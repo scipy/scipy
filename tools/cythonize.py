@@ -1,11 +1,15 @@
 #!/usr/bin/env python
-""" cythonize
+"""cythonize
 
 Cythonize pyx files into C files as needed.
 
 Usage: cythonize [root_dir]
 
 Default [root_dir] is 'scipy'.
+
+The number of parallel Cython processes is controlled by the
+environment variable SCIPY_NUM_CYTHONIZE_JOBS. If not set, determined
+from the number of CPUs.
 
 Checks pyx files to see if they have been changed relative to their
 corresponding C files.  If they have, then runs cython on these files to
@@ -28,6 +32,7 @@ https://raw.github.com/dagss/private-scipy-refactor/cythonize/cythonize.py
 
 Note: this script does not check any of the dependent C libraries; it only
 operates on the Cython .pyx files.
+
 """
 
 from __future__ import division, print_function, absolute_import
@@ -240,7 +245,12 @@ def process_generate_pyx(path, lock):
 
 def find_process_files(root_dir):
     lock = Lock()
-    pool = Pool()
+
+    try:
+        num_proc = int(os.environ.get('SCIPY_NUM_CYTHONIZE_JOBS', ''))
+        pool = Pool(processes=num_proc)
+    except ValueError:
+        pool = Pool()
 
     hash_db = load_hashes(HASH_FILE)
     # Keep changed pxi/pxd hashes in a separate dict until the end
@@ -255,7 +265,7 @@ def find_process_files(root_dir):
         if os.path.exists(generate_pyx):
             jobs.append(generate_pyx)
 
-    for result in pool.imap(lambda fn: process_generate_pyx(fn, lock), jobs):
+    for result in pool.imap_unordered(lambda fn: process_generate_pyx(fn, lock), jobs):
         pass
 
     # Process pyx files
@@ -278,7 +288,7 @@ def find_process_files(root_dir):
                     jobs.append((cur_dir, fromfile, tofile, function,
                                  hash_db, dep_hashes, lock))
 
-    for result in pool.imap(lambda args: process(*args), jobs):
+    for result in pool.imap_unordered(lambda args: process(*args), jobs):
         pass
 
     hash_db.update(dep_hashes)

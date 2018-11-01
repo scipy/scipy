@@ -40,7 +40,7 @@ arpack-ng - 3.1.5
 arpack-ng - 3.1.4
 
  * libparpack2: missing dependency on MPI:
-   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=718790
+   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=718790
 
  * Replace LAPACK second function with ARPACK's own arscnd in PARPACK
 

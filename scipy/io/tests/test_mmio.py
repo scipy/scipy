@@ -542,7 +542,7 @@ class TestMMIOCoordinate(object):
                         (5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
 
     def test_empty_write_read(self):
-        # http://projects.scipy.org/scipy/ticket/883
+        # https://github.com/scipy/scipy/issues/1410 (Trac #883)
 
         b = scipy.sparse.coo_matrix((10, 10))
         mmwrite(self.fn, b)
@@ -558,7 +558,7 @@ class TestMMIOCoordinate(object):
         try:
             # bz2 module isn't always built when building Python.
             import bz2
-        except:
+        except ImportError:
             return
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
@@ -582,7 +582,7 @@ class TestMMIOCoordinate(object):
         try:
             # gzip module can be missing from Python installation
             import gzip
-        except:
+        except ImportError:
             return
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])

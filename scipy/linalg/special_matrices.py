@@ -810,7 +810,7 @@ def pascal(n, kind='symmetric', exact=True):
 
     Notes
     -----
-    See http://en.wikipedia.org/wiki/Pascal_matrix for more information
+    See https://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
 
     .. versionadded:: 0.11.0
@@ -901,7 +901,7 @@ def invpascal(n, kind='symmetric', exact=True):
 
     References
     ----------
-    .. [1] "Pascal matrix",  http://en.wikipedia.org/wiki/Pascal_matrix
+    .. [1] "Pascal matrix", https://en.wikipedia.org/wiki/Pascal_matrix
     .. [2] Cohen, A. M., "The inverse of a Pascal matrix", Mathematical
            Gazette, 59(408), pp. 111-112, 1975.
 
@@ -1006,7 +1006,7 @@ def dft(n, scale=None):
 
     References
     ----------
-    .. [1] "DFT matrix", http://en.wikipedia.org/wiki/DFT_matrix
+    .. [1] "DFT matrix", https://en.wikipedia.org/wiki/DFT_matrix
 
     Examples
     --------

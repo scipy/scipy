@@ -93,7 +93,7 @@ def test_diagonal():
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
     # required to reproduce arpack bug
-    # http://forge.scilab.org/index.php/p/arpack-ng/issues/1397/
+    # https://forge.scilab.org/p/arpack-ng/issues/1397/
     # even using the same n=100.
 
     np.random.seed(1234)

@@ -18,18 +18,6 @@ Apple ships its own version of Python with OS X. However, we
 Alternatively, use Python from one of the OS X package managers 
 (Homebrew, MacPorts, Fink).  
 
-Apple's Developer Tools
------------------------
-
-Apple's Developer Tools provide a number of key libraries,
-particularly the `vecLib Framework
-<https://developer.apple.com/library/mac/documentation/Performance/Conceptual/vecLib/>`__
-, which includes the BLAS and LAPACK libraries for optimizing matrix and vector
-operations. The most recent version should be included on your OS X installation CD.
-Ensure that all components are installed by choosing **customize** when available
-during the install process and selecting all optional packages - at least the X11
-development tools and (on OS X 10.6 or lower) the 10.4 SDK.
-
 Compilers (C/C++/FORTRAN/Cython)
 --------------------------------
 
@@ -48,6 +36,17 @@ See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
 
 Unless you are building from released source packages, the `Cython
 <http://cython.org/>`__ compiler is also needed.
+
+BLAS/LAPACK Installation
+------------------------
+
+You will also need to install a library providing the BLAS and LAPACK
+interfaces. ATLAS, OpenBLAS, and MKL all work. OpenBLAS can be installed
+via `Homebrew <https://brew.sh/>`.
+
+As of Scipy version 1.2.0, we do not support compiling against the system
+Accelerate library for BLAS and LAPACK. It does not support a sufficiently
+recent LAPACK interface.
 
 Version-specific notes
 ----------------------

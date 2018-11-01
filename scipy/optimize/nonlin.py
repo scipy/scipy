@@ -261,10 +261,12 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     ----------
     .. [KIM] C. T. Kelley, \"Iterative Methods for Linear and Nonlinear
        Equations\". Society for Industrial and Applied Mathematics. (1995)
-       http://www.siam.org/books/kelley/fr16/index.php
+       https://archive.siam.org/books/kelley/fr16/
 
     """
-
+    # Can't use default parameters because it's being explicitly passed as None
+    # from the calling function, so we need to set it here.
+    tol_norm = maxnorm if tol_norm is None else tol_norm
     condition = TerminationCondition(f_tol=f_tol, f_rtol=f_rtol,
                                      x_tol=x_tol, x_rtol=x_rtol,
                                      iter=iter, norm=tol_norm)
@@ -340,8 +342,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Print status
         if verbose:
-            sys.stdout.write("%d:  |F(x)| = %g; step %g; tol %g\n" % (
-                n, norm(Fx), s, eta))
+            sys.stdout.write("%d:  |F(x)| = %g; step %g\n" % (
+                n, tol_norm(Fx), s))
             sys.stdout.flush()
     else:
         if raise_exception:
@@ -443,10 +445,7 @@ class TerminationCondition(object):
         self.f_tol = f_tol
         self.f_rtol = f_rtol
 
-        if norm is None:
-            self.norm = maxnorm
-        else:
-            self.norm = norm
+        self.norm = norm
 
         self.iter = iter
 
@@ -845,7 +844,7 @@ class LowRankMatrix(object):
            systems of nonlinear equations\". Mathematisch Instituut,
            Universiteit Leiden, The Netherlands (2003).
 
-           http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+           https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
         """
         if self.collapsed is not None:
@@ -939,7 +938,7 @@ class BroydenFirst(GenericBroyden):
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
 
-       http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
     """
 
@@ -1029,7 +1028,7 @@ class BroydenSecond(BroydenFirst):
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
 
-       http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
     """
 
@@ -1263,7 +1262,7 @@ class LinearMixing(GenericBroyden):
         return -f/np.conj(self.alpha)
 
     def todense(self):
-        return np.diag(-np.ones(self.shape[0])/self.alpha)
+        return np.diag(np.full(self.shape[0], -1/self.alpha))
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         pass
@@ -1299,7 +1298,7 @@ class ExcitingMixing(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.beta = self.alpha * np.ones((self.shape[0],), dtype=self.dtype)
+        self.beta = np.full((self.shape[0],), self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
         return -f*self.beta

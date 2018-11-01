@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, cos, sin
+import numpy as np
 
 # Import testing parameters
 try:
@@ -56,3 +57,64 @@ class Newton(Benchmark):
 
     def time_newton(self, func, meth):
         newton(self.f, self.x0, args=(), fprime=self.f_1, fprime2=self.f_2)
+
+
+class NewtonArray(Benchmark):
+    params = [['loop', 'array'], ['newton', 'secant', 'halley']]
+    param_names = ['vectorization', 'solver']
+
+    def setup(self, vec, meth):
+        if vec == 'loop':
+            if meth == 'newton':
+                self.fvec = lambda f, x0, args, fprime, fprime2: [
+                    newton(f, x, args=(a0, a1) + args[2:], fprime=fprime)
+                    for (x, a0, a1) in zip(x0, args[0], args[1])
+                ]
+            elif meth == 'halley':
+                self.fvec = lambda f, x0, args, fprime, fprime2: [
+                    newton(
+                        f, x, args=(a0, a1) + args[2:], fprime=fprime,
+                        fprime2=fprime2
+                    ) for (x, a0, a1) in zip(x0, args[0], args[1])
+                ]
+            else:
+                self.fvec = lambda f, x0, args, fprime, fprime2: [
+                    newton(f, x, args=(a0, a1) + args[2:]) for (x, a0, a1)
+                    in zip(x0, args[0], args[1])
+                ]
+        else:
+            if meth == 'newton':
+                self.fvec = lambda f, x0, args, fprime, fprime2: newton(
+                    f, x0, args=args, fprime=fprime
+                )
+            elif meth == 'halley':
+                self.fvec = newton
+            else:
+                self.fvec = lambda f, x0, args, fprime, fprime2: newton(
+                    f, x0, args=args
+                )
+
+    def time_array_newton(self, vec, meth):
+
+        def f(x, *a):
+            b = a[0] + x * a[3]
+            return a[1] - a[2] * (np.exp(b / a[5]) - 1.0) - b / a[4] - x
+
+        def f_1(x, *a):
+            b = a[3] / a[5]
+            return -a[2] * np.exp(a[0] / a[5] + x * b) * b - a[3] / a[4] - 1
+
+        def f_2(x, *a):
+            b = a[3] / a[5]
+            return -a[2] * np.exp(a[0] / a[5] + x * b) * b ** 2
+
+        a0 = np.array([
+            5.32725221, 5.48673747, 5.49539973,
+            5.36387202, 4.80237316, 1.43764452,
+            5.23063958, 5.46094772, 5.50512718,
+            5.42046290
+        ])
+        a1 = (np.sin(range(10)) + 1.0) * 7.0
+        args = (a0, a1, 1e-09, 0.004, 10, 0.27456)
+        x0 = [7.0] * 10
+        self.fvec(f, x0, args=args, fprime=f_1, fprime2=f_2)

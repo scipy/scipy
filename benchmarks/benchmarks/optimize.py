@@ -506,7 +506,7 @@ class BenchGlobal(Benchmark):
                 return av_results[solver]['mean_nfev']
             else:
                 raise ValueError()
-        except:
+        except Exception:
             print("".join(traceback.format_exc()))
             self.results[name] = "".join(traceback.format_exc())
 

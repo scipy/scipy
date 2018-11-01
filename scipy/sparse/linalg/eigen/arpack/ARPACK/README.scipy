@@ -12,19 +12,11 @@ functions, to avoid various ABI mismatches on OSX. These changes are
 made with the following command:
 
 perl -pi -e '
-s@\bsdot\b@wsdot@g;
 s@\bcdotc\b@wcdotc@g;
 s@\bzdotc\b@wzdotc@g;
 s@\bcdotu\b@wcdotu@g;
 s@\bzdotu\b@wzdotu@g;
 s@\bcladiv\b@wcladiv@g;
 s@\bzladiv\b@wzladiv@g;
-s@\bslapy2\b@wslapy2@g;
-s@\bscnrm2\b@wscnrm2@g;
-s@\bslanhs\b@wslanhs@g;
-s@\bsnrm2\b@wsnrm2@g;
-s@\bclanhs\b@wclanhs@g;
-s@\bSLAMCH\b@wslamch@g;
-s@\bslamch\b@wslamch@g;
-s@\bslanst\b@wslanst@g;' \
+s@\bSLAMCH\b@slamch@g;' \
 SRC/*.f UTIL/*.f LAPACK/*.f

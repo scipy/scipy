@@ -6,7 +6,7 @@ from os.path import join
 def configuration(parent_package='', top_path=None):
     import warnings
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info, BlasNotFoundError
+    from scipy._build_utils.system_info import get_info, BlasNotFoundError
     config = Configuration('odr', parent_package, top_path)
 
     libodr_files = ['d_odr.f',

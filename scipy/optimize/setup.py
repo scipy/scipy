@@ -1,13 +1,16 @@
 from __future__ import division, print_function, absolute_import
 
+import os.path
 from os.path import join
 
 from scipy._build_utils import numpy_nodepr_api
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
+
+    include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
 
     minpack_src = [join('minpack','*f')]
     config.add_library('minpack',sources=minpack_src)
@@ -16,6 +19,7 @@ def configuration(parent_package='',top_path=None):
                          libraries=['minpack'],
                          depends=(["minpack.h","__minpack.h"]
                                   + minpack_src),
+                         include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
     rootfind_src = [join('Zeros','*.c')]
@@ -40,7 +44,7 @@ def configuration(parent_package='',top_path=None):
             lapack['define_macros'] = numpy_nodepr_api['define_macros']
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
-                         sources=[join('lbfgsb',x) for x in sources],
+                         sources=[join('lbfgsb_src',x) for x in sources],
                          **lapack)
 
     sources = ['moduleTNC.c','tnc.c']
@@ -76,13 +80,13 @@ def configuration(parent_package='',top_path=None):
 
     config.add_subpackage('_trustregion_constr')
 
-    config.add_subpackage('shgo_m')
-    config.add_data_dir('shgo_m')
+    config.add_subpackage('_shgo_lib')
+    config.add_data_dir('_shgo_lib')
 
     config.add_data_dir('tests')
 
     # Add license files
-    config.add_data_files('lbfgsb/README')
+    config.add_data_files('lbfgsb_src/README')
 
     return config
 

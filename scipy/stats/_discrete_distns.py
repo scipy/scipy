@@ -7,13 +7,14 @@ from __future__ import division, print_function, absolute_import
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import _lazywhere
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
 
 class binom_gen(rv_discrete):
@@ -260,7 +261,7 @@ class geom_gen(rv_discrete):
         return k*log1p(-p)
 
     def _ppf(self, q, p):
-        vals = ceil(log(1.0-q)/log(1-p))
+        vals = ceil(log1p(-q) / log1p(-p))
         temp = self._cdf(vals-1, p)
         return np.where((temp >= q) & (vals > 0), vals-1, vals)
 
@@ -351,9 +352,10 @@ class hypergeom_gen(rv_discrete):
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return betaln(good+1, 1) + betaln(bad+1,1) + betaln(tot-N+1, N+1)\
-            - betaln(k+1, good-k+1) - betaln(N-k+1,bad-N+k+1)\
-            - betaln(tot+1, 1)
+        result = (betaln(good+1, 1) + betaln(bad+1, 1) + betaln(tot-N+1, N+1) -
+                  betaln(k+1, good-k+1) - betaln(N-k+1, bad-N+k+1) -
+                  betaln(tot+1, 1))
+        return result
 
     def _pmf(self, k, M, n, N):
         # same as the following but numerically more precise
@@ -476,7 +478,7 @@ class poisson_gen(rv_discrete):
 
     .. math::
 
-        f(k) = \exp(-\mu) \frac{mu^k}{k!}
+        f(k) = \exp(-\mu) \frac{\mu^k}{k!}
 
     for :math:`k \ge 0`.
 
@@ -542,7 +544,7 @@ class planck_gen(rv_discrete):
 
         f(k) = (1-\exp(-\lambda)) \exp(-\lambda k)
 
-    for :math:`k \lambda \ge 0`.
+    for :math:`k \ge 0` and :math:`\lambda > 0`.
 
     `planck` takes :math:`\lambda` as shape parameter.
 
@@ -552,14 +554,10 @@ class planck_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_):
-        self.a = np.where(lambda_ > 0, 0, -np.inf)
-        self.b = np.where(lambda_ > 0, np.inf, 0)
-        return lambda_ != 0
+        return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        # planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
-        fact = (1-exp(-lambda_))
-        return fact*exp(-lambda_*k)
+        return (1-exp(-lambda_))*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
@@ -591,7 +589,7 @@ class planck_gen(rv_discrete):
         return l*exp(-l)/C - log(C)
 
 
-planck = planck_gen(name='planck', longname='A discrete exponential ')
+planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
 
 
 class boltzmann_gen(rv_discrete):
@@ -605,17 +603,22 @@ class boltzmann_gen(rv_discrete):
 
     .. math::
 
-        f(k) = (1-\exp(-\lambda) \exp(-\lambda k)/(1-\exp(-\lambda N))
+        f(k) = (1-\exp(-\lambda)) \exp(-\lambda k) / (1-\exp(-\lambda N))
 
     for :math:`k = 0,..., N-1`.
 
-    `boltzmann` takes :math:`\lambda` and :math:`N` as shape parameters.
+    `boltzmann` takes :math:`\lambda > 0` and :math:`N > 0` as shape parameters.
 
     %(after_notes)s
 
     %(example)s
 
     """
+    def _argcheck(self, lambda_, N):
+        self.a = 0
+        self.b = N - 1
+        return (lambda_ > 0) & (N > 0)
+
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
         #               (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
@@ -648,7 +651,7 @@ class boltzmann_gen(rv_discrete):
 
 
 boltzmann = boltzmann_gen(name='boltzmann',
-        longname='A truncated discrete exponential ')
+                          longname='A truncated discrete exponential ')
 
 
 class randint_gen(rv_discrete):
@@ -738,7 +741,8 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter.
+    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the 
+    Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
 
@@ -779,7 +783,7 @@ class dlaplace_gen(rv_discrete):
 
         f(k) = \tanh(a/2) \exp(-a |k|)
 
-    for :math:`a > 0`.
+    for integers :math:`k` and :math:`a > 0`.
 
     `dlaplace` takes :math:`a` as shape parameter.
 
@@ -800,8 +804,9 @@ class dlaplace_gen(rv_discrete):
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
-        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)), log(q*const) / a - 1,
-                                                      -log((1-q) * const) / a))
+        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)),
+                             log(q*const) / a - 1,
+                             -log((1-q) * const) / a))
         vals1 = vals - 1
         return np.where(self._cdf(vals1, a) >= q, vals1, vals)
 
@@ -830,8 +835,8 @@ class skellam_gen(rv_discrete):
     uncorrelated Poisson random variables.
 
     Let :math:`k_1` and :math:`k_2` be two Poisson-distributed r.v. with
-    expected values lam1 and lam2. Then, :math:`k_1 - k_2` follows a Skellam
-    distribution with parameters
+    expected values :math:`\lambda_1` and :math:`\lambda_2`. Then,
+    :math:`k_1 - k_2` follows a Skellam distribution with parameters
     :math:`\mu_1 = \lambda_1 - \rho \sqrt{\lambda_1 \lambda_2}` and
     :math:`\mu_2 = \lambda_2 - \rho \sqrt{\lambda_1 \lambda_2}`, where
     :math:`\rho` is the correlation coefficient between :math:`k_1` and
@@ -840,7 +845,7 @@ class skellam_gen(rv_discrete):
 
     Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: http://en.wikipedia.org/wiki/Skellam_distribution
+    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
 
     `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
@@ -856,16 +861,16 @@ class skellam_gen(rv_discrete):
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,
-                _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
         px = np.where(x < 0,
-                _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                1-_ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

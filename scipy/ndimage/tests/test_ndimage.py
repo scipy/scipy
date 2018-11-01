@@ -1645,6 +1645,15 @@ class TestNdimage:
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
 
+    def test_geometric_transform_with_string_output(self):
+        data = numpy.array([1])
+
+        def mapping(x):
+            return x
+        out = ndimage.geometric_transform(data, mapping, output='f')
+        assert_(out.dtype is numpy.dtype('f'))
+        assert_array_almost_equal(out, [1])
+
     def test_map_coordinates01(self):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
@@ -1700,6 +1709,13 @@ class TestNdimage:
             returned = ndimage.map_coordinates(data, idx, output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, expected)
+
+    def test_map_coordinates_with_string_output(self):
+        data = numpy.array([[1]])
+        idx = numpy.indices(data.shape)
+        out = ndimage.map_coordinates(data, idx, output='f')
+        assert_(out.dtype is numpy.dtype('f'))
+        assert_array_almost_equal(out, [[1]])
 
     @pytest.mark.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8,
                         reason="do not run on 32 bit or windows (no sparse memory)")
@@ -1997,6 +2013,12 @@ class TestNdimage:
             returned = ndimage.affine_transform(data, [[1]], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
+
+    def test_affine_transform_with_string_output(self):
+        data = numpy.array([1])
+        out = ndimage.affine_transform(data, [[1]], output='f')
+        assert_(out.dtype is numpy.dtype('f'))
+        assert_array_almost_equal(out, [1])
 
     def test_shift01(self):
         data = numpy.array([1])
@@ -2846,17 +2868,17 @@ class TestNdimage:
                                 [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-        out, ft = ndimage.distance_transform_edt(data, return_indices=True)
-        bf = ndimage.distance_transform_bf(data, 'euclidean')
-        assert_array_almost_equal(bf, out)
+            out, ft = ndimage.distance_transform_edt(data, return_indices=True)
+            bf = ndimage.distance_transform_bf(data, 'euclidean')
+            assert_array_almost_equal(bf, out)
 
-        dt = ft - numpy.indices(ft.shape[1:], dtype=ft.dtype)
-        dt = dt.astype(numpy.float64)
-        numpy.multiply(dt, dt, dt)
-        dt = numpy.add.reduce(dt, axis=0)
-        numpy.sqrt(dt, dt)
+            dt = ft - numpy.indices(ft.shape[1:], dtype=ft.dtype)
+            dt = dt.astype(numpy.float64)
+            numpy.multiply(dt, dt, dt)
+            dt = numpy.add.reduce(dt, axis=0)
+            numpy.sqrt(dt, dt)
 
-        assert_array_almost_equal(bf, dt)
+            assert_array_almost_equal(bf, dt)
 
     def test_distance_transform_edt02(self):
         for type_ in self.types:
@@ -2869,43 +2891,43 @@ class TestNdimage:
                                 [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-        tdt, tft = ndimage.distance_transform_edt(data, return_indices=True)
-        dts = []
-        fts = []
-        dt = numpy.zeros(data.shape, dtype=numpy.float64)
-        ndimage.distance_transform_edt(data, distances=dt)
-        dts.append(dt)
-        ft = ndimage.distance_transform_edt(
-            data, return_distances=0, return_indices=True)
-        fts.append(ft)
-        ft = numpy.indices(data.shape, dtype=numpy.int32)
-        ndimage.distance_transform_edt(
-            data, return_distances=False, return_indices=True, indices=ft)
-        fts.append(ft)
-        dt, ft = ndimage.distance_transform_edt(
-            data, return_indices=True)
-        dts.append(dt)
-        fts.append(ft)
-        dt = numpy.zeros(data.shape, dtype=numpy.float64)
-        ft = ndimage.distance_transform_edt(
-            data, distances=dt, return_indices=True)
-        dts.append(dt)
-        fts.append(ft)
-        ft = numpy.indices(data.shape, dtype=numpy.int32)
-        dt = ndimage.distance_transform_edt(
-            data, return_indices=True, indices=ft)
-        dts.append(dt)
-        fts.append(ft)
-        dt = numpy.zeros(data.shape, dtype=numpy.float64)
-        ft = numpy.indices(data.shape, dtype=numpy.int32)
-        ndimage.distance_transform_edt(
-            data, distances=dt, return_indices=True, indices=ft)
-        dts.append(dt)
-        fts.append(ft)
-        for dt in dts:
-            assert_array_almost_equal(tdt, dt)
-        for ft in fts:
-            assert_array_almost_equal(tft, ft)
+            tdt, tft = ndimage.distance_transform_edt(data, return_indices=True)
+            dts = []
+            fts = []
+            dt = numpy.zeros(data.shape, dtype=numpy.float64)
+            ndimage.distance_transform_edt(data, distances=dt)
+            dts.append(dt)
+            ft = ndimage.distance_transform_edt(
+                data, return_distances=0, return_indices=True)
+            fts.append(ft)
+            ft = numpy.indices(data.shape, dtype=numpy.int32)
+            ndimage.distance_transform_edt(
+                data, return_distances=False, return_indices=True, indices=ft)
+            fts.append(ft)
+            dt, ft = ndimage.distance_transform_edt(
+                data, return_indices=True)
+            dts.append(dt)
+            fts.append(ft)
+            dt = numpy.zeros(data.shape, dtype=numpy.float64)
+            ft = ndimage.distance_transform_edt(
+                data, distances=dt, return_indices=True)
+            dts.append(dt)
+            fts.append(ft)
+            ft = numpy.indices(data.shape, dtype=numpy.int32)
+            dt = ndimage.distance_transform_edt(
+                data, return_indices=True, indices=ft)
+            dts.append(dt)
+            fts.append(ft)
+            dt = numpy.zeros(data.shape, dtype=numpy.float64)
+            ft = numpy.indices(data.shape, dtype=numpy.int32)
+            ndimage.distance_transform_edt(
+                data, distances=dt, return_indices=True, indices=ft)
+            dts.append(dt)
+            fts.append(ft)
+            for dt in dts:
+                assert_array_almost_equal(tdt, dt)
+            for ft in fts:
+                assert_array_almost_equal(tft, ft)
 
     def test_distance_transform_edt03(self):
         for type_ in self.types:
@@ -2918,9 +2940,9 @@ class TestNdimage:
                                 [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-        ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 2])
-        out = ndimage.distance_transform_edt(data, sampling=[2, 2])
-        assert_array_almost_equal(ref, out)
+            ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 2])
+            out = ndimage.distance_transform_edt(data, sampling=[2, 2])
+            assert_array_almost_equal(ref, out)
 
     def test_distance_transform_edt4(self):
         for type_ in self.types:
@@ -2933,9 +2955,9 @@ class TestNdimage:
                                 [0, 0, 0, 1, 1, 1, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                                 [0, 0, 0, 0, 0, 0, 0, 0, 0]], type_)
-        ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 1])
-        out = ndimage.distance_transform_edt(data, sampling=[2, 1])
-        assert_array_almost_equal(ref, out)
+            ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 1])
+            out = ndimage.distance_transform_edt(data, sampling=[2, 1])
+            assert_array_almost_equal(ref, out)
 
     def test_distance_transform_edt5(self):
         # Ticket #954 regression test
@@ -4427,7 +4449,7 @@ class TestNdimage:
         array = numpy.eye(5, dtype=numpy.bool_)
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
-        # Check that type missmatch is properly handled
+        # Check that type mismatch is properly handled
         output = numpy.empty_like(array, dtype=numpy.float)
         ndimage.white_tophat(array, structure=structure, output=output)
 
@@ -4482,7 +4504,7 @@ class TestNdimage:
         array = numpy.eye(5, dtype=numpy.bool_)
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
-        # Check that type missmatch is properly handled
+        # Check that type mismatch is properly handled
         output = numpy.empty_like(array, dtype=numpy.float)
         ndimage.black_tophat(array, structure=structure, output=output)
 

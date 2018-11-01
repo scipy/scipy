@@ -8765,7 +8765,7 @@ C             Careful on the branch cut -- avoid signed zeros
               CE1=-EL-CDLOG(Z)+Z*CE1
            ENDIF
         ELSE
-C          Continued fraction http://dlmf.nist.gov/6.9
+C          Continued fraction https://dlmf.nist.gov/6.9
 C
 C                           1     1     1     2     2     3     3
 C          E1 = exp(-z) * ----- ----- ----- ----- ----- ----- ----- ...

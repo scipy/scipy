@@ -42,6 +42,8 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 
 from scipy.sparse import isspmatrix
@@ -136,8 +138,9 @@ class LinearOperator(object):
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
-                raise TypeError("LinearOperator subclass should implement"
-                                " at least one of _matvec and _matmat.")
+                warnings.warn("LinearOperator subclass should implement"
+                              " at least one of _matvec and _matmat.",
+                              category=RuntimeWarning, stacklevel=2)
 
             return obj
 
@@ -564,7 +567,7 @@ class _ScaledLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, alpha = self.args
-        return A.H * alpha
+        return A.H * np.conj(alpha)
 
 
 class _PowerLinearOperator(LinearOperator):

@@ -85,8 +85,22 @@ class TestTrustRegionSolvers(object):
             assert_(len(r_dogleg['allvecs']) < len(r_ncg['allvecs']))
 
     def test_trust_ncg_hessp(self):
-        for x0 in (self.easy_guess, self.hard_guess):
+        for x0 in (self.easy_guess, self.hard_guess, self.x_opt):
             r = minimize(rosen, x0, jac=rosen_der, hessp=rosen_hess_prod,
                          tol=1e-8, method='trust-ncg')
             assert_allclose(self.x_opt, r['x'])
 
+    def test_trust_ncg_start_in_optimum(self):
+        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+                     tol=1e-8, method='trust-ncg')
+        assert_allclose(self.x_opt, r['x'])
+
+    def test_trust_krylov_start_in_optimum(self):
+        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+                     tol=1e-8, method='trust-krylov')
+        assert_allclose(self.x_opt, r['x'])
+
+    def test_trust_exact_start_in_optimum(self):
+        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+                     tol=1e-8, method='trust-exact')
+        assert_allclose(self.x_opt, r['x'])

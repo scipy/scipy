@@ -411,5 +411,5 @@ def arr_to_chars(arr):
     if not np.any(empties):
         return arr
     arr = arr.copy()
-    arr[empties] = ' '
+    arr[tuple(empties)] = ' '
     return arr

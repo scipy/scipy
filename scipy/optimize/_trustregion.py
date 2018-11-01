@@ -178,7 +178,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     k = 0
 
     # search for the function min
-    while True:
+    # do not even start if the gradient is small enough
+    while m.jac_mag >= gtol:
 
         # Solve the sub-problem.
         # This gives us the proposed step relative to the current position

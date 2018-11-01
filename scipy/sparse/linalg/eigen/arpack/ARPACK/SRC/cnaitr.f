@@ -134,19 +134,19 @@ c     ivout   ARPACK utility routine that prints integers.
 c     arscnd  ARPACK utility routine for timing.
 c     cmout   ARPACK utility routine that prints matrices
 c     cvout   ARPACK utility routine that prints vectors.
-c     wclanhs  LAPACK routine that computes various norms of a matrix.
+c     clanhs  LAPACK routine that computes various norms of a matrix.
 c     clascl  LAPACK routine for careful scaling of a matrix.
 c     slabad  LAPACK routine for defining the underflow and overflow
 c             limits.
-c     wslamch  LAPACK routine that determines machine constants.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     cgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     caxpy   Level 1 BLAS that computes a vector triad.
 c     ccopy   Level 1 BLAS that copies one vector to another .
 c     wcdotc   Level 1 BLAS that computes the scalar product of two vectors. 
 c     cscal   Level 1 BLAS that scales a vector.
 c     csscal  Level 1 BLAS that scales a complex vector by a real number. 
-c     wscnrm2  Level 1 BLAS that computes the norm of a vector.
+c     scnrm2  Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -282,8 +282,8 @@ c
       Complex
      &           wcdotc 
       Real            
-     &           wslamch,  wscnrm2, wclanhs, wslapy2
-      external   wcdotc, wscnrm2, wclanhs, wslamch, wslapy2
+     &           slamch,  scnrm2, clanhs, slapy2
+      external   wcdotc, scnrm2, clanhs, slamch, slapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -311,10 +311,10 @@ c        | overflow should not occur.              |
 c        | REFERENCE: LAPACK subroutine clahqr     |
 c        %-----------------------------------------%
 c
-         unfl = wslamch( 'safe minimum' )
+         unfl = slamch( 'safe minimum' )
          ovfl = real(one / unfl)
          call slabad( unfl, ovfl )
-         ulp = wslamch( 'precision' )
+         ulp = slamch( 'precision' )
          smlnum = unfl*( n / ulp )
          first = .false.
       end if
@@ -551,9 +551,9 @@ c        %-------------------------------------%
 c
          if (bmat .eq. 'G') then  
              cnorm = wcdotc (n, resid, 1, workd(ipj), 1)
-             wnorm = sqrt( wslapy2(real(cnorm),aimag(cnorm)) )
+             wnorm = sqrt( slapy2(real(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
-             wnorm = wscnrm2(n, resid, 1)
+             wnorm = scnrm2(n, resid, 1)
          end if
 c
 c        %-----------------------------------------%
@@ -623,9 +623,9 @@ c        %------------------------------%
 c
          if (bmat .eq. 'G') then         
             cnorm = wcdotc (n, resid, 1, workd(ipj), 1)
-            rnorm = sqrt( wslapy2(real(cnorm),aimag(cnorm)) )
+            rnorm = sqrt( slapy2(real(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
-            rnorm = wscnrm2(n, resid, 1)
+            rnorm = scnrm2(n, resid, 1)
          end if
 c 
 c        %-----------------------------------------------------------%
@@ -723,9 +723,9 @@ c        %-----------------------------------------------------%
 c 
          if (bmat .eq. 'G') then         
              cnorm  = wcdotc (n, resid, 1, workd(ipj), 1)
-             rnorm1 = sqrt( wslapy2(real(cnorm),aimag(cnorm)) )
+             rnorm1 = sqrt( slapy2(real(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
-             rnorm1 = wscnrm2(n, resid, 1)
+             rnorm1 = scnrm2(n, resid, 1)
          end if
 c 
          if (msglvl .gt. 0 .and. iter .gt. 0 ) then
@@ -811,11 +811,11 @@ c              | Use a standard test as in the QR algorithm |
 c              | REFERENCE: LAPACK subroutine clahqr        |
 c              %--------------------------------------------%
 c     
-               tst1 = wslapy2(real(h(i,i)),aimag(h(i,i)))
-     &              + wslapy2(real(h(i+1,i+1)), aimag(h(i+1,i+1)))
+               tst1 = slapy2(real(h(i,i)),aimag(h(i,i)))
+     &              + slapy2(real(h(i+1,i+1)), aimag(h(i+1,i+1)))
                if( tst1.eq.real(zero) )
-     &              tst1 = wclanhs( '1', k+np, h, ldh, workd(n+1) )
-               if( wslapy2(real(h(i+1,i)),aimag(h(i+1,i))) .le. 
+     &              tst1 = clanhs( '1', k+np, h, ldh, workd(n+1) )
+               if( slapy2(real(h(i+1,i)),aimag(h(i+1,i))) .le. 
      &                    max( ulp*tst1, smlnum ) ) 
      &             h(i+1,i) = zero
  110        continue

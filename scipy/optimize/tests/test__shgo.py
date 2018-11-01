@@ -67,7 +67,7 @@ class StructTest2(StructTestFunction):
 test2_1 = StructTest2(bounds=[(0, 60)],
                       expected_x=[1.53567906],
                       expected_fun=-28.44677132,
-                      # Important to test that funl return is in the correct order
+                      # Important: test that funl return is in the correct order
                       expected_xl=numpy.array([[1.53567906],
                                                [55.01782167],
                                                [7.80894889],
@@ -261,7 +261,7 @@ class StructTestInfeasible(StructTestFunction):
         return -(x[0] + x[1] - 1)
 
     def g3(x):
-        return (-x[0] + x[1] - 1)
+        return -x[0] + x[1] - 1
 
     def g4(x):
         return -(-x[0] + x[1] - 1)
@@ -317,23 +317,28 @@ class TestShgoSobolTestFunctions(object):
 
     # Sobol algorithm
     def test_f1_1_sobol(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
+        """Multivariate test function 1:
+        x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
         run_test(test1_1)
 
     def test_f1_2_sobol(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
+        """Multivariate test function 1:
+         x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
         run_test(test1_2)
 
     def test_f1_3_sobol(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
+        """Multivariate test function 1:
+        x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
         run_test(test1_3)
 
     def test_f2_1_sobol(self):
-        """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
+        """Univariate test function on
+        f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
         run_test(test2_1)
 
     def test_f2_2_sobol(self):
-        """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
+        """Univariate test function on
+        f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
         run_test(test2_2)
 
     def test_f3_sobol(self):
@@ -368,11 +373,13 @@ class TestShgoSimplicialTestFunctions(object):
     """
 
     def test_f1_1_simplicial(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
+        """Multivariate test function 1:
+        x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
         run_test(test1_1, n=1, sampling_method='simplicial')
 
     def test_f1_2_simplicial(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
+        """Multivariate test function 1:
+        x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
         run_test(test1_2, n=1, sampling_method='simplicial')
 
     def test_f1_3_simplicial(self):
@@ -388,7 +395,8 @@ class TestShgoSimplicialTestFunctions(object):
                  sampling_method='simplicial')
 
     def test_f2_2_simplicial(self):
-        """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
+        """Univariate test function on
+        f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
         run_test(test2_2, n=1, sampling_method='simplicial')
 
     def test_f3_simplicial(self):
@@ -567,7 +575,7 @@ class TestShgoArguments(object):
                      minimizer_kwargs=minimizer_kwargs, options=options)
 
     def test_7_3_minkwargs(self):
-        """Test the minimizer_kwargs arguments for solvers without constraints"""
+        """Test minimizer_kwargs arguments for solvers without constraints"""
         for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
                        'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg', 'trust-exact',
                        'trust-krylov']:

@@ -476,7 +476,7 @@ class interp1d(_Interpolator1D):
         # Adjust to interpolation kind; store reference to *unbound*
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
-        # collection.  See: http://docs.python.org/2/reference/datamodel.html
+        # collection.  See: https://docs.python.org/reference/datamodel.html
         if kind in ('linear', 'nearest', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
@@ -1389,7 +1389,7 @@ class BPoly(_PPolyBase):
     Properties of Bernstein polynomials are well documented in the literature.
     Here's a non-exhaustive list:
 
-    .. [1] http://en.wikipedia.org/wiki/Bernstein_polynomial
+    .. [1] https://en.wikipedia.org/wiki/Bernstein_polynomial
 
     .. [2] Kenneth I. Joy, Bernstein polynomials,
       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
@@ -2070,7 +2070,7 @@ class NdPPoly(object):
         else:
             sl = [slice(None)]*ndim
             sl[axis] = slice(None, -nu, None)
-            c2 = self.c[sl]
+            c2 = self.c[tuple(sl)]
 
         if c2.shape[axis] == 0:
             # derivative of order 0 is zero
@@ -2082,7 +2082,7 @@ class NdPPoly(object):
         factor = spec.poch(np.arange(c2.shape[axis], 0, -1), nu)
         sl = [None]*c2.ndim
         sl[axis] = slice(None)
-        c2 *= factor[sl]
+        c2 *= factor[tuple(sl)]
 
         self.c = c2
 
@@ -2390,13 +2390,12 @@ class RegularGridInterpolator(object):
     ----------
     .. [1] Python package *regulargrid* by Johannes Buchner, see
            https://pypi.python.org/pypi/regulargrid/
-    .. [2] Trilinear interpolation. (2013, January 17). In Wikipedia, The Free
-           Encyclopedia. Retrieved 27 Feb 2013 01:28.
-           http://en.wikipedia.org/w/index.php?title=Trilinear_interpolation&oldid=533448871
+    .. [2] Wikipedia, "Trilinear interpolation",
+           https://en.wikipedia.org/wiki/Trilinear_interpolation
     .. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
            and multilinear table interpolation in many dimensions." MATH.
            COMPUT. 50.181 (1988): 189-196.
-           http://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
+           https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
 
     """
     # this class is based on code originally programmed by Johannes Buchner,
@@ -2511,7 +2510,7 @@ class RegularGridInterpolator(object):
         idx_res = []
         for i, yi in zip(indices, norm_distances):
             idx_res.append(np.where(yi <= .5, i, i + 1))
-        return self.values[idx_res]
+        return self.values[tuple(idx_res)]
 
     def _find_indices(self, xi):
         # find relevant edges between which xi are situated
@@ -2820,7 +2819,7 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
 
     try:
         func = eval('_find_%s' % kind)
-    except:
+    except Exception:
         raise NotImplementedError
 
     # the constraint matrix

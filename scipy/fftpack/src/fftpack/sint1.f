@@ -1,5 +1,7 @@
       SUBROUTINE SINT1(N,WAR,WAS,XH,X,IFAC)
-      DIMENSION WAR(*),WAS(*),X(*),XH(*),IFAC(*)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, K, KC, MODN, NP1, NS2
+      REAL :: WAR(*), WAS(*), XH(*), X(*), SQRT3, T1, T2, XHOLD
       DATA SQRT3 /1.73205080756888/
       DO 100 I=1,N
       XH(I) = WAR(I)

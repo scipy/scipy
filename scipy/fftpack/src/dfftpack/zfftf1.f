@@ -1,6 +1,8 @@
       SUBROUTINE ZFFTF1 (N,C,CH,WA,IFAC)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       CH(*)      ,C(*)       ,WA(*)      ,IFAC(*)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, IDL1, IDO, IDOT, IP, IW, IX2, IX3, IX4
+      INTEGER :: K1, L1, L2, N2, NA, NAC, NF
+      DOUBLE PRECISION :: C(*), CH(*), WA(*)
       NF = IFAC(2)
       NA = 0
       L1 = 1
@@ -62,10 +64,11 @@
       END
 
       SUBROUTINE DPASSF (NAC,IDO,IP,L1,IDL1,CC,C1,C2,CH,CH2,WA)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       CH(IDO,L1,IP)          ,CC(IDO,IP,L1)          ,
-     1                C1(IDO,L1,IP)          ,WA(1)      ,C2(IDL1,IP),
-     2                CH2(IDL1,IP)
+      IMPLICIT NONE
+      INTEGER :: NAC, IDO, IP, L1, IDL1, I, IDIJ, IDJ, IDL, IDLJ, IDOT
+      INTEGER :: IDP, IK, INC, IPP2, IPPH, J, JC, K, L, LC, NT
+      DOUBLE PRECISION :: CC(IDO,IP,L1), C1(IDO,L1,IP), C2(IDL1,IP)
+      DOUBLE PRECISION :: CH(IDO,L1,IP), CH2(IDL1,IP), WA(1), WAI, WAR
       IDOT = IDO/2
       NT = IP*IDL1
       IPP2 = IP+2
@@ -180,9 +183,9 @@ C
       END
 
       SUBROUTINE DPASSF2 (IDO,L1,CC,CH,WA1)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z) 
-      DIMENSION       CC(IDO,2,L1)           ,CH(IDO,L1,2)           ,
-     1                WA1(1)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      DOUBLE PRECISION :: CC(IDO,2,L1), CH(IDO,L1,2), WA1(1), TI2, TR2
       IF (IDO .GT. 2) GO TO 102
       DO 101 K=1,L1
          CH(1,K,1) = CC(1,1,K)+CC(1,2,K)
@@ -205,9 +208,11 @@ C
       END
 
       SUBROUTINE DPASSF3 (IDO,L1,CC,CH,WA1,WA2)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z) 
-      DIMENSION       CC(IDO,3,L1)           ,CH(IDO,L1,3)           ,
-     1                WA1(1)     ,WA2(1)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      DOUBLE PRECISION :: CC(IDO,3,L1), CH(IDO,L1,3), WA1(1), WA2(1)
+      DOUBLE PRECISION :: CI2, CI3, CR2, CR3, DI2, DI3, DR2, DR3, TAUI
+      DOUBLE PRECISION :: TAUR, TI2, TR2
 C     *** TAUI IS -SQRT(3)/2 ***
       DATA TAUR,TAUI /-0.5D0,-0.86602540378443864676D0/
       IF (IDO .NE. 2) GO TO 102
@@ -250,9 +255,11 @@ C     *** TAUI IS -SQRT(3)/2 ***
       END
 
       SUBROUTINE DPASSF4 (IDO,L1,CC,CH,WA1,WA2,WA3)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       CC(IDO,4,L1)           ,CH(IDO,L1,4)           ,
-     1                WA1(1)     ,WA2(1)     ,WA3(1)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      DOUBLE PRECISION :: CC(IDO,4,L1), CH(IDO,L1,4), WA1(1), WA2(1)
+      DOUBLE PRECISION :: WA3(1), CI2, CI3, CI4, CR2, CR3, CR4, TI1
+      DOUBLE PRECISION :: TI2, TI3, TI4, TR1, TR2, TR3, TR4
       IF (IDO .NE. 2) GO TO 102
       DO 101 K=1,L1
          TI1 = CC(2,1,K)-CC(2,3,K)
@@ -303,9 +310,13 @@ C     *** TAUI IS -SQRT(3)/2 ***
       END
 
       SUBROUTINE DPASSF5 (IDO,L1,CC,CH,WA1,WA2,WA3,WA4)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       CC(IDO,5,L1)           ,CH(IDO,L1,5)           ,
-     1                WA1(1)     ,WA2(1)     ,WA3(1)     ,WA4(1)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      DOUBLE PRECISION :: CC(IDO,5,L1), CH(IDO,L1,5), WA1(1), WA2(1)
+      DOUBLE PRECISION :: WA3(1), WA4(1), CI2, CI3, CI4, CI5, CR2, CR3
+      DOUBLE PRECISION :: CR4, CR5, DI2, DI3, DI4, DI5, DR2, DR3, DR4
+      DOUBLE PRECISION :: DR5, TI11, TI12, TI2, TI3, TI4, TI5, TR11
+      DOUBLE PRECISION :: TR12, TR2, TR3, TR4, TR5
 C     *** TR11=COS(2*PI/5), TI11=-SIN(2*PI/5)
 C     *** TR12=-COS(4*PI/5), TI12=-SIN(4*PI/5)  
       DATA TR11,TI11,TR12,TI12 /0.3090169943749474241D0,

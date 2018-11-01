@@ -120,8 +120,8 @@ Contributing by helping maintain existing code
 
 The previous section talked specifically about adding new functionality to
 SciPy.  A large part of that discussion also applies to maintenance of existing
-code.  Maintenance means fixing bugs, improving code quality or style,
-documenting existing functionality better, adding missing unit tests, keeping
+code.  Maintenance means fixing bugs, improving code quality, documenting
+existing functionality better, adding missing unit tests, keeping
 build scripts up-to-date, etc.  The SciPy `issue list`_ contains all
 reported bugs, build/documentation issues, etc.  Fixing issues
 helps improve the overall quality of SciPy, and is also a good way
@@ -137,6 +137,14 @@ not be necessary - if the old behavior of the code is clearly incorrect, no one
 will object to having it fixed.  It may be necessary to add some warning or
 deprecation message for the changed behavior.  This should be part of the
 review process.
+
+.. note::
+
+  Pull requests that *only* change code style, e.g. fixing some PEP8 issues in
+  a file, are discouraged. Such PRs are often not worth cluttering the git
+  annotate history, and take reviewer time that may be better spent in other ways.
+  Code style cleanups of code that is touched as part of a functional change
+  are fine however.
 
 
 Reviewing pull requests
@@ -292,7 +300,6 @@ Checklist before submitting a PR
   - In case of larger additions, is there a tutorial or more extensive
     module-level description?
   - In case compiled code is added, is it integrated correctly via setup.py
-    (and preferably also Bento configuration files - bento.info and bscript)?
   - If you are a first-time contributor, did you add yourself to THANKS.txt?
     Please note that this is perfectly normal and desirable - the aim is to
     give every single contributor credit, and if you don't add yourself it's
@@ -366,7 +373,7 @@ For development, you can set up an in-place build so that changes made to
     $ python setup.py build_ext -i
 
 Then you need to point your PYTHONPATH environment variable to this directory.
-Some IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux
+Some IDEs (`Spyder`_ for example) have utilities to manage PYTHONPATH.  On Linux
 and OSX, you can run the command::
 
     $ export PYTHONPATH=$PWD
@@ -380,14 +387,14 @@ test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
 
 
-*Are there any video examples for installing from source, setting up a 
+*Are there any video examples for installing from source, setting up a
 development environment, etc...?*
 
 Currently, there are two video demonstrations for Anaconda Python on macOS:
 
 `Anaconda SciPy Dev Part I (macOS)`_ is a four-minute
 overview of installing Anaconda, building SciPy from source, and testing
-changes made to SciPy from the Spyder IDE.
+changes made to SciPy from the `Spyder`_ IDE.
 
 `Anaconda SciPy Dev Part II (macOS)`_ shows how to use
 a virtual environment to easily switch between the "pre-built version" of SciPy
@@ -397,7 +404,7 @@ according to Part I.
 
 *Are there any video examples of the basic development workflow?*
 
-`SciPy Development Workflow`_ is a five-minute example of fixing a bug and 
+`SciPy Development Workflow`_ is a five-minute example of fixing a bug and
 submitting a pull request. While it's intended as a followup to
 `Anaconda SciPy Dev Part I (macOS)`_ and `Anaconda SciPy Dev Part II (macOS)`_,
 the process is similar for other development setups.
@@ -462,27 +469,27 @@ suite.
 
 .. _scikit-image: http://scikit-image.org/
 
-.. _statsmodels: http://statsmodels.sourceforge.net/
+.. _statsmodels: https://www.statsmodels.org/
 
 .. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
 
-.. _formatted correctly: http://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
+.. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
-.. _bug report: http://scipy.org/bug-report.html
+.. _bug report: https://scipy.org/bug-report.html
 
-.. _PEP8: http://www.python.org/dev/peps/pep-0008/
+.. _PEP8: https://www.python.org/dev/peps/pep-0008/
 
-.. _pep8 package: http://pypi.python.org/pypi/pep8
+.. _pep8 package: https://pypi.python.org/pypi/pep8
 
-.. _pyflakes: http://pypi.python.org/pypi/pyflakes
+.. _pyflakes: https://pypi.python.org/pypi/pyflakes
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
 .. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
-.. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
+.. _git workflow: https://docs.scipy.org/doc/numpy/dev/gitwash/
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
@@ -492,25 +499,27 @@ suite.
 
 .. _scipy.org: https://scipy.org/
 
-.. _scipy.github.com: http://scipy.github.com/
+.. _scipy.github.com: https://scipy.github.com/
 
 .. _scipy.org-new: https://github.com/scipy/scipy.org-new
 
 .. _documentation wiki: https://docs.scipy.org/scipy/Front%20Page/
 
-.. _SciPy Central: http://scipy-central.org/
+.. _SciPy Central: https://web.archive.org/web/20170520065729/http://central.scipy.org/
 
-.. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
+.. _doctest: https://pymotw.com/3/doctest/
 
-.. _virtualenv: http://www.virtualenv.org/
+.. _virtualenv: https://virtualenv.pypa.io/
 
-.. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
+.. _virtualenvwrapper: https://bitbucket.org/dhellmann/virtualenvwrapper/
 
 .. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
 
 .. _Pytest: https://pytest.org/
 
 .. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
+
+.. _Spyder: https://www.spyder-ide.org/
 
 .. _Anaconda SciPy Dev Part I (macOS): https://youtu.be/1rPOSNd0ULI
 
