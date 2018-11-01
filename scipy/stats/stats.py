@@ -3041,10 +3041,14 @@ def pearsonr(x, y):
         r = np.nan
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
-    # floating point arithmetic.
-    r = max(min(r, 1.0), -1.0)
+    # floating point arithmetic, except if np.inf
+    if r != np.inf:
+        r = max(min(r, 1.0), -1.0)
+    else:
+        r = np.inf
+
     df = n - 2
-    if np.isnan(r):
+    if np.isnan(r) or np.isinf(r):
         prob = np.nan
     elif abs(r) == 1.0:
         prob = 0.0
