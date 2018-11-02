@@ -8,7 +8,8 @@ import numpy as np
 import time
 import logging
 import warnings
-from scipy import optimize, spatial
+from scipy import spatial
+from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._shgo_lib import sobol_seq
 from scipy.optimize._shgo_lib.triangulation import Complex
 
@@ -645,7 +646,7 @@ class SHGO(object):
         self.LMC = LMapCache()
 
         # Initialize return object
-        self.res = optimize.OptimizeResult()
+        self.res = OptimizeResult()  # scipy.optimize.OptimizeResult object
         self.res.nfev = 0  # Includes each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local Jacobian evals for all minimisers
@@ -1155,8 +1156,8 @@ class SHGO(object):
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
 
-        lres = optimize.minimize(self.func, x_min,
-                                 **self.minimizer_kwargs)
+        # Local minimization using scipy.optimize.minimize:
+        lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:
             print('lres = {}'.format(lres))
