@@ -74,7 +74,7 @@ def delaunay_plot_2d(tri, ax=None):
 
     Plot it:
 
-    >>> delaunay_plot_2d(tri)
+    >>> _ = delaunay_plot_2d(tri)
     >>> plt.show()
 
     """
@@ -129,7 +129,7 @@ def convex_hull_plot_2d(hull, ax=None):
 
     Plot it:
 
-    >>> convex_hull_plot_2d(hull)
+    >>> _ = convex_hull_plot_2d(hull)
     >>> plt.show()
 
     """

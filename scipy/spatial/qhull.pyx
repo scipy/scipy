@@ -2169,7 +2169,7 @@ def tsearch(tri, xi):
 
     >>> pts = np.random.rand(20, 2)
     >>> tri = Delaunay(pts)
-    >>> delaunay_plot_2d(tri)
+    >>> _ = delaunay_plot_2d(tri)
 
     Find the simplices containing a given set of points:
 
