@@ -10,27 +10,72 @@ import numpy as np
 from numpy import finfo, power, nan, isclose
 
 
-from scipy.optimize import zeros as cc
-from scipy.optimize import zeros, newton
+from scipy.optimize import zeros, newton, root_scalar
 
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 # Import testing parameters
-from scipy.optimize._tstutils import functions, fstrings, get_tests
+from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
 from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
 
+# A few test functions used frequently:
+# # A simple quadratic, (x-1)^2 - 1
+def f1(x):
+    return x ** 2 - 2 * x - 1
+
+
+def f1_1(x):
+    return 2 * x - 2
+
+
+def f1_2(x):
+    return 2.0 + 0 * x
+
+
+def f1_and_p_and_pp(x):
+    return f1(x), f1_1(x), f1_2(x)
+
+
+# Simple transcendental function
+def f2(x):
+    return exp(x) - cos(x)
+
+
+def f2_1(x):
+    return exp(x) + sin(x)
+
+
+def f2_2(x):
+    return exp(x) + cos(x)
+
 
 class TestBasic(object):
+
+    def run_check_by_name(self, name, smoothness=0, **kwargs):
+        a = .5
+        b = sqrt(3)
+        xtol = 4*np.finfo(float).eps
+        rtol = 4*np.finfo(float).eps
+        for function, fname in zip(tstutils_functions, tstutils_fstrings):
+            if smoothness > 0 and fname in ['f4', 'f5', 'f6']:
+                continue
+            r = root_scalar(function, method=name, bracket=[a, b], x0=a,
+                            xtol=xtol, rtol=rtol, **kwargs)
+            zero = r.root
+            assert_(r.converged)
+            assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
+                            err_msg='method %s, function %s' % (name, fname))
+
     def run_check(self, method, name):
         a = .5
         b = sqrt(3)
         xtol = 4 * _FLOAT_EPS
         rtol = 4 * _FLOAT_EPS
-        for function, fname in zip(functions, fstrings):
+        for function, fname in zip(tstutils_functions, tstutils_fstrings):
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              full_output=True)
             assert_(r.converged)
@@ -125,33 +170,39 @@ class TestBasic(object):
                        known_fail=known_fail, **kwargs)
 
     def test_bisect(self):
-        self.run_check(cc.bisect, 'bisect')
-        self.run_collection('aps', cc.bisect, 'bisect', smoothness=1)
+        self.run_check(zeros.bisect, 'bisect')
+        self.run_check_by_name('bisect')
+        self.run_collection('aps', zeros.bisect, 'bisect', smoothness=1)
 
     def test_ridder(self):
-        self.run_check(cc.ridder, 'ridder')
-        self.run_collection('aps', cc.ridder, 'ridder', smoothness=1)
+        self.run_check(zeros.ridder, 'ridder')
+        self.run_check_by_name('ridder')
+        self.run_collection('aps', zeros.ridder, 'ridder', smoothness=1)
 
     def test_brentq(self):
-        self.run_check(cc.brentq, 'brentq')
+        self.run_check(zeros.brentq, 'brentq')
+        self.run_check_by_name('brentq')
         # Brentq/h needs a lower tolerance to be specified
-        self.run_collection('aps', cc.brentq, 'brentq', smoothness=1,
+        self.run_collection('aps', zeros.brentq, 'brentq', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_brenth(self):
-        self.run_check(cc.brenth, 'brenth')
-        self.run_collection('aps', cc.brenth, 'brenth', smoothness=1,
+        self.run_check(zeros.brenth, 'brenth')
+        self.run_check_by_name('brenth')
+        self.run_collection('aps', zeros.brenth, 'brenth', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_toms748(self):
-        self.run_check(cc.toms748, 'toms748')
-        self.run_collection('aps', cc.toms748, 'toms748', smoothness=1)
+        self.run_check(zeros.toms748, 'toms748')
+        self.run_check_by_name('toms748')
+        self.run_collection('aps', zeros.toms748, 'toms748', smoothness=1)
 
     def test_newton_collections(self):
         known_fail = ['aps.13.00']
         known_fail += ['aps.12.05', 'aps.12.17']  # fails under Windows Py27
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'newton', smoothness=2, known_fail=known_fail)
+            self.run_collection(collection, zeros.newton, 'newton',
+                                smoothness=2, known_fail=known_fail)
 
     def test_halley_collections(self):
         known_fail = ['aps.12.06', 'aps.12.07', 'aps.12.08', 'aps.12.09',
@@ -159,7 +210,8 @@ class TestBasic(object):
                       'aps.12.14', 'aps.12.15', 'aps.12.16', 'aps.12.17',
                       'aps.12.18', 'aps.13.00']
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'halley', smoothness=2, known_fail=known_fail)
+            self.run_collection(collection, zeros.newton, 'halley',
+                                smoothness=2, known_fail=known_fail)
 
     @staticmethod
     def f1(x):
@@ -186,13 +238,47 @@ class TestBasic(object):
         return exp(x) + cos(x)
 
     def test_newton(self):
-        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2), (self.f2, self.f2_1, self.f2_2)]:
+        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2),
+                            (self.f2, self.f2_1, self.f2_2)]:
             x = zeros.newton(f, 3, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)
+            x = zeros.newton(f, 3, x1=5, tol=1e-6)  # secant, x0 and x1
             assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)
+            x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)   # newton
             assert_allclose(f(x), 0, atol=1e-6)
+            x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)  # halley
+            assert_allclose(f(x), 0, atol=1e-6)
+
+    def test_newton_by_name(self):
+        r"""Invoke newton through root_scalar()"""
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='newton', x0=3, fprime=f_1, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+    def test_secant_by_name(self):
+        r"""Invoke secant through root_scalar()"""
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='secant', x0=3, x1=2, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+            r = root_scalar(f, method='secant', x0=3, x1=5, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+    def test_halley_by_name(self):
+        r"""Invoke halley through root_scalar()"""
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='halley', x0=3,
+                            fprime=f_1, fprime2=f_2, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+    def test_root_scalar_fail(self):
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='secant', x0=3, xtol=1e-6)  # no x1
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='newton', x0=3, xtol=1e-6)  # no fprime
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='halley', fprime=f1_1, x0=3, xtol=1e-6)  # no fprime2
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='halley', fprime2=f1_2, x0=3, xtol=1e-6)  # no fprime
 
     def test_array_newton(self):
         """test newton with array"""
@@ -207,7 +293,7 @@ class TestBasic(object):
 
         def f1_2(x, *a):
             b = a[3] / a[5]
-            return -a[2] * np.exp(a[0] / a[5] + x * b) * b ** 2
+            return -a[2] * np.exp(a[0] / a[5] + x * b) * b**2
 
         a0 = np.array([
             5.32725221, 5.48673747, 5.49539973,
@@ -260,6 +346,24 @@ class TestBasic(object):
             assert results.zero_der.all()
             assert not results.converged.any()
 
+    def test_newton_combined(self):
+        f1 = lambda x: x**2 - 2*x - 1
+        f1_1 = lambda x: 2*x - 2
+        f1_2 = lambda x: 2.0 + 0*x
+
+        def f1_and_p_and_pp(x):
+            return x**2 - 2*x-1, 2*x-2, 2.0
+
+        sol0 = root_scalar(f1, method='newton', x0=3, fprime=f1_1)
+        sol = root_scalar(f1_and_p_and_pp, method='newton', x0=3, fprime=True)
+        assert_allclose(sol0.root, sol.root, atol=1e-8)
+        assert_equal(2*sol.function_calls, sol0.function_calls)
+
+        sol0 = root_scalar(f1, method='halley', x0=3, fprime=f1_1, fprime2=f1_2)
+        sol = root_scalar(f1_and_p_and_pp, method='halley', x0=3, fprime2=True)
+        assert_allclose(sol0.root, sol.root, atol=1e-8)
+        assert_equal(3*sol.function_calls, sol0.function_calls)
+
     def test_newton_full_output(self):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
@@ -300,7 +404,7 @@ class TestBasic(object):
     def test_deriv_zero_warning(self):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
-        assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc)
 
 
 def test_gh_5555():
@@ -309,9 +413,8 @@ def test_gh_5555():
     def f(x):
         return x - root
 
-    methods = [cc.bisect, cc.ridder]
-    xtol = 4 * _FLOAT_EPS
-    rtol = 4 * _FLOAT_EPS
+    methods = [zeros.bisect, zeros.ridder]
+    xtol = rtol = TOL
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
@@ -336,7 +439,7 @@ def test_gh_5557():
 
     atol = 0.51
     rtol = 4 * _FLOAT_EPS
-    methods = [cc.brentq, cc.brenth]
+    methods = [zeros.brentq, zeros.brenth]
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
         assert_allclose(0.6, res, atol=atol, rtol=rtol)

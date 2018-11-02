@@ -5,29 +5,28 @@ from collections import namedtuple
 from . import _zeros
 import numpy as np
 
+
 _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748', 'RootResults']
 
-CONVERGED = 'converged'
-SIGNERR = 'sign error'
-CONVERR = 'convergence error'
-VALUEERR = 'value error'
-INPROGRESS = 'No error'
 _ECONVERGED = 0
 _ESIGNERR = -1
 _ECONVERR = -2
 _EVALUEERR = -3
 _EINPROGRESS = 1
 
-flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
-            _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
+flag_map = {_ECONVERGED: 'converged',
+            _ESIGNERR: 'sign error',
+            _ECONVERR: 'convergence error',
+            _EVALUEERR: 'value error',
+            _EINPROGRESS: 'in progress'}
 
 
 class RootResults(object):
-    """ Represents the root finding result.
+    """Represents the root finding result.
 
     Attributes
     ----------
@@ -43,6 +42,7 @@ class RootResults(object):
         Description of the cause of termination.
 
     """
+
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
@@ -87,7 +87,8 @@ def _results_select(full_output, r):
 
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None, full_output=False, disp=True):
+           fprime2=None, x1=None, rtol=0.0,
+           full_output=False, disp=True):
     """
     Find a zero of a real or complex function using the Newton-Raphson
     (or secant or Halley's) method.
@@ -106,8 +107,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     ----------
     func : callable
         The function whose zero is wanted. It must be a function of a
-        single variable of the form f(x,a,b,c...), where a,b,c... are extra
-        arguments that can be passed in the `args` parameter.
+        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        are extra arguments that can be passed in the `args` parameter.
     x0 : float, sequence, or ndarray
         An initial estimate of the zero that should be somewhere near the
         actual zero. If not scalar, then `func` must be vectorized and return
@@ -120,7 +121,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     tol : float, optional
         The allowable error of the zero value.  If `func` is complex-valued,
         a larger `tol` is recommended as both the real and imaginary parts
-        of `x` contribute to `|x - x0|`.
+        of `x` contribute to ``|x - x0|``.
     maxiter : int, optional
         Maximum number of iterations.
     fprime2 : callable, optional
@@ -128,6 +129,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
+    x1 : float, optional
+        Another estimate of the zero that should be somewhere near the
+        actual zero.  Used if `fprime` is not provided.
+    rtol : float, optional
+        Tolerance (relative) for termination.
     full_output : bool, optional
         If `full_output` is False (default), the root is returned.
         If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
@@ -267,13 +273,15 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
             # If fval is 0, a root has been found, then terminate
             if fval == 0:
-                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
+                return _results_select(
+                    full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
-                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                return _results_select(
+                    full_output, (p0, funcalls, itr + 1, _ECONVERR))
             newton_step = fval / fder
             if fprime2:
                 fder2 = fprime2(p0, *args)
@@ -288,30 +296,43 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 if np.abs(adj) < 1:
                     newton_step /= 1.0 - adj
             p = p0 - newton_step
-            if np.abs(p - p0) < tol:
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+            if np.isclose(p, p0, rtol=rtol, atol=tol):
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
-        eps = (-1e-4 if x0 < 0 else 1e-4)
-        p1 = x0 * (1 + eps) + eps
+        if x1 is not None:
+            if x1 == x0:
+                raise ValueError("x1 and x0 must be different")
+            p1 = x1
+        else:
+            eps = 1e-4
+            p1 = x0 * (1 + eps)
+            p1 += (eps if p1 >= 0 else -eps)
         q0 = func(p0, *args)
         funcalls += 1
         q1 = func(p1, *args)
         funcalls += 1
+        if abs(q1) < abs(q0):
+            p0, p1, q0, q1 = p1, p0, q1, q0
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
                     msg = "Tolerance of %s reached" % (p1 - p0)
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
-                p = p1 - q1 * (p1 - p0) / (q1 - q0)
-            if np.abs(p - p1) < tol:
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
-            p0 = p1
-            q0 = q1
+                if abs(q1) > abs(q0):
+                    p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
+                else:
+                    p = (-q1 / q0 * p0 + p1) / (1 - q1 / q0)
+            if np.isclose(p, p1, rtol=rtol, atol=tol):
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
+            p0, q0 = p1, q1
             p1 = p
             q1 = func(p1, *args)
             funcalls += 1
@@ -853,7 +874,8 @@ def _within_tolerance(x, y, rtol, atol):
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
     notclosefvals = all(fs) and all(np.isfinite(fs)) and \
-                    not any(any(np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
+                    not any(any(
+                        np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
                             for i, _f in enumerate(fs[:-1]))
     return notclosefvals
 

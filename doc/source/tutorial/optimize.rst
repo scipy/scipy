@@ -25,7 +25,7 @@ The module contains:
    (:func:`curve_fit`) algorithms
 
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
-   root finders (:func:`newton`)
+   root finders (:func:`root_scalar`)
 
 5. Multivariate equation system solvers (:func:`root`) using a variety of
    algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
@@ -983,11 +983,15 @@ Root finding
 Scalar functions
 ^^^^^^^^^^^^^^^^
 
-If one has a single-variable equation, there are four different root
-finding algorithms that can be tried. Each of these algorithms requires the
+If one has a single-variable equation, there are multiple different root
+finding algorithms that can be tried. Most of these algorithms require the
 endpoints of an interval in which a root is expected (because the function
 changes signs). In general :obj:`brentq` is the best choice, but the other
 methods may be useful in certain circumstances or for academic purposes.
+When a bracket is not available, but one or more derivatives are available,
+then :obj:`newton` (or :obj:`halley`, :obj:`secant`) may be applicable.
+This is especially the case if the function is defined on a subset of the
+complex plane, and the bracketing methods cannot be used.
 
 
 Fixed-point solving

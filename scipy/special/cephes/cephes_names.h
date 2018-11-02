@@ -91,9 +91,15 @@
 #define zeta cephes_zeta
 #define zetac cephes_zetac
 #define smirnov cephes_smirnov
+#define smirnovc cephes_smirnovc
 #define smirnovi cephes_smirnovi
+#define smirnovci cephes_smirnovci
+#define smirnovp cephes_smirnovp
 #define kolmogorov cephes_kolmogorov
 #define kolmogi cephes_kolmogi
+#define kolmogp cephes_kolmogp
+#define kolmogc cephes_kolmogc
+#define kolmogci cephes_kolmogci
 #define owens_t cephes_owens_t
 
 #endif
