@@ -2364,7 +2364,7 @@ def gstd(a, axis=0, ddof=1):
         gstd = exp(std(log(a))
 
     The geometric standard deviation describes the spread of a set of numbers
-    where :func: `gmean` is the preferred mean. It is a multiplicative
+    where `gmean` is the preferred mean. It is a multiplicative
     factor, and therefore a dimensionless quantity.
 
     Parameters
