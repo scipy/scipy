@@ -2249,8 +2249,8 @@ def gstd(a, axis=0, ddof=1):
         gstd = exp(std(log(a))
 
     The geometric standard deviation describes the spread of a set of numbers
-    where `gmean` is the preferred mean. It is a multiplicative
-    factor, and therefore a dimensionless quantity.
+    where `gmean` is the preferred mean. It is a multiplicative factor, and
+    therefore a dimensionless quantity.
 
     Parameters
     ----------
@@ -2310,15 +2310,16 @@ def gstd(a, axis=0, ddof=1):
       fill_value=1e+20)
     """
     try:
-        am = np.ma.masked_invalid(a)
+        with np.errstate(invalid='ignore'):
+            is_valid = np.logical_and(np.isfinite(a), np.greater(a, 0))
     except TypeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
             )
-    else:
-        am = np.ma.masked_less_equal(am, 0)
+    am = np.ma.masked_where(~is_valid, a)
     return np.exp(np.std(np.ma.log(am), axis=axis, ddof=ddof))
+
 
 
 DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',

@@ -2364,8 +2364,8 @@ def gstd(a, axis=0, ddof=1):
         gstd = exp(std(log(a))
 
     The geometric standard deviation describes the spread of a set of numbers
-    where `gmean` is the preferred mean. It is a multiplicative
-    factor, and therefore a dimensionless quantity.
+    where `gmean` is the preferred mean. It is a multiplicative factor, and
+    therefore a dimensionless quantity.
 
     Parameters
     ----------
@@ -2388,7 +2388,7 @@ def gstd(a, axis=0, ddof=1):
     -----
     As the calculation requires use of logarithms the geometric standard
     deviation only support strictly positive values. Any non-finite or
-    non-positive values will be ignored.
+    non-positive values will raise a ValueError.
 
     The geometric standard deviation is sometimes confused with the exponent of
     the standard deviation, ``exp(std(a))``. Instead the geometric standard
@@ -2421,22 +2421,23 @@ def gstd(a, axis=0, ddof=1):
            [1.09348306, 1.07244798, 1.05914985]])
     """
     try:
-        if not np.isfinite(a).all():
-            return mstats_basic.gstd(a, axis=axis, ddof=ddof)
-        with np.errstate(invalid='raise'):
-            is_non_positive = np.less_equal(a, 0).any()
+        with np.errstate(invalid='ignore'):
+            a = np.asanyarray(a)
+            # np.sum avoids creating a huge array in memory
+            is_finite = np.isfinite(a.sum())
     except (AttributeError, TypeError):
         raise ValueError(
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
             )
-    except FloatingPointError:
-        # This occurs if invalid values (NaNs, inf etc) are encountered.
-        return mstats_basic.gstd(a, axis=axis, ddof=ddof)
+
+    if is_finite and np.greater(a, 0).all():
+        return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
     else:
-        if is_non_positive:
-            return mstats_basic.gstd(a, axis=axis, ddof=ddof)
-    return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
+        # TODO: Add option to pass to mstats_basic.gstd()
+        raise ValueError(
+            'Invalid value encountered. The geometric standard deviation is '
+            'defined for strictly positive values only.')
 
 
 # Private dictionary initialized only once at module level

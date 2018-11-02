@@ -176,12 +176,20 @@ class TestGeometricStandardDeviation(object):
         with pytest.raises(ValueError):
             mstats.gstd('This should fail as it can not be cast to an array.')
 
-    def test_ignores_negative_entries(self):
+    def test_ignores_negative_entry(self):
         gstd_actual = mstats.gstd(np.append(self.array_1d, [-1]))
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
-    def test_ignores_nan_entries(self):
+    def test_ignores_nan_entry(self):
         gstd_actual = mstats.gstd(np.append(self.array_1d, [np.nan]))
+        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+
+    def test_ignores_inf_entry(self):
+        gstd_actual = mstats.gstd(np.append(self.array_1d, [np.inf]))
+        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+
+    def test_ignores_neg_inf_entry(self):
+        gstd_actual = mstats.gstd(np.append(self.array_1d, [-np.inf]))
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
     def test_3d_array(self):
