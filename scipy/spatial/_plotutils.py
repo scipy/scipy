@@ -61,6 +61,22 @@ def delaunay_plot_2d(tri, ax=None):
     -----
     Requires Matplotlib.
 
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import Delaunay, delaunay_plot_2d
+
+    The Delaunay triangulation of a set of random points:
+
+    >>> points = np.random.rand(30, 2)
+    >>> tri = Delaunay(points)
+
+    Plot it:
+
+    >>> _ = delaunay_plot_2d(tri)
+    >>> plt.show()
+
     """
     if tri.points.shape[1] != 2:
         raise ValueError("Delaunay triangulation is not 2-D")
@@ -98,6 +114,23 @@ def convex_hull_plot_2d(hull, ax=None):
     Notes
     -----
     Requires Matplotlib.
+
+
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+
+    The convex hull of a random set of points:
+
+    >>> points = np.random.rand(30, 2)
+    >>> hull = ConvexHull(points)
+
+    Plot it:
+
+    >>> _ = convex_hull_plot_2d(hull)
+    >>> plt.show()
 
     """
     from matplotlib.collections import LineCollection
