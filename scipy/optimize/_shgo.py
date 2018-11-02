@@ -8,7 +8,8 @@ import numpy as np
 import time
 import logging
 import warnings
-from scipy import optimize, spatial
+import scipy.optimize as optimize
+import scipy.spatial as spatial
 from scipy.optimize._shgo_lib import sobol_seq
 from scipy.optimize._shgo_lib.triangulation import Complex
 
