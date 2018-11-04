@@ -433,7 +433,7 @@ def test_rank_filter_noninteger_rank():
     # regression test for issue 9388: ValueError for
     # non integer rank when performing rank_filter
     arr = np.random.random((10, 20, 30))
-    assert_raises(ValueError, rank_filter, arr, 0.5,
+    assert_raises(TypeError, rank_filter, arr, 0.5,
                   footprint=np.ones((1, 1, 10), dtype=bool))
 
 
