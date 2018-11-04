@@ -30,8 +30,9 @@
 
 from __future__ import division, print_function, absolute_import
 import warnings
-
+import numbers
 import numpy
+import operator
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -1187,6 +1188,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
+    rank = operator.index(rank)
     return _rank_filter(input, rank, size, footprint, output, mode, cval,
                         origin, 'rank')
 
