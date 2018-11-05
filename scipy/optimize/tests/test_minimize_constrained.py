@@ -4,7 +4,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less)
+                           assert_array_less, assert_allclose, assert_)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -447,6 +447,7 @@ class Elec:
 
 class TestTrustRegionConstr(TestCase):
 
+    @pytest.mark.slow
     def test_list_of_problems(self):
         list_of_problems = [Maratos(),
                             Maratos(constr_hess='2-point'),
@@ -491,7 +492,8 @@ class TestTrustRegionConstr(TestCase):
                                           constraints=prob.constr)
 
                     if prob.x_opt is not None:
-                        assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
+                        assert_array_almost_equal(result.x, prob.x_opt,
+                                                  decimal=5)
                         # gtol
                         if result.status == 1:
                             assert_array_less(result.optimality, 1e-8)
@@ -516,7 +518,8 @@ class TestTrustRegionConstr(TestCase):
         def fun(x):
             return (x - 1) ** 2
         bounds = [(-2, 2)]
-        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr', jac='2-point')
+        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr',
+                       jac='2-point')
         assert_array_almost_equal(res.x, 1, decimal=5)
 
     def test_no_constraints(self):
@@ -529,8 +532,8 @@ class TestTrustRegionConstr(TestCase):
                            jac='2-point')
         with pytest.warns(UserWarning):
             result2 = minimize(prob.fun, prob.x0,
-                                method='L-BFGS-B',
-                                jac='3-point')
+                               method='L-BFGS-B',
+                               jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
@@ -582,7 +585,6 @@ class TestTrustRegionConstr(TestCase):
         # xtol
         if result.status == 2:
             assert_array_less(result.tr_radius, 1e-8)
-
             if result.method == "tr_interior_point":
                 assert_array_less(result.barrier_parameter, 1e-8)
         # max iter
@@ -594,3 +596,22 @@ class TestTrustRegionConstr(TestCase):
 
         raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
                jac='2-point', hess='2-point', constraints=prob.constr)
+
+    def test_issue_9044(self):
+        # https://github.com/scipy/scipy/issues/9044
+        # Test the returned `OptimizeResult` contains keys consistent with
+        # other solvers.
+
+        def callback(x, info):
+            assert_('nit' in info)
+            assert_('niter' in info)
+
+        result = minimize(lambda x: x**2, [0], jac=lambda x: 2*x,
+                          hess=lambda x: 2, callback=callback,
+                          method='trust-constr')
+        assert_(result.get('success'))
+        assert_(result.get('nit', -1) == 1)
+
+        # Also check existence of the 'niter' attribute, for backward
+        # compatibility
+        assert_(result.get('niter', -1) == 1)

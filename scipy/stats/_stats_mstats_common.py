@@ -5,7 +5,7 @@ import numpy as np
 from . import distributions
 
 
-__all__ = ['_find_repeats', 'linregress', 'theilslopes']
+__all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
 LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                    'rvalue', 'pvalue',
@@ -158,6 +158,10 @@ def theilslopes(y, x=None, alpha=0.95):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
+    See also
+    --------
+    siegelslopes : a similar technique using repeated medians
+
     Notes
     -----
     The implementation of `theilslopes` follows [1]_. The intercept is
@@ -264,3 +268,122 @@ def _find_repeats(arr):
     freq = np.diff(change_idx)
     atleast2 = freq > 1
     return unique[atleast2], freq[atleast2]
+
+
+def siegelslopes(y, x=None, method="hierarchical"):
+    r"""
+    Computes the Siegel estimator for a set of points (x, y).
+
+    `siegelslopes` implements a method for robust linear regression
+    using repeated medians (see [1]_) to fit a line to the points (x, y).
+    The method is robust to outliers with an asymptotic breakdown point
+    of 50%.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    method : {'hierarchical', 'separate'}
+        If 'hierarchical', estimate the intercept using the estimated
+        slope ``medslope`` (default option).
+        If 'separate', estimate the intercept independent of the estimated
+        slope. See Notes for details.
+
+    Returns
+    -------
+    medslope : float
+        Estimate of the slope of the regression line.
+    medintercept : float
+        Estimate of the intercept of the regression line.
+
+    See also
+    --------
+    theilslopes : a similar technique without repeated medians
+
+    Notes
+    -----
+    With ``n = len(y)``, compute ``m_j`` as the median of
+    the slopes from the point ``(x[j], y[j])`` to all other `n-1` points.
+    ``medslope`` is then the median of all slopes ``m_j``.
+    Two ways are given to estimate the intercept in [1]_ which can be chosen
+    via the parameter ``method``.
+    The hierarchical approach uses the estimated slope ``medslope``
+    and computes ``medintercept`` as the median of ``y - medslope*x``.
+    The other approach estimates the intercept separately as follows: for
+    each point ``(x[j], y[j])``, compute the intercepts of all the `n-1`
+    lines through the remaining points and take the median ``i_j``.
+    ``medintercept`` is the median of the ``i_j``.
+
+    The implementation computes `n` times the median of a vector of size `n`
+    which can be slow for large vectors. There are more efficient algorithms
+    (see [2]_) which are not implemented here.
+
+    References
+    ----------
+    .. [1] A. Siegel, "Robust Regression Using Repeated Medians",
+           Biometrika, Vol. 69, pp. 242-244, 1982.
+
+    .. [2] A. Stein and M. Werman, "Finding the repeated median regression
+           line", Proceedings of the Third Annual ACM-SIAM Symposium on
+           Discrete Algorithms, pp. 409–413, 1992.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope and intercept.  For comparison, also compute the
+    least-squares fit with `linregress`:
+
+    >>> res = stats.siegelslopes(y, x)
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results. The Siegel regression line is shown in red. The green
+    line shows the least-squares fit for comparison.
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    """
+    if method not in ['hierarchical', 'separate']:
+        raise ValueError("method can only be 'hierarchical' or 'separate'")
+    y = np.asarray(y).ravel()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).ravel()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+
+    deltax = x[:, np.newaxis] - x
+    deltay = y[:, np.newaxis] - y
+    slopes, intercepts = [], []
+
+    for j in range(len(x)):
+        id_nonzero = deltax[j, :] != 0
+        slopes_j = deltay[j, id_nonzero] / deltax[j, id_nonzero]
+        medslope_j = np.median(slopes_j)
+        slopes.append(medslope_j)
+        if method == 'separate':
+            z = y*x[j] - y[j]*x
+            medintercept_j = np.median(z[id_nonzero] / deltax[j, id_nonzero])
+            intercepts.append(medintercept_j)
+
+    medslope = np.median(np.asarray(slopes))
+    if method == "separate":
+        medinter = np.median(np.asarray(intercepts))
+    else:
+        medinter = np.median(y - medslope*x)
+
+    return medslope, medinter

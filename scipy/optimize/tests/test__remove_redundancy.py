@@ -105,6 +105,7 @@ def test_infeasible_m_lt_n():
 
 
 def test_m_gt_n():
+    np.random.seed(2032)
     m, n = 20, 10
     A0 = np.random.rand(m, n)
     b0 = np.random.rand(m)

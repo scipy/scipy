@@ -261,7 +261,7 @@ class geom_gen(rv_discrete):
         return k*log1p(-p)
 
     def _ppf(self, q, p):
-        vals = ceil(log(1.0-q)/log(1-p))
+        vals = ceil(log1p(-q) / log1p(-p))
         temp = self._cdf(vals-1, p)
         return np.where((temp >= q) & (vals > 0), vals-1, vals)
 
@@ -544,7 +544,7 @@ class planck_gen(rv_discrete):
 
         f(k) = (1-\exp(-\lambda)) \exp(-\lambda k)
 
-    for :math:`k \lambda \ge 0`.
+    for :math:`k \ge 0` and :math:`\lambda > 0`.
 
     `planck` takes :math:`\lambda` as shape parameter.
 
@@ -554,14 +554,10 @@ class planck_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_):
-        self.a = np.where(lambda_ > 0, 0, -np.inf)
-        self.b = np.where(lambda_ > 0, np.inf, 0)
-        return lambda_ != 0
+        return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        # planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
-        fact = (1-exp(-lambda_))
-        return fact*exp(-lambda_*k)
+        return (1-exp(-lambda_))*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
@@ -593,7 +589,7 @@ class planck_gen(rv_discrete):
         return l*exp(-l)/C - log(C)
 
 
-planck = planck_gen(name='planck', longname='A discrete exponential ')
+planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
 
 
 class boltzmann_gen(rv_discrete):
@@ -745,7 +741,8 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter.
+    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the 
+    Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
 
@@ -786,7 +783,7 @@ class dlaplace_gen(rv_discrete):
 
         f(k) = \tanh(a/2) \exp(-a |k|)
 
-    for :math:`a > 0`.
+    for integers :math:`k` and :math:`a > 0`.
 
     `dlaplace` takes :math:`a` as shape parameter.
 
@@ -838,8 +835,8 @@ class skellam_gen(rv_discrete):
     uncorrelated Poisson random variables.
 
     Let :math:`k_1` and :math:`k_2` be two Poisson-distributed r.v. with
-    expected values lam1 and lam2. Then, :math:`k_1 - k_2` follows a Skellam
-    distribution with parameters
+    expected values :math:`\lambda_1` and :math:`\lambda_2`. Then,
+    :math:`k_1 - k_2` follows a Skellam distribution with parameters
     :math:`\mu_1 = \lambda_1 - \rho \sqrt{\lambda_1 \lambda_2}` and
     :math:`\mu_2 = \lambda_2 - \rho \sqrt{\lambda_1 \lambda_2}`, where
     :math:`\rho` is the correlation coefficient between :math:`k_1` and
@@ -885,6 +882,84 @@ class skellam_gen(rv_discrete):
 
 
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
+
+
+class yulesimon_gen(rv_discrete):
+    r"""A Yule-Simon discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+
+    The probability mass function for the `yulesimon` is:
+
+    .. math::
+
+        f(k) =  \alpha B(k, \alpha+1)
+
+    for :math:`k=1,2,3,...`, where :math:`\alpha>0`.
+    Here :math:`B` refers to the `scipy.special.beta` function.
+
+    The sampling of random variates is based on pg 553, Section 6.3 of [1]_.
+    Our notation maps to the referenced logic via :math:`\alpha=a-1`.
+
+    For details see the wikipedia entry [2]_.
+
+    References
+    ----------
+    .. [1] Devroye, Luc. "Non-uniform Random Variate Generation",
+         (1986) Springer, New York.
+
+    .. [2] https://en.wikipedia.org/wiki/Yule-Simon_distribution
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _rvs(self, alpha):
+        E1 = self._random_state.standard_exponential(self._size)
+        E2 = self._random_state.standard_exponential(self._size)
+        ans = ceil(-E1 / log1p(-exp(-E2 / alpha)))
+        return ans
+
+    def _pmf(self, x, alpha):
+        return alpha * special.beta(x, alpha + 1)
+
+    def _argcheck(self, alpha):
+        return (alpha > 0)
+
+    def _logpmf(self, x, alpha):
+        return log(alpha) + special.betaln(x, alpha + 1)
+
+    def _cdf(self, x, alpha):
+        return 1 - x * special.beta(x, alpha + 1)
+
+    def _sf(self, x, alpha):
+        return x * special.beta(x, alpha + 1)
+
+    def _logsf(self, x, alpha):
+        return log(x) + special.betaln(x, alpha + 1)
+
+    def _stats(self, alpha):
+        mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
+        mu2 = np.where(alpha > 2,
+                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
+                np.inf)
+        mu2 = np.where(alpha <= 1, np.nan, mu2)
+        g1 = np.where(alpha > 3,
+                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
+                np.inf)
+        g1 = np.where(alpha <= 2, np.nan, g1)
+        g2 = np.where(alpha > 4,
+                (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha *
+                        (alpha - 4) * (alpha - 3)), np.inf)
+        g2 = np.where(alpha <= 2, np.nan, g2)
+        return mu, mu2, g1, g2
+
+
+yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
 
 # Collect names of classes and objects in this module.

@@ -1,5 +1,7 @@
       SUBROUTINE COSQI (N,WSAVE)
-      DIMENSION       WSAVE(*)
+      IMPLICIT NONE
+      INTEGER :: N, K
+      REAL :: WSAVE(*), DT, FK, PIH
       DATA PIH /1.57079632679491/
       DT = PIH/FLOAT(N)
       FK = 0.

@@ -1,12 +1,16 @@
 include MANIFEST.in
 include *.txt
-# Top-level build scripts
-include setup.py bscript bento.info
+# Top-level build script
+include setup.py
 # All source files
 recursive-include scipy *
+recursive-include benchmarks *
 # All documentation
 recursive-include doc *
 # Add build and testing tools
+include runtests.py
+include .coveragerc
+include site.cfg.example
 include tox.ini pytest.ini
 recursive-include tools *
 # Cached Cython signatures

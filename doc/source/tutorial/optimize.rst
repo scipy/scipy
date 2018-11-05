@@ -25,7 +25,7 @@ The module contains:
    (:func:`curve_fit`) algorithms
 
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
-   root finders (:func:`newton`)
+   root finders (:func:`root_scalar`)
 
 5. Multivariate equation system solvers (:func:`root`) using a variety of
    algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
@@ -44,7 +44,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
 
-    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
+    f\left(\mathbf{x}\right)=\sum_{i=2}^{N}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -441,10 +441,10 @@ Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
 The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBLYA'``. They require the constraints
+namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
 to be defined using slightly different structures. The method ``'trust-constr'`` requires
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
-:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBLYA'``, on the other hand,
+:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
 require constraints to be defined  as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
@@ -676,7 +676,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
     ...              'fun' : lambda x: np.array([1 - x[0] - 2*x[1],
     ...                                          1 - x[0]**2 - x[1],
     ...                                          1 - x[0]**2 + x[1]]),
-    ...              'jac' : lambda x: np.array([[1.0, 2.0],
+    ...              'jac' : lambda x: np.array([[-1.0, -2.0],
     ...                                          [-2*x[0], -1.0],
     ...                                          [-2*x[0], 1.0]])}
     >>> eq_cons = {'type': 'eq',
@@ -697,7 +697,7 @@ And the optimization problem is solved with:
                 Function evaluations: 6
                 Gradient evaluations: 5
     >>> print(res.x)
-    [0.41494418 0.17011164]
+    [0.41494475 0.1701105 ]
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
@@ -983,11 +983,15 @@ Root finding
 Scalar functions
 ^^^^^^^^^^^^^^^^
 
-If one has a single-variable equation, there are four different root
-finding algorithms that can be tried. Each of these algorithms requires the
+If one has a single-variable equation, there are multiple different root
+finding algorithms that can be tried. Most of these algorithms require the
 endpoints of an interval in which a root is expected (because the function
 changes signs). In general :obj:`brentq` is the best choice, but the other
 methods may be useful in certain circumstances or for academic purposes.
+When a bracket is not available, but one or more derivatives are available,
+then :obj:`newton` (or :obj:`halley`, :obj:`secant`) may be applicable.
+This is especially the case if the function is defined on a subset of the
+complex plane, and the bracketing methods cannot be used.
 
 
 Fixed-point solving

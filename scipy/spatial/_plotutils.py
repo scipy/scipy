@@ -17,7 +17,7 @@ def _held_figure(func, obj, ax=None, **kw):
 
     # As of matplotlib 2.0, the "hold" mechanism is deprecated.
     # When matplotlib 1.x is no longer supported, this check can be removed.
-    was_held = ax.ishold()
+    was_held = getattr(ax, 'ishold', lambda: True)()
     if was_held:
         return func(obj, ax=ax, **kw)
     try:
@@ -29,8 +29,8 @@ def _held_figure(func, obj, ax=None, **kw):
 
 def _adjust_bounds(ax, points):
     margin = 0.1 * points.ptp(axis=0)
-    xy_min = points.min(axis=0) - margin 
-    xy_max = points.max(axis=0) + margin 
+    xy_min = points.min(axis=0) - margin
+    xy_max = points.max(axis=0) + margin
     ax.set_xlim(xy_min[0], xy_max[0])
     ax.set_ylim(xy_min[1], xy_max[1])
 
@@ -60,6 +60,22 @@ def delaunay_plot_2d(tri, ax=None):
     Notes
     -----
     Requires Matplotlib.
+
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import Delaunay, delaunay_plot_2d
+
+    The Delaunay triangulation of a set of random points:
+
+    >>> points = np.random.rand(30, 2)
+    >>> tri = Delaunay(points)
+
+    Plot it:
+
+    >>> _ = delaunay_plot_2d(tri)
+    >>> plt.show()
 
     """
     if tri.points.shape[1] != 2:
@@ -98,6 +114,23 @@ def convex_hull_plot_2d(hull, ax=None):
     Notes
     -----
     Requires Matplotlib.
+
+
+    Examples
+    --------
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+
+    The convex hull of a random set of points:
+
+    >>> points = np.random.rand(30, 2)
+    >>> hull = ConvexHull(points)
+
+    Plot it:
+
+    >>> _ = convex_hull_plot_2d(hull)
+    >>> plt.show()
 
     """
     from matplotlib.collections import LineCollection

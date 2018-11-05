@@ -249,7 +249,7 @@ Raw Statistical Functions
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function
    smirnovi     -- Inverse to `smirnov`
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution
-   kolmogi      -- Inverse function to kolmogorov
+   kolmogi      -- Inverse function to `kolmogorov`
    tklmbda      -- Tukey-Lambda cumulative distribution function
    logit        -- Logit ufunc for ndarrays.
    expit        -- Expit ufunc for ndarrays.

@@ -36,6 +36,10 @@ Backwards incompatible changes
 LAPACK version 3.4.0 or later is now required. Building with
 Apple Accelerate is no longer supported.
 
+The function scipy.linalg.subspace_angles(A, B) now gives right
+results for all angles. Before this function only returned
+right values for those angles which were greater than pi/4.
+
 Other changes
 =============
 

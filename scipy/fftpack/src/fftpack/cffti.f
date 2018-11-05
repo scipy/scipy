@@ -1,5 +1,7 @@
       SUBROUTINE CFFTI (N,WSAVE)
-      DIMENSION       WSAVE(*)
+      IMPLICIT NONE
+      INTEGER :: N, IW1, IW2
+      REAL :: WSAVE(*)
       IF (N .EQ. 1) RETURN
       IW1 = N+N+1
       IW2 = IW1+N+N

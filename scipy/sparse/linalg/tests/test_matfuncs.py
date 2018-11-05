@@ -170,6 +170,17 @@ class TestExpM(object):
             [1, 1, 1, -3]])
         assert_allclose(expm(Q), expm(1.0 * Q))
 
+    def test_integer_matrix_2(self):
+        # Check for integer overflows
+        Q = np.array([[-500, 500, 0, 0],
+                      [0, -550, 360, 190],
+                      [0, 630, -630, 0],
+                      [0, 0, 0, 0]], dtype=np.int16)
+        assert_allclose(expm(Q), expm(1.0 * Q))
+
+        Q = csc_matrix(Q)
+        assert_allclose(expm(Q).A, expm(1.0 * Q).A)
+
     def test_triangularity_perturbation(self):
         # Experiment (1) of
         # Awad H. Al-Mohy and Nicholas J. Higham (2012)
@@ -200,8 +211,7 @@ class TestExpM(object):
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
-                       "scipy.linalg.solve\nIll-conditioned.*")
+            sup.filter(RuntimeWarning, "Ill-conditioned.*")
             A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny

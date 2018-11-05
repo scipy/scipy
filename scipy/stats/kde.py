@@ -242,19 +242,21 @@ class gaussian_kde(object):
 
         result = zeros((m,), dtype=float)
 
+        whitening = linalg.cholesky(self.inv_cov)
+        scaled_dataset = dot(whitening, self.dataset)
+        scaled_points = dot(whitening, points)
+
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
-                diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0) / 2.0
-                result = result + self.weights[i]*exp(-energy)
+                diff = scaled_dataset[:, i, newaxis] - scaled_points
+                energy = sum(diff * diff, axis=0) / 2.0
+                result += self.weights[i]*exp(-energy)
         else:
             # loop over points
             for i in range(m):
-                diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0) / 2.0
+                diff = scaled_dataset - scaled_points[:, i, newaxis]
+                energy = sum(diff * diff, axis=0) / 2.0
                 result[i] = sum(exp(-energy)*self.weights, axis=0)
 
         result = result / self._norm_factor

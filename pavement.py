@@ -70,8 +70,6 @@ import warnings
 from hashlib import md5
 from hashlib import sha256
 
-import distutils
-
 try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
@@ -231,7 +229,7 @@ def bootstrap():
     bdir = options.bootstrap_dir
     if not os.path.exists(bdir):
         os.makedirs(bdir)
-    bscript = "boostrap.py"
+    bscript = "bootstrap.py"
 
     options.virtualenv.script_name = os.path.join(options.bootstrap_dir,
                                                   bscript)
@@ -564,7 +562,7 @@ def _build_mpkg(pyver):
 def dmg():
     try:
         pyver = options.dmg.python_version
-    except:
+    except Exception:
         pyver = PYVER
     idirs = options.installers.installersdir
 

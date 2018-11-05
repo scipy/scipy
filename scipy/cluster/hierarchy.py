@@ -2471,8 +2471,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Z : ndarray
         The hierarchical clustering encoded with the matrix returned
         by the `linkage` function.
-    t : float
-        The threshold to apply when forming flat clusters.
+    t : scalar
+        For criteria 'inconsistent', 'distance' or 'monocrit',
+         this is the threshold to apply when forming flat clusters.
+        For 'maxclust' or 'maxclust_monocrit' criteria,
+         this would be max number of clusters requested.
     criterion : str, optional
         The criterion to use in forming flat clusters. This can
         be any of the following values:
@@ -2603,7 +2606,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     4 points to be merged with their nearest neighbors. So here only 8
     clusters are returned.
 
-    The third case, with a much higher threhold, allows for up to 8 data
+    The third case, with a much higher threshold, allows for up to 8 data
     points to be connected - so 4 clusters are returned here.
 
     Lastly, the threshold of the fourth case is large enough to allow for
@@ -2666,8 +2669,11 @@ def fclusterdata(X, t, criterion='inconsistent',
     ----------
     X : (N, M) ndarray
         N by M data matrix with N observations in M dimensions.
-    t : float
-        The threshold to apply when forming flat clusters.
+    t : scalar
+        For criteria 'inconsistent', 'distance' or 'monocrit',
+         this is the threshold to apply when forming flat clusters.
+        For 'maxclust' or 'maxclust_monocrit' criteria,
+         this would be max number of clusters requested.
     criterion : str, optional
         Specifies the criterion for forming flat clusters.  Valid
         values are 'inconsistent' (default), 'distance', or 'maxclust'
@@ -2778,7 +2784,7 @@ def leaves_list(Z):
     >>> Z = ward(pdist(X))
 
     The linkage matrix ``Z`` represents a dendrogram, that is, a tree that
-    encodes the structure of the clustering perfomed.
+    encodes the structure of the clustering performed.
     `scipy.cluster.hierarchy.leaves_list` shows the mapping between
     indexes in the ``X`` dataset and leaves in the dendrogram:
 

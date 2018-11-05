@@ -23,7 +23,7 @@ class MemUsage(Benchmark):
 
     @property
     def params(self):
-        return [self._get_sizes().keys(), [True, False]]
+        return [list(self._get_sizes().keys()), [True, False]]
 
     def _get_sizes(self):
         sizes = collections.OrderedDict([

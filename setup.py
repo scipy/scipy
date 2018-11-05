@@ -16,7 +16,7 @@ give SciPy a try!
 
 """
 
-DOCLINES = __doc__.split("\n")
+DOCLINES = (__doc__ or '').split("\n")
 
 import os
 import sys
@@ -150,7 +150,7 @@ if not release:
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True
-except:
+except Exception:
     HAVE_SPHINX = False
 
 if HAVE_SPHINX:

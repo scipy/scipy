@@ -257,6 +257,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
@@ -306,10 +309,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         in `scipy.linalg.solve_banded` (check for an illustration).
         These parameters can be also used with ``jac=None`` to reduce the
         number of Jacobian elements estimated by finite differences.
-    min_step, first_step : float, optional
-        The minimum allowed step size and the initial step size respectively
-        for 'LSODA' method. By default `min_step` is zero and `first_step` is
-        selected automatically.
+    min_step : float, optional
+        The minimum allowed step size for 'LSODA' method. 
+        By default `min_step` is zero.
 
     Returns
     -------
@@ -456,6 +458,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if t_eval is None:
         ts = [t0]
         ys = [y0]
+    elif t_eval is not None and dense_output:
+        ts = []
+        ti = [t0]
+        ys = []
     else:
         ts = []
         ys = []
@@ -531,6 +537,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 ts.append(t_eval_step)
                 ys.append(sol(t_eval_step))
                 t_eval_i = t_eval_i_new
+        
+        if t_eval is not None and dense_output:
+            ti.append(t)
 
     message = MESSAGES.get(status, message)
 
@@ -545,7 +554,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ys = np.hstack(ys)
 
     if dense_output:
-        sol = OdeSolution(ts, interpolants)
+        if t_eval is None:
+            sol = OdeSolution(ts, interpolants)
+        else:
+            sol = OdeSolution(ti, interpolants)
     else:
         sol = None
 
