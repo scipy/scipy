@@ -34,9 +34,9 @@ class TestBSpline(object):
                 **dict(t=[0, 1, 2, 3, 4], c=[1., 1.], k=2))
 
         # non-integer orders
-        assert_raises(ValueError, BSpline,
+        assert_raises(TypeError, BSpline,
                 **dict(t=[0., 0., 1., 2., 3., 4.], c=[1., 1., 1.], k="cubic"))
-        assert_raises(ValueError, BSpline,
+        assert_raises(TypeError, BSpline,
                 **dict(t=[0., 0., 1., 2., 3., 4.], c=[1., 1., 1.], k=2.5))
 
         # basic interval cannot have measure zero (here: [1..1])
@@ -784,6 +784,10 @@ class TestInterp(object):
     #
     xx = np.linspace(0., 2.*np.pi)
     yy = np.sin(xx)
+
+    def test_non_int_order(self):
+        with assert_raises(TypeError):
+            make_interp_spline(self.xx, self.yy, k=2.5)
 
     def test_order_0(self):
         b = make_interp_spline(self.xx, self.yy, k=0)
