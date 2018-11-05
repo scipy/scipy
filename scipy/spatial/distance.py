@@ -831,7 +831,7 @@ def jaccard(u, v, w=None):
 
     Notes
     -----
-    When both `u` and `v` lead to a `0/0` divsion i.e. there is no overlap
+    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
     between the items in the vectors the returned distance is 0. See the
     Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
 
