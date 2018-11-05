@@ -20,20 +20,26 @@ from scipy.sparse.linalg import aslinearoperator, LinearOperator
 __all__ = ['lobpcg']
 
 
-def pause():
-    # Used only when verbosity level > 10.
-    input()
-
-
 def save(ar, fileName):
     # Used only when verbosity level > 10.
     from numpy import savetxt
-    savetxt(fileName, ar, precision=8)
+    savetxt(fileName, ar)
 
 
-def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
-    assert_allclose(M.T.conj(), M, rtol=rtol, atol=atol)
+def _report_nonhermitian(M, a, b, name):
+    """
+    Report if `M` is not a hermitian matrix given the tolerances `a`, `b`.
+    """
+    from scipy.linalg import norm
 
+    md = M - M.T.conj()
+
+    nmd = norm(md, 1)
+    tol = np.spacing(max(10**a, (10**b)*norm(M, 1)))
+    if nmd > tol:
+        print('matrix %s is not sufficiently Hermitian for a=%d, b=%d:'
+              % (name, a, b))
+        print('condition: %.e < %e' % (nmd, tol))
 
 ##
 # 21.05.2007, c
@@ -102,6 +108,15 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
     else:
         return blockVectorV, blockVectorBV
 
+def _get_indx(_lambda, num, largest):
+    """Get `num` indices into `_lambda` depending on `largest` option."""
+    ii = np.argsort(_lambda)
+    if largest:
+        ii = ii[:-num-1:-1]
+    else:
+        ii = ii[:num]
+
+    return ii
 
 def lobpcg(A, X,
             B=None, M=None, Y=None,
@@ -299,7 +314,14 @@ def lobpcg(A, X,
 
         A_dense = A(np.eye(n))
         B_dense = None if B is None else B(np.eye(n))
-        return eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
+
+        vals, vecs = eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
+        if largest:
+            # Reverse order to be compatible with eigs() in 'LM' mode.
+            vals = vals[::-1]
+            vecs = vecs[:, ::-1]
+
+        return vals, vecs
 
     if residualTolerance is None:
         residualTolerance = np.sqrt(1e-15) * n
@@ -356,9 +378,7 @@ def lobpcg(A, X,
     gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
-    ii = np.argsort(_lambda)[:sizeX]
-    if largest:
-        ii = ii[::-1]
+    ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
 
     eigBlockVector = np.asarray(eigBlockVector[:,ii])
@@ -476,8 +496,9 @@ def lobpcg(A, X,
             gramB = np.bmat([[ident0, xbw],
                               [xbw.T.conj(), ident]])
 
-        _assert_symmetric(gramA)
-        _assert_symmetric(gramB)
+        if verbosityLevel > 0:
+            _report_nonhermitian(gramA, 3, -1, 'gramA')
+            _report_nonhermitian(gramB, 3, -1, 'gramB')
 
         if verbosityLevel > 10:
             save(gramA, 'gramA')
@@ -485,9 +506,7 @@ def lobpcg(A, X,
 
         # Solve the generalized eigenvalue problem.
         _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
-        ii = np.argsort(_lambda)[:sizeX]
-        if largest:
-            ii = ii[::-1]
+        ii = _get_indx(_lambda, sizeX, largest)
         if verbosityLevel > 10:
             print(ii)
 
@@ -506,7 +525,6 @@ def lobpcg(A, X,
 
         if verbosityLevel > 10:
             print(eigBlockVector)
-            pause()
 
         ##
         # Compute Ritz vectors.
@@ -535,7 +553,6 @@ def lobpcg(A, X,
             print(pp)
             print(app)
             print(bpp)
-            pause()
 
         blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
         blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
