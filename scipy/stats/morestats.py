@@ -26,7 +26,9 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'circmean', 'circvar', 'circstd', 'anderson_ksamp',
+           'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
+           'yeojohnson_normplot'
            ]
 
 
@@ -1150,6 +1152,43 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     return optimfunc(x, brack)
 
 
+def _normplot(method, x, la, lb, plot=None, N=80):
+    """Compute parameters for a Box-Cox or Yeo-Johnson normality plot,
+    optionally show it. See `boxcox_normplot` or `yeojohnson_normplot` for
+    details."""
+
+    if method == 'boxcox':
+        title = 'Box-Cox Normality Plot'
+        transform_func = boxcox
+    else:
+        title = 'Yeo-Johnson Normality Plot'
+        transform_func = yeojohnson
+
+    x = np.asarray(x)
+    if x.size == 0:
+        return x
+
+    if lb <= la:
+        raise ValueError("`lb` has to be larger than `la`.")
+
+    lmbdas = np.linspace(la, lb, num=N)
+    ppcc = lmbdas * 0.0
+    for i, val in enumerate(lmbdas):
+        # Determine for each lmbda the square root of correlation coefficient
+        # of transformed x
+        z = transform_func(x, lmbda=val)
+        _, (_, _, r) = probplot(z, dist='norm', fit=True)
+        ppcc[i] = r
+
+    if plot is not None:
+        plot.plot(lmbdas, ppcc, 'x')
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
+                               ylabel='Prob Plot Corr. Coef.',
+                               title=title)
+
+    return lmbdas, ppcc
+
+
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1215,28 +1254,333 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     >>> plt.show()
 
     """
+    return _normplot('boxcox', x, la, lb, plot, N)
+
+
+def yeojohnson(x, lmbda=None):
+    r"""
+    Return a dataset transformed by a Yeo-Johnson power transformation.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.  Should be 1-dimensional.
+    lmbda : float, optional
+        If ``lmbda`` is ``None``, find the lambda that maximizes the
+        log-likelihood function and return it as the second output argument.
+        Otherwise the transformation is done for the given value.
+
+    Returns
+    -------
+    yeojohnson: ndarray
+        Yeo-Johnson power transformed array.
+    maxlog : float, optional
+        If the `lmbda` parameter is None, the second returned argument is
+        the lambda that maximizes the log-likelihood function.
+
+    See Also
+    --------
+    probplot, yeojohnson_normplot, yeojohnson_normmax, yeojohnson_llf, boxcox
+
+    Notes
+    -----
+    The Yeo-Johnson transform is given by::
+
+        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
+            log(x + 1),                                  for x >= 0, lmbda = 0
+            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
+            -log(-x + 1),                                for x < 0, lmbda = 2
+
+    Unlike `boxcox`, `yeojohnson` does not require the input data to be
+    positive.
+
+    .. versionadded:: 1.2.0
+
+
+    References
+    ----------
+    I. Yeo and R.A. Johnson, "A New Family of Power Transformations to
+    Improve Normality or Symmetry", Biometrika 87.4 (2000):
+
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    We generate some random variates from a non-normal distribution and make a
+    probability plot for it, to show it is non-normal in the tails:
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(211)
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> prob = stats.probplot(x, dist=stats.norm, plot=ax1)
+    >>> ax1.set_xlabel('')
+    >>> ax1.set_title('Probplot against normal distribution')
+
+    We now use `yeojohnson` to transform the data so it's closest to normal:
+
+    >>> ax2 = fig.add_subplot(212)
+    >>> xt, lmbda = stats.yeojohnson(x)
+    >>> prob = stats.probplot(xt, dist=stats.norm, plot=ax2)
+    >>> ax2.set_title('Probplot after Yeo-Johnson transformation')
+
+    >>> plt.show()
+
+    """
+
     x = np.asarray(x)
     if x.size == 0:
         return x
 
-    if lb <= la:
-        raise ValueError("`lb` has to be larger than `la`.")
+    if lmbda is not None:
+        return _yeojohnson_transform(x, lmbda)
 
-    lmbdas = np.linspace(la, lb, num=N)
-    ppcc = lmbdas * 0.0
-    for i, val in enumerate(lmbdas):
-        # Determine for each lmbda the correlation coefficient of transformed x
-        z = boxcox(x, lmbda=val)
-        _, r2 = probplot(z, dist='norm', fit=True)
-        ppcc[i] = r2[-1]
+    # if lmbda=None, find the lmbda that maximizes the log-likelihood function.
+    lmax = yeojohnson_normmax(x)
+    y = _yeojohnson_transform(x, lmax)
 
-    if plot is not None:
-        plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\\lambda$',
-                               ylabel='Prob Plot Corr. Coef.',
-                               title='Box-Cox Normality Plot')
+    return y, lmax
 
-    return lmbdas, ppcc
+
+def _yeojohnson_transform(x, lmbda):
+    """Return x transformed by the Yeo-Johnson power transform with given
+    parameter lmbda."""
+
+    out = np.zeros_like(x)
+    pos = x >= 0  # binary mask
+
+    # when x >= 0
+    if abs(lmbda) < np.spacing(1.):
+        out[pos] = np.log1p(x[pos])
+    else:  # lmbda != 0
+        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+
+    # when x < 0
+    if abs(lmbda - 2) > np.spacing(1.):
+        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+    else:  # lmbda == 2
+        out[~pos] = -np.log1p(-x[~pos])
+
+    return out
+
+
+def yeojohnson_llf(lmb, data):
+    r"""The yeojohnson log-likelihood function.
+
+    Parameters
+    ----------
+    lmb : scalar
+        Parameter for Yeo-Johnson transformation. See `yeojohnson` for
+        details.
+    data : array_like
+        Data to calculate Yeo-Johnson log-likelihood for. If `data` is
+        multi-dimensional, the log-likelihood is calculated along the first
+        axis.
+
+    Returns
+    -------
+    llf : float
+        Yeo-Johnson log-likelihood of `data` given `lmb`.
+
+    See Also
+    --------
+    yeojohnson, probplot, yeojohnson_normplot, yeojohnson_normmax
+
+    Notes
+    -----
+    The Yeo-Johnson log-likelihood function is defined here as
+
+    .. math::
+
+        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+
+    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    transformed input data ``x``.
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    >>> np.random.seed(1245)
+
+    Generate some random variates and calculate Yeo-Johnson log-likelihood
+    values for them for a range of ``lmbda`` values:
+
+    >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
+    >>> lmbdas = np.linspace(-2, 10)
+    >>> llf = np.zeros(lmbdas.shape, dtype=float)
+    >>> for ii, lmbda in enumerate(lmbdas):
+    ...     llf[ii] = stats.yeojohnson_llf(lmbda, x)
+
+    Also find the optimal lmbda value with `yeojohnson`:
+
+    >>> x_most_normal, lmbda_optimal = stats.yeojohnson(x)
+
+    Plot the log-likelihood as function of lmbda.  Add the optimal lmbda as a
+    horizontal line to check that that's really the optimum:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(lmbdas, llf, 'b.-')
+    >>> ax.axhline(stats.yeojohnson_llf(lmbda_optimal, x), color='r')
+    >>> ax.set_xlabel('lmbda parameter')
+    >>> ax.set_ylabel('Yeo-Johnson log-likelihood')
+
+    Now add some probability plots to show that where the log-likelihood is
+    maximized the data transformed with `yeojohnson` looks closest to normal:
+
+    >>> locs = [3, 10, 4]  # 'lower left', 'center', 'lower right'
+    >>> for lmbda, loc in zip([-1, lmbda_optimal, 9], locs):
+    ...     xt = stats.yeojohnson(x, lmbda=lmbda)
+    ...     (osm, osr), (slope, intercept, r_sq) = stats.probplot(xt)
+    ...     ax_inset = inset_axes(ax, width="20%", height="20%", loc=loc)
+    ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
+    ...     ax_inset.set_xticklabels([])
+    ...     ax_inset.set_yticklabels([])
+    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+
+    >>> plt.show()
+
+    """
+    data = np.asarray(data)
+    n_samples = data.shape[0]
+
+    if n_samples == 0:
+        return np.nan
+
+    trans = _yeojohnson_transform(data, lmb)
+
+    loglike = -n_samples / 2 * np.log(trans.var(axis=0))
+    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0)
+
+    return loglike
+
+
+def yeojohnson_normmax(x, brack=(-2, 2)):
+    """Compute optimal Yeo-Johnson transform parameter for input data, using
+    maximum likelihood estimation.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    brack : 2-tuple, optional
+        The starting interval for a downhill bracket search with
+        `optimize.brent`. Note that this is in most cases not critical; the
+        final result is allowed to be outside this bracket.
+
+    Returns
+    -------
+    maxlog : float
+        The optimal transform parameter found.
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
+
+    See Also
+    --------
+    yeojohnson, yeojohnson_llf, yeojohnson_normplot
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(1234)  # make this example reproducible
+
+    Generate some data and determine optimal ``lmbda``
+
+    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> lmax = stats.yeojohnson_normmax(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -10, 10, plot=ax)
+    >>> ax.axvline(lmax, color='r')
+
+    >>> plt.show()
+
+    """
+
+    def _neg_llf(lmbda, data):
+        return -yeojohnson_llf(lmbda, data)
+
+    return optimize.brent(_neg_llf, brack=brack, args=(x,))
+
+
+def yeojohnson_normplot(x, la, lb, plot=None, N=80):
+    """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
+
+    A Yeo-Johnson normality plot shows graphically what the best
+    transformation parameter is to use in `yeojohnson` to obtain a
+    distribution that is close to normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    la, lb : scalar
+        The lower and upper bounds for the ``lmbda`` values to pass to
+        `yeojohnson` for Yeo-Johnson transformations. These are also the
+        limits of the horizontal axis of the plot if that is generated.
+    plot : object, optional
+        If given, plots the quantiles and least squares fit.
+        `plot` is an object that has to have methods "plot" and "text".
+        The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
+        or a custom object with the same methods.
+        Default is None, which means that no plot is created.
+    N : int, optional
+        Number of points on the horizontal axis (equally distributed from
+        `la` to `lb`).
+
+    Returns
+    -------
+    lmbdas : ndarray
+        The ``lmbda`` values for which a Yeo-Johnson transform was done.
+    ppcc : ndarray
+        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        when fitting the Box-Cox transformed input `x` against a normal
+        distribution.
+
+    See Also
+    --------
+    probplot, yeojohnson, yeojohnson_normmax, yeojohnson_llf, ppcc_max
+
+    Notes
+    -----
+    Even if `plot` is given, the figure is not shown or saved by
+    `boxcox_normplot`; ``plt.show()`` or ``plt.savefig('figname.png')``
+    should be used after calling `probplot`.
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Generate some non-normally distributed data, and create a Yeo-Johnson plot:
+
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -20, 20, plot=ax)
+
+    Determine and plot the optimal ``lmbda`` to transform ``x`` and plot it in
+    the same plot:
+
+    >>> _, maxlog = stats.yeojohnson(x)
+    >>> ax.axvline(maxlog, color='r')
+
+    >>> plt.show()
+
+    """
+    return _normplot('yeojohnson', x, la, lb, plot, N)
 
 
 def shapiro(x):
