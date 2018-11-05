@@ -839,7 +839,7 @@ def jaccard(u, v, w=None):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Jaccard_index
     .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
-       dstance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
+       distance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
 
     Examples
     --------
