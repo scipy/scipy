@@ -906,6 +906,7 @@ def newton_cotes(rn, equal=0):
      6   2.000017814   1.78136e-05
      8   1.999999835   1.64725e-07
     10   2.000000001   1.14677e-09
+
     Notes
     -----
     Normally, the Newton-Cotes rules are used on smaller integration
