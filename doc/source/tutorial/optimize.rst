@@ -453,7 +453,7 @@ As an example let us consider the constrained minimization of the Rosenbrock fun
 .. math::
    :nowrap:
 
-     \begin{eqnarray*} \min_{x_0, x_1} & ~~100\left(x_{0}-x_{1}^{2}\right)^{2}+\left(1-x_{0}\right)^{2} &\\
+     \begin{eqnarray*} \min_{x_0, x_1} & ~~100\left(x_{1}-x_{0}^{2}\right)^{2}+\left(1-x_{0}\right)^{2} &\\
                      \text{subject to: } & x_0 + 2 x_1 \leq 1 & \\
 		                         & x_0^2 + x_1 \leq 1  & \\
 		                         & x_0^2 - x_1 \leq 1  & \\
