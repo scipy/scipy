@@ -16,16 +16,16 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         A function with signature `pdf(x)` that is the probability
         density function of the distribution.
     umax : float
-        The upper bound of the bounding rectangle in the y-direction.
+        The upper bound of the bounding rectangle in the u-direction.
     vmin : float
-        The lower bound of the bounding rectangle in the x-direction.
+        The lower bound of the bounding rectangle in the v-direction.
     vmax : float
-        The upper bound of the bounding rectangle in the x-direction.
+        The upper bound of the bounding rectangle in the v-direction.
     size : int or tuple of ints, optional
         Defining number of random variates (default is 1).
     c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    random_state : None or int or np.random.RandomState instance, optional
+    random_state : int or np.random.RandomState instance, optional
         If already a RandomState instance, use it.
         If seed is an int, return a new RandomState instance seeded with seed.
         If None, use np.random.RandomState. Default is None.
@@ -128,9 +128,9 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
     exp_iter = 2 * (vmax - vmin) * umax  # rejection constant (see [1])
     if exp_iter > 20:
-        msg = "The expected number of iterations to generate a single random" \
-              " number from the desired distribution is larger than " \
-              "{}, potentially causing bad performance.".format(int(exp_iter))
+        msg = ("The expected number of iterations to generate a single random "
+               "number from the desired distribution is larger than {}, "
+               "potentially causing bad performance.".format(int(exp_iter)))
         warnings.warn(msg, RuntimeWarning)
 
     size1d = tuple(np.atleast_1d(size))
@@ -161,9 +161,9 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         if simulated >= N:
             return np.reshape(x, size1d)
         if (simulated == 0) and (i*N >= 50000):
-            msg = "Not a single random variate could be generated in {} " \
-                  "attempts. The ratio of uniforms method does not appear " \
-                  "to work for the provided parameters. Please check the "\
-                  "pdf and the bounds.".format(i*N)
+            msg = ("Not a single random variate could be generated in {} "
+                   "attempts. The ratio of uniforms method does not appear "
+                   "to work for the provided parameters. Please check the "
+                   "pdf and the bounds.".format(i*N))
             raise RuntimeError(msg)
         i += 1
