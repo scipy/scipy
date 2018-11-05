@@ -1316,7 +1316,7 @@ class TestYeojohnson(object):
         x_inv = _inverse_transform(x, lmbda)
         xt, maxlog = stats.yeojohnson(x_inv)
 
-        assert_almost_equal(maxlog, lmbda, decimal=2)
+        assert_allclose(maxlog, lmbda, atol=1e-2)
 
         assert_almost_equal(0, np.linalg.norm(x - xt) / n_samples, decimal=2)
         assert_almost_equal(0, xt.mean(), decimal=1)
