@@ -829,6 +829,18 @@ def jaccard(u, v, w=None):
     jaccard : double
         The Jaccard distance between vectors `u` and `v`.
 
+    Notes
+    -----
+    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
+    between the items in the vectors the returned distance is 0. See the
+    Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Jaccard_index
+    .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
+       distance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -844,14 +856,16 @@ def jaccard(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+
     nonzero = np.bitwise_or(u != 0, v != 0)
     unequal_nonzero = np.bitwise_and((u != v), nonzero)
     if w is not None:
         w = _validate_weights(w)
         nonzero = w * nonzero
         unequal_nonzero = w * unequal_nonzero
-    dist = np.double(unequal_nonzero.sum()) / np.double(nonzero.sum())
-    return dist
+    a = np.double(unequal_nonzero.sum())
+    b = np.double(nonzero.sum())
+    return (a / b) if b != 0 else 0
 
 
 def kulsinski(u, v, w=None):
