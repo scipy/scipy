@@ -24,7 +24,7 @@ ctypedef struct full_output_struct:
     double root
 
 
-# callabck function
+# callback function
 cdef double f_example(double x, void *args):
     cdef extra_params *myargs = <extra_params *> args
     cdef double[4] a
