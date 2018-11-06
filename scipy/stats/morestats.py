@@ -897,9 +897,16 @@ def boxcox_llf(lmb, data):
         return np.nan
 
     y = boxcox(data, lmb)
+    # Early exit: too big (or small) of a lambda causes numerical instability
+    if not np.isfinite(y).all():
+        return np.nan
     y_mean = np.mean(y, axis=0)
     llf = (lmb - 1) * np.sum(np.log(data), axis=0)
-    llf -= N / 2.0 * np.log(np.sum((y - y_mean)**2. / N, axis=0))
+    # Ensure that the mean squared error is non-zero
+    nonzero = lambda x: max(1e-21, x)
+    mse = np.sum((y - y_mean)**2. / N, axis=0)
+    mse = nonzero(mse) if y.ndim == 1 else [nonzero(x) for x in mse]
+    llf -= N / 2.0 * np.log(mse)
     return llf
 
 
@@ -1124,7 +1131,14 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
             # correlation.
             y = boxcox(samps, lmbda)
             yvals = np.sort(y)
-            r, prob = stats.pearsonr(xvals, yvals)
+            # When all of yvals are equal, `stats.pearsonr` fails due to a
+            # division by zero error; since we want to approximate a normal
+            # distribution anyway we just discard these yvals and say that
+            # the correlation is zero
+            if np.unique(yvals).size == 1:
+                r = -1
+            else:
+                r, prob = stats.pearsonr(xvals, yvals)
             return 1 - r
 
         return optimize.brent(_eval_pearsonr, brack=brack, args=(xvals, x))

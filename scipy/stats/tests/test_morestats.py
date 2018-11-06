@@ -1177,6 +1177,39 @@ class TestBoxcoxNormmax(object):
         maxlog_all = stats.boxcox_normmax(self.x, method='all')
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
+    def test_single_value(self):
+        x = [1.]
+        # This test only checks that no exception is thrown
+        stats.boxcox_normmax(x, method='all')
+
+    def test_all_equal_values(self):
+        x = np.ones(64)
+        # This test only checks that no exception is thrown
+        stats.boxcox_normmax(x, method='all')
+
+    def test_output_warning(self):
+        x = [.5]
+        # Using this input leads to intermediate values reaching inf.
+        stats.boxcox_normmax(x, method='all')
+
+    def test_not_equal_output_values(self):
+        # https://github.com/scipy/scipy/issues/6873#issuecomment-411755758
+        x = [4640, 4460, 4500, 4980, 5120, 4940, 4540, 5000, 5160, 4800, 5300,
+             4800, 4660, 4480, 4900, 4860, 5860, 5680, 4700, 5260, 5240, 6160,
+             5040, 4800, 4680, 4700, 5300, 4780, 5880, 7980, 6800, 6240, 5340,
+             5300, 7020, 4680, 4680, 5080, 5860, 5440, 6320, 5440, 6900, 6780,
+             5460, 5100, 5720, 4760, 4960, 4760, 6860, 6900, 5900, 7440, 4820,
+             6000, 7360, 5820, 5920, 4720, 4820, 5440, 5400, 6940, 5440, 5440,
+             5980, 6040, 5640, 6240, 5840, 4760, 5120, 5020, 5400, 5140, 5440,
+             6260, 5060, 5860, 6500, 5300, 4520, 4360, 4600, 4560, 4680, 5100,
+             5000, 6420, 5940, 5860, 6080, 6060, 5320, 4540, 5160, 5080, 5220,
+             5200, 5080, 5700, 6060, 5600, 5580, 5880, 5240, 4720, 4560, 5060,
+             4300, 5120, 5340, 6140, 5600, 5960, 6140, 6380, 4920, 4460, 4700,
+             5000, 5040, 4880, 4840, 5860]
+        lmax_all = stats.boxcox_normmax(x, method='all')
+        for lmax in lmax_all:
+            output = stats.boxcox(x, lmbda=lmax)
+            assert_(max(output) - min(output) > 0)
 
 class TestBoxcoxNormplot(object):
     def setup_method(self):
