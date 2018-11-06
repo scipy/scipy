@@ -293,7 +293,7 @@ jaccard_distance_double(const double *u, const double *v, const npy_intp n)
         num += (x != y) & ((x != 0.0) | (y != 0.0));
         denom += (x != 0.0) | (y != 0.0);
     }
-    return (double)num / denom;
+    return denom == 0.0 ? 0.0 : (double)num / denom;
 }
 
 static NPY_INLINE double
@@ -307,7 +307,7 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
         num += (x != y);
         denom += x | y;
     }
-    return (double)num / denom;
+    return denom == 0.0 ? 0.0 : (double)num / denom;
 }
 
 

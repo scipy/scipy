@@ -1109,6 +1109,11 @@ class TestPdist(object):
         Y_test1 = wpdist(X, 'jaccard')
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    def test_pdist_djaccard_allzeros(self):
+        eps = 1e-08
+        Y = pdist(np.zeros((5, 3)), 'jaccard')
+        _assert_within_tol(np.zeros(10), Y, eps)
+
     def test_pdist_djaccard_random_nonC(self):
         eps = 1e-08
         X = np.float64(eo['pdist-boolean-inp'])
@@ -1157,6 +1162,11 @@ class TestPdist(object):
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test2 = pdist(X, 'test_jensenshannon')
         _assert_within_tol(Y_test2, Y_right, eps)
+
+    def test_pdist_djaccard_allzeros_nonC(self):
+        eps = 1e-08
+        Y = pdist(np.zeros((5, 3)), 'test_jaccard')
+        _assert_within_tol(np.zeros(10), Y, eps)
 
     def test_pdist_chebyshev_random(self):
         eps = 1e-08
