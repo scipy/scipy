@@ -85,6 +85,7 @@ DEFINE_WRAP_CDIST(city_block, double)
 DEFINE_WRAP_CDIST(euclidean, double)
 DEFINE_WRAP_CDIST(hamming, double)
 DEFINE_WRAP_CDIST(jaccard, double)
+DEFINE_WRAP_CDIST(jensenshannon, double)
 DEFINE_WRAP_CDIST(sqeuclidean, double)
 
 DEFINE_WRAP_CDIST(dice, char)
@@ -288,6 +289,7 @@ DEFINE_WRAP_PDIST(city_block, double)
 DEFINE_WRAP_PDIST(euclidean, double)
 DEFINE_WRAP_PDIST(hamming, double)
 DEFINE_WRAP_PDIST(jaccard, double)
+DEFINE_WRAP_PDIST(jensenshannon, double)
 DEFINE_WRAP_PDIST(sqeuclidean, double)
 
 DEFINE_WRAP_PDIST(dice, char)
@@ -334,7 +336,7 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n, status;
-  double *dimbuf, *dm;
+  double *dm;
   const double *X;
   const double *covinv;
   static char *kwlist[] = {"X", "dm", "VI", NULL};
@@ -510,6 +512,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_hamming_bool_wrap", cdist_hamming_char_wrap, METH_VARARGS},
   {"cdist_jaccard_double_wrap", cdist_jaccard_double_wrap, METH_VARARGS},
   {"cdist_jaccard_bool_wrap", cdist_jaccard_char_wrap, METH_VARARGS},
+  {"cdist_jensenshannon_double_wrap", cdist_jensenshannon_double_wrap, METH_VARARGS},
   {"cdist_kulsinski_bool_wrap", cdist_kulsinski_char_wrap, METH_VARARGS},
   {"cdist_mahalanobis_double_wrap", cdist_mahalanobis_double_wrap, METH_VARARGS | METH_KEYWORDS},
   {"cdist_minkowski_double_wrap", cdist_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS},
@@ -532,6 +535,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_hamming_bool_wrap", pdist_hamming_char_wrap, METH_VARARGS},
   {"pdist_jaccard_double_wrap", pdist_jaccard_double_wrap, METH_VARARGS},
   {"pdist_jaccard_bool_wrap", pdist_jaccard_char_wrap, METH_VARARGS},
+  {"pdist_jensenshannon_double_wrap", pdist_jensenshannon_double_wrap, METH_VARARGS},
   {"pdist_kulsinski_bool_wrap", pdist_kulsinski_char_wrap, METH_VARARGS},
   {"pdist_mahalanobis_double_wrap", pdist_mahalanobis_double_wrap, METH_VARARGS | METH_KEYWORDS},
   {"pdist_minkowski_double_wrap", pdist_minkowski_double_wrap, METH_VARARGS | METH_KEYWORDS},

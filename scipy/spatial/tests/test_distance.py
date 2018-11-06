@@ -56,10 +56,11 @@ from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
 # these were missing: chebyshev cityblock kulsinski
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
-                                    hamming, jaccard, kulsinski, mahalanobis,
-                                    matching, minkowski, rogerstanimoto,
-                                    russellrao, seuclidean, sokalmichener,
-                                    sokalsneath, sqeuclidean, yule)
+                                    hamming, jaccard, jensenshannon,
+                                    kulsinski, mahalanobis, matching,
+                                    minkowski, rogerstanimoto, russellrao,
+                                    seuclidean, sokalmichener, sokalsneath,
+                                    sqeuclidean, yule)
 from scipy.spatial.distance import wminkowski as old_wminkowski
 
 _filenames = [
@@ -80,6 +81,8 @@ _filenames = [
               "pdist-euclidean-ml.txt",
               "pdist-hamming-ml.txt",
               "pdist-jaccard-ml.txt",
+              "pdist-jensenshannon-ml-iris.txt",
+              "pdist-jensenshannon-ml.txt",
               "pdist-minkowski-3.2-ml-iris.txt",
               "pdist-minkowski-3.2-ml.txt",
               "pdist-minkowski-5.8-ml-iris.txt",
@@ -1118,6 +1121,48 @@ class TestPdist(object):
         Y_test2 = wpdist(X, 'test_jaccard')
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    def test_pdist_jensenshannon_random(self):
+        eps = 1e-08
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-jensenshannon']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps)
+
+    def test_pdist_jensenshannon_random_float32(self):
+        eps = 1e-07
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-jensenshannon']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+
+    def test_pdist_jensenshannon_random_nonC(self):
+        eps = 1e-08
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-jensenshannon']
+        Y_test2 = pdist(X, 'test_jensenshannon')
+        _assert_within_tol(Y_test2, Y_right, eps)
+
+    def test_pdist_jensenshannon_iris(self):
+        eps = 1e-12
+        X = eo['iris']
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps)
+
+    def test_pdist_jensenshannon_iris_float32(self):
+        eps = 1e-06
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+
+    def test_pdist_jensenshannon_iris_nonC(self):
+        eps = 5e-13
+        X = eo['iris']
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test2 = pdist(X, 'test_jensenshannon')
+        _assert_within_tol(Y_test2, Y_right, eps)
+
     def test_pdist_djaccard_allzeros_nonC(self):
         eps = 1e-08
         Y = pdist(np.zeros((5, 3)), 'test_jaccard')
@@ -2011,7 +2056,7 @@ def test_Xdist_non_negative_weights():
     w = np.ones(X.shape[1])
     w[::5] = -w[::5]
     for metric in _METRICS_NAMES:
-        if metric in ['seuclidean', 'mahalanobis']:
+        if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
             continue
 
         for m in [metric, eval(metric), "test_" + metric]:
