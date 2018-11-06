@@ -1331,7 +1331,7 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
 
-class Test_sorted_query_ball_point:
+class Test_sorted_query_ball_point(object):
 
     def setup_method(self):
         np.random.seed(1234)

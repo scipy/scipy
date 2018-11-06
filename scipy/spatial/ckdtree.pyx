@@ -885,6 +885,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             multi-point queries which was the behavior before this option
             was added.
 
+            .. versionadded:: 1.2.0
+
         Returns
         -------
         results : list or array of lists
