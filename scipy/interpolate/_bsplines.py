@@ -181,7 +181,7 @@ class BSpline(object):
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super(BSpline, self).__init__()
 
-        self.k = int(k)
+        self.k = operator.index(k)
         self.c = np.asarray(c)
         self.t = np.ascontiguousarray(t, dtype=np.float64)
 
@@ -206,8 +206,6 @@ class BSpline(object):
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
-        if int(k) != k:
-            raise ValueError("Spline order must be integer.")
         if self.t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
@@ -776,7 +774,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
-    k = int(k)
+    k = operator.index(k)
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -975,7 +973,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         w = _as_float_array(w, check_finite)
     else:
         w = np.ones_like(x)
-    k = int(k)
+    k = operator.index(k)
 
     if not -y.ndim <= axis < y.ndim:
         raise ValueError("axis {} is out of bounds".format(axis))
