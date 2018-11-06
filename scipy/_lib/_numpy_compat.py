@@ -87,6 +87,41 @@ else:
         return _broadcast_to(array, shape, subok=subok, readonly=True)
 
 
+if NumpyVersion(np.__version__) >= '1.11.0':
+    def get_randint(random_state):
+        return random_state.randint
+else:
+    # In NumPy versions previous to 1.11.0 the randint funtion and the randint
+    # method of RandomState does only work with int32 values.
+    def get_randint(random_state):
+        def randint_patched(*args, **kwargs):
+            try:
+                low = args[0]
+            except IndexError:
+                low = None
+            high = kwargs.pop('high', None)
+            dtype = kwargs.pop('dtype', None)
+
+            if high is None:
+                high = low
+                low = 0
+
+            low_min = np.iinfo(np.int32).min
+            if low is None:
+                low = low_min
+            else:
+                low = max(low, low_min)
+            high_max = np.iinfo(np.int32).max
+            if high is None:
+                high = high_max
+            else:
+                high = min(high, high_max)
+
+            integers = random_state.randint(low, high=high, **kwargs)
+            return integers.astype(dtype, copy=False)
+        return randint_patched
+
+
 if NumpyVersion(np.__version__) >= '1.9.0':
     from numpy import unique
 else:

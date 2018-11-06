@@ -9,6 +9,7 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 
 import numpy as np
+from scipy._lib._numpy_compat import get_randint
 
 from scipy._lib.six import xrange
 
@@ -746,8 +747,6 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
     dtype = np.dtype(dtype)
-    if dtype.char not in 'fdg':
-        raise NotImplementedError("type %s not supported" % dtype)
 
     mn = m * n
 
@@ -770,10 +769,20 @@ greater than %d - this is not supported on this machine
     elif isinstance(random_state, (int, np.integer)):
         random_state = np.random.RandomState(random_state)
     if data_rvs is None:
-        data_rvs = random_state.rand
+        if np.issubdtype(dtype, np.integer):
+            randint = get_randint(random_state)
+
+            def data_rvs(n):
+                return randint(np.iinfo(dtype).min, np.iinfo(dtype).max,
+                               n, dtype=dtype)
+        elif np.issubdtype(dtype, np.complexfloating):
+            def data_rvs(n):
+                return random_state.rand(n) + random_state.rand(n) * 1j
+        else:
+            data_rvs = random_state.rand
 
     # Use the algorithm from python's random.sample for k < mn/3.
-    if mn < 3*k:
+    if mn < 3 * k:
         ind = random_state.choice(mn, size=k, replace=False)
     else:
         ind = np.empty(k, dtype=tp)
@@ -785,10 +794,11 @@ greater than %d - this is not supported on this machine
             selected.add(j)
             ind[i] = j
 
-    j = np.floor(ind * 1. / m).astype(tp)
-    i = (ind - j * m).astype(tp)
-    vals = data_rvs(k).astype(dtype)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
+    j = np.floor(ind * 1. / m).astype(tp, copy=False)
+    i = (ind - j * m).astype(tp, copy=False)
+    vals = data_rvs(k).astype(dtype, copy=False)
+    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format,
+                                                             copy=False)
 
 
 def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
