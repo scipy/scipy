@@ -750,6 +750,8 @@ class TestSolve(object):
     def test_assume_a_keyword(self):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
+    @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
+                             "crash on Windows (gh-8064)")
     def test_all_type_size_routine_combinations(self):
         sizes = [10, 100]
         assume_as = ['gen', 'sym', 'pos', 'her']
