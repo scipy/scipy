@@ -711,14 +711,20 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     -------
     res : sparse matrix
 
+    Notes
+    -----
+    Only float types are supported for now.
+
     Examples
     --------
     >>> from scipy.sparse import random
     >>> from scipy import stats
-    >>> class CustomRandomState(object):
+
+    >>> class CustomRandomState(np.random.RandomState):
     ...     def randint(self, k):
     ...         i = np.random.randint(k)
     ...         return i - i % 2
+    >>> np.random.seed(12345)
     >>> rs = CustomRandomState()
     >>> rvs = stats.poisson(25, loc=10).rvs
     >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
@@ -736,13 +742,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
     >>> S.A
-    array([[ 0.        ,  1.9467163 ,  0.13569738, -0.81205367],
-           [ 0.        ,  0.        ,  0.        ,  0.        ],
+    array([[ 0.        ,  0.        ,  0.        ,  0.        ],
+           [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
 
-    Notes
-    -----
-    Only float types are supported for now.
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
@@ -768,6 +771,7 @@ greater than %d - this is not supported on this machine
         random_state = np.random
     elif isinstance(random_state, (int, np.integer)):
         random_state = np.random.RandomState(random_state)
+
     if data_rvs is None:
         if np.issubdtype(dtype, np.integer):
             randint = get_randint(random_state)
@@ -781,18 +785,7 @@ greater than %d - this is not supported on this machine
         else:
             data_rvs = random_state.rand
 
-    # Use the algorithm from python's random.sample for k < mn/3.
-    if mn < 3 * k:
-        ind = random_state.choice(mn, size=k, replace=False)
-    else:
-        ind = np.empty(k, dtype=tp)
-        selected = set()
-        for i in xrange(k):
-            j = random_state.randint(mn)
-            while j in selected:
-                j = random_state.randint(mn)
-            selected.add(j)
-            ind[i] = j
+    ind = random_state.choice(mn, size=k, replace=False)
 
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
@@ -841,8 +834,9 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     <3x4 sparse matrix of type '<class 'numpy.float64'>'
        with 3 stored elements in Compressed Sparse Row format>
     >>> matrix.todense()
-    matrix([[ 0.        ,  0.59685016,  0.779691  ,  0.        ],
-            [ 0.        ,  0.        ,  0.        ,  0.44583275],
-            [ 0.        ,  0.        ,  0.        ,  0.        ]])
+    matrix([[0.05641158, 0.        , 0.        , 0.65088847],
+            [0.        , 0.        , 0.        , 0.14286682],
+            [0.        , 0.        , 0.        , 0.        ]])
+
     """
     return random(m, n, density, format, dtype, random_state)

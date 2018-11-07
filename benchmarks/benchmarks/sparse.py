@@ -423,3 +423,20 @@ class Densify(Benchmark):
 
     # Retain old benchmark results (remove this if changing the benchmark)
     time_toarray.version = "2fbf492ec800b982946a62785beda803460b913cc80080043a5d407025893b2b"
+
+
+class Random(Benchmark):
+    params = [
+        np.arange(0, 1.1, 0.1).tolist()
+    ]
+    param_names = ['density']
+
+    def setup(self, density):
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+        self.nrows = 1000
+        self.ncols = 1000
+        self.format = 'csr'
+
+    def time_rand(self, density):
+        sparse.rand(self.nrows, self.ncols,
+                    format=self.format, density=density)
