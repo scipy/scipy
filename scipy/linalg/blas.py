@@ -206,6 +206,7 @@ BLAS Level 3 functions
 #
 
 from __future__ import division, print_function, absolute_import
+
 __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as _np
@@ -283,6 +284,8 @@ def find_best_blas_type(arrays=(), dtype=None):
     prefer_fortran : bool
         Whether to prefer Fortran order routines over C order.
 
+    .. versionchanged:: 1.2.0
+
     Examples
     --------
     >>> import scipy.linalg.blas as bla
@@ -345,7 +348,7 @@ def _get_funcs(names, arrays, dtype,
     if prefer_fortran:
         module1, module2 = module2, module1
 
-    for i, name in enumerate(names):
+    for name in names:
         func_name = prefix + name
         func_name = alias.get(func_name, func_name)
         func = getattr(module1[0], func_name, None)
