@@ -192,7 +192,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     """
 
     if type(values) != np.ndarray:
-          raise TypeError('Invalid type of values, values must be type of ndarray.')
+          values = np.array(values)
 
     points = _ndim_coords_from_arrays(points)
 
