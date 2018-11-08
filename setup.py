@@ -211,6 +211,8 @@ def get_build_ext_override():
                 script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
                 with open(script_fn, 'w') as f:
                     f.write(text)
+                    # line below fixes gh-8680
+                    ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
 
             old_build_ext.build_extension(self, ext)

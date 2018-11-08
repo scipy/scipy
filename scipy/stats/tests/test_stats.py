@@ -30,6 +30,8 @@ import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
+from scipy.special import kv
+from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -4598,3 +4600,103 @@ class TestBrunnerMunzel(object):
         assert_approx_equal(p1, 0.0057862086661515377,
                             significant=self.significant)
 
+
+class TestRatioUniforms(object):
+    """ Tests for rvs_ratio_uniforms.
+    """
+    def test_rv_generation(self):
+        # use KS test to check distribution of rvs
+        # normal distribution
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+        rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500,
+                                       random_state=12345)
+        assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
+
+        # exponential distribution
+        rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
+                                       vmin=0, vmax=2*np.exp(-1),
+                                       size=1000, random_state=12345)
+        assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
+
+    def test_shape(self):
+        # test shape of return value depending on size parameter
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+
+        r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=3,
+                                      random_state=1234)
+        r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3,),
+                                      random_state=1234)
+        r3 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 1),
+                                      random_state=1234)
+        assert_equal(r1, r2)
+        assert_equal(r2, r3.flatten())
+        assert_equal(r1.shape, (3,))
+        assert_equal(r3.shape, (3, 1))
+
+        r4 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 3, 3),
+                                      random_state=12)
+        r5 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=27,
+                                      random_state=12)
+        assert_equal(r4.flatten(), r5)
+        assert_equal(r4.shape, (3, 3, 3))
+
+        r6 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, random_state=1234)
+        r7 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=1,
+                                      random_state=1234)
+        r8 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(1, ),
+                                      random_state=1234)
+        assert_equal(r6, r7)
+        assert_equal(r7, r8)
+
+    def test_random_state(self):
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+        np.random.seed(1234)
+        r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4))
+        r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4),
+                                      random_state=1234)
+        assert_equal(r1, r2)
+
+    def test_exceptions(self):
+        f = stats.norm.pdf
+        # need vmin < vmax
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=1, vmin=3, vmax=1)
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=1, vmin=1, vmax=1)
+        # need umax > 0
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
+
+    def test_gig(self):
+        # test generalized inverse gaussian distribution
+        p, b = 0.5, 0.75
+
+        def gig_mode(p, b):
+            return b / (np.sqrt((p - 1)**2 + b**2) + 1 - p)
+
+        def gig_pdf(x, p, b):
+            c = 1/(2 * kv(p, b))
+            return c * x**(p - 1) * np.exp(- b * (x + 1/x) / 2)
+
+        def gig_cdf(x, p, b):
+            x = np.atleast_1d(x)
+            cdf = [quad(gig_pdf, 0, xi, args=(p, b))[0] for xi in x]
+            return np.array(cdf)
+
+        s = kv(p+2, b) / kv(p, b)
+        vmax = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
+        umax = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
+
+        rvs = stats.rvs_ratio_uniforms(lambda x: gig_pdf(x, p, b), umax,
+                                       0, vmax, random_state=1234, size=1500)
+
+        assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
+                     True)

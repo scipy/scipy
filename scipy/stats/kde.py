@@ -39,6 +39,7 @@ from . import mvn
 
 __all__ = ['gaussian_kde']
 
+
 class gaussian_kde(object):
     """Representation of a kernel-density estimate using Gaussian kernels.
 

@@ -850,21 +850,21 @@ _builtincoeffs = {
 
 
 def newton_cotes(rn, equal=0):
-    """
+    r"""
     Return weights and error coefficient for Newton-Cotes integration.
 
     Suppose we have (N+1) samples of f at the positions
     x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
     integral between x_0 and x_N is:
 
-    :math:`\\int_{x_0}^{x_N} f(x)dx = \\Delta x \\sum_{i=0}^{N} a_i f(x_i)
-    + B_N (\\Delta x)^{N+2} f^{N+1} (\\xi)`
+    :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
+    + B_N (\Delta x)^{N+2} f^{N+1} (\xi)`
 
-    where :math:`\\xi \\in [x_0,x_N]`
-    and :math:`\\Delta x = \\frac{x_N-x_0}{N}` is the average samples spacing.
+    where :math:`\xi \in [x_0,x_N]`
+    and :math:`\Delta x = \frac{x_N-x_0}{N}` is the average samples spacing.
 
     If the samples are equally-spaced and N is even, then the error
-    term is :math:`B_N (\\Delta x)^{N+3} f^{N+2}(\\xi)`.
+    term is :math:`B_N (\Delta x)^{N+3} f^{N+2}(\xi)`.
 
     Parameters
     ----------
@@ -882,6 +882,30 @@ def newton_cotes(rn, equal=0):
         positions.
     B : float
         Error coefficient.
+
+    Examples
+    --------
+    Compute the integral of sin(x) in [0, :math:`\pi`]:
+
+    >>> from scipy.integrate import newton_cotes
+    >>> def f(x):
+    ...     return np.sin(x)
+    >>> a = 0
+    >>> b = np.pi
+    >>> exact = 2
+    >>> for N in [2, 4, 6, 8, 10]:
+    ...     x = np.linspace(a, b, N + 1)
+    ...     an, B = newton_cotes(N, 1)
+    ...     dx = (b - a) / N
+    ...     quad = dx * np.sum(an * f(x))
+    ...     error = abs(quad - exact)
+    ...     print('{:2d}  {:10.9f}  {:.5e}'.format(N, quad, error))
+    ...
+     2   2.094395102   9.43951e-02
+     4   1.998570732   1.42927e-03
+     6   2.000017814   1.78136e-05
+     8   1.999999835   1.64725e-07
+    10   2.000000001   1.14677e-09
 
     Notes
     -----

@@ -1203,6 +1203,26 @@ def kruskal(*args):
     -----
     For more details on `kruskal`, see `stats.kruskal`.
 
+    Examples
+    --------
+    >>> from scipy.stats.mstats import kruskal
+
+    Random samples from three different brands of batteries were tested
+    to see how long the charge lasted. Results were as follows:
+
+    >>> a = [6.3, 5.4, 5.7, 5.2, 5.0]
+    >>> b = [6.9, 7.0, 6.1, 7.9]
+    >>> c = [7.2, 6.9, 6.1, 6.5]
+
+    Test the hypotesis that the distribution functions for all of the brands'
+    durations are identical. Use 5% level of significance.
+
+    >>> kruskal(a, b, c)
+    KruskalResult(statistic=7.113812154696133, pvalue=0.028526948491942164)
+
+    The null hypothesis is rejected at the 5% level of significance
+    because the returned p-value is less than the critical value of 5%.
+
     """
     output = argstoarray(*args)
     ranks = ma.masked_equal(rankdata(output, use_missing=False), 0)

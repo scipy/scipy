@@ -237,12 +237,13 @@ def test_hermitian():
 def test_eigs_consistency(n, atol):
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
+    np.random.seed(345678)
     X = np.random.rand(n, 2)
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
     vals, vecs = eigs(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
-    assert_allclose(vals, lvals, atol=1e-14)
+    assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 def test_verbosity():
     """Check that nonzero verbosity level code runs.

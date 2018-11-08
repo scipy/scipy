@@ -147,6 +147,7 @@ Support Functions
    :toctree: generated/
 
    rankdata
+   rvs_ratio_uniforms
 
 References
 ----------
@@ -173,6 +174,7 @@ from . import distributions
 from . import mstats_basic
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
+from ._rvs_sampling import rvs_ratio_uniforms
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -189,7 +191,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata',
+           'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel']
 

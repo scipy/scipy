@@ -127,6 +127,10 @@ class Radius(LimitedParamBenchmark):
     def time_query_ball_point(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_ball_point(self.queries, probe_radius, p=p)
 
+    def time_query_ball_point_nosort(self, mnr, p, probe_radius, boxsize, leafsize):
+        self.T.query_ball_point(self.queries, probe_radius, p=p,
+                                return_sorted=False)
+
     def time_query_pairs(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_pairs(probe_radius, p=p)
 
@@ -199,7 +203,7 @@ class CNeighbors(Benchmark):
         data2 = np.random.uniform(size=(n2, m))
         self.w1 = np.ones(len(data1))
         self.w2 = np.ones(len(data2))
- 
+
         self.T1d = cKDTree(data1, leafsize=1)
         self.T2d = cKDTree(data2, leafsize=1)
         self.T1s = cKDTree(data1, leafsize=8)
@@ -259,9 +263,9 @@ class SphericalVorSort(Benchmark):
 class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
-    'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
-    'kulsinski', 'rogerstanimoto', 'russellrao', 'sokalmichener',
-    'sokalsneath', 'wminkowski'])
+    'jensenshannon', 'chebyshev', 'canberra', 'braycurtis', 'mahalanobis',
+    'yule', 'dice', 'kulsinski', 'rogerstanimoto', 'russellrao',
+    'sokalmichener', 'sokalsneath', 'wminkowski'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
