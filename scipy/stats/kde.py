@@ -28,8 +28,8 @@ from scipy import linalg, special
 from scipy.special import logsumexp
 from scipy._lib._numpy_compat import cov
 
-from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
-     ravel, power, atleast_1d, squeeze, sum, transpose, ones
+from numpy import (atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt,
+                   ravel, power, atleast_1d, squeeze, sum, transpose, ones)
 import numpy as np
 from numpy.random import choice, multivariate_normal
 
