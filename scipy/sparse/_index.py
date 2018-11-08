@@ -142,7 +142,7 @@ class IndexMixin(object):
         """
         try:
             x = np.asarray(idx)
-        except:
+        except (ValueError, TypeError, MemoryError):
             raise IndexError('invalid index')
 
         if x.ndim not in (1, 2):

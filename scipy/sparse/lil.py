@@ -218,7 +218,7 @@ class lil_matrix(spmatrix, IndexMixin):
         # LIL routines handle bounds-checking for us, so don't do it here.
         try:
             x = np.asarray(idx)
-        except:
+        except (ValueError, TypeError, MemoryError):
             raise IndexError('invalid index')
         if x.ndim not in (1, 2):
             raise IndexError('Index dimension must be <= 2')
