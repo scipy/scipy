@@ -88,8 +88,9 @@
       END 
 
 
-      SUBROUTINE mvnun_weighted(d, n, lower, upper, means, weights, covar,
-     &                          maxpts, abseps, releps, value, inform)
+      SUBROUTINE mvnun_weighted(d, n, lower, upper, means, weights,
+     &                          covar, maxpts, abseps, releps, 
+     &                           value, inform)
 *  Parameters
 *
 *   d       integer, dimensionality of the data
