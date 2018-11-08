@@ -4,7 +4,7 @@ test cython optimize zeros api functions
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from . import zeros_examples
+from scipy.optimize.cython_optimize import _zeros
 
 
 EXPECTED_BISECT = [
@@ -23,7 +23,7 @@ EXPECTED_BISECT = [
 # test bisect
 def test_bisect():
     assert np.allclose(EXPECTED_BISECT,
-                       list(zeros_examples.loop_example('bisect')))
+                       list(_zeros.loop_example('bisect')))
 
 
 EXPECTED_RIDDER = [
@@ -42,7 +42,7 @@ EXPECTED_RIDDER = [
 # test ridder
 def test_ridder():
     assert np.allclose(EXPECTED_RIDDER,
-                       list(zeros_examples.loop_example('ridder')))
+                       list(_zeros.loop_example('ridder')))
 
 
 EXPECTED_BRENTH = [
@@ -61,7 +61,7 @@ EXPECTED_BRENTH = [
 # test brenth
 def test_brenth():
     assert np.allclose(EXPECTED_BRENTH,
-                       list(zeros_examples.loop_example('brenth')))
+                       list(_zeros.loop_example('brenth')))
 
 
 EXPECTED_BRENTQ = [
@@ -80,12 +80,12 @@ EXPECTED_BRENTQ = [
 # test brentq
 def test_brentq():
     assert np.allclose(EXPECTED_BRENTQ,
-                       list(zeros_examples.loop_example('brentq')))
+                       list(_zeros.loop_example('brentq')))
                        
 
 # test brentq with full output
 def test_brentq_full_output():
-    output = zeros_examples.full_output_example()
+    output = _zeros.full_output_example()
     print(output)
     assert np.isclose(EXPECTED_BRENTQ[0], output['root'])
     assert np.isclose(6, output['iterations'])
