@@ -110,7 +110,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     if (!setjmp(env)) {
         /* direct return */
         memcpy(params.env, env, sizeof(jmp_buf));
-        // error_nums must be initialized to zero by the solver
+        /* error_num must be initialized to zero by the solver */
         zero = solver(scipy_zeros_functions_func, a, b,
                 xtol, rtol, iter, (default_parameters*)&params);
         Py_DECREF(fargs);
