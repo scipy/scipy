@@ -376,9 +376,9 @@ class gaussian_kde(object):
         else:
             extra_kwds = {}
 
-        value, inform = mvn.mvnun(low_bounds, high_bounds, self.dataset,
-                                  self.weights, self.covariance,
-                                  **extra_kwds)
+        value, inform = mvn.mvnun_weighted(low_bounds, high_bounds, 
+                                           self.dataset, self.weights, 
+                                           self.covariance, **extra_kwds)
         if inform:
             msg = ('An integral in mvn.mvnun requires more points than %s' %
                    (self.d * 1000))
