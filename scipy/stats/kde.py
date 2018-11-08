@@ -74,6 +74,8 @@ class gaussian_kde(object):
         Number of datapoints.
     neff : int
         Effective number of datapoints.
+
+        .. versionadded:: 1.2.0 
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`, with which
         the covariance matrix is multiplied.
