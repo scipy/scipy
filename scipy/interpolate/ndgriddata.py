@@ -191,6 +191,9 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     """
 
+    if type(values) not in (np.ndarray, np.ma.core.MaskedArray):
+        raise TypeError('Invalid type of values, values must be the type of ndarry.')
+
     points = _ndim_coords_from_arrays(points)
 
     if points.ndim < 2:
