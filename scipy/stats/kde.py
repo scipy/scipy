@@ -76,7 +76,7 @@ class gaussian_kde(object):
     neff : int
         Effective number of datapoints.
 
-        .. versionadded:: 1.2.0 
+        .. versionadded:: 1.2.0
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`, with which
         the covariance matrix is multiplied.
@@ -112,12 +112,12 @@ class gaussian_kde(object):
 
         n**(-1./(d+4)),
 
-    with ``n`` the number of data points and ``d`` the number of dimensions. 
+    with ``n`` the number of data points and ``d`` the number of dimensions.
     In the case of unequally weighted points, `scotts_factor` becomes::
-    
+
         neff**(-1./(d+4)),
 
-    with ``neff`` the effective number of datapoints. 
+    with ``neff`` the effective number of datapoints.
     Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
         (n * (d + 2) / 4.)**(-1. / (d + 4)).
@@ -376,8 +376,8 @@ class gaussian_kde(object):
         else:
             extra_kwds = {}
 
-        value, inform = mvn.mvnun_weighted(low_bounds, high_bounds, 
-                                           self.dataset, self.weights, 
+        value, inform = mvn.mvnun_weighted(low_bounds, high_bounds,
+                                           self.dataset, self.weights,
                                            self.covariance, **extra_kwds)
         if inform:
             msg = ('An integral in mvn.mvnun requires more points than %s' %
@@ -593,8 +593,9 @@ class gaussian_kde(object):
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
-                energy[i] = sum(diff*tdiff,axis=0) / 2.0
-            result = logsumexp(-energy, b=self.weights[i]*self.n/self._norm_factor,
+                energy[i] = sum(diff*tdiff, axis=0) / 2.0
+            result = logsumexp(-energy,
+                               b=self.weights[i]*self.n/self._norm_factor,
                                axis=0)
         else:
             # loop over points
@@ -602,22 +603,22 @@ class gaussian_kde(object):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=self.weights*self.n/self._norm_factor)
+                result[i] = logsumexp(-energy,
+                                      b=self.weights*self.n/self._norm_factor)
 
         return result
 
     @property
     def weights(self):
-        try: 
+        try:
             return self._weights
         except AttributeError:
             self._weights = ones(self.n)/self.n
             return self._weights
 
-
     @property
     def neff(self):
-        try: 
+        try:
             return self._neff
         except AttributeError:
             self._neff = 1/sum(self.weights**2)
