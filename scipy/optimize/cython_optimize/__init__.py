@@ -8,9 +8,10 @@ The following four zeros functions can be accessed directly from Cython:
 - `~scipy.optimize.brenth`
 - `~scipy.optimize.brentq`
 
-Import the module into Cython as follows::
+The Cython API is similar to Python except there is no ``disp`` argument.
+Import the zero functions into Cython directly from ``cython_optimize``. ::
 
-    from scipy.optimize cimport cython_optimize
+    from scipy.optimize.cython_optimize cimport bisect, ridder, brentq, brenth
 
 
 Callback Signature
@@ -24,7 +25,7 @@ with any extra parameters as the 2nd argument. ::
 
 Examples
 --------
-Usage of `scipy.optimize.cython_optimize` requires Cython to write callbacks
+Usage of `~scipy.optimize.cython_optimize` requires Cython to write callbacks
 that are compiled into C. For more information on compiling Cython see the
 `Cython Documentation <http://docs.cython.org/en/latest/index.html>`_.
 
@@ -38,7 +39,7 @@ These are the basic steps:
        import math
        from scipy.optimize.cython_optimize cimport brentq
 
-       ARGS = {'C0': 1.0, 'C1': 0.7}  # a dictionary of extra arguments
+       myargs = {'C0': 1.0, 'C1': 0.7}  # a dictionary of extra arguments
        XLO, XHI = 0.5, 1.0  # lower and upper search boundaries
        XTOL, RTOL, MITR = 1e-3, 1e-3, 10  # other solver parameters
 
@@ -64,7 +65,7 @@ These are the basic steps:
 
 
        # Python function
-       def brentq_example(args=ARGS, xa=XLO, xb=XHI, xtol=XTOL, rtol=RTOL,
+       def brentq_example(args=myargs, xa=XLO, xb=XHI, xtol=XTOL, rtol=RTOL,
                           mitr=MITR):
            '''Calls Cython wrapper from Python.'''
            return brentq_wrapper_example(args, xa, xb, xtol, rtol, mitr)
@@ -86,11 +87,12 @@ Full Output
 The  functions in ``scipy.optimize.cython_optimize`` can also copy the full
 output from the solver to a C ``struct`` that is passed as its last argument.
 If you don't want the full output just pass ``NULL``. The full output
-``struct`` is a ``scipy_zeros_parameters`` and contains the following:
+``struct`` must be ``scipy_zeros_parameters`` and contains the following:
 
-- ``funcalls``: number of function calls
-- ``iterations``: number of iterations
-- ``error_num``: error number
+- ``int funcalls``: number of function calls
+- ``int iterations``: number of iterations
+- ``int error_num``: error number
+- ``double root``: root of function
 
 An error number of -1 means a sign error, -2 means a convergence error, and 0
 means the solver converged. Continuing from the previous example::
@@ -125,7 +127,7 @@ means the solver converged. Continuing from the previous example::
 
 
     # Python function
-    def brent_full_output_example(args=ARGS, xa=XLO, xb=XHI, xtol=XTOL,
+    def brent_full_output_example(args=myargs, xa=XLO, xb=XHI, xtol=XTOL,
                                   rtol=RTOL, mitr=MITR):
         '''Returns full output'''
         return brentq_full_output_wrapper_example(args, xa, xb, xtol, rtol,
