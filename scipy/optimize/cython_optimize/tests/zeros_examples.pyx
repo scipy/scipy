@@ -3,7 +3,8 @@ Use a structure to hold callback args so there's no Python and functions can
 free the global interpreter lock.
 """
 
-from .. cimport zeros
+from ...cython_optimize cimport (
+    brentq, brenth, ridder, bisect, scipy_zeros_parameters)
 
 ARGS = (0.0, 0.0, 1.0)
 A0 = tuple(-2.0 - x/10.0 for x in range(10))
@@ -37,7 +38,7 @@ cdef double f_example(double x, void *args):
 cdef double bisect_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
-    return zeros.bisect(
+    return bisect(
         f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
@@ -45,7 +46,7 @@ cdef double bisect_example(tuple args):
 cdef double ridder_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
-    return zeros.ridder(
+    return ridder(
         f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
@@ -53,7 +54,7 @@ cdef double ridder_example(tuple args):
 cdef double brenth_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
-    return zeros.brenth(
+    return brenth(
         f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
@@ -61,7 +62,7 @@ cdef double brenth_example(tuple args):
 cdef double brentq_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
-    return zeros.brentq(
+    return brentq(
         f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
@@ -87,9 +88,9 @@ cdef full_output_struct brentq_full_output_example(tuple args):
     cdef full_output_struct full_output
     cdef extra_params myargs
     myargs.a = args
-    full_output.root = zeros.brentq(
+    full_output.root = brentq(
         f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR,
-        <zeros.scipy_zeros_parameters *> &full_output)
+        <scipy_zeros_parameters *> &full_output)
     return full_output
 
 
