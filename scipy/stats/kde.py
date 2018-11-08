@@ -197,16 +197,13 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
 
         if weights is not None:
-            self.weights = atleast_1d(weights)
+            self._weights = atleast_1d(weights)
+            self._weights /= sum(self._weights)
             if self.weights.ndim != 1:
                 raise ValueError("`weights` input should be one-dimensional.")
-            if len(self.weights) != self.n:
+            if len(self._weights) != self.n:
                 raise ValueError("`weights` input should be of length n")
-        else:
-            self.weights = ones(self.n)
-
-        self.weights /= sum(self.weights)
-        self.neff = 1/sum(self.weights**2)
+            self._neff = 1/sum(self._weights**2)
 
         self.set_bandwidth(bw_method=bw_method)
 
@@ -262,7 +259,7 @@ class gaussian_kde(object):
                 energy = sum(diff * diff, axis=0) / 2.0
                 result[i] = sum(exp(-energy)*self.weights, axis=0)
 
-        result = result / self._norm_factor
+        result = result * self.n / self._norm_factor
 
         return result
 
@@ -556,7 +553,7 @@ class gaussian_kde(object):
 
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
-        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance))
+        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
 
     def pdf(self, x):
         """
@@ -597,7 +594,7 @@ class gaussian_kde(object):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
                 energy[i] = sum(diff*tdiff,axis=0) / 2.0
-            result = logsumexp(-energy, b=self.weights[i]/self._norm_factor,
+            result = logsumexp(-energy, b=self.weights[i]*self.n/self._norm_factor,
                                axis=0)
         else:
             # loop over points
@@ -605,6 +602,23 @@ class gaussian_kde(object):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=self.weights/self._norm_factor)
+                result[i] = logsumexp(-energy, b=self.weights*self.n/self._norm_factor)
 
         return result
+
+    @property
+    def weights(self):
+        try: 
+            return self._weights
+        except AttributeError:
+            self._weights = ones(self.n)/self.n
+            return self._weights
+
+
+    @property
+    def neff(self):
+        try: 
+            return self._neff
+        except AttributeError:
+            self._neff = 1/sum(self.weights**2)
+            return self._neff
