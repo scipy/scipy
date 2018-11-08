@@ -39,7 +39,7 @@ cdef double bisect_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
     return bisect(
-        f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
+        f_example, XLO, XHI, &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # ridder example
@@ -47,7 +47,7 @@ cdef double ridder_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
     return ridder(
-        f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
+        f_example, XLO, XHI, &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # brenth example
@@ -55,7 +55,7 @@ cdef double brenth_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
     return brenth(
-        f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
+        f_example, XLO, XHI, &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # brentq example
@@ -63,7 +63,7 @@ cdef double brentq_example(tuple args):
     cdef extra_params myargs
     myargs.a = args
     return brentq(
-        f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR, NULL)
+        f_example, XLO, XHI, &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # python function
@@ -85,13 +85,16 @@ def loop_example(method, a0=A0, args=ARGS):
 
 # brentq example with full ouptut
 cdef full_output_struct brentq_full_output_example(tuple args):
-    cdef full_output_struct full_output
+    cdef full_output_struct my_full_output
+    cdef scipy_zeros_parameters full_output
     cdef extra_params myargs
     myargs.a = args
-    full_output.root = brentq(
-        f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR,
-        <scipy_zeros_parameters *> &full_output)
-    return full_output
+    my_full_output.root = brentq(
+        f_example, XLO, XHI, &myargs, XTOL, RTOL, MITR, &full_output)
+    my_full_output.funcalls = full_output.funcalls
+    my_full_output.iterations = full_output.iterations
+    my_full_output.error_num = full_output.error_num
+    return my_full_output
 
 
 # python function

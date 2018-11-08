@@ -3,10 +3,10 @@ Cython Optimize Zeros API
 =========================
 The following four zeros functions can be accessed directly from Cython:
 
-- `bisect`
-- `ridder`
-- `brenth`
-- `brentq`
+- `~scipy.optimize.bisect`
+- `~scipy.optimize.ridder`
+- `~scipy.optimize.brenth`
+- `~scipy.optimize.brentq`
 
 Import the module into Cython as follows::
 
@@ -30,8 +30,8 @@ that are compiled into C. For more information on compiling Cython see the
 
 These are the basic steps:
 
-1. Create a Cython ``.pyx`` file, *eg*: ``myexample.pyx``
-2. Import the desired root finder from `cython_optimize`
+1. Create a Cython ``.pyx`` file, for example: ``myexample.pyx``
+2. Import the desired root finder from `~scipy.optimize.cython_optimize`
 3. Write the callback function, and call the selected zeros function passing
    the callback, any extra arguments, and the other solver parameters ::
 
@@ -86,20 +86,19 @@ Full Output
 The  functions in ``scipy.optimize.cython_optimize`` can also copy the full
 output from the solver to a C ``struct`` that is passed as its last argument.
 If you don't want the full output just pass ``NULL``. The full output
-``struct`` should contain the following:
+``struct`` is a ``scipy_zeros_parameters`` and contains the following:
 
 - ``funcalls``: number of function calls
 - ``iterations``: number of iterations
 - ``error_num``: error number
 
 An error number of -1 means a sign error, -2 means a convergence error, and 0
-means the solver converged. Note that the full output ``struct`` must be cast
-to ``scipy_zeros_parameters``. Continuing from the previous example::
+means the solver converged. Continuing from the previous example::
 
     from scipy.optimize.cython_optimize cimport scipy_zeros_parameters
 
 
-    # user defined full output structure with required fields
+    # user defined full output structure with simplified fields
     ctypedef struct scipy_brent_full_output:
         int funcalls
         int iterations
@@ -112,12 +111,17 @@ to ``scipy_zeros_parameters``. Continuing from the previous example::
             dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
         cdef test_params myargs = args
-        cdef scipy_brent_full_output full_output  # used instead of NULL
+        cdef scipy_brent_full_output my_full_output  # simplified output
+        cdef scipy_zeros_parameters full_output  # use instead of NULL
         # put result into full_output
-        full_output.root = brentq(
-            f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr,
-            <scipy_zeros_parameters *> &full_output)
-        return full_output
+        my_full_output.root = brentq(
+            f, xa, xb, &myargs, xtol, rtol, mitr, &full_output)
+        # copy full output to simpler struct with only primitives,
+        # so Cython will convert it to a dictionary
+        my_full_output.funcalls = full_output.funcalls
+        my_full_output.iterations = full_output.iterations
+        my_full_output.error_num = full_output.error_num
+        return my_full_output
 
 
     # Python function
