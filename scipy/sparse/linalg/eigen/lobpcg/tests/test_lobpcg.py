@@ -243,7 +243,7 @@ def test_eigs_consistency(n, atol):
     vals, vecs = eigs(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
-    assert_allclose(vals, lvals, atol=1e-14)
+    assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
