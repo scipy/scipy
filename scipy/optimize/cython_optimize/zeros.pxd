@@ -8,10 +8,18 @@ ctypedef struct scipy_zeros_parameters:
     void* args
     double root
 
-cdef double bisect(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
+cdef double bisect(callback_type f, double xa, double xb, void* args,
+                   double xtol, double rtol, int iter,
+                   scipy_zeros_parameters *full_output)
 
-cdef double ridder(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
+cdef double ridder(callback_type f, double xa, double xb, void* args,
+                   double xtol, double rtol, int iter,
+                   scipy_zeros_parameters *full_output)
 
-cdef double brenth(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
+cdef double brenth(callback_type f, double xa, double xb, void* args,
+                   double xtol, double rtol, int iter,
+                   scipy_zeros_parameters *full_output)
 
-cdef double brentq(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
+cdef double brentq(callback_type f, double xa, double xb, void* args,
+                   double xtol, double rtol, int iter,
+                   scipy_zeros_parameters *full_output)
