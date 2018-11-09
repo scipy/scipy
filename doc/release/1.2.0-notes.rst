@@ -26,6 +26,12 @@ New features
 
 The function `softmax` was added to `scipy.special`.
 
+`scipy.stats`
+-------------
+
+``stats.ks_2samp`` used to return nonsensical values if the input was
+not real or contained nans.  It now raises an exception for such inputs.
+
 Deprecated features
 ===================
 
