@@ -6,6 +6,12 @@
 
 #include "Python.h"
 #include <setjmp.h>
+#include <numpy/npy_math.h>
+#include "Zeros/zeros.h"
+
+/*
+ * Caller entry point functions
+ */
 
 #ifdef PYPY_VERSION
     /*
@@ -20,23 +26,12 @@
 #endif
 
 typedef struct {
-    int funcalls;
-    int iterations;
-    int error_num;
     PyObject *function;
     PyObject *args;
     jmp_buf env;
 } scipy_zeros_parameters;
 
-/*
- * Storage for the relative precision of doubles. This is computed when the module
- * is initialized.
- */
 
-#include "Zeros/zeros.h"
-
-#define SIGNERR -1
-#define CONVERR -2
 
 static double
 scipy_zeros_functions_func(double x, void *params)
@@ -48,7 +43,7 @@ scipy_zeros_functions_func(double x, void *params)
     args = myparams->args;
     f = myparams->function;
     PyArgs(SetItem)(args, 0, Py_BuildValue("d",x));
-    retval=PyObject_CallObject(f,args);
+    retval = PyObject_CallObject(f,args);
     if (retval == NULL) {
         longjmp(myparams->env, 1);
     }
@@ -57,6 +52,7 @@ scipy_zeros_functions_func(double x, void *params)
     return val;
 }
 
+
 /*
  * Helper function that calls a Python function with extended arguments
  */
@@ -64,18 +60,19 @@ scipy_zeros_functions_func(double x, void *params)
 static PyObject *
 call_solver(solver_type solver, PyObject *self, PyObject *args)
 {
-    double a,b,xtol,rtol,zero;
-    int iter,i, len, fulloutput, disp=1, flag=0;
+    double a, b, xtol, rtol, zero;
+    Py_ssize_t len;
+    int iter, i, fulloutput, disp=1, flag=0;
     scipy_zeros_parameters params;
-    jmp_buf env;
-    PyObject *f, *xargs, *item, *fargs=NULL;
+    scipy_zeros_info solver_stats;
+    PyObject *f, *xargs, *item;
+    volatile PyObject *fargs = NULL;
 
     if (!PyArg_ParseTuple(args, "OddddiOi|i",
-                &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp))
-        {
-            PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
-            return NULL;
-        }
+                &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp)) {
+        PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
+        return NULL;
+    }
     if (xtol < 0) {
         PyErr_SetString(PyExc_ValueError, "xtol must be >= 0");
         return NULL;
@@ -89,8 +86,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     /* Make room for the double as first argument */
     fargs = PyArgs(New)(len + 1);
     if (fargs == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                "Failed to allocate arguments");
+        PyErr_SetString(PyExc_RuntimeError, "Failed to allocate arguments");
         return NULL;
     }
 
@@ -105,45 +101,45 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     }
 
     params.function = f;
-    params.args = fargs;
+    params.args = (PyObject *)fargs;  /* Discard the volatile attribute */
 
-    if (!setjmp(env)) {
+    if (!setjmp(params.env)) {
         /* direct return */
-        memcpy(params.env, env, sizeof(jmp_buf));
-        params.error_num = 0;
-        zero = solver(scipy_zeros_functions_func, a, b,
-                xtol, rtol, iter, (default_parameters*)&params);
+        solver_stats.error_num = 0;
+        zero = solver(scipy_zeros_functions_func, a, b, xtol, rtol,
+                      iter, (void*)&params, &solver_stats);
         Py_DECREF(fargs);
-        if (params.error_num != 0) {
-            if (params.error_num == SIGNERR) {
-                PyErr_SetString(PyExc_ValueError,
-                        "f(a) and f(b) must have different signs");
-                return NULL;
-            }
-            if (params.error_num == CONVERR) {
-                if (disp) {
-                    char msg[100];
-                    PyOS_snprintf(msg, sizeof(msg),
-                            "Failed to converge after %d iterations.",
-                            params.iterations);
-                    PyErr_SetString(PyExc_RuntimeError, msg);
-                    flag = 1;
-                    return NULL;
-                }
-            }
-        }
-        if (fulloutput) {
-            return Py_BuildValue("diii",
-                    zero, params.funcalls, params.iterations, flag);
-        }
-        else {
-            return Py_BuildValue("d", zero);
-        }
-    }
-    else {
+        fargs = NULL;
+    } else {
         /* error return from Python function */
         Py_DECREF(fargs);
         return NULL;
+    }
+
+    if (solver_stats.error_num != 0) {
+        if (solver_stats.error_num == SIGNERR) {
+            PyErr_SetString(PyExc_ValueError,
+                    "f(a) and f(b) must have different signs");
+            return NULL;
+        }
+        if (solver_stats.error_num == CONVERR) {
+            if (disp) {
+                char msg[100];
+                PyOS_snprintf(msg, sizeof(msg),
+                        "Failed to converge after %d iterations.",
+                        solver_stats.iterations);
+                PyErr_SetString(PyExc_RuntimeError, msg);
+                flag = 1;
+                return NULL;
+            }
+        }
+    }
+    if (fulloutput) {
+        return Py_BuildValue("diii",
+                zero, solver_stats.funcalls, solver_stats.iterations, flag);
+    }
+    else {
+        return Py_BuildValue("d", zero);
     }
 }
 
