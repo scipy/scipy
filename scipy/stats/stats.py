@@ -3467,7 +3467,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement. This implements all three common variants of Kendall's
+    strong disagreement. This implements the three common variants of Kendall's
     tau: tau-a, tau-b and tau-c. The default option is tau-b which takes into
     account possible ties in the rankings. The p-value is computed only for the
     numerator that all three variants have in common and does not take into
