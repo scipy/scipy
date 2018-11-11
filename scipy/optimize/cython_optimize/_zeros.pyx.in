@@ -27,7 +27,9 @@ cdef double {{ROOT_FINDER}}(callback_type f, double xa, double xb, void *args,
         scipy_zeros_functions_func, xa, xb, xtol, rtol, iter,
         <c_zeros.default_parameters *> &myparams)
     if full_output is not NULL:
-        full_output = &myparams
+        full_output.funcalls = myparams.funcalls
+        full_output.iterations = myparams.iterations
+        full_output.error_num = myparams.error_num
     return myparams.root
 
 
