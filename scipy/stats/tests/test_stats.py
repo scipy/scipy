@@ -1263,6 +1263,11 @@ class TestGeometricStandardDeviation(object):
         with pytest.raises(ValueError):
             stats.gstd(np.append(self.array_1d, [np.nan]))
 
+    def test_ignores_invalid_value(self):
+        a = np.append(self.array_1d, [-np.inf, np.nan, np.inf])
+        gstd_actual = stats.gstd(a, ignore_invalid=True)
+        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+
     def test_raises_value_error_inf_entry(self):
         with pytest.raises(ValueError):
             stats.gstd(np.append(self.array_1d, [np.inf]))

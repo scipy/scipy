@@ -2354,7 +2354,7 @@ def zmap(scores, compare, axis=0, ddof=0):
         return (scores - mns) / sstd
 
 
-def gstd(a, axis=0, ddof=1):
+def gstd(a, axis=0, ddof=1, ignore_invalid=False):
     """Calculate the geometric standard deviation of an array
 
     The geometric standard deviations is defined as the exponent of the
@@ -2377,11 +2377,13 @@ def gstd(a, axis=0, ddof=1):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
+    ignore_invalid : bool
+        If invalid (non-positive) values should be ignored. Default is False.
 
     Returns
     -------
     ndarray or float
-        An array of the geometric standard deviation. If `axis` is `1` or `None`
+        An array of the geometric standard deviation. If `axis` is 1 or `None`
         a float is returned instead.
 
     Notes
@@ -2424,17 +2426,18 @@ def gstd(a, axis=0, ddof=1):
         with np.errstate(invalid='ignore'):
             a = np.asanyarray(a)
             # np.sum avoids creating a huge array in memory
-            is_finite = np.isfinite(a.sum())
+            all_finite = np.isfinite(a.sum())
     except (AttributeError, TypeError):
         raise ValueError(
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
             )
 
-    if is_finite and np.greater(a, 0).all():
+    if all_finite and np.greater(a, 0).all():
         return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
+    elif ignore_invalid:
+        return mstats_basic.gstd(a, axis=axis, ddof=ddof)
     else:
-        # TODO: Add option to pass to mstats_basic.gstd()
         raise ValueError(
             'Invalid value encountered. The geometric standard deviation is '
             'defined for strictly positive values only.')

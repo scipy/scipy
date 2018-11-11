@@ -2266,7 +2266,7 @@ def gstd(a, axis=0, ddof=1):
     Returns
     -------
     ndarray or float
-        An array of the geometric standard deviation. If `axis` is `1` or `None`
+        An array of the geometric standard deviation. If `axis` is 1 or None
         a float is returned instead.
 
     Notes
@@ -2319,7 +2319,6 @@ def gstd(a, axis=0, ddof=1):
             )
     am = np.ma.masked_where(~is_valid, a)
     return np.exp(np.std(np.ma.log(am), axis=axis, ddof=ddof))
-
 
 
 DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
