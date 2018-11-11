@@ -87,7 +87,7 @@ Full Output
 The  functions in ``scipy.optimize.cython_optimize`` can also copy the full
 output from the solver to a C ``struct`` that is passed as its last argument.
 If you don't want the full output just pass ``NULL``. The full output
-``struct`` must be ``scipy_zeros_parameters`` and contains the following:
+``struct`` must be ``zeros_parameters`` and contains the following:
 
 - ``int funcalls``: number of function calls
 - ``int iterations``: number of iterations
@@ -97,11 +97,11 @@ If you don't want the full output just pass ``NULL``. The full output
 An error number of -1 means a sign error, -2 means a convergence error, and 0
 means the solver converged. Continuing from the previous example::
 
-    from scipy.optimize.cython_optimize cimport scipy_zeros_parameters
+    from scipy.optimize.cython_optimize cimport zeros_parameters
 
 
     # user defined full output structure with simplified fields
-    ctypedef struct scipy_brent_full_output:
+    ctypedef struct brent_full_output:
         int funcalls
         int iterations
         int error_num
@@ -109,12 +109,12 @@ means the solver converged. Continuing from the previous example::
 
 
     # cython brentq solver with full output
-    cdef scipy_brent_full_output brentq_full_output_wrapper_example(
+    cdef brent_full_output brentq_full_output_wrapper_example(
             dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
         cdef test_params myargs = args
-        cdef scipy_brent_full_output my_full_output  # simplified output
-        cdef scipy_zeros_parameters full_output  # use instead of NULL
+        cdef brent_full_output my_full_output  # simplified output
+        cdef zeros_parameters full_output  # use instead of NULL
         # put result into full_output
         my_full_output.root = brentq(
             f, xa, xb, &myargs, xtol, rtol, mitr, &full_output)
