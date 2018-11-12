@@ -284,7 +284,7 @@ def find_best_blas_type(arrays=(), dtype=None):
     prefer_fortran : bool
         Whether to prefer Fortran order routines over C order.
 
-    .. versionchanged:: 1.2.0
+    .. versionchanged:: 1.3.0
 
     Examples
     --------
@@ -304,18 +304,22 @@ def find_best_blas_type(arrays=(), dtype=None):
     prefer_fortran = False
 
     if arrays:
-        # use the most generic type in arrays
-        chars = [arr.dtype.char for arr in arrays]
-        scores = [_type_score.get(x, 5) for x in chars]
-        max_score = max(scores)
-        ind_max_score = scores.index(max_score)
-        # safe upcasting for mix of float64 and complex64 --> prefix 'z'
-        if max_score == 3 and (2 in scores):
-            max_score = 4
+        # In most cases, single element is passed through, quicker route
+        if len(arrays) == 1:
+            max_score = _type_score.get(arrays[0].dtype.char, 5)
+            prefer_fortran = arrays[0].flags['FORTRAN']
+        else:
+            # use the most generic type in arrays
+            scores = [_type_score.get(x.dtype.char, 5) for x in arrays]
+            max_score = max(scores)
+            ind_max_score = scores.index(max_score)
+            # safe upcasting for mix of float64 and complex64 --> prefix 'z'
+            if max_score == 3 and (2 in scores):
+                max_score = 4
 
-        if arrays[ind_max_score].flags['FORTRAN']:
-            # prefer Fortran for leading array with column major order
-            prefer_fortran = True
+            if arrays[ind_max_score].flags['FORTRAN']:
+                # prefer Fortran for leading array with column major order
+                prefer_fortran = True
 
     # Get the LAPACK prefix and the corresponding dtype if not fall back
     # to 'd' and double precision float.
