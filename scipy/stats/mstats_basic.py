@@ -2266,26 +2266,26 @@ def gstd(a, axis=0, ddof=1):
     Returns
     -------
     ndarray or float
-        An array of the geometric standard deviation. If `axis` is 1 or None
-        a float is returned instead.
+        An array of the geometric standard deviation. If `axis` is None or `a`
+        is a 1d array a float is returned.
 
     Notes
     -----
-    As the calculation requires use of logarithms the geometric standard
-    deviation only support strictly positive values. Any non-finite or
-    non-positive values will be ignored.
+    As the calculation requires the use of logarithms the geometric standard
+    deviation only supports strictly positive values. Any non-positive or
+    infinite values will be ignored.
 
     The geometric standard deviation is sometimes confused with the exponent of
     the standard deviation, ``exp(std(a))``. Instead the geometric standard
     deviation is ``exp(std(log(a)))``.
 
-    The default value for `ddof` is different to the default (0) used by other
-    ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+    The default value for `ddof` is different to the default value (0) used
+    by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
 
     Examples
     --------
     Find the geometric standard deviation of a log-normally distributed sample.
-    Note the standard deviation of the distribution is 1, on a log scale this
+    Note the standard deviation of the distribution is one, on a log scale this
     evaluates to ``exp(1)``.
 
     >>> from scipy.stats import gstd
@@ -2317,7 +2317,7 @@ def gstd(a, axis=0, ddof=1):
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
             )
-    am = np.ma.masked_where(~is_valid, a)
+    am = np.ma.masked_where(np.logical_not(is_valid), a)
     return np.exp(np.std(np.ma.log(am), axis=axis, ddof=ddof))
 
 
