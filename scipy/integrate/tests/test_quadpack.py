@@ -279,6 +279,30 @@ class TestQuad(object):
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
+    def test_recursive_quad(self):
+        # From https://github.com/scipy/scipy/issues/6882
+
+        def integrand(x, y):
+            return (1.0 / sqrt(x) - 1.0) * (1.0 / sqrt(y) - 1.0) * sqrt(x + y)
+
+        def inner_int(y):
+            return quad(integrand, 0, 1, args=(y))[0]
+
+        a = quad(inner_int, 0, 1)
+        assert_allclose(a, (0.5214054330650386, 1.9894822456123507e-09))
+
+    def test_dblquad_so_question(self):
+        # https://stackoverflow.com/questions/53264803/
+        #   scipy-dblquad-providing-the-wrong-result-in-simple-double-integral
+
+        def integ(u1, u2):
+            return max(0, (4 - 12*u1) + (6 - 12*u2))
+
+        sol_int, err = dblquad(integ, 0, 1, lambda _:0, lambda _:1,
+                               epsabs=1E-12, epsrel=1E-12)
+
+        assert_allclose(sol_int, 125/108)
+
 
 class TestNQuad(object):
     def test_fixed_limits(self):
