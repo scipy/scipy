@@ -4275,7 +4275,32 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     return Ttest_relResult(t, prob)
 
 
-KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+class _LazyTestResult:
+    def __init__(self, statistic, pvalue):
+        self.statistic = statistic
+        self.__cached_pvalue = pvalue
+
+    @property
+    def pvalue(self):
+        if callable(self.__cached_pvalue):
+            self.__cached_pvalue = self.__cached_pvalue()
+        return self.__cached_pvalue
+
+    def __repr__(self):
+        return "{}(statistic={}, pvalue={})".format(
+            type(self).__name__, self.statistic, self.pvalue)
+
+    def __getitem__(self, idx):
+        if idx == 0:
+            return self.statistic
+        elif idx in [1, -1]:
+            return self.pvalue
+        else:
+            raise IndexError("index out of range")
+
+
+class KstestResult(_LazyTestResult):
+    pass
 
 
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
@@ -4408,23 +4433,29 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
         if alternative == 'greater':
-            return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
+            return KstestResult(
+                Dplus, lambda: distributions.ksone.sf(Dplus, N))
 
     if alternative in ['two-sided', 'less']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
         if alternative == 'less':
-            return KstestResult(Dmin, distributions.ksone.sf(Dmin, N))
+            return KstestResult(
+                Dmin, lambda: distributions.ksone.sf(Dmin, N))
 
     if alternative == 'two-sided':
         D = np.max([Dplus, Dmin])
         if mode == 'asymp':
             return KstestResult(D, distributions.kstwobign.sf(D * np.sqrt(N)))
         if mode == 'approx':
-            pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
-            if N > 2666 or pval_two > 0.80 - N*0.3/1000:
-                return KstestResult(D, pval_two)
-            else:
-                return KstestResult(D, 2 * distributions.ksone.sf(D, N))
+
+            def compute_p():
+                pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
+                if N > 2666 or pval_two > 0.80 - N*0.3/1000:
+                    return pval_two
+                else:
+                    return 2 * distributions.ksone.sf(D, N)
+
+            return KstestResult(D, compute_p)
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -4787,7 +4818,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
-Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
+class Ks_2sampResult(_LazyTestResult):
+    pass
 
 
 def ks_2samp(data1, data2):
@@ -4863,15 +4895,18 @@ def ks_2samp(data1, data2):
     d = np.max(np.absolute(cdf1 - cdf2))
     # Note: d absolute not signed distance
     en = np.sqrt(n1 * n2 / (n1 + n2))
-    try:
-        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
-    except Exception:
-        warnings.warn('This should not happen! Please open an issue at '
-                    'https://github.com/scipy/scipy/issues and provide the code '
-                    'you used to trigger this warning.\n')
-        prob = 1.0
 
-    return Ks_2sampResult(d, prob)
+    def compute_p():
+        try:
+            prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
+        except Exception:
+            warnings.warn('This should not happen! Please open an issue at '
+                          'https://github.com/scipy/scipy/issues and provide '
+                          'the code you used to trigger this warning.\n')
+            prob = 1.0
+        return prob
+
+    return Ks_2sampResult(d, compute_p)
 
 
 def tiecorrect(rankvals):
