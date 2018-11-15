@@ -215,7 +215,14 @@ def rosen_der(x):
     See Also
     --------
     rosen, rosen_hess, rosen_hess_prod
-
+    
+    Examples
+    --------
+    >>> from scipy.optimize import rosen_der
+    >>> X = 0.1 * np.arange(9)
+    >>> rosen_der(X)
+    array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
+    
     """
     x = asarray(x)
     xm = x[1:-1]
@@ -246,7 +253,17 @@ def rosen_hess(x):
     See Also
     --------
     rosen, rosen_der, rosen_hess_prod
-
+    
+    Examples
+    --------
+    >>> from scipy.optimize import rosen_hess
+    >>> X = 0.1 * np.arange(4)
+    >>> rosen_hess(X)
+    array([[-38.,   0.,   0.,   0.],
+           [  0., 134., -40.,   0.],
+           [  0., -40., 130., -80.],
+           [  0.,   0., -80., 200.]])
+           
     """
     x = atleast_1d(x)
     H = numpy.diag(-400 * x[:-1], 1) - numpy.diag(400 * x[:-1], -1)
@@ -278,7 +295,15 @@ def rosen_hess_prod(x, p):
     See Also
     --------
     rosen, rosen_der, rosen_hess
-
+    
+    Examples
+    --------
+    >>> from scipy.optimize import rosen_hess_prod
+    >>> X = 0.1 * np.arange(9)
+    >>> p = 0.5 * np.arange(9) 
+    >>> rosen_hess_prod(X, p)
+    array([  -0.,   27.,  -10.,  -95., -192., -265., -278., -195., -180.])
+    
     """
     x = atleast_1d(x)
     Hp = numpy.zeros(len(x), dtype=x.dtype)
