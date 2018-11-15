@@ -1501,12 +1501,16 @@ def bi_zeros(nt):
     Examples
     --------
     >>> from scipy import special
-    >>> special.bi_zeros(2)
-    (array([-1.17371322, -3.2710933 ]),
-     array([-2.29443968, -4.07315509]),
-     array([-0.45494438,  0.39652284]),
-     array([ 0.60195789, -0.76031014]))
-
+    >>> b, bp, bi, bip = special.ai_zeros(3)
+    >>> b
+    array([-2.33810741, -4.08794944, -5.52055983])
+    >>> bp
+    array([-1.01879297, -3.24819758, -4.82009921])
+    >>> bi
+    array([ 0.53565666, -0.41901548,  0.38040647])
+    >>> bip
+    array([ 0.70121082, -0.80311137,  0.86520403])
+    
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
