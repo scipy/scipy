@@ -1450,12 +1450,16 @@ def ai_zeros(nt):
     Examples
     --------
     >>> from scipy import special
-    >>> special.ai_zeros(2)
-    (array([-2.33810741, -4.08794944]),
-     array([-1.01879297, -3.24819758]),
-     array([ 0.53565666, -0.41901548]),
-     array([ 0.70121082, -0.80311137]))
-
+    >>> a, ap, ai, aip = special.ai_zeros(3)
+    >>> a
+    array([-2.33810741, -4.08794944, -5.52055983])
+    >>> ap
+    array([-1.01879297, -3.24819758, -4.82009921])
+    >>> ai
+    array([ 0.53565666, -0.41901548,  0.38040647])
+    >>> aip
+    array([ 0.70121082, -0.80311137,  0.86520403])
+    
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
