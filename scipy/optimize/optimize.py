@@ -318,7 +318,7 @@ def rosen_hess_prod(x, p):
     >>> from scipy.optimize import rosen_hess_prod
     >>> X = 0.1 * np.arange(10)
     >>> p = 0.5 * np.arange(10) 
-    >>> rosen_hess_prod(X)
+    >>> rosen_hess_prod(X, p)
     array([  -0.,   27.,  -10.,  -95., -192., -265., -278., -195.,   20.,
        -380.])
 
