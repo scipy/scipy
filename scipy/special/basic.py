@@ -1446,6 +1446,15 @@ def ai_zeros(nt):
         Values of Ai(x) evaluated at first `nt` zeros of Ai'(x)
     aip : ndarray
         Values of Ai'(x) evaluated at first `nt` zeros of Ai(x)
+        
+    Examples
+    --------
+    >>> from scipy import special
+    >>> special.ai_zeros(2)
+    (array([-2.33810741, -4.08794944]),
+     array([-1.01879297, -3.24819758]),
+     array([ 0.53565666, -0.41901548]),
+     array([ 0.70121082, -0.80311137]))
 
     References
     ----------
@@ -1484,6 +1493,15 @@ def bi_zeros(nt):
         Values of Bi(x) evaluated at first `nt` zeros of Bi'(x)
     bip : ndarray
         Values of Bi'(x) evaluated at first `nt` zeros of Bi(x)
+    
+    Examples
+    --------
+    >>> from scipy import special
+    >>> special.bi_zeros(2)
+    (array([-1.17371322, -3.2710933 ]),
+     array([-2.29443968, -4.07315509]),
+     array([-0.45494438,  0.39652284]),
+     array([ 0.60195789, -0.76031014]))
 
     References
     ----------
