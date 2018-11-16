@@ -2354,7 +2354,7 @@ def zmap(scores, compare, axis=0, ddof=0):
         return (scores - mns) / sstd
 
 
-def gstd(a, axis=0, ddof=1, ignore_invalid=False):
+def gstd(a, axis=0, ddof=1, nan_policy='raise'):
     """Calculate the geometric standard deviation of an array
 
     The geometric standard deviations is defined as the exponent of the
@@ -2377,8 +2377,16 @@ def gstd(a, axis=0, ddof=1, ignore_invalid=False):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
-    ignore_invalid : bool, optional
-        If invalid (non-positive or infinite) values are ignored.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle input containing invalid values. In this
+        context an invalid value is defined as any non-finite or non positive
+        value.
+
+            'propagate' returns nan,
+            'raise' throws a  ValueError
+            'omit' performs the calculations ignoring nan values.
+
+        Default is 'raise'.
 
     Returns
     -------
@@ -2437,8 +2445,10 @@ def gstd(a, axis=0, ddof=1, ignore_invalid=False):
 
     if all_finite and np.greater(a, 0).all():
         return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
-    elif ignore_invalid:
+    elif nan_policy == 'omit':
         return mstats_basic.gstd(a, axis=axis, ddof=ddof)
+    elif nan_policy == 'propagate':
+        return np.nan
     else:
         raise ValueError(
             'Invalid value encountered. The geometric standard deviation is '
