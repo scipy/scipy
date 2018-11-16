@@ -164,10 +164,6 @@ class TestGeometricStandardDeviation(object):
         gstd_actual = mstats.gstd(self.array_1d)
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
-    def test_1d_masked_array(self):
-        gstd_actual = mstats.gstd(np.ma.asarray(self.array_1d))
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
-
     def test_1d_numeric_array_like_input(self):
         gstd_actual = mstats.gstd(tuple(self.array_1d))
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
@@ -180,16 +176,9 @@ class TestGeometricStandardDeviation(object):
         gstd_actual = mstats.gstd(np.append(self.array_1d, [-1]))
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
-    def test_ignores_nan_entry(self):
-        gstd_actual = mstats.gstd(np.append(self.array_1d, [np.nan]))
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
-
-    def test_ignores_inf_entry(self):
-        gstd_actual = mstats.gstd(np.append(self.array_1d, [np.inf]))
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
-
-    def test_ignores_neg_inf_entry(self):
-        gstd_actual = mstats.gstd(np.append(self.array_1d, [-np.inf]))
+    def test_ignores_non_finite_entries(self):
+        gstd_actual = mstats.gstd(
+            np.append(self.array_1d, [-np.inf, np.nan, np.nan]))
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
     def test_3d_array(self):

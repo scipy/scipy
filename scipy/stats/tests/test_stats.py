@@ -1243,10 +1243,6 @@ class TestGeometricStandardDeviation(object):
         gstd_actual = stats.gstd(self.array_1d)
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
-    def test_1d_masked_array(self):
-        gstd_actual = stats.gstd(np.ma.asarray(self.array_1d))
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
-
     def test_1d_numeric_array_like_input(self):
         gstd_actual = stats.gstd(tuple(self.array_1d))
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
@@ -1255,26 +1251,18 @@ class TestGeometricStandardDeviation(object):
         with pytest.raises(ValueError):
             stats.gstd('This should fail as it can not be cast to an array.')
 
-    def test_raises_value_error_negative_entries(self):
+    def test_raises_value_error_negative_entry(self):
         with pytest.raises(ValueError):
             gstd_actual = stats.gstd(np.append(self.array_1d, [-1]))
 
-    def test_raises_value_error_nan_entry(self):
+    def test_raises_value_error_non_finite_entries(self):
         with pytest.raises(ValueError):
-            stats.gstd(np.append(self.array_1d, [np.nan]))
+            stats.gstd(np.append(self.array_1d, [-np.inf, np.nan, np.inf]))
 
-    def test_ignores_invalid_value(self):
-        a = np.append(self.array_1d, [-np.inf, np.nan, np.inf])
+    def test_ignores_with_invalid_value(self):
+        a = np.append(self.array_1d, [-np.inf, np.nan, np.inf, -1, 0])
         gstd_actual = stats.gstd(a, ignore_invalid=True)
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
-
-    def test_raises_value_error_inf_entry(self):
-        with pytest.raises(ValueError):
-            stats.gstd(np.append(self.array_1d, [np.inf]))
-
-    def test_raises_value_error_neg_inf_entry(self):
-        with pytest.raises(ValueError):
-            stats.gstd(np.append(self.array_1d, [-np.inf]))
 
     def test_3d_array(self):
         gstd_actual = stats.gstd(self.array_3d, axis=None)
