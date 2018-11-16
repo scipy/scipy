@@ -3723,121 +3723,156 @@ class TestHarMean(HarMeanTestCase):
         assert_equal(x.dtype, dtype)
 
 
-class GeoMeanTestCase:
-    def test_1dlist(self):
+class GeoMeanTestMethod:
+    def equal_test(self, array_like, desired, axis=None, dtype=None, decimal=7):
+        # Note this doesn't test when axis is not specified
+        x = stats.gmean(array_like, axis=axis, dtype=dtype)
+        assert_almost_equal(desired, x, decimal=decimal)
+        assert_equal(x.dtype, dtype)
+
+    def approx_test(self, array_like, desired, axis=None, dtype=None, significant=7):
+        x = stats.gmean(array_like, axis=axis, dtype=dtype)
+        assert_approx_equal(desired, x, significant=significant)
+        assert_equal(x.dtype, dtype)
+
+class TestGeoMean(GeoMeanTestMethod):
+    def test_1d_list(self):
         #  Test a 1d list
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 45.2872868812
-        self.do(a, b)
+        self.equal_test(a, b)
 
-    def test_1darray(self):
+        a = [1, 2, 3, 4]
+        desired = power(1 * 2 * 3 * 4, 1. / 4.)
+        self.equal_test(a, desired, decimal=14)
+
+        desired1 = stats.gmean(a, axis=-1)
+        self.equal_test(a, desired1, axis=-1)
+
+    def test_1d_array(self):
         #  Test a 1d array
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
-        self.do(a, b)
+        self.equal_test(a, b)
 
-    def test_1dma(self):
+        a = array([1, 2, 3, 4], float32)
+        desired = power(1 * 2 * 3 * 4, 1. / 4.)
+        self.equal_test(a, desired, dtype=float32)
+
+        desired1 = stats.gmean(a, axis=-1)
+        self.equal_test(a, desired1, axis=-1, dtype=float32)
+
+    def test_1d_ma(self):
         #  Test a 1d masked array
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
-        self.do(a, b)
+        self.equal_test(a, b)
 
-    def test_1dmavalue(self):
+    def test_1d_ma_value(self):
         #  Test a 1d masked array with a masked value
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
         b = 41.4716627439
-        self.do(a, b)
+        self.equal_test(a, b)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2dlist(self):
+    def test_2d_list(self):
         #  Test a 2d list
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
-        self.do(a, b)
+        self.equal_test(a, b)
 
-    def test_2darray(self):
+    def test_2d_array(self):
         #  Test a 2d array
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
-        self.do(np.array(a), b)
+        self.equal_test(array(a), b)
 
-    def test_2dma(self):
+    def test_2d_ma(self):
         #  Test a 2d masked array
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
-        self.do(np.ma.array(a), b)
+        self.equal_test(np.ma.array(a), b)
 
-    def test_2daxis0(self):
+    def test_2d_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
-        self.do(a, b, axis=0)
+        self.equal_test(a, b, axis=0)
 
-    def test_2daxis1(self):
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        desired = array([1, 2, 3, 4])
+        self.equal_test(a, desired, axis=0, decimal=14)
+
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        desired = stats.gmean(a, axis=0)
+        self.equal_test(a, desired, axis=0, decimal=14)
+
+    def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([22.13363839, 64.02171746, 104.40086817])
-        self.do(a, b, axis=1)
+        self.equal_test(a, b, axis=1)
 
-    def test_2dmatrixdaxis0(self):
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        v = power(1 * 2 * 3 * 4, 1. / 4.)
+        desired = array([v, v, v])
+        self.equal_test(a, desired, axis=1, decimal=14)
+
+    def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        self.do(np.matrix(a), b, axis=0)
+        self.equal_test(np.matrix(a), b, axis=0)
 
-    def test_2dmatrixaxis1(self):
+    def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        self.do(np.matrix(a), b, axis=1)
+        self.equal_test(np.matrix(a), b, axis=1)
 
-    def test_1dlist0(self):
+    def test_large_values(self):
+        a = array([1e100, 1e200, 1e300])
+        self.approx_test(a, 1e200, significant=13)
+
+    def test_1d_list0(self):
         #  Test a 1d list with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         b = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
-            self.do(a, b)
+            self.equal_test(a, b)
         finally:
             np.seterr(**olderr)
 
-    def test_1darray0(self):
+    def test_1d_array0(self):
         #  Test a 1d array with zero element
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
-            self.do(a, b)
+            self.equal_test(a, b)
         finally:
             np.seterr(**olderr)
 
-    def test_1dma0(self):
+    def test_1d_ma0(self):
         #  Test a 1d masked array with zero element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
-            self.do(a, b)
+            self.equal_test(a, b)
         finally:
             np.seterr(**olderr)
 
-    def test_1dmainf(self):
+    def test_1d_ma_inf(self):
         #  Test a 1d masked array with negative element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
-            self.do(a, b)
+            self.equal_test(a, b)
         finally:
             np.seterr(**olderr)
-
-
-class TestGeoMean(GeoMeanTestCase):
-    def do(self, a, b, axis=None, dtype=None):
-        # Note this doesn't test when axis is not specified
-        x = stats.gmean(a, axis=axis, dtype=dtype)
-        assert_almost_equal(b, x)
-        assert_equal(x.dtype, dtype)
 
 
 def test_binomtest():
