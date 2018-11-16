@@ -1231,52 +1231,6 @@ def test_relfreq():
     assert_array_almost_equal(relfreqs, relfreqs2)
 
 
-class TestGMean(object):
-
-    def test_1D_list(self):
-        a = (1,2,3,4)
-        actual = stats.gmean(a)
-        desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(actual, desired,decimal=14)
-
-        desired1 = stats.gmean(a,axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
-
-    def test_1D_array(self):
-        a = array((1,2,3,4), float32)
-        actual = stats.gmean(a)
-        desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(actual, desired, decimal=7)
-
-        desired1 = stats.gmean(a,axis=-1)
-        assert_almost_equal(actual, desired1, decimal=7)
-
-    def test_2D_array_default(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-        actual = stats.gmean(a)
-        desired = array((1,2,3,4))
-        assert_array_almost_equal(actual, desired, decimal=14)
-
-        desired1 = stats.gmean(a,axis=0)
-        assert_array_almost_equal(actual, desired1, decimal=14)
-
-    def test_2D_array_dim1(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-        actual = stats.gmean(a, axis=1)
-        v = power(1*2*3*4,1./4.)
-        desired = array((v,v,v))
-        assert_array_almost_equal(actual, desired, decimal=14)
-
-    def test_large_values(self):
-        a = array([1e100, 1e200, 1e300])
-        actual = stats.gmean(a)
-        assert_approx_equal(actual, 1e200, significant=13)
-
-
 class TestHMean(object):
     def test_1D_list(self):
         a = (1,2,3,4)
@@ -3723,7 +3677,7 @@ class TestHarMean(HarMeanTestCase):
         assert_equal(x.dtype, dtype)
 
 
-class GeoMeanTestMethod:
+class GeoMeanTestMethod(object):
     def equal_test(self, array_like, desired, axis=None, dtype=None, decimal=7):
         # Note this doesn't test when axis is not specified
         x = stats.gmean(array_like, axis=axis, dtype=dtype)
