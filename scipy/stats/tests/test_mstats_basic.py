@@ -196,6 +196,10 @@ class TestGeometricStandardDeviation(object):
         gstd_actual = mstats.gstd(self.array_3d, axis=None)
         assert_almost_equal(gstd_actual, self.gstd_array_1d)
 
+    def test_3d_array_axis_type_tuple(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=(1,2))
+        assert_array_almost_equal(gstd_actual, [2.12939215, 1.22120169])
+
     def test_3d_array_axis_0(self):
         gstd_actual = mstats.gstd(self.array_3d, axis=0)
         gstd_desired = np.ma.array([

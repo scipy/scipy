@@ -2256,7 +2256,7 @@ def gstd(a, axis=0, ddof=1):
     ----------
     a : array_like
         An array like object containing the sample data.
-    axis : int or None, optional
+    axis : int, tuple or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     ddof : int, optional
@@ -2288,7 +2288,7 @@ def gstd(a, axis=0, ddof=1):
     Note the standard deviation of the distribution is one, on a log scale this
     evaluates to ``exp(1)``.
 
-    >>> from scipy.stats import gstd
+    >>> from scipy.stats.mstats import gstd
     >>> np.random.seed(123)
     >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
     >>> gstd(sample)
@@ -2297,17 +2297,21 @@ def gstd(a, axis=0, ddof=1):
     Compute the geometric standard deviation of a multidimensional array and
     of a given axis.
 
-    >>> from scipy.stats import gstd
-    >>> a = np.ma.arange(1, 25).reshape(2, 3, 4)
-    >>> gstd(a, axis=None)
+    >>> from scipy.stats.mstats import gstd
+    >>> am = np.ma.arange(1, 25).reshape(2, 3, 4)
+    >>> gstd(am, axis=None)
     2.2944076136018947
-    >>> gstd(a, axis=2)
+    >>> gstd(am, axis=2)
     masked_array(
       data=[[1.8242475707663655, 1.2243686572447428, 1.1318311657788478],
             [1.0934830582350938, 1.0724479791887027, 1.0591498540749245]],
       mask=[[False, False, False],
             [False, False, False]],
       fill_value=1e+20)
+    >>> gstd(am, axis=(1, 2))
+    masked_array(data=[2.1293921474683466, 1.2212016930472196],
+                 mask=[False, False],
+           fill_value=1e+20)
     """
     try:
         with np.errstate(invalid='ignore'):

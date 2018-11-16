@@ -2371,7 +2371,7 @@ def gstd(a, axis=0, ddof=1, ignore_invalid=False):
     ----------
     a : array_like
         An array like object containing the sample data.
-    axis : int or None, optional
+    axis : int, tuple or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     ddof : int, optional
@@ -2421,6 +2421,8 @@ def gstd(a, axis=0, ddof=1, ignore_invalid=False):
     >>> gstd(a, axis=2)
     array([[1.82424757, 1.22436866, 1.13183117],
            [1.09348306, 1.07244798, 1.05914985]])
+    >>> gstd(a, axis=(1,2))
+    array([2.12939215, 1.22120169])
     """
     try:
         with np.errstate(invalid='ignore'):
