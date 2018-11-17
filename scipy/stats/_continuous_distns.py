@@ -1082,7 +1082,7 @@ class chi2_gen(rv_continuous):
         return sc.chdtri(df, p)
 
     def _ppf(self, p, df):
-        return self._isf(1.0-p, df)
+        return 2*sc.gammaincinv(df/2, p)
 
     def _stats(self, df):
         mu = df
