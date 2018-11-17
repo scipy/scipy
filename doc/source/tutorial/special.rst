@@ -66,7 +66,7 @@ Cython Bindings for Special Functions (:mod:`scipy.special.cython_special`)
 
 .. highlight:: cython
 
-Scipy also offers Cython bindings for scalar, typed versions of many
+SciPy also offers Cython bindings for scalar, typed versions of many
 of the functions in special. The following Cython code gives a simple
 example of how to use these functions::
 

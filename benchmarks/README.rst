@@ -4,7 +4,7 @@
 SciPy benchmarks
 ================
 
-Benchmarking Scipy with Airspeed Velocity.
+Benchmarking SciPy with Airspeed Velocity.
 
 
 Usage
@@ -12,11 +12,11 @@ Usage
 
 Airspeed Velocity manages building and Python virtualenvs by itself,
 unless told otherwise. Some of the benchmarking features in
-``runtests.py`` also tell ASV to use the Scipy compiled by
+``runtests.py`` also tell ASV to use the SciPy compiled by
 ``runtests.py``. To run the benchmarks, you do not need to install a
-development version of Scipy to your current Python environment.
+development version of SciPy to your current Python environment.
 
-Run a benchmark against currently checked out Scipy version (don't record the
+Run a benchmark against currently checked out SciPy version (don't record the
 result)::
 
     python runtests.py --bench sparse.Arithmetic
@@ -54,7 +54,7 @@ See `ASV documentation`_ for basics on how to write benchmarks.
 
 Some things to consider:
 
-- When importing things from Scipy on the top of the test files, do it as::
+- When importing things from SciPy on the top of the test files, do it as::
 
       try:
           from scipy.sparse.linalg import onenormest
@@ -62,7 +62,7 @@ Some things to consider:
           pass
 
   The benchmark files need to be importable also when benchmarking old versions
-  of Scipy. The benchmarks themselves don't need any guarding against missing
+  of SciPy. The benchmarks themselves don't need any guarding against missing
   features --- only the top-level imports.
 
 - Try to keep the runtime of the benchmark reasonable.

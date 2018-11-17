@@ -356,7 +356,7 @@ different file extension. A library has now been created that can be loaded
 into Python with `ctypes`.
 
 3.) Load shared library into Python using `ctypes` and set ``restypes`` and
-``argtypes`` - this allows Scipy to interpret the function correctly:
+``argtypes`` - this allows SciPy to interpret the function correctly:
 
 .. code:: python
 

@@ -4,7 +4,7 @@ Making a SciPy release
 ======================
 
 At the highest level, this is what the release manager does to release a new
-Scipy version:
+SciPy version:
 
 #. Propose a release schedule on the scipy-dev mailing list.
 #. Create the maintenance branch for the release.
@@ -85,7 +85,7 @@ and that the release notes are up-to-date and included in the html docs.
 
 Then edit ``setup.py`` to get the correct version number (set
 ``ISRELEASED = True``) and commit it with a message like ``REL: set version to
-<version-number>``.  Don't push this commit to the Scipy repo yet.
+<version-number>``.  Don't push this commit to the SciPy repo yet.
 
 Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
 the tag is signed).  Continue with building release artifacts (next section).
@@ -179,7 +179,7 @@ doc server is needed; ask @pv (server admin) or @rgommers (can upload) if you
 don't have that.
 
 The sources for the website itself are maintained in
-https://github.com/scipy/docs.scipy.org/.  Add the new Scipy version in the
+https://github.com/scipy/docs.scipy.org/.  Add the new SciPy version in the
 table of releases in ``index.rst``.  Push that commit, then do ``make upload
 USERNAME=yourusername``.
 

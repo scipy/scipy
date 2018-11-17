@@ -10,7 +10,7 @@ Basic functions
 Interaction with Numpy
 ----------------------
 
-Scipy builds on Numpy, and for all basic array handling needs you can
+SciPy builds on Numpy, and for all basic array handling needs you can
 use Numpy functions:
 
     >>> import numpy as np
@@ -22,7 +22,7 @@ Rather than giving a detailed description of each of these functions
 will discuss some of the more useful commands which require a little
 introduction to use to their full potential.
 
-To use functions from some of the Scipy modules, you can do:
+To use functions from some of the SciPy modules, you can do:
 
     >>> from scipy import some_module
     >>> some_module.some_function()

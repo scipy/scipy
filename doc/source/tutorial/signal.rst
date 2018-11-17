@@ -512,7 +512,7 @@ Filter Design
 
 Time-discrete filters can be classified into finite response (FIR) filters and
 infinite response (IIR) filters. FIR filters can provide a linear phase
-response, whereas IIR filters cannot. Scipy provides functions
+response, whereas IIR filters cannot. SciPy provides functions
 for designing both types of filters.
 
 FIR Filter
@@ -579,7 +579,7 @@ Nyquist frequency in :func:`firwin2` and :func:`freqz` (as explained above).
 IIR Filter
 """"""""""
 
-Scipy provides two functions to directly design IIR :func:`iirdesign` and
+SciPy provides two functions to directly design IIR :func:`iirdesign` and
 :func:`iirfilter` where the filter type (e.g. elliptic) is passed as an
 argument and several more filter design functions for specific filter types;
 e.g. :func:`ellip`.
@@ -1044,7 +1044,7 @@ implementation.
 Detrend
 -------
 
-Scipy provides the function :func:`detrend` to remove a constant or linear
+SciPy provides the function :func:`detrend` to remove a constant or linear
 trend in a data series in order to see effect of higher order.
 
 The example below removes the constant and linear trend of a 2-nd order
