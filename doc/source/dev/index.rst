@@ -12,6 +12,8 @@ SciPy Developer Guide
 
 .. include:: versioning.rst
 
+.. include:: toolchain.rst
+
 .. include:: deprecations.rst
 
 .. include:: distributing.rst
