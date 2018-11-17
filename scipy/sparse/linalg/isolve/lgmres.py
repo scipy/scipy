@@ -30,7 +30,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
-        produce ``Ax`` and ``A^T x`` using, e.g.,
+        produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).

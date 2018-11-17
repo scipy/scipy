@@ -202,7 +202,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                '``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
+               'produce ``Ax`` using, e.g.,\n'
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
@@ -269,7 +269,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                'The real or complex N-by-N matrix of the linear system.\n'
                '``A`` must represent a hermitian, positive definite matrix.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
+               'produce ``Ax`` using, e.g.,\n'
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
@@ -340,7 +340,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
 @set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
                'The real-valued N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
-               'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
+               'produce ``Ax`` using, e.g.,\n'
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
@@ -425,7 +425,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
-        produce ``Ax`` and ``A^T x`` using, e.g.,
+        produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
