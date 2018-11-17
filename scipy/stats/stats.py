@@ -2980,8 +2980,8 @@ def pearsonr(x, y):
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Pearson correlation at least as extreme
-    as the one computed from these datasets. The p-values are not entirely
-    reliable but are probably reasonable for datasets larger than 500 or so.
+    as the one computed from these datasets. The p-value is calculated using
+    the t-distribution as described in [1]_.
 
     Parameters
     ----------
@@ -3004,16 +3004,18 @@ def pearsonr(x, y):
 
     .. math::
 
-        r_{pb} = \frac{\sum (x - m_x) (y - m_y)}
-                      {\sqrt{\sum (x - m_x)^2 \sum (y - m_y)^2}}
+        r_{pb} = \frac{\sum_{i=1}^N (x_i - m_x) (y_i - m_y)}
+                {\sqrt{\sum_{i=1}^N (x_i - m_x)^2 \sum_{i=1}(y_i - m_y)^2}}
 
     where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
-    the mean of the vector :math:`y`.
+    the mean of the vector :math:`y` [2]_.
 
 
     References
     ----------
-    http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+    .. [1] https://en.wikipedia.org/wiki/Pearson_correlation_coefficient#Testing_using_Student's_t-distribution
+    .. [2] http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+
 
     Examples
     --------
