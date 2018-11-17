@@ -4,7 +4,7 @@ SciPy requires several tools in order to be built.
 
 - First and foremost, SciPy is a Python project hence it requires a Python environment.
 - The LAPACK and OpenBLAS numerical libraries need to be installed.
-- Compilers for C, Cython and Fortran code are needed.
+- Compilers for C, C++, Cython and Fortran code are needed.
 - The Python environment needs the ``NumPy`` package to be installed.
 - Testing requires the ``pytest`` Python package.
 - Building the documentation requires Sphinx and ``numpydoc``.
@@ -37,8 +37,8 @@ that can be supported.
 ===================   ==============   ===================
 CPython               MS Visual C++    C Standard
 ===================   ==============   ===================
-3.5, 3.6                14.0           C90 + most of C99
-3.3, 3.4                10.0           C90 + some of C99
+3.5, 3.6                14.0           C90 & most of C99
+3.3, 3.4                10.0           C90 & some of C99
 2.7, 3.0, 3.1, 3.2       9.0           C90
 ===================   ==============   ===================
 
@@ -60,7 +60,7 @@ This table shows what it could look like.*]
 
 Some C99 features would be useful for scientific programming, in particular better support of
 IEEE 754 [2]_.  Experience has shown that not all features are supported equally well across
-all platforms, SciPy has a small include file ``scipy/_lib/_c99compat.h`` which provides
+all platforms. SciPy has a small include file ``scipy/_lib/_c99compat.h`` which provides
 access to a few functions.  Use in conjunction with ``<numpy/npy_math.h>``.
 
 ================================  ========================================================
