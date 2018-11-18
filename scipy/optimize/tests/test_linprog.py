@@ -485,15 +485,11 @@ class LinprogCommonTests(object):
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
 
-        def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-              options={}):
-            linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, method=self.method,
-                    options=options)
-
         o = {key: self.options[key] for key in self.options}
         o['spam'] = 42
-        _assert_warns(OptimizeWarning, f,
-                      c, A_ub=A_ub, b_ub=b_ub, options=o)
+
+        with pytest.warns(OptimizeWarning, match='Unknown solver options...'):
+            linprog(c, A_ub, b_ub, method=self.method, options=o)
 
     def test_no_constraints(self):
         res = linprog([-1, -2], method=self.method, options=self.options)
@@ -1065,7 +1061,8 @@ class LinprogCommonTests(object):
         ])
         b_eq = np.array([[100],[0],[0],[0],[0]])
 
-        with pytest.warns(OptimizeWarning):
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, 'A_eq does not appear')
             res = linprog(
                 c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 method=self.method, options=self.options
@@ -1117,7 +1114,8 @@ class LinprogCommonTests(object):
         A_eq = [[0], [-8], [9]]
         b_eq = [3, 2, 10]
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+            sup.filter(RuntimeWarning, 'invalid value encountered in...')
+            sup.filter(RuntimeWarning, 'overflow encountered...')
             sup.filter(OptimizeWarning, "Solving system with option...")
             o = {key: self.options[key] for key in self.options}
             o["presolve"] = False
@@ -1195,11 +1193,11 @@ class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
         assert_allclose(last_cb['slack'], res['slack'])
 
     def test_bug_5400(self):
-        with pytest.warns(OptimizeWarning):
+        with pytest.warns(OptimizeWarning, match='The pivot operation...'):
             super(TestLinprogSimplexCommon, self).test_bug_5400()
 
     def test_issue_8174(self):
-        with pytest.warns(OptimizeWarning):
+        with pytest.warns(OptimizeWarning, match='The pivot operation...'):
             super(TestLinprogSimplexCommon, self).test_issue_8174()
 
 
@@ -1207,7 +1205,7 @@ class TestLinprogSimplexBland(BaseTestLinprogSimplex):
     options = {'bland': True}
 
     def test_issue_8174(self):
-        with pytest.warns(OptimizeWarning):
+        with pytest.warns(OptimizeWarning, match='The pivot operation...'):
             super(TestLinprogSimplexBland, self).test_issue_8174()
 
 
@@ -1215,7 +1213,7 @@ class TestLinprogSimplexNoPresolve(BaseTestLinprogSimplex):
     options = {'presolve': False}
 
     def test_bug_5400(self):
-        with pytest.warns(OptimizeWarning):
+        with pytest.warns(OptimizeWarning, match='The pivot operation...'):
             super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
 
     def test_issue_6139(self):
@@ -1223,18 +1221,11 @@ class TestLinprogSimplexNoPresolve(BaseTestLinprogSimplex):
         # if phase 1 pseudo-objective function is outside the provided tol.
         # https://github.com/scipy/scipy/issues/6139
         # Without ``presolve`` eliminating such rows the result is incorrect.
-        with pytest.warns(OptimizeWarning):
+        with pytest.warns(OptimizeWarning, match='The pivot operation...'):
             super(TestLinprogSimplexNoPresolve, self).test_issue_6139()
 
     def test_issue_8174(self):
-        with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplexNoPresolve, self).test_issue_8174()
-
-    def test_issue_8174_stackoverflow(self):
-        # Test expects linprog to raise a warning during presolve.
-        # As ``'presolve'=False`` no warning should be raised.
-        # Despite not presolving the result is still correct.
-        with pytest.warns(OptimizeWarning) as redundant_warning:
+        with pytest.warns(OptimizeWarning, match='The pivot operation...'):
             super(TestLinprogSimplexNoPresolve, self).test_issue_8174()
 
     def test_unbounded_no_nontrivial_constraints_1(self):
