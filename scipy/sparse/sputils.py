@@ -294,7 +294,7 @@ def check_shape(args, current_shape=None):
             new_size = np.prod(new_shape, dtype=int)
             if new_size != current_size:
                 raise ValueError('cannot reshape array of size {} into shape {}'
-                                 .format(new_size, new_shape))
+                                 .format(current_size, new_shape))
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
             specified = np.prod(new_shape[0:skip] + new_shape[skip+1:])
