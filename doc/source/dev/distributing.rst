@@ -2,16 +2,16 @@ Distributing
 ============
 
 Distributing Python packages is nontrivial - especially for a package with
-complex build requirements like Scipy - and subject to change.  For an up-to-date
+complex build requirements like SciPy - and subject to change.  For an up-to-date
 overview of recommended tools and techniques, see the `Python Packaging User
 Guide`_.  This document discusses some of the main issues and considerations for
-Scipy.
+SciPy.
 
 Dependencies
 ------------
 Dependencies are things that a user has to install in order to use (or
 build/test) a package.  They usually cause trouble, especially if they're not
-optional.  Scipy tries to keep its dependencies to a minimum; currently they
+optional.  SciPy tries to keep its dependencies to a minimum; currently they
 are:
 
 *Unconditional run-time dependencies:*
@@ -43,7 +43,7 @@ are:
 - LaTeX (pdf docs)
 - Pillow_ (docs)
 
-Furthermore of course one needs C, C++ and Fortran compilers to build Scipy,
+Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
 here.  For details, see https://scipy.github.io/devdocs/building/.
 
@@ -53,18 +53,18 @@ scipy) the package instead.  For example, six_ and decorator_ are vendored in
 ``scipy._lib``.
 
 The only dependency that is reported to pip_  is Numpy_, see
-``install_requires`` in Scipy's main ``setup.py``.  The other dependencies
-aren't needed for Scipy to function correctly, and the one unconditional build
+``install_requires`` in SciPy's main ``setup.py``.  The other dependencies
+aren't needed for SciPy to function correctly, and the one unconditional build
 dependency that pip_ knows how to install (Cython_) we prefer to treat like a
 compiler rather than a Python package that pip_ is allowed to upgrade.
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There are some serious issues with how Python packaging tools handle
-dependencies reported by projects.  Because Scipy gets regular bug reports
+dependencies reported by projects.  Because SciPy gets regular bug reports
 about this, we go in a bit of detail here.
 
-Scipy only reports its dependency on Numpy via ``install_requires`` if Numpy
+SciPy only reports its dependency on Numpy via ``install_requires`` if Numpy
 isn't installed at all on a system.  This will only change when there are
 either 32-bit and 64-bit Windows wheels for Numpy on PyPI or when
 ``pip upgrade`` becomes available (with sane behavior, unlike ``pip install
@@ -75,7 +75,7 @@ either 32-bit and 64-bit Windows wheels for Numpy on PyPI or when
 The situation with ``setup_requires`` is even worse; pip_ doesn't handle that
 keyword at all, while ``setuptools`` has issues (here's a `current one
 <https://bitbucket.org/pypa/setuptools/issues/391>`_) and invokes
-``easy_install`` which comes with its own set of problems (note that Scipy doesn't
+``easy_install`` which comes with its own set of problems (note that SciPy doesn't
 support ``easy_install`` at all anymore; issues specific to it will be closed
 as "wontfix").
 
@@ -84,19 +84,19 @@ as "wontfix").
 
 Supported Python and Numpy versions
 -----------------------------------
-The Python_ versions that Scipy supports are listed in the list of PyPI
+The Python_ versions that SciPy supports are listed in the list of PyPI
 classifiers in ``setup.py``, and mentioned in the release notes for each
 release.  All newly released Python versions will be supported as soon as
 possible.  The general policy on dropping support for a Python version is that
 (a) usage of that version has to be quite low (say <5% of users) and (b) the
 version isn't included in an active long-term support release of one of the
-main Linux distributions anymore.  Scipy typically follows Numpy, which has a
+main Linux distributions anymore.  SciPy typically follows Numpy, which has a
 similar policy.  The final decision on dropping support is always taken on the
 scipy-dev mailing list.
 
-The lowest supported Numpy_ version for a Scipy version is mentioned in the
+The lowest supported Numpy_ version for a SciPy version is mentioned in the
 release notes and is encoded in ``scipy/__init__.py`` and the
-``install_requires`` field of ``setup.py``.  Typically the latest Scipy release
+``install_requires`` field of ``setup.py``.  Typically the latest SciPy release
 supports 3 or 4 minor versions of Numpy.  That may become more if the frequency
 of Numpy releases increases (it's about 1x/year at the time of writing).
 Support for a particular Numpy version is typically dropped if (a) that Numpy
@@ -105,7 +105,7 @@ is starting to outweigh the benefits.  The final decision on dropping support
 is always taken on the scipy-dev mailing list.
 
 Supported versions of optional dependencies and compilers is less clearly
-documented, and also isn't tested well or at all by Scipy's Continuous
+documented, and also isn't tested well or at all by SciPy's Continuous
 Integration setup.  Issues regarding this are dealt with as they come up in the
 issue tracker or mailing list.
 
@@ -114,8 +114,8 @@ Building binary installers
 --------------------------
 .. note::
 
-   This section is only about building Scipy binary installers to *distribute*.
-   For info on building Scipy on the same machine as where it will be used, see
+   This section is only about building SciPy binary installers to *distribute*.
+   For info on building SciPy on the same machine as where it will be used, see
    `this scipy.org page <https://scipy.github.io/devdocs/building/>`_.
 
 There are a number of things to take into consideration when building binaries
@@ -132,7 +132,7 @@ and distributing them on PyPI or elsewhere.
 **Windows**
 
 - The currently most easily available toolchain for building
-  Python.org compatible binaries for Scipy is installing MSVC (see
+  Python.org compatible binaries for SciPy is installing MSVC (see
   https://wiki.python.org/moin/WindowsCompilers) and mingw64-gfortran.
   Support for this configuration requires numpy.distutils from
   Numpy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
@@ -140,7 +140,7 @@ and distributing them on PyPI or elsewhere.
   https://github.com/MacPython/scipy-wheels
 - For 64-bit Windows installers built with a free toolchain, use the method
   documented at https://github.com/numpy/numpy/wiki/Mingw-static-toolchain.
-  That method will likely be used for Scipy itself once it's clear that the
+  That method will likely be used for SciPy itself once it's clear that the
   maintenance of that toolchain is sustainable long-term.  See the MingwPy_
   project and `this thread
   <https://mail.scipy.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
@@ -151,13 +151,13 @@ and distributing them on PyPI or elsewhere.
   `this article <https://software.intel.com/en-us/articles/numpyscipy-with-intel-mkl>`_
   and for (partial) MSVC instructions see
   `this wiki page <https://github.com/numpy/numpy/wiki/Building-with-MSVC>`_.
-- Older Scipy releases contained a .exe "superpack" installer.  Those contain
+- Older SciPy releases contained a .exe "superpack" installer.  Those contain
   3 complete builds (no SSE, SSE2, SSE3), and were built with
   https://github.com/numpy/numpy-vendor.  That build setup is known to not work
   well anymore and is no longer supported.  It used g77 instead of gfortran,
   due to complex DLL distribution issues (see `gh-2829
   <https://github.com/scipy/scipy/issues/2829>`_).  Because the toolchain is no
-  longer supported, g77 support isn't needed anymore and Scipy can now include
+  longer supported, g77 support isn't needed anymore and SciPy can now include
   Fortran 90/95 code.
 
 **OS X**
@@ -166,13 +166,13 @@ and distributing them on PyPI or elsewhere.
   python.org, Homebrew, MacPython), use the build method provided by
   https://github.com/MacPython/scipy-wheels.
 - DMG installers for the Python from python.org on OS X can still be produced
-  by ``tools/scipy-macosx-installer/``.  Scipy doesn't distribute those
+  by ``tools/scipy-macosx-installer/``.  SciPy doesn't distribute those
   installers anymore though, now that there are binary wheels on PyPi.
 
 **Linux**
 
 - PyPi-compatible Linux wheels can be produced via the manylinux_ project.
-  The corresponding build setup for TravisCI for Scipy is set up in
+  The corresponding build setup for TravisCI for SciPy is set up in
   https://github.com/MacPython/scipy-wheels.
 
 Other Linux build-setups result to PyPi incompatible wheels, which

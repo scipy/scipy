@@ -69,7 +69,7 @@ Subpackage          Description
 :mod:`stats`        Statistical distributions and functions
 ==================  ======================================================
 
-Scipy sub-packages need to be imported separately, for example::
+SciPy sub-packages need to be imported separately, for example::
 
     >>> from scipy import linalg, optimize
 

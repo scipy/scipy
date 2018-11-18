@@ -51,7 +51,7 @@ Dealing with pull requests
 - Make sure that the labels and milestone on a merged PR are set correctly.
 - When you want to reject a PR: if it's very obvious you can just close it and
   explain why, if not obvious then it's a good idea to first explain why you
-  think the PR is not suitable for inclusion in Scipy and then let a second
+  think the PR is not suitable for inclusion in SciPy and then let a second
   committer comment or close.
 
 
