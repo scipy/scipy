@@ -3065,6 +3065,10 @@ class _TestArithmetic(object):
         self.__Asp = self.spmatrix(self.__A)
         self.__Bsp = self.spmatrix(self.__B)
 
+        # vector for matrix vector multiplication
+        self.__x = np.array((1, 0, 2, 3)).reshape(1, -1)
+        self.__y = np.array((4.5, 1.25, 0, 1 + 1j, 1, 2j)).reshape(-1, 1)
+
     def test_add_sub(self):
         self.__arith_init()
 
@@ -3127,6 +3131,14 @@ class _TestArithmetic(object):
                 assert_allclose(S1.todense(), D1,
                                 atol=1e-14*abs(D1).max())
                 assert_equal(S1.dtype,D1.dtype)
+
+    def test_mul_vector(self):
+        self.__arith_init()
+        x = self.__x
+        y = self.__y
+        for A, Asp in ((self.__A, self.__Asp), (self.__B, self.__Bsp)):
+            assert_array_equal(x * Asp, x * A)
+            assert_array_equal(Asp * y, A * y)
 
 
 class _TestMinMax(object):

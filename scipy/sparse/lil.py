@@ -13,7 +13,7 @@ import numpy as np
 
 from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
-from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
+from .sputils import (getdtype, isshape, isscalarlike, IndexMixin, upcast_char,
                       upcast_scalar, get_index_dtype, isintlike, check_shape,
                       check_reshape_kwargs)
 from . import _csparsetools
@@ -368,6 +368,14 @@ class lil_matrix(spmatrix, IndexMixin):
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val*other for val in rowvals]
         return new
+
+    def _mul_vector(self, other):
+        M, N = self.shape
+        result = np.empty(M, dtype=upcast_char(self.dtype.char,
+                                               other.dtype.char))
+        _csparsetools.lil_matvec(M, N, self.rows, self.data,
+                                 other, result)
+        return result
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):

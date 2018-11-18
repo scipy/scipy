@@ -461,3 +461,57 @@ cdef _fill_dtype_map2(map):
 
 _fill_dtype_map(_LIL_FANCY_GET_DISPATCH, np.typecodes['Integer'])
 _fill_dtype_map2(_LIL_FANCY_SET_DISPATCH)
+
+
+ctypedef fused vector_type:
+    cnp.int8_t
+    cnp.int16_t
+    cnp.int32_t
+    cnp.int64_t
+    cnp.float32_t
+    cnp.float64_t
+    cnp.complex64_t
+    cnp.complex128_t
+ctypedef fused result_type:
+    cnp.int8_t
+    cnp.int16_t
+    cnp.int32_t
+    cnp.int64_t
+    cnp.float32_t
+    cnp.float64_t
+    cnp.complex64_t
+    cnp.complex128_t
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def lil_matvec(cython.integral M,
+               cython.integral N,
+               cnp.ndarray[list] rows,
+               cnp.ndarray[list] data,
+               cnp.ndarray[vector_type] vector,
+               cnp.ndarray[result_type] result):
+    """
+    Compute y = A * x for LIL matrix A and dense vectors x and y.
+
+    Parameters
+    ----------
+    M, N, rows, data
+        The data from the LIL matrix A.
+    vector
+        The vector x as array.
+    res
+        The vector y as array.
+        Must be preallocated to shape `N`!
+
+    """
+
+    cdef cython.integral i, k, j
+    cdef list row_i, data_i
+    cdef result_type result_i
+
+    for i, row_i in enumerate(rows):
+        data_i = data[i]
+        result_i = 0
+        for k, j in enumerate(row_i):
+            result_i = result_i + data_i[k] * vector[j]
+        result[i] = result_i
