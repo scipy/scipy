@@ -72,9 +72,10 @@ Regarding build environments:
     as they have access to ifort and MKL of course).  This mainly needs better
     documentation at the moment.
   - We're aiming to gradually increase the minimum version of LAPACK that is
-    required, so we can use never features.  Support for Accelerate on macOS
+    required, so we can use newer features.  Support for Accelerate on macOS
     has been dropped.  We do rely quite heavily on OpenBLAS, and its stability
-    is a worry - improvements in testing and build documentation at least are
+    is a worry (often only one of the recent releases works without test
+    failures) - improvements in testing and build documentation at least are
     needed.
 
 Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
@@ -100,7 +101,7 @@ We aim to follow NumPy in adopting ``pocketfft`` (see `this NumPy PR
 <https://github.com/numpy/numpy/pull/11888>`__).  That will address a number of
 maintenance issues, and increase performance (both accuracy and speed).
 Of particular interest regarding performance is the Bluestein algorithm (or
-chirp Z-transform), which we have wanting to add to ``fftpack`` for a long
+chirp Z-transform), which we have been wanting to add to ``fftpack`` for a long
 time.
 
 We probably want to deprecate fftpack.convolve as public function (it was not
@@ -219,16 +220,18 @@ The morphology interface needs to be standardized:
 
 odr
 ```
-This module is in reasonable shape, although it could use a bit more maintence.
-No major plans or wishes here.
+This module is in reasonable shape, although it could use a bit more
+maintenance.  No major plans or wishes here.
 
 
 optimize
 ````````
-Overall this module is in good shape. Two good good global optimizers were
-added in 1.2.0; large-scale optimizers is still a gap that could be filled.
-Other things that are needed:
+Overall this module is in good shape. Two good global optimizers were added in
+1.2.0; large-scale optimizers is still a gap that could be filled.  Other
+things that are needed:
 
+  - Many ideas for additional functionality (e.g. integer constraints, sparse
+    matrix support, performance improvements) in ``linprog``, see gh-9269.
   - Add functionality to the benchmark suite to compare results more easily
     (e.g. with summary plots).
   - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
