@@ -105,7 +105,7 @@ The solution can be found using the `newton_krylov` solver:
 
 """
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
-# Distributed under the same license as Scipy.
+# Distributed under the same license as SciPy.
 
 from __future__ import division, print_function, absolute_import
 
@@ -465,7 +465,7 @@ class TerminationCondition(object):
             return 1
 
         if self.iter is not None:
-            # backwards compatibility with Scipy 0.6.0
+            # backwards compatibility with SciPy 0.6.0
             return 2 * (self.iteration > self.iter)
 
         # NB: condition must succeed for rtol=inf even if norm == 0
@@ -1381,7 +1381,7 @@ class KrylovJacobian(Jacobian):
     Due to the use of iterative matrix inverses, these methods can
     deal with large nonlinear problems.
 
-    Scipy's `scipy.sparse.linalg` module offers a selection of Krylov
+    SciPy's `scipy.sparse.linalg` module offers a selection of Krylov
     solvers to choose from. The default here is `lgmres`, which is a
     variant of restarted GMRES iteration that reuses some of the
     information obtained in the previous Newton steps to invert

@@ -8,7 +8,7 @@ Spherical Voronoi Code
 # Copyright (C)  Tyler Reddy, Ross Hemsley, Edd Edmondson,
 #                Nikolai Nowaczyk, Joe Pitt-Francis, 2015.
 #
-# Distributed under the same BSD license as Scipy.
+# Distributed under the same BSD license as SciPy.
 #
 
 import numpy as np

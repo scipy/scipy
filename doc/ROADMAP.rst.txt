@@ -341,7 +341,7 @@ New modules under discussion
 
 diff
 ````
-Currently Scipy doesn't provide much support for numerical differentiation.
+Currently SciPy doesn't provide much support for numerical differentiation.
 A new ``scipy.diff`` module for that is discussed in
 https://github.com/scipy/scipy/issues/2035.  There's also a fairly detailed
 GSoC proposal to build on, see `here <https://github.com/scipy/scipy/wiki/Proposal:-add-finite-difference-numerical-derivatives-as-scipy.diff>`_.

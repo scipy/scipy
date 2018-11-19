@@ -1852,7 +1852,7 @@ def from_mlab_linkage(Z):
     See Also
     --------
     linkage: for a description of what a linkage matrix is.
-    to_mlab_linkage: transform from Scipy to MATLAB format.
+    to_mlab_linkage: transform from SciPy to MATLAB format.
 
     Examples
     --------
@@ -1861,7 +1861,7 @@ def from_mlab_linkage(Z):
 
     Given a linkage matrix in MATLAB format ``mZ``, we can use
     `scipy.cluster.hierarchy.from_mlab_linkage` to import
-    it into Scipy format:
+    it into SciPy format:
 
     >>> mZ = np.array([[1, 2, 1], [4, 5, 1], [7, 8, 1],
     ...                [10, 11, 1], [3, 13, 1.29099445],
@@ -1889,7 +1889,7 @@ def from_mlab_linkage(Z):
     As expected, the linkage matrix ``Z`` returned includes an
     additional column counting the number of original samples in
     each cluster. Also, all cluster indexes are reduced by 1
-    (MATLAB format uses 1-indexing, whereas Scipy uses 0-indexing).
+    (MATLAB format uses 1-indexing, whereas SciPy uses 0-indexing).
 
     """
     Z = np.asarray(Z, dtype=np.double, order='c')
@@ -1942,7 +1942,7 @@ def to_mlab_linkage(Z):
     See Also
     --------
     linkage: for a description of what a linkage matrix is.
-    from_mlab_linkage: transform from Matlab to Scipy format.
+    from_mlab_linkage: transform from Matlab to SciPy format.
 
     Examples
     --------
@@ -2712,7 +2712,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     >>> from scipy.cluster.hierarchy import fclusterdata
 
     This is a convenience method that abstracts all the steps to perform in a
-    typical Scipy's hierarchical clustering workflow.
+    typical SciPy's hierarchical clustering workflow.
 
     * Transform the input data into a condensed matrix with `scipy.spatial.distance.pdist`.
 
@@ -3015,7 +3015,7 @@ def set_link_color_palette(palette):
 
     Notes
     -----
-    Ability to reset the palette with ``None`` added in Scipy 0.17.0.
+    Ability to reset the palette with ``None`` added in SciPy 0.17.0.
 
     Examples
     --------

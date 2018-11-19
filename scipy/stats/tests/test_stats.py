@@ -284,7 +284,7 @@ class TestFisherExact(object):
     Note that in SciPy 0.9.0 this was not working well for large numbers due to
     inaccuracy of the hypergeom distribution (see #1218). Fixed now.
 
-    Also note that R and Scipy have different argument formats for their
+    Also note that R and SciPy have different argument formats for their
     hypergeometric distribution functions.
 
     R:

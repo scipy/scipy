@@ -1,4 +1,4 @@
-API - importing from Scipy
+API - importing from SciPy
 ==========================
 
 In Python the distinction between what is the public API of a library and what
@@ -25,12 +25,12 @@ rules for what is and isn't public in Python are:
           case; the presence of underscores do mark something as private, but
           the absence of underscores do not mark something as public.
 
-In Scipy there are modules whose names don't start with an underscore, but that
+In SciPy there are modules whose names don't start with an underscore, but that
 should be considered private.  To clarify which modules these are we define
-below what the public API is for Scipy, and give some recommendations for how
-to import modules/functions/objects from Scipy.
+below what the public API is for SciPy, and give some recommendations for how
+to import modules/functions/objects from SciPy.
 
-Guidelines for importing functions from Scipy
+Guidelines for importing functions from SciPy
 ---------------------------------------------
 
 The scipy namespace itself only contains functions imported from numpy.  These
@@ -77,7 +77,7 @@ API definition
 
 Every submodule listed below is public.  That means that these submodules are
 unlikely to be renamed or changed in an incompatible way, and if that is
-necessary a deprecation warning will be raised for one Scipy release before the
+necessary a deprecation warning will be raised for one SciPy release before the
 change is made.
 
 * `scipy.cluster`

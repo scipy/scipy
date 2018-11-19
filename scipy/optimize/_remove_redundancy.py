@@ -309,7 +309,7 @@ def _remove_redundancy_sparse(A, rhs):
     # I tried and tried and tried to improve performance using the
     # Bartels-Golub update. It works, but it's only practical if the LU
     # factorization can be specialized as described, and that is not possible
-    # until the Scipy SuperLU interface permits control over column
+    # until the SciPy SuperLU interface permits control over column
     # permutation - see issue #7700.
 
     for i in v:
