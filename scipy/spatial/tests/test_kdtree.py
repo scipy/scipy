@@ -1125,7 +1125,7 @@ def simulate_periodic_box(kdtree, data, k, boxsize, p):
 
 
 @pytest.mark.skipif(python_implementation() == 'PyPy',
-                    reason="Fails on PyPy CI runs. See #9455")
+                    reason="Fails on PyPy CI runs. See #9507")
 def test_ckdtree_memuse():
     # unit test adaptation of gh-5630
 
