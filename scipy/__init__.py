@@ -51,7 +51,7 @@ Utility tools
  test              --- Run scipy unittests
  show_config       --- Show scipy build configuration
  show_numpy_config --- Show numpy build configuration
- __version__       --- Scipy version string
+ __version__       --- SciPy version string
  __numpy_version__ --- Numpy version string
 
 """

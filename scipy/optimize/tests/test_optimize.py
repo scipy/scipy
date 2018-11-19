@@ -114,11 +114,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 9, self.funccalls)
         assert_(self.gradcalls == 7, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[2:4],
                         [[0, -0.5, 0.5],
                          [0, -5.05700028e-01, 4.95985862e-01]],
@@ -158,11 +158,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 10, self.funccalls)
         assert_(self.gradcalls == 8, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[6:8],
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
@@ -206,7 +206,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         #
         # However, some leeway must be added: the exact evaluation
         # count is sensitive to numerical error, and floating-point
@@ -217,7 +217,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[34:39],
                         [[0.72949016, -0.44156936, 0.47100962],
                          [0.72949016, -0.44156936, 0.48052496],
@@ -247,11 +247,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 167, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[76:78],
                         [[0.1928968, -0.62780447, 0.35166118],
                          [0.19572515, -0.63648426, 0.35838135]],
@@ -285,11 +285,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.17.0. Don't allow them to increase.
+        # SciPy 0.17.0. Don't allow them to increase.
         assert_(self.funccalls == 100, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.15.0
+        # Ensure that the function behaves the same; this is from SciPy 0.15.0
         assert_allclose(self.trace[50:52],
                         [[0.14687474, -0.5103282, 0.48252111],
                          [0.14474003, -0.5282084, 0.48743951]],
@@ -349,14 +349,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls <= 22, self.gradcalls)  # 0.13.0
         #assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
         #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
@@ -384,13 +384,13 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
@@ -418,13 +418,13 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
@@ -539,11 +539,11 @@ class TestOptimizeSimple(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls == 5, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[0., -0.52489628, 0.48753042],
                          [0., -0.52489628, 0.48753042]],

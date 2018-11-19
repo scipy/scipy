@@ -1,5 +1,5 @@
 """
-Test Scipy functions versus mpmath, if available.
+Test SciPy functions versus mpmath, if available.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -1383,7 +1383,7 @@ class TestSystematic(object):
 
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
-        # Scipy's hyp2f1 seems to have performance and accuracy problems
+        # SciPy's hyp2f1 seems to have performance and accuracy problems
         assert_mpmath_equal(lambda a, b, c, x: sc.hyp2f1(a.real, b.real, c.real, x),
                             exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
                             [Arg(-1e2, 1e2), Arg(-1e2, 1e2), Arg(-1e2, 1e2), ComplexArg()],
