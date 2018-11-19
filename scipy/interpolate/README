@@ -91,12 +91,8 @@ interpolate.lagrange
 interpolate.ppform
 interpolate.spalde
 interpolate.splev
-interpolate.spleval
-interpolate.spline
 interpolate.splint
-interpolate.splmake
 interpolate.splprep
 interpolate.splrep
-interpolate.spltopp
 interpolate.sproot
 interpolate.test
