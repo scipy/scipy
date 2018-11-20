@@ -23,55 +23,7 @@ ARGS = (0.0, 0.0, 1.0)  # 1st, 2nd, and 3rd order terms
 XLO, XHI = 0.0, 2.0  # first and second bounds of zeros functions
 # absolute and relative tolerances and max iterations for zeros functions
 XTOL, RTOL, MITR = 0.001, 0.001, 10
-
-
-EXPECTED_BISECT = [
-    1.259765625,
-    1.279296875,
-    1.298828125,
-    1.318359375,
-    1.337890625,
-    1.357421875,
-    1.376953125,
-    1.392578125,
-    1.408203125,
-    1.427734375]
-
-
-# test bisect
-def test_bisect():
-    npt.assert_allclose(
-        EXPECTED_BISECT,
-        list(
-            _zeros.loop_example('bisect', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
-        )
-    )
-
-
-EXPECTED_RIDDER = [
-    1.2588478785767947,
-    1.2795040615075954,
-    1.299514441316524,
-    1.318927124420269,
-    1.3377847289304623,
-    1.356125211864335,
-    1.373982543571637,
-    1.3913872624129802,
-    1.408366934614972,
-    1.4249465383291897]
-
-
-# test ridder
-def test_ridder():
-    npt.assert_allclose(
-        EXPECTED_RIDDER,
-        list(
-            _zeros.loop_example('ridder', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
-        )
-    )
-
-
-EXPECTED_BRENT = [
+EXPECTED = [
     1.259872799904563,
     1.28042866862737,
     1.3003083443276644,
@@ -84,10 +36,32 @@ EXPECTED_BRENT = [
     1.4261502005552444]
 
 
+# test bisect
+def test_bisect():
+    npt.assert_allclose(
+        EXPECTED,
+        list(
+            _zeros.loop_example('bisect', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        ),
+        rtol=RTOL, atol=XTOL
+    )
+
+
+# test ridder
+def test_ridder():
+    npt.assert_allclose(
+        EXPECTED,
+        list(
+            _zeros.loop_example('ridder', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        ),
+        rtol=RTOL, atol=XTOL
+    )
+
+
 # test brenth
 def test_brenth():
     npt.assert_allclose(
-        EXPECTED_BRENT,
+        EXPECTED,
         list(
             _zeros.loop_example('brenth', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
         ),
@@ -98,7 +72,7 @@ def test_brenth():
 # test brentq
 def test_brentq():
     npt.assert_allclose(
-        EXPECTED_BRENT,
+        EXPECTED,
         list(
             _zeros.loop_example('brentq', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
         ),
@@ -110,7 +84,7 @@ def test_brentq():
 def test_brentq_full_output():
     output = _zeros.full_output_example(
         (A0[0],) + ARGS, XLO, XHI, XTOL, RTOL, MITR)
-    npt.assert_allclose(EXPECTED_BRENT[0], output['root'])
+    npt.assert_allclose(EXPECTED[0], output['root'])
     npt.assert_equal(6, output['iterations'])
     npt.assert_equal(7, output['funcalls'])
     npt.assert_equal(0, output['error_num'])
