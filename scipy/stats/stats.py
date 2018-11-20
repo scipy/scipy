@@ -3005,17 +3005,15 @@ def pearsonr(x, y):
     .. math::
 
         r_{pb} = \frac{\sum_{i=1}^N (x_i - m_x) (y_i - m_y)}
-                {\sqrt{\sum_{i=1}^N (x_i - m_x)^2 \sum_{i=1}(y_i - m_y)^2}}
+                {\sqrt{\sum_{i=1}^N (x_i - m_x)^2 \sum_{i=1}^N(y_i - m_y)^2}}
 
     where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
-    the mean of the vector :math:`y` [2]_.
+    the mean of the vector :math:`y`.
 
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Pearson_correlation_coefficient#Testing_using_Student's_t-distribution
-    .. [2] http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
-
 
     Examples
     --------
