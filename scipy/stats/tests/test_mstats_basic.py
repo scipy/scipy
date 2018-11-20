@@ -42,48 +42,88 @@ class TestMquantiles(object):
         assert_almost_equal(quants, desired)
 
 
-class TestGMean(object):
-    def test_1D(self):
-        a = (1, 2, 3, 4)
-        actual = mstats.gmean(a)
+class MStatsTestMethod(object):
+    def equal_test(self, array_like, desired, axis=None, dtype=None, significant=7):
+        # Note this doesn't test when axis is not specified
+        rtol = np.float_power(10, -1.0 * significant)
+        x = mstats.gmean(array_like, axis=axis, dtype=dtype)
+        assert_allclose(x, desired, rtol=rtol)
+        assert_equal(x.dtype, dtype)
+
+
+class TestGeoMean(MStatsTestMethod):
+    def test_1d(self):
+        a = [1, 2, 3, 4]
         desired = np.power(1*2*3*4, 1./4.)
-        assert_almost_equal(actual, desired, decimal=14)
+        self.equal_test(a, desired, significant=14)
 
         desired1 = mstats.gmean(a, axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
+        self.equal_test(a, desired1, significant=14)
         assert_(not isinstance(desired1, ma.MaskedArray))
 
-        a = ma.array((1, 2, 3, 4), mask=(0, 0, 0, 1))
-        actual = mstats.gmean(a)
+    def test_1d_ma(self):
+        #  Test a 1d masked array
+        a = ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        b = 45.2872868812
+        self.equal_test(a, b)
+
+        a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired = np.power(1*2*3, 1./3.)
-        assert_almost_equal(actual, desired, decimal=14)
+        self.equal_test(a, desired, significant=14)
 
         desired1 = mstats.gmean(a, axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
+        self.equal_test(a, desired1, significant=14)
+
+    def test_1d_ma_value(self):
+        #  Test a 1d masked array with a masked value
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+        b = 41.4716627439
+        self.equal_test(a, b)
+
+    def test_1d_ma0(self):
+        #  Test a 1d masked array with zero element
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        b = 41.4716627439
+        olderr = np.seterr(all='ignore')
+        try:
+            self.equal_test(a, b)
+        finally:
+            np.seterr(**olderr)
+
+    def test_1d_ma_inf(self):
+        #  Test a 1d masked array with negative element
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
+        b = 41.4716627439
+        olderr = np.seterr(all='ignore')
+        try:
+            self.equal_test(a, b)
+        finally:
+            np.seterr(**olderr)
 
     @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
-    def test_1D_float96(self):
-        a = ma.array((1, 2, 3, 4), mask=(0, 0, 0, 1))
-        actual_dt = mstats.gmean(a, dtype=np.float96)
+    def test_1d_float96(self):
+        a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.power(1*2*3, 1./3.).astype(np.float96)
-        assert_almost_equal(actual_dt, desired_dt, decimal=14)
-        assert_(actual_dt.dtype == desired_dt.dtype)
+        self.equal_test(a, desired_dt, dtype=np.float96, significant=14)
 
-    def test_2D(self):
-        a = ma.array(((1, 2, 3, 4), (1, 2, 3, 4), (1, 2, 3, 4)),
-                     mask=((0, 0, 0, 0), (1, 0, 0, 1), (0, 1, 1, 0)))
-        actual = mstats.gmean(a)
-        desired = np.array((1, 2, 3, 4))
-        assert_array_almost_equal(actual, desired, decimal=14)
+    def test_2d_ma(self):
+        a = ma.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]],
+                     mask=[[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 1, 0]])
+        desired = np.array([1, 2, 3, 4])
+        self.equal_test(a, desired, axis=0, significant=14)
 
         desired1 = mstats.gmean(a, axis=0)
-        assert_array_almost_equal(actual, desired1, decimal=14)
+        self.equal_test(a, desired1, axis=0, significant=14)
 
-        actual = mstats.gmean(a, -1)
-        desired = ma.array((np.power(1*2*3*4, 1./4.),
+        desired = ma.array([np.power(1*2*3*4, 1./4.),
                             np.power(2*3, 1./2.),
-                            np.power(1*4, 1./2.)))
-        assert_array_almost_equal(actual, desired, decimal=14)
+                            np.power(1*4, 1./2.)])
+        self.equal_test(a, desired, axis=-1, significant=14)
+
+        #  Test a 2d masked array
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 52.8885199
+        self.equal_test(np.ma.array(a), b)
 
 
 class TestHMean(object):
