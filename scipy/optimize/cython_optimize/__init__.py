@@ -9,7 +9,8 @@ The following four zeros functions can be accessed directly from Cython:
 - `~scipy.optimize.brentq`
 
 The Cython API is similar to Python except there is no ``disp`` argument.
-Import the zero functions into Cython directly from ``cython_optimize``. ::
+Import the zero functions into Cython directly from
+`scipy.optimize.cython_optimize`. ::
 
     from scipy.optimize.cython_optimize cimport bisect, ridder, brentq, brenth
 
@@ -36,8 +37,10 @@ These are the basic steps:
 3. Write the callback function, and call the selected zeros function passing
    the callback, any extra arguments, and the other solver parameters ::
 
-       import math
        from scipy.optimize.cython_optimize cimport brentq
+
+       # import math from Cython
+       from libc cimport math
 
        myargs = {'C0': 1.0, 'C1': 0.7}  # a dictionary of extra arguments
        XLO, XHI = 0.5, 1.0  # lower and upper search boundaries
@@ -84,7 +87,7 @@ These are the basic steps:
 
 Full Output
 -----------
-The  functions in ``scipy.optimize.cython_optimize`` can also copy the full
+The  functions in `~scipy.optimize.cython_optimize` can also copy the full
 output from the solver to a C ``struct`` that is passed as its last argument.
 If you don't want the full output just pass ``NULL``. The full output
 ``struct`` must be ``zeros_parameters`` and contains the following:

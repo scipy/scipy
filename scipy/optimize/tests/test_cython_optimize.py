@@ -1,10 +1,28 @@
 """
-test cython optimize zeros api functions
+Test Cython optimize zeros API functions: ``bisect``, ``ridder``, ``brenth``,
+and ``brentq``, in `scipy.optimize.cython_optimize`, by finding the roots of a
+3rd order polynomial given a sequence of constant terms, ``a0``, and fixed 1st,
+2nd, and 3rd order terms in ``args``.
+
+.. math::
+
+    f(x, a0, args) =  ((args[2]*x + args[1])*x + args[0])*x + a0
+
+The 3rd order polynomial function is written in Cython and called in a Python
+wrapper named after the zero function. See the private ``_zeros`` Cython module
+in `scipy.optimize.cython_optimze` for more information. 
 """
 
 from __future__ import division, print_function, absolute_import
-import numpy as np
+import numpy.testing as npt
 from scipy.optimize.cython_optimize import _zeros
+
+# constants
+A0 = tuple(-2.0 - x/10.0 for x in range(10))  # constant term
+ARGS = (0.0, 0.0, 1.0)  # 1st, 2nd, and 3rd order terms
+XLO, XHI = 0.0, 2.0  # first and second bounds of zeros functions
+# absolute and relative tolerances and max iterations for zeros functions
+XTOL, RTOL, MITR = 0.001, 0.001, 10
 
 
 EXPECTED_BISECT = [
@@ -22,8 +40,12 @@ EXPECTED_BISECT = [
 
 # test bisect
 def test_bisect():
-    assert np.allclose(EXPECTED_BISECT,
-                       list(_zeros.loop_example('bisect')))
+    npt.assert_allclose(
+        EXPECTED_BISECT,
+        list(
+            _zeros.loop_example('bisect', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        )
+    )
 
 
 EXPECTED_RIDDER = [
@@ -41,30 +63,15 @@ EXPECTED_RIDDER = [
 
 # test ridder
 def test_ridder():
-    assert np.allclose(EXPECTED_RIDDER,
-                       list(_zeros.loop_example('ridder')))
+    npt.assert_allclose(
+        EXPECTED_RIDDER,
+        list(
+            _zeros.loop_example('ridder', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        )
+    )
 
 
-EXPECTED_BRENTH = [
-    1.2599013632116787,
-    1.2805183764606847,
-    1.300478153836079,
-    1.319836062211477,
-    1.3386396735339707,
-    1.3569302110890944,
-    1.3747436816264305,
-    1.392111769620191,
-    1.4090625496526121,
-    1.4256210584575042]
-
-
-# test brenth
-def test_brenth():
-    assert np.allclose(EXPECTED_BRENTH,
-                       list(_zeros.loop_example('brenth')))
-
-
-EXPECTED_BRENTQ = [
+EXPECTED_BRENT = [
     1.259872799904563,
     1.28042866862737,
     1.3003083443276644,
@@ -77,17 +84,33 @@ EXPECTED_BRENTQ = [
     1.4261502005552444]
 
 
+# test brenth
+def test_brenth():
+    npt.assert_allclose(
+        EXPECTED_BRENT,
+        list(
+            _zeros.loop_example('brenth', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        ),
+        rtol=RTOL, atol=XTOL
+    )
+
+
 # test brentq
 def test_brentq():
-    assert np.allclose(EXPECTED_BRENTQ,
-                       list(_zeros.loop_example('brentq')))
+    npt.assert_allclose(
+        EXPECTED_BRENT,
+        list(
+            _zeros.loop_example('brentq', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        ),
+        rtol=RTOL, atol=XTOL
+    )
                        
 
 # test brentq with full output
 def test_brentq_full_output():
-    output = _zeros.full_output_example()
-    print(output)
-    assert np.isclose(EXPECTED_BRENTQ[0], output['root'])
-    assert np.isclose(6, output['iterations'])
-    assert np.isclose(7, output['funcalls'])
-    assert np.isclose(0, output['error_num'])
+    output = _zeros.full_output_example(
+        (A0[0],) + ARGS, XLO, XHI, XTOL, RTOL, MITR)
+    npt.assert_allclose(EXPECTED_BRENT[0], output['root'])
+    npt.assert_equal(6, output['iterations'])
+    npt.assert_equal(7, output['funcalls'])
+    npt.assert_equal(0, output['error_num'])
