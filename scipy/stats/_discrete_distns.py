@@ -708,7 +708,7 @@ class randint_gen(rv_discrete):
     def _rvs(self, low, high):
         """An array of *size* random integers >= ``low`` and < ``high``."""
         if self._size is not None:
-            # Numpy's RandomState.randint() doesn't broadcast its arguments.
+            # NumPy's RandomState.randint() doesn't broadcast its arguments.
             # Use `broadcast_to()` to extend the shapes of low and high
             # up to self._size.  Then we can use the numpy.vectorize'd
             # randint without needing to pass it a `size` argument.

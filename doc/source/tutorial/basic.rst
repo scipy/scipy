@@ -7,17 +7,17 @@ Basic functions
 
 .. contents::
 
-Interaction with Numpy
+Interaction with NumPy
 ----------------------
 
-SciPy builds on Numpy, and for all basic array handling needs you can
-use Numpy functions:
+SciPy builds on NumPy, and for all basic array handling needs you can
+use NumPy functions:
 
     >>> import numpy as np
     >>> np.some_function()
 
 Rather than giving a detailed description of each of these functions
-(which is available in the Numpy Reference Guide or by using the
+(which is available in the NumPy Reference Guide or by using the
 :func:`help`, :func:`info` and :func:`source` commands), this tutorial
 will discuss some of the more useful commands which require a little
 introduction to use to their full potential.
@@ -99,7 +99,7 @@ usage:
 
 Having meshed arrays like this is sometimes very useful. However, it
 is not always needed just to evaluate some N-dimensional function over
-a grid due to the array-broadcasting rules of Numpy and SciPy. If this
+a grid due to the array-broadcasting rules of NumPy and SciPy. If this
 is the only purpose for generating a meshgrid, you should instead use
 the function :obj:`ogrid` which generates an "open" grid using :obj:`newaxis`
 judiciously to create N, N-d arrays where only one dimension in each
@@ -123,7 +123,7 @@ Polynomials
 ^^^^^^^^^^^
 
 There are two (interchangeable) ways to deal with 1-d polynomials in
-SciPy. The first is to use the :class:`poly1d` class from Numpy. This
+SciPy. The first is to use the :class:`poly1d` class from NumPy. This
 class accepts coefficients or polynomial roots to initialize a
 polynomial. The polynomial object can then be manipulated in algebraic
 expressions, integrated, differentiated, and evaluated. It even prints
@@ -158,7 +158,7 @@ Vectorizing functions (vectorize)
 One of the features that NumPy provides is a class :obj:`vectorize` to
 convert an ordinary Python function which accepts scalars and returns
 scalars into a "vectorized-function" with the same broadcasting rules
-as other Numpy functions (*i.e.* the Universal functions, or
+as other NumPy functions (*i.e.* the Universal functions, or
 ufuncs). For example, suppose you have a Python function named
 :obj:`addsubtract` defined as:
 
@@ -198,7 +198,7 @@ complex number. While complex numbers and arrays have attributes that
 return those values, if one is not sure whether or not the object will
 be complex-valued, it is better to use the functional forms
 :func:`np.real` and :func:`np.imag` . These functions succeed for anything
-that can be turned into a Numpy array. Consider also the function
+that can be turned into a NumPy array. Consider also the function
 :func:`np.real_if_close` which transforms a complex-valued number with
 tiny imaginary part into a real number.
 
@@ -207,7 +207,7 @@ Occasionally the need to check whether or not a number is a scalar
 occurs in coding. This functionality is provided in the convenient
 function :func:`np.isscalar` which returns a 1 or a 0.
 
-Finally, ensuring that objects are a certain Numpy type occurs often
+Finally, ensuring that objects are a certain NumPy type occurs often
 enough that it has been given a convenient interface in SciPy through
 the use of the :obj:`np.cast` dictionary. The dictionary is keyed by the
 type it is desired to cast to and the dictionary stores functions to
@@ -227,7 +227,7 @@ mentioned. For doing phase processing, the functions :func:`angle`,
 and :obj:`unwrap` are useful. Also, the :obj:`linspace` and
 :obj:`logspace` functions return equally spaced samples in a linear or
 log scale.  Finally, it's useful to be aware of the indexing
-capabilities of Numpy. Mention should be made of the function
+capabilities of NumPy. Mention should be made of the function
 :obj:`select` which extends the functionality of :obj:`where` to
 include multiple conditions and multiple choices. The calling
 convention is ``select(condlist,choicelist,default=0).`` :obj:`select`

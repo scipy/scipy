@@ -64,9 +64,9 @@ There are some serious issues with how Python packaging tools handle
 dependencies reported by projects.  Because SciPy gets regular bug reports
 about this, we go in a bit of detail here.
 
-SciPy only reports its dependency on Numpy via ``install_requires`` if Numpy
+SciPy only reports its dependency on NumPy via ``install_requires`` if NumPy
 isn't installed at all on a system.  This will only change when there are
-either 32-bit and 64-bit Windows wheels for Numpy on PyPI or when
+either 32-bit and 64-bit Windows wheels for NumPy on PyPI or when
 ``pip upgrade`` becomes available (with sane behavior, unlike ``pip install
 -U``, see `this PR
 <https://github.com/pypa/pip/pull/3194>`_).  For more details, see
@@ -82,7 +82,7 @@ as "wontfix").
 
 .. _supported-py-numpy-versions:
 
-Supported Python and Numpy versions
+Supported Python and NumPy versions
 -----------------------------------
 The Python_ versions that SciPy supports are listed in the list of PyPI
 classifiers in ``setup.py``, and mentioned in the release notes for each
@@ -90,16 +90,16 @@ release.  All newly released Python versions will be supported as soon as
 possible.  The general policy on dropping support for a Python version is that
 (a) usage of that version has to be quite low (say <5% of users) and (b) the
 version isn't included in an active long-term support release of one of the
-main Linux distributions anymore.  SciPy typically follows Numpy, which has a
+main Linux distributions anymore.  SciPy typically follows NumPy, which has a
 similar policy.  The final decision on dropping support is always taken on the
 scipy-dev mailing list.
 
 The lowest supported Numpy_ version for a SciPy version is mentioned in the
 release notes and is encoded in ``scipy/__init__.py`` and the
 ``install_requires`` field of ``setup.py``.  Typically the latest SciPy release
-supports 3 or 4 minor versions of Numpy.  That may become more if the frequency
-of Numpy releases increases (it's about 1x/year at the time of writing).
-Support for a particular Numpy version is typically dropped if (a) that Numpy
+supports 3 or 4 minor versions of NumPy.  That may become more if the frequency
+of NumPy releases increases (it's about 1x/year at the time of writing).
+Support for a particular NumPy version is typically dropped if (a) that NumPy
 version is several years old, and (b) the maintenance cost of keeping support
 is starting to outweigh the benefits.  The final decision on dropping support
 is always taken on the scipy-dev mailing list.
@@ -125,8 +125,8 @@ and distributing them on PyPI or elsewhere.
 
 - A binary is specific for a single Python version (because different Python
   versions aren't ABI-compatible, at least up to Python 3.4).
-- Build against the lowest Numpy version that you need to support, then it will
-  work for all Numpy versions with the same major version number (Numpy does
+- Build against the lowest NumPy version that you need to support, then it will
+  work for all NumPy versions with the same major version number (NumPy does
   maintain backwards ABI compatibility).
 
 **Windows**
@@ -135,7 +135,7 @@ and distributing them on PyPI or elsewhere.
   Python.org compatible binaries for SciPy is installing MSVC (see
   https://wiki.python.org/moin/WindowsCompilers) and mingw64-gfortran.
   Support for this configuration requires numpy.distutils from
-  Numpy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
+  NumPy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
   This configuration is currently used in the Appveyor configuration for
   https://github.com/MacPython/scipy-wheels
 - For 64-bit Windows installers built with a free toolchain, use the method

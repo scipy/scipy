@@ -261,7 +261,7 @@ following, a *SciPy module* is defined as a Python package, say
   for instance ``yyy/_somemodule.py``.
 
 * User-visible functions should have good documentation following
-  the Numpy documentation style, see `how to document`_
+  the NumPy documentation style, see `how to document`_
 
 * The ``__init__.py`` of the module should contain the main reference
   documentation in its docstring. This is connected to the Sphinx
@@ -277,7 +277,7 @@ following, a *SciPy module* is defined as a Python package, say
 
 See the existing Scipy submodules for guidance.
 
-For further details on Numpy distutils, see:
+For further details on NumPy distutils, see:
 
   https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt
 
@@ -356,7 +356,7 @@ command ``source scipy-dev/bin/activate``, and ``deactivate`` to exit from the
 virtual environment and back to your previous shell.  With scipy-dev
 activated, install first Scipy's dependencies::
 
-    $ pip install Numpy pytest Cython
+    $ pip install NumPy pytest Cython
 
 After that, you can install a development version of Scipy, for example via::
 

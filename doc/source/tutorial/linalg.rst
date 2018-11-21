@@ -111,7 +111,7 @@ The inverse of a matrix :math:`\mathbf{A}` is the matrix
 :math:`\mathbf{I}` is the identity matrix consisting of ones down the
 main diagonal.  Usually :math:`\mathbf{B}` is denoted
 :math:`\mathbf{B}=\mathbf{A}^{-1}` . In SciPy, the matrix inverse of
-the Numpy array, A, is obtained using :obj:`linalg.inv` ``(A)`` , or
+the NumPy array, A, is obtained using :obj:`linalg.inv` ``(A)`` , or
 using ``A.I`` if ``A`` is a Matrix. For example, let
 
 .. math::

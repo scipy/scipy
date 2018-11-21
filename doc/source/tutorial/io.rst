@@ -45,7 +45,7 @@ How do I start?
 ```````````````
 
 You may have a ``.mat`` file that you want to read into SciPy.  Or, you
-want to pass some variables from SciPy / Numpy into MATLAB.
+want to pass some variables from SciPy / NumPy into MATLAB.
 
 To save us using a MATLAB license, let's start in Octave_.  Octave has
 MATLAB-compatible save and load functions.  Start Octave (``octave`` at

@@ -26,7 +26,7 @@ Generate C code coverage listing under build/lcov/:
 """
 
 #
-# This is a generic test runner script for projects using Numpy's test
+# This is a generic test runner script for projects using NumPy's test
 # framework. Change the following values to adapt to your project:
 #
 
@@ -106,7 +106,7 @@ def main(argv):
                         help="Debug build")
     parser.add_argument("--parallel", "-j", type=int, default=1,
                         help="Number of parallel jobs during build (requires "
-                             "Numpy 1.10 or greater).")
+                             "NumPy 1.10 or greater).")
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",

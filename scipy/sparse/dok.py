@@ -235,7 +235,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return newdok
 
     def _getitem_ranges(self, i_indices, j_indices, shape):
-        # performance golf: we don't want Numpy scalars here, they are slow
+        # performance golf: we don't want NumPy scalars here, they are slow
         i_start, i_stop, i_stride = map(int, i_indices)
         j_start, j_stop, j_stride = map(int, j_indices)
 

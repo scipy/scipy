@@ -5,7 +5,7 @@ Introduction
 .. contents::
 
 SciPy is a collection of mathematical algorithms and convenience
-functions built on the Numpy extension of Python. It adds
+functions built on the NumPy extension of Python. It adds
 significant power to the interactive Python session by providing the
 user with high-level commands and classes for manipulating and
 visualizing data. With SciPy an interactive Python session
@@ -26,7 +26,7 @@ This tutorial will acquaint the first-time user of SciPy with some of its most
 important features. It assumes that the user has already installed the SciPy
 package. Some general Python facility is also assumed, such as could be
 acquired by working through the Python distribution's Tutorial. For further
-introductory help the user is directed to the Numpy documentation.
+introductory help the user is directed to the NumPy documentation.
 
 For brevity and convenience, we will often assume that the main
 packages (numpy, scipy, and matplotlib) have been imported as::

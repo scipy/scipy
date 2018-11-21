@@ -21,7 +21,7 @@ try:
     _deprecated()
 except DeprecationWarning as e:
     # don't fail import if DeprecationWarnings raise error -- works around
-    # the situation with Numpy's test framework
+    # the situation with NumPy's test framework
     pass
 
 from ._sparsetools import *
