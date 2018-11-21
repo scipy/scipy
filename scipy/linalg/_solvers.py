@@ -784,7 +784,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     q = np.atleast_2d(_asarray_validated(q, check_finite=True))
     r = np.atleast_2d(_asarray_validated(r, check_finite=True))
 
-    # Get the correct data types otherwise Numpy complains
+    # Get the correct data types otherwise NumPy complains
     # about pushing complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
 
