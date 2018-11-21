@@ -1319,7 +1319,7 @@ def _merge_clusters(peaks_above, peaks_below, runs=0):
     Yields
     ------
     peaks : array
-        Array with indecies of peaks above a threshold within a (merged)
+        Array with indices of peaks above a threshold within a (merged)
         cluster.
 
     """
