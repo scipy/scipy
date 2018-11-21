@@ -6,6 +6,7 @@
 import warnings
 from collections.abc import Iterable
 import ctypes
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -2086,11 +2087,18 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = TBA
+        f(x, a) = c x^{c-1} \exp(-x^c)
 
-    for :math:`0 < x < a`.
+    for :math:`x > a`, :math:`c > 0`.
 
-    `truncweibull_min` takes ``a`` in addition to a shape parameter.
+    `truncweibull_min` takes :math:`a` and :math:`b` as shape parameters.
+
+    Notice that the truncation value, :math:`a`, is defined in standardized
+    form::
+
+        a = (u - loc)/scale
+
+    where :math:`u` is the specific truncation value.
 
     %(after_notes)s
 
@@ -2099,39 +2107,191 @@ class truncweibull_min_gen(rv_continuous):
     """
     def _argcheck(self, a, c):
         self.a = a
-        return a > 0
+        return (a >= 0.) & (c > 0.)
 
     def _pdf(self, x, a, c):
-        # truncexpon.pdf(x, b) = exp(-x) / (1-exp(-b))
-        return c*pow(x, c-1)*np.exp(-pow(x, c))/np.exp(-pow(a, c))
+        return c*pow(x, c-1)*np.exp(-pow(x, c) + pow(a, c))
 
-    # def _logpdf(self, x, b):
-    #     return -x - np.log(-sc.expm1(-b))
+    def _logpdf(self, x, a, c):
+        logpdf = np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) + pow(a, c)
+        return logpdf
 
-    # def _cdf(self, x, b, c):
-    #     return -sc.expm1(-pow(x, c))/sc.expm1(-pow(b, c))
+    def _cdf(self, x, a, c):
+        return -sc.expm1(-pow(x, c) + pow(a, c))
 
-    # def _ppf(self, q, b):
-    #     return -sc.log1p(q*sc.expm1(-b))
+    def _sf(self, x, a, c):
+        return np.exp(-pow(x, c) + pow(a, c))
 
-    # def _munp(self, n, b):
-    #     # wrong answer with formula, same as in continuous.pdf
-    #     # return sc.gamman+1)-sc.gammainc1+n, b)
-    #     if n == 1:
-    #         return (1-(b+1)*np.exp(-b))/(-sc.expm1(-b))
-    #     elif n == 2:
-    #         return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(-sc.expm1(-b))
-    #     else:
-    #         # return generic for higher moments
-    #         # return rv_continuous._mom1_sc(self, n, b)
-    #         return self._mom1_sc(n, b)
+    def _logsf(self, x, a, c):
+        return -pow(x, c) + pow(a, c)
 
-    # def _entropy(self, b):
-    #     eB = np.exp(b)
-    #     return np.log(eB-1)+(1+eB*(b-1.0))/(1.0-eB)
+    def _ppf(self, q, a, c):
+        return pow(pow(a, c) - sc.log1p(-q), 1.0/c)
+
+    def _penalized_nnlf(self, theta, x):
+        """
+        Method override to hook into scipy.stats optimization framework
+        with custom objective function. MLE is either non-existent/non-robust
+        in general.
+
+        logsf is fitted agianst log(1-F_e), where F_e is the empirical cdf.
+        Non-linear least squares is used.
+
+        """
+        loc, scale, (a, c) = self._unpack_loc_scale(theta)
+        x = np.asarray((x-loc) / scale)
+
+        n = len(x)
+        ecdf = np.array([(i + 1.)/(n + 1.) for i in range(n)])
+        logsf = self._logsf(x, a, c)
+        w = np.ones(x.shape, dtype=x.dtype)
+        penalty = np.zeros(x.shape, dtype=x.dtype)
+
+        cond0 = (x <= a)
+        if cond0.any():
+            w[cond0] = 0.
+            penalty[cond0] = pow(a, c)
+
+        return w*(sc.log1p(-ecdf) - logsf) + penalty
+
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        Maximum likelihood estimator for this distribution function is
+        non-existent in general. Therefore, an alternative approach is used.
+        `logsf` is fitted agianst `log(1-F_e)`, where `F_e` is the empirical
+        cumulativ distribution function. The non-linear least squares optimizer
+        is used, and therefore the `optimizer` argument is ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+
+        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
+              kwds.get('fix_a', None))
+        f1 = (kwds.get('f1', None) or kwds.get('fc', None) or
+              kwds.get('fix_c', None))
+        floc = kwds.get('floc', None)
+        fscale = kwds.get('fscale', None)
+
+        x = np.asarray(data)
+        x.sort()
+
+        bounds = ([0., 0., -np.inf, 0.],
+                  [np.inf, np.inf, x[0], np.inf])
+
+        for i, fp in enumerate((f0, f1, floc, fscale)):
+            if fp is not None:
+                bounds[0].pop(i), bounds[1].pop(i)
+
+        def _lsq_optimizer(*args, **kwds):
+            kwds.pop('disp')
+            kwds['bounds'] = bounds
+            return optimize.least_squares(*args, **kwds)['x']
+
+        kwds['optimizer'] = _lsq_optimizer
+        return super(truncweibull_min_gen, self).fit(x, *args, **kwds)
 
 
-trunweibull_min = truncweibull_min_gen(name='truncweibull_min')
+truncweibull_min = truncweibull_min_gen(a=0.0, name='truncweibull_min')
+
+
+class truncweibull_min_gen_2(rv_continuous):
+    r"""A truncated Weibull minimum continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `truncweibull_min` is:
+
+    .. math::
+
+        f(x, a) = c x^{c-1} \exp(-x^c)
+
+    for :math:`x > a`, :math:`c > 0`.
+
+    `truncweibull_min` takes :math:`a` and :math:`b` as shape parameters.
+
+    Notice that the truncation value, :math:`a`, is defined in standardized
+    form::
+
+        a = (u - loc)/scale
+
+    where :math:`u` is the specific truncation value.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _argcheck(self, a, c):
+        self.a = a
+        return (a >= 0.) & (c > 0.)
+
+    def _pdf(self, x, a, c):
+        return c*pow(x, c-1)*np.exp(-pow(x, c) + pow(a, c))
+
+    def _logpdf(self, x, a, c):
+        logpdf = np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) + pow(a, c)
+        return logpdf
+
+    def _cdf(self, x, a, c):
+        return -sc.expm1(-pow(x, c) + pow(a, c))
+
+    def _sf(self, x, a, c):
+        return np.exp(-pow(x, c) + pow(a, c))
+
+    def _logsf(self, x, a, c):
+        return -pow(x, c) + pow(a, c)
+
+    def _ppf(self, q, a, c):
+        return pow(pow(a, c) - sc.log1p(-q), 1.0/c)
+
+    @contextmanager
+    def _mle_mod(self):
+        """Override penalized_nnlf method in a context manager."""
+        penalized_nnlf = self._penalized_nnlf
+        try:
+            self._penalized_nnlf = self._penalized_nnlf_mod
+            yield
+        finally:
+            self._penalized_nnlf = penalized_nnlf
+
+    def _a_est(self, x, c):
+        x_r = x.min()
+        f_r = (1. - 0.3)/(len(x) + 0.4)
+
+        if pow(-np.log(1 - f_r), 1./c) > x_r:
+            return 0
+        else:
+            return (np.log(1. - f_r) + x_r**c)**(1./c)
+
+    def _penalized_nnlf_mod(self, theta, x):
+        """
+        Ignore provided `a` and estimate it using an alternative method. This
+        modifies the resulting ML function sent to the optimizer.
+
+        """
+        loc, scale, (_, c) = self._unpack_loc_scale(theta)
+        theta = (self._a_est((x - loc)/scale, c), c, loc, scale)
+        return super(truncweibull_min_gen_2, self)._penalized_nnlf(theta, x)
+
+    def fit(self, data, *args, **kwds):
+
+        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
+              kwds.get('fix_a', None))
+        floc = kwds.get('floc', None)
+        fscale = kwds.get('fscale', None)
+
+        # MLE is well-behaved, use default fit method.
+        if f0 is not None or (floc is not None and fscale is not None):
+            return super(truncweibull_min_gen_2, self).fit(data, *args, **kwds)
+
+        # MLE is non-existent - use a modified version. See notes
+        with self._mle_mod():
+            _, c, loc, scale = super(truncweibull_min_gen_2, self).fit(
+                data, *args, **kwds)
+            a = self._a_est((data - loc)/scale, c)
+        return a, c, loc, scale
+
+
+truncweibull_min_2 = truncweibull_min_gen_2(a=0.0, name='truncweibull_min')
 
 
 class weibull_max_gen(rv_continuous):
