@@ -1368,7 +1368,7 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
     Returns
     -------
     peaks : tuple
-        Tuple with arrays containing the indecies of selected peaks in each
+        Tuple with arrays containing the indices of selected peaks in each
         cluster. Indecies are ordered (descending) with respect to value of the
         peaks.
 
