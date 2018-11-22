@@ -1231,47 +1231,6 @@ def test_relfreq():
     assert_array_almost_equal(relfreqs, relfreqs2)
 
 
-class TestHMean(object):
-    def test_1D_list(self):
-        a = (1,2,3,4)
-        actual = stats.hmean(a)
-        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        assert_almost_equal(actual, desired, decimal=14)
-
-        desired1 = stats.hmean(array(a),axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
-
-    def test_1D_array(self):
-        a = array((1,2,3,4), float64)
-        actual = stats.hmean(a)
-        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        assert_almost_equal(actual, desired, decimal=14)
-
-        desired1 = stats.hmean(a,axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
-
-    def test_2D_array_default(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-        actual = stats.hmean(a)
-        desired = array((1.,2.,3.,4.))
-        assert_array_almost_equal(actual, desired, decimal=14)
-
-        actual1 = stats.hmean(a,axis=0)
-        assert_array_almost_equal(actual1, desired, decimal=14)
-
-    def test_2D_array_dim1(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-
-        v = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        desired1 = array((v,v,v))
-        actual1 = stats.hmean(a, axis=1)
-        assert_array_almost_equal(actual1, desired1, decimal=14)
-
-
 class TestScoreatpercentile(object):
     def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
@@ -3600,90 +3559,74 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-class HarMeanTestCase:
-    def test_1dlist(self):
-        #  Test a 1d list
-        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        b = 34.1417152147
-        self.do(a, b)
-
-    def test_1darray(self):
-        #  Test a 1d array
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        b = 34.1417152147
-        self.do(a, b)
-
-    def test_1dma(self):
-        #  Test a 1d masked array
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        b = 34.1417152147
-        self.do(a, b)
-
-    def test_1dmavalue(self):
-        #  Test a 1d masked array with a masked value
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-                      mask=[0,0,0,0,0,0,0,0,0,1])
-        b = 31.8137186141
-        self.do(a, b)
-
-    # Note the next tests use axis=None as default, not axis=0
-    def test_2dlist(self):
-        #  Test a 2d list
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 38.6696271841
-        self.do(a, b)
-
-    def test_2darray(self):
-        #  Test a 2d array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 38.6696271841
-        self.do(np.array(a), b)
-
-    def test_2dma(self):
-        #  Test a 2d masked array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 38.6696271841
-        self.do(np.ma.array(a), b)
-
-    def test_2daxis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
-        self.do(a, b, axis=0)
-
-    def test_2daxis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([19.2, 63.03939962, 103.80078637])
-        self.do(a, b, axis=1)
-
-    def test_2dmatrixdaxis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        self.do(np.matrix(a), b, axis=0)
-
-    def test_2dmatrixaxis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
-        self.do(np.matrix(a), b, axis=1)
-
-
-class TestHarMean(HarMeanTestCase):
-    def do(self, a, b, axis=None, dtype=None):
-        x = stats.hmean(a, axis=axis, dtype=dtype)
-        assert_almost_equal(b, x)
-        assert_equal(x.dtype, dtype)
-
-
 class StatsTestMethod(object):
-    def equal_test(self, array_like, desired, axis=None, dtype=None, significant=7):
+    def equal_gmean_test(self, array_like, desired, axis=None, dtype=None, significant=7):
         # Note this doesn't test when axis is not specified
         rtol = np.float_power(10, -1.0 * significant)
         x = stats.gmean(array_like, axis=axis, dtype=dtype)
         assert_allclose(x, desired, rtol=rtol)
         assert_equal(x.dtype, dtype)
+
+    def equal_hmean_test(self, array_like, desired, axis=None, dtype=None, significant=7):
+        rtol = np.float_power(10, -1.0 * significant)
+        x = stats.hmean(array_like, axis=axis, dtype=dtype)
+        assert_allclose(x, desired, rtol=rtol)
+        assert_equal(x.dtype, dtype)
+
+
+class TestHarMean(StatsTestMethod):
+    def test_1d_list(self):
+        #  Test a 1d list
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        b = 34.1417152147
+        self.equal_hmean_test(a, b)
+
+        a = [1, 2, 3, 4]
+        b = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
+        self.equal_hmean_test(a, b)
+
+    def test_1d_array(self):
+        #  Test a 1d array
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        b = 34.1417152147
+        self.equal_hmean_test(a, b)
+
+    # Note the next tests use axis=None as default, not axis=0
+    def test_2d_list(self):
+        #  Test a 2d list
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 38.6696271841
+        self.equal_hmean_test(a, b)
+
+    def test_2d_array(self):
+        #  Test a 2d array
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = 38.6696271841
+        self.equal_hmean_test(np.array(a), b)
+
+    def test_2d_axis0(self):
+        #  Test a 2d list with axis=0
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
+        self.equal_hmean_test(a, b, axis=0)
+
+    def test_2d_axis1(self):
+        #  Test a 2d list with axis=1
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.array([19.2, 63.03939962, 103.80078637])
+        self.equal_hmean_test(a, b, axis=1)
+
+    def test_2d_matrix_axis0(self):
+        #  Test a 2d list with axis=0
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
+        self.equal_hmean_test(np.matrix(a), b, axis=0)
+
+    def test_2d_matrix_axis1(self):
+        #  Test a 2d list with axis=1
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        b = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
+        self.equal_hmean_test(np.matrix(a), b, axis=1)
 
 
 class TestGeoMean(StatsTestMethod):
@@ -3691,94 +3634,94 @@ class TestGeoMean(StatsTestMethod):
         #  Test a 1d list
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 45.2872868812
-        self.equal_test(a, b)
+        self.equal_gmean_test(a, b)
 
         a = [1, 2, 3, 4]
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        self.equal_test(a, desired, significant=14)
+        self.equal_gmean_test(a, desired, significant=14)
 
         desired1 = stats.gmean(a, axis=-1)
-        self.equal_test(a, desired1, axis=-1)
+        self.equal_gmean_test(a, desired1, axis=-1)
 
     def test_1d_array(self):
         #  Test a 1d array
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
-        self.equal_test(a, b)
+        self.equal_gmean_test(a, b)
 
         a = array([1, 2, 3, 4], float32)
         desired = power(1 * 2 * 3 * 4, 1. / 4.)
-        self.equal_test(a, desired, dtype=float32)
+        self.equal_gmean_test(a, desired, dtype=float32)
 
         desired1 = stats.gmean(a, axis=-1)
-        self.equal_test(a, desired1, axis=-1, dtype=float32)
+        self.equal_gmean_test(a, desired1, axis=-1, dtype=float32)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2d_list(self):
         #  Test a 2d list
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
-        self.equal_test(a, b)
+        self.equal_gmean_test(a, b)
 
     def test_2d_array(self):
         #  Test a 2d array
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
-        self.equal_test(array(a), b)
+        self.equal_gmean_test(array(a), b)
 
     def test_2d_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
-        self.equal_test(a, b, axis=0)
+        self.equal_gmean_test(a, b, axis=0)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         desired = array([1, 2, 3, 4])
-        self.equal_test(a, desired, axis=0, significant=14)
+        self.equal_gmean_test(a, desired, axis=0, significant=14)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         desired = stats.gmean(a, axis=0)
-        self.equal_test(a, desired, axis=0, significant=14)
+        self.equal_gmean_test(a, desired, axis=0, significant=14)
 
     def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([22.13363839, 64.02171746, 104.40086817])
-        self.equal_test(a, b, axis=1)
+        self.equal_gmean_test(a, b, axis=1)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         v = power(1 * 2 * 3 * 4, 1. / 4.)
         desired = array([v, v, v])
-        self.equal_test(a, desired, axis=1, significant=14)
+        self.equal_gmean_test(a, desired, axis=1, significant=14)
 
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        self.equal_test(np.matrix(a), b, axis=0)
+        self.equal_gmean_test(np.matrix(a), b, axis=0)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         desired = np.matrix([1, 2, 3, 4])
-        self.equal_test(np.matrix(a), desired, axis=0, significant=14)
+        self.equal_gmean_test(np.matrix(a), desired, axis=0, significant=14)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         desired = np.matrix(stats.gmean(a, axis=0))
-        self.equal_test(np.matrix(a), desired, axis=0, significant=14)
+        self.equal_gmean_test(np.matrix(a), desired, axis=0, significant=14)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        self.equal_test(np.matrix(a), b, axis=1)
+        self.equal_gmean_test(np.matrix(a), b, axis=1)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         v = power(1 * 2 * 3 * 4, 1. / 4.)
         desired = np.matrix([[v], [v], [v]])
-        self.equal_test(np.matrix(a), desired, axis=1, significant=14)
+        self.equal_gmean_test(np.matrix(a), desired, axis=1, significant=14)
 
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
-        self.equal_test(a, 1e200, significant=13)
+        self.equal_gmean_test(a, 1e200, significant=13)
 
     def test_1d_list0(self):
         #  Test a 1d list with zero element
@@ -3786,7 +3729,7 @@ class TestGeoMean(StatsTestMethod):
         b = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
-            self.equal_test(a, b)
+            self.equal_gmean_test(a, b)
         finally:
             np.seterr(**olderr)
 
@@ -3796,7 +3739,7 @@ class TestGeoMean(StatsTestMethod):
         b = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
-            self.equal_test(a, b)
+            self.equal_gmean_test(a, b)
         finally:
             np.seterr(**olderr)
 
