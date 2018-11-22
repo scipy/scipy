@@ -10,6 +10,7 @@ from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
+from ._crossing_finding import argcrossup
 from ._peak_finding_utils import (
     _local_maxima_1d,
     _select_by_peak_distance,
@@ -18,8 +19,8 @@ from ._peak_finding_utils import (
 )
 
 
-__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
-           'peak_widths', 'find_peaks', 'find_peaks_cwt']
+__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'decluster_peaks',
+           'peak_prominences', 'peak_widths', 'find_peaks', 'find_peaks_cwt']
 
 
 def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
@@ -1297,3 +1298,158 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     max_locs.sort()
 
     return max_locs
+
+
+def _merge_clusters(peaks_above, peaks_below, runs=0):
+    """
+    Generator that merges naive peak clusters according to some declustering
+    rule.
+
+    Parameters
+    ----------
+    peaks_above : sequence
+        Sequence of arrays with indecies of peaks above a thershold within a
+        cluster. Assumes that clusters and indecies are sorted.
+    peaks_below : sequence
+        Sequence of arrays with indecies of peaks below a thershold within a
+        cluster. Assumes that clusters and indecies are sorted.
+    runs : int
+        Minimum required number of peaks below a threshold to sustain a
+        cluster. If number of peaks below a threshold is lower than ``runs``
+        then the cluster is merged with the subsequent cluster.
+
+    Yields
+    ------
+    peaks : array
+        Array with indices of peaks above a threshold within a (merged)
+        cluster.
+
+    """
+    buffer = []
+    for pa, pb in zip(peaks_above, peaks_below):
+        if len(pb) >= runs:
+            if not buffer:
+                yield pa
+            else:
+                buffer.append(pa)
+                yield np.concatenate(buffer)
+                buffer = []
+        else:
+            buffer.append(pa)
+    if buffer:
+        yield np.concatenate(buffer)
+
+
+def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
+    """
+    Find and decluster peaks inside a signal.
+
+    This function takes a one-dimensional array, finds all local maxima above a
+    threshold, divides them into clusters, and ultimately applies a
+    declustering method.
+
+    Parameters
+    ----------
+    x : sequence
+        A signal with peaks.
+    x_th : number or ndarray or sequence
+        Only peaks above this threshold are selected. The threshold may also be
+        used as a declustering parameter. If ``None`` is passed, the mean of
+        the signal is used.
+    method : str
+        The declustering method to use. Accepts ``mean`` or ``runs``. See
+        Notes.
+    order : int
+        N-th (>= 1) largest peaks to return from each cluster. For instance,
+        ``order = 1`` yields the largest, ``order = 2`` yields the two largest,
+        ..., from each cluster.
+    runs : int
+        Required parameter for declustering if ``method`` is
+        ``runs``, and ignored otherwise.
+
+    Returns
+    -------
+    peaks : tuple
+        Tuple with arrays containing the indices of selected peaks in each
+        cluster. Indices are ordered (descending) with respect to value of the
+        peaks.
+
+    Notes
+    -----
+    A useful assumption in statistical analysis of peaks, (e.g. extreme value
+    analysis where data are fitted to suitable distribution functions), is that
+    data are independent. However, this is necessarily NOT the case when
+    dealing with many real world scenarios, e.g. dynamic response of mechanical
+    systems to environmental loads.
+
+    Declustering is a pragmatic method to sub-sample peaks from stationary
+    stochastic signals to (hopefully) achieve statistical independence by
+    spacing out peaks in a systematic manner. Here, 2 declustering approaches
+    are implemented; mean-upcrossing and runs.
+
+    Mean-upcrossing (``mean``) declustering is as following:
+     1. Identify clusters of exceedences, i.e., find all peaks between two
+        upcrossings above the signal mean value.
+     2. Select only the n-th largest peaks from each cluster (cf. ``order``).
+     3. Exclude peaks that falls below the threshold (cf. ``x_th``).
+
+    Runs (``runs``) declustering is as following:
+     1. Identify clusters of exceedences, i.e., find all peaks between two
+        upcrossings above the threshold (cf. ``x_th``).
+     2. Merge clusters that are seperated with less than k runs (cf. ``runs``).
+        The number of peaks below the threshold seperating a down-crossing and
+        the subsequent up-crossing is called runs.
+     3. Select only the n-th largest peaks from each cluster (cf. ``order``).
+
+    The difference between the methods are subtle, and they even overplap for
+    ``x_th = x.mean()`` and ``runs = 0``.
+
+    References
+    ----------
+    .. [1] Coles S, (2001), An Introduction to Statistical Modelling of
+        Extreme Values. Springer.
+
+    See Also
+    --------
+    find_peaks_cwt
+        Find peaks using the wavelet transformation.
+    find_peaks
+        Find peaks inside a signal based on peak properties.
+
+    """
+    x = _arg_x_as_expected(x)
+
+    if x_th is None:
+        x_th = x.mean()
+
+    if method == 'mean':
+        runs = 0
+        x_up = x.mean()
+    elif method == 'runs':
+        x_up = x_th
+    else:
+        raise ValueError("method must be 'mean' or 'runs.'")
+
+    index = np.arange(len(x), dtype=int)
+    crossups, = argcrossup(x, threshold=x_up)
+
+    boolrelmax = np.zeros(len(x), dtype=bool)
+    index_p, _, _ = _local_maxima_1d(x)
+    boolrelmax[index_p] = True
+
+    boolthreshold = (x > x_th)
+    boolrelmax_above = boolrelmax & boolthreshold
+    boolrelmax_below = boolrelmax & ~boolthreshold
+
+    peaks_above = []
+    peaks_below = []
+    for i, j in zip(crossups[:-1], crossups[1:]):
+        index_i = index[i:j]
+        peaks_above.append(index_i[boolrelmax_above[i:j]])
+        peaks_below.append(index_i[boolrelmax_below[i:j]])
+
+    peaks = tuple(
+        block[x[block].argsort()[-order:]]
+        for block in _merge_clusters(peaks_above, peaks_below, runs=runs)
+        )
+    return peaks
