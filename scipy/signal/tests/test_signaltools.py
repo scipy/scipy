@@ -1517,6 +1517,14 @@ class TestCorrelateReal(object):
             pass
         return decimal
 
+    def equal_tolerance_fft(self, res_dt):
+        # FFT implementations convert longdouble arguments down to
+        # double so don't expect better precision, see gh-9520
+        if res_dt == np.longdouble:
+            return self.equal_tolerance(np.double)
+        else:
+            return self.equal_tolerance(res_dt)
+
     def test_method(self, dt):
         if dt == Decimal:
             method = choose_conv_method([Decimal(4)], [Decimal(3)])
@@ -1526,8 +1534,8 @@ class TestCorrelateReal(object):
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance(y_fft.dtype))
-            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_fft.dtype))
+            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance_fft(y_fft.dtype))
+            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_direct.dtype))
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 
@@ -1658,8 +1666,13 @@ class TestCorrelateComplex(object):
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
     # assert_array_almost_equal().
+    # Since correlate may chose to use FFT method which converts
+    # longdoubles to doubles internally don't expect better precision
+    # for longdouble than for double (see gh-9520).
 
     def decimal(self, dt):
+        if dt == np.clongdouble:
+            dt = np.cdouble
         return int(2 * np.finfo(dt).precision / 3)
 
     def _setup_rank1(self, dt, mode):
