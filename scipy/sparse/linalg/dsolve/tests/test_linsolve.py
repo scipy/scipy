@@ -557,7 +557,7 @@ class TestSplu(object):
         a_ = csc_matrix(a)
         lu = splu(a_, permc_spec = "NATURAL")
         # Assert that output col permutations are sequential ordering
-        assert_(np.all(lu.perm_c==np.arange(n)))
+        assert_(np.all(lu.perm_c == np.arange(n)))
 
     def test_spilu_natural_permc(self):
         # Test that the "NATURAL" permc_spec does not permute the matrix
@@ -569,7 +569,7 @@ class TestSplu(object):
         a_ = csc_matrix(a)
         lu = spilu(a_, permc_spec = "NATURAL")
         # Assert that output col permutations are sequential ordering
-        assert_(np.all(lu.perm_c==np.arange(n)))
+        assert_(np.all(lu.perm_c == np.arange(n)))
 
     @pytest.mark.skipif(not hasattr(sys, 'getrefcount'), reason="no sys.getrefcount")
     def test_lu_refcount(self):
