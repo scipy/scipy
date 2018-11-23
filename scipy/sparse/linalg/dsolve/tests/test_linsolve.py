@@ -547,6 +547,30 @@ class TestSplu(object):
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
 
+    def test_splu_natural_permc(self):
+        # Test that the "NATURAL" permc_spec does not permute the matrix
+        n = 1000
+        p = 0.01
+        a = scipy.sparse.random(n,n,p)
+        # Make a diagonal dominant, to make sure it is not singular
+        a += (n+1)*scipy.sparse.identity(n)
+        a_ = csc_matrix(a)
+        lu = splu(a_, permc_spec = "NATURAL")
+        # Assert that output col permutations are sequential ordering
+        assert_(np.all(lu.perm_c==np.arange(n)))
+
+    def test_spilu_natural_permc(self):
+        # Test that the "NATURAL" permc_spec does not permute the matrix
+        n = 1000
+        p = 0.01
+        a = scipy.sparse.random(n,n,p)
+        # Make a diagonal dominant, to make sure it is not singular
+        a += (n+1)*scipy.sparse.identity(n)
+        a_ = csc_matrix(a)
+        lu = spilu(a_, permc_spec = "NATURAL")
+        # Assert that output col permutations are sequential ordering
+        assert_(np.all(lu.perm_c==np.arange(n)))
+
     @pytest.mark.skipif(not hasattr(sys, 'getrefcount'), reason="no sys.getrefcount")
     def test_lu_refcount(self):
         # Test that we are keeping track of the reference count with splu.
