@@ -230,6 +230,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     >>> f = lambda x, a: x**3 - a
     >>> fder = lambda x, a: 3 * x**2
+    >>> np.random.seed(4321)
     >>> x = np.random.randn(100)
     >>> a = np.arange(-50, 50)
     >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
