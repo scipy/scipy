@@ -395,13 +395,13 @@ def _read_record(f):
     elif record['rectype'] == "HEAP_HEADER":
 
         record['nvalues'] = _read_long(f)
-        record['indices'] = [_read_long(f) for i in range(record['nvalues'])]
+        record['indices'] = [_read_long(f) for _ in range(record['nvalues'])]
 
     elif record['rectype'] == "COMMONBLOCK":
 
         record['nvars'] = _read_long(f)
         record['name'] = _read_string(f)
-        record['varnames'] = [_read_string(f) for i in range(record['nvars'])]
+        record['varnames'] = [_read_string(f) for _ in range(record['nvars'])]
 
     elif record['rectype'] == "END_MARKER":
 
@@ -462,7 +462,7 @@ def _read_arraydesc(f):
 
         arraydesc['nmax'] = _read_long(f)
 
-        arraydesc['dims'] = [_read_long(f) for d in range(arraydesc['nmax'])]
+        arraydesc['dims'] = [_read_long(f) for _ in range(arraydesc['nmax'])]
 
     elif arraydesc['arrstart'] == 18:
 
@@ -513,7 +513,7 @@ def _read_structdesc(f):
     if not structdesc['predef']:
 
         structdesc['tagtable'] = [_read_tagdesc(f)
-                                  for t in range(structdesc['ntags'])]
+                                  for _ in range(structdesc['ntags'])]
 
         for tag in structdesc['tagtable']:
             tag['name'] = _read_string(f)
@@ -530,9 +530,9 @@ def _read_structdesc(f):
             structdesc['classname'] = _read_string(f)
             structdesc['nsupclasses'] = _read_long(f)
             structdesc['supclassnames'] = [
-                _read_string(f) for s in range(structdesc['nsupclasses'])]
+                _read_string(f) for _ in range(structdesc['nsupclasses'])]
             structdesc['supclasstable'] = [
-                _read_structdesc(f) for s in range(structdesc['nsupclasses'])]
+                _read_structdesc(f) for _ in range(structdesc['nsupclasses'])]
 
         STRUCT_DICT[structdesc['name']] = structdesc
 
