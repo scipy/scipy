@@ -218,7 +218,7 @@ cpdef _label(np.ndarray input,
          "{:d} != {:d}".format(input.ndim, structure.ndim))
 
     # Check that structuring element is of size 3 in every dimension
-    assert set((<object> structure).shape) <= set([3]), \
+    assert set((<object> structure).shape) <= {3}, \
         ("Structuring element must be size 3 in every dimension, "
          "was {}".format((<object> structure).shape))
 

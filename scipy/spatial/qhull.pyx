@@ -294,7 +294,7 @@ cdef class _Qhull:
             option_set.update(required_option_set)
 
         if incremental:
-            incremental_bad_ops = set([b'Qbb', b'Qbk', b'QBk', b'QbB', b'Qz'])
+            incremental_bad_ops = {b'Qbb', b'Qbk', b'QBk', b'QbB', b'Qz'}
             bad_opts = []
             for bad_opt in incremental_bad_ops:
                 if bad_opt in options:

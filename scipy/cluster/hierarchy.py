@@ -2348,7 +2348,7 @@ def _check_hierarchy_uses_cluster_before_formed(Z):
 
 def _check_hierarchy_uses_cluster_more_than_once(Z):
     n = Z.shape[0] + 1
-    chosen = set([])
+    chosen = set()
     for i in xrange(0, n - 1):
         if (Z[i, 0] in chosen) or (Z[i, 1] in chosen) or Z[i, 0] == Z[i, 1]:
             return True
@@ -2359,7 +2359,7 @@ def _check_hierarchy_uses_cluster_more_than_once(Z):
 
 def _check_hierarchy_not_all_clusters_used(Z):
     n = Z.shape[0] + 1
-    chosen = set([])
+    chosen = set()
     for i in xrange(0, n - 1):
         chosen.add(int(Z[i, 0]))
         chosen.add(int(Z[i, 1]))
@@ -2826,7 +2826,7 @@ def _remove_dups(L):
 
     The set class is not guaranteed to do this.
     """
-    seen_before = set([])
+    seen_before = set()
     L2 = []
     for i in L:
         if i not in seen_before:

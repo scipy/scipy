@@ -1672,7 +1672,7 @@ class TestNumObsY(object):
     def test_num_obs_y_2_100(self):
         # Tests num_obs_y(y) on 100 improper condensed distance matrices.
         # Expecting exception.
-        a = set([])
+        a = set()
         for n in xrange(2, 16):
             a.add(n * (n - 1) / 2)
         for i in xrange(5, 105):

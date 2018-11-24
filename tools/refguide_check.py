@@ -107,13 +107,13 @@ OTHER_MODULE_DOCS = {
 
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
-DOCTEST_SKIPLIST = set([
+DOCTEST_SKIPLIST = {
     'scipy.stats.kstwobign', # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc', # comes from numpy
     'scipy.misc.who', # comes from numpy
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
-])
+}
 
 # these names are not required to be present in ALL despite being in
 # autosummary:: listing
@@ -320,12 +320,12 @@ def validate_rst_syntax(text, name, dots=True):
             output_dot('E')
         return False, "ERROR: %s: no documentation" % (name,)
 
-    ok_unknown_items = set([
+    ok_unknown_items = {
         'mod', 'currentmodule', 'autosummary', 'data',
         'obj', 'versionadded', 'versionchanged', 'module', 'class',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
-    ])
+    }
 
     # Run through docutils
     error_stream = io.StringIO()
@@ -783,10 +783,10 @@ def check_doctests_testfile(fname, verbose, ns=None,
         with open(fname, encoding='utf-8') as f:
             text = f.read()
 
-    PSEUDOCODE = set(['some_function', 'some_module', 'import example',
-                      'ctypes.CDLL',     # likely need compiling, skip it
-                      'integrate.nquad(func,'  # ctypes integrate tutotial
-    ])
+    PSEUDOCODE = {'some_function', 'some_module', 'import example',
+                  'ctypes.CDLL',     # likely need compiling, skip it
+                  'integrate.nquad(func,'  # ctypes integrate tutotial
+    }
 
     # split the text into "blocks" and try to detect and omit pseudocode blocks.
     parser = doctest.DocTestParser()

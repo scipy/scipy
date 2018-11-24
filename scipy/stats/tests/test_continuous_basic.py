@@ -59,13 +59,13 @@ distslow = ['kappa4', 'rdist', 'gausshyper',
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
-                   'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
-                   'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
-                   'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
-                   'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+fails_cmplx = {'beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
+               'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+               'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
+               'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
+               'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
+               'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
+               'vonmises', 'vonmises_line', 'rv_histogram_instance'}
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -172,8 +172,8 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises', 'ksone'])
-    fail_higher = set(['vonmises', 'ksone', 'ncf'])
+    fail_normalization = {'vonmises', 'ksone'}
+    fail_higher = {'vonmises', 'ksone', 'ncf'}
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':

@@ -43,7 +43,7 @@ def main():
         try:
             old_data = np.load(outp)
             try:
-                changed = set(old_data.keys()) != set(key for key, _ in files)
+                changed = set(old_data.keys()) != {key for key, _ in files}
             finally:
                 old_data.close()
         except (IOError, OSError):

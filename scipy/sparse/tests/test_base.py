@@ -831,8 +831,8 @@ class _TestCommon(object):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
         Asp = self.spmatrix(A)
 
-        A_nz = set([tuple(ij) for ij in transpose(A.nonzero())])
-        Asp_nz = set([tuple(ij) for ij in transpose(Asp.nonzero())])
+        A_nz = {tuple(ij) for ij in transpose(A.nonzero())}
+        Asp_nz = {tuple(ij) for ij in transpose(Asp.nonzero())}
 
         assert_equal(A_nz, Asp_nz)
 
@@ -841,8 +841,8 @@ class _TestCommon(object):
         A = array([[1, 0, 1], [0, 1, 1], [0, 0, 1]])
         Asp = self.spmatrix(A)
 
-        A_nz = set([tuple(ij) for ij in transpose(np.nonzero(A))])
-        Asp_nz = set([tuple(ij) for ij in transpose(np.nonzero(Asp))])
+        A_nz = {tuple(ij) for ij in transpose(np.nonzero(A))}
+        Asp_nz = {tuple(ij) for ij in transpose(np.nonzero(Asp))}
 
         assert_equal(A_nz, Asp_nz)
 

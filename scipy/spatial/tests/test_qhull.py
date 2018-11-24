@@ -871,7 +871,7 @@ class TestVoronoi:
 
             def remap(x):
                 if hasattr(x, '__len__'):
-                    return tuple(set([remap(y) for y in x]))
+                    return tuple({remap(y) for y in x})
                 try:
                     return vertex_map[x]
                 except KeyError:
