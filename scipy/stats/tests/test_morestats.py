@@ -924,9 +924,7 @@ class TestKstat(object):
     def test_moments_normal_distribution(self):
         np.random.seed(32149)
         data = np.random.randn(12345)
-        moments = []
-        for n in [1, 2, 3, 4]:
-            moments.append(stats.kstat(data, n))
+        moments = [stats.kstat(data, n) for n in [1, 2, 3, 4]]
 
         expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
         assert_allclose(moments, expected, rtol=1e-4)

@@ -105,9 +105,8 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
     terminate : bool
         Whether a terminal event occurred.
     """
-    roots = []
-    for event_index in active_events:
-        roots.append(solve_event_equation(events[event_index], sol, t_old, t))
+    roots = [solve_event_equation(events[event_index], sol, t_old, t)
+             for event_index in active_events]
 
     roots = np.asarray(roots)
 

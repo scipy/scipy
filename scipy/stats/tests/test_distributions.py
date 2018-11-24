@@ -535,10 +535,8 @@ class TestHypergeom(object):
         pears = 1.1e5
         fruits_eaten = np.array([3, 3.8, 3.9, 4, 4.1, 4.2, 5]) * 1e4
         quantile = 2e4
-        res = []
-        for eaten in fruits_eaten:
-            res.append(stats.hypergeom.sf(quantile, oranges + pears, oranges,
-                                          eaten))
+        res = [stats.hypergeom.sf(quantile, oranges + pears, oranges, eaten)
+               for eaten in fruits_eaten]
         expected = np.array([0, 1.904153e-114, 2.752693e-66, 4.931217e-32,
                              8.265601e-11, 0.1237904, 1])
         assert_allclose(res, expected, atol=0, rtol=5e-7)

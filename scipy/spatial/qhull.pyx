@@ -295,10 +295,8 @@ cdef class _Qhull:
 
         if incremental:
             incremental_bad_ops = set([b'Qbb', b'Qbk', b'QBk', b'QbB', b'Qz'])
-            bad_opts = []
-            for bad_opt in incremental_bad_ops:
-                if bad_opt in options:
-                    bad_opts.append(bad_opt)
+            bad_opts = [bad_opt for bad_opt in incremental_bad_ops
+                        if bad_opt in options]
             if bad_opts:
                 raise ValueError("Qhull options %r are incompatible "
                                  "with incremental mode" % (bad_opts,))
@@ -1009,10 +1007,8 @@ cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
     p[2*qh._nridges + 1] = point_2
 
     # Record which voronoi vertices constitute the ridge
-    cur_vertices = []
-    for i in xrange(qh_setsize(_qh, centers)):
-        ix = (<facetT*>centers.e[i].p).visitid - 1
-        cur_vertices.append(ix)
+    cur_vertices = [(<facetT*>centers.e[i].p).visitid - 1
+                    for i in xrange(qh_setsize(_qh, centers))]
     qh._ridge_vertices.append(cur_vertices)
 
     qh._nridges += 1
