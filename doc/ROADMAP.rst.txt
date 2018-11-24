@@ -67,10 +67,16 @@ Regarding Cython code:
 Regarding build environments:
 
   - SciPy builds from source on Windows now with a MSVC + MinGW-w64 gfortran
-    toolchain.  This still needs to prove itself, but is looking good so far.
-  - Support for Accelerate will be dropped, likely in SciPy 1.1.0.  If there is
-    enough interest, we may want to write wrappers so the BLAS part of Accelerate
-    can still be used.
+    toolchain, which we're using for official releases.
+    MSVC + Intel Fortran + MKL works as well, and is easier for users (as long
+    as they have access to ifort and MKL of course).  This mainly needs better
+    documentation at the moment.
+  - We're aiming to gradually increase the minimum version of LAPACK that is
+    required, so we can use newer features.  Support for Accelerate on macOS
+    has been dropped.  We do rely quite heavily on OpenBLAS, and its stability
+    is a worry (often only one of the recent releases works without test
+    failures) - improvements in testing and build documentation at least are
+    needed.
 
 Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
 as a range of versions of our dependencies and building release quality wheels.
@@ -91,12 +97,15 @@ This module is basically done, low-maintenance and without open issues.
 
 fftpack
 ```````
-Needed:
+We aim to follow NumPy in adopting ``pocketfft`` (see `this NumPy PR
+<https://github.com/numpy/numpy/pull/11888>`__).  That will address a number of
+maintenance issues, and increase performance (both accuracy and speed).
+Of particular interest regarding performance is the Bluestein algorithm (or
+chirp Z-transform), which we have been wanting to add to ``fftpack`` for a long
+time.
 
-  - solve issues with single precision: large errors, disabled for difficult sizes
-  - fix caching bug
-  - Bluestein algorithm (or chirp Z-transform)
-  - deprecate fftpack.convolve as public function (was not meant to be public)
+We probably want to deprecate fftpack.convolve as public function (it was not
+meant to be public).
 
 There's a large overlap with ``numpy.fft``.  This duplication has to change
 (both are too widely used to deprecate one); in the documentation we should
@@ -105,6 +114,11 @@ If there are differences in signature or functionality, the best version
 should be picked case by case (example: numpy's ``rfft`` is preferred, see
 gh-2487).
 
+Ideas for new features:
+
+- Add a backend/plugin system.  At the moment pyFFTW is monkeypatching SciPy,
+  and ``mkl_fft`` provides ``fftpack``-compatible functions as well.  We should
+  provide a method to support such packages.
 
 integrate
 `````````
@@ -174,13 +188,21 @@ been moved to another submodule or deprecated.  The few that are left:
 
 ndimage
 ```````
-Underlying ``ndimage`` is a powerful interpolation engine.  Unfortunately, it was
-never decided whether to use a pixel model (``(1, 1)`` elements with centers
-``(0.5, 0.5)``) or a data point model (values at points on a grid).  Over time,
-it seems that the data point model is better defined and easier to implement.
-We therefore propose to move to this data representation for 1.0, and to vet
-all interpolation code to ensure that boundary values, transformations, etc.
-are correctly computed.  Addressing this issue will close several issues,
+Underlying ``ndimage`` is a powerful interpolation engine.  Users come
+with an expectation of one of two models: a pixel model with ``(1,
+1)`` elements having centers ``(0.5, 0.5)``, or a data point model,
+where values are defined at points on a grid.  Over time, we've become
+convinced that the data point model is better defined and easier to
+implement, but this should be clearly communicated in the documentation.
+
+More importantly, still, SciPy implements one *variant* of this data
+point model, where datapoints at any two extremes of an axis share a
+spatial location under *periodic wrapping* mode.  E.g., in a 1D array,
+you would have ``x[0]`` and ``x[-1]`` co-located.  A very common
+use-case, however, is for signals to be periodic, with equal spacing
+between the first and last element along an axis (instead of zero
+spacing).  Adding wrapping modes for this use-case and disambiguating
+them from the existing implementation should address several issues,
 including #1323, #1903, #2045 and #2640.
 
 The morphology interface needs to be standardized:
@@ -198,21 +220,22 @@ The morphology interface needs to be standardized:
 
 odr
 ```
-Rename the module to ``regression`` or ``fitting``, include
-``optimize.curve_fit``. This module will then provide a home for other fitting
-functionality - what exactly needs to be worked out in more detail, a
-discussion can be found at https://github.com/scipy/scipy/pull/448.
+This module is in reasonable shape, although it could use a bit more
+maintenance.  No major plans or wishes here.
 
 
 optimize
 ````````
-Overall this module is in reasonably good shape, however it is missing a few
-more good global optimizers as well as large-scale optimizers.  These should be
-added.  Other things that are needed:
+Overall this module is in good shape. Two good global optimizers were added in
+1.2.0; large-scale optimizers is still a gap that could be filled.  Other
+things that are needed:
 
+  - Many ideas for additional functionality (e.g. integer constraints, sparse
+    matrix support, performance improvements) in ``linprog``, see gh-9269.
+  - Add functionality to the benchmark suite to compare results more easily
+    (e.g. with summary plots).
   - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
     preferred.
-  - clearly define what's out of scope for this module.
 
 
 signal
@@ -250,21 +273,26 @@ for those).
 
 sparse
 ``````
-The sparse matrix formats are getting feature-complete but are slow ...
-reimplement parts in Cython?
+The sparse matrix formats are mostly feature-complete, however the main issue
+is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
+some point).  What we want is sparse arrays, that act like ``numpy.ndarray``.
+This is being worked on in https://github.com/pydata/sparse, which is quite far
+along.  The tentative plan is:
 
-    - Small matrices are slower than PySparse, needs fixing
+- Start depending on ``pydata/sparse`` once it's feature-complete enough (it
+  still needs a CSC/CSR equivalent) and okay performance-wise.
+- Add support for ``pydata/sparse`` to ``scipy.sparse.linalg`` (and perhaps to
+  ``scipy.sparse.csgraph`` after that).
+- Indicate in the documentation that for new code users should prefer
+  ``pydata/sparse`` over sparse matrices.
+- When NumPy deprecates ``numpy.matrix``, vendor that or maintain it as a
+  stand-alone package.
 
-There are a lot of formats.  These should be kept, but
-improvements/optimizations should go into CSR/CSC, which are the preferred
-formats.  LIL may be the exception, it's inherently inefficient.  It could be
-dropped if DOK is extended to support all the operations LIL currently
-provides.  Alternatives are being worked on, see  https://github.com/ev-br/sparr
-and https://github.com/perimosocordiae/sparray.
-
-Ideas for new features:
-
-    - Sparse arrays now act like np.matrix.  We want sparse *arrays*.
+Regarding the different sparse matrix formats: there are a lot of them.  These
+should be kept, but improvements/optimizations should go into CSR/CSC, which
+are the preferred formats.  LIL may be the exception, it's inherently
+inefficient.  It could be dropped if DOK is extended to support all the
+operations LIL currently provides.
 
 
 sparse.csgraph
@@ -293,9 +321,10 @@ Ideas for new features:
 
     - Wrappers for PROPACK for faster sparse SVD computation.
 
+
 spatial
 ```````
-QHull wrappers are in good shape.
+QHull wrappers are in good shape, as is ``cKDTree``.
 
 Needed:
 
@@ -329,33 +358,7 @@ functions, and spheroidal wave functions. Three possible ways to handle this:
 stats
 `````
 
-``stats.distributions`` is in good shape.
+This module is in good shape overall.  New functionality that's similar to
+what's already present can continue to be added; more advanced statistical
+routines may fit better in ``statsmodels``.
 
-``gaussian_kde`` is in good shape but limited. It should not be expanded
-probably, this fits better in Statsmodels (which already has a lot more KDE
-functionality).
-
-
-New modules under discussion
-----------------------------
-
-diff
-````
-Currently SciPy doesn't provide much support for numerical differentiation.
-A new ``scipy.diff`` module for that is discussed in
-https://github.com/scipy/scipy/issues/2035.  There's also a fairly detailed
-GSoC proposal to build on, see `here <https://github.com/scipy/scipy/wiki/Proposal:-add-finite-difference-numerical-derivatives-as-scipy.diff>`_.
-There has been a second (unsuccessful) GSoC project in 2017.  Recent discussion
-and the host of alternatives available make it unlikely that a new ``scipy.diff``
-submodule will be added in the near future.
-
-There is also ``approx_derivative`` in ``optimize``, which is still private
-but could form a solid basis for this module.
-
-transforms
-``````````
-This module was discussed previously, mainly to provide a home for
-discrete wavelet transform functionality.  Other transforms could fit as well,
-for example there's a PR for a Hankel transform .
-*Note: this is on the back burner, because the plans to integrate PyWavelets
-DWT code has been put on hold.*
