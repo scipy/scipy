@@ -99,8 +99,7 @@ class CanonicalConstraint(object):
         must have their Jacobians in the same format.
         """
         def fun(x):
-            eq_all, ineq_all = zip(
-                    *[c.fun(x) for c in canonical_constraints])
+            eq_all, ineq_all = zip(*[c.fun(x) for c in canonical_constraints])
 
             return np.hstack(eq_all), np.hstack(ineq_all)
 
@@ -110,8 +109,7 @@ class CanonicalConstraint(object):
             vstack = np.vstack
 
         def jac(x):
-            eq_all, ineq_all = zip(
-                    *[c.jac(x) for c in canonical_constraints])
+            eq_all, ineq_all = zip(*[c.jac(x) for c in canonical_constraints])
             return vstack(eq_all), vstack(ineq_all)
 
         def hess(x, v_eq, v_ineq):
