@@ -207,7 +207,7 @@ def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-12):
         return a[~bl][c_hat < -tol][0]
 
 
-def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
+def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -230,7 +230,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
     else:
         B = LU(A, b)
 
-    for iteration in range(maxiter):
+    for iteration in range(iteration, iteration + maxiter):
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
 
@@ -377,6 +377,6 @@ def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,
     if status == 0:
         x, basis, status, iteration = _phase_two(c, A, x, basis,
                                                  maxiter, tol, maxupdate,
-                                                 mast, pivot)
+                                                 mast, pivot, iteration)
 
     return x, status, messages[status].format(residual, tol), iteration
