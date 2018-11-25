@@ -1044,8 +1044,8 @@ def fiedler(a):
 
     Fiedler matrices have zero diagonals and nonnegative entries. A Fiedler
     matrix has a dominant positive eigenvalue and other eigenvalues are
-    negative. Although not valid generally, for certain arrays, the inverse
-    and determinant can be derived explicitly [1]_.
+    negative. Although not valid generally, for certain inputs, the inverse
+    and the determinant can be derived explicitly [1]_.
 
     Parameters
     ----------
@@ -1073,6 +1073,7 @@ def fiedler(a):
     >>> a = [1, 4, 12, 45, 77]
     >>> n = len(a)
     >>> A = fiedler(a)
+    >>> A
     array([[ 0,  3, 11, 44, 76],
            [ 3,  0,  8, 41, 73],
            [11,  8,  0, 33, 65],
@@ -1128,14 +1129,18 @@ def fiedler_companion(a):
     c : (N-1, N-1) ndarray
         Resulting companion matrix
 
-    .. versionadded:: 1.13.0
-
     Notes
     -----
     Similar to `scipy.linalg.companion` the leading coefficient should be
     nonzero. In case the leading coefficienct is not 1., other coefficients
     are rescaled before the array generation. To avoid numerical issues, it is
     best to provide a monic polynomial.
+
+    See Also
+    --------
+    companion
+
+    .. versionadded:: 1.13.0
 
     References
     ----------
@@ -1147,6 +1152,7 @@ def fiedler_companion(a):
     >>> from scipy.linalg import fiedler_companion, eigvals
     >>> p = np.poly(np.arange(1, 9, 2))  # [1., -16., 86., -176., 105.]
     >>> fc = fiedler_companion(p)
+    >>> fc
     array([[  16.,  -86.,    1.,    0.],
            [   1.,    0.,    0.,    0.],
            [   0.,  176.,    0., -105.],
