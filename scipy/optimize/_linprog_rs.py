@@ -231,7 +231,6 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
         B = LU(A, b)
 
     for iteration in range(maxiter):
-
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
 
