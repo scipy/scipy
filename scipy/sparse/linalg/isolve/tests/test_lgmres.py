@@ -5,6 +5,9 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, assert_allclose, assert_equal
 
+import pytest
+from platform import python_implementation
+
 import numpy as np
 from numpy import zeros, array, allclose
 from scipy.linalg import norm
@@ -16,13 +19,13 @@ from scipy.sparse.linalg.isolve import lgmres, gmres
 
 from scipy._lib._numpy_compat import suppress_warnings
 
-Am = csr_matrix(array([[-2,1,0,0,0,9],
-                       [1,-2,1,0,5,0],
-                       [0,1,-2,1,0,0],
-                       [0,0,1,-2,1,0],
-                       [0,3,0,1,-2,1],
-                       [1,0,0,0,1,-2]]))
-b = array([1,2,3,4,5,6])
+Am = csr_matrix(array([[-2, 1, 0, 0, 0, 9],
+                       [1, -2, 1, 0, 5, 0],
+                       [0, 1, -2, 1, 0, 0],
+                       [0, 0, 1, -2, 1, 0],
+                       [0, 3, 0, 1, -2, 1],
+                       [1, 0, 0, 0, 1, -2]]))
+b = array([1, 2, 3, 4, 5, 6])
 count = [0]
 
 
@@ -38,7 +41,8 @@ def do_solve(**kw):
     count[0] = 0
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")
-        x0, flag = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=6, tol=1e-14, **kw)
+        x0, flag = lgmres(A, b, x0=zeros(A.shape[0]),
+                          inner_m=6, tol=1e-14, **kw)
     count_0 = count[0]
     assert_(allclose(A*x0, b, rtol=1e-12, atol=1e-12), norm(A*x0-b))
     return x0, count_0
@@ -65,7 +69,8 @@ class TestLGMRES(object):
         assert_(len(outer_v) > 0)
         assert_(len(outer_v) <= 6)
 
-        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v, prepend_outer_v=True)
+        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v,
+                               prepend_outer_v=True)
         assert_(count_1 == 2, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
@@ -73,27 +78,33 @@ class TestLGMRES(object):
         # ---
 
         outer_v = []
-        x0, count_0 = do_solve(outer_k=6, outer_v=outer_v, store_outer_Av=False)
+        x0, count_0 = do_solve(outer_k=6, outer_v=outer_v,
+                               store_outer_Av=False)
         assert_(array([v[1] is None for v in outer_v]).all())
         assert_(len(outer_v) > 0)
         assert_(len(outer_v) <= 6)
 
-        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v, prepend_outer_v=True)
+        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v,
+                               prepend_outer_v=True)
         assert_(count_1 == 3, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
 
+    @pytest.mark.skipif(python_implementation() == 'PyPy',
+                        reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
         np.random.rand(1234)
 
-        A = eye(10000) + rand(10000,10000,density=1e-4)
+        A = eye(10000) + rand(10000, 10000, density=1e-4)
         b = np.random.rand(10000)
 
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
-            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]),
+                               inner_m=15, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]),
+                              restart=15, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
@@ -134,7 +145,7 @@ class TestLGMRES(object):
 
     def test_nans(self):
         A = eye(3, format='lil')
-        A[1,1] = np.nan
+        A[1, 1] = np.nan
         b = np.ones(3)
 
         with suppress_warnings() as sup:
