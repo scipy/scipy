@@ -360,7 +360,7 @@ cdef class BGLU(LU):
                 w = temp
 
                 # Equation 5.18
-                # For whatever reason, faster to use U.T and set trans=True
+                # Faster to use U.T and set trans=True due to array order
                 v = solve_triangular(self.U.T, w, lower=True,
                                      trans=True, check_finite=False)
 

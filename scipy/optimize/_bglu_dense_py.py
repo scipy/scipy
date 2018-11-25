@@ -130,6 +130,8 @@ class BGLU(LU):
         Given matrix A and basis indices b, perform PLU factorization of
         basis matrix B
         """
+        self.total_updates = 0
+        self.total_ops = 0
         self.A = A
         self.b = b
         self.m, self.n = A.shape
@@ -165,13 +167,14 @@ class BGLU(LU):
     def update(self, i, j):
         """ Perform rank-one update to basis and factorization """
         self.update_basis(i, j)
-
+        self.total_updates += 1
         # calculate last column of Hessenberg matrix
         # FIXME: share this calculation with simplex method
         pla = self.A[self.pi, j]
         um = solve_triangular(self.L, pla, lower=True,
                               check_finite=False, unit_diagonal=True)
-        for ops in self.ops_list:
+        for ii, ops in enumerate(self.ops_list):
+            self.total_ops += 1
             um = self.perform_ops(um, ops)
 
         # form Hessenberg matrix
