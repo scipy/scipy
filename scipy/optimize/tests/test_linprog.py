@@ -1166,6 +1166,38 @@ class LinprogCommonTests(object):
         _assert_success(res)  # would not pass if solution is infeasible
 
 
+def generic_callback_test(self):
+    # Check that callback is as advertised
+    last_cb = {}
+
+    def cb(res):
+        message = res.pop('message')
+        complete = res.pop('complete')
+
+        assert_(res.pop('phase') in (1, 2))
+        assert_(res.pop('status') in range(4))
+        assert_(isinstance(res.pop('nit'), int))
+        assert_(isinstance(complete, bool))
+        assert_(isinstance(message, str))
+
+#        if complete:
+        last_cb['x'] = res['x']
+        last_cb['fun'] = res['fun']
+        last_cb['slack'] = res['slack']
+        last_cb['con'] = res['con']
+
+    c = np.array([-3, -2])
+    A_ub = [[2, 1], [1, 1], [1, 0]]
+    b_ub = [10, 8, 4]
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, callback=cb, method=self.method)
+
+    _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
+    assert_allclose(last_cb['fun'], res['fun'])
+    assert_allclose(last_cb['x'], res['x'])
+    assert_allclose(last_cb['con'], res['con'])
+    assert_allclose(last_cb['slack'], res['slack'])
+
+
 class BaseTestLinprogSimplex(LinprogCommonTests):
     method = "simplex"
 
@@ -1174,43 +1206,7 @@ class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
     options = {}
 
     def test_callback(self):
-        # Check that callback is as advertised
-        last_cb = {}
-
-        def cb(res):
-            message = res.pop('message')
-            complete = res.pop('complete')
-
-            assert_(res.pop('phase') in (1, 2))
-            assert_(res.pop('status') in range(4))
-            assert_(isinstance(res.pop('nit'), int))
-            assert_(isinstance(complete, bool))
-            assert_(isinstance(message, str))
-
-            if complete:
-                last_cb['x'] = res['x']
-                last_cb['fun'] = res['fun']
-                last_cb['slack'] = res['slack']
-                last_cb['con'] = res['con']
-
-        c = [2.8, 6.3, 10.8, -2.8, -6.3, -10.8]
-        A_eq = [[-1, -1, -1, 0, 0, 0],
-                [0, 0, 0, 1, 1, 1],
-                [1, 0, 0, 1, 0, 0],
-                [0, 1, 0, 0, 1, 0],
-                [0, 0, 1, 0, 0, 1]]
-        b_eq = [-0.5, 0.4, 0.3, 0.3, 0.3]
-
-        desired_fun = -1.77
-        desired_x = [0.3, 0.2, 0, 0, 0.1, 0.3]
-        with pytest.warns(OptimizeWarning):
-            res = linprog(c, A_eq=A_eq, b_eq=b_eq, callback=cb, method=self.method)
-
-        _assert_success(res, desired_fun=-1.77, desired_x=desired_x)
-        assert_allclose(last_cb['fun'], res['fun'])
-        assert_allclose(last_cb['x'], res['x'])
-        assert_allclose(last_cb['con'], res['con'])
-        assert_allclose(last_cb['slack'], res['slack'])
+        generic_callback_test(self)
 
     def test_issue_7237(self):
         with pytest.raises(ValueError):
@@ -1276,6 +1272,9 @@ class BaseTestLinprogRS(LinprogCommonTests):
 
 class TestLinprogRSCommon(BaseTestLinprogRS):
     options = {}
+
+    def test_callback(self):
+        generic_callback_test(self)
 
 
 class TestLinprogRSBland(BaseTestLinprogRS):
