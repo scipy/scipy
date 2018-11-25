@@ -477,7 +477,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 c, c0=c0, A=A, b=b, callback=callback, **solver_options)
         elif meth == 'revised simplex':
             x, status, message, iteration = _linprog_rs(
-                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
 
