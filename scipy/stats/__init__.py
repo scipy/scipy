@@ -246,6 +246,7 @@ Statistical tests
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    tiecorrect
    rankdata

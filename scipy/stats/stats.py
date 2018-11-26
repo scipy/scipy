@@ -120,6 +120,7 @@ Inferential Stats
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    ranksums
    wilcoxon
@@ -177,6 +178,7 @@ from . import mstats_basic
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 from ._rvs_sampling import rvs_ratio_uniforms
+from ._hypotests import epps_singleton_2samp
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -195,7 +197,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel']
+           'brunnermunzel', 'epps_singleton_2samp']
 
 
 def _chk_asarray(a, axis):
