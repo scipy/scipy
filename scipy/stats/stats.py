@@ -1029,9 +1029,6 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     Compute the skewness of a data set.
 
-    The sample skewness is defined as the adjusted Fisher-Pearson
-    standardized moment coefficient.
-
     For normally distributed data, the skewness should be about 0. For
     unimodal continuous distributions, a skewness value > 0 means that
     there is more weight in the right tail of the distribution. The
@@ -1057,6 +1054,20 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     skewness : ndarray
         The skewness of values along an axis, returning 0 where all values are
         equal.
+
+    Notes
+    -----
+    The sample skewness is computed as the Fisher-Pearson coefficicient
+    of skewness, i.e.
+    
+    .. math:: g_1=\\frac{m_3}{m_2^{3/2}}
+
+    If ``bias`` is False, the calculations are corrected for bias and the
+    value computed is the adjusted Fisher-Pearson standardized moment
+    coefficient, i.e. 
+    
+    .. math:: G_1=\\frac{k_3}{k_2^{3/2}}=
+                  \\frac{\\sqrt{n(n-1)}}{n-2}\\frac{m_3}{m_2^{3/2}}`.
 
     References
     ----------
