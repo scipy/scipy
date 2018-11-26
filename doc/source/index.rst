@@ -47,6 +47,7 @@ the roadmap:
    :maxdepth: 1
 
    roadmap
+   roadmap-detailed
 
 API Reference
 -------------
