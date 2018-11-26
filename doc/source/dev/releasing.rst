@@ -117,8 +117,8 @@ commit (not the tag, see section above) to the scipy repo.
 To build wheels, push a commit to the master branch of
 https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
 Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
-config files what commit to build, and what Python and Numpy are used for the
-builds (it needs to be the lowest supported Numpy version for each Python
+config files what commit to build, and what Python and NumPy are used for the
+builds (it needs to be the lowest supported NumPy version for each Python
 version).  See the README file in the scipy-wheels repo for more details.
 
 The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,

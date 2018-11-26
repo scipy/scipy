@@ -229,7 +229,7 @@ not be used. Attempting to build with the MSYS2 Python will not work correctly.*
 
 Please note that this is a simpler procedure than what is used for the official binaries.
 **Your binaries will only work with the latest NumPy (v1.14.0dev and higher)**. For
-building against older Numpy versions, see `Building Against an Older Numpy Version`_. 
+building against older NumPy versions, see `Building Against an Older NumPy Version`_.
 Make sure that you are in the same directory where  ``setup.py`` is (you should be if you 
 have not changed directories):
 
@@ -257,13 +257,13 @@ Congratulatations, you've built SciPy!
 .. _`pre-built zip files`: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/
 .. _WindowsCompilers: https://wiki.python.org/moin/WindowsCompilers
 
-Building Against an Older Numpy Version
+Building Against an Older NumPy Version
 ---------------------------------------
 
 If you want to build SciPy to work with an older numpy version, then you will need 
-to replace the Numpy "distutils" folder with the folder from the latest numpy.
-The following powershell snippet can upgrade Numpy distutils while retaining an older
-Numpy ABI_.
+to replace the NumPy "distutils" folder with the folder from the latest numpy.
+The following powershell snippet can upgrade NumPy distutils while retaining an older
+NumPy ABI_.
 
 .. code:: shell
 

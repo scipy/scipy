@@ -1294,7 +1294,7 @@ class StateSpace(LinearTimeInvariant):
 
     """
 
-    # Override Numpy binary operations and ufuncs
+    # Override NumPy binary operations and ufuncs
     __array_priority__ = 100.0
     __array_ufunc__ = None
 

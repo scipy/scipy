@@ -520,7 +520,7 @@ def _reverse_and_conj(x):
 def _np_conv_ok(volume, kernel, mode):
     """
     See if numpy supports convolution of `volume` and `kernel` (i.e. both are
-    1D ndarrays and of the appropriate shape).  Numpy's 'same' mode uses the
+    1D ndarrays and of the appropriate shape).  NumPy's 'same' mode uses the
     size of the larger input, while SciPy's uses the size of the first input.
 
     Invalid mode strings will return False and be caught by the calling func.
