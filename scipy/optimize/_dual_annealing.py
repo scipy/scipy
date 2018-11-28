@@ -414,11 +414,11 @@ class LocalSearchWrapper(object):
             return e, x_tmp
 
 
-def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
+def dual_annealing(func, bounds, args=(), maxiter=1000,
                    local_search_options={}, initial_temp=5230.,
                    restart_temp_ratio=2.e-5, visit=2.62, accept=-5.0,
                    maxfun=1e7, seed=None, no_local_search=False,
-                   callback=None):
+                   callback=None, x0=None):
     """
     Find the global minimum of a function using Dual Annealing.
 
@@ -429,10 +429,6 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    x0 : ndarray, shape(n,)
-        A single initial starting point coordinates. If ``None`` is provided,
-        initial coordinates are automatically generated (using the ``reset``
-        method from the internal ``EnergyState`` class).
     bounds : sequence, shape (n, 2)
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining bounds for the objective function parameter.
@@ -495,6 +491,8 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
             - 2: detection done in the dual annealing process.
 
         If the callback implementation returns True, the algorithm will stop.
+    x0 : ndarray, shape(n,), optional
+        A single initial starting point coordinates.
 
     Returns
     -------
@@ -605,7 +603,10 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         raise ValueError('Some bounds values are inf values or nan values')
     # Checking that bounds are consistent
     if not np.all(lower < upper):
-        raise ValueError('Bounds are note consistent min < max')
+        raise ValueError('Bounds are not consistent min < max')
+    # Checking that bounds are the same length
+    if not len(lower) == len(upper):
+        raise ValueError('Bounds do not have the same dimensions')
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
