@@ -492,7 +492,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
-        A single initial starting point coordinates.
+        Coordinates of a single n-dimensional starting point. 
 
     Returns
     -------
