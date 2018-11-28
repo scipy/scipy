@@ -1072,7 +1072,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     adjusted Fisher-Pearson standardized moment coefficient, i.e. 
     
     .. math:: G_1=\\frac{k_3}{k_2^{3/2}}=
-                  \\frac{\\sqrt{n(n-1)}}{n-2}\\frac{m_3}{m_2^{3/2}}.
+                  \\frac{\\sqrt{N(N-1)}}{N-2}\\frac{m_3}{m_2^{3/2}}.
 
     References
     ----------
