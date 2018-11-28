@@ -580,7 +580,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)), seed=1234)
+    >>> ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
     >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
     ...       ret.x, ret.fun))
     global minimum: xmin = [-4.26437714e-09 -3.91699361e-09 -1.86149218e-09 -3.97165720e-09
