@@ -2,7 +2,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import numpy as np
 from numpy import array, matrix
 from numpy.testing import (assert_equal, assert_,
@@ -10,7 +9,6 @@ from numpy.testing import (assert_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
-from scipy._lib._version import NumpyVersion
 
 from scipy.sparse import csr_matrix, coo_matrix
 
@@ -422,9 +420,6 @@ class TestConstructUtils(object):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
-    @pytest.mark.xfail((NumpyVersion(np.__version__) < "1.11.0" and
-                        sys.maxsize <= 2**32),
-                       reason="randint not compatible")
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
