@@ -97,13 +97,12 @@ traverse_checking(const ckdtree *self,
     }
 }
 
-
 inline npy_intp min(npy_intp x, npy_intp y) { return x < y ? x : y; }
 
 extern "C" PyObject*
 query_ball_point(const ckdtree *self, const npy_float64 *x,
                  const npy_float64 *r, const npy_intp n_r,
-                 const npy_float64 p, const npy_float64 eps,
+		 const npy_float64 p, const npy_float64 eps,
                  const npy_intp n_queries, std::vector<npy_intp> **results)
 {
 #define HANDLE(cond, kls) \
@@ -118,7 +117,7 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
         try {
             for (npy_intp i=0; i < n_queries; ++i) {
                 const npy_intp m = self->m;
-                const npy_float64 rr = r[min(i, n_r-1)];
+		const npy_float64 rr = r[min(i, n_r-1)];
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);
                 if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
                     Rectangle point(m, x + i * m, x + i * m);
