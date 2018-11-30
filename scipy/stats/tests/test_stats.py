@@ -1241,11 +1241,11 @@ class TestGeometricStandardDeviation(object):
 
     def test_1d_array(self):
         gstd_actual = stats.gstd(self.array_1d)
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
 
     def test_1d_numeric_array_like_input(self):
         gstd_actual = stats.gstd(tuple(self.array_1d))
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
 
     def test_raises_value_error_non_array_like_input(self):
         with pytest.raises(ValueError):
@@ -1262,20 +1262,20 @@ class TestGeometricStandardDeviation(object):
     def test_nan_policy_omit_with_invalid_value(self):
         a = np.append(self.array_1d, [-np.inf, np.nan, np.inf, -1, 0])
         gstd_actual = stats.gstd(a, nan_policy='omit')
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
 
     def test_nan_policy_propogate_with_invalid_value(self):
         a = np.append(self.array_1d, [-np.inf, np.nan, np.inf, -1, 0])
         gstd_actual = stats.gstd(a, nan_policy='propagate')
-        assert_equal(gstd_actual, np.nan)
+        assert_allclose(gstd_actual, np.nan)
 
     def test_3d_array(self):
         gstd_actual = stats.gstd(self.array_3d, axis=None)
-        assert_almost_equal(gstd_actual, self.gstd_array_1d)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
 
     def test_3d_array_axis_type_tuple(self):
         gstd_actual = stats.gstd(self.array_3d, axis=(1,2))
-        assert_array_almost_equal(gstd_actual, [2.12939215, 1.22120169])
+        assert_allclose(gstd_actual, [2.12939215, 1.22120169])
 
     def test_3d_array_axis_0(self):
         gstd_actual = stats.gstd(self.array_3d, axis=0)
@@ -1284,7 +1284,7 @@ class TestGeometricStandardDeviation(object):
             [2.3758135028411, 2.174581428192, 2.0260062829505, 1.9115518327308],
             [1.8205343606803, 1.746342404566, 1.6846557065742, 1.6325269194382]
         ])
-        assert_array_almost_equal(gstd_actual, gstd_desired)
+        assert_allclose(gstd_actual, gstd_desired)
 
     def test_3d_array_axis_1(self):
         gstd_actual = stats.gstd(self.array_3d, axis=1)
@@ -1292,7 +1292,7 @@ class TestGeometricStandardDeviation(object):
             [3.118993630946, 2.275985934063, 1.933995977619, 1.742896469724],
             [1.271693593916, 1.254158641801, 1.238774141609, 1.225164057869]
         ])
-        assert_array_almost_equal(gstd_actual, gstd_desired)
+        assert_allclose(gstd_actual, gstd_desired)
 
     def test_3d_array_axis_2(self):
         gstd_actual = stats.gstd(self.array_3d, axis=2)
@@ -1300,7 +1300,7 @@ class TestGeometricStandardDeviation(object):
             [1.8242475707664, 1.2243686572447, 1.1318311657788],
             [1.0934830582351, 1.0724479791887, 1.0591498540749]
         ])
-        assert_array_almost_equal(gstd_actual, gstd_desired)
+        assert_allclose(gstd_actual, gstd_desired)
 
 
 class TestScoreatpercentile(object):
