@@ -68,6 +68,24 @@ def calc_circumcenters(tetrahedrons):
     return (nominator / denominator).T
 
 
+def calc_centroids(triangles):
+    """ Calculates the centroids of the of triangles of the convex hull.
+
+    Parameters
+    ----------
+    triangles : an array of shape (N, 3, 3)
+        consisting of N triangles defined by 3 points in 3D
+
+    Returns
+    ----------
+    centroids : an array of shape (N, 3)
+        consisting of the N centroids of the triangles in 3D
+
+    """
+
+    return triangles.sum(axis=1)/3.0
+
+
 def project_to_sphere(points, center, radius):
     """
     Projects the elements of points onto the sphere defined
@@ -108,6 +126,14 @@ class SphericalVoronoi:
         Threshold for detecting duplicate points and
         mismatches between points and sphere parameters.
         (Default: 1e-06)
+    method : string
+        The method to determine the vertices of the Voronoi regions.
+        Must be one of
+        - `circumcenters`, `circumcenter`, or `cc`, for tetrahedron
+          circumcenters or 
+        - `centroids`, `centroid`, or `centr` for cetroids of the 
+          convex hull triangulation.
+        (Default: `cc`)
 
     Attributes
     ----------
@@ -130,6 +156,7 @@ class SphericalVoronoi:
     ValueError
         If there are duplicates in `points`.
         If the provided `radius` is not consistent with `points`.
+        If the provided `method` is not a valid method name.
 
     Notes
     ----------
@@ -140,10 +167,12 @@ class SphericalVoronoi:
     the coordinate system as the fourth vertex of each simplex of the Convex
     Hull. The circumcenters of all tetrahedra in the system are calculated and
     projected to the surface of the sphere, producing the Voronoi vertices.
-    The Delaunay tetrahedralization neighbour information is then used to
-    order the Voronoi region vertices around each generator. The latter
-    approach is substantially less sensitive to floating point issues than
-    angle-based methods of Voronoi region vertex sorting.
+    Alternatively, the centroids of each simplex of the Convex Hull are used
+    to establish the Voronoi vertices. The Delaunay tetrahedralization
+    neighbour information is then used to order the Voronoi region vertices 
+    around each generator. The latter approach is substantially less sensitive
+    to floating point issues than angle-based methods of Voronoi region vertex 
+    sorting.
 
     The surface area of spherical polygons is calculated by decomposing them
     into triangles and using L'Huilier's Theorem to calculate the spherical
@@ -213,7 +242,7 @@ class SphericalVoronoi:
 
     """
 
-    def __init__(self, points, radius=None, center=None, threshold=1e-06):
+    def __init__(self, points, radius=None, center=None, threshold=1e-06, method="circumcenters"):
         """
         Initializes the object and starts the computation of the Voronoi
         diagram.
@@ -224,7 +253,17 @@ class SphericalVoronoi:
         radius : The radius of the sphere. Will default to 1 if not supplied.
         center : The center of the sphere. Will default to the origin if not
          supplied.
+        method : The method to determine the vertices of the Voronoi regions.
+         Must be one of
+         - `circumcenters`, `circumcenter`, or `cc`, for tetrahedron circum-
+           centers or 
+         - `centroids`, `centroid`, or `centr` for cetroids of the convex hull
+           triangulation.
+         Will default to `circumcenters` if not supplied. 
         """
+
+        _circumcenters = ["circumcenters", "circumcenter", "cc"]
+        _centroids = ["centroids", "centroid", "centr"]
 
         self.points = points
         if np.any(center):
@@ -235,6 +274,12 @@ class SphericalVoronoi:
             self.radius = radius
         else:
             self.radius = 1
+        if method in _circumcenters:
+            self.method = "cc"
+        elif method in _centroids:
+            self.method = "centr"
+        else:
+            raise ValueError("Invalid method parameter.")
 
         if pdist(self.points).min() <= threshold * self.radius:
             raise ValueError("Duplicate generators present.")
@@ -262,26 +307,30 @@ class SphericalVoronoi:
         # perform 3D Delaunay triangulation on data set
         # (here ConvexHull can also be used, and is faster)
         self._tri = scipy.spatial.ConvexHull(self.points)
+        triangles = self._tri.points[self._tri.simplices]
 
-        # add the center to each of the simplices in tri to get the same
-        # tetrahedrons we'd have gotten from Delaunay tetrahedralization
-        # tetrahedrons will have shape: (2N-4, 4, 3)
-        tetrahedrons = self._tri.points[self._tri.simplices]
-        tetrahedrons = np.insert(
-            tetrahedrons,
-            3,
-            np.array([self.center]),
-            axis=1
-        )
+        if(self.method == "cc"):
+            # add the center to each of the simplices in tri to get the same
+            # tetrahedrons we'd have gotten from Delaunay tetrahedralization
+            # tetrahedrons will have shape: (2N-4, 4, 3)
+            tetrahedrons = np.insert(
+                triangles,
+                3,
+                np.array([self.center]),
+                axis=1
+            )
+            # produce circumcenters of tetrahedrons from 3D Delaunay
+            # circumcenters will have shape: (2N-4, 3)
+            centers = calc_circumcenters(tetrahedrons)
+        else:
+            # produce centroids of triangles from 3D convex hull
+            # centroid will have shape: (2N-4, 3)
+            centers = calc_centroids(triangles)
 
-        # produce circumcenters of tetrahedrons from 3D Delaunay
-        # circumcenters will have shape: (2N-4, 3)
-        circumcenters = calc_circumcenters(tetrahedrons)
-
-        # project tetrahedron circumcenters to the surface of the sphere
+        # project centers to the surface of the sphere
         # self.vertices will have shape: (2N-4, 3)
         self.vertices = project_to_sphere(
-            circumcenters,
+            centers,
             self.center,
             self.radius
         )

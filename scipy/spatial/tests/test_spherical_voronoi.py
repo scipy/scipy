@@ -10,7 +10,7 @@ from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
-class TestCircumcenters(object):
+class TestCenters(object):
 
     def test_circumcenters(self):
         tetrahedrons = np.array([
@@ -29,6 +29,25 @@ class TestCircumcenters(object):
         expected = [
             [-0.5680861153262529, -0.133279590288315, 0.1843323216995444],
             [-0.5965330784014926, -0.1480377040397778, 0.1981967854886021]
+        ]
+
+        assert_array_almost_equal(result, expected)
+
+    def test_centroids(self):
+        triangles = np.array([
+            [[1, 2, 3],
+             [-1.1, -2.1, -3.1],
+             [-1.2, 2.2, 3.2]],
+            [[10, 20, 30],
+             [-10.1, -20.1, -30.1],
+             [-10.2, 20.2, 30.2]]
+        ])
+
+        result = spherical_voronoi.calc_centroids(triangles)
+
+        expected = [
+            [-0.4333333333333333, 0.7,  1.0333333333333333],
+            [-3.4333333333333333, 6.7, 10.0333333333333333],
         ]
 
         assert_array_almost_equal(result, expected)
@@ -101,10 +120,21 @@ class TestSphericalVoronoi(object):
         assert_array_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
+        sv_origin = SphericalVoronoi(self.points, method='centr')
+        sv_translated = SphericalVoronoi(self.points + center, None, center, method='centr')
+        assert_array_equal(sv_origin.regions, sv_translated.regions)
+        assert_array_almost_equal(sv_origin.vertices + center,
+                                  sv_translated.vertices)
+            
 
     def test_vertices_regions_scaling_invariance(self):
         sv_unit = SphericalVoronoi(self.points)
         sv_scaled = SphericalVoronoi(self.points * 2, 2)
+        assert_array_equal(sv_unit.regions, sv_scaled.regions)
+        assert_array_almost_equal(sv_unit.vertices * 2,
+                                  sv_scaled.vertices)
+        sv_unit = SphericalVoronoi(self.points, method='centr')
+        sv_scaled = SphericalVoronoi(self.points * 2, 2, method='centr')
         assert_array_equal(sv_unit.regions, sv_scaled.regions)
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
@@ -133,6 +163,9 @@ class TestSphericalVoronoi(object):
         # and Engineering
         sv = SphericalVoronoi(self.points)
         expected = self.points.shape[0] * 2 - 4
+        actual = sv.vertices.shape[0]
+        assert_equal(actual, expected)
+        sv = SphericalVoronoi(self.points, method='centr')
         actual = sv.vertices.shape[0]
         assert_equal(actual, expected)
 
