@@ -315,7 +315,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
     `shgo` also has a return for any other local minima that was found, these
-     can be called using:
+    can be called using:
 
     >>> result.xl
     array([[ 512.        ,  404.23180542],
