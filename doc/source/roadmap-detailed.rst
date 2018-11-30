@@ -57,6 +57,14 @@ tutorial in the reference guide that is a good introduction, however there are
 a few missing or incomplete tutorials - this should be fixed.
 
 
+Benchmarks
+``````````
+The ``asv``-based benchmark system is in reasonable shape.  It is quite easy to
+add new benchmarks, however running the benchmarks is not very intuitive.
+Making this easier is a priority.  In addition, we should run them in our CI
+(gh-8779 is an ongoing attempt at this).
+
+
 Other
 `````
 
@@ -115,7 +123,7 @@ There's a large overlap with ``numpy.fft``.  This duplication has to change
 make clear that ``scipy.fftpack`` is preferred over ``numpy.fft``.
 If there are differences in signature or functionality, the best version
 should be picked case by case (example: numpy's ``rfft`` is preferred, see
-gh-2487).
+`gh-2487 <https://github.com/scipy/scipy/issues/2487>`__).
 
 Ideas for new features:
 
@@ -132,8 +140,8 @@ Needed for ODE solvers:
     In the future we can consider (soft-)deprecating the older API.
 
 The numerical integration functions are in good shape.  Support for integrating
-complex-valued functions and integrating multiple intervals (see gh-3325) could
-be added.
+complex-valued functions and integrating multiple intervals (see `gh-3325
+<https://github.com/scipy/scipy/issues/3325>`__) could be added.
 
 
 interpolate
@@ -234,7 +242,8 @@ Overall this module is in good shape. Two good global optimizers were added in
 things that are needed:
 
   - Many ideas for additional functionality (e.g. integer constraints, sparse
-    matrix support, performance improvements) in ``linprog``, see gh-9269.
+    matrix support, performance improvements) in ``linprog``, see
+    `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
   - Add functionality to the benchmark suite to compare results more easily
     (e.g. with summary plots).
   - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
@@ -350,8 +359,9 @@ functions, and spheroidal wave functions. Three possible ways to handle this:
     2. Port Boost's arbitrary precision library and use it under the hood to get
        double precision accuracy. This might be necessary as a stopgap measure
        for hypergeometric functions; the idea of using arbitrary precision has
-       been suggested before by @nmayorov and in gh-5349. Likely necessary for
-       spheroidal wave functions, this could be reused:
+       been suggested before by @nmayorov and in
+       `gh-5349 <https://github.com/scipy/scipy/issues/5349>`__.  Likely
+       necessary for spheroidal wave functions, this could be reused:
        https://github.com/radelman/scattering.
 
     3. Add clear warnings to the documentation about the limits of the existing
@@ -363,5 +373,13 @@ stats
 
 This module is in good shape overall.  New functionality that's similar to
 what's already present can continue to be added; more advanced statistical
-routines may fit better in ``statsmodels``.
+routines may fit better in ``statsmodels``.  Some ideas for new contributions
+are:
 
+- Implementing (well-kown) distributions to the ``stats.distributions``
+  framework is always welcome.
+- Continuing work on making the function signatures of ``stats`` and
+``stats.mstats`` more consistent, and adding tests to ensure that that remains
+  the case.
+- There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
+  PR in `gh-4933 https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
