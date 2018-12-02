@@ -1262,6 +1262,10 @@ class TestBrute:
         self.rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
         self.solution = np.array([-1.05665192, 1.80834843])
 
+    def brute_func(self, z, *params):
+        # an instance method optimizing
+        return brute_func(z, *params)
+
     def test_brute(self):
         # test fmin
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -1277,6 +1281,13 @@ class TestBrute:
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
         assert_allclose(resbrute[1], brute_func(self.solution, *self.params),
                         atol=1e-3)
+
+        # test that brute can optimize an instance method (the other tests use
+        # a non-class based function
+        resbrute = optimize.brute(self.brute_func, self.rranges,
+                                  args=self.params, full_output=True,
+                                  finish=optimize.minimize)
+        assert_allclose(resbrute[0], self.solution, atol=1e-3)
 
     def test_1D(self):
         # test that for a 1D problem the test function is passed an array,
@@ -1296,8 +1307,8 @@ class TestBrute:
         resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=None, workers=2)
 
-        assert_equal(resbrute1[-1], resbrute[-1])
-        assert_equal(resbrute1[0], resbrute[0])
+        assert_allclose(resbrute1[-1], resbrute[-1])
+        assert_allclose(resbrute1[0], resbrute[0])
 
 
 class TestIterationLimits(object):
