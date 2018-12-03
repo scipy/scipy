@@ -65,7 +65,7 @@ static void fname ## _onemultadd2(char *sum, char *term1, char *term2) { \
   return; }
 
 #define MAKE_C_ONEMULTADD2(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, npy_intp str,
+static void fname ## _onemultadd(char *sum, char *term1, npy_intp str, \
                                  char **pvals, npy_intp n) { \
         npy_intp k; \
         for (k=0; k < n; k++) { \
