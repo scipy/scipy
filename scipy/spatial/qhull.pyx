@@ -1007,8 +1007,10 @@ cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
     p[2*qh._nridges + 1] = point_2
 
     # Record which voronoi vertices constitute the ridge
-    cur_vertices = [(<facetT*>centers.e[i].p).visitid - 1
-                    for i in xrange(qh_setsize(_qh, centers))]
+    cur_vertices = []
+    for i in xrange(qh_setsize(_qh, centers)):
+        ix = (<facetT*>centers.e[i].p).visitid - 1
+        cur_vertices.append(ix)
     qh._ridge_vertices.append(cur_vertices)
 
     qh._nridges += 1
