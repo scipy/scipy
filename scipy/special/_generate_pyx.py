@@ -838,7 +838,7 @@ class FusedFunc(Func):
             return lines
 
         # Set fused-type variables to nan
-        all_codes = tuple([codes for _, codes in fused_types])
+        all_codes = tuple([codes for _, codes in fused_types])  # noqa
 
         codelens = list(map(lambda x: len(x), all_codes))
         last = numpy.product(codelens) - 1
