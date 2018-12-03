@@ -32,12 +32,13 @@ import sys
 import numpy
 from scipy._lib.six import callable, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
-                   vectorize, asarray, sqrt, Inf, asfarray, isinf)
+                   asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import MapWrapper
 
 
 # standard status messages of optimizers
@@ -2679,7 +2680,7 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
 
 
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
-          disp=False):
+          disp=False, workers=1):
     """Minimize a function over a given range by brute force.
 
     Uses the "brute force" method, i.e. computes the function's value
@@ -2729,7 +2730,17 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         and/or `disp` as keyword arguments.  Use None if no "polishing"
         function is to be used. See Notes for more details.
     disp : bool, optional
-        Set to True to print convergence messages.
+        Set to True to print convergence messages from the `finish` callable.
+    workers : int or map-like callable, optional
+        If `workers` is an int the grid is subdivided into `workers`
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
+        Supply `-1` to use all cores available to the Process.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the grid in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        Requires that `func` be pickleable.
+
+        .. versionadded:: 1.3.0
 
     Returns
     -------
@@ -2852,16 +2863,27 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     if (N == 1):
         lrange = lrange[0]
 
-    def _scalarfunc(*params):
-        params = asarray(params).flatten()
-        return func(params, *args)
+    grid = np.mgrid[lrange]
 
-    vecfunc = vectorize(_scalarfunc)
-    grid = mgrid[lrange]
-    if (N == 1):
-        grid = (grid,)
-    Jout = vecfunc(*grid)
+    # obtain an array of parameters that is iterable by a map-like callable
+    inpt_shape = grid.shape
+    if (N > 1):
+        grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
+
+    wrapped_func = _Brute_Wrapper(func, args)
+
+    # iterate over input arrays, possibly in parallel
+    with MapWrapper(pool=workers) as mapper:
+        Jout = np.array(list(mapper(wrapped_func, grid)))
+        if (N == 1):
+            grid = (grid,)
+            Jout = np.squeeze(Jout)
+        elif (N > 1):
+            Jout = np.reshape(Jout, inpt_shape[1:])
+            grid = np.reshape(grid.T, inpt_shape)
+
     Nshape = shape(Jout)
+
     indx = argmin(Jout.ravel(), axis=-1)
     Nindx = zeros(N, int)
     xmin = zeros(N, float)
@@ -2876,6 +2898,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     if (N == 1):
         grid = grid[0]
         xmin = xmin[0]
+
     if callable(finish):
         # set up kwargs for `finish` function
         finish_args = _getargspec(finish).args
@@ -2910,6 +2933,19 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         return xmin, Jmin, grid, Jout
     else:
         return xmin
+
+
+class _Brute_Wrapper(object):
+    """
+    Object to wrap user cost function for optimize.brute, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        # flatten needed for one dimensional case.
+        return self.f(np.asarray(x).flatten(), *self.args)
 
 
 def show_options(solver=None, method=None, disp=True):
