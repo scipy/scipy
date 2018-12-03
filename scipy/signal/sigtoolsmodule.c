@@ -5,9 +5,8 @@ Permission to use, copy, modify, and distribute this software without fee
 is granted under the SciPy License.
 */
 #include <Python.h>
-
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
-#include <numpy/noprefix.h>
+#include "numpy/ndarrayobject.h"
 
 #include "sigtools.h"
 #include <setjmp.h>
@@ -39,7 +38,7 @@ order filtering, however uses python-specific constructs in its guts
 and is therefore Python dependent.  This could be changed in a 
 straightforward way but I haven't done it for lack of time.*/
 
-static int index_out_of_bounds(intp *indices, intp *max_indices, int ndims) {
+static int index_out_of_bounds(npy_intp *indices, npy_intp *max_indices, int ndims) {
   int bad_index = 0, k = 0;
 
   while (!bad_index && (k++ < ndims)) {
@@ -56,11 +55,11 @@ static int index_out_of_bounds(intp *indices, intp *max_indices, int ndims) {
  * but probably with dim1 being the size of the "original, unsliced" array
  */
 
-static intp compute_offsets (uintp *offsets, intp *offsets2, intp *dim1,
-                             intp *dim2, intp *dim3, intp *mode_dep,
+static npy_intp compute_offsets (npy_uintp *offsets, npy_intp *offsets2, npy_intp *dim1,
+                             npy_intp *dim2, npy_intp *dim3, npy_intp *mode_dep,
                              int nd) {
   int k,i;
-  intp init_offset = 0;
+  npy_intp init_offset = 0;
 
   for (k = 0; k < nd - 1; k++) 
     {
@@ -93,7 +92,7 @@ static intp compute_offsets (uintp *offsets, intp *offsets2, intp *dim1,
 
 /* increment by 1 the index into an N-D array, doing the necessary
    carrying when the index reaches the dimension along that axis */ 
-static int increment(intp *ret_ind, int nd, intp *max_ind) {    
+static int increment(npy_intp *ret_ind, int nd, npy_intp *max_ind) {    
     int k, incr = 1;
     
     k = nd - 1;
@@ -768,13 +767,13 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
 
 static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
                         char *sort_buffer, int nels2, int check,
-                        intp *loop_ind, intp *temp_ind, uintp *offset){ 
+                        npy_intp *loop_ind, npy_intp *temp_ind, npy_uintp *offset){ 
   int i, k, incr = 1;
   int ndims = PyArray_NDIM(ap1);
-  intp *dims2 = PyArray_DIMS(ap2);
-  intp *dims1 = PyArray_DIMS(ap1);
-  intp is1 = PyArray_ITEMSIZE(ap1);
-  intp is2 = PyArray_ITEMSIZE(ap2);
+  npy_intp *dims2 = PyArray_DIMS(ap2);
+  npy_intp *dims1 = PyArray_DIMS(ap1);
+  npy_intp is1 = PyArray_ITEMSIZE(ap1);
+  npy_intp is2 = PyArray_ITEMSIZE(ap2);
   char *ip2 = PyArray_DATA(ap2);
   int elsize = PyArray_ITEMSIZE(ap1);
   char *ptr;
@@ -811,17 +810,17 @@ int fname(type *ip1, type *ip2) { return *ip1 < *ip2 ? -1 : *ip1 == *ip2 ? 0 : 1
 
 COMPARE(DOUBLE_compare, double)
 COMPARE(FLOAT_compare, float)
-COMPARE(LONGDOUBLE_compare, longdouble)
-COMPARE(BYTE_compare, byte)
+COMPARE(LONGDOUBLE_compare, npy_longdouble)
+COMPARE(BYTE_compare, npy_byte)
 COMPARE(SHORT_compare, short)
 COMPARE(INT_compare, int)
 COMPARE(LONG_compare, long)
-COMPARE(LONGLONG_compare, longlong)
-COMPARE(UBYTE_compare, ubyte)
-COMPARE(USHORT_compare, ushort)
-COMPARE(UINT_compare, uint)
-COMPARE(ULONG_compare, ulong)
-COMPARE(ULONGLONG_compare, ulonglong)
+COMPARE(LONGLONG_compare, npy_longlong)
+COMPARE(UBYTE_compare, npy_ubyte)
+COMPARE(USHORT_compare, npy_ushort)
+COMPARE(UINT_compare, npy_uint)
+COMPARE(ULONG_compare, npy_ulong)
+COMPARE(ULONGLONG_compare, npy_ulonglong)
 
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
@@ -843,14 +842,14 @@ CompareFunction compare_functions[] = \
 
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
-	intp *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
-	uintp *offsets, offset1;
-	intp *offsets2;
+	npy_intp *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
+	npy_uintp *offsets, offset1;
+	npy_intp *offsets2;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
 	int is1, os;
 	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer;
-	intp *ret_ind;
+	npy_intp *ret_ind;
 	CompareFunction compare_func;
 	char *zptr=NULL;
 	PyArray_CopySwapFunc *copyswap;
@@ -911,21 +910,21 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	copyswap = PyArray_DESCR(ret)->f->copyswap;
 
-	bytes_in_array = PyArray_NDIM(ap1)*sizeof(intp);
+	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
 	mode_dep = malloc(bytes_in_array);
 	for (k = 0; k < PyArray_NDIM(ap1); k++) { 
 	  mode_dep[k] = -((PyArray_DIMS(ap2)[k]-1) >> 1);
 	}	
 
-	b_ind = (intp *)malloc(bytes_in_array);  /* loop variables */
+	b_ind = (npy_intp *)malloc(bytes_in_array);  /* loop variables */
 	memset(b_ind,0,bytes_in_array);
-	a_ind = (intp *)malloc(bytes_in_array);
-	ret_ind = (intp *)malloc(bytes_in_array);
+	a_ind = (npy_intp *)malloc(bytes_in_array);
+	ret_ind = (npy_intp *)malloc(bytes_in_array);
 	memset(ret_ind,0,bytes_in_array);
-	temp_ind = (intp *)malloc(bytes_in_array);
-	check_ind = (intp*)malloc(bytes_in_array);
-	offsets = (uintp *)malloc(PyArray_NDIM(ap1)*sizeof(uintp));
-	offsets2 = (intp *)malloc(PyArray_NDIM(ap1)*sizeof(intp));
+	temp_ind = (npy_intp *)malloc(bytes_in_array);
+	check_ind = (npy_intp*)malloc(bytes_in_array);
+	offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp));
+	offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp));
 	offset1 = compute_offsets(offsets, offsets2, PyArray_DIMS(ap1),
                                   PyArray_DIMS(ap2), PyArray_DIMS(ret),
                                   mode_dep, PyArray_NDIM(ap1));
@@ -1027,14 +1026,14 @@ static char doc_correlateND[] = "out = _correlateND(a,kernel,mode) \n\n   mode =
 
 static char doc_convolve2d[] = "out = _convolve2d(in1, in2, flip, mode, boundary, fillvalue)";
 
-extern int pylab_convolve_2d(char*, intp*, char*, intp*, char*, intp*, intp*,
-                             intp*, int, char*);
+extern int pylab_convolve_2d(char*, npy_intp*, char*, npy_intp*, char*,
+                             npy_intp*, npy_intp*, npy_intp*, int, char*);
 
 static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
     int mode=2, boundary=0, typenum, flag, flip=1, ret;
-    intp *aout_dimens=NULL;
+    npy_intp *aout_dimens=NULL;
     int i;
     PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL;
     PyArrayObject *afill=NULL;
@@ -1094,7 +1093,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
         if (afill == NULL) goto fail;
     }
 
-    aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(intp));
+    aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
     switch(mode & OUTSIZE_MASK) {
     case VALID:
 	for (i = 0; i < PyArray_NDIM(ain1); i++) { 
@@ -1206,7 +1205,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     int k, numtaps, numbands, type = BANDPASS, err; 
     PyArrayObject *a_bands=NULL, *a_des=NULL, *a_weight=NULL;
     PyArrayObject *h=NULL;
-    intp ret_dimens; int maxiter = 25, grid_density = 16;
+    npy_intp ret_dimens; int maxiter = 25, grid_density = 16;
     double oldvalue, *dptr, fs = 1.0;
     char mystr[255];
     int niter = -1;
@@ -1303,9 +1302,9 @@ fail:
 
 static char doc_median2d[] = "filt = _median2d(data, size)";
 
-extern void f_medfilt2(float*,float*,intp*,intp*);
-extern void d_medfilt2(double*,double*,intp*,intp*);
-extern void b_medfilt2(unsigned char*,unsigned char*,intp*,intp*);
+extern void f_medfilt2(float*,float*,npy_intp*,npy_intp*);
+extern void d_medfilt2(double*,double*,npy_intp*,npy_intp*);
+extern void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
 
 static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
@@ -1313,7 +1312,7 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     int typenum;
     PyArrayObject *a_image=NULL, *a_size=NULL;
     PyArrayObject *a_out=NULL;
-    intp Nwin[2] = {3,3};
+    npy_intp Nwin[2] = {3,3};
 
     if (!PyArg_ParseTuple(args, "O|O", &image, &size)) return NULL;
 
@@ -1326,8 +1325,8 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 	if (a_size == NULL) goto fail;
 	if ((PyArray_NDIM(a_size) != 1) || (PyArray_DIMS(a_size)[0] < 2)) 
 	    PYERR("Size must be a length two sequence");
-	Nwin[0] = ((intp *)PyArray_DATA(a_size))[0];
-	Nwin[1] = ((intp *)PyArray_DATA(a_size))[1];
+	Nwin[0] = ((npy_intp *)PyArray_DATA(a_size))[0];
+	Nwin[1] = ((npy_intp *)PyArray_DATA(a_size))[1];
     }  
 
     a_out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), typenum);
