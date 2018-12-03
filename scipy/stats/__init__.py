@@ -361,6 +361,15 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
+Warnings used in :mod:`scipy.stats`
+===================================
+
+.. autosummary::
+   :toctree: generated/
+
+   PearsonRConstantInputWarning
+   PearsonRNearConstantInputWarning
+
 For many more stat related functions install the software R and the
 interface package rpy.
 
