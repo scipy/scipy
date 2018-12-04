@@ -2971,7 +2971,7 @@ def show_options(solver=None, method=None, disp=True):
     Returns
     -------
     text
-        Either None (for disp=False) or the text string (disp=True)
+        Either None (for disp=True) or the text string (disp=False)
 
     Notes
     -----
