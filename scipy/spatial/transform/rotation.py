@@ -1571,8 +1571,8 @@ class Rotation(object):
         References
         ----------
         .. [1] F. Landis Markley,
-                “Attitude determination using vector observations: a fast
-                optimal matrix algorithm”, Journal of Astronautical Sciences,
+                "Attitude determination using vector observations: a fast
+                optimal matrix algorithm", Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
         .. [2] F. Landis Markley,
                 "Attitude determination using vector observations and the
