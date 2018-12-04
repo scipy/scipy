@@ -42,40 +42,39 @@ class TestMquantiles(object):
         assert_almost_equal(quants, desired)
 
 
-class MStatsTestMethod(object):
-    def check_equal_gmean(self, array_like, desired, axis=None, dtype=None, rtol=1e-7):
-        # Note this doesn't test when axis is not specified
-        x = mstats.gmean(array_like, axis=axis, dtype=dtype)
-        assert_allclose(x, desired, rtol=rtol)
-        assert_equal(x.dtype, dtype)
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
+    # Note this doesn't test when axis is not specified
+    x = mstats.gmean(array_like, axis=axis, dtype=dtype)
+    assert_allclose(x, desired, rtol=rtol)
+    assert_equal(x.dtype, dtype)
 
-    def check_equal_hmean(self, array_like, desired, axis=None, dtype=None, rtol=1e-7):
-        x = stats.hmean(array_like, axis=axis, dtype=dtype)
-        assert_allclose(x, desired, rtol=rtol)
-        assert_equal(x.dtype, dtype)
+def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
+    x = stats.hmean(array_like, axis=axis, dtype=dtype)
+    assert_allclose(x, desired, rtol=rtol)
+    assert_equal(x.dtype, dtype)
 
 
-class TestGeoMean(MStatsTestMethod):
+class TestGeoMean(object):
     def test_1d(self):
         a = [1, 2, 3, 4]
         desired = np.power(1*2*3*4, 1./4.)
-        self.check_equal_gmean(a, desired, rtol=1e-14)
+        check_equal_gmean(a, desired, rtol=1e-14)
 
     def test_1d_ma(self):
         #  Test a 1d masked array
         a = ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         desired = 45.2872868812
-        self.check_equal_gmean(a, desired)
+        check_equal_gmean(a, desired)
 
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired = np.power(1*2*3, 1./3.)
-        self.check_equal_gmean(a, desired, rtol=1e-14)
+        check_equal_gmean(a, desired, rtol=1e-14)
 
     def test_1d_ma_value(self):
         #  Test a 1d masked array with a masked value
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
         desired = 41.4716627439
-        self.check_equal_gmean(a, desired)
+        check_equal_gmean(a, desired)
 
     def test_1d_ma0(self):
         #  Test a 1d masked array with zero element
@@ -83,7 +82,7 @@ class TestGeoMean(MStatsTestMethod):
         desired = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
-            self.check_equal_gmean(a, desired)
+            check_equal_gmean(a, desired)
         finally:
             np.seterr(**olderr)
 
@@ -93,7 +92,7 @@ class TestGeoMean(MStatsTestMethod):
         desired = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
-            self.check_equal_gmean(a, desired)
+            check_equal_gmean(a, desired)
         finally:
             np.seterr(**olderr)
 
@@ -101,58 +100,58 @@ class TestGeoMean(MStatsTestMethod):
     def test_1d_float96(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.power(1*2*3, 1./3.).astype(np.float96)
-        self.check_equal_gmean(a, desired_dt, dtype=np.float96, rtol=1e-14)
+        check_equal_gmean(a, desired_dt, dtype=np.float96, rtol=1e-14)
 
     def test_2d_ma(self):
         a = ma.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]],
                      mask=[[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 1, 0]])
         desired = np.array([1, 2, 3, 4])
-        self.check_equal_gmean(a, desired, axis=0, rtol=1e-14)
+        check_equal_gmean(a, desired, axis=0, rtol=1e-14)
 
         desired = ma.array([np.power(1*2*3*4, 1./4.),
                             np.power(2*3, 1./2.),
                             np.power(1*4, 1./2.)])
-        self.check_equal_gmean(a, desired, axis=-1, rtol=1e-14)
+        check_equal_gmean(a, desired, axis=-1, rtol=1e-14)
 
         #  Test a 2d masked array
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = 52.8885199
-        self.check_equal_gmean(np.ma.array(a), desired)
+        check_equal_gmean(np.ma.array(a), desired)
 
 
-class TestHarMean(MStatsTestMethod):
+class TestHarMean(object):
     def test_1d(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired = 3. / (1./1 + 1./2 + 1./3)
-        self.check_equal_hmean(a, desired, rtol=1e-14)
+        check_equal_hmean(a, desired, rtol=1e-14)
 
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         desired = 34.1417152147
-        self.check_equal_hmean(a, desired)
+        check_equal_hmean(a, desired)
 
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
                         mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
         desired = 31.8137186141
-        self.check_equal_hmean(a, desired)
+        check_equal_hmean(a, desired)
 
     @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1d_float96(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.asarray(3. / (1./1 + 1./2 + 1./3), dtype=np.float96)
-        self.check_equal_hmean(a, desired_dt, dtype=np.float96)
+        check_equal_hmean(a, desired_dt, dtype=np.float96)
 
     def test_2d(self):
         a = ma.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]],
                      mask=[[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 1, 0]])
         desired = ma.array([1, 2, 3, 4])
-        self.check_equal_hmean(a, desired, axis=0, rtol=1e-14)
+        check_equal_hmean(a, desired, axis=0, rtol=1e-14)
 
         desired = [4./(1/1.+1/2.+1/3.+1/4.), 2./(1/2.+1/3.), 2./(1/1.+1/4.)]
-        self.check_equal_hmean(a, desired, axis=-1, rtol=1e-14)
+        check_equal_hmean(a, desired, axis=-1, rtol=1e-14)
 
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = 38.6696271841
-        self.check_equal_hmean(np.ma.array(a), desired)
+        check_equal_hmean(np.ma.array(a), desired)
 
 
 class TestRanking(object):
