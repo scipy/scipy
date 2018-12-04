@@ -298,6 +298,7 @@ Authors
 * emmi474 +
 * Stefan Endres +
 * Thomas Etherington +
+* Piotr Figiel
 * Alex Fikl +
 * fo40225 +
 * Joseph Fox-Rabinovitz
@@ -354,6 +355,7 @@ Authors
 * Nick Papior
 * Haesun Park +
 * Ronny Pfannschmidt +
+* Matti Picus
 * pijyoi +
 * Ilhan Polat
 * Anthony Polloreno +
@@ -404,6 +406,9 @@ This list of names is automatically generated, and may not be fully complete.
 Issues closed for 1.2.0
 -----------------------
 
+* `#9520 <https://github.com/scipy/scipy/issues/9520>`__: signal.correlate with method='fft' doesn't benefit from long...
+* `#9547 <https://github.com/scipy/scipy/issues/9547>`__: signature of dual_annealing doesn't match other optimizers
+* `#9540 <https://github.com/scipy/scipy/issues/9540>`__: SciPy v1.2.0rc1 cannot be imported on Python 2.7.15
 * `#1240 <https://github.com/scipy/scipy/issues/1240>`__: Allowing multithreaded use of minpack through scipy.optimize...
 * `#1432 <https://github.com/scipy/scipy/issues/1432>`__: scipy.stats.mode extremely slow (Trac #905)
 * `#3372 <https://github.com/scipy/scipy/issues/3372>`__: Please add Sphinx search field to online scipy html docs
@@ -465,6 +470,15 @@ Issues closed for 1.2.0
 Pull requests for 1.2.0
 -----------------------
 
+* `#9526 <https://github.com/scipy/scipy/pull/9526>`__: TST: relax precision requirements in signal.correlate tests
+* `#9507 <https://github.com/scipy/scipy/pull/9507>`__: CI: MAINT: Skip a ckdtree test on pypy
+* `#9512 <https://github.com/scipy/scipy/pull/9512>`__: TST: test_random_sampling 32-bit handling
+* `#9494 <https://github.com/scipy/scipy/pull/9494>`__: TST: test_kolmogorov xfail 32-bit
+* `#9486 <https://github.com/scipy/scipy/pull/9486>`__: BUG: fix sparse random int handling
+* `#9561 <https://github.com/scipy/scipy/pull/9561>`__: ENH: remove noprefix.h, change code appropriately
+* `#9550 <https://github.com/scipy/scipy/pull/9550>`__: BUG: scipy/_lib/_numpy_compat: get_randint
+* `#9549 <https://github.com/scipy/scipy/pull/9549>`__: MAINT: make dual_annealing signature match other optimizers
+* `#9541 <https://github.com/scipy/scipy/pull/9541>`__: BUG: fix SyntaxError due to non-ascii character on Python 2.7
 * `#7352 <https://github.com/scipy/scipy/pull/7352>`__: ENH: add Brunner Munzel test to scipy.stats.
 * `#7373 <https://github.com/scipy/scipy/pull/7373>`__: BUG: Jaccard distance for all-zero arrays would return np.nan
 * `#7374 <https://github.com/scipy/scipy/pull/7374>`__: ENH: Add PDF, CDF and parameter estimation for Stable Distributions

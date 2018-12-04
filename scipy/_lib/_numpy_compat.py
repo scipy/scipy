@@ -95,8 +95,8 @@ else:
     # method of RandomState does only work with int32 values.
     def get_randint(random_state):
         def randint_patched(low, high, size, dtype=np.int32):
-            low = max(low, np.iinfo(dtype).min)
-            high = min(high, np.iinfo(dtype).max)
+            low = max(low, np.iinfo(dtype).min, np.iinfo(np.int32).min)
+            high = min(high, np.iinfo(dtype).max, np.iinfo(np.int32).max)
             integers = random_state.randint(low, high=high, size=size)
             return integers.astype(dtype, copy=False)
         return randint_patched
@@ -779,6 +779,3 @@ else:
         c = dot(X, X_T.conj())
         c *= 1. / np.float64(fact)
         return c.squeeze()
-
-
-
