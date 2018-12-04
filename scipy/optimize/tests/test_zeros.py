@@ -398,14 +398,16 @@ class TestBasic(object):
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
                 with pytest.raises(
-                        RuntimeError,
-                        match='Failed to converge after %d iterations, value is .*' % (iters)):
+                    RuntimeError,
+                    match='Failed to converge after %d iterations, value is .*' % (iters)):
                     x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
-        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc)
+        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
+        with pytest.raises(RuntimeError):
+            result = zeros.newton(func, 0.0, dfunc)
 
     def test_newton_does_not_modify_x0(self):
         # https://github.com/scipy/scipy/issues/9964
@@ -512,13 +514,17 @@ def test_zero_der_nz_dp():
     p0 = (2.0 - 1e-4) / (2.0 + 1e-4)
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning, "Tolerance of")
-        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0)
+        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, 1)
+    with pytest.raises(RuntimeError):
+        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=True)
     p0 = (-2.0 + 1e-4) / (2.0 + 1e-4)
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning, "Tolerance of")
-        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0)
+        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, -1)
+    with pytest.raises(RuntimeError):
+        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=True)
 
 
 def test_array_newton_failures():
