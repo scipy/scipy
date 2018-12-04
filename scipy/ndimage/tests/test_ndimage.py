@@ -4453,6 +4453,15 @@ class TestNdimage:
         output = numpy.empty_like(array, dtype=numpy.float)
         ndimage.white_tophat(array, structure=structure, output=output)
 
+    def test_white_tophat05(self):
+        array = numpy.ones((3, 3))
+        array[1,1] = 0.0
+        ndimage.white_tophat(array, size=3, output=array)
+        expected = numpy.array([[1., 1., 1.],
+                                [1., 0., 1.],
+                                [1., 1., 1.]])
+        assert_array_equal(array, expected)
+
     def test_black_tophat01(self):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [7, 6, 9, 3, 5],
@@ -4507,6 +4516,15 @@ class TestNdimage:
         # Check that type mismatch is properly handled
         output = numpy.empty_like(array, dtype=numpy.float)
         ndimage.black_tophat(array, structure=structure, output=output)
+
+    def test_black_tophat05(self):
+        array = numpy.ones((3, 3))
+        array[1, 1] = 0.0
+        ndimage.black_tophat(array, size=3, output=array)
+        expected = numpy.array([[1., 1., 1.],
+                                [1., 0., 1.],
+                                [1., 1., 1.]])
+        assert_array_equal(array, expected)
 
     def test_hit_or_miss01(self):
         struct = [[0, 1, 0],
