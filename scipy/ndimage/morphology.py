@@ -1733,8 +1733,14 @@ def white_tophat(input, size=None, footprint=None, structure=None,
         warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
-    tmp = grey_dilation(tmp, size, footprint, structure, output, mode,
-                        cval, origin)
+
+    if numpy.array_equal(input, output):
+        tmp = grey_dilation(tmp, size, footprint, structure, None, mode,
+                           cval, origin)
+    else:
+        tmp = grey_dilation(tmp, size, footprint, structure, output, mode,
+                           cval, origin)
+
     if tmp is None:
         tmp = output
 
@@ -1791,8 +1797,14 @@ def black_tophat(input, size=None, footprint=None,
         warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)
-    tmp = grey_erosion(tmp, size, footprint, structure, output, mode,
-                       cval, origin)
+
+    if numpy.array_equal(input, output):
+        tmp = grey_erosion(tmp, size, footprint, structure, None, mode,
+                           cval, origin)
+    else:
+        tmp = grey_erosion(tmp, size, footprint, structure, output, mode,
+                           cval, origin)
+
     if tmp is None:
         tmp = output
 
