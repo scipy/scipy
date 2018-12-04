@@ -2,6 +2,7 @@
 #define _SCIPY_PRIVATE_SIGNAL_SIGTOOLS_H_
 
 #include "Python.h"
+#include "numpy/noprefix.h"
 
 #define BOUNDARY_MASK 12
 #define OUTSIZE_MASK 3
@@ -32,7 +33,7 @@ typedef struct {
 
 typedef struct {
   char *data;
-  npy_intp numels;
+  intp numels;
   int elsize;
   char *zero;        /* Pointer to Representation of zero */
 } Generic_Vector;
@@ -40,15 +41,13 @@ typedef struct {
 typedef struct {
   char *data;
   int  nd;
-  npy_intp  *dimensions;
+  intp  *dimensions;
   int  elsize;
-  npy_intp  *strides;
+  intp  *strides;
   char *zero;         /* Pointer to Representation of zero */
 } Generic_Array;
 
-typedef void (MultAddFunction) (char *, npy_intp, char *, npy_intp, char *,
-                                npy_intp *, npy_intp *, int, npy_intp, int,
-                                npy_intp *, npy_intp *, npy_uintp *);
+typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp *, int, intp, int, intp *, intp *, uintp *);
 
 PyObject*
 scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args);
