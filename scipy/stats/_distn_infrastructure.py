@@ -2578,7 +2578,8 @@ class rv_discrete(rv_generic):
         The tolerance for the generic calculation of moments.
     values : tuple of two array_like, optional
         ``(xk, pk)`` where ``xk`` are integers with non-zero
-        probabilities ``pk``  with ``sum(pk) = 1``.
+        probabilities ``pk``  with ``sum(pk) = 1``. Note: pk should be
+        assigned between 0 to 1.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3362,6 +3363,8 @@ class rv_sample(rv_discrete):
 
         if len(xk) != len(pk):
             raise ValueError("xk and pk need to have the same length.")
+        if not np.allclose(np.sum(np.sign(pk)), np.size(pk)):
+            raise ValueError("pk should be assigned between 0 to 1.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
 
