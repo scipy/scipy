@@ -3357,7 +3357,7 @@ class rv_sample(rv_discrete):
 
         if np.shape(xk) != np.shape(pk):
             raise ValueError("xk and pk must have the same shape.")
-        if not np.allclose(np.sum(np.sign(pk)), np.size(pk)):
+        if not np.allclose(np.size(np.where((np.array(pk) >= 0.0) & (np.array(pk) <= 1.0))), np.size(pk)):
             raise ValueError("pk should be assigned between 0 to 1.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
