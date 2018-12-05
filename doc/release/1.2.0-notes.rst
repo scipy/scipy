@@ -355,7 +355,6 @@ Authors
 * Nick Papior
 * Haesun Park +
 * Ronny Pfannschmidt +
-* Matti Picus
 * pijyoi +
 * Ilhan Polat
 * Anthony Polloreno +
@@ -475,7 +474,6 @@ Pull requests for 1.2.0
 * `#9512 <https://github.com/scipy/scipy/pull/9512>`__: TST: test_random_sampling 32-bit handling
 * `#9494 <https://github.com/scipy/scipy/pull/9494>`__: TST: test_kolmogorov xfail 32-bit
 * `#9486 <https://github.com/scipy/scipy/pull/9486>`__: BUG: fix sparse random int handling
-* `#9561 <https://github.com/scipy/scipy/pull/9561>`__: ENH: remove noprefix.h, change code appropriately
 * `#9550 <https://github.com/scipy/scipy/pull/9550>`__: BUG: scipy/_lib/_numpy_compat: get_randint
 * `#9549 <https://github.com/scipy/scipy/pull/9549>`__: MAINT: make dual_annealing signature match other optimizers
 * `#9541 <https://github.com/scipy/scipy/pull/9541>`__: BUG: fix SyntaxError due to non-ascii character on Python 2.7
