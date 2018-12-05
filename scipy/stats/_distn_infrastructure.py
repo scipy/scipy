@@ -2572,6 +2572,8 @@ class rv_discrete(rv_generic):
         ``(xk, pk)`` where ``xk`` are integers with non-zero
         probabilities ``pk``  with ``sum(pk) = 1``.
         ``xk`` and ``pk`` must have the same shape.
+        probabilities ``pk``  with ``sum(pk) = 1``. Note: pk should be
+        assigned between 0 to 1.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3355,6 +3357,8 @@ class rv_sample(rv_discrete):
 
         if np.shape(xk) != np.shape(pk):
             raise ValueError("xk and pk must have the same shape.")
+        if not np.allclose(np.sum(np.sign(pk)), np.size(pk)):
+            raise ValueError("pk should be assigned between 0 to 1.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
 
