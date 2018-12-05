@@ -2569,8 +2569,8 @@ class rv_discrete(rv_generic):
     moment_tol : float, optional
         The tolerance for the generic calculation of moments.
     values : tuple of two array_like, optional
-        ``(xk, pk)`` where ``xk`` are integers with non-zero
-        probabilities ``pk``  with ``sum(pk) = 1``.
+        ``(xk, pk)`` where ``xk`` are integers with non-zero and
+        probabilities ``pk`` are ``sum(pk) = 1`` and bounded inside [0.0, 1.0].
         ``xk`` and ``pk`` must have the same shape.
         probabilities ``pk``  with ``sum(pk) = 1``. Note: pk should be
         assigned between 0 to 1.
@@ -3354,10 +3354,11 @@ class rv_sample(rv_discrete):
         self.vecentropy = self._entropy
 
         xk, pk = values
-
+        pk_range_count = np.size(np.where((np.array(pk) >= 0.0) &
+                                          (np.array(pk) <= 1.0)))
         if np.shape(xk) != np.shape(pk):
             raise ValueError("xk and pk must have the same shape.")
-        if not np.allclose(np.size(np.where((np.array(pk) >= 0.0) & (np.array(pk) <= 1.0))), np.size(pk)):
+        if pk_range_count != len(pk):
             raise ValueError("pk should be assigned between 0 to 1.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
