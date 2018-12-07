@@ -345,6 +345,7 @@ def _root_broyden1_doc():
                 method and values for additional parameters.
 
                 Methods available:
+
                     - ``restart``: drop all matrix columns. Has no
                         extra parameters.
                     - ``simple``: drop oldest matrix column. Has no
@@ -352,6 +353,7 @@ def _root_broyden1_doc():
                     - ``svd``: keep only the most significant SVD
                         components.
                       Extra parameters:
+
                           - ``to_retain``: number of SVD components to
                               retain when rank reduction is done.
                               Default is ``max_rank - 2``.
@@ -403,6 +405,7 @@ def _root_broyden2_doc():
             method and values for additional parameters.
 
             Methods available:
+
                 - ``restart``: drop all matrix columns. Has no
                     extra parameters.
                 - ``simple``: drop oldest matrix column. Has no
@@ -410,6 +413,7 @@ def _root_broyden2_doc():
                 - ``svd``: keep only the most significant SVD
                     components.
                   Extra parameters:
+                  
                       - ``to_retain``: number of SVD components to
                           retain when rank reduction is done.
                           Default is ``max_rank - 2``.
