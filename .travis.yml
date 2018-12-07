@@ -10,7 +10,7 @@ env:
    - OPENBLAS_NUM_THREADS=1
 matrix:
   include:
-    - python: 2.7
+    - python: 3.6
       env:
         - PYFLAKES=1
         - PEP8=1
@@ -21,7 +21,7 @@ matrix:
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
-    - python: 2.7
+    - python: 3.7
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -32,7 +32,7 @@ matrix:
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC="--upgrade numpy"
+        - NUMPYSPEC="numpy==1.15.4"
     - python: 3.6
       env:
         - TESTMODE=fast
@@ -44,14 +44,14 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="numpy==1.8.2"
+        - NUMPYSPEC="numpy==1.13.3"
         - USE_SDIST=1
-    - python: 3.4
+    - python: 3.6
       env:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
-        - NUMPYSPEC="--upgrade numpy"
+        - NUMPYSPEC="numpy==1.14.6"
         # The following is needed for optimized "-OO" test run but since we use
         # pytest-xdist plugin for load scheduling its workers don't pick up the
         # flag. This environment variable starts all Py instances in -OO mode.
