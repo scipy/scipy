@@ -354,11 +354,6 @@ docdict_discrete['default'] = _doc_default_disc
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
 del obj
-try:
-    del s
-except NameError:
-    # in Python 3, loop variables are not visible after the loop
-    pass
 
 
 def _moment(data, n, mu=None):

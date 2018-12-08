@@ -19,9 +19,12 @@ matrix:
         - pip install pycodestyle==2.3.1
         - pip install pyflakes==1.1.0
       script:
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
+        # pyflakes doesn't respect "# noqa" and cannot ignore files, so filter out six.py
+        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' | grep -E -v 'scipy/_lib/six.py' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
     - python: 3.7
+      dist: xenial # travis-ci/travis-ci/issues/9815
+      sudo: true
       env:
         - TESTMODE=fast
         - COVERAGE=
