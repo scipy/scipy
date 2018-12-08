@@ -3,7 +3,7 @@
 Special functions (:mod:`scipy.special`)
 ========================================
 
-.. module:: scipy.special
+.. currentmodule:: scipy.special
 
 Nearly all of the functions below are universal functions and follow
 broadcasting and automatic array-looping rules. Exceptions are
@@ -405,7 +405,7 @@ orthogonal polynomials:
    roots_sh_jacobi   -- Gauss-Jacobi (shifted) quadrature.
 
 The functions below, in turn, return the polynomial coefficients in
-:class:`~.orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
+:class:`~.orthopoly1d` objects, which function similarly as `numpy.poly1d`.
 The :class:`~.orthopoly1d` class also has an attribute ``weights`` which returns
 the roots, weights, and total weights for the appropriate form of Gaussian
 quadrature.  These are returned in an ``n x 3`` array with roots in the first
