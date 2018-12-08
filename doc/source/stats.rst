@@ -2,5 +2,5 @@
 
 .. toctree::
    :hidden:
-   
-   scipy.stats.mstats
+
+   stats.mstats

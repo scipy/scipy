@@ -3,4 +3,4 @@
 .. toctree::
    :hidden:
 
-   scipy.io.arff
+   io.arff
