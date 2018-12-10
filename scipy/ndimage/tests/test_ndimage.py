@@ -4456,7 +4456,7 @@ class TestNdimage:
     def test_white_tophat05(self):
         array = numpy.ones((3, 3))
         array[1,1] = 0.0
-        ndimage.white_tophat(array, size=3, output=array)
+        array = ndimage.white_tophat(array, size=3, output=array)
         expected = numpy.array([[1., 1., 1.],
                                 [1., 0., 1.],
                                 [1., 1., 1.]])
@@ -4520,10 +4520,10 @@ class TestNdimage:
     def test_black_tophat05(self):
         array = numpy.ones((3, 3))
         array[1, 1] = 0.0
-        ndimage.black_tophat(array, size=3, output=array)
-        expected = numpy.array([[1., 1., 1.],
-                                [1., 0., 1.],
-                                [1., 1., 1.]])
+        array = ndimage.black_tophat(array, size=3, output=array)
+        expected = numpy.array([[0., 0., 0.],
+                                [0., 1., 0.],
+                                [0., 0., 0.]])
         assert_array_equal(array, expected)
 
     def test_hit_or_miss01(self):
