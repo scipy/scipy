@@ -1748,6 +1748,10 @@ def white_tophat(input, size=None, footprint=None, structure=None,
         numpy.bitwise_xor(input, tmp, out=tmp)
     else:
         numpy.subtract(input, tmp, out=tmp)
+
+    if numpy.array_equal(input, output):
+        output=tmp
+
     return tmp
 
 
@@ -1812,6 +1816,9 @@ def black_tophat(input, size=None, footprint=None,
         numpy.bitwise_xor(tmp, input, out=tmp)
     else:
         numpy.subtract(tmp, input, out=tmp)
+
+    if numpy.array_equal(input, output):
+        output=tmp
     return tmp
 
 
