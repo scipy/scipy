@@ -764,7 +764,10 @@ class burr_gen(rv_continuous):
     `burr` takes :math:`c` and :math:`d` as shape parameters.
 
     This is the PDF corresponding to the third CDF given in Burr's list;
-    specifically, it is equation (11) in Burr's paper [1]_.
+    specifically, it is equation (11) in Burr's paper [1]_. The distribution
+    is also commonly referred to as the Dagum distribution [2]_. If the
+    parameter :math:`c < 1` then the mean of the distribution does not
+    exist and if :math:`c < 2` the variance does not exist [2]_.
 
     %(after_notes)s
 
@@ -772,6 +775,9 @@ class burr_gen(rv_continuous):
     ----------
     .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
        Mathematical Statistics, 13(2), pp 215-232 (1942).
+    .. [2] https://en.wikipedia.org/wiki/Dagum_distribution
+    .. [3] Kleiber, Christian. "A guide to the Dagum distributions."
+       Modeling Income Distributions and Lorenz Curves  pp 97-117 (2008).
 
     %(example)s
 
@@ -782,13 +788,40 @@ class burr_gen(rv_continuous):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
         return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
 
+    def _logpdf(self, x, c, d):
+        return np.log(c) + np.log(d) + (-c - 1.0) * np.log(x) \
+                + (-d - 1.0) * np.log(1 + x**(-c))
+
     def _cdf(self, x, c, d):
         return (1 + x**(-c))**(-d)
+
+    def _logcdf(self, x, c, d):
+        return -d * np.log1p(x**(-c))
+
+    def _sf(self, x, c, d):
+        return 1 - (1 + x**(-c))**(-d) #=1 - _cdf(x)
 
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
+    def _stats(self, c, d):
+        e = lambda k: sc.beta(d + k / c, 1.0 - k / c) / sc.beta(d, 1.0)
+        e1 = e(1.0)
+        e2 = e(2.0)
+        e3 = e(3.0)
+        e4 = e(4.0)
+        # now convert
+        mu = np.where(c > 1.0, e1, np.nan)
+        mu2_if_c = e2 - mu**2
+        mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
+        g1_if_c = (e3 - 3 * e2 * e1 + 2 * mu**3) / np.sqrt((mu2_if_c)**3)
+        g2_if_c = (e4 - 4 * e3 * mu + 6 * e2 * mu**2 - 3 * mu**4) / mu2_if_c**2
+        g1 = np.where(c > 3.0, g1_if_c, np.nan)
+        g2 = np.where(c > 4.0, g2_if_c, np.nan)
+        return mu, mu2, g1, g2
+
     def _munp(self, n, c, d):
+        # TODO: figure out if we still need this in light of _stats()
         nc = 1. * n / c
         return d * sc.beta(1.0 - nc, d + nc)
 
@@ -906,14 +939,26 @@ class fisk_gen(burr_gen):
         # fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
         return burr_gen._pdf(self, x, c, 1.0)
 
+    def _logpdf(self, x, c):
+        return burr_gen._logpdf(self, x, c, 1.0)
+
     def _cdf(self, x, c):
         return burr_gen._cdf(self, x, c, 1.0)
+
+    def _logcdf(self, x, c):
+        return burr_gen._logcdf(self, x, c, 1.0)
+
+    def _sf(self, x, c):
+        return burr_gen._sf(self, x, c, 1.0)
 
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
 
     def _munp(self, n, c):
         return burr_gen._munp(self, n, c, 1.0)
+
+    def _stats(self, c):
+        return burr_gen._stats(self, c, 1.0)
 
     def _entropy(self, c):
         return 2 - np.log(c)
