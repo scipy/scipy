@@ -3453,8 +3453,8 @@ def test_burr12_ppf_small_arg():
 def test_burr_nan_mean_var():
     c, d = 0.5, 3
     mean, variance = stats.burr(c, d).stats()
-    assert_(mean == np.nan)
-    assert_(variance == np.nan)
+    assert_(np.isnan(mean))
+    assert_(np.isnan(variance))
 
 def test_burr_stats():
     c, d = 5.0, 3
