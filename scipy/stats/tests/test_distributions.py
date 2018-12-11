@@ -3418,6 +3418,18 @@ def test_burr12_ppf_small_arg():
     #   5.7735026918962575e-09
     assert_allclose(quantile, 5.7735026918962575e-09)
 
+def test_burr_nan_mean_var():
+    c, d = 0.5, 3
+    mean, variance = stats.burr(c, d).stats()
+    assert_(mean == np.nan)
+    assert_(variance == np.nan)
+
+def test_burr_stats():
+    c, d = 5.0, 3
+    mean, variance = stats.burr(c, d).stats()
+    mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
+    assert_allclose(mean_hc, mean_hc)
+    assert_allclose(variance, variance_hc)
 
 def test_crystalball_function():
     """
