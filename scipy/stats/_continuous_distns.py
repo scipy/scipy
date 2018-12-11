@@ -806,7 +806,7 @@ class burr_gen(rv_continuous):
         return -d * np.log1p(x**(-c))
 
     def _sf(self, x, c, d):
-        return 1 - (1 + x**(-c))**(-d) #=1 - _cdf(x)
+        return 1 - (1 + x**(-c))**(-d)
 
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
@@ -817,7 +817,6 @@ class burr_gen(rv_continuous):
         e2 = e(2.0)
         e3 = e(3.0)
         e4 = e(4.0)
-        # now convert
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
@@ -827,7 +826,7 @@ class burr_gen(rv_continuous):
             g1 = np.nan
         if c > 4.0:
             g2 = (e4 - 4 * e3 * mu + 6 * e2 * mu**2 - 3 * mu**4) /\
-            mu2_if_c**2
+                    mu2_if_c**2
         else:
             g2 = np.nan
         g1 = np.where(c > 3.0, g1, np.nan)
