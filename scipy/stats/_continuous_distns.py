@@ -762,6 +762,14 @@ class burr_gen(rv_continuous):
 
     `burr` takes :math:`c` and :math:`d` as shape parameters.
 
+    The kth moment of `burr` is:
+
+    .. math::
+
+        E(X^k) = \frac{B(d + k/c, 1 - k/c)}{B(d,1)}
+
+    where :math:`c` and :math:`d` are shape parameters and `c > k`.
+
     This is the PDF corresponding to the third CDF given in Burr's list;
     specifically, it is equation (11) in Burr's paper [1]_. The distribution
     is also commonly referred to as the Dagum distribution [2]_. If the
