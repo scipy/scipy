@@ -38,7 +38,6 @@ Summary statistics
    tmax
    tsem
    variation
-   gstd
    find_repeats
    sem
    trimmed_mean

@@ -1248,26 +1248,29 @@ class TestGeometricStandardDeviation(object):
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
     def test_raises_value_error_non_array_like_input(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='Invalid array input'):
             stats.gstd('This should fail as it can not be cast to an array.')
 
+    def test_raises_value_error_zero_entry(self):
+        with pytest.raises(ValueError, match='Non positive value'):
+            stats.gstd(np.append(self.array_1d, [0]))
+
     def test_raises_value_error_negative_entry(self):
-        with pytest.raises(ValueError):
-            gstd_actual = stats.gstd(np.append(self.array_1d, [-1]))
+        with pytest.raises(ValueError, match='Non positive value'):
+            stats.gstd(np.append(self.array_1d, [-1]))
 
-    def test_raises_value_error_non_finite_entries(self):
-        with pytest.raises(ValueError):
-            stats.gstd(np.append(self.array_1d, [-np.inf, np.nan, np.inf]))
+    def test_raises_value_error_inf_entry(self):
+        with pytest.raises(ValueError, match='Infinite value'):
+            stats.gstd(np.append(self.array_1d, [np.inf]))
 
-    def test_nan_policy_omit_with_invalid_value(self):
-        a = np.append(self.array_1d, [-np.inf, np.nan, np.inf, -1, 0])
-        gstd_actual = stats.gstd(a, nan_policy='omit')
-        assert_allclose(gstd_actual, self.gstd_array_1d)
+    def test_propogates_nan_values(self):
+        a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
+        gstd_actual = stats.gstd(a, axis=1)
+        assert_allclose(gstd_actual, np.array([4, np.nan]))
 
-    def test_nan_policy_propogate_with_invalid_value(self):
-        a = np.append(self.array_1d, [-np.inf, np.nan, np.inf, -1, 0])
-        gstd_actual = stats.gstd(a, nan_policy='propagate')
-        assert_allclose(gstd_actual, np.nan)
+    def test_ddof_equal_to_number_of_observations(self):
+        with pytest.raises(ValueError, match='Degrees of freedom <= 0'):
+            stats.gstd(self.array_1d, ddof=self.array_1d.size)
 
     def test_3d_array(self):
         gstd_actual = stats.gstd(self.array_3d, axis=None)
@@ -1301,6 +1304,14 @@ class TestGeometricStandardDeviation(object):
             [1.0934830582351, 1.0724479791887, 1.0591498540749]
         ])
         assert_allclose(gstd_actual, gstd_desired)
+
+    def test_masked_3d_array(self):
+        ma = np.ma.masked_where(self.array_3d > 16, self.array_3d)
+        gstd_actual = stats.gstd(ma, axis=2)
+        gstd_desired = stats.gstd(self.array_3d, axis=2)
+        mask = [[0, 0, 0], [0, 1, 1]]
+        assert_allclose(gstd_actual, gstd_desired)
+        assert_equal(gstd_actual.mask, mask)
 
 
 class TestScoreatpercentile(object):

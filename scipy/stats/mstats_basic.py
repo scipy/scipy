@@ -14,7 +14,6 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['argstoarray',
            'count_tied_groups',
            'describe',
-           'gstd',
            'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
            'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
@@ -2237,92 +2236,6 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals - 3
     else:
         return vals
-
-
-def gstd(a, axis=0, ddof=1):
-    """Calculate the geometric standard deviation of an array
-
-    The geometric standard deviations is defined as the exponent of the
-    standard deviation of ``log(a)``. Mathematically the population
-    geometric standard deviation is evaluated as::
-
-        gstd = exp(std(log(a))
-
-    The geometric standard deviation describes the spread of a set of numbers
-    where `gmean` is the preferred mean. It is a multiplicative factor, and
-    therefore a dimensionless quantity.
-
-    Parameters
-    ----------
-    a : array_like
-        An array like object containing the sample data.
-    axis : int, tuple or None, optional
-        Axis along which to operate. Default is 0. If None, compute over
-        the whole array `a`.
-    ddof : int, optional
-        Degrees of freedom correction in the calculation of the
-        geometric standard deviation. Default is 1.
-
-    Returns
-    -------
-    ndarray or float
-        An array of the geometric standard deviation. If `axis` is None or `a`
-        is a 1d array a float is returned.
-
-    Notes
-    -----
-    As the calculation requires the use of logarithms the geometric standard
-    deviation only supports strictly positive values. Any non-positive or
-    infinite values will be ignored.
-
-    The geometric standard deviation is sometimes confused with the exponent of
-    the standard deviation, ``exp(std(a))``. Instead the geometric standard
-    deviation is ``exp(std(log(a)))``.
-
-    The default value for `ddof` is different to the default value (0) used
-    by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
-
-    Examples
-    --------
-    Find the geometric standard deviation of a log-normally distributed sample.
-    Note the standard deviation of the distribution is one, on a log scale this
-    evaluates to ``exp(1)``.
-
-    >>> from scipy.stats.mstats import gstd
-    >>> np.random.seed(123)
-    >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
-    >>> gstd(sample)
-    2.7217860664589946
-
-    Compute the geometric standard deviation of a multidimensional array and
-    of a given axis.
-
-    >>> from scipy.stats.mstats import gstd
-    >>> am = np.ma.arange(1, 25).reshape(2, 3, 4)
-    >>> gstd(am, axis=None)
-    2.2944076136018947
-    >>> gstd(am, axis=2)
-    masked_array(
-      data=[[1.8242475707663655, 1.2243686572447428, 1.1318311657788478],
-            [1.0934830582350938, 1.0724479791887027, 1.0591498540749245]],
-      mask=[[False, False, False],
-            [False, False, False]],
-      fill_value=1e+20)
-    >>> gstd(am, axis=(1, 2))
-    masked_array(data=[2.1293921474683466, 1.2212016930472196],
-                 mask=[False, False],
-           fill_value=1e+20)
-    """
-    try:
-        with np.errstate(invalid='ignore'):
-            is_valid = np.logical_and(np.isfinite(a), np.greater(a, 0))
-    except TypeError:
-        raise ValueError(
-            'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types'
-            )
-    am = np.ma.masked_where(np.logical_not(is_valid), a)
-    return np.exp(np.std(np.ma.log(am), axis=axis, ddof=ddof))
 
 
 DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',

@@ -2354,7 +2354,7 @@ def zmap(scores, compare, axis=0, ddof=0):
         return (scores - mns) / sstd
 
 
-def gstd(a, axis=0, ddof=1, nan_policy='raise'):
+def gstd(a, axis=0, ddof=1):
     """Calculate the geometric standard deviation of an array
 
     The geometric standard deviations is defined as the exponent of the
@@ -2377,16 +2377,6 @@ def gstd(a, axis=0, ddof=1, nan_policy='raise'):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle input containing invalid values. In this
-        context an invalid value is defined as any non-finite or non positive
-        value.
-
-            'propagate' returns nan,
-            'raise' throws a  ValueError
-            'omit' performs the calculations ignoring nan values.
-
-        Default is 'raise'.
 
     Returns
     -------
@@ -2396,9 +2386,9 @@ def gstd(a, axis=0, ddof=1, nan_policy='raise'):
 
     Notes
     -----
-    As the calculation requires use of logarithms the geometric standard
+    As the calculation requires the use of logarithms the geometric standard
     deviation only supports strictly positive values. Any non-positive or
-    infinite values will raise a `ValueError` unless ``ignore_invalid=True``.
+    infinite values will raise a `ValueError`.
 
     The geometric standard deviation is sometimes confused with the exponent of
     the standard deviation, ``exp(std(a))``. Instead the geometric standard
@@ -2410,8 +2400,8 @@ def gstd(a, axis=0, ddof=1, nan_policy='raise'):
     Examples
     --------
     Find the geometric standard deviation of a log-normally distributed sample.
-    Note the standard deviation of the distribution is one, on a log scale this
-    evaluates to ``exp(1)``.
+    Note that the standard deviation of the distribution is one, on a
+    log scale this evaluates to approximately ``exp(1)``.
 
     >>> from scipy.stats import gstd
     >>> np.random.seed(123)
@@ -2431,28 +2421,61 @@ def gstd(a, axis=0, ddof=1, nan_policy='raise'):
            [1.09348306, 1.07244798, 1.05914985]])
     >>> gstd(a, axis=(1,2))
     array([2.12939215, 1.22120169])
+
+    The geometric standard deviation further handles masked arrays.
+
+    >>> from scipy.stats import gstd
+    >>> a = np.arange(1, 25).reshape(2, 3, 4)
+    >>> ma = np.ma.masked_where(a > 16, a)
+    >>> ma
+    masked_array(
+      data=[[[1, 2, 3, 4],
+             [5, 6, 7, 8],
+             [9, 10, 11, 12]],
+            [[13, 14, 15, 16],
+             [--, --, --, --],
+             [--, --, --, --]]],
+      mask=[[[False, False, False, False],
+             [False, False, False, False],
+             [False, False, False, False]],
+            [[False, False, False, False],
+             [ True,  True,  True,  True],
+             [ True,  True,  True,  True]]],
+      fill_value=999999)
+    >>> gstd(ma, axis=2)
+    masked_array(
+      data=[[1.8242475707663655, 1.2243686572447428, 1.1318311657788478],
+            [1.0934830582350938, --, --]],
+      mask=[[False, False, False],
+            [False,  True,  True]],
+      fill_value=999999)
     """
+    if not isinstance(a, np.ndarray):
+        a = np.array(a)
+    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+
     try:
-        with np.errstate(invalid='ignore'):
-            a = np.asanyarray(a)
-            # np.sum avoids creating a huge array in memory
-            all_finite = np.isfinite(a.sum())
-    except (AttributeError, TypeError):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+    except RuntimeWarning as w:
+        if np.isinf(a).any():
+            raise ValueError(
+                'Infinite value encountered. The geometric standard deviation '
+                'is defined for strictly positive values only.')
+        elif np.less_equal(a, 0).any():
+            raise ValueError(
+                'Non positive value encountered. The geometric standard '
+                'deviation is defined for strictly positive values only.')
+        elif 'Degrees of freedom <= 0 for slice' == str(w):
+            raise ValueError(w)
+        else:
+            #  Remaining warnings don't need to be exceptions.
+            warnings.warn(w)
+    except TypeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types'
-            )
-
-    if all_finite and np.greater(a, 0).all():
-        return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
-    elif nan_policy == 'omit':
-        return mstats_basic.gstd(a, axis=axis, ddof=ddof)
-    elif nan_policy == 'propagate':
-        return np.nan
-    else:
-        raise ValueError(
-            'Invalid value encountered. The geometric standard deviation is '
-            'defined for strictly positive values only.')
+            'safely coerced to any supported types')
 
 
 # Private dictionary initialized only once at module level
