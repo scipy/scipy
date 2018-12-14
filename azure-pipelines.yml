@@ -40,6 +40,12 @@ jobs:
   strategy:
     maxParallel: 4
     matrix:
+        Python27-64bit-full:
+          PYTHON_VERSION: '2.7'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
+          OPENBLAS: $(OPENBLAS_64)
+          BITS: 64
         Python36-32bit-full:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x86'
