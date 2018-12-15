@@ -1598,7 +1598,9 @@ class TestLevyStable(object):
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
             subdata = data[filter_func(data)] if filter_func is not None else data
             with suppress_warnings() as sup:
-                sup.record(RuntimeWarning, "Cumulative density calculations experimental for FFT method.*")
+                sup.record(RuntimeWarning, 'FFT method is considered ' +
+                           'experimental for cumulative distribution ' +
+                           'function evaluations.*')
                 p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
                 subdata2 = rec_append_fields(subdata, 'calc', p)
                 failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]

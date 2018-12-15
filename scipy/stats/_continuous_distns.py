@@ -4002,8 +4002,10 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn('Cumulative density calculations experimental for FFT method.' +
-                              ' Use zolatarev method instead.', RuntimeWarning)
+                warnings.warn('FFT method is considered experimental for ' +
+                              'cumulative distribution function ' +
+                              'evaluations. Use Zolotarev’s method instead).',
+                              RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
 
