@@ -820,7 +820,7 @@ class burr_gen(rv_continuous):
         if c > 4.0:
             g2 = (e4 - 4 * e3 * mu + 6 * e2 * mu**2 - 3 * mu**4) /\
                     mu2_if_c**2
-            g2 -= 3 # excess kurtosis
+            g2 -= 3
         else:
             g2 = np.nan
         g1 = np.where(c > 3.0, g1, np.nan)
