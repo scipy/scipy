@@ -295,10 +295,8 @@ cdef class _Qhull:
 
         if incremental:
             incremental_bad_ops = set([b'Qbb', b'Qbk', b'QBk', b'QbB', b'Qz'])
-            bad_opts = []
-            for bad_opt in incremental_bad_ops:
-                if bad_opt in options:
-                    bad_opts.append(bad_opt)
+            bad_opts = [bad_opt for bad_opt in incremental_bad_ops
+                        if bad_opt in options]
             if bad_opts:
                 raise ValueError("Qhull options %r are incompatible "
                                  "with incremental mode" % (bad_opts,))

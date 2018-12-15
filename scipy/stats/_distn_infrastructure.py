@@ -1074,10 +1074,7 @@ class rv_generic(object):
                 place(out0, cond, g2)
                 output.append(out0)
         else:  # no valid args
-            output = []
-            for _ in moments:
-                out0 = default.copy()
-                output.append(out0)
+            output = [default.copy() for _ in moments]
 
         if len(output) == 1:
             return output[0]

@@ -304,10 +304,9 @@ class SphericalVoronoi:
 
         # group by generator indices to produce
         # unsorted regions in nested list
-        groups = []
-        for k, g in itertools.groupby(array_associations,
-                                      lambda t: t[0]):
-            groups.append(list(list(zip(*list(g)))[1]))
+        groups = [list(list(zip(*list(g)))[1])
+                  for k, g in itertools.groupby(array_associations,
+                                                lambda t: t[0])]
 
         self.regions = groups
 

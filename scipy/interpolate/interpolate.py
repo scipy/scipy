@@ -2501,9 +2501,8 @@ class RegularGridInterpolator(object):
         return values
 
     def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
-        idx_res = []
-        for i, yi in zip(indices, norm_distances):
-            idx_res.append(np.where(yi <= .5, i, i + 1))
+        idx_res = [np.where(yi <= .5, i, i + 1)
+                   for i, yi in zip(indices, norm_distances)]
         return self.values[tuple(idx_res)]
 
     def _find_indices(self, xi):
