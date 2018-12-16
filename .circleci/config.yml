@@ -137,9 +137,8 @@ jobs:
           command: |
             # CircleCI has 4G memory limit, play it safe
             export SCIPY_AVAILABLE_MEM=1G
-            # Limit OpenBLAS to 1 thread, PyPy crashes otherwise (at least for
-            # OpenBLAS v0.3.0), see gh-9530.
-            export OPENBLAS_NUM_THREADS=1
+            # Try to limit per-process GC memory usage
+            export PYPY_GC_MAX=900MB
             pypy3 runtests.py -- -rfEX -n 3 --durations=30
 
 
