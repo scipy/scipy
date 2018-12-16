@@ -804,30 +804,22 @@ class burr_gen(rv_continuous):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
-        e = lambda k: sc.beta(d + k / c, 1.0 - k / c) / sc.beta(d, 1.0)
-        e1 = e(1.0)
-        e2 = e(2.0)
-        e3 = e(3.0)
-        e4 = e(4.0)
+        e1, e2, e3, e4 = sc.beta(d + np.arange(1, 5)/c, 1. - np.arange(1, 5)/c)
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
-        if c > 3.0:
-            g1 = (e3 - 3 * e2 * e1 + 2 * mu**3) / np.sqrt((mu2_if_c)**3)
-        else:
-            g1 = np.nan
-        if c > 4.0:
-            g2 = (e4 - 4 * e3 * mu + 6 * e2 * mu**2 - 3 * mu**4) /\
-                    mu2_if_c**2
-            g2 -= 3
-        else:
-            g2 = np.nan
-        g1 = np.where(c > 3.0, g1, np.nan)
-        g2 = np.where(c > 4.0, g2, np.nan)
+        g1 = _lazywhere(c > 3.0, (c, e1, e2, e3, mu2_if_c),
+             lambda c, e1, e2, e3, mu2_if_c:
+             (e3 - 3 * e2 * e1 + 2 * e1**3) / np.sqrt((mu2_if_c)**3),
+             np.nan)
+        g2 = _lazywhere(c > 3.0, (c, e1, e2, e3, e4, mu2_if_c),
+             lambda c, e1, e2, e3, e4, mu2_if_c:
+             ((e4 - 4 * e3 * e1 + 6 * e2 * e1**2 - 3 * e1**4) /
+             mu2_if_c**2) - 3,
+             np.nan)
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
-        # TODO: figure out if we still need this in light of _stats()
         nc = 1. * n / c
         return d * sc.beta(1.0 - nc, d + nc)
 

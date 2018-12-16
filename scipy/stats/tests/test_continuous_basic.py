@@ -41,6 +41,8 @@ distcont_extra = [
     ['fatiguelife', (5,)],
     ['mielke', (4.6420495492121487, 0.59707419545516938)],
     ['invweibull', (0.58847112119264788,)],
+    # burr: sample mean test fails still for c<1
+    ['burr', (0.94839838075366045, 4.3820284068855795)],
     # genextreme: sample mean test, sf-logsf test fail
     ['genextreme', (3.3184017469423535,)],
 ]
