@@ -1037,13 +1037,8 @@ def det(a, overwrite_a=False, check_finite=True):
                          'det.getrf' % -info)
     return a_det
 
+
 # Linear Least Squares
-
-
-class LstsqLapackError(LinAlgError):
-    pass
-
-
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
@@ -1054,9 +1049,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     Parameters
     ----------
     a : (M, N) array_like
-        Left hand side matrix (2-D array).
+        Left hand side array
     b : (M,) or (M, K) array_like
-        Right hand side matrix or vector (1-D or 2-D array).
+        Right hand side array
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
         rank of a. Singular values smaller than
@@ -1082,16 +1077,15 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     -------
     x : (N,) or (N, K) ndarray
         Least-squares solution.  Return shape matches shape of `b`.
-    residues : (0,) or () or (K,) ndarray
-        Sums of residues, squared 2-norm for each column in ``b - a x``.
-        If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
-        this is a length zero array. If b was 1-D, this is a () shape array
-        (numpy scalar), otherwise the shape is (K,).
+    residues : (K,) ndarray or float
+        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
+        ``rank(A) == n`` (returns a scalar if b is 1-D). Otherwise a
+        (0,)-shaped array is returned.
     rank : int
-        Effective rank of matrix `a`.
-    s : (min(M,N),) ndarray or None
+        Effective rank of `a`.
+    s : (min(M, N),) ndarray or None
         Singular values of `a`. The condition number of a is
-        ``abs(s[0] / s[-1])``. None is returned when ``'gelsy'`` is used.
+        ``abs(s[0] / s[-1])``.
 
     Raises
     ------
@@ -1099,11 +1093,16 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         If computation does not converge.
 
     ValueError
-        When parameters are wrong.
+        When parameters are not compatible.
 
     See Also
     --------
     optimize.nnls : linear least squares with non-negativity constraint
+
+    Notes
+    -----
+    When ``'gelsy'`` is used as a driver, `residues` is set to a (0,)-shaped
+    array and `s` is always ``None``.
 
     Examples
     --------
@@ -1153,14 +1152,15 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
+        raise ValueError('Input array a should be 2-D')
     m, n = a1.shape
     if len(b1.shape) == 2:
         nrhs = b1.shape[1]
     else:
         nrhs = 1
     if m != b1.shape[0]:
-        raise ValueError('incompatible dimensions')
+        raise ValueError('Shape mismatch: a and b should have the same number'
+                         ' of rows ({} != {}).'.format(m, b1.shape[0]))
     if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
         x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
         if n == 0:
@@ -1207,29 +1207,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         elif driver == 'gelsd':
             if real_data:
                 lwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-                if iwork == 0:
-                    # this is LAPACK bug 0038: dgelsd does not provide the
-                    # size of the iwork array in query mode.  This bug was
-                    # fixed in LAPACK 3.2.2, released July 21, 2010.
-                    mesg = ("internal gelsd driver lwork query error, "
-                            "required iwork dimension not returned. "
-                            "This is likely the result of LAPACK bug "
-                            "0038, fixed in LAPACK 3.2.2 (released "
-                            "July 21, 2010). ")
-
-                    if lapack_driver is None:
-                        # restart with gelss
-                        lstsq.default_lapack_driver = 'gelss'
-                        mesg += "Falling back to 'gelss' driver."
-                        warn(mesg, RuntimeWarning, stacklevel=2)
-                        return lstsq(a, b, cond, overwrite_a, overwrite_b,
-                                     check_finite, lapack_driver='gelss')
-
-                    # can't proceed, bail out
-                    mesg += ("Use a different lapack_driver when calling lstsq"
-                             " or upgrade LAPACK.")
-                    raise LstsqLapackError(mesg)
-
                 x, s, rank, info = lapack_func(a1, b1, lwork,
                                                iwork, cond, False, False)
             else:  # complex data

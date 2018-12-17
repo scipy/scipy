@@ -57,7 +57,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 2
+MINOR = 3
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -478,8 +478,8 @@ def setup_package():
         metadata['configuration'] = configuration
     else:
         # Don't import numpy here - non-build actions are required to succeed
-        # without Numpy for example when pip is used to install Scipy when
-        # Numpy is not yet present in the system.
+        # without NumPy for example when pip is used to install Scipy when
+        # NumPy is not yet present in the system.
 
         # Version number is added to metadata inside configuration() if build
         # is run.

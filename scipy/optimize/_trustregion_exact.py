@@ -236,7 +236,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.k_hard = k_hard
 
         # Get Lapack function for cholesky decomposition.
-        # The implemented Scipy wrapper does not return
+        # The implemented SciPy wrapper does not return
         # the incomplete factorization needed by the method.
         self.cholesky, = get_lapack_funcs(('potrf',), (self.hess,))
 

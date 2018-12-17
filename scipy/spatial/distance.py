@@ -2122,7 +2122,7 @@ def squareform(X, force="no", checks=True):
       :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
       diagonal elements are zero.
 
-    In Scipy 0.19.0, ``squareform`` stopped casting all input types to
+    In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
 
     """

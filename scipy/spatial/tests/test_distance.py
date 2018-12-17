@@ -1157,7 +1157,7 @@ class TestPdist(object):
         _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_jensenshannon_iris_nonC(self):
-        eps = 5e-13
+        eps = 5e-12
         X = eo['iris']
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test2 = pdist(X, 'test_jensenshannon')

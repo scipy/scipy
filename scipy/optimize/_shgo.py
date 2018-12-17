@@ -315,7 +315,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
     `shgo` also has a return for any other local minima that was found, these
-     can be called using:
+    can be called using:
 
     >>> result.xl
     array([[ 512.        ,  404.23180542],
@@ -1097,9 +1097,7 @@ class SHGO(object):
         cbounds : list of lists
             List of size dim with length-2 list of bounds for each dimension
         """
-        cbounds = []
-        for x_b_i in self.bounds:
-            cbounds.append([x_b_i[0], x_b_i[1]])
+        cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
 
         return cbounds
 

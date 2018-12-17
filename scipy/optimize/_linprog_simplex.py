@@ -324,9 +324,9 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     complete = False
 
     if phase == 1:
-        m = T.shape[0]-2
+        m = T.shape[1]-2
     elif phase == 2:
-        m = T.shape[0]-1
+        m = T.shape[1]-1
     else:
         raise ValueError("Argument 'phase' to _solve_simplex must be 1 or 2")
 
@@ -370,6 +370,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                 complete = True
 
         if callback is not None:
+            solution[:] = 0
             solution[basis[:n]] = T[:n, -1]
             x = solution[:m]
             c, A_ub, b_ub, A_eq, b_eq, bounds, undo = _T_o

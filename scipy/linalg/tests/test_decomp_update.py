@@ -81,11 +81,10 @@ def nonitemsize_strides(arrs):
         out.append(c)
     return out
 
+
 def make_nonnative(arrs):
-    out = []
-    for a in arrs:
-        out.append(a.astype(a.dtype.newbyteorder()))
-    return out
+    return [a.astype(a.dtype.newbyteorder()) for a in arrs]
+
 
 class BaseQRdeltas(object):
     def setup_method(self):

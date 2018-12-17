@@ -199,7 +199,7 @@ Raw Statistical Functions
    bdtri        -- Inverse function to `bdtr` with respect to `p`.
    bdtrik       -- Inverse function to `bdtr` with respect to `k`.
    bdtrin       -- Inverse function to `bdtr` with respect to `n`.
-   btdtr        -- Cumulative density function of the beta distribution.
+   btdtr        -- Cumulative distribution function of the beta distribution.
    btdtri       -- The `p`-th quantile of the beta distribution.
    btdtria      -- Inverse of `btdtr` with respect to `a`.
    btdtrib      -- btdtria(a, p, x)
@@ -207,7 +207,7 @@ Raw Statistical Functions
    fdtrc        -- F survival function.
    fdtri        -- The `p`-th quantile of the F-distribution.
    fdtridfd     -- Inverse to `fdtr` vs dfd
-   gdtr         -- Gamma distribution cumulative density function.
+   gdtr         -- Gamma distribution cumulative distribution function.
    gdtrc        -- Gamma distribution survival function.
    gdtria       -- Inverse of `gdtr` vs a.
    gdtrib       -- Inverse of `gdtr` vs b.
@@ -232,7 +232,7 @@ Raw Statistical Functions
    pdtrc        -- Poisson survival function
    pdtri        -- Inverse to `pdtr` vs m
    pdtrik       -- Inverse to `pdtr` vs k
-   stdtr        -- Student t distribution cumulative density function
+   stdtr        -- Student t distribution cumulative distribution function
    stdtridf     -- Inverse of `stdtr` vs df
    stdtrit      -- Inverse of `stdtr` vs `t`
    chdtr        -- Chi square cumulative distribution function

@@ -61,8 +61,8 @@ class TestGCROTMK(object):
     def test_arnoldi(self):
         np.random.rand(1234)
 
-        A = eye(10000) + rand(10000,10000,density=1e-4)
-        b = np.random.rand(10000)
+        A = eye(2000) + rand(2000, 2000, density=5e-4)
+        b = np.random.rand(2000)
 
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:

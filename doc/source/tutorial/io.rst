@@ -44,8 +44,8 @@ From time to time you may find yourself re-using this machinery.
 How do I start?
 ```````````````
 
-You may have a ``.mat`` file that you want to read into Scipy.  Or, you
-want to pass some variables from Scipy / Numpy into MATLAB.
+You may have a ``.mat`` file that you want to read into SciPy.  Or, you
+want to pass some variables from SciPy / NumPy into MATLAB.
 
 To save us using a MATLAB license, let's start in Octave_.  Octave has
 MATLAB-compatible save and load functions.  Start Octave (``octave`` at
@@ -171,7 +171,7 @@ We can load this in Python:
    >>> val.dtype
    dtype([('field1', 'O'), ('field2', 'O')])
 
-In versions of Scipy from 0.12.0, MATLAB structs come back as numpy
+In versions of SciPy from 0.12.0, MATLAB structs come back as numpy
 structured arrays, with fields named for the struct fields.  You can see
 the field names in the ``dtype`` output above.  Note also:
 
@@ -187,7 +187,7 @@ and:
      1   1
 
 So, in MATLAB, the struct array must be at least 2D, and we replicate
-that when we read into Scipy.  If you want all length 1 dimensions
+that when we read into SciPy.  If you want all length 1 dimensions
 squeezed out, try this:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat', squeeze_me=True)

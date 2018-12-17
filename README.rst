@@ -13,6 +13,9 @@ SciPy
 .. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/scipy/scipy
 
+.. image:: https://dev.azure.com/scipy-org/SciPy/_apis/build/status/scipy.scipy?branchName=master
+  :target: https://dev.azure.com/scipy-org/SciPy/_build/latest?definitionId=1?branchName=master
+
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering.  It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,

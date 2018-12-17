@@ -163,10 +163,6 @@ new code):
 .. autosummary::
    :toctree: generated/
 
-   spleval
-   spline
-   splmake
-   spltopp
    pchip
 
 """

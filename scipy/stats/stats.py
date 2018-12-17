@@ -1664,7 +1664,7 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     Notes
     -----
     This function will become obsolete in the future.
-    For Numpy 1.9 and higher, `numpy.percentile` provides all the functionality
+    For NumPy 1.9 and higher, `numpy.percentile` provides all the functionality
     that `scoreatpercentile` provides.  And it's significantly faster.
     Therefore it's recommended to use `numpy.percentile` for users that have
     numpy >= 1.9.
@@ -2482,6 +2482,9 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
     if len(rng) != 2:
         raise TypeError("quantile range must be two element sequence")
+
+    if np.isnan(rng).any():
+        raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
     pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,

@@ -1,5 +1,5 @@
 """
-Test Scipy functions versus mpmath, if available.
+Test SciPy functions versus mpmath, if available.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -365,9 +365,7 @@ def test_loggamma_taylor_transition():
     dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))
+    dataset = [(z0, complex(mpmath.loggamma(z0))) for z0 in z]
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -383,9 +381,7 @@ def test_loggamma_taylor():
     dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))
+    dataset = [(z0, complex(mpmath.loggamma(z0))) for z0 in z]
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -409,10 +405,8 @@ def test_rgamma_zeros():
     dz = dx + 1j*dy
     zeros = np.arange(0, -170, -1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
     with mpmath.workdps(100):
-        for z0 in z:
-            dataset.append((z0, complex(mpmath.rgamma(z0))))
+        dataset = [(z0, complex(mpmath.rgamma(z0))) for z0 in z]
 
     dataset = np.array(dataset)
     FuncData(sc.rgamma, dataset, 0, 1, rtol=1e-12).check()
@@ -438,10 +432,8 @@ def test_digamma_roots():
     dx, dy = np.meshgrid(dx, dy)
     dz = dx + 1j*dy
     z = (roots + np.dstack((dz,)*roots.size)).flatten()
-    dataset = []
     with mpmath.workdps(30):
-        for z0 in z:
-            dataset.append((z0, complex(mpmath.digamma(z0))))
+        dataset = [(z0, complex(mpmath.digamma(z0))) for z0 in z]
 
     dataset = np.array(dataset)
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-14).check()
@@ -460,11 +452,8 @@ def test_digamma_negreal():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
     with mpmath.workdps(40):
-        for z0 in z:
-            res = digamma(z0)
-            dataset.append((z0, complex(res)))
+        dataset = [(z0, complex(digamma(z0))) for z0 in z]
     dataset = np.asarray(dataset)
 
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
@@ -480,11 +469,8 @@ def test_digamma_boundary():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
     with mpmath.workdps(30):
-        for z0 in z:
-            res = mpmath.digamma(z0)
-            dataset.append((z0, complex(res)))
+        dataset = [(z0, complex(mpmath.digamma(z0))) for z0 in z]
     dataset = np.asarray(dataset)
 
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
@@ -503,10 +489,9 @@ def test_gammainc_boundary():
     x = a.copy()
     a, x = np.meshgrid(a, x)
     a, x = a.flatten(), x.flatten()
-    dataset = []
     with mpmath.workdps(100):
-        for a0, x0 in zip(a, x):
-            dataset.append((a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True))))
+        dataset = [(a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True)))
+                   for a0, x0 in zip(a, x)]
     dataset = np.array(dataset)
 
     FuncData(sc.gammainc, dataset, (0, 1), 2, rtol=1e-12).check()
@@ -528,11 +513,8 @@ def test_spence_circle():
     r = np.linspace(0.5, 1.5)
     theta = np.linspace(0, 2*pi)
     z = (1 + np.outer(r, np.exp(1j*theta))).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, spence(z0)))
+    dataset = np.asarray([(z0, spence(z0)) for z0 in z])
 
-    dataset = np.array(dataset)
     FuncData(sc.spence, dataset, 0, 1, rtol=1e-14).check()
 
 
@@ -549,11 +531,8 @@ def test_sinpi_zeros():
     dz = dx + 1j*dy
     zeros = np.arange(-100, 100, 1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.sinpi(z0))))
-
-    dataset = np.array(dataset)
+    dataset = np.asarray([(z0, complex(mpmath.sinpi(z0)))
+                          for z0 in z])
     FuncData(_sinpi, dataset, 0, 1, rtol=2*eps).check()
 
 
@@ -566,11 +545,9 @@ def test_cospi_zeros():
     dz = dx + 1j*dy
     zeros = (np.arange(-100, 100, 1) + 0.5).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.cospi(z0))))
+    dataset = np.asarray([(z0, complex(mpmath.cospi(z0)))
+                          for z0 in z])
 
-    dataset = np.array(dataset)
     FuncData(_cospi, dataset, 0, 1, rtol=2*eps).check()
 
 
@@ -628,10 +605,8 @@ def test_wrightomega_branch():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
 
@@ -645,10 +620,8 @@ def test_wrightomega_region1():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
 
@@ -662,10 +635,8 @@ def test_wrightomega_region2():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
 
@@ -681,10 +652,8 @@ def test_lambertw_smallz():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.lambertw(z0))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(mpmath.lambertw(z0)))
+                          for z0 in z])
 
     FuncData(sc.lambertw, dataset, 0, 1, rtol=1e-13).check()
 
@@ -1383,7 +1352,7 @@ class TestSystematic(object):
 
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
-        # Scipy's hyp2f1 seems to have performance and accuracy problems
+        # SciPy's hyp2f1 seems to have performance and accuracy problems
         assert_mpmath_equal(lambda a, b, c, x: sc.hyp2f1(a.real, b.real, c.real, x),
                             exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
                             [Arg(-1e2, 1e2), Arg(-1e2, 1e2), Arg(-1e2, 1e2), ComplexArg()],

@@ -54,7 +54,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     Notes
     -----
-    Numpy has a logaddexp function which is very similar to `logsumexp`, but
+    NumPy has a logaddexp function which is very similar to `logsumexp`, but
     only handles two arguments. `logaddexp.reduce` is similar to this
     function, but may be less stable.
 

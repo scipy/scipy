@@ -9,7 +9,7 @@
 #  Date: 2004-08-09
 #
 #  Modified: 2005-02-10 by Robert Kern.
-#              Contributed to Scipy
+#              Contributed to SciPy
 #            2005-10-07 by Robert Kern.
 #              Some fixes to match the new scipy_core
 #
@@ -22,7 +22,7 @@ from __future__ import division, print_function, absolute_import
 # Standard library imports.
 import warnings
 
-# Scipy imports.
+# SciPy imports.
 from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 from scipy.special import logsumexp

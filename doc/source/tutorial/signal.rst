@@ -151,17 +151,17 @@ Filtering
 ---------
 
 Filtering is a generic name for any system that modifies an input
-signal in some way. In SciPy a signal can be thought of as a Numpy
+signal in some way. In SciPy a signal can be thought of as a NumPy
 array. There are different kinds of filters for different kinds of
 operations. There are two broad kinds of filtering operations: linear
 and non-linear. Linear filters can always be reduced to multiplication
-of the flattened Numpy array by an appropriate matrix resulting in
-another flattened Numpy array. Of course, this is not usually the best
+of the flattened NumPy array by an appropriate matrix resulting in
+another flattened NumPy array. Of course, this is not usually the best
 way to compute the filter as the matrices and vectors involved may be
 huge. For example filtering a :math:`512 \times 512` image with this
 method would require multiplication of a :math:`512^2 \times 512^2`
 matrix with a :math:`512^2` vector. Just trying to store the
-:math:`512^2 \times 512^2` matrix using a standard Numpy array would
+:math:`512^2 \times 512^2` matrix using a standard NumPy array would
 require :math:`68,719,476,736` elements. At 4 bytes per element this
 would require :math:`256\textrm{GB}` of memory. In most applications
 most of the elements of this matrix are zero and a different method
@@ -512,7 +512,7 @@ Filter Design
 
 Time-discrete filters can be classified into finite response (FIR) filters and
 infinite response (IIR) filters. FIR filters can provide a linear phase
-response, whereas IIR filters cannot. Scipy provides functions
+response, whereas IIR filters cannot. SciPy provides functions
 for designing both types of filters.
 
 FIR Filter
@@ -579,7 +579,7 @@ Nyquist frequency in :func:`firwin2` and :func:`freqz` (as explained above).
 IIR Filter
 """"""""""
 
-Scipy provides two functions to directly design IIR :func:`iirdesign` and
+SciPy provides two functions to directly design IIR :func:`iirdesign` and
 :func:`iirfilter` where the filter type (e.g. elliptic) is passed as an
 argument and several more filter design functions for specific filter types;
 e.g. :func:`ellip`.
@@ -1044,7 +1044,7 @@ implementation.
 Detrend
 -------
 
-Scipy provides the function :func:`detrend` to remove a constant or linear
+SciPy provides the function :func:`detrend` to remove a constant or linear
 trend in a data series in order to see effect of higher order.
 
 The example below removes the constant and linear trend of a 2-nd order

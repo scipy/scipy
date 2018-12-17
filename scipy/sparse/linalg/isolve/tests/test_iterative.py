@@ -544,7 +544,7 @@ class TestGMRES(object):
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
 
-        # Expected output from Scipy 1.0.0
+        # Expected output from SciPy 1.0.0
         assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
 
         # Test preconditioned callback
@@ -555,7 +555,7 @@ class TestGMRES(object):
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter, callback=callback)
 
-        # Expected output from Scipy 1.0.0 (callback has preconditioned residual!)
+        # Expected output from SciPy 1.0.0 (callback has preconditioned residual!)
         assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
     def test_abi(self):

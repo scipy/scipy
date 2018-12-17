@@ -138,7 +138,7 @@ def load_npz(file):
 
         if sys.version_info[0] >= 3 and not isinstance(matrix_format, str):
             # Play safe with Python 2 vs 3 backward compatibility;
-            # files saved with Scipy < 1.0.0 may contain unicode or bytes.
+            # files saved with SciPy < 1.0.0 may contain unicode or bytes.
             matrix_format = matrix_format.decode('ascii')
 
         try:

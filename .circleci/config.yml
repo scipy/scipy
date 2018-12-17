@@ -112,10 +112,10 @@ jobs:
             export CCACHE_COMPRESS=1
             export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
             export PATH=/usr/lib/ccache:$PATH
-            # XXX: use "numpy>=1.15.0" when it's released
             pypy3 -mpip install --upgrade pip setuptools wheel
-            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist Tempita "Cython>=0.28.2" mpmath
-            pypy3 -mpip install --no-build-isolation git+https://github.com/numpy/numpy.git@db552b5b6b37f2ff085b304751d7a2ebed26adc9
+            pypy3 -mpip install Cython>=0.28.5
+            pypy3 -mpip install numpy>=1.15.0
+            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist Tempita mpmath
       - run:
           name: build
           command: |
@@ -137,6 +137,8 @@ jobs:
           command: |
             # CircleCI has 4G memory limit, play it safe
             export SCIPY_AVAILABLE_MEM=1G
+            # Try to limit per-process GC memory usage
+            export PYPY_GC_MAX=900MB
             pypy3 runtests.py -- -rfEX -n 3 --durations=30
 
 
