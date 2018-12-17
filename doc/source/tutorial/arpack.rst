@@ -3,6 +3,8 @@ Sparse Eigenvalue Problems with ARPACK
 
 .. sectionauthor:: Jake Vanderplas <vanderplas@astro.washington.edu>
 
+.. sectionauthor:: Matteo Ravasi  <matteoravasi@gmail.com>
+
 .. currentmodule:: scipy.sparse.linalg
 
 
@@ -202,6 +204,68 @@ inverse.  This is taken care of automatically by ``eigsh`` and `eigs`,
 but the operation can also be specified by the user.  See the docstring of
 :func:`scipy.sparse.linalg.eigsh` and
 :func:`scipy.sparse.linalg.eigs` for details.
+
+We consider now the case where you'd like to avoid creating a dense matrix
+and use :func:`scipy.sparse.linalg.LinearOperator` instead.  Our first
+linear operator applies element-wise multiplication between the input vector
+and a vector :math:`\mathbf{d}` provided by the user to the operator itself.
+This operator mimics a diagonal matrix with the elements of :math:`\mathbf{d}`
+along the main diagonal and it has the main benefit that the forward and
+adjoint operations are simple element-wise multiplications other
+than matrix-vector multiplications.  Moreover, we expect the
+eigenvalues to be equal to the elements of :math:`\mathbf{d}`. We will
+use the `Diagonal <https://pylops.readthedocs.io/en/latest/api/
+generated/pylops.Diagonal.html#pylops.Diagonal>`_ operator provided by
+the external library `PyLops <https://pylops.readthedocs.io>`_ and
+compare the results with those obtained by ``eigh`` when applied to the
+dense matrix:
+
+    >>> from pylops import Diagonal
+    >>> np.random.seed(0)
+    >>> N = 100
+    >>> d = np.random.normal(0, 1, N).astype(np.float64)
+    >>> D = np.diag(d)
+    >>> Dop = Diagonal(d, dtype=np.float64)
+    >>>
+    >>> evals_all, evecs_all = eigh(D)
+    >>> evals_large, evecs_large = eigsh(Dop, 3, which='LA', maxiter=1e3)
+    >>> evals_all[-3:])
+    array([1.9507754  2.2408932  2.26975462])
+    >>> evals_large
+    array([1.9507754  2.2408932  2.26975462])
+    >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
+    array([[-0.  1.  0.],     # may vary (signs)
+           [-0. -0.  1.],
+           [ 1.  0.  0.]]
+
+Finally, we use another linear operator from the
+`PyLops <https://pylops.readthedocs.io>`_ library which implements a
+real nonsymmetric matrix, the `FirstDerivative <https://pylops.
+readthedocs.io/en/latest/api/generated/pylops.FirstDerivative.html>`_
+operator. In this case the operator mimics the application of a
+first derivative stencil. Once again we compare the estimated eigenvalues
+and eigenvectors with those from a dense matrix that applies the
+same first derivative to an input signal:
+
+    >>> N = 21
+    >>> D = np.diag(0.5*np.ones(N-1), k=1) - np.diag(0.5*np.ones(N-1), k=-1)
+    >>> D[0] = D[-1] = 0 # take away edge effects
+    >>> Dop = FirstDerivative(N, dtype=np.float64)
+    >>>
+    >>> evals_all, evecs_all = eig(D)
+    >>> evals_large, evecs_large = eigs(Dop, 3, which='LI')
+    >>> evals_all_imag = evals_all.imag
+    >>> isort_imag = np.argsort(np.abs(evals_all_imag))
+    >>> evals_all_imag = evals_all_imag[isort_imag]
+    >>> evals_all_imag[-3:])
+    array([0.95105652 -0.98768834  0.98768834])
+    >>> evals_large_imag
+    array([0.95105652 -0.98768834  0.98768834])
+
+Note that the eigenvalues of this operator are all imaginary. Moreover,
+the keyword ``which='LI'`` of :func:`scipy.sparse.linalg.eigs` produces
+the eigenvalues with largest absolute imaginary part (both
+positive and negative).
 
 
 References
