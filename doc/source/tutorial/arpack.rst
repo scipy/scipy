@@ -212,15 +212,24 @@ and a vector :math:`\mathbf{d}` provided by the user to the operator itself.
 This operator mimics a diagonal matrix with the elements of :math:`\mathbf{d}`
 along the main diagonal and it has the main benefit that the forward and
 adjoint operations are simple element-wise multiplications other
-than matrix-vector multiplications.  Moreover, we expect the
-eigenvalues to be equal to the elements of :math:`\mathbf{d}`. We will
-use the `Diagonal <https://pylops.readthedocs.io/en/latest/api/
-generated/pylops.Diagonal.html#pylops.Diagonal>`_ operator provided by
-the external library `PyLops <https://pylops.readthedocs.io>`_ and
-compare the results with those obtained by ``eigh`` when applied to the
-dense matrix:
+than matrix-vector multiplications.  For a diagonal matrix, we expect the
+eigenvalues to be equal to the elements along the main diagonal, in this case
+:math:`\mathbf{d}`. The eigenvalues and eigenvectors obtained with ``eigsh``
+are compared  those obtained by using ``eigh`` when applied to
+the dense matrix:
 
-    >>> from pylops import Diagonal
+    >>> from scipy.sparse.linalg import LinearOperator
+    >>>
+    >>> class Diagonal(LinearOperator):
+    >>>     def __init__(self, diag, dtype=None):
+    >>>         self.diag = diag
+    >>>         self.shape = (len(self.diag), len(self.diag))
+    >>>         self.dtype = np.dtype(dtype)
+    >>>     def _matvec(self, x):
+    >>>         return self.diag*x
+    >>>     def _rmatvec(self, x):
+    >>>         return self.diag*x
+    >>>
     >>> np.random.seed(0)
     >>> N = 100
     >>> d = np.random.normal(0, 1, N).astype(np.float64)
@@ -238,15 +247,33 @@ dense matrix:
            [-0. -0.  1.],
            [ 1.  0.  0.]]
 
-Finally, we use another linear operator from the
-`PyLops <https://pylops.readthedocs.io>`_ library which implements a
-real nonsymmetric matrix, the `FirstDerivative <https://pylops.
-readthedocs.io/en/latest/api/generated/pylops.FirstDerivative.html>`_
-operator. In this case the operator mimics the application of a
-first derivative stencil. Once again we compare the estimated eigenvalues
+In this case we have created a quick and easy ``Diagonal`` operator.
+The external library `PyLops <https://pylops.readthedocs.io>`_ provides
+similar capabilities in the `Diagonal <https://pylops.readthedocs.io/en/
+latest/api/generated/pylops.Diagonal.html#pylops.Diagonal>`_ operator
+as well as several other operators.
+
+Finally, we use consider a linear operator that mimics the application of a
+first derivative stencil. In this case the operator is equivalent to a real
+nonsymmetric matrix. Once again we compare the estimated eigenvalues
 and eigenvectors with those from a dense matrix that applies the
 same first derivative to an input signal:
 
+    >>> class FirstDerivative(LinearOperator):
+    >>>     def __init__(self, N, dtype='float32'):
+    >>>         self.N = N
+    >>>         self.shape = (self.N, self.N)
+    >>>         self.dtype = np.dtype(dtype)
+    >>>     def _matvec(self, x):
+    >>>         y = np.zeros(self.N, self.dtype)
+    >>>         y[1:-1] = (0.5*x[2:]-0.5*x[0:-2])
+    >>>         return y
+    >>>     def _rmatvec(self, x):
+    >>>         y = np.zeros(self.N, self.dtype)
+    >>>         y[0:-2] = y[0:-2] - (0.5*x[1:-1])
+    >>>         y[2:] = y[2:] + (0.5*x[1:-1])
+    >>>         return y
+    >>>
     >>> N = 21
     >>> D = np.diag(0.5*np.ones(N-1), k=1) - np.diag(0.5*np.ones(N-1), k=-1)
     >>> D[0] = D[-1] = 0 # take away edge effects
@@ -265,7 +292,12 @@ same first derivative to an input signal:
 Note that the eigenvalues of this operator are all imaginary. Moreover,
 the keyword ``which='LI'`` of :func:`scipy.sparse.linalg.eigs` produces
 the eigenvalues with largest absolute imaginary part (both
-positive and negative).
+positive and negative). Again, a more advanced implementation of the
+first derivative operator is available in the
+`PyLops <https://pylops.readthedocs.io>`_ library under the name of
+`FirstDerivative <https://pylops.
+readthedocs.io/en/latest/api/generated/pylops.FirstDerivative.html>`_
+operator.
 
 
 References
