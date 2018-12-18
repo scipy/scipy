@@ -13,9 +13,9 @@ import numpy as np
 
 from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
-from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
-                      upcast_scalar, get_index_dtype, isintlike, check_shape,
-                      check_reshape_kwargs)
+from ._index import IndexMixin, INT_TYPES
+from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
+                      get_index_dtype, check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
@@ -194,84 +194,85 @@ class lil_matrix(spmatrix, IndexMixin):
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
         """
-        i = self._check_row_bounds(i)
-        new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
+        M, N = self.shape
+        if i < 0:
+            i += M
+        if i < 0 or i >= M:
+            raise IndexError('row index out of bounds')
+        new = lil_matrix((1, N), dtype=self.dtype)
         new.rows[0] = self.rows[i][:]
         new.data[0] = self.data[i][:]
         return new
 
-    def _check_row_bounds(self, i):
-        if i < 0:
-            i += self.shape[0]
-        if i < 0 or i >= self.shape[0]:
-            raise IndexError('row index out of bounds')
-        return i
+    def __getitem__(self, key):
+        # Fast path for simple (int, int) indexing.
+        if (isinstance(key, tuple) and len(key) == 2 and
+                isinstance(key[0], INT_TYPES) and
+                isinstance(key[1], INT_TYPES)):
+            # lil_get1 handles validation for us.
+            return self._get_intXint(*key)
+        # Everything else takes the normal path.
+        return IndexMixin.__getitem__(self, key)
 
-    def _check_col_bounds(self, j):
-        if j < 0:
-            j += self.shape[1]
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-        return j
+    def _asindices(self, idx, N):
+        # LIL routines handle bounds-checking for us, so don't do it here.
+        try:
+            x = np.asarray(idx)
+        except (ValueError, TypeError, MemoryError):
+            raise IndexError('invalid index')
+        if x.ndim not in (1, 2):
+            raise IndexError('Index dimension must be <= 2')
+        return x
 
-    def __getitem__(self, index):
-        """Return the element(s) index=(i, j), where j may be a slice.
-        This always returns a copy for consistency, since slices into
-        Python lists return copies.
-        """
+    def __getitem__(self, key):
+        # Fast path for simple (int, int) indexing.
+        if (isinstance(key, tuple) and len(key) == 2 and
+                isinstance(key[0], INT_TYPES) and
+                isinstance(key[1], INT_TYPES)):
+            # lil_get1 handles validation for us.
+            return self._get_intXint(*key)
+        # Everything else takes the normal path.
+        return IndexMixin.__getitem__(self, key)
 
-        # Scalar fast path first
-        if isinstance(index, tuple) and len(index) == 2:
-            i, j = index
-            # Use isinstance checks for common index types; this is
-            # ~25-50% faster than isscalarlike. Other types are
-            # handled below.
-            if ((isinstance(i, int) or isinstance(i, np.integer)) and
-                    (isinstance(j, int) or isinstance(j, np.integer))):
-                v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
-                                           self.rows, self.data,
-                                           i, j)
-                return self.dtype.type(v)
+    def _get_intXint(self, row, col):
+        v = _csparsetools.lil_get1(self.shape[0], self.shape[1], self.rows,
+                                   self.data, row, col)
+        return self.dtype.type(v)
 
-        # Utilities found in IndexMixin
-        i, j = self._unpack_index(index)
+    def _get_sliceXint(self, row, col):
+        row = xrange(*row.indices(self.shape[0]))
+        return self._get_row_ranges(row, slice(col, col+1))
 
-        # Proper check for other scalar index types
-        i_intlike = isintlike(i)
-        j_intlike = isintlike(j)
+    def _get_arrayXint(self, row, col):
+        return self._get_row_ranges(row, slice(col, col+1))
 
-        if i_intlike and j_intlike:
-            v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
-                                       self.rows, self.data,
-                                       i, j)
-            return self.dtype.type(v)
-        elif j_intlike or isinstance(j, slice):
-            # column slicing fast path
-            if j_intlike:
-                j = self._check_col_bounds(j)
-                j = slice(j, j+1)
+    def _get_intXslice(self, row, col):
+        return self._get_row_ranges((row,), col)
 
-            if i_intlike:
-                i = self._check_row_bounds(i)
-                i = xrange(i, i+1)
-                i_shape = None
-            elif isinstance(i, slice):
-                i = xrange(*i.indices(self.shape[0]))
-                i_shape = None
-            else:
-                i = np.atleast_1d(i)
-                i_shape = i.shape
+    def _get_sliceXslice(self, row, col):
+        row = xrange(*row.indices(self.shape[0]))
+        return self._get_row_ranges(row, col)
 
-            if i_shape is None or len(i_shape) == 1:
-                return self._get_row_ranges(i, j)
+    def _get_arrayXslice(self, row, col):
+        return self._get_row_ranges(row, col)
 
-        i, j = self._index_to_arrays(i, j)
-        if i.size == 0:
-            return lil_matrix(i.shape, dtype=self.dtype)
+    def _get_intXarray(self, row, col):
+        row = np.array(row, dtype=col.dtype, ndmin=1)
+        return self._get_columnXarray(row, col)
 
+    def _get_sliceXarray(self, row, col):
+        row = np.arange(*row.indices(self.shape[0]))
+        return self._get_columnXarray(row, col)
+
+    def _get_columnXarray(self, row, col):
+        # outer indexing
+        row, col = np.broadcast_arrays(row[:,None], col)
+        return self._get_arrayXarray(row, col)
+
+    def _get_arrayXarray(self, row, col):
+        # inner indexing
+        i, j = map(np.atleast_2d, _prepare_index_for_memoryview(row, col))
         new = lil_matrix(i.shape, dtype=self.dtype)
-
-        i, j = _prepare_index_for_memoryview(i, j)
         _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     new.rows, new.data,
@@ -307,53 +308,41 @@ class lil_matrix(spmatrix, IndexMixin):
 
         return new
 
-    def __setitem__(self, index, x):
-        # Scalar fast path first
-        if isinstance(index, tuple) and len(index) == 2:
-            i, j = index
-            # Use isinstance checks for common index types; this is
-            # ~25-50% faster than isscalarlike. Scalar index
-            # assignment for other types is handled below together
-            # with fancy indexing.
-            if ((isinstance(i, int) or isinstance(i, np.integer)) and
-                    (isinstance(j, int) or isinstance(j, np.integer))):
-                x = self.dtype.type(x)
-                if x.size > 1:
-                    # Triggered if input was an ndarray
-                    raise ValueError("Trying to assign a sequence to an item")
-                _csparsetools.lil_insert(self.shape[0], self.shape[1],
-                                         self.rows, self.data, i, j, x)
-                return
+    def _set_intXint(self, row, col, x):
+        _csparsetools.lil_insert(self.shape[0], self.shape[1], self.rows,
+                                 self.data, row, col, x)
 
-        # General indexing
-        i, j = self._unpack_index(index)
+    def _set_arrayXarray(self, row, col, x):
+        i, j, x = map(np.atleast_2d, _prepare_index_for_memoryview(row, col, x))
+        _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    i, j, x)
 
-        # shortcut for common case of full matrix assign:
-        if (isspmatrix(x) and isinstance(i, slice) and i == slice(None) and
-                isinstance(j, slice) and j == slice(None)
-                and x.shape == self.shape):
+    def _set_arrayXarray_sparse(self, row, col, x):
+        # Special case: full matrix assignment
+        if (x.shape == self.shape and
+                isinstance(row, slice) and row == slice(None) and
+                isinstance(col, slice) and col == slice(None)):
             x = lil_matrix(x, dtype=self.dtype)
             self.rows = x.rows
             self.data = x.data
             return
+        # Fall back to densifying x
+        x = np.asarray(x.toarray(), dtype=self.dtype)
+        x, _ = np.broadcast_arrays(x, row)
+        self._set_arrayXarray(row, col, x)
 
-        i, j = self._index_to_arrays(i, j)
-
-        if isspmatrix(x):
-            x = x.toarray()
-
-        # Make x and i into the same shape
-        x = np.asarray(x, dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, i)
-
-        if x.shape != i.shape:
-            raise ValueError("shape mismatch in assignment")
-
-        # Set values
-        i, j, x = _prepare_index_for_memoryview(i, j, x)
-        _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
-                                    self.rows, self.data,
-                                    i, j, x)
+    def __setitem__(self, key, x):
+        # Fast path for simple (int, int) indexing.
+        if (isinstance(key, tuple) and len(key) == 2 and
+                isinstance(key[0], INT_TYPES) and
+                isinstance(key[1], INT_TYPES)):
+            x = self.dtype.type(x)
+            if x.size > 1:
+                raise ValueError("Trying to assign a sequence to an item")
+            return self._set_intXint(key[0], key[1], x)
+        # Everything else takes the normal path.
+        IndexMixin.__setitem__(self, key, x)
 
     def _mul_scalar(self, other):
         if other == 0:
@@ -380,10 +369,12 @@ class lil_matrix(spmatrix, IndexMixin):
             return self.tocsr() / other
 
     def copy(self):
-        from copy import deepcopy
+        M, N = self.shape
         new = lil_matrix(self.shape, dtype=self.dtype)
-        new.data = deepcopy(self.data)
-        new.rows = deepcopy(self.rows)
+        # This is ~14x faster than calling deepcopy() on rows and data.
+        _csparsetools.lil_get_row_ranges(M, N, self.rows, self.data,
+                                         new.rows, new.data, xrange(M),
+                                         0, N, 1, N)
         return new
 
     copy.__doc__ = spmatrix.copy.__doc__
