@@ -3362,7 +3362,7 @@ class rv_sample(rv_discrete):
 
         if len(xk) != len(pk):
             raise ValueError("xk and pk need to have the same length.")
-        if not all([x >= 0.0 for x in pk]):
+        if np.less(pk, 0.0).any():
             raise ValueError("pk cannot be negative values.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
