@@ -91,8 +91,8 @@ derived from :func:`scipy.sparse.linalg.LinearOperator`.  For this example, for
 simplicity, we'll construct a symmetric, positive-definite matrix.
 
     >>> import numpy as np
-    >>> from scipy.linalg import eigh
-    >>> from scipy.sparse.linalg import eigsh
+    >>> from scipy.linalg import eig, eigh
+    >>> from scipy.sparse.linalg import eigs, eigsh
     >>> np.set_printoptions(suppress=True)
     >>>
     >>> np.random.seed(0)
@@ -220,7 +220,7 @@ the dense matrix:
 
     >>> from scipy.sparse.linalg import LinearOperator
     >>> class Diagonal(LinearOperator):
-    >>>     def __init__(self, diag, dtype=None):
+    >>>     def __init__(self, diag, dtype='float32'):
     >>>         self.diag = diag
     >>>         self.shape = (len(self.diag), len(self.diag))
     >>>         self.dtype = np.dtype(dtype)
@@ -238,13 +238,13 @@ the dense matrix:
     >>> evals_all, evecs_all = eigh(D)
     >>> evals_large, evecs_large = eigsh(Dop, 3, which='LA', maxiter=1e3)
     >>> evals_all[-3:]
-    array([1.9507754  2.2408932  2.26975462])
+    array([1.9507754, 2.2408932, 2.26975462])
     >>> evals_large
-    array([1.9507754  2.2408932  2.26975462])
+    array([1.9507754, 2.2408932, 2.26975462])
     >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
-    array([[-0.  1.  0.],     # may vary (signs)
-           [-0. -0.  1.],
-           [ 1.  0.  0.]]
+    array([[-1.  0.  0.],     # may vary (signs)
+           [-0. -1.  0.],
+           [ 0.  0. -1.]]
 
 In this case we have created a quick and easy ``Diagonal`` operator.
 The external library `PyLops <https://pylops.readthedocs.io>`_ provides
@@ -287,9 +287,9 @@ same first derivative to an input signal:
     >>> isort_imag = np.argsort(np.abs(evals_large_imag))
     >>> evals_large_imag = evals_large_imag[isort_imag]
     >>> evals_all_imag[-4:]
-    array([-0.95105652  0.95105652 -0.98768834  0.98768834])
+    array([-0.95105652, 0.95105652, -0.98768834, 0.98768834])
     >>> evals_large_imag
-    array([0.95105652 -0.95105652  0.98768834 -0.98768834])
+    array([0.95105652, -0.95105652, 0.98768834, -0.98768834])
 
 Note that the eigenvalues of this operator are all imaginary. Moreover,
 the keyword ``which='LI'`` of :func:`scipy.sparse.linalg.eigs` produces
