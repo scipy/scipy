@@ -219,7 +219,6 @@ are compared  those obtained by using ``eigh`` when applied to
 the dense matrix:
 
     >>> from scipy.sparse.linalg import LinearOperator
-    >>>
     >>> class Diagonal(LinearOperator):
     >>>     def __init__(self, diag, dtype=None):
     >>>         self.diag = diag
@@ -238,7 +237,7 @@ the dense matrix:
     >>>
     >>> evals_all, evecs_all = eigh(D)
     >>> evals_large, evecs_large = eigsh(Dop, 3, which='LA', maxiter=1e3)
-    >>> evals_all[-3:])
+    >>> evals_all[-3:]
     array([1.9507754  2.2408932  2.26975462])
     >>> evals_large
     array([1.9507754  2.2408932  2.26975462])
@@ -280,14 +279,17 @@ same first derivative to an input signal:
     >>> Dop = FirstDerivative(N, dtype=np.float64)
     >>>
     >>> evals_all, evecs_all = eig(D)
-    >>> evals_large, evecs_large = eigs(Dop, 3, which='LI')
+    >>> evals_large, evecs_large = eigs(Dop, 4, which='LI')
     >>> evals_all_imag = evals_all.imag
     >>> isort_imag = np.argsort(np.abs(evals_all_imag))
     >>> evals_all_imag = evals_all_imag[isort_imag]
-    >>> evals_all_imag[-3:])
-    array([0.95105652 -0.98768834  0.98768834])
+    >>> evals_large_imag = evals_large.imag
+    >>> isort_imag = np.argsort(np.abs(evals_large_imag))
+    >>> evals_large_imag = evals_large_imag[isort_imag]
+    >>> evals_all_imag[-4:]
+    array([-0.95105652  0.95105652 -0.98768834  0.98768834])
     >>> evals_large_imag
-    array([0.95105652 -0.98768834  0.98768834])
+    array([0.95105652 -0.95105652  0.98768834 -0.98768834])
 
 Note that the eigenvalues of this operator are all imaginary. Moreover,
 the keyword ``which='LI'`` of :func:`scipy.sparse.linalg.eigs` produces
