@@ -22,6 +22,8 @@ matrix:
         # pyflakes doesn't respect "# noqa" and cannot ignore files, so filter out six.py
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' | grep -E -v 'scipy/_lib/six.py' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
+        - |
+          grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
     - python: 3.7
       dist: xenial # travis-ci/travis-ci/issues/9815
       sudo: true
