@@ -99,9 +99,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     derivative `fprime2` of `func` is also provided, then Halley's method is
     used.
 
-    If `x0` is a sequence, then `newton` returns an array, and `func` must be
-    vectorized and return a sequence or array of the same shape as its first
-    argument.
+    If `x0` is a sequence with more than one item, then `newton` returns an
+    array, and `func` must be vectorized and return a sequence or array of the
+    same shape as its first argument. If `fprime` or `fprime2` is given then
+    its return must also have the same shape.
 
     Parameters
     ----------
