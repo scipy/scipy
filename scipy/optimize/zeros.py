@@ -259,7 +259,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    if not np.isscalar(x0):
+    if np.size(x0) > 1:
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                              full_output)
 

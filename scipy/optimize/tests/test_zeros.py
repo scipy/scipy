@@ -619,3 +619,22 @@ def test_gh_8881():
     # Check that it now succeeds.
     rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
     assert(r.converged)
+
+
+def test_gh_9608_preserve_array_shape():
+    """
+    Test that shape is preserved for array inputs even if fprime or fprime2 is
+    scalar
+    """
+    def f(x):
+        return x**2
+
+    def fp(x):
+        return 2 * x
+
+    def fpp(x):
+        return 2
+
+    x0 = np.array([-2], dtype=np.float32)
+    rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
+    assert(r.converged)
