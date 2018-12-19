@@ -6,7 +6,7 @@ import sys
 import warnings
 from functools import partial
 
-from . import _quadpack
+from . import _quadpack, _quad_vec
 import numpy
 from numpy import Inf
 
@@ -43,9 +43,8 @@ def quad_explain(output=sys.stdout):
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
-         limlst=50):
-    """
-    Compute a definite integral.
+         limlst=50, vectorized=False, norm=None, quadrature=None, workers=1):
+    """Compute a definite integral.
 
     Integrate func from `a` to `b` (possibly infinite interval) using a
     technique from the Fortran library QUADPACK.
@@ -82,6 +81,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
+    vectorized : bool, optional
+        Whether the function is vector-valued.
+        If yes, a slightly different integration algorithm is used.
 
     Returns
     -------
@@ -115,7 +117,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         to be sorted.
     weight : float or int, optional
         String indicating weighting function. Full explanation for this
-        and the remaining arguments can be found below.
+        and the following four arguments can be found below.
+        Not available for ``vectorized=True``.
     wvar : optional
         Variables for use with weighting functions.
     wopts : optional
@@ -125,6 +128,23 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     limlst : int, optional
         Upper bound on the number of cycles (>=3) for use with a sinusoidal
         weighting and an infinite end-point.
+    norm : {'max', '2'}, optional
+        Available only for ``vectorized=True``.
+        Vector norm to use for error estimation.
+    quadrature : {'gk21', 'trapz'}, optional
+        Available only for ``vectorized=True``.
+        Quadrature rule to use on subintervals.
+        Options: 'gk21' (Gauss-Kronrod 21-point rule),
+        'trapz' (composite trapezoid rule).
+    workers : int or map-like callable, optional
+        Available only for ``vectorized=True``.
+        If `workers` is an integer, part of the computation is done in
+        parallel subdivided to this many tasks (using `multiprocessing.Pool`).
+        Supply `-1` to use all cores available to the Process.
+        Alternatively, supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        
 
     See Also
     --------
@@ -165,6 +185,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     'rlist'
         A rank-1 array of length M, the first K elements of which are the
         integral approximations on the subintervals.
+        For ``vectorized=True`` the integrator does not retain all
+        of the data. In this case, missing data is indicated with NaN values.
     'elist'
         A rank-1 array of length M, the first K elements of which are the
         moduli of the absolute error estimates on the subintervals.
@@ -179,6 +201,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     If the input argument points is provided (i.e. it is not None),
     the following additional outputs are placed in the output
     dictionary.  Assume the points sequence is of length P.
+    The keys below are not present when ``vectorized=True``.
 
     'pts'
         A rank-1 array of length P+2 containing the integration limits
@@ -270,6 +293,36 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         ``infodict['rslist']``.  See the explanation dictionary (last entry
         in the output tuple) for the meaning of the codes.
 
+    **Vector-valued integration**
+
+    The algorithm used for ``vectorized=True`` mainly follows the
+    implementation of QUADPACK's DQAG* algorithms (which are used for
+    ``vectorized=False``), implementing global error control and
+    adaptive subdivision.
+
+    The algorithm has some differences to the QUADPACK approach:
+
+    Instead of subdividing one interval at a time, the algorithm
+    subdivides N intervals with largest errors at once. This enables
+    (partial) parallelization of the integration.
+
+    The logic of subdividing "next largest" intervals first is then
+    not implemented, and we rely on the above extension to avoid
+    concentrating on "small" intervals only.
+
+    The Wynn epsilon table extrapolation is not used (QUADPACK uses it
+    for infinite intervals). This is because the algorithm here is
+    supposed to work on vector-valued functions, in an user-specified
+    norm, and the extension of the epsilon algorithm to this case does
+    not appear to be widely agreed.  For max-norm, using elementwise
+    Wynn epsilon could be possible, but we do not do this here with
+    the hope that the epsilon extrapolation is mainly useful in
+    special cases.
+
+    References
+    ----------
+    [1] R. Piessens, E. de Doncker, QUADPACK (1983).
+
     Examples
     --------
     Calculate :math:`\\int^4_0 x^2 dx` and compare with an analytic result
@@ -333,15 +386,39 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     if not isinstance(args, tuple):
         args = (args,)
 
-    # check the limits of integration: \int_a^b, expect a < b
-    flip, a, b = b < a, min(a, b), max(a, b)
+    if not vectorized:
+        if norm is not None:
+            raise ValueError("Option 'norm' not available when vectorized=False")
+        if quadrature is not None:
+            raise ValueError("Option 'quadrature' not available when vectorized=False")
+        if workers != 1:
+            raise ValueError("Option 'workers' not available when vectorized=False")
 
-    if weight is None:
-        retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
-                       points)
+        # check the limits of integration: \int_a^b, expect a < b
+        flip, a, b = b < a, min(a, b), max(a, b)
+
+        if weight is None:
+            retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
+                           points)
+        else:
+            retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
+                                  limlst, limit, maxp1, weight, wvar, wopts)
     else:
-        retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
-                              limlst, limit, maxp1, weight, wvar, wopts)
+        if weight is not None:
+            raise ValueError("Option 'weight' not supported when vectorized=True")
+        if args:
+            f = lambda t: func(t, *args)
+        else:
+            f = func
+        res, err, info, ier = _quad_vec.quad_vec(f, a, b, epsabs=epsabs, epsrel=epsrel, norm=norm,
+                                                 limit=limit, workers=workers,
+                                                 full_output=full_output,
+                                                 points=points, quadrature=quadrature)
+        flip = False
+        if full_output:
+            retval = (res, err, info, ier)
+        else:
+            retval = (res, err, ier)
 
     if flip:
         retval = (-retval[0],) + retval[1:]
