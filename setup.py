@@ -26,13 +26,11 @@ import warnings
 import sysconfig
 
 
-if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 4):
-    raise RuntimeError("Python version 2.7 or >= 3.4 required.")
+if sys.version_info[:2] < (3, 5):
+    raise RuntimeError("Python version >= 3.5 required.")
 
-if sys.version_info[0] < 3:
-    import __builtin__ as builtins
-else:
-    import builtins
+import builtins
+
 
 CLASSIFIERS = """\
 Development Status :: 5 - Production/Stable
@@ -41,12 +39,10 @@ Intended Audience :: Developers
 License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
-Programming Language :: Python :: 2
-Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -423,12 +419,12 @@ def setup_package():
     try:
         import numpy
     except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.8.2']
+        build_requires = ['numpy>=1.13.3']
     else:
         # If we're building a wheel, assume there already exist numpy wheels
         # for this platform, so it is safe to add numpy to build requirements.
         # See gh-5184.
-        build_requires = (['numpy>=1.8.2'] if 'bdist_wheel' in sys.argv[1:]
+        build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
     metadata = dict(
@@ -446,7 +442,7 @@ def setup_package():
         test_suite='nose.collector',
         setup_requires=build_requires,
         install_requires=build_requires,
-        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+        python_requires='>=3.5',
     )
 
     if "--force" in sys.argv:
