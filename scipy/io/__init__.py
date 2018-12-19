@@ -1,4 +1,4 @@
-# -*- encoding:utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 ==================================
 Input and output (:mod:`scipy.io`)

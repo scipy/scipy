@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from collections import namedtuple
 
 import numpy as np
@@ -10,6 +12,7 @@ __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                    'rvalue', 'pvalue',
                                                    'stderr'))
+
 
 def linregress(x, y=None):
     """

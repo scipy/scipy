@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
