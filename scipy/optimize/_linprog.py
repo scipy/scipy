@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from .optimize import OptimizeResult
+from .optimize import OptimizeResult, OptimizeWarning
+from warnings import warn
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
@@ -163,7 +164,7 @@ def linprog_terse_callback(res):
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, method='simplex', callback=None,
-            options=None):
+            options=None, x0 = None):
     """
     Minimize a linear objective function subject to linear
     equality and inequality constraints. Linear Programming is intended to
@@ -256,6 +257,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         For method-specific options, see :func:`show_options('linprog')`.
 
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm. Currently compatible only with the
+        'revised simplex' method, and only if x0 is a basic feasible solution
+        of the problem.
+
+
     Returns
     -------
     res : OptimizeResult
@@ -315,8 +323,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     vertex of the polytope defined by the constraints.
 
     Method *revised simplex* uses the revised simplex method as decribed in
-    [9]_, except that a factorization [11]_ of the basis matrix, rather than its
-    inverse, is efficiently maintained and used to solve the linear systems
+    [9]_, except that a factorization [11]_ of the basis matrix, rather than
+    its inverse, is efficiently maintained and used to solve the linear systems
     at each iteration of the algorithm.
 
     Before applying either method a presolve procedure based on [8]_ attempts
@@ -446,8 +454,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     meth = method.lower()
     default_tol = 1e-12 if meth == 'simplex' else 1e-9
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options = _parse_linprog(
-        c, A_ub, b_ub, A_eq, b_eq, bounds, options)
+    if x0 is not None and meth != "revised simplex":
+        warning_message = "x0 is used only when method is 'revised simplex'. "
+        warn(warning_message, OptimizeWarning)
+
+    c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0 = _parse_linprog(
+        c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0)
     tol = solver_options.get('tol', default_tol)
 
     iteration = 0
@@ -463,11 +475,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
-        (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status,
-            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol)
+        (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, x0, undo, complete, status,
+            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol)
 
     if not complete:
-        A, b, c, c0 = _get_Abc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
+        A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
+                                   b_eq, bounds, x0, undo)
         T_o = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
@@ -477,7 +490,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 c, c0=c0, A=A, b=b, callback=callback, **solver_options)
         elif meth == 'revised simplex':
             x, status, message, iteration = _linprog_rs(
-                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, x0=x0, callback=callback, _T_o=T_o, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
 
