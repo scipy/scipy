@@ -205,6 +205,9 @@ but the operation can also be specified by the user.  See the docstring of
 :func:`scipy.sparse.linalg.eigsh` and
 :func:`scipy.sparse.linalg.eigs` for details.
 
+
+Use of LinearOperator
+---------------------
 We consider now the case where you'd like to avoid creating a dense matrix
 and use :func:`scipy.sparse.linalg.LinearOperator` instead.  Our first
 linear operator applies element-wise multiplication between the input vector
@@ -228,13 +231,13 @@ the dense matrix:
    ...         return self.diag*x
    ...     def _rmatvec(self, x):
    ...         return self.diag*x
-   >>>
+
    >>> np.random.seed(0)
    >>> N = 100
    >>> d = np.random.normal(0, 1, N).astype(np.float64)
    >>> D = np.diag(d)
    >>> Dop = Diagonal(d, dtype=np.float64)
-   >>>
+
    >>> evals_all, evecs_all = eigh(D)
    >>> evals_large, evecs_large = eigsh(Dop, 3, which='LA', maxiter=1e3)
    >>> evals_all[-3:]
@@ -252,7 +255,7 @@ similar capabilities in the `Diagonal <https://pylops.readthedocs.io/en/
 latest/api/generated/pylops.Diagonal.html#pylops.Diagonal>`_ operator
 as well as several other operators.
 
-Finally, we use consider a linear operator that mimics the application of a
+Finally, we consider a linear operator that mimics the application of a
 first derivative stencil. In this case the operator is equivalent to a real
 nonsymmetric matrix. Once again we compare the estimated eigenvalues
 and eigenvectors with those from a dense matrix that applies the
@@ -272,12 +275,12 @@ same first derivative to an input signal:
     ...         y[0:-2] = y[0:-2] - (0.5*x[1:-1])
     ...         y[2:] = y[2:] + (0.5*x[1:-1])
     ...         return y
-    >>>
+
     >>> N = 21
     >>> D = np.diag(0.5*np.ones(N-1), k=1) - np.diag(0.5*np.ones(N-1), k=-1)
     >>> D[0] = D[-1] = 0 # take away edge effects
     >>> Dop = FirstDerivative(N, dtype=np.float64)
-    >>>
+
     >>> evals_all, evecs_all = eig(D)
     >>> evals_large, evecs_large = eigs(Dop, 4, which='LI')
     >>> evals_all_imag = evals_all.imag
