@@ -36,15 +36,13 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     necessary to complete a basis/BFS for the original problem.
     """
 
-    # x0_data = _check_x0(x0, A, b, tol)
-    # if x0_data:
-    #    return x0_data
-
     m, n = A.shape
     status = 0
 
     # generate auxiliary problem to get initial BFS
-    A, b, c, basis, x = _generate_auxiliary_problem(A, b, x0, tol)
+    A, b, c, basis, x, status = _generate_auxiliary_problem(A, b, x0, tol)
+
+    # TODO: check status
 
     # solve auxiliary problem
     phase_one_n = n
@@ -82,29 +80,29 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     return x, basis, A, b, residual, status, iter_k
 
 
-def _check_x0(x0, A, b, tol):
-    """
-    Check whether x0 is an initial basic feasible solution (BFS) to the
-    original problem.
-    """
-    if x0 is None:
-        return False
-
-    residual = np.linalg.norm(A @ x0 - b)
-    if residual > tol:
-        return False
-
-    m, n = A.shape
-    basis = np.where(x0)[0]
-    if len(basis) > m:
-        return False
-    if len(basis) < m:
-        basis = _get_more_basis_columns(A, basis)
-    # need to choose m columns for basis
-    # values of auxiliary variables might need to be nonzero to satisfy equality
-    status = 0
-    iter_k = 0
-    return x0, basis, A, b, residual, status, iter_k
+#def _check_x0(x0, A, b, tol):
+#    """
+#    Check whether x0 is an initial basic feasible solution (BFS) to the
+#    original problem.
+#    """
+#    if x0 is None:
+#        return False
+#
+#    residual = np.linalg.norm(A @ x0 - b)
+#    if residual > tol:
+#        return False
+#
+#    m, n = A.shape
+#    basis = np.where(x0)[0]
+#    if len(basis) > m:
+#        return False
+#    if len(basis) < m:
+#        basis = _get_more_basis_columns(A, basis)
+#    # need to choose m columns for basis
+#    # values of auxiliary variables might need to be nonzero to satisfy equality
+#    status = 0
+#    iter_k = 0
+#    return x0, basis, A, b, residual, status, iter_k
 
 
 def _get_more_basis_columns(A, basis):
@@ -158,47 +156,79 @@ def _generate_auxiliary_problem(A, b, x0, tol):
     is feasible. The original problem is declared infeasible otherwise.
 
     Much of the complexity below is to improve efficiency by using singleton
-    columns in the original problem where possible and generating artificial
-    variables only as necessary.
+    columns in the original problem where possible, thus generating artificial
+    variables only as necessary, and using an initial 'guess' basic feasible
+    solution.
     """
+    status = 0
     m, n = A.shape
 
-    if x0:
+    if x0 is not None:
         x = x0
     else:
         x = np.zeros(n)
 
-    r = b - A@x
+    r = b - A@x  # residual; this must be all zeros for feasibility
 
     A[r < 0] = -A[r < 0]  # express problem with RHS positive for trivial BFS
     b[r < 0] = -b[r < 0]  # to the auxiliary problem
+    r[r < 0] *= -1
 
-    # nonzero_constraints =
-    # chooses existing columns appropriate for inclusion in inital basis
-    cols, rows = _select_singleton_columns(A, b)
+    # rows which we will need to find a trivial way to zero
+    nonzero_constraints = np.where(r > tol)[0]
 
-    acols = np.arange(m-len(cols))          # indices of auxiliary columns
+    # these are (at least some of) the initial basis columns
+    basis = np.where(np.abs(x) > tol)[0]
 
-    # indices of corresponding rows,
-    arows = np.delete(np.arange(m), rows)
-    # that is, the row in each aux column with nonzero entry
+    if len(nonzero_constraints) == 0 and len(basis) <= m:  # already a BFS
+        c = np.zeros(n)
+        basis = _get_more_basis_columns(A, basis)
+        return A, b, c, basis, x, status
+    elif len(nonzero_constraints) > m - len(basis):  # can't get trivial BFS
+        status = 6
+        return A, b, None, basis, x, status
 
-    basis = np.concatenate((cols, n + acols))   # all initial basis columns
-    basis_rows = np.concatenate((rows, arows))  # all intial basis rows
+    # chooses existing columns appropriate for inclusion in initial basis
+    cols, rows = _select_singleton_columns(A, r)
+
+    # find the rows we need to zero that we _can_ zero with column singletons
+    i_tofix = np.isin(rows, nonzero_constraints)
+    # these columns can't already be in the basis, though
+    # we are going to add them to the basis and change the corresponding x val
+    i_notinbasis = np.logical_not(np.isin(cols, basis))
+    i_fix_without_aux = np.logical_and(i_tofix, i_notinbasis)
+    rows = rows[i_fix_without_aux]
+    cols = cols[i_fix_without_aux]
+
+    # indices of the rows we can only zero with auxiliary variable
+    # these rows will get a one in each auxiliary column
+    arows = nonzero_constraints[np.logical_not(
+                                np.isin(nonzero_constraints, rows))]
+    n_aux = len(arows)
+    acols = n + np.arange(n_aux)          # indices of auxiliary columns
+
+    basis_ng = np.concatenate((cols, acols))   # basis columns not from guess
+    basis_ng_rows = np.concatenate((rows, arows))  # rows we need to zero
 
     # add auxiliary singleton columns
-    A = np.hstack((A, np.zeros((m, m-len(cols)))))
-    A[arows, n + acols] = 1
+    A = np.hstack((A, np.zeros((m, n_aux))))
+    A[arows, acols] = 1
 
-    # generate intial BFS
-    x = np.zeros(m+n-len(cols))
-    x[basis] = b[basis_rows]/A[basis_rows, basis]
+    # generate initial BFS
+    x = np.concatenate((x, np.zeros(n_aux)))
+    x[basis_ng] = r[basis_ng_rows]/A[basis_ng_rows, basis_ng]
 
     # generate costs to minimize infeasibility
-    c = np.zeros(m+n-len(cols))
-    c[n+acols] = 1
+    c = np.zeros(n_aux + n)
+    c[acols] = 1
 
-    return A, b, c, basis, x
+    # basis columns correspond with nonzeros in guess, those with column
+    # singletons we used to zero remaining constraints, and any additional
+    # columns to get a full set (m columns)
+    basis = np.concatenate((basis, basis_ng))
+    basis = _get_more_basis_columns(A, basis)  # add columns as needed
+
+    return A, b, c, basis, x, status
 
 
 def _select_singleton_columns(A, b):
@@ -217,12 +247,17 @@ def _select_singleton_columns(A, b):
     row_indices[nonzero_columns] = nonzero_rows   # corresponding row indicies
 
     # keep only singletons with entries that have same sign as RHS
-    same_sign = A[row_indices, column_indices]*b[row_indices] >= 0
-    column_indices = column_indices[same_sign]
-    row_indices = row_indices[same_sign]
     # this is necessary because all elements of BFS must be non-negative
+    same_sign = A[row_indices, column_indices]*b[row_indices] >= 0
+    column_indices = column_indices[same_sign][::-1]
+    row_indices = row_indices[same_sign][::-1]
+    # Reversing the order so that steps below select rightmost columns
+    # for initial basis, which will tend to be slack variables. (If the
+    # guess corresponds with a basic feasible solution but a constraint
+    # is not satisfied with the corresponding slack variable zero, the slack
+    # variable must be basic.)
 
-    # for each row, keep only one singleton column with an entry in that row
+    # for each row, keep rightmost singleton column with an entry in that row
     unique_row_indices, first_columns = np.unique(row_indices,
                                                   return_index=True)
     return column_indices[first_columns], unique_row_indices
@@ -404,6 +439,7 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
          3 : Problem appears to be unbounded
          4 : Numerical difficulties encountered
          5 : No constraints; turn presolve on
+         6 : Guess x0 cannot be converted to a basic feasible solution
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -428,7 +464,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
                 "Numerical difficulties encountered; consider trying "
                 "method='interior-point'.",
                 "Problems with no constraints are trivially solved; please "
-                "turn presolve on."
+                "turn presolve on.",
+                "The guess x0 cannot be converted to a basic feasible "
+                "solution. "
                 ]
 
     # _T_o contains information for postsolve needed for callback function
