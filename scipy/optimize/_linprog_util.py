@@ -1058,6 +1058,8 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         b = b.ravel()
     else:
         b -= (A[:, i_shift] * lb_shift).sum(axis=1)
+    if x0 is not None:
+        x0[i_shift] -= lb_shift
 
     return A, b, c, c0, x0
 
