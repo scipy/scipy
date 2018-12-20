@@ -77,7 +77,6 @@ def linprog_verbose_callback(res):
     """
     x = res['x']
     fun = res['fun']
-    success = res['success']
     phase = res['phase']
     status = res['status']
     nit = res['nit']
@@ -164,7 +163,7 @@ def linprog_terse_callback(res):
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, method='simplex', callback=None,
-            options=None, x0 = None):
+            options=None, x0=None):
     """
     Minimize a linear objective function subject to linear
     equality and inequality constraints. Linear Programming is intended to
