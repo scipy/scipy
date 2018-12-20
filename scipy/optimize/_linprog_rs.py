@@ -21,7 +21,7 @@ from .optimize import OptimizeResult
 # TODO: Pythranize?
 
 
-def _phase_one(A, b, maxiter, tol, maxupdate, mast, pivot, callback=None,
+def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
                _T_o=[]):
     """
     The purpose of phase one is to find an initial basic feasible solution
@@ -36,11 +36,15 @@ def _phase_one(A, b, maxiter, tol, maxupdate, mast, pivot, callback=None,
     necessary to complete a basis/BFS for the original problem.
     """
 
+    # x0_data = _check_x0(x0, A, b, tol)
+    # if x0_data:
+    #    return x0_data
+
     m, n = A.shape
     status = 0
 
     # generate auxiliary problem to get initial BFS
-    A, b, c, basis, x = _generate_auxiliary_problem(A, b)
+    A, b, c, basis, x = _generate_auxiliary_problem(A, b, x0, tol)
 
     # solve auxiliary problem
     phase_one_n = n
@@ -78,6 +82,30 @@ def _phase_one(A, b, maxiter, tol, maxupdate, mast, pivot, callback=None,
     return x, basis, A, b, residual, status, iter_k
 
 
+def _check_x0(x0, A, b, tol):
+    """
+    Check whether x0 is an initial basic feasible solution (BFS) to the
+    original problem.
+    """
+    if x0 is None:
+        return False
+
+    residual = np.linalg.norm(A @ x0 - b)
+    if residual > tol:
+        return False
+
+    m, n = A.shape
+    basis = np.where(x0)[0]
+    if len(basis) > m:
+        return False
+    if len(basis) < m:
+        basis = _get_more_basis_columns(A, basis)
+    # need to choose m columns for basis
+    # values of auxiliary variables might need to be nonzero to satisfy equality
+    status = 0
+    iter_k = 0
+    return x0, basis, A, b, residual, status, iter_k
+
 def _get_more_basis_columns(A, basis):
     """
     Called when the auxiliary problem terminates with artificial columns in
@@ -109,7 +137,7 @@ def _get_more_basis_columns(A, basis):
     return np.concatenate((basis, new_basis))
 
 
-def _generate_auxiliary_problem(A, b):
+def _generate_auxiliary_problem(A, b, x0, tol):
     """
     Modifies original problem to create an auxiliary problem with a trivial
     intial basic feasible solution and an objective that minimizes
@@ -132,13 +160,19 @@ def _generate_auxiliary_problem(A, b):
     columns in the original problem where possible and generating artificial
     variables only as necessary.
     """
-    A = A.copy()  # FIXME: no need to copy once used with rest of linprog
-    b = b.copy()
     m, n = A.shape
 
-    A[b < 0] = -A[b < 0]  # express problem with RHS positive for trivial BFS
-    b[b < 0] = -b[b < 0]  # to the auxiliary problem
+    if x0:
+        x = x0
+    else:
+        x = np.zeros(n)
 
+    r = b - A@x
+
+    A[r < 0] = -A[r < 0]  # express problem with RHS positive for trivial BFS
+    b[r < 0] = -b[r < 0]  # to the auxiliary problem
+
+    # nonzero_constraints =
     # chooses existing columns appropriate for inclusion in inital basis
     cols, rows = _select_singleton_columns(A, b)
 
@@ -299,7 +333,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
 
 
 # FIXME: is maxiter for each phase?
-def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,
+def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
                 maxupdate=10, mast=False, pivot="mrc", _T_o=[],
                 **unknown_options):
     """
@@ -324,6 +358,9 @@ def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,
     b : 1D array
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm
     callback : callable, optional (Currently unused.)
 
     Options
@@ -401,10 +438,10 @@ def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,
     if A.size == 0:  # address test_unbounded_below_no_presolve_corrected
         return np.zeros(c.shape), 5, messages[5], 0
 
-    x, basis, A, b, residual, status, iteration = _phase_one(A, b, maxiter,
-                                                             tol, maxupdate,
-                                                             mast, pivot,
-                                                             callback, _T_o)
+    x, basis, A, b, residual, status, iteration = (
+        _phase_one(A, b, x0, maxiter, tol, maxupdate,
+                   mast, pivot, callback, _T_o))
+
     if status == 0:
         x, basis, status, iteration = _phase_two(c, A, x, basis,
                                                  maxiter, tol, maxupdate,
