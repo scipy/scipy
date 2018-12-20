@@ -1203,6 +1203,21 @@ class TestRvDiscrete(object):
         pk = [1, 2, 3]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
+    def test_shape_rv_sample():
+        # tests added for gh-9565
+
+        # mismatch of 2d inputs
+        xk, pk = np.arange(4).reshape((2, 2)), np.ones((2, 3)) / 6
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        # same number of elements, but shapes not compatible
+        xk, pk = np.arange(6).reshape((3, 2)), np.ones((2, 3)) / 6
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        # same shapes => no error
+        xk, pk = np.arange(6).reshape((3, 2)), np.ones((3, 2)) / 6
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
 
 class TestSkewNorm(object):
     def setup_method(self):
