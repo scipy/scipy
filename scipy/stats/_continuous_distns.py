@@ -789,8 +789,8 @@ class burr_gen(rv_continuous):
         return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
 
     def _logpdf(self, x, c, d):
-        return np.log(c) + np.log(d) + (-c - 1.0) * np.log(x) \
-                + (-d - 1.0) * np.log1p(x**(-c))
+        return (np.log(c) + np.log(d) + (-c - 1.0) * np.log(x) +
+                 (-d - 1.0) * np.log1p(x**(-c)))
 
     def _cdf(self, x, c, d):
         return (1 + x**(-c))**(-d)
@@ -798,15 +798,12 @@ class burr_gen(rv_continuous):
     def _logcdf(self, x, c, d):
         return -d * np.log1p(x**(-c))
 
-    def _sf(self, x, c, d):
-        return 1 - (1 + x**(-c))**(-d)
-
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
-        nc = np.arange(1, 5)/c
-        e1, e2, e3, e4 = sc.beta(d + nc, 1. - nc) / sc.beta(d, 1.0)
+        nc = np.arange(1, 5).reshape(4,1) / c
+        e1, e2, e3, e4 = d * sc.beta(d + nc, 2. - nc)
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
