@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from collections import namedtuple
 
 import numpy as np
@@ -330,7 +328,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     .. [2] A. Stein and M. Werman, "Finding the repeated median regression
            line", Proceedings of the Third Annual ACM-SIAM Symposium on
-           Discrete Algorithms, pp. 409–413, 1992.
+           Discrete Algorithms, pp. 409-413, 1992.
 
     Examples
     --------

@@ -3343,7 +3343,7 @@ class norminvgauss_gen(rv_continuous):
 
     O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
     Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
-    pp. 1–13, 1997.
+    pp. 1-13, 1997.
 
     %(example)s
 
@@ -3380,7 +3380,7 @@ norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):
-    r"""An inverted Weibull continuous random variable.
+    u"""An inverted Weibull continuous random variable.
 
     This distribution is also known as the Fréchet distribution or the
     type II extreme value distribution.
@@ -3393,7 +3393,7 @@ class invweibull_gen(rv_continuous):
 
     .. math::
 
-        f(x, c) = c x^{-c-1} \exp(-x^{-c})
+        f(x, c) = c x^{-c-1} \\exp(-x^{-c})
 
     for :math:`x > 0`, :math:`c > 0`.
 
@@ -4003,9 +4003,9 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn('FFT method is considered experimental for ' +
-                              'cumulative distribution function ' +
-                              'evaluations. Use Zolotarev’s method instead).',
+                warnings.warn(u'FFT method is considered experimental for ' +
+                              u'cumulative distribution function ' +
+                              u'evaluations. Use Zolotarev’s method instead).',
                               RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
