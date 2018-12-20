@@ -65,12 +65,12 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
-                OptimizeWarning)
+             OptimizeWarning)
     return options, A_ub, A_eq
 
 
 def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-                  x0 = None):
+                  x0=None):
     """
     Given user inputs for a linear programming problem, return the
     objective vector, upper bound constraints, equality constraints,
@@ -1293,7 +1293,7 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     elif status == 2 and is_feasible:
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can make the solution
-        #basic, however, this solution is NOT optimal
+        # basic, however, this solution is NOT optimal
         raise ValueError(message)
 
     return status, message

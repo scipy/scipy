@@ -106,6 +106,7 @@ def _check_x0(x0, A, b, tol):
     iter_k = 0
     return x0, basis, A, b, residual, status, iter_k
 
+
 def _get_more_basis_columns(A, basis):
     """
     Called when the auxiliary problem terminates with artificial columns in
@@ -279,13 +280,14 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
             else:
                 phase = 2
                 x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve, *_T_o, tol)
+            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve, *_T_o,
+                                                    tol=tol)
             message = ""
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration,
                                   'phase': phase, 'complete': False,
                                   'status': 0, 'message': message,
-                                  'success':False})
+                                  'success': False})
             callback(res)
 
         bl = np.zeros(len(a), dtype=bool)
