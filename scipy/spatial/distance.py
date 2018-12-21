@@ -374,6 +374,12 @@ def directed_hausdorff(u, v, seed=0):
     index_2 : int
         index of point contributing to Hausdorff pair in `v`
 
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `u` and `v` do not have
+        the same number of columns.
+
     Notes
     -----
     Uses the early break technique and the random sampling approach
@@ -434,6 +440,9 @@ def directed_hausdorff(u, v, seed=0):
     """
     u = np.asarray(u, dtype=np.float64, order='c')
     v = np.asarray(v, dtype=np.float64, order='c')
+    if u.shape[1] != v.shape[1]:
+        raise ValueError('u and v need to have the same '
+                         'number of columns')
     result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
 
