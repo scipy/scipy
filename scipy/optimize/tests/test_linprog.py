@@ -102,6 +102,20 @@ def lpgen_2d(m, n):
     return A, b, c.ravel()
 
 
+def nontrivial_problem():
+    c = [-1, 8, 4, -6]
+    A_ub = [[-7, -7, 6, 9],
+            [1, -1, -3, 0],
+            [10, -10, -7, 7],
+            [6, -1, 3, 4]]
+    b_ub = [-3, 6, -6, 6]
+    A_eq = [[-10, 1, 1, -8]]
+    b_eq = [-4]
+    x_star = [101 / 1391, 1462 / 1391, 0, 752 / 1391]
+    f_star = 7083 / 1391
+    return c, A_ub, b_ub, A_eq, b_eq, x_star, f_star
+
+
 def _assert_iteration_limit_reached(res, maxiter):
     assert_(not res.success, "Incorrectly reported success")
     assert_(res.success < maxiter, "Incorrectly reported number of iterations")
@@ -313,18 +327,10 @@ class LinprogCommonTests(object):
     def test_nontrivial_problem(self):
         # Test linprog for a problem involving all constraint types,
         # negative resource limits, and rounding issues.
-        c = [-1, 8, 4, -6]
-        A_ub = [[-7, -7, 6, 9],
-                [1, -1, -3, 0],
-                [10, -10, -7, 7],
-                [6, -1, 3, 4]]
-        b_ub = [-3, 6, -6, 6]
-        A_eq = [[-10, 1, 1, -8]]
-        b_eq = [-4]
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       method=self.method, options=self.options)
-        _assert_success(res, desired_fun=7083 / 1391,
-                        desired_x=[101 / 1391, 1462 / 1391, 0, 752 / 1391])
+        _assert_success(res, desired_fun=f_star, desired_x=x_star)
 
     def test_negative_variable(self):
         # Test linprog with a problem with one unbounded variable and
@@ -1272,6 +1278,65 @@ class TestLinprogRSCommon(BaseTestLinprogRS):
 
     def test_callback(self):
         generic_callback_test(self)
+
+    def test_nontrivial_problem_with_guess(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      method=self.method, options=self.options, x0=x_star)
+        _assert_success(res, desired_fun=f_star, desired_x=x_star)
+        assert_equal(res.nit, 0)
+
+    def test_nontrivial_problem_with_unbounded_variables(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        bounds = [(None, None), (None, None), (0, None), (None, None)]
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options,
+                      x0=x_star)
+        _assert_success(res, desired_fun=f_star, desired_x=x_star)
+        assert_equal(res.nit, 0)
+
+    def test_nontrivial_problem_with_bounded_variables(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        bounds = [(None, 1), (1, None), (0, None), (.4, .6)]
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options,
+                      x0=x_star)
+        _assert_success(res, desired_fun=f_star, desired_x=x_star)
+        assert_equal(res.nit, 0)
+
+    def test_nontrivial_problem_with_negative_unbounded_variable(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        b_eq = [4]
+        x_star = np.array([-219/385, 582/385, 0, 4/10])
+        f_star = 3951/385
+        bounds = [(None, None), (1, None), (0, None), (.4, .6)]
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options,
+                      x0=x_star)
+        _assert_success(res, desired_fun=f_star, desired_x=x_star)
+        assert_equal(res.nit, 0)
+
+    def test_nontrivial_problem_with_bad_guess(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        bad_guess = [1, 2, 3, .5]
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      method=self.method, options=self.options, x0=bad_guess)
+        assert_equal(res.status, 6)
+
+    def test_redundant_constraints_with_guess(self):
+        A, b, c, N = magic_square(3)
+        p = np.random.rand(*c.shape)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            sup.filter(LinAlgWarning)
+            res = linprog(c, A_eq=A, b_eq=b, method=self.method)
+            res2 = linprog(c, A_eq=A, b_eq=b, method=self.method, x0=res.x)
+            res3 = linprog(c + p, A_eq=A, b_eq=b, method=self.method, x0=res.x)
+        _assert_success(res2, desired_fun=1.730550597)
+        assert_equal(res2.nit, 0)
+        _assert_success(res3)
+        assert_(res3.nit < res.nit)  # hot start reduces iterations
 
 
 class TestLinprogRSBland(BaseTestLinprogRS):

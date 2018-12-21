@@ -1040,7 +1040,9 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     A1[:, range(n_ub, A1.shape[1])] = -A1[:, i_free]
     c[np.arange(n_ub, A1.shape[1])] = -c[i_free]
     if x0 is not None:
-        x0[np.arange(n_ub, A1.shape[1])] = -x0[i_free]
+        i_free_neg = x0[i_free] < 0
+        x0[np.arange(n_ub, A1.shape[1])[i_free_neg]] = -x0[i_free[i_free_neg]]
+        x0[i_free[i_free_neg]] = 0
 
     # add slack variables
     A2 = vstack([eye(A_ub.shape[0]), zeros((A_eq.shape[0], A_ub.shape[0]))])

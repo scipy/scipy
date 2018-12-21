@@ -16,6 +16,8 @@ from numpy.linalg.linalg import LinAlgError as LinAlgError2
 from ._linprog_util import _postsolve
 from .optimize import OptimizeResult
 
+# TODO: add unit tests for initial guess
+# TODO: report status/message when initial guess is not BFS
 # TODO: add display?
 # TODO: cythonize c_hat = c - v.dot(A); c_hat = c_hat[~bl]
 # TODO: Pythranize?
@@ -42,7 +44,10 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     # generate auxiliary problem to get initial BFS
     A, b, c, basis, x, status = _generate_auxiliary_problem(A, b, x0, tol)
 
-    # TODO: check status
+    if status == 6:
+        residual = c.dot(x)
+        iter_k = 0
+        return x, basis, A, b, residual, status, iter_k
 
     # solve auxiliary problem
     phase_one_n = n
@@ -78,31 +83,6 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
         basis = _get_more_basis_columns(A, basis)
 
     return x, basis, A, b, residual, status, iter_k
-
-
-#def _check_x0(x0, A, b, tol):
-#    """
-#    Check whether x0 is an initial basic feasible solution (BFS) to the
-#    original problem.
-#    """
-#    if x0 is None:
-#        return False
-#
-#    residual = np.linalg.norm(A @ x0 - b)
-#    if residual > tol:
-#        return False
-#
-#    m, n = A.shape
-#    basis = np.where(x0)[0]
-#    if len(basis) > m:
-#        return False
-#    if len(basis) < m:
-#        basis = _get_more_basis_columns(A, basis)
-#    # need to choose m columns for basis
-#    # values of auxiliary variables might need to be nonzero to satisfy equality
-#    status = 0
-#    iter_k = 0
-#    return x0, basis, A, b, residual, status, iter_k
 
 
 def _get_more_basis_columns(A, basis):
@@ -184,9 +164,11 @@ def _generate_auxiliary_problem(A, b, x0, tol):
         c = np.zeros(n)
         basis = _get_more_basis_columns(A, basis)
         return A, b, c, basis, x, status
-    elif len(nonzero_constraints) > m - len(basis):  # can't get trivial BFS
+    elif (len(nonzero_constraints) > m - len(basis) or
+          np.any(x < 0)):  # can't get trivial BFS
+        c = np.zeros(n)
         status = 6
-        return A, b, None, basis, x, status
+        return A, b, c, basis, x, status
 
     # chooses existing columns appropriate for inclusion in initial basis
     cols, rows = _select_singleton_columns(A, r)
@@ -369,7 +351,6 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
     return x, b, status, iteration
 
 
-# FIXME: is maxiter for each phase?
 def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
                 maxupdate=10, mast=False, pivot="mrc", _T_o=[],
                 **unknown_options):
@@ -397,7 +378,8 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
         (row) in ``A_eq``.
     x0 : 1D array, optional
         Starting values of the independent variables, which will be refined by
-        the optimization algorithm
+        the optimization algorithm. For the revised simplex method, these must
+        correspond with a basic feasible solution.
     callback : callable, optional (Currently unused.)
 
     Options
