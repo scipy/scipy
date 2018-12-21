@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import sys, os, re
+import glob
 from datetime import date
+import warnings
+
+import numpy as np
 
 # Check Sphinx version
 import sphinx
@@ -20,9 +24,16 @@ needs_sphinx = '1.6'
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
-              'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
-              'sphinx.ext.autosummary', 'scipyoptdoc', 'doi_role']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.intersphinx',
+    'numpydoc',
+    'scipyoptdoc',
+    'doi_role',
+]
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
@@ -92,6 +103,38 @@ show_authors = False
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# Enusre all our internal links work
+nitpicky = True
+exclude_patterns = [  # glob-style
+    'dev/decisions.rst',
+    'dev/deprecations.rst',
+    'dev/distributing.rst',
+    'dev/github.rst',
+    'dev/licensing.rst',
+    'dev/modules.rst',
+    'dev/newfeatures.rst',
+    'dev/releasing.rst',
+    'dev/versioning.rst',
+    '**/class_generated',
+]
+
+"""
+# be strict about warnings in our examples, we should write clean code
+# (exceptions permitted for pedagogical purposes below)
+np.seterr(all='raise')  # be strict about our examples
+warnings.resetwarnings()
+warnings.filterwarnings('error')
+# allow these and show them
+warnings.filterwarnings('default', module='sphinx')  # internal warnings
+warnings.filterwarnings(
+    'always', '.*coefficients of the spline.*')  # LSQSphereBivariateSpline
+# safely ignore these
+for key in (
+        "'U' mode is deprecated",  # sphinx io
+        ):
+    warnings.filterwarnings(  # deal with other modules having bad imports
+        'ignore', message=".*%s.*" % key, category=DeprecationWarning)
+"""
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -260,9 +303,9 @@ latex_elements = {
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'python': ('https://docs.python.org/dev', None),
-        'numpy': ('https://docs.scipy.org/doc/numpy', None),
-        'matplotlib': ('https://matplotlib.org', None),
+    'python': ('https://docs.python.org/dev', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'matplotlib': ('https://matplotlib.org', None),
 }
 
 
@@ -275,14 +318,21 @@ phantom_import_file = 'dump.xml'
 
 # Generate plots for example sections
 numpydoc_use_plots = True
+numpydoc_class_members_toctree = False
 
 # -----------------------------------------------------------------------------
 # Autosummary
 # -----------------------------------------------------------------------------
 
-if sphinx.__version__ >= "0.7":
-    import glob
-    autosummary_generate = glob.glob("*.rst")
+autosummary_generate = glob.glob("*.rst")
+
+# -----------------------------------------------------------------------------
+# Autodoc
+# -----------------------------------------------------------------------------
+
+autodoc_default_options = {
+    'inherited-members': None,
+}
 
 # -----------------------------------------------------------------------------
 # Coverage checker

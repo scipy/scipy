@@ -28,7 +28,6 @@ Package Content
 Prebuilt models:
 
 .. autosummary::
-   :toctree: generated/
 
    polynomial
 

@@ -200,7 +200,7 @@ The Brunner-Munzel test is now available as ``brunnermunzel`` in ``stats``
 and ``mstats``
 
 `scipy.linalg` improvements
---------------------------
+---------------------------
 
 `scipy.linalg.lapack` now exposes the LAPACK routines using the Rectangular
 Full Packed storage (RFP) for upper triangular, lower triangular, symmetric,

@@ -312,8 +312,8 @@ general function that takes a function argument to calculate the
 second derivative along a given direction.
 
 - The function :func:`generic_laplace` calculates a laplace filter
-  using the function passed through :func:`derivative2` to calculate
-  second derivatives. The function :func:`derivative2` should have the
+  using the function passed through ``derivative2`` to calculate
+  second derivatives. The function ``derivative2`` should have the
   following signature
 
   .. code:: python
@@ -395,8 +395,8 @@ function that calculats the gradient magnitude of an array.
 
 - The function :func:`generic_gradient_magnitude` calculates a
   gradient magnitude using the function passed through
-  :func:`derivative` to calculate first derivatives. The function
-  :func:`derivative` should have the following signature
+  ``derivative`` to calculate first derivatives. The function
+  ``derivative`` should have the following signature
 
   .. code:: python
 
@@ -459,8 +459,8 @@ information).
   one-dimensional filter function, where the actual filtering
   operation must be supplied as a python function (or other callable
   object). The :func:`generic_filter1d` function iterates over the
-  lines of an array and calls :func:`function` at each line. The
-  arguments that are passed to :func:`function` are one-dimensional
+  lines of an array and calls ``function`` at each line. The
+  arguments that are passed to ``function`` are one-dimensional
   arrays of the :class:`np.float64` type. The first contains the values
   of the current line.  It is extended at the beginning end the end,
   according to the *filter_size* and *origin* arguments. The second
@@ -523,7 +523,7 @@ information).
   function, where the actual filtering operation must be supplied as a
   python function (or other callable object). The
   :func:`generic_filter` function iterates over the array and calls
-  :func:`function` at each element. The argument of :func:`function`
+  ``function`` at each element. The argument of ``function``
   is a one-dimensional array of the :class:`np.float64` type, that
   contains the values around the current element that are within the
   footprint of the filter. The function should return a single value
