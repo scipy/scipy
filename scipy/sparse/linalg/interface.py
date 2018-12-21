@@ -113,6 +113,11 @@ class LinearOperator(object):
     is always a new, composite LinearOperator, that defers linear
     operations to the original operators and combines the results.
 
+    More details regarding how to subclass a LinearOperator and several
+    examples of concrete LinearOperator instances can be found in the
+    external project `PyLops <https://pylops.readthedocs.io>`_.
+
+
     Examples
     --------
     >>> import numpy as np
