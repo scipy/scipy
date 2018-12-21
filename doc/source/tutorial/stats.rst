@@ -5,6 +5,8 @@ Statistics (`scipy.stats`)
 .. sectionauthor:: Josef Perktold
 .. sectionauthor:: Nicky van Foreest
 
+.. currentmodule:: scipy
+
 Introduction
 ------------
 
@@ -502,7 +504,7 @@ distribution.
 Subclassing ``rv_discrete``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the following we use ``stats.rv_discrete`` to generate a discrete
+In the following we use `stats.rv_discrete` to generate a discrete
 distribution that has the probabilities of the truncated normal for the
 intervals centered around the integers.
 
@@ -659,7 +661,7 @@ How do the some sample properties compare to their theoretical counterparts?
     >>> print(sstr % ('sample:', sm, sv, ss, sk))
     sample:        mean = 0.0141, variance = 1.2903, skew = 0.2165, kurtosis = 1.0556
 
-Note: stats.describe uses the unbiased estimator for the variance, while
+Note: `stats.describe` uses the unbiased estimator for the variance, while
 np.var is the biased estimator.
 
 
@@ -901,14 +903,14 @@ density estimation.  The most well-known tool to do this is the histogram.
 A histogram is a useful tool for visualization (mainly because everyone
 understands it), but doesn't use the available data very efficiently.  Kernel
 density estimation (KDE) is a more efficient tool for the same task.  The
-:func:`gaussian_kde` estimator can be used to estimate the PDF of univariate as
+:func:`~stats.gaussian_kde` estimator can be used to estimate the PDF of univariate as
 well as multivariate data.  It works best if the data is unimodal.
 
 
 Univariate estimation
 ^^^^^^^^^^^^^^^^^^^^^
 
-We start with a minimal amount of data in order to see how :func:`gaussian_kde`
+We start with a minimal amount of data in order to see how :func:`~stats.gaussian_kde`
 works, and what the different options for bandwidth selection do.  The data
 sampled from the PDF is show as blue dashes at the bottom of the figure (this
 is called a rug plot):
@@ -1022,7 +1024,7 @@ non-uniform (adaptive) bandwidth.
 Multivariate estimation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-With :func:`gaussian_kde` we can perform multivariate as well as univariate
+With :func:`~stats.gaussian_kde` we can perform multivariate as well as univariate
 estimation.  We demonstrate the bivariate case.  First we generate some random
 data with a model in which the two variates are correlated.
 

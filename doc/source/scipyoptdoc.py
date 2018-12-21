@@ -27,6 +27,7 @@ import sphinx
 import inspect
 import collections
 import textwrap
+import warnings
 
 if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
@@ -82,12 +83,17 @@ def wrap_mangling_directive(base_directive):
             # Interface function
             name = self.arguments[0].strip()
             obj = _import_object(name)
-            args, varargs, keywords, defaults = inspect.getargspec(obj)
+            # XXX deprecation that we should fix eventually
+            with warnings.catch_warnings(record=True):
+                warnings.simplefilter('ignore')
+                args, varargs, keywords, defaults = inspect.getargspec(obj)
 
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            impl_args, impl_varargs, impl_keywords, impl_defaults = inspect.getargspec(impl_obj)
+            with warnings.catch_warnings(record=True):  # deprecation
+                warnings.simplefilter('ignore')
+                impl_args, impl_varargs, impl_keywords, impl_defaults = inspect.getargspec(impl_obj)
 
             # Format signature taking implementation into account
             args = list(args)

@@ -1483,7 +1483,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if ier < -2:
             deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
-            warnings.warn(message, stacklevel=3)
+            warnings.warn(message, stacklevel=2)
         elif ier not in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
