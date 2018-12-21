@@ -1203,7 +1203,7 @@ class TestRvDiscrete(object):
         pk = [1, 2, 3]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
-    def test_shape_rv_sample():
+    def test_shape_rv_sample(self):
         # tests added for gh-9565
 
         # mismatch of 2d inputs
