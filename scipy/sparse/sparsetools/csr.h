@@ -686,7 +686,7 @@ void csr_matmat_pass2(const I n_row,
  * Note:
  *   Input:  A and B column indices are not assumed to be in sorted order
  *   Output: C column indices are not generally in sorted order
- *           C will not contain any duplicate entries or explicit zeros.
+ *           C will not contain any duplicate entries .
  *
  */
 template <class I, class T, class T2, class binary_op>
@@ -745,7 +745,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         for(I jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
 
-            if(result != 0){
+            if(result != 0 || A_row[head] == 0){
                 Cj[nnz] = head;
                 Cx[nnz] = result;
                 nnz++;
@@ -776,7 +776,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
  * Note:
  *   Input:  A and B column indices are assumed to be in sorted order
  *   Output: C column indices will be in sorted order
- *           Cx will not contain any zero entries
+ *           Cx will contain non zero and explicit zero entries
  *
  */
 template <class I, class T, class T2, class binary_op>
@@ -804,7 +804,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 
             if(A_j == B_j){
                 T result = op(Ax[A_pos],Bx[B_pos]);
-                if(result != 0){
+                if(result != 0 || Ax[A_pos] == 0){
                     Cj[nnz] = A_j;
                     Cx[nnz] = result;
                     nnz++;
@@ -813,20 +813,16 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
                 B_pos++;
             } else if (A_j < B_j) {
                 T result = op(Ax[A_pos],0);
-                if (result != 0){
-                    Cj[nnz] = A_j;
-                    Cx[nnz] = result;
-                    nnz++;
-                }
+                Cj[nnz] = A_j;
+                Cx[nnz] = result;
+                nnz++;
                 A_pos++;
             } else {
                 //B_j < A_j
                 T result = op(0,Bx[B_pos]);
-                if (result != 0){
-                    Cj[nnz] = B_j;
-                    Cx[nnz] = result;
-                    nnz++;
-                }
+                Cj[nnz] = B_j;
+                Cx[nnz] = result;
+                nnz++;
                 B_pos++;
             }
         }
@@ -834,20 +830,16 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
         //tail
         while(A_pos < A_end){
             T result = op(Ax[A_pos],0);
-            if (result != 0){
-                Cj[nnz] = Aj[A_pos];
-                Cx[nnz] = result;
-                nnz++;
-            }
+            Cj[nnz] = Aj[A_pos];
+            Cx[nnz] = result;
+            nnz++;
             A_pos++;
         }
         while(B_pos < B_end){
             T result = op(0,Bx[B_pos]);
-            if (result != 0){
-                Cj[nnz] = Bj[B_pos];
-                Cx[nnz] = result;
-                nnz++;
-            }
+            Cj[nnz] = Bj[B_pos];
+            Cx[nnz] = result;
+            nnz++;
             B_pos++;
         }
 
@@ -901,6 +893,7 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
+	
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
         csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
