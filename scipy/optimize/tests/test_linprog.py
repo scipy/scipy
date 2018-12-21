@@ -452,7 +452,7 @@ class LinprogCommonTests(object):
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
-                              method=self.method, options=self.options)
+                          method=self.method, options=self.options)
         _assert_success(res, desired_fun=-1.77,
                         desired_x=[0.3, 0.2, 0.0, 0.0, 0.1, 0.3])
 
@@ -894,10 +894,11 @@ class LinprogCommonTests(object):
                               method=self.method, options=self.options)
         else:
             with suppress_warnings() as sup:
-                sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
+                sup.filter(OptimizeWarning,
+                           "Solving system with option 'sym_pos'")
                 sup.filter(RuntimeWarning, "invalid value encountered")
                 res = linprog(c, A_ub, b_ub, bounds=bounds,
-                        method=self.method, options=self.options)
+                              method=self.method, options=self.options)
             _assert_success(res, desired_fun=-106.63507541835018)
 
     def test_issue_6139(self):
@@ -1000,7 +1001,7 @@ class LinprogCommonTests(object):
         c = np.array([-1, 0, 0, 0, 0, 0, 0, 0, 0])
         A_ub = np.array([
             [1., -724., 911., -551., -555., -896., 478., -80., -293.],
-            [1., 566., 42., 937.,233., 883., 392., -909., 57.],
+            [1., 566., 42., 937., 233., 883., 392., -909., 57.],
             [1., -208., -894., 539., 321., 532., -924., 942., 55.],
             [1., 857., -859., 83., 462., -265., -971., 826., 482.],
             [1., 314., -424., 245., -424., 194., -443., -104., -429.],
@@ -1030,7 +1031,7 @@ class LinprogCommonTests(object):
         bounds = [(None, None)] * 9
 
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                bounds=bounds, method=self.method, options=self.options)
+                      bounds=bounds, method=self.method, options=self.options)
         _assert_success(res, desired_fun=108.568535, atol=1e-6)
 
     def test_issue_8174(self):
@@ -1044,7 +1045,7 @@ class LinprogCommonTests(object):
             [22714, 0, 0, 17386.5, 0]])
         b_ub = np.zeros(A_ub.shape[0])
         c = -np.ones(A_ub.shape[1])
-        bounds = [(0,1)] * A_ub.shape[1]
+        bounds = [(0, 1)] * A_ub.shape[1]
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered")
             sup.filter(LinAlgWarning)
@@ -1057,7 +1058,7 @@ class LinprogCommonTests(object):
         # https://stackoverflow.com/questions/47717012/linprog-in-scipy-optimize-checking-solution
         c = np.array([1, 0, 0, 0, 0, 0, 0])
         A_ub = -np.identity(7)
-        b_ub = np.array([[-2],[-2],[-2],[-2],[-2],[-2],[-2]])
+        b_ub = np.array([[-2], [-2], [-2], [-2], [-2], [-2], [-2]])
         A_eq = np.array([
             [1, 1, 1, 1, 1, 1, 0],
             [0.3, 1.3, 0.9, 0, 0, 0, -1],
@@ -1065,7 +1066,7 @@ class LinprogCommonTests(object):
             [0, 0.65, 0, 0, 0, 0, -1/15],
             [0, 0, 0.3, 0, 0, 0, -1/15]
         ])
-        b_eq = np.array([[100],[0],[0],[0],[0]])
+        b_eq = np.array([[100], [0], [0], [0], [0]])
 
         with pytest.warns(OptimizeWarning):
             res = linprog(
