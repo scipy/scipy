@@ -71,6 +71,12 @@ not yet clear which algorithms will work out of the box, and if there are
 significant performance gains when they do.  We want to create a map of which
 parts of the SciPy API work, and improve support over time.
 
+In addition to making use of NumPy protocols like ``__array_function__``, we can
+make use of these protocols in SciPy as well.  That will make it possible to
+(re)implement SciPy functions like, e.g., those in ``scipy.signal`` for Dask
+or GPU arrays (see
+`NEP 18 - use outside of NumPy <http://www.numpy.org/neps/nep-0018-array-function-protocol.html#use-outside-of-numpy>`__).
+
 
 Improve source builds on Windows
 --------------------------------
