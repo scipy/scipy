@@ -1216,7 +1216,7 @@ class TestRvDiscrete(object):
 
         # same shapes => no error
         xk, pk = np.arange(6).reshape((3, 2)), np.ones((3, 2)) / 6
-        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+        assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
 
 
 class TestSkewNorm(object):
