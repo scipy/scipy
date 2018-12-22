@@ -2571,6 +2571,7 @@ class rv_discrete(rv_generic):
     values : tuple of two array_like, optional
         ``(xk, pk)`` where ``xk`` are integers with non-zero
         probabilities ``pk``  with ``sum(pk) = 1``.
+        ``xk`` and ``pk`` must have the same shape.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3352,8 +3353,8 @@ class rv_sample(rv_discrete):
 
         xk, pk = values
 
-        if len(xk) != len(pk):
-            raise ValueError("xk and pk need to have the same length.")
+        if np.shape(xk) != np.shape(pk):
+            raise ValueError("xk and pk must have the same shape.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
 
