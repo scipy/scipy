@@ -801,8 +801,10 @@ class burr_gen(rv_continuous):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
-        nc = np.arange(1, 5).reshape(4,1) / c
-        e1, e2, e3, e4 = d * sc.beta(d + nc, 2. - nc)
+        e1 = self._munp(1, c, d)
+        e2 = self._munp(2, c, d)
+        e3 = self._munp(3, c, d)
+        e4 = self._munp(4, c, d)
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
@@ -813,7 +815,7 @@ class burr_gen(rv_continuous):
         g2 = _lazywhere(c > 3.0, (c, e1, e2, e3, e4, mu2_if_c),
              lambda c, e1, e2, e3, e4, mu2_if_c:
              ((e4 - 4 * e3 * e1 + 6 * e2 * e1**2 - 3 * e1**4) /
-             mu2_if_c**2) - 3,
+             mu2_if_c**2) - 3.,
              fillvalue=np.nan)
         return mu, mu2, g1, g2
 
@@ -945,16 +947,32 @@ class fisk_gen(burr_gen):
         return burr_gen._logcdf(self, x, c, 1.0)
 
     def _sf(self, x, c):
-        return burr_gen._sf(self, x, c, 1.0)
+        return 1. - (1 + x**(-c))**(-1.0)
 
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
 
     def _munp(self, n, c):
-        return burr_gen._munp(self, n, c, 1.0)
+        return sc.beta(1 + n / c, 1 - n / c)
 
     def _stats(self, c):
-        return burr_gen._stats(self, c, 1.0)
+        e1 = self._munp(1, c)
+        e2 = self._munp(2, c)
+        e3 = self._munp(3, c)
+        e4 = self._munp(4, c)
+        mu = np.where(c > 1.0, e1, np.nan)
+        mu2_if_c = e2 - mu**2
+        mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
+        g1 = _lazywhere(c > 3.0, (c, e1, e2, e3, mu2_if_c),
+             lambda c, e1, e2, e3, mu2_if_c:
+             (e3 - 3 * e2 * e1 + 2 * e1**3) / np.sqrt((mu2_if_c)**3),
+             fillvalue=np.nan)
+        g2 = _lazywhere(c > 3.0, (c, e1, e2, e3, e4, mu2_if_c),
+             lambda c, e1, e2, e3, e4, mu2_if_c:
+             ((e4 - 4 * e3 * e1 + 6 * e2 * e1**2 - 3 * e1**4) /
+             mu2_if_c**2) - 3.,
+             fillvalue=np.nan)
+        return mu, mu2, g1, g2
 
     def _entropy(self, c):
         return 2 - np.log(c)
