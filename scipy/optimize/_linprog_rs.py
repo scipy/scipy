@@ -358,7 +358,7 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
     Solve the following linear programming problem via a two-phase
     revised simplex algorithm.::
 
-        minimize:     c^T @ x
+        minimize:     c @ x
 
         subject to:  A @ x == b
                      0 <= x < oo
@@ -386,9 +386,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
             x : 1D array
-                Current solution vector
+                Current solution vector.
             fun : float
-                Current value of the objective function
+                Current value of the objective function ``c @ x``.
             success : bool
                 True only when an algorithm has completed successfully,
                 so this is always False as the callback function is called
@@ -399,7 +399,7 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
                 the corresponding constraint is active.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints,
-                that is, ``b - A_eq @ x``
+                that is, ``b - A_eq @ x``.
             phase : int
                 The phase of the algorithm being executed.
             status : int
