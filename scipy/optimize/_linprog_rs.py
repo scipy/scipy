@@ -380,7 +380,35 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
         Starting values of the independent variables, which will be refined by
         the optimization algorithm. For the revised simplex method, these must
         correspond with a basic feasible solution.
-    callback : callable, optional (Currently unused.)
+    callback : callable, optional
+        If a callback function is provided, it will be called within each
+        iteration of the algorithm. The callback function must accept a single
+        `scipy.optimize.OptimizeResult` consisting of the following fields:
+
+            x : 1D array
+                Current solution vector
+            fun : float
+                Current value of the objective function
+            success : bool
+                True only when an algorithm has completed successfully,
+                so this is always False as the callback function is called
+                only while the algorithm is still iterating.
+            slack : 1D array
+                The values of the slack variables. Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints,
+                that is, ``b - A_eq @ x``
+            phase : int
+                The phase of the algorithm being executed.
+            status : int
+                For revised simplex, this is always 0 because if a different
+                status is detected, the algorithm terminates.
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
 
     Options
     -------
