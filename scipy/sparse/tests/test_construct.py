@@ -141,16 +141,14 @@ class TestConstructUtils(object):
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            try:
-                assert_equal(construct.diags(d, o, shape=shape).todense(),
-                             result)
+            err_msg = "%r %r %r %r" % (d, o, shape, result)
+            assert_equal(construct.diags(d, o, shape=shape).todense(),
+                         result, err_msg=err_msg)
 
-                if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
-                    # should be able to find the shape automatically
-                    assert_equal(construct.diags(d, o).todense(), result)
-            except:
-                print("%r %r %r %r" % (d, o, shape, result))
-                raise
+            if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
+                # should be able to find the shape automatically
+                assert_equal(construct.diags(d, o).todense(), result,
+                             err_msg=err_msg)
 
     def test_diags_default(self):
         a = array([1, 2, 3, 4, 5])
@@ -175,11 +173,7 @@ class TestConstructUtils(object):
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            try:
-                assert_raises(ValueError, construct.diags, d, o, shape)
-            except:
-                print("%r %r %r" % (d, o, shape))
-                raise
+            assert_raises(ValueError, construct.diags, d, o, shape)
 
         assert_raises(TypeError, construct.diags, [[None]], [0])
 
@@ -384,12 +378,12 @@ class TestConstructUtils(object):
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
-        
+
         n = 33000
         A = csr_matrix(np.ones((n, n), dtype=bool))
         B = A.copy()
         C = construct._compressed_sparse_stack((A,B), 0)
-        
+
         assert_(np.all(np.equal(np.diff(C.indptr), n)))
         assert_equal(C.indices.dtype, np.int64)
         assert_equal(C.indptr.dtype, np.int64)
@@ -429,16 +423,18 @@ class TestConstructUtils(object):
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
-            for t in [np.float32, np.float64, np.longdouble]:
+            for t in [np.float32, np.float64, np.longdouble,
+                      np.int32, np.int64, np.complex64, np.complex128]:
                 x = f(5, 10, density=0.1, dtype=t)
                 assert_equal(x.dtype, t)
                 assert_equal(x.shape, (5, 10))
-                assert_equal(x.nonzero()[0].size, 5)
+                assert_equal(x.nnz, 5)
 
             x1 = f(5, 10, density=0.1, random_state=4321)
             assert_equal(x1.dtype, np.double)
 
-            x2 = f(5, 10, density=0.1, random_state=np.random.RandomState(4321))
+            x2 = f(5, 10, density=0.1,
+                   random_state=np.random.RandomState(4321))
 
             assert_array_equal(x1.data, x2.data)
             assert_array_equal(x1.row, x2.row)

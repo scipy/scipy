@@ -316,6 +316,8 @@ def structural_rank(graph):
     on the numerical rank of the matrix. A graph has full structural rank 
     if it is possible to permute the elements to make the diagonal zero-free.
 
+    .. versionadded:: 0.19.0
+
     Parameters
     ----------
     graph : sparse matrix
@@ -325,8 +327,6 @@ def structural_rank(graph):
     -------
     rank : int
         The structural rank of the sparse graph.
-
-    .. versionadded:: 0.19.0
     
     References
     ----------

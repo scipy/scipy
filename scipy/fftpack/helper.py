@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import operator
-from numpy import arange
+from numpy import (arange, array, asarray, atleast_1d, intc, integer,
+                   isscalar, issubdtype, take, unique, where)
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 from bisect import bisect_left
 
@@ -151,3 +152,126 @@ def next_fast_len(target):
     if p5 < match:
         match = p5
     return match
+
+
+def _init_nd_shape_and_axes(x, shape, axes):
+    """Handle shape and axes arguments for n-dimensional transforms.
+
+    Returns the shape and axes in a standard form, taking into account negative
+    values and checking for various potential errors.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    shape : int or array_like of ints or None
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If `shape` is -1, the size of the corresponding dimension of `x` is
+        used.
+    axes : int or array_like of ints or None
+        Axes along which the calculation is computed.
+        The default is over all axes.
+        Negative indices are automatically converted to their positive
+        counterpart.
+
+    Returns
+    -------
+    shape : array
+        The shape of the result. It is a 1D integer array.
+    axes : array
+        The shape of the result. It is a 1D integer array.
+
+    """
+    x = asarray(x)
+    noshape = shape is None
+    noaxes = axes is None
+
+    if noaxes:
+        axes = arange(x.ndim, dtype=intc)
+    else:
+        axes = atleast_1d(axes)
+
+    if axes.size == 0:
+        axes = axes.astype(intc)
+
+    if not axes.ndim == 1:
+        raise ValueError("when given, axes values must be a scalar or vector")
+    if not issubdtype(axes.dtype, integer):
+        raise ValueError("when given, axes values must be integers")
+
+    axes = where(axes < 0, axes + x.ndim, axes)
+
+    if axes.size != 0 and (axes.max() >= x.ndim or axes.min() < 0):
+        raise ValueError("axes exceeds dimensionality of input")
+    if axes.size != 0 and unique(axes).shape != axes.shape:
+        raise ValueError("all axes must be unique")
+
+    if not noshape:
+        shape = atleast_1d(shape)
+    elif isscalar(x):
+        shape = array([], dtype=intc)
+    elif noaxes:
+        shape = array(x.shape, dtype=intc)
+    else:
+        shape = take(x.shape, axes)
+
+    if shape.size == 0:
+        shape = shape.astype(intc)
+
+    if shape.ndim != 1:
+        raise ValueError("when given, shape values must be a scalar or vector")
+    if not issubdtype(shape.dtype, integer):
+        raise ValueError("when given, shape values must be integers")
+    if axes.shape != shape.shape:
+        raise ValueError("when given, axes and shape arguments"
+                         " have to be of the same length")
+
+    shape = where(shape == -1, array(x.shape)[axes], shape)
+
+    if shape.size != 0 and (shape < 1).any():
+        raise ValueError(
+            "invalid number of data points ({0}) specified".format(shape))
+
+    return shape, axes
+
+
+def _init_nd_shape_and_axes_sorted(x, shape, axes):
+    """Handle and sort shape and axes arguments for n-dimensional transforms.
+
+    This is identical to `_init_nd_shape_and_axes`, except the axes are
+    returned in sorted order and the shape is reordered to match.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    shape : int or array_like of ints or None
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If `shape` is -1, the size of the corresponding dimension of `x` is
+        used.
+    axes : int or array_like of ints or None
+        Axes along which the calculation is computed.
+        The default is over all axes.
+        Negative indices are automatically converted to their positive
+        counterpart.
+
+    Returns
+    -------
+    shape : array
+        The shape of the result. It is a 1D integer array.
+    axes : array
+        The shape of the result. It is a 1D integer array.
+
+    """
+    noaxes = axes is None
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+
+    if not noaxes:
+        shape = shape[axes.argsort()]
+        axes.sort()
+
+    return shape, axes

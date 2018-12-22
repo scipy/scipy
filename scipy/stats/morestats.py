@@ -26,7 +26,9 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'circmean', 'circvar', 'circstd', 'anderson_ksamp',
+           'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
+           'yeojohnson_normplot'
            ]
 
 
@@ -463,7 +465,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
             plot.title(title)
             plot.xlabel(xlabel)
             plot.ylabel(ylabel)
-    except:
+    except Exception:
         # Not an MPL object or something that looks (enough) like it.
         # Don't crash on adding labels or title
         pass
@@ -1150,6 +1152,43 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     return optimfunc(x, brack)
 
 
+def _normplot(method, x, la, lb, plot=None, N=80):
+    """Compute parameters for a Box-Cox or Yeo-Johnson normality plot,
+    optionally show it. See `boxcox_normplot` or `yeojohnson_normplot` for
+    details."""
+
+    if method == 'boxcox':
+        title = 'Box-Cox Normality Plot'
+        transform_func = boxcox
+    else:
+        title = 'Yeo-Johnson Normality Plot'
+        transform_func = yeojohnson
+
+    x = np.asarray(x)
+    if x.size == 0:
+        return x
+
+    if lb <= la:
+        raise ValueError("`lb` has to be larger than `la`.")
+
+    lmbdas = np.linspace(la, lb, num=N)
+    ppcc = lmbdas * 0.0
+    for i, val in enumerate(lmbdas):
+        # Determine for each lmbda the square root of correlation coefficient
+        # of transformed x
+        z = transform_func(x, lmbda=val)
+        _, (_, _, r) = probplot(z, dist='norm', fit=True)
+        ppcc[i] = r
+
+    if plot is not None:
+        plot.plot(lmbdas, ppcc, 'x')
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
+                               ylabel='Prob Plot Corr. Coef.',
+                               title=title)
+
+    return lmbdas, ppcc
+
+
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1215,28 +1254,333 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     >>> plt.show()
 
     """
+    return _normplot('boxcox', x, la, lb, plot, N)
+
+
+def yeojohnson(x, lmbda=None):
+    r"""
+    Return a dataset transformed by a Yeo-Johnson power transformation.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.  Should be 1-dimensional.
+    lmbda : float, optional
+        If ``lmbda`` is ``None``, find the lambda that maximizes the
+        log-likelihood function and return it as the second output argument.
+        Otherwise the transformation is done for the given value.
+
+    Returns
+    -------
+    yeojohnson: ndarray
+        Yeo-Johnson power transformed array.
+    maxlog : float, optional
+        If the `lmbda` parameter is None, the second returned argument is
+        the lambda that maximizes the log-likelihood function.
+
+    See Also
+    --------
+    probplot, yeojohnson_normplot, yeojohnson_normmax, yeojohnson_llf, boxcox
+
+    Notes
+    -----
+    The Yeo-Johnson transform is given by::
+
+        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
+            log(x + 1),                                  for x >= 0, lmbda = 0
+            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
+            -log(-x + 1),                                for x < 0, lmbda = 2
+
+    Unlike `boxcox`, `yeojohnson` does not require the input data to be
+    positive.
+
+    .. versionadded:: 1.2.0
+
+
+    References
+    ----------
+    I. Yeo and R.A. Johnson, "A New Family of Power Transformations to
+    Improve Normality or Symmetry", Biometrika 87.4 (2000):
+
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    We generate some random variates from a non-normal distribution and make a
+    probability plot for it, to show it is non-normal in the tails:
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(211)
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> prob = stats.probplot(x, dist=stats.norm, plot=ax1)
+    >>> ax1.set_xlabel('')
+    >>> ax1.set_title('Probplot against normal distribution')
+
+    We now use `yeojohnson` to transform the data so it's closest to normal:
+
+    >>> ax2 = fig.add_subplot(212)
+    >>> xt, lmbda = stats.yeojohnson(x)
+    >>> prob = stats.probplot(xt, dist=stats.norm, plot=ax2)
+    >>> ax2.set_title('Probplot after Yeo-Johnson transformation')
+
+    >>> plt.show()
+
+    """
+
     x = np.asarray(x)
     if x.size == 0:
         return x
 
-    if lb <= la:
-        raise ValueError("`lb` has to be larger than `la`.")
+    if lmbda is not None:
+        return _yeojohnson_transform(x, lmbda)
 
-    lmbdas = np.linspace(la, lb, num=N)
-    ppcc = lmbdas * 0.0
-    for i, val in enumerate(lmbdas):
-        # Determine for each lmbda the correlation coefficient of transformed x
-        z = boxcox(x, lmbda=val)
-        _, r2 = probplot(z, dist='norm', fit=True)
-        ppcc[i] = r2[-1]
+    # if lmbda=None, find the lmbda that maximizes the log-likelihood function.
+    lmax = yeojohnson_normmax(x)
+    y = _yeojohnson_transform(x, lmax)
 
-    if plot is not None:
-        plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\\lambda$',
-                               ylabel='Prob Plot Corr. Coef.',
-                               title='Box-Cox Normality Plot')
+    return y, lmax
 
-    return lmbdas, ppcc
+
+def _yeojohnson_transform(x, lmbda):
+    """Return x transformed by the Yeo-Johnson power transform with given
+    parameter lmbda."""
+
+    out = np.zeros_like(x)
+    pos = x >= 0  # binary mask
+
+    # when x >= 0
+    if abs(lmbda) < np.spacing(1.):
+        out[pos] = np.log1p(x[pos])
+    else:  # lmbda != 0
+        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+
+    # when x < 0
+    if abs(lmbda - 2) > np.spacing(1.):
+        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+    else:  # lmbda == 2
+        out[~pos] = -np.log1p(-x[~pos])
+
+    return out
+
+
+def yeojohnson_llf(lmb, data):
+    r"""The yeojohnson log-likelihood function.
+
+    Parameters
+    ----------
+    lmb : scalar
+        Parameter for Yeo-Johnson transformation. See `yeojohnson` for
+        details.
+    data : array_like
+        Data to calculate Yeo-Johnson log-likelihood for. If `data` is
+        multi-dimensional, the log-likelihood is calculated along the first
+        axis.
+
+    Returns
+    -------
+    llf : float
+        Yeo-Johnson log-likelihood of `data` given `lmb`.
+
+    See Also
+    --------
+    yeojohnson, probplot, yeojohnson_normplot, yeojohnson_normmax
+
+    Notes
+    -----
+    The Yeo-Johnson log-likelihood function is defined here as
+
+    .. math::
+
+        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+
+    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    transformed input data ``x``.
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    >>> np.random.seed(1245)
+
+    Generate some random variates and calculate Yeo-Johnson log-likelihood
+    values for them for a range of ``lmbda`` values:
+
+    >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
+    >>> lmbdas = np.linspace(-2, 10)
+    >>> llf = np.zeros(lmbdas.shape, dtype=float)
+    >>> for ii, lmbda in enumerate(lmbdas):
+    ...     llf[ii] = stats.yeojohnson_llf(lmbda, x)
+
+    Also find the optimal lmbda value with `yeojohnson`:
+
+    >>> x_most_normal, lmbda_optimal = stats.yeojohnson(x)
+
+    Plot the log-likelihood as function of lmbda.  Add the optimal lmbda as a
+    horizontal line to check that that's really the optimum:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(lmbdas, llf, 'b.-')
+    >>> ax.axhline(stats.yeojohnson_llf(lmbda_optimal, x), color='r')
+    >>> ax.set_xlabel('lmbda parameter')
+    >>> ax.set_ylabel('Yeo-Johnson log-likelihood')
+
+    Now add some probability plots to show that where the log-likelihood is
+    maximized the data transformed with `yeojohnson` looks closest to normal:
+
+    >>> locs = [3, 10, 4]  # 'lower left', 'center', 'lower right'
+    >>> for lmbda, loc in zip([-1, lmbda_optimal, 9], locs):
+    ...     xt = stats.yeojohnson(x, lmbda=lmbda)
+    ...     (osm, osr), (slope, intercept, r_sq) = stats.probplot(xt)
+    ...     ax_inset = inset_axes(ax, width="20%", height="20%", loc=loc)
+    ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
+    ...     ax_inset.set_xticklabels([])
+    ...     ax_inset.set_yticklabels([])
+    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+
+    >>> plt.show()
+
+    """
+    data = np.asarray(data)
+    n_samples = data.shape[0]
+
+    if n_samples == 0:
+        return np.nan
+
+    trans = _yeojohnson_transform(data, lmb)
+
+    loglike = -n_samples / 2 * np.log(trans.var(axis=0))
+    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0)
+
+    return loglike
+
+
+def yeojohnson_normmax(x, brack=(-2, 2)):
+    """Compute optimal Yeo-Johnson transform parameter for input data, using
+    maximum likelihood estimation.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    brack : 2-tuple, optional
+        The starting interval for a downhill bracket search with
+        `optimize.brent`. Note that this is in most cases not critical; the
+        final result is allowed to be outside this bracket.
+
+    Returns
+    -------
+    maxlog : float
+        The optimal transform parameter found.
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
+
+    See Also
+    --------
+    yeojohnson, yeojohnson_llf, yeojohnson_normplot
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(1234)  # make this example reproducible
+
+    Generate some data and determine optimal ``lmbda``
+
+    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> lmax = stats.yeojohnson_normmax(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -10, 10, plot=ax)
+    >>> ax.axvline(lmax, color='r')
+
+    >>> plt.show()
+
+    """
+
+    def _neg_llf(lmbda, data):
+        return -yeojohnson_llf(lmbda, data)
+
+    return optimize.brent(_neg_llf, brack=brack, args=(x,))
+
+
+def yeojohnson_normplot(x, la, lb, plot=None, N=80):
+    """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
+
+    A Yeo-Johnson normality plot shows graphically what the best
+    transformation parameter is to use in `yeojohnson` to obtain a
+    distribution that is close to normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    la, lb : scalar
+        The lower and upper bounds for the ``lmbda`` values to pass to
+        `yeojohnson` for Yeo-Johnson transformations. These are also the
+        limits of the horizontal axis of the plot if that is generated.
+    plot : object, optional
+        If given, plots the quantiles and least squares fit.
+        `plot` is an object that has to have methods "plot" and "text".
+        The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
+        or a custom object with the same methods.
+        Default is None, which means that no plot is created.
+    N : int, optional
+        Number of points on the horizontal axis (equally distributed from
+        `la` to `lb`).
+
+    Returns
+    -------
+    lmbdas : ndarray
+        The ``lmbda`` values for which a Yeo-Johnson transform was done.
+    ppcc : ndarray
+        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        when fitting the Box-Cox transformed input `x` against a normal
+        distribution.
+
+    See Also
+    --------
+    probplot, yeojohnson, yeojohnson_normmax, yeojohnson_llf, ppcc_max
+
+    Notes
+    -----
+    Even if `plot` is given, the figure is not shown or saved by
+    `boxcox_normplot`; ``plt.show()`` or ``plt.savefig('figname.png')``
+    should be used after calling `probplot`.
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Generate some non-normally distributed data, and create a Yeo-Johnson plot:
+
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -20, 20, plot=ax)
+
+    Determine and plot the optimal ``lmbda`` to transform ``x`` and plot it in
+    the same plot:
+
+    >>> _, maxlog = stats.yeojohnson(x)
+    >>> ax.axvline(maxlog, color='r')
+
+    >>> plt.show()
+
+    """
+    return _normplot('yeojohnson', x, la, lb, plot, N)
 
 
 def shapiro(x):
@@ -1571,7 +1915,8 @@ def anderson_ksamp(samples, midrank=True):
         The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected.
+        provided samples can be rejected. The value is floored / capped at
+        1% / 25%.
 
     Raises
     ------
@@ -1586,7 +1931,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Notes
     -----
-    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    [1]_ defines three versions of the k-sample Anderson-Darling test:
     one for continuous distributions and two for discrete
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
@@ -1596,6 +1941,12 @@ def anderson_ksamp(samples, midrank=True):
     data. According to [1]_, the two discrete test statistics differ
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
+
+    The critical values corresponding to the significance levels from 0.01
+    to 0.25 are taken from [1]_. p-values are floored / capped
+    at 0.1% / 25%. Since the range of critical values might be extended in
+    future releases, it is recommended not to test ``p == 0.25``, but rather
+    ``p >= 0.25`` (analogously for the lower bound).
 
     .. versionadded:: 0.14.0
 
@@ -1614,24 +1965,26 @@ def anderson_ksamp(samples, midrank=True):
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.1%:
+    significance level of 3.2%:
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(loc=0.5, size=30)])
     (2.4615796189876105,
-      array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
-      0.03134990135800783)
+      array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
+      0.03176687568842282)
 
 
     The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The approximate p-value (87%) has to be
-    computed by extrapolation and may not be very accurate:
+    identical distribution. The reported p-value (25%) has been capped and
+    may not be very accurate (since it corresponds to the value 0.449
+    whereas the statistic is -0.731):
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(size=30), np.random.normal(size=20)])
     (-0.73091722665244196,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
-      0.8789283903979661)
+      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101]),
+      0.25)
 
     """
     k = len(samples)
@@ -1671,17 +2024,25 @@ def anderson_ksamp(samples, midrank=True):
 
     # The b_i values are the interpolation coefficients from Table 2
     # of Scholz and Stephens 1987
-    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
-    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
-    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
+    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085])
+    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615])
+    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396, -0.345, -0.154])
     critical = b0 + b1 / math.sqrt(m) + b2 / m
-    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
-    if A2 < critical.min() or A2 > critical.max():
-        warnings.warn("approximate p-value will be computed by extrapolation")
-    try:
+
+    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
+    if A2 < critical.min():
+        p = sig.max()
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
+        p = sig.min()
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
+        # interpolation of probit of significance level
+        pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-    except (OverflowError,):
-        p = float("inf")
+
     return Anderson_ksampResult(A2, critical, p)
 
 
@@ -1796,7 +2157,8 @@ def bartlett(*args):
     Parameters
     ----------
     sample1, sample2,... : array_like
-        arrays of sample data.  May be different lengths.
+        arrays of sample data.  Only 1d arrays are accepted, they may have
+        different lengths.
 
     Returns
     -------
@@ -1815,7 +2177,8 @@ def bartlett(*args):
     Conover et al. (1981) examine many of the existing parametric and
     nonparametric tests by extensive simulations and they conclude that the
     tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
-    superior in terms of robustness of departures from normality and power [3]_.
+    superior in terms of robustness of departures from normality and power
+    ([3]_).
 
     References
     ----------
@@ -1834,10 +2197,12 @@ def bartlett(*args):
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
     """
-    # Handle empty input
+    # Handle empty input and input that is not 1d
     for a in args:
         if np.asanyarray(a).size == 0:
             return BartlettResult(np.nan, np.nan)
+        if np.asanyarray(a).ndim > 1:
+            raise ValueError('Samples must be one-dimensional.')
 
     k = len(args)
     if k < 2:
@@ -1873,7 +2238,8 @@ def levene(*args, **kwds):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        The sample data, possibly with different lengths
+        The sample data, possibly with different lengths. Only one-dimensional
+        samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
         Which function of the data to use in the test.  The default
         is 'median'.
@@ -1897,6 +2263,11 @@ def levene(*args, **kwds):
       * 'median' : Recommended for skewed (non-normal) distributions>
       * 'mean' : Recommended for symmetric, moderate-tailed distributions.
       * 'trimmed' : Recommended for heavy-tailed distributions.
+
+    The test version using the mean was proposed in the original article
+    of Levene ([2]_) while the median and trimmed mean have been studied by
+    Brown and Forsythe ([3]_), sometimes also referred to as Brown-Forsythe
+    test.
 
     References
     ----------
@@ -1923,12 +2294,17 @@ def levene(*args, **kwds):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+    # check for 1d input
+    for j in range(k):
+        if np.asanyarray(args[j]).ndim > 1:
+            raise ValueError('Samples must be one-dimensional.')
+
     Ni = zeros(k)
     Yci = zeros(k, 'd')
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
+                         " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2002,6 +2378,20 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Binomial_test
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    A car manufacturer claims that no more than 10% of their cars are unsafe.
+    15 cars are inspected for safety, 3 were found to be unsafe. Test the
+    manufacturer's claim:
+
+    >>> stats.binom_test(3, n=15, p=0.1, alternative='greater')
+    0.18406106910639114
+
+    The null hypothesis cannot be rejected at the 5% level of significance
+    because the returned p-value is greater than the critical value of 5%.
 
     """
     x = atleast_1d(x).astype(np.integer)

@@ -10,7 +10,6 @@ import numpy as np
 from . import _iterative
 
 from scipy.sparse.linalg.interface import LinearOperator
-from scipy._lib.decorator import decorator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant

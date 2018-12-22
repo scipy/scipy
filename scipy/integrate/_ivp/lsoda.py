@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import ode
-from .common import validate_tol, warn_extraneous
+from .common import validate_tol, validate_first_step, warn_extraneous
 from .base import OdeSolver, DenseOutput
 
 
@@ -110,8 +110,10 @@ class LSODA(OdeSolver):
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
-        elif first_step <= 0:
-            raise ValueError("`first_step` must be positive or None.")
+        else:
+            first_step = validate_first_step(first_step, t0, t_bound)
+
+        first_step *= self.direction
 
         if max_step == np.inf:
             max_step = 0  # LSODA value for infinity.

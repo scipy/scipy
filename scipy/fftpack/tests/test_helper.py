@@ -11,10 +11,12 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from numpy.testing import (assert_array_almost_equal,
-                           assert_equal, assert_)
+from pytest import raises as assert_raises
+from numpy.testing import assert_array_almost_equal, assert_equal, assert_
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
-from scipy.fftpack.helper import next_fast_len
+from scipy.fftpack.helper import (next_fast_len,
+                                  _init_nd_shape_and_axes,
+                                  _init_nd_shape_and_axes_sorted)
 
 from numpy import pi, random
 import numpy as np
@@ -166,3 +168,249 @@ class TestNextOptLen(object):
         for x, y in hams.items():
             assert_equal(next_fast_len(x), y)
 
+
+class Test_init_nd_shape_and_axes(object):
+
+    def test_py_0d_defaults(self):
+        x = 4
+        shape = None
+        axes = None
+
+        shape_expected = np.array([])
+        axes_expected = np.array([])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_0d_defaults(self):
+        x = np.array(7.)
+        shape = None
+        axes = None
+
+        shape_expected = np.array([])
+        axes_expected = np.array([])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_py_1d_defaults(self):
+        x = [1, 2, 3]
+        shape = None
+        axes = None
+
+        shape_expected = np.array([3])
+        axes_expected = np.array([0])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_1d_defaults(self):
+        x = np.arange(0, 1, .1)
+        shape = None
+        axes = None
+
+        shape_expected = np.array([10])
+        axes_expected = np.array([0])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_py_2d_defaults(self):
+        x = [[1, 2, 3, 4],
+             [5, 6, 7, 8]]
+        shape = None
+        axes = None
+
+        shape_expected = np.array([2, 4])
+        axes_expected = np.array([0, 1])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_2d_defaults(self):
+        x = np.arange(0, 1, .1).reshape(5, 2)
+        shape = None
+        axes = None
+
+        shape_expected = np.array([5, 2])
+        axes_expected = np.array([0, 1])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_5d_defaults(self):
+        x = np.zeros([6, 2, 5, 3, 4])
+        shape = None
+        axes = None
+
+        shape_expected = np.array([6, 2, 5, 3, 4])
+        axes_expected = np.array([0, 1, 2, 3, 4])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_5d_set_shape(self):
+        x = np.zeros([6, 2, 5, 3, 4])
+        shape = [10, -1, -1, 1, 4]
+        axes = None
+
+        shape_expected = np.array([10, 2, 5, 1, 4])
+        axes_expected = np.array([0, 1, 2, 3, 4])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_5d_set_axes(self):
+        x = np.zeros([6, 2, 5, 3, 4])
+        shape = None
+        axes = [4, 1, 2]
+
+        shape_expected = np.array([4, 2, 5])
+        axes_expected = np.array([4, 1, 2])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_5d_set_axes_sorted(self):
+        x = np.zeros([6, 2, 5, 3, 4])
+        shape = None
+        axes = [4, 1, 2]
+
+        shape_expected = np.array([2, 5, 4])
+        axes_expected = np.array([1, 2, 4])
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_5d_set_shape_axes(self):
+        x = np.zeros([6, 2, 5, 3, 4])
+        shape = [10, -1, 2]
+        axes = [1, 0, 3]
+
+        shape_expected = np.array([10, 6, 2])
+        axes_expected = np.array([1, 0, 3])
+
+        shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_np_5d_set_shape_axes_sorted(self):
+        x = np.zeros([6, 2, 5, 3, 4])
+        shape = [10, -1, 2]
+        axes = [1, 0, 3]
+
+        shape_expected = np.array([6, 10, 2])
+        axes_expected = np.array([0, 1, 3])
+
+        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
+
+        assert_equal(shape_res, shape_expected)
+        assert_equal(axes_res, axes_expected)
+
+    def test_errors(self):
+        with assert_raises(ValueError,
+                           match="when given, axes values must be a scalar"
+                           " or vector"):
+            _init_nd_shape_and_axes([0], shape=None, axes=[[1, 2], [3, 4]])
+
+        with assert_raises(ValueError,
+                           match="when given, axes values must be integers"):
+            _init_nd_shape_and_axes([0], shape=None, axes=[1., 2., 3., 4.])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            _init_nd_shape_and_axes([0], shape=None, axes=[1])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            _init_nd_shape_and_axes([0], shape=None, axes=[-2])
+
+        with assert_raises(ValueError,
+                           match="all axes must be unique"):
+            _init_nd_shape_and_axes([0], shape=None, axes=[0, 0])
+
+        with assert_raises(ValueError,
+                           match="when given, shape values must be a scalar "
+                           "or vector"):
+            _init_nd_shape_and_axes([0], shape=[[1, 2], [3, 4]], axes=None)
+
+        with assert_raises(ValueError,
+                           match="when given, shape values must be integers"):
+            _init_nd_shape_and_axes([0], shape=[1., 2., 3., 4.], axes=None)
+
+        with assert_raises(ValueError,
+                           match="when given, axes and shape arguments"
+                           " have to be of the same length"):
+            _init_nd_shape_and_axes(np.zeros([1, 1, 1, 1]),
+                                    shape=[1, 2, 3], axes=[1])
+
+        with assert_raises(ValueError,
+                           match="invalid number of data points"
+                           r" \(\[0\]\) specified"):
+            _init_nd_shape_and_axes([0], shape=[0], axes=None)
+
+        with assert_raises(ValueError,
+                           match="invalid number of data points"
+                           r" \(\[-2\]\) specified"):
+            _init_nd_shape_and_axes([0], shape=-2, axes=None)

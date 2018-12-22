@@ -16,7 +16,7 @@ give SciPy a try!
 
 """
 
-DOCLINES = __doc__.split("\n")
+DOCLINES = (__doc__ or '').split("\n")
 
 import os
 import sys
@@ -57,7 +57,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 2
+MINOR = 3
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -150,7 +150,7 @@ if not release:
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True
-except:
+except Exception:
     HAVE_SPHINX = False
 
 if HAVE_SPHINX:
@@ -211,6 +211,8 @@ def get_build_ext_override():
                 script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
                 with open(script_fn, 'w') as f:
                     f.write(text)
+                    # line below fixes gh-8680
+                    ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
 
             old_build_ext.build_extension(self, ext)

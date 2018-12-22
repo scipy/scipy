@@ -25,7 +25,8 @@ __all__ = ['argstoarray',
            'rankdata',
            'scoreatpercentile','sem',
            'sen_seasonal_slopes','skew','skewtest','spearmanr',
-           'theilslopes','tmax','tmean','tmin','trim','trimboth',
+           'siegelslopes', 'theilslopes',
+           'tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
@@ -50,7 +51,8 @@ import scipy.special as special
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
-        theilslopes as stats_theilslopes
+        theilslopes as stats_theilslopes,
+        siegelslopes as stats_siegelslopes
         )
 
 
@@ -86,7 +88,7 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
-def _chk_size(a,b):
+def _chk_size(a, b):
     a = ma.asanyarray(a)
     b = ma.asanyarray(b)
     (na, nb) = (a.size, b.size)
@@ -409,7 +411,7 @@ def pearsonr(x,y):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y, use_ties=True):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -433,12 +435,23 @@ def spearmanr(x, y, use_ties=True):
 
     Parameters
     ----------
-    x : array_like
-        The length of `x` must be > 2.
-    y : array_like
-        The length of `y` must be > 2.
+    x, y : 1D or 2D array_like, y is optional
+        One or two 1-D or 2-D arrays containing multiple variables and
+        observations. When these are 1-D, each represents a vector of
+        observations of a single variable. For the behavior in the 2-D case,
+        see under ``axis``, below.
     use_ties : bool, optional
-        Whether the correction for ties should be computed.
+        DO NOT USE.  Does not do anything, keyword is only left in place for
+        backwards compatibility reasons.
+    axis : int or None, optional
+        If axis=0 (default), then each column represents a variable, with
+        observations in the rows. If axis=1, the relationship is transposed:
+        each row represents a variable, while the columns contain observations.
+        If axis=None, then both arrays will be raveled.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -452,48 +465,76 @@ def spearmanr(x, y, use_ties=True):
     [CRCProbStat2000] section 14.7
 
     """
-    (x, y, n) = _chk_size(x, y)
-    (x, y) = (x.ravel(), y.ravel())
+    if not use_ties:
+        raise ValueError("`use_ties=False` is not supported in SciPy >= 1.2.0")
 
-    m = ma.mask_or(ma.getmask(x), ma.getmask(y))
-    # need int() here, otherwise numpy defaults to 32 bit
-    # integer on all Windows architectures, causing overflow.
-    # int() will keep it infinite precision.
-    n -= int(m.sum())
-    if m is not nomask:
-        x = ma.array(x, mask=m, copy=True)
-        y = ma.array(y, mask=m, copy=True)
-    df = n-2
-    if df < 0:
-        raise ValueError("The input must have at least 3 entries!")
+    # Always returns a masked array, raveled if axis=None
+    x, axisout = _chk_asarray(x, axis)
+    if y is not None:
+        # Deal only with 2-D `x` case.
+        y, _ = _chk_asarray(y, axis)
+        if axisout == 0:
+            x = ma.column_stack((x, y))
+        else:
+            x = ma.row_stack((x, y))
 
-    # Gets the ranks and rank differences
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    dsq = np.add.reduce((rankx-ranky)**2)
-    # Tie correction
-    if use_ties:
-        xties = count_tied_groups(x)
-        yties = count_tied_groups(y)
-        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+    if axisout == 1:
+        # To simplify the code that follow (always use `n_obs, n_vars` shape)
+        x = x.T
+
+    if nan_policy == 'omit':
+        x = ma.masked_invalid(x)
+
+    def _spearmanr_2cols(x):
+        # Mask the same observations for all variables, and then drop those
+        # observations (can't leave them masked, rankdata is weird).
+        x = ma.mask_rowcols(x, axis=0)
+        x = x[~x.mask.any(axis=1), :]
+
+        m = ma.getmask(x)
+        n_obs = x.shape[0]
+        dof = n_obs - 2 - int(m.sum(axis=0)[0])
+        if dof < 0:
+            raise ValueError("The input must have at least 3 entries!")
+
+        # Gets the ranks and rank differences
+        x_ranked = rankdata(x, axis=0)
+        rs = ma.corrcoef(x_ranked, rowvar=False).data
+
+        # rs can have elements equal to 1, so avoid zero division warnings
+        olderr = np.seterr(divide='ignore')
+        try:
+            # clip the small negative values possibly caused by rounding
+            # errors before taking the square root
+            t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
+        finally:
+            np.seterr(**olderr)
+
+        prob = 2 * distributions.t.sf(np.abs(t), dof)
+
+        # For backwards compatibility, return scalars when comparing 2 columns
+        if rs.shape == (2, 2):
+            return SpearmanrResult(rs[1, 0], prob[1, 0])
+        else:
+            return SpearmanrResult(rs, prob)
+
+    # Need to do this per pair of variables, otherwise the dropped observations
+    # in a third column mess up the result for a pair.
+    n_vars = x.shape[1]
+    if n_vars == 2:
+        return _spearmanr_2cols(x)
     else:
-        corr_x = corr_y = 0
+        rs = np.ones((n_vars, n_vars), dtype=float)
+        prob = np.zeros((n_vars, n_vars), dtype=float)
+        for var1 in range(n_vars - 1):
+            for var2 in range(var1+1, n_vars):
+                result = _spearmanr_2cols(x[:, [var1, var2]])
+                rs[var1, var2] = result.correlation
+                rs[var2, var1] = result.correlation
+                prob[var1, var2] = result.pvalue
+                prob[var2, var1] = result.pvalue
 
-    denom = n*(n**2 - 1)/6.
-    if corr_x != 0 or corr_y != 0:
-        rho = denom - dsq - corr_x - corr_y
-        rho /= ma.sqrt((denom-2*corr_x)*(denom-2*corr_y))
-    else:
-        rho = 1. - dsq/denom
-
-    t = ma.sqrt(ma.divide(df,(rho+1.0)*(1.0-rho))) * rho
-    if t is masked:
-        prob = 0.
-    else:
-        prob = _betai(0.5*df, 0.5, df/(df + t * t))
-
-    return SpearmanrResult(rho, prob)
+        return SpearmanrResult(rs, prob)
 
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
@@ -829,6 +870,11 @@ def theilslopes(y, x=None, alpha=0.95):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
+    See also
+    --------
+    siegelslopes : a similar technique with repeated medians
+
+
     Notes
     -----
     For more details on `theilslopes`, see `stats.theilslopes`.
@@ -849,6 +895,60 @@ def theilslopes(y, x=None, alpha=0.95):
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
     return stats_theilslopes(y, x, alpha=alpha)
+
+
+def siegelslopes(y, x=None, method="hierarchical"):
+    r"""
+    Computes the Siegel estimator for a set of points (x, y).
+
+    `siegelslopes` implements a method for robust linear regression
+    using repeated medians to fit a line to the points (x, y).
+    The method is robust to outliers with an asymptotic breakdown point
+    of 50%.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    method : {'hierarchical', 'separate'}
+        If 'hierarchical', estimate the intercept using the estimated
+        slope ``medslope`` (default option).
+        If 'separate', estimate the intercept independent of the estimated
+        slope. See Notes for details.
+
+    Returns
+    -------
+    medslope : float
+        Estimate of the slope of the regression line.
+    medintercept : float
+        Estimate of the intercept of the regression line.
+
+    See also
+    --------
+    theilslopes : a similar technique without repeated medians
+
+    Notes
+    -----
+    For more details on `siegelslopes`, see `scipy.stats.siegelslopes`.
+
+    """
+    y = ma.asarray(y).ravel()
+    if x is None:
+        x = ma.arange(len(y), dtype=float)
+    else:
+        x = ma.asarray(x).ravel()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+
+    m = ma.mask_or(ma.getmask(x), ma.getmask(y))
+    y._mask = x._mask = m
+    # Disregard any masked elements of x or y
+    y = y.compressed()
+    x = x.compressed().astype(float)
+    # We now have unmasked arrays so can use `stats.siegelslopes`
+    return stats_siegelslopes(y, x)
 
 
 def sen_seasonal_slopes(x):
@@ -932,6 +1032,7 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         population variances.
         If False, perform Welch's t-test, which does not assume equal population
         variance.
+
         .. versionadded:: 0.17.0
 
     Returns
@@ -1101,6 +1202,26 @@ def kruskal(*args):
     Notes
     -----
     For more details on `kruskal`, see `stats.kruskal`.
+
+    Examples
+    --------
+    >>> from scipy.stats.mstats import kruskal
+
+    Random samples from three different brands of batteries were tested
+    to see how long the charge lasted. Results were as follows:
+
+    >>> a = [6.3, 5.4, 5.7, 5.2, 5.0]
+    >>> b = [6.9, 7.0, 6.1, 7.9]
+    >>> c = [7.2, 6.9, 6.1, 6.5]
+
+    Test the hypotesis that the distribution functions for all of the brands'
+    durations are identical. Use 5% level of significance.
+
+    >>> kruskal(a, b, c)
+    KruskalResult(statistic=7.113812154696133, pvalue=0.028526948491942164)
+
+    The null hypothesis is rejected at the 5% level of significance
+    because the returned p-value is less than the critical value of 5%.
 
     """
     output = argstoarray(*args)
@@ -2264,8 +2385,7 @@ def skewtest(a, axis=0):
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
-KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
-                                                       'pvalue'))
+KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 def kurtosistest(a, axis=0):
@@ -2314,11 +2434,12 @@ def kurtosistest(a, axis=0):
     denom = 1 + x*ma.sqrt(2/(A-4.0))
     if np.ma.isMaskedArray(denom):
         # For multi-dimensional array input
-        denom[denom < 0] = masked
-    elif denom < 0:
+        denom[denom == 0.0] = masked
+    elif denom == 0.0:
         denom = masked
 
-    term2 = ma.power((1-2.0/A)/denom,1/3.0)
+    term2 = np.ma.where(denom > 0, ma.power((1-2.0/A)/denom, 1/3.0),
+                        -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))

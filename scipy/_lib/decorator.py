@@ -189,7 +189,7 @@ class FunctionMaker(object):
         try:
             code = compile(src, filename, 'single')
             exec(code, evaldict)
-        except:
+        except:  # noqa: E722
             print('Error in generated code:', file=sys.stderr)
             print(src, file=sys.stderr)
             raise

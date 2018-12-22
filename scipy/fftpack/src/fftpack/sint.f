@@ -1,5 +1,7 @@
       SUBROUTINE SINT (N,X,WSAVE)
-      DIMENSION       X(*)       ,WSAVE(*)
+      IMPLICIT NONE
+      INTEGER :: N, IW1, IW2, IW3, NP1
+      REAL :: X(*), WSAVE(*)
       NP1 = N+1
       IW1 = N/2+1
       IW2 = IW1+NP1

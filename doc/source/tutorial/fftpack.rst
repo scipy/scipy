@@ -137,7 +137,7 @@ truncated for illustrative purposes).
 
 
 In case the sequence x is complex-valued, the spectrum is no longer symmetric.
-To simplify working wit the FFT functions, scipy provides the following two
+To simplify working with the FFT functions, scipy provides the following two
 helper functions.
 
 The function :func:`fftfreq` returns the FFT sample frequency points.

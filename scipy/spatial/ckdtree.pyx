@@ -856,7 +856,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, np.float64_t r,
-                         np.float64_t p=2., np.float64_t eps=0, n_jobs=1):
+                         np.float64_t p=2., np.float64_t eps=0, n_jobs=1,
+                         return_sorted=None):
         """
         query_ball_point(self, x, r, p=2., eps=0)
         
@@ -878,6 +879,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         n_jobs : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
+        return_sorted : bool, optional
+            Sorts returned indicies if True and does not sort them if False. If
+            None, does not sort single point queries, but does sort
+            multi-point queries which was the behavior before this option
+            was added.
+
+            .. versionadded:: 1.2.0
 
         Returns
         -------
@@ -932,7 +940,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 if NPY_LIKELY(n > 0):
                     cur = npy_intp_vector_buf(vres)
                     for i in range(n):
-                        tmp[i] = cur[0]
+                        if return_sorted:
+                            tmp[i] = sorted(cur[0])
+                        else:
+                            tmp[i] = cur[0]
                         cur += 1
                 result = tmp
             
@@ -1006,7 +1017,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         for j in range(m):
                             tmp[j] = cur[0]
                             cur += 1
-                        result[c] = sorted(tmp)
+                        if return_sorted or return_sorted is None:
+                            result[c] = sorted(tmp)
+                        else:
+                            result[c] = tmp
                     else:
                         result[c] = []
                     i += 1

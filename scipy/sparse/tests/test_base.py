@@ -1701,6 +1701,13 @@ class _TestCommon(object):
             assert_equal(c.format,format)
             assert_array_equal(c.todense(), D)
 
+        for format in ['array', 'dense']:
+            a = A.asformat(format)
+            assert_array_equal(a, D)
+
+            b = self.spmatrix(D+3j).asformat(format)
+            assert_array_equal(b, D+3j)
+
     def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
@@ -4074,6 +4081,17 @@ class TestCOO(sparse_test_class(getset=False,
         y = x.reshape(new_shape, copy=True)
         assert_(not np.may_share_memory(y.data, x.data))
 
+    def test_large_dimensions_reshape(self):
+        # Test that reshape is immune to integer overflow when number of elements
+        # exceeds 2^31-1
+        mat1 = coo_matrix(([1], ([3000000], [1000])), (3000001, 1001))
+        mat2 = coo_matrix(([1], ([1000], [3000000])), (1001, 3000001))
+
+        # assert_array_equal is slow for big matrices because it expects dense
+        # Using __ne__ and nnz instead
+        assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
+        assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
+
 
 TestCOO.init_class()
 
@@ -4185,6 +4203,29 @@ class TestBSR(sparse_test_class(getset=False,
         indptr = np.array([0, n], dtype=np.int32)
         indices = np.arange(n, dtype=np.int32)
         bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+
+    def test_bsr_tocsr(self):
+        # check native conversion from BSR to CSR
+        indptr = array([0, 2, 2, 4])
+        indices = array([0, 2, 2, 3])
+        data = zeros((4, 2, 3))
+
+        data[0] = array([[0, 1, 2],
+                         [3, 0, 5]])
+        data[1] = array([[0, 2, 4],
+                         [6, 0, 10]])
+        data[2] = array([[0, 4, 8],
+                         [12, 0, 20]])
+        data[3] = array([[0, 5, 10],
+                         [15, 0, 25]])
+
+        A = kron([[1, 0, 2, 0], [0, 0, 0, 0], [0, 0, 4, 5]],
+                 [[0, 1, 2], [3, 0, 5]])
+        Absr = bsr_matrix((data, indices, indptr), shape=(6, 12))
+        Acsr = Absr.tocsr()
+        Acsr_via_coo = Absr.tocoo().tocsr()
+        assert_equal(Acsr.todense(), A)
+        assert_equal(Acsr.todense(), Acsr_via_coo.todense())
 
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
@@ -4487,6 +4528,7 @@ def cases_64bit():
         'test_inv': 'linsolve for 64-bit indices not available',
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
+        'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
     }
 
     for cls in TEST_CLASSES:

@@ -77,6 +77,24 @@ def fixed_quad(func, a, b, args=(), n=5):
     ode : ODE integrator
     odeint : ODE integrator
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
+    (0.1110884353741496, None)
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=5)
+    (0.11111111111111102, None)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=4)
+    (0.9999999771971152, None)
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=5)
+    (1.000000000039565, None)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
+
     """
     x, w = _cached_roots_legendre(n)
     x = np.real(x)
@@ -180,6 +198,20 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.quadrature(f, 0.0, 1.0)
+    (0.11111111111111106, 4.163336342344337e-17)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.quadrature(np.cos, 0.0, np.pi/2)
+    (0.9999999999999536, 3.9611425250996035e-11)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
 
     """
     if not isinstance(args, tuple):
@@ -294,7 +326,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.ones(shape, dtype=res.dtype) * initial, res],
+        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
                              axis=axis)
 
     return res
@@ -505,13 +537,13 @@ def romb(y, dx=1.0, axis=-1, show=False):
     -0.742561336672229
 
     >>> integrate.romb(y, show=True)
-    Richardson Extrapolation Table for Romberg Integration       
+    Richardson Extrapolation Table for Romberg Integration
     ====================================================================
-    -0.81576 
-    4.63862  6.45674 
-    -1.10581 -3.02062 -3.65245 
-    -2.57379 -3.06311 -3.06595 -3.05664 
-    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256 
+    -0.81576
+    4.63862  6.45674
+    -1.10581 -3.02062 -3.65245
+    -2.57379 -3.06311 -3.06595 -3.05664
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
     ====================================================================
     -0.742561336672229
     """
@@ -818,21 +850,21 @@ _builtincoeffs = {
 
 
 def newton_cotes(rn, equal=0):
-    """
+    r"""
     Return weights and error coefficient for Newton-Cotes integration.
 
     Suppose we have (N+1) samples of f at the positions
     x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
     integral between x_0 and x_N is:
 
-    :math:`\\int_{x_0}^{x_N} f(x)dx = \\Delta x \\sum_{i=0}^{N} a_i f(x_i)
-    + B_N (\\Delta x)^{N+2} f^{N+1} (\\xi)`
+    :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
+    + B_N (\Delta x)^{N+2} f^{N+1} (\xi)`
 
-    where :math:`\\xi \\in [x_0,x_N]`
-    and :math:`\\Delta x = \\frac{x_N-x_0}{N}` is the average samples spacing.
+    where :math:`\xi \in [x_0,x_N]`
+    and :math:`\Delta x = \frac{x_N-x_0}{N}` is the average samples spacing.
 
     If the samples are equally-spaced and N is even, then the error
-    term is :math:`B_N (\\Delta x)^{N+3} f^{N+2}(\\xi)`.
+    term is :math:`B_N (\Delta x)^{N+3} f^{N+2}(\xi)`.
 
     Parameters
     ----------
@@ -851,6 +883,30 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Examples
+    --------
+    Compute the integral of sin(x) in [0, :math:`\pi`]:
+
+    >>> from scipy.integrate import newton_cotes
+    >>> def f(x):
+    ...     return np.sin(x)
+    >>> a = 0
+    >>> b = np.pi
+    >>> exact = 2
+    >>> for N in [2, 4, 6, 8, 10]:
+    ...     x = np.linspace(a, b, N + 1)
+    ...     an, B = newton_cotes(N, 1)
+    ...     dx = (b - a) / N
+    ...     quad = dx * np.sum(an * f(x))
+    ...     error = abs(quad - exact)
+    ...     print('{:2d}  {:10.9f}  {:.5e}'.format(N, quad, error))
+    ...
+     2   2.094395102   9.43951e-02
+     4   1.998570732   1.42927e-03
+     6   2.000017814   1.78136e-05
+     8   1.999999835   1.64725e-07
+    10   2.000000001   1.14677e-09
+
     Notes
     -----
     Normally, the Newton-Cotes rules are used on smaller integration
@@ -863,7 +919,7 @@ def newton_cotes(rn, equal=0):
             rn = np.arange(N+1)
         elif np.all(np.diff(rn) == 1):
             equal = 1
-    except:
+    except Exception:
         N = rn
         rn = np.arange(N+1)
         equal = 1

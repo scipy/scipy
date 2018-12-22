@@ -130,6 +130,7 @@ change is made.
 * `scipy.spatial`
 
   - `scipy.spatial.distance`
+  - `scipy.spatial.transform`
 
 * `scipy.special`
 
@@ -137,4 +138,3 @@ change is made.
 
   - `scipy.stats.distributions`
   - `scipy.stats.mstats`
-

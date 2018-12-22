@@ -727,7 +727,7 @@ def iddr_aid(A, k):
     w = iddr_aidi(m, n, k)
     idx, proj = _id.iddr_aid(A, k, w)
     if k == n:
-        proj = np.array([], dtype='float64', order='F')
+        proj = np.empty((k, n-k), dtype='float64', order='F')
     else:
         proj = proj.reshape((k, n-k), order='F')
     return idx, proj
@@ -1523,7 +1523,7 @@ def idzr_aid(A, k):
     w = idzr_aidi(m, n, k)
     idx, proj = _id.idzr_aid(A, k, w)
     if k == n:
-        proj = np.array([], dtype='complex128', order='F')
+        proj = np.empty((k, n-k), dtype='complex128', order='F')
     else:
         proj = proj.reshape((k, n-k), order='F')
     return idx, proj

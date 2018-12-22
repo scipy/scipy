@@ -698,6 +698,19 @@ class TestInterp1D(object):
                 assert_(np.isnan(outn).all())
                 assert_equal(out.shape, outn.shape)
 
+    def test_read_only(self):
+        x = np.arange(0, 10)
+        y = np.exp(-x / 3.0)
+        xnew = np.arange(0, 9, 0.1)
+        # Check both read-only and not read-only:
+        for writeable in (True, False):
+            xnew.flags.writeable = writeable
+            for kind in ('linear', 'nearest', 'zero', 'slinear', 'quadratic',
+                         'cubic'):
+                f = interp1d(x, y, kind=kind)
+                vals = f(xnew)
+                assert_(np.isfinite(vals).all())
+
 
 class TestLagrange(object):
 
@@ -778,14 +791,9 @@ class TestAkima1DInterpolator(object):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y)
-        try:
+        match = "Extending a 1D Akima interpolator is not yet implemented"
+        with pytest.raises(NotImplementedError, match=match):
             ak.extend(None, None)
-        except NotImplementedError as e:
-            if str(e) != ("Extending a 1D Akima interpolator is not "
-                          "yet implemented"):
-                raise
-        except:
-            raise
 
 
 class TestPPolyCommon(object):

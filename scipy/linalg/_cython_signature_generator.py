@@ -55,7 +55,7 @@ def get_sig_name(line):
 def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
     if directory[-1] in ['/', '\\']:
         directory = directory[:-1]
-    files = glob.glob(directory + '/*.f*')
+    files = sorted(glob.glob(directory + '/*.f*'))
     if exclusions is None:
         exclusions = []
     if manual_wrappers is not None:

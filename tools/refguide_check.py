@@ -92,6 +92,7 @@ PUBLIC_SUBMODULES = [
     'sparse.linalg',
     'spatial',
     'spatial.distance',
+    'spatial.transform',
     'special',
     'stats',
     'stats.mstats',
@@ -259,7 +260,7 @@ def is_deprecated(f):
             f(**{"not a kwarg":None})
         except DeprecationWarning:
             return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -422,7 +423,7 @@ def check_rest(module, names, dots=True):
         else:
             try:
                 text = str(get_doc_object(obj))
-            except:
+            except Exception:
                 import traceback
                 results.append((full_name, False,
                                 "Error in docstring format!\n" +
@@ -566,7 +567,21 @@ class Checker(doctest.OutputChecker):
         try:
             a_want = eval(want, dict(self.ns))
             a_got = eval(got, dict(self.ns))
-        except:
+        except Exception:
+            # Maybe we're printing a numpy array? This produces invalid python
+            # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
+            # values. So, reinsert commas and retry.
+            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            #              (2) n-dim arrays with n > 1
+            s_want = want.strip()
+            s_got = got.strip()
+            cond = (s_want.startswith("[") and s_want.endswith("]") and
+                    s_got.startswith("[") and s_got.endswith("]"))
+            if cond:
+                s_want = ", ".join(s_want[1:-1].split())
+                s_got = ", ".join(s_got[1:-1].split())
+                return self.check_output(s_want, s_got, optionflags)
+
             if not self.parse_namedtuples:
                 return False
             # suppose that "want"  is a tuple, and "got" is smth like
@@ -630,6 +645,12 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
             else:
                 out(msg)
 
+        # a flush method is required when a doctest uses multiprocessing
+        # multiprocessing/popen_fork.py flushes sys.stderr
+        def flush(self):
+            if doctest_warnings:
+                sys.stdout.flush()
+
     # Run tests, trying to restore global state afterward
     old_printoptions = np.get_printoptions()
     old_errstate = np.seterr()
@@ -688,7 +709,7 @@ def check_doctests(module, verbose, ns=None,
         finder = doctest.DocTestFinder()
         try:
             tests = finder.find(obj, name, globs=dict(ns))
-        except:
+        except Exception:
             import traceback
             results.append((full_name, False,
                             "Failed to get doctests!\n" +

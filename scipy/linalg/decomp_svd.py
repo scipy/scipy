@@ -405,7 +405,8 @@ def subspace_angles(A, B):
     Returns
     -------
     angles : ndarray, shape (min(N, K),)
-        The subspace angles between the column spaces of `A` and `B`.
+        The subspace angles between the column spaces of `A` and `B` in
+        descending order.
 
     See Also
     --------
@@ -489,5 +490,6 @@ def subspace_angles(A, B):
         mu_arcsin = 0.
 
     # 5. Compute the principal angles
-    theta = where(mask, mu_arcsin, arccos(clip(sigma, -1., 1.)))
+    # with reverse ordering of sigma because smallest sigma belongs to largest angle theta
+    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
     return theta

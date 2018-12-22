@@ -191,7 +191,7 @@ def _remove_redundancy_dense(A, rhs):
         try:  # fails for i==0 and any time it gets ill-conditioned
             j = b[i-1]
             lu = bg_update_dense(lu, perm_r, A[:, j], i-1)
-        except:
+        except Exception:
             lu = scipy.linalg.lu_factor(B)
             LU, p = lu
             perm_r = list(range(m))

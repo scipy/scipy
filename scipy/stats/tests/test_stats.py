@@ -30,6 +30,8 @@ import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
+from scipy.special import kv
+from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -103,7 +105,7 @@ class TestTrimmedStats(object):
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
             msg = "'propagate', 'raise', 'omit'"
-            with assert_raises(ValueError, message=msg):
+            with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
     def test_tmax(self):
@@ -422,6 +424,27 @@ class TestCorrSpearmanr(object):
         assert_raises(ValueError, stats.spearmanr, [1, 2, 1], [8, 9])
         assert_raises(ValueError, stats.spearmanr, [1, 2, 1], 8)
 
+    def test_uneven_2d_shapes(self):
+        # Different number of columns should work - those just get concatenated.
+        np.random.seed(232324)
+        x = np.random.randn(4, 3)
+        y = np.random.randn(4, 2)
+        assert stats.spearmanr(x, y).correlation.shape == (5, 5)
+        assert stats.spearmanr(x.T, y.T, axis=1).pvalue.shape == (5, 5)
+
+        assert_raises(ValueError, stats.spearmanr, x, y, axis=1)
+        assert_raises(ValueError, stats.spearmanr, x.T, y.T)
+
+    def test_ndim_too_high(self):
+        np.random.seed(232324)
+        x = np.random.randn(4, 3, 2)
+        assert_raises(ValueError, stats.spearmanr, x)
+        assert_raises(ValueError, stats.spearmanr, x, x)
+        assert_raises(ValueError, stats.spearmanr, x, None, None)
+        # But should work with axis=None (raveling axes) for two input arrays
+        assert_allclose(stats.spearmanr(x, x, axis=None),
+                        stats.spearmanr(x.flatten(), x.flatten(), axis=0))
+
     def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
@@ -540,6 +563,77 @@ class TestCorrSpearmanr(object):
         res = stats.spearmanr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
+
+    def test_1d_vs_2d(self):
+        x1 = [1, 2, 3, 4, 5, 6]
+        x2 = [1, 2, 3, 4, 6, 5]
+        res1 = stats.spearmanr(x1, x2)
+        res2 = stats.spearmanr(np.asarray([x1, x2]).T)
+        assert_allclose(res1, res2)
+
+    def test_1d_vs_2d_nans(self):
+        # Now the same with NaNs present.  Regression test for gh-9103.
+        for nan_policy in ['propagate', 'omit']:
+            x1 = [1, np.nan, 3, 4, 5, 6]
+            x2 = [1, 2, 3, 4, 6, np.nan]
+            res1 = stats.spearmanr(x1, x2, nan_policy=nan_policy)
+            res2 = stats.spearmanr(np.asarray([x1, x2]).T, nan_policy=nan_policy)
+            assert_allclose(res1, res2)
+
+    def test_3cols(self):
+        x1 = np.arange(6)
+        x2 = -x1
+        x3 = np.array([0, 1, 2, 3, 5, 4])
+        x = np.asarray([x1, x2, x3]).T
+        actual = stats.spearmanr(x)
+        expected_corr = np.array([[1, -1, 0.94285714],
+                                  [-1, 1, -0.94285714],
+                                  [0.94285714, -0.94285714, 1]])
+        expected_pvalue = np.zeros((3, 3), dtype=float)
+        expected_pvalue[2, 0:2] = 0.00480466472
+        expected_pvalue[0:2, 2] = 0.00480466472
+
+        assert_allclose(actual.correlation, expected_corr)
+        assert_allclose(actual.pvalue, expected_pvalue)
+
+    def test_gh_9103(self):
+        # Regression test for gh-9103.
+        x = np.array([[np.nan, 3.0, 4.0, 5.0, 5.1, 6.0, 9.2],
+                      [5.0, np.nan, 4.1, 4.8, 4.9, 5.0, 4.1],
+                      [0.5, 4.0, 7.1, 3.8, 8.0, 5.1, 7.6]]).T
+        corr = np.array([[np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, 1.]])
+        assert_allclose(stats.spearmanr(x, nan_policy='propagate').correlation,
+                        corr)
+
+        res = stats.spearmanr(x, nan_policy='omit').correlation
+        assert_allclose((res[0][1], res[0][2], res[1][2]),
+                        (0.2051957, 0.4857143, -0.4707919), rtol=1e-6)
+
+    def test_gh_8111(self):
+        # Regression test for gh-8111 (different result for float/int/bool).
+        n = 100
+        np.random.seed(234568)
+        x = np.random.rand(n)
+        m = np.random.rand(n) > 0.7
+
+        # bool against float, no nans
+        a = (x > .5)
+        b = np.array(x)
+        res1 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        # bool against float with NaNs
+        b[m] = np.nan
+        res2 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        # int against float with NaNs
+        a = a.astype(np.int32)
+        res3 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        expected = [0.865895477, 0.866100381, 0.866100381]
+        assert_allclose([res1, res2, res3], expected)
+
 
 def test_spearmanr():
     # Cross-check with R:
@@ -1071,13 +1165,13 @@ class TestRegression(object):
         # Expected values
         exp_slope = 1.00211681802045
         exp_intercept = -0.262323073774029
-        exp_rvalue = 0.999993745883712
+        exp_rsquared = 0.999993745883712
 
         actual = stats.linregress(x, y)
 
         assert_almost_equal(actual.slope, exp_slope)
         assert_almost_equal(actual.intercept, exp_intercept)
-        assert_almost_equal(actual.rvalue, exp_rvalue, decimal=5)
+        assert_almost_equal(actual.rvalue**2, exp_rsquared)
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.linregress, [], [])
@@ -3231,7 +3325,7 @@ def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
-    x = np.array((-2,-1,0,1,2,3)*4)**2
+    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
@@ -3281,6 +3375,12 @@ def test_normalitytests():
 
     assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
     assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
+
+    # regression test for issue gh-9033: x cleary non-normal but power of
+    # negtative denom needs to be handled correctly to reject normality
+    counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
+    x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
+    assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
 
 class TestRankSums(object):
@@ -4500,3 +4600,103 @@ class TestBrunnerMunzel(object):
         assert_approx_equal(p1, 0.0057862086661515377,
                             significant=self.significant)
 
+
+class TestRatioUniforms(object):
+    """ Tests for rvs_ratio_uniforms.
+    """
+    def test_rv_generation(self):
+        # use KS test to check distribution of rvs
+        # normal distribution
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+        rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500,
+                                       random_state=12345)
+        assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
+
+        # exponential distribution
+        rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
+                                       vmin=0, vmax=2*np.exp(-1),
+                                       size=1000, random_state=12345)
+        assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
+
+    def test_shape(self):
+        # test shape of return value depending on size parameter
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+
+        r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=3,
+                                      random_state=1234)
+        r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3,),
+                                      random_state=1234)
+        r3 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 1),
+                                      random_state=1234)
+        assert_equal(r1, r2)
+        assert_equal(r2, r3.flatten())
+        assert_equal(r1.shape, (3,))
+        assert_equal(r3.shape, (3, 1))
+
+        r4 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 3, 3),
+                                      random_state=12)
+        r5 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=27,
+                                      random_state=12)
+        assert_equal(r4.flatten(), r5)
+        assert_equal(r4.shape, (3, 3, 3))
+
+        r6 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, random_state=1234)
+        r7 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=1,
+                                      random_state=1234)
+        r8 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(1, ),
+                                      random_state=1234)
+        assert_equal(r6, r7)
+        assert_equal(r7, r8)
+
+    def test_random_state(self):
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+        np.random.seed(1234)
+        r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4))
+        r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4),
+                                      random_state=1234)
+        assert_equal(r1, r2)
+
+    def test_exceptions(self):
+        f = stats.norm.pdf
+        # need vmin < vmax
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=1, vmin=3, vmax=1)
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=1, vmin=1, vmax=1)
+        # need umax > 0
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
+        assert_raises(ValueError,
+                      stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
+
+    def test_gig(self):
+        # test generalized inverse gaussian distribution
+        p, b = 0.5, 0.75
+
+        def gig_mode(p, b):
+            return b / (np.sqrt((p - 1)**2 + b**2) + 1 - p)
+
+        def gig_pdf(x, p, b):
+            c = 1/(2 * kv(p, b))
+            return c * x**(p - 1) * np.exp(- b * (x + 1/x) / 2)
+
+        def gig_cdf(x, p, b):
+            x = np.atleast_1d(x)
+            cdf = [quad(gig_pdf, 0, xi, args=(p, b))[0] for xi in x]
+            return np.array(cdf)
+
+        s = kv(p+2, b) / kv(p, b)
+        vmax = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
+        umax = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
+
+        rvs = stats.rvs_ratio_uniforms(lambda x: gig_pdf(x, p, b), umax,
+                                       0, vmax, random_state=1234, size=1500)
+
+        assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
+                     True)
