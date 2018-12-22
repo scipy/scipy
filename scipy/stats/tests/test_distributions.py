@@ -1194,9 +1194,7 @@ class TestRvDiscrete(object):
         assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
 
     def test_multidimension(self):
-        xk = np.array([[1,2,3,4],
-                       [5,6,7,8],
-                       [9,10,11,12]])
+        xk = np.arange(12).reshape((3, 4))
         pk = np.array([[0.1,0.1,0.15,0.05],
                        [0.1,0.1,0.05,0.05],
                        [0.1,0.1,0.05,0.05]])
@@ -1212,8 +1210,12 @@ class TestRvDiscrete(object):
         pk = [1, 2, 3]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
+        xk = [1, 2, 3]
+        pk = [0.5, 1.2, -0.7]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
         xk = [1, 2, 3, 4, 5]
-        pk = [-0.3, -0.3, 0.3, 0.3, 0.4]
+        pk = [0.3, 0.3, 0.3, 0.3, -0.2]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
     def test_shape_rv_sample(self):
