@@ -208,38 +208,34 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         Type of solver.  :ref:`'simplex' <optimize.linprog-simplex>`
         and :ref:`'interior-point' <optimize.linprog-interior-point>`
         are supported.
-    callback : callable, optional (simplex only)
+    callback : callable, optional
         If a callback function is provided, it will be called within each
-        iteration of the simplex algorithm. The callback must require a
+        iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
             x : 1D array
-                The independent variable vector which optimizes the linear
-                programming problem.
+                Current solution vector
             fun : float
-                Value of the objective function.
+                Current value of the objective function
             success : bool
-                True if the algorithm succeeded in finding an optimal solution.
+                True when an algorithm has completed successfully.
             slack : 1D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
             con : 1D array
-                The (nominally zero) residuals of the equality constraints
+                The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``
             phase : int
-                The phase of the optimization being executed. In phase 1 a basic
-                feasible solution is sought and the T has an additional row
-                representing an alternate objective function.
+                The phase of the algorithm being executed.
             status : int
-                An integer representing the exit status of the optimization::
+                An integer representing the status of the optimization::
 
-                     0 : Optimization terminated successfully
+                     0 : Algorithm proceeding nominally
                      1 : Iteration limit reached
                      2 : Problem appears to be infeasible
                      3 : Problem appears to be unbounded
                      4 : Serious numerical difficulties encountered
-
             nit : int
                 The number of iterations performed.
             message : str
@@ -486,7 +482,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
-                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
         elif meth == 'revised simplex':
             x, status, message, iteration = _linprog_rs(
                 c, c0=c0, A=A, b=b, x0=x0, callback=callback, _T_o=T_o, **solver_options)

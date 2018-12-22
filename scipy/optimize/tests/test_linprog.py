@@ -163,6 +163,9 @@ def _assert_success(res, desired_fun=None, desired_x=None,
 
 class LinprogCommonTests(object):
 
+    def test_callback(self):
+        generic_callback_test(self)
+
     def test_docstring_example(self):
         # Example from linprog docstring.
         c = [-1, 4]
@@ -1213,9 +1216,6 @@ class BaseTestLinprogSimplex(LinprogCommonTests):
 class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
     options = {}
 
-    def test_callback(self):
-        generic_callback_test(self)
-
     def test_issue_7237(self):
         with pytest.raises(ValueError):
             super(TestLinprogSimplexCommon, self).test_issue_7237()
@@ -1305,9 +1305,6 @@ class BaseTestLinprogRS(LinprogCommonTests):
 
 class TestLinprogRSCommon(BaseTestLinprogRS):
     options = {}
-
-    def test_callback(self):
-        generic_callback_test(self)
 
     def test_nontrivial_problem_with_guess(self):
         c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
@@ -1430,28 +1427,6 @@ class TestLinprogIPSpecific(object):
                       options={"disp": True})
         # disp is independent of sparse/dense
         _assert_success(res, desired_fun=-64.049494229)
-
-    def test_callback(self):
-        def f():
-            pass
-
-        A = [[0, -7]]
-        b = [-6]
-        c = [1, 5]
-        bounds = [(0, None), (None, None)]
-
-        # Linprog should solve in presolve. As the interior-point method is
-        # not used the the callback should never be needed and no error
-        # returned
-        res = linprog(c, A_eq=A, b_eq=b, bounds=bounds,
-                      method=self.method, callback=f)
-        _assert_success(res, desired_x=[0, 6./7], desired_fun=5*6./7)
-
-        # Without presolve the solver reverts to the interior-point method
-        # Interior-point currently does not implement callback functions.
-        with pytest.raises(NotImplementedError):
-            res = linprog(c, A_eq=A, b_eq=b, bounds=bounds, method=self.method,
-                          callback=f, options={'presolve': False})
 
 
 class TestLinprogIPSparse(BaseTestLinprogIP):
