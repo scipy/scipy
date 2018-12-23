@@ -133,7 +133,7 @@ def linprog_terse_callback(res):
             corresponding constraint is active.
         con : 1D array
             The (nominally zero) residuals of the equality constraints, that is,
-            ``b - A_eq @ x``
+            ``b - A_eq @ x``.
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -199,7 +199,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Parameters
     ----------
     c : 1D array
-        Coefficients of the linear objective function to be minimized.
+        The coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
         coefficients of a linear inequality constraint on ``x``.
@@ -210,11 +210,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The equality constraint matrix. Each row of ``A_eq`` specifies the
         coefficients of a linear equality constraint on ``x``.
     b_eq : 1D array, optional
-        The equality constraint vector. Each element of ``A_eq @ x`` msst equal
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
         A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use `None` to
+        the minimum and maximum values of that decision variable. Use ``None`` to
         indicate that there is no bound. By default, bounds are ``(0, None)``
         (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
@@ -235,13 +235,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             fun : float
                 The current value of the objective function ``c @ x``.
             success : bool
-                `True` when the algorithm has completed successfully.
+                ``True`` when the algorithm has completed successfully.
             slack : 1D array
                 The (nominally positive) values of the slack,
-                ``b_ub - A_ub @ x``
+                ``b_ub - A_ub @ x``.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints,
-                ``b_eq - A_eq @ x``
+                ``b_eq - A_eq @ x``.
             phase : int
                 The phase of the algorithm being executed.
             status : int
@@ -292,7 +292,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 The (nominally zero) residuals of the equality constraints,
                 ``b_eq - A_eq @ x``
             success : bool
-                `True` when the algorithm succeeds in finding an optimal
+                ``True`` when the algorithm succeeds in finding an optimal
                 solution.
             status : int
                 An integer representing the exit status of the algorithm::
