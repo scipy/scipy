@@ -24,7 +24,7 @@ from .optimize import OptimizeResult
 
 
 def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
-               _T_o=[]):
+               _T_o=[], disp=False):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -53,7 +53,7 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     phase_one_n = n
     x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter,
                                           tol, maxupdate, mast, pivot,
-                                          0, callback, _T_o, phase_one_n)
+                                          0, callback, _T_o, disp, phase_one_n)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -264,8 +264,30 @@ def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-12):
         return a[~bl][c_hat < -tol][0]
 
 
+def _display_iter(phase, iteration, slack, con, fun):
+    """
+    Print indicators of optimization status to the console.
+    """
+    header = True if not iteration % 20 else False
+
+    if header:
+        print("Phase",
+              "Iteration",
+              "Minimum Slack      ",
+              "Constraint Residual",
+              "Objective          ")
+
+    # no clue why this works
+    fmt = '{0:<6}{1:<10}{2:<20.13}{3:<20.13}{4:<20.13}'
+    try:
+        slack = np.min(slack)
+    except ValueError:
+        slack = "NA"
+    print(fmt.format(phase, iteration, slack, np.linalg.norm(con), fun))
+
+
 def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
-               callback=None, _T_o=[], phase_one_n=None):
+               callback=None, _T_o=[], disp=False, phase_one_n=None):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -290,7 +312,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
 
     for iteration in range(iteration, iteration + maxiter):
 
-        if callback is not None:
+        if disp or callback is not None:
             if phase_one_n is not None:
                 phase = 1
                 x_postsolve = x[:phase_one_n]
@@ -299,13 +321,17 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
                 x_postsolve = x
             x_o, fun, slack, con, _, _ = _postsolve(x_postsolve, *_T_o,
                                                     tol=tol)
-            message = ""
-            res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                                  'con': con, 'nit': iteration,
-                                  'phase': phase, 'complete': False,
-                                  'status': 0, 'message': message,
-                                  'success': False})
-            callback(res)
+
+            if callback is not None:
+                message = ""
+                res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
+                                      'con': con, 'nit': iteration,
+                                      'phase': phase, 'complete': False,
+                                      'status': 0, 'message': message,
+                                      'success': False})
+                callback(res)
+            else:
+                _display_iter(phase, iteration, slack, con, fun)
 
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
@@ -352,7 +378,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
 
 
 def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
-                maxupdate=10, mast=False, pivot="mrc", _T_o=[],
+                maxupdate=10, mast=False, pivot="mrc", _T_o=[], disp=False,
                 **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
@@ -490,12 +516,12 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
 
     x, basis, A, b, residual, status, iteration = (
         _phase_one(A, b, x0, maxiter, tol, maxupdate,
-                   mast, pivot, callback, _T_o))
+                   mast, pivot, callback, _T_o, disp))
 
     if status == 0:
         x, basis, status, iteration = _phase_two(c, A, x, basis,
                                                  maxiter, tol, maxupdate,
                                                  mast, pivot, iteration,
-                                                 callback, _T_o)
+                                                 callback, _T_o, disp)
 
     return x, status, messages[status].format(residual, tol), iteration
