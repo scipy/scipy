@@ -86,7 +86,7 @@ def expected_freq(observed):
     Examples
     --------
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
-    >>> from scipy.stats import expected_freq
+    >>> from scipy.stats.contingency import expected_freq
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
            [ 18.,  18.,  24.]])
