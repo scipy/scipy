@@ -234,6 +234,14 @@ class LinprogCommonTests(object):
     def test_callback(self):
         generic_callback_test(self)
 
+    def test_disp(self):
+        # test that display option does not break anything.
+        A, b, c = lpgen_2d(20, 20)
+        res = linprog(c, A_ub=A, b_ub=b, method=self.method,
+                      options={"disp": True})
+        # disp is independent of sparse/dense
+        _assert_success(res, desired_fun=-64.049494229)
+
     def test_docstring_example(self):
         # Example from linprog docstring.
         c = [-1, 4]
@@ -1471,16 +1479,8 @@ class TestLinprogIPSpecific(object):
         res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                       options={"maxiter": maxiter})
         # maxiter is independent of sparse/dense
-        assert_equal(res.status, 1)
+        _assert_iteration_limit_reached(res, maxiter)
         assert_equal(res.nit, maxiter)
-
-    def test_disp(self):
-        # test that display option does not break anything.
-        A, b, c = lpgen_2d(20, 20)
-        res = linprog(c, A_ub=A, b_ub=b, method=self.method,
-                      options={"disp": True})
-        # disp is independent of sparse/dense
-        _assert_success(res, desired_fun=-64.049494229)
 
     def test_bug_8664(self):
         # interior-point has trouble with this when presolve is off
