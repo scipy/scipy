@@ -7,7 +7,7 @@ The easy way to build the documentation is to run
 
     python setup.py build_sphinx
 
-This will first build Scipy in-place, and then generate documentation for it.
+This will first build SciPy in-place, and then generate documentation for it.
 
 Another way
 -----------
@@ -16,5 +16,5 @@ Another way
 2. Run ``make html`` or ``make dist``
 
 Note that ``make html`` builds the documentation for the currently installed
-version of Scipy, not the one corresponding to the source code here.
+version of SciPy, not the one corresponding to the source code here.
 

@@ -490,7 +490,7 @@ def iter_variants(inputs, outputs):
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
         # For instance sph_harm(0,[0],0,0).dtype == complex64
-        # This may be a Numpy bug, but we need to work around it.
+        # This may be a NumPy bug, but we need to work around it.
         # cf. gh-4895, https://github.com/numpy/numpy/issues/5895
         maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
 
@@ -756,12 +756,8 @@ class FusedFunc(Func):
         return all_types, fused_types
 
     def _get_vars(self):
-        invars = []
-        for n in range(len(self.intypes)):
-            invars.append("x{}".format(n))
-        outvars = []
-        for n in range(len(self.outtypes)):
-            outvars.append("y{}".format(n))
+        invars = ["x{}".format(n) for n in range(len(self.intypes))]
+        outvars = ["y{}".format(n) for n in range(len(self.outtypes))]
         return invars, outvars
 
     def _get_conditional(self, types, codes, adverb):
@@ -842,11 +838,7 @@ class FusedFunc(Func):
             return lines
 
         # Set fused-type variables to nan
-        all_codes = []
-        for fused_type in fused_types:
-            _, codes = fused_type
-            all_codes.append(codes)
-        all_codes = tuple(all_codes)
+        all_codes = tuple([codes for _unused, codes in fused_types])
 
         codelens = list(map(lambda x: len(x), all_codes))
         last = numpy.product(codelens) - 1
@@ -878,10 +870,8 @@ class FusedFunc(Func):
         tab = " "*4
         tmpvars = list(all_tmpvars)
         tmpvars.sort()
-        tmpdecs = []
-        for tmpvar in tmpvars:
-            line = "cdef npy_cdouble {}".format(tmpvar)
-            tmpdecs.append(tab + line)
+        tmpdecs = [tab + "cdef npy_cdouble {}".format(tmpvar)
+                   for tmpvar in tmpvars]
         return tmpdecs
 
     def _get_python_wrap(self):

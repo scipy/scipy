@@ -1,12 +1,7 @@
-""" Classes for interpolating values.
-"""
 from __future__ import division, print_function, absolute_import
 
-
-__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
+__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
            'RegularGridInterpolator', 'interpn']
-
 
 import itertools
 import warnings
@@ -15,9 +10,8 @@ import operator
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
-                   dot, ravel, poly1d, asarray, intp)
+                   ravel, poly1d, asarray, intp)
 
-import scipy.linalg
 import scipy.special as spec
 from scipy.special import comb
 
@@ -2507,9 +2501,8 @@ class RegularGridInterpolator(object):
         return values
 
     def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
-        idx_res = []
-        for i, yi in zip(indices, norm_distances):
-            idx_res.append(np.where(yi <= .5, i, i + 1))
+        idx_res = [np.where(yi <= .5, i, i + 1)
+                   for i, yi in zip(indices, norm_distances)]
         return self.values[tuple(idx_res)]
 
     def _find_indices(self, xi):
@@ -2714,205 +2707,3 @@ class _ppform(PPoly):
             res /= fact
             sivals[order-m, :] = res
         return cls(sivals, xk, fill=fill)
-
-
-# The 3 private functions below can be called by splmake().
-
-
-def _dot0(a, b):
-    """Similar to numpy.dot, but sum over last axis of a and 1st axis of b"""
-    if b.ndim <= 2:
-        return dot(a, b)
-    else:
-        axes = list(range(b.ndim))
-        axes.insert(-1, 0)
-        axes.pop(0)
-        return dot(a, b.transpose(axes))
-
-
-def _find_smoothest(xk, yk, order, conds=None, B=None):
-    # construct Bmatrix, and Jmatrix
-    # e = J*c
-    # minimize norm(e,2) given B*c=yk
-    # if desired B can be given
-    # conds is ignored
-    N = len(xk)-1
-    K = order
-    if B is None:
-        B = _fitpack._bsplmat(order, xk)
-    J = _fitpack._bspldismat(order, xk)
-    u, s, vh = scipy.linalg.svd(B)
-    ind = K-1
-    V2 = vh[-ind:,:].T
-    V1 = vh[:-ind,:].T
-    A = dot(J.T,J)
-    tmp = dot(V2.T,A)
-    Q = dot(tmp,V2)
-    p = scipy.linalg.solve(Q, tmp)
-    tmp = dot(V2,p)
-    tmp = np.eye(N+K) - tmp
-    tmp = dot(tmp,V1)
-    tmp = dot(tmp,np.diag(1.0/s))
-    tmp = dot(tmp,u.T)
-    return _dot0(tmp, yk)
-
-
-# conds is a tuple of an array and a vector
-#  giving the left-hand and the right-hand side
-#  of the additional equations to add to B
-
-
-def _find_user(xk, yk, order, conds, B):
-    lh = conds[0]
-    rh = conds[1]
-    B = np.concatenate((B, lh), axis=0)
-    w = np.concatenate((yk, rh), axis=0)
-    M, N = B.shape
-    if (M > N):
-        raise ValueError("over-specification of conditions")
-    elif (M < N):
-        return _find_smoothest(xk, yk, order, None, B)
-    else:
-        return scipy.linalg.solve(B, w)
-
-
-# Remove the 3 private functions above as well when removing splmake
-@np.deprecate(message="splmake is deprecated in scipy 0.19.0, "
-                      "use make_interp_spline instead.")
-def splmake(xk, yk, order=3, kind='smoothest', conds=None):
-    """
-    Return a representation of a spline given data-points at internal knots
-
-    Parameters
-    ----------
-    xk : array_like
-        The input array of x values of rank 1
-    yk : array_like
-        The input array of y values of rank N. `yk` can be an N-d array to
-        represent more than one curve, through the same `xk` points. The first
-        dimension is assumed to be the interpolating dimension and is the same
-        length of `xk`.
-    order : int, optional
-        Order of the spline
-    kind : str, optional
-        Can be 'smoothest', 'not_a_knot', 'fixed', 'clamped', 'natural',
-        'periodic', 'symmetric', 'user', 'mixed' and it is ignored if order < 2
-    conds : optional
-        Conds
-
-    Returns
-    -------
-    splmake : tuple
-        Return a (`xk`, `cvals`, `k`) representation of a spline given
-        data-points where the (internal) knots are at the data-points.
-
-    """
-    yk = np.asanyarray(yk)
-
-    order = int(order)
-    if order < 0:
-        raise ValueError("order must not be negative")
-    if order == 0:
-        return xk, yk[:-1], order
-    elif order == 1:
-        return xk, yk, order
-
-    try:
-        func = eval('_find_%s' % kind)
-    except Exception:
-        raise NotImplementedError
-
-    # the constraint matrix
-    B = _fitpack._bsplmat(order, xk)
-    coefs = func(xk, yk, order, conds, B)
-    return xk, coefs, order
-
-
-@np.deprecate(message="spleval is deprecated in scipy 0.19.0, "
-        "use BSpline instead.")
-def spleval(xck, xnew, deriv=0):
-    """
-    Evaluate a fixed spline represented by the given tuple at the new x-values
-
-    The `xj` values are the interior knot points.  The approximation
-    region is `xj[0]` to `xj[-1]`.  If N+1 is the length of `xj`, then `cvals`
-    should have length N+k where `k` is the order of the spline.
-
-    Parameters
-    ----------
-    (xj, cvals, k) : tuple
-        Parameters that define the fixed spline
-    xj : array_like
-        Interior knot points
-    cvals : array_like
-        Curvature
-    k : int
-        Order of the spline
-    xnew : array_like
-        Locations to calculate spline
-    deriv : int
-        Deriv
-
-    Returns
-    -------
-    spleval : ndarray
-        If `cvals` represents more than one curve (`cvals.ndim` > 1) and/or
-        `xnew` is N-d, then the result is `xnew.shape` + `cvals.shape[1:]`
-        providing the interpolation of multiple curves.
-
-    Notes
-    -----
-    Internally, an additional `k`-1 knot points are added on either side of
-    the spline.
-
-    """
-    (xj, cvals, k) = xck
-    oldshape = np.shape(xnew)
-    xx = np.ravel(xnew)
-    sh = cvals.shape[1:]
-    res = np.empty(xx.shape + sh, dtype=cvals.dtype)
-    for index in np.ndindex(*sh):
-        sl = (slice(None),) + index
-        if issubclass(cvals.dtype.type, np.complexfloating):
-            res[sl].real = _fitpack._bspleval(xx,xj, cvals.real[sl], k, deriv)
-            res[sl].imag = _fitpack._bspleval(xx,xj, cvals.imag[sl], k, deriv)
-        else:
-            res[sl] = _fitpack._bspleval(xx, xj, cvals[sl], k, deriv)
-    res.shape = oldshape + sh
-    return res
-
-
-# When `spltopp` gets removed, also remove the _ppform class.
-@np.deprecate(message="spltopp is deprecated in scipy 0.19.0, "
-                      "use PPoly.from_spline instead.")
-def spltopp(xk, cvals, k):
-    """Return a piece-wise polynomial object from a fixed-spline tuple."""
-    return _ppform.fromspline(xk, cvals, k)
-
-
-@np.deprecate(message="spline is deprecated in scipy 0.19.0, "
-                      "use Bspline class instead.")
-def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
-    """
-    Interpolate a curve at new points using a spline fit
-
-    Parameters
-    ----------
-    xk, yk : array_like
-        The x and y values that define the curve.
-    xnew : array_like
-        The x values where spline should estimate the y values.
-    order : int
-        Default is 3.
-    kind : string
-        One of {'smoothest'}
-    conds : Don't know
-        Don't know
-
-    Returns
-    -------
-    spline : ndarray
-        An array of y values; the spline evaluated at the positions `xnew`.
-
-    """
-    return spleval(splmake(xk, yk, order=order, kind=kind, conds=conds), xnew)

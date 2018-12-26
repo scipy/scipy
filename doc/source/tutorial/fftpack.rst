@@ -1,7 +1,7 @@
 Fourier Transforms (:mod:`scipy.fftpack`)
 =========================================
 
-.. sectionauthor:: Scipy Developers
+.. sectionauthor:: SciPy Developers
 
 .. currentmodule:: scipy.fftpack
 
@@ -23,7 +23,7 @@ Fourier analysis and its applications.
    PyFFTW_ provides a way to replace a number of functions in `scipy.fftpack`
    with its own functions, which are usually significantly faster, via
    pyfftw.interfaces_.  Because PyFFTW_ relies on the GPL-licensed FFTW_ it
-   cannot be included in Scipy.  Users for whom the speed of FFT routines is
+   cannot be included in SciPy.  Users for whom the speed of FFT routines is
    critical should consider installing PyFFTW_.
 
 
@@ -255,7 +255,7 @@ arrays in frequency domain.
 Discrete Cosine Transforms
 --------------------------
 
-Scipy provides a DCT with the function :func:`dct` and a corresponding IDCT
+SciPy provides a DCT with the function :func:`dct` and a corresponding IDCT
 with the function :func:`idct`. There are 8 types of the DCT [WPC]_, [Mak]_;
 however, only the first 3 types are implemented in scipy. "The" DCT generally
 refers to DCT type 2, and "the" Inverse DCT generally refers to DCT type 3. In
@@ -270,7 +270,7 @@ MATLAB dct(x).
 Type I DCT
 __________
 
-Scipy uses the following definition of the unnormalized DCT-I
+SciPy uses the following definition of the unnormalized DCT-I
 (``norm='None'``):
 
 .. math::
@@ -285,7 +285,7 @@ DCT-I is only supported for input size > 1
 Type II DCT
 ___________
 
-Scipy uses the following definition of the unnormalized DCT-II
+SciPy uses the following definition of the unnormalized DCT-II
 (``norm='None'``):
 
 .. math::
@@ -312,7 +312,7 @@ In this case, the DCT "base functions" :math:`\phi_k[n] = 2 f \cos
 Type III DCT
 ____________
 
-Scipy uses the following definition of the unnormalized DCT-III
+SciPy uses the following definition of the unnormalized DCT-III
 (``norm='None'``):
 
 .. math::
@@ -403,7 +403,7 @@ provides a five-fold compression rate.
 Discrete Sine Transforms
 ------------------------
 
-Scipy provides a DST [Mak]_ with the function :func:`dst` and a corresponding IDST
+SciPy provides a DST [Mak]_ with the function :func:`dst` and a corresponding IDST
 with the function :func:`idst`.
 
 There are theoretically 8 types of the DST for different combinations of
@@ -413,7 +413,7 @@ types are implemented in scipy.
 Type I DST
 __________
 
-DST-I assumes the input is odd around n=-1 and n=N. Scipy uses the following
+DST-I assumes the input is odd around n=-1 and n=N. SciPy uses the following
 definition of the unnormalized DST-I (``norm='None'``):
 
 .. math::
@@ -428,7 +428,7 @@ own inverse, up to a factor `2(N+1)`.
 Type II DST
 ___________
 
-DST-II assumes the input is odd around n=-1/2 and even around n=N. Scipy uses
+DST-II assumes the input is odd around n=-1/2 and even around n=N. SciPy uses
 the following definition of the unnormalized DST-II (``norm='None'``):
 
 .. math::
@@ -439,7 +439,7 @@ the following definition of the unnormalized DST-II (``norm='None'``):
 Type III DST
 ____________
 
-DST-III assumes the input is odd around n=-1 and even around n=N-1. Scipy uses
+DST-III assumes the input is odd around n=-1 and even around n=N-1. SciPy uses
 the following definition of the unnormalized DST-III (``norm='None'``):
 
 .. math::

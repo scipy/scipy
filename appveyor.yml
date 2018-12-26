@@ -26,11 +26,6 @@ environment:
       PYTHON_ARCH: 32
       TEST_MODE: fast
 
-    - PYTHON: C:\Python27-x64
-      PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 64
-      TEST_MODE: fast
-
     - PYTHON: C:\Python35-x64
       PYTHON_VERSION: 3.5
       PYTHON_ARCH: 64
@@ -39,18 +34,6 @@ environment:
     - PYTHON: C:\Python37-x64
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
-      TEST_MODE: full
-
-    - PYTHON: C:\Python27
-      PYTHON_VERSION: 2.7
-      PYTHON_ARCH: 32
-      SKIP_NOTAG: true
-      TEST_MODE: full
-
-    - PYTHON: C:\Python34
-      PYTHON_VERSION: 3.4
-      PYTHON_ARCH: 32
-      SKIP_NOTAG: true
       TEST_MODE: full
 
     - PYTHON: C:\Python35-x64

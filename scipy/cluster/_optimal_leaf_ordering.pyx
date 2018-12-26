@@ -88,7 +88,7 @@ cdef int _simultaneous_sort(float* dist, int* idx,
         # The smallest of the three is moved to the beginning of the array,
         # the middle (the pivot value) is moved to the end, and the largest
         # is moved to the pivot index.
-        pivot_idx = size / 2
+        pivot_idx = size // 2
         if dist[0] > dist[size - 1]:
             dual_swap(dist, idx, 0, size - 1)
         if dist[size - 1] > dist[pivot_idx]:

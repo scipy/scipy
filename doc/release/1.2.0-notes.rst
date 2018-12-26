@@ -2,8 +2,6 @@
 SciPy 1.2.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.2.0 is not released yet!
-
 .. contents::
 
 SciPy 1.2.0 is the culmination of 6 months of hard work. It contains
@@ -19,12 +17,16 @@ Our development attention will now shift to bug-fix releases on the
 
 This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 
+.. note:: This will be the last SciPy release to support Python 2.7.
+          Consequently, the 1.2.x series will be a long term support (LTS)
+          release; we will backport bug fixes until 1 Jan 2020.
+
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
 --------------------------
 
-- 1-D root finding improvements with a new solver, ``toms748``, and a new 
+- 1-D root finding improvements with a new solver, ``toms748``, and a new
   unified interface, ``root_scalar``
 - New ``dual_annealing`` optimization method that combines stochastic and
   local deterministic searching
@@ -45,7 +47,7 @@ Proper spline coefficient calculations have been added for the ``mirror``,
 `scipy.fftpack` improvements
 --------------------------------
 
-DCT-IV, DST-IV, DCT-I, and DST-I orthonormalization are now supported in 
+DCT-IV, DST-IV, DCT-I, and DST-I orthonormalization are now supported in
 `scipy.fftpack`.
 
 `scipy.interpolate` improvements
@@ -67,11 +69,11 @@ The function ``softmax`` was added to `scipy.special`.
 `scipy.optimize` improvements
 -----------------------------
 
-The one-dimensional nonlinear solvers have been given a unified interface 
-`scipy.optimize.root_scalar`, similar to the `scipy.optimize.root` interface 
+The one-dimensional nonlinear solvers have been given a unified interface
+`scipy.optimize.root_scalar`, similar to the `scipy.optimize.root` interface
 for multi-dimensional solvers. ``scipy.optimize.root_scalar(f, bracket=[a ,b],
 method="brenth")`` is equivalent to ``scipy.optimize.brenth(f, a ,b)``.  If no
-``method`` is specified, an appropriate one will be selected based upon the 
+``method`` is specified, an appropriate one will be selected based upon the
 bracket and the number of derivatives available.
 
 The so-called Algorithm 748 of Alefeld, Potra and Shi for root-finding within
@@ -81,27 +83,27 @@ of approximately 1.65 (for sufficiently well-behaved functions.)
 
 ``differential_evolution`` now has the ``updating`` and ``workers`` keywords.
 The first chooses between continuous updating of the best solution vector (the
-default), or once per generation. Continuous updating can lead to faster 
+default), or once per generation. Continuous updating can lead to faster
 convergence. The ``workers`` keyword accepts an ``int`` or map-like callable,
-and parallelises the solver (having the side effect of updating once per 
+and parallelises the solver (having the side effect of updating once per
 generation). Supplying an ``int`` evaluates the trial solutions in N parallel
-parts. Supplying a map-like callable allows other parallelisation approaches 
+parts. Supplying a map-like callable allows other parallelisation approaches
 (such as ``mpi4py``, or ``joblib``) to be used.
 
-``dual_annealing`` (and ``shgo`` below) is a powerful new general purpose 
-global optizimation (GO) algorithm. ``dual_annealing`` uses two annealing 
-processes to accelerate the convergence towards the global minimum of an 
-objective mathematical function. The first annealing process controls the 
-stochastic Markov chain searching and the second annealing process controls the 
-deterministic minimization. So, dual annealing is a hybrid method that takes 
+``dual_annealing`` (and ``shgo`` below) is a powerful new general purpose
+global optizimation (GO) algorithm. ``dual_annealing`` uses two annealing
+processes to accelerate the convergence towards the global minimum of an
+objective mathematical function. The first annealing process controls the
+stochastic Markov chain searching and the second annealing process controls the
+deterministic minimization. So, dual annealing is a hybrid method that takes
 advantage of stochastic and local deterministic searching in an efficient way.
 
 ``shgo`` (simplicial homology global optimization) is a similar algorithm
-appropriate for solving black box and derivative free optimization (DFO) 
-problems. The algorithm generally converges to the global solution in finite 
-time. The convergence holds for non-linear inequality and 
-equality constraints. In addition to returning a global minimum, the 
-algorithm also returns any other global and local minima found after every 
+appropriate for solving black box and derivative free optimization (DFO)
+problems. The algorithm generally converges to the global solution in finite
+time. The convergence holds for non-linear inequality and
+equality constraints. In addition to returning a global minimum, the
+algorithm also returns any other global and local minima found after every
 iteration. This makes it useful for exploring the solutions in a domain.
 
 `scipy.optimize.newton` can now accept a scalar or an array
@@ -113,18 +115,18 @@ be used on multiple threads.
 ---------------------------
 
 Digital filter design functions now include a parameter to specify the sampling
-rate. Previously, digital filters could only be specified using normalized 
-frequency, but different functions used different scales (e.g. 0 to 1 for 
-``butter`` vs 0 to π for ``freqz``), leading to errors and confusion.  With 
+rate. Previously, digital filters could only be specified using normalized
+frequency, but different functions used different scales (e.g. 0 to 1 for
+``butter`` vs 0 to π for ``freqz``), leading to errors and confusion.  With
 the ``fs`` parameter, ordinary frequencies can now be entered directly into
 functions, with the normalization handled internally.
 
-``find_peaks`` and related functions no longer raise an exception if the 
+``find_peaks`` and related functions no longer raise an exception if the
 properties of a peak have unexpected values (e.g. a prominence of 0). A
 ``PeakPropertyWarning`` is given instead.
 
-The new keyword argument ``plateau_size`` was added to ``find_peaks``. 
-``plateau_size`` may be used to select peaks based on the length of the 
+The new keyword argument ``plateau_size`` was added to ``find_peaks``.
+``plateau_size`` may be used to select peaks based on the length of the
 flat top of a peak.
 
 ``welch()`` and ``csd()`` methods in `scipy.signal` now support calculation
@@ -140,12 +142,12 @@ conversions is now improved.
 
 The issue where SuperLU or UMFPACK solvers crashed on matrices with
 non-canonical format in `scipy.sparse.linalg` was fixed. The solver wrapper
-canonicalizes the matrix if necessary before calling the SuperLU or UMFPACK 
-solver. 
+canonicalizes the matrix if necessary before calling the SuperLU or UMFPACK
+solver.
 
 The ``largest`` option of `scipy.sparse.linalg.lobpcg()` was fixed to have
-a correct (and expected) behavior. The order of the eigenvalues was made 
-consistent with the ARPACK solver (``eigs()``), i.e. ascending for the 
+a correct (and expected) behavior. The order of the eigenvalues was made
+consistent with the ARPACK solver (``eigs()``), i.e. ascending for the
 smallest eigenvalues, and descending for the largest eigenvalues.
 
 The `scipy.sparse.random` function is now faster and also supports integer and
@@ -155,20 +157,20 @@ complex values by passing the appropriate value to the ``dtype`` argument.
 ----------------------------
 
 The function `scipy.spatial.distance.jaccard` was modified to return 0 instead
-of ``np.nan`` when two all-zero vectors are compared. 
+of ``np.nan`` when two all-zero vectors are compared.
 
 Support for the Jensen Shannon distance, the square-root of the divergence, has
 been added under `scipy.spatial.distance.jensenshannon`
 
-An optional keyword was added to the function 
-`scipy.spatial.cKDTree.query_ball_point()` to sort or not sort the returned 
+An optional keyword was added to the function
+`scipy.spatial.cKDTree.query_ball_point()` to sort or not sort the returned
 indices. Not sorting the indices can speed up calls.
 
 A new category of quaternion-based transformations are available in
 `scipy.spatial.transform`, including spherical linear interpolation of
 rotations (``Slerp``), conversions to and from quaternions, Euler angles,
-and general rotation and inversion capabilities 
-(`spatial.transform.Rotation`), and uniform random sampling of 3D 
+and general rotation and inversion capabilities
+(`spatial.transform.Rotation`), and uniform random sampling of 3D
 rotations (`spatial.transform.Rotation.random`).
 
 `scipy.stats` improvements
@@ -182,10 +184,10 @@ values.
 Added a general method to sample random variates based on the density only, in
 the new function ``rvs_ratio_uniforms``.
 
-The Yule-Simon distribution (``yulesimon``) was added -- this is a new 
+The Yule-Simon distribution (``yulesimon``) was added -- this is a new
 discrete probability distribution.
 
-``stats`` and ``mstats`` now have access to a new regression method, 
+``stats`` and ``mstats`` now have access to a new regression method,
 ``siegelslopes``, a robust linear regression algorithm
 
 `scipy.stats.gaussian_kde` now has the ability to deal with weighted samples,
@@ -200,8 +202,8 @@ and ``mstats``
 `scipy.linalg` improvements
 --------------------------
 
-`scipy.linalg.lapack` now exposes the LAPACK routines using the Rectangular 
-Full Packed storage (RFP) for upper triangular, lower triangular, symmetric, 
+`scipy.linalg.lapack` now exposes the LAPACK routines using the Rectangular
+Full Packed storage (RFP) for upper triangular, lower triangular, symmetric,
 or Hermitian matrices; the upper trapezoidal fat matrix RZ decomposition
 routines are now available as well.
 
@@ -221,34 +223,34 @@ The function ``scipy.linalg.subspace_angles(A, B)`` now gives correct
 results for all angles. Before this, the function only returned
 correct values for those angles which were greater than pi/4.
 
-Support for the Bento build system has been removed. Bento has not been 
+Support for the Bento build system has been removed. Bento has not been
 maintained for several years, and did not have good Python 3 or wheel support,
 hence it was time to remove it.
 
-The required signature of `scipy.optimize.lingprog` ``method=simplex`` 
-callback function has changed. Before iteration begins, the simplex solver 
+The required signature of `scipy.optimize.lingprog` ``method=simplex``
+callback function has changed. Before iteration begins, the simplex solver
 first converts the problem into a standard form that does not, in general,
 have the same variables or constraints
 as the problem defined by the user. Previously, the simplex solver would pass a
-user-specified callback function several separate arguments, such as the 
-current solution vector ``xk``, corresponding to this standard form problem. 
-Unfortunately, the relationship between the standard form problem and the 
-user-defined problem was not documented, limiting the utility of the 
+user-specified callback function several separate arguments, such as the
+current solution vector ``xk``, corresponding to this standard form problem.
+Unfortunately, the relationship between the standard form problem and the
+user-defined problem was not documented, limiting the utility of the
 information passed to the callback function.
 
-In addition to numerous bug fix changes, the simplex solver now passes a 
+In addition to numerous bug fix changes, the simplex solver now passes a
 user-specified callback function a single ``OptimizeResult`` object containing
 information that corresponds directly to the user-defined problem. In future
 releases, this ``OptimizeResult`` object may be expanded to include additional
-information, such as variables corresponding to the standard-form problem and 
-information concerning the relationship between the standard-form and 
+information, such as variables corresponding to the standard-form problem and
+information concerning the relationship between the standard-form and
 user-defined problems.
 
-The implementation of `scipy.sparse.random` has changed, and this affects the 
-numerical values returned for both ``sparse.random`` and ``sparse.rand`` for 
+The implementation of `scipy.sparse.random` has changed, and this affects the
+numerical values returned for both ``sparse.random`` and ``sparse.rand`` for
 some matrix shapes and a given seed.
 
-`scipy.optimize.newton` will no longer use Halley's method in cases where it 
+`scipy.optimize.newton` will no longer use Halley's method in cases where it
 negatively impacts convergence
 
 Other changes
@@ -294,6 +296,7 @@ Authors
 * emmi474 +
 * Stefan Endres +
 * Thomas Etherington +
+* Piotr Figiel
 * Alex Fikl +
 * fo40225 +
 * Joseph Fox-Rabinovitz
@@ -400,6 +403,9 @@ This list of names is automatically generated, and may not be fully complete.
 Issues closed for 1.2.0
 -----------------------
 
+* `#9520 <https://github.com/scipy/scipy/issues/9520>`__: signal.correlate with method='fft' doesn't benefit from long...
+* `#9547 <https://github.com/scipy/scipy/issues/9547>`__: signature of dual_annealing doesn't match other optimizers
+* `#9540 <https://github.com/scipy/scipy/issues/9540>`__: SciPy v1.2.0rc1 cannot be imported on Python 2.7.15
 * `#1240 <https://github.com/scipy/scipy/issues/1240>`__: Allowing multithreaded use of minpack through scipy.optimize...
 * `#1432 <https://github.com/scipy/scipy/issues/1432>`__: scipy.stats.mode extremely slow (Trac #905)
 * `#3372 <https://github.com/scipy/scipy/issues/3372>`__: Please add Sphinx search field to online scipy html docs
@@ -461,6 +467,14 @@ Issues closed for 1.2.0
 Pull requests for 1.2.0
 -----------------------
 
+* `#9526 <https://github.com/scipy/scipy/pull/9526>`__: TST: relax precision requirements in signal.correlate tests
+* `#9507 <https://github.com/scipy/scipy/pull/9507>`__: CI: MAINT: Skip a ckdtree test on pypy
+* `#9512 <https://github.com/scipy/scipy/pull/9512>`__: TST: test_random_sampling 32-bit handling
+* `#9494 <https://github.com/scipy/scipy/pull/9494>`__: TST: test_kolmogorov xfail 32-bit
+* `#9486 <https://github.com/scipy/scipy/pull/9486>`__: BUG: fix sparse random int handling
+* `#9550 <https://github.com/scipy/scipy/pull/9550>`__: BUG: scipy/_lib/_numpy_compat: get_randint
+* `#9549 <https://github.com/scipy/scipy/pull/9549>`__: MAINT: make dual_annealing signature match other optimizers
+* `#9541 <https://github.com/scipy/scipy/pull/9541>`__: BUG: fix SyntaxError due to non-ascii character on Python 2.7
 * `#7352 <https://github.com/scipy/scipy/pull/7352>`__: ENH: add Brunner Munzel test to scipy.stats.
 * `#7373 <https://github.com/scipy/scipy/pull/7373>`__: BUG: Jaccard distance for all-zero arrays would return np.nan
 * `#7374 <https://github.com/scipy/scipy/pull/7374>`__: ENH: Add PDF, CDF and parameter estimation for Stable Distributions

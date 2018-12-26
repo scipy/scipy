@@ -4,7 +4,7 @@ Making a SciPy release
 ======================
 
 At the highest level, this is what the release manager does to release a new
-Scipy version:
+SciPy version:
 
 #. Propose a release schedule on the scipy-dev mailing list.
 #. Create the maintenance branch for the release.
@@ -85,7 +85,7 @@ and that the release notes are up-to-date and included in the html docs.
 
 Then edit ``setup.py`` to get the correct version number (set
 ``ISRELEASED = True``) and commit it with a message like ``REL: set version to
-<version-number>``.  Don't push this commit to the Scipy repo yet.
+<version-number>``.  Don't push this commit to the SciPy repo yet.
 
 Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
 the tag is signed).  Continue with building release artifacts (next section).
@@ -117,8 +117,8 @@ commit (not the tag, see section above) to the scipy repo.
 To build wheels, push a commit to the master branch of
 https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
 Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
-config files what commit to build, and what Python and Numpy are used for the
-builds (it needs to be the lowest supported Numpy version for each Python
+config files what commit to build, and what Python and NumPy are used for the
+builds (it needs to be the lowest supported NumPy version for each Python
 version).  See the README file in the scipy-wheels repo for more details.
 
 The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,
@@ -179,7 +179,7 @@ doc server is needed; ask @pv (server admin) or @rgommers (can upload) if you
 don't have that.
 
 The sources for the website itself are maintained in
-https://github.com/scipy/docs.scipy.org/.  Add the new Scipy version in the
+https://github.com/scipy/docs.scipy.org/.  Add the new SciPy version in the
 table of releases in ``index.rst``.  Push that commit, then do ``make upload
 USERNAME=yourusername``.
 

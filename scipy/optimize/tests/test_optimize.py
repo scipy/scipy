@@ -114,11 +114,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 9, self.funccalls)
         assert_(self.gradcalls == 7, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[2:4],
                         [[0, -0.5, 0.5],
                          [0, -5.05700028e-01, 4.95985862e-01]],
@@ -158,11 +158,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 10, self.funccalls)
         assert_(self.gradcalls == 8, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[6:8],
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
@@ -206,7 +206,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         #
         # However, some leeway must be added: the exact evaluation
         # count is sensitive to numerical error, and floating-point
@@ -217,7 +217,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[34:39],
                         [[0.72949016, -0.44156936, 0.47100962],
                          [0.72949016, -0.44156936, 0.48052496],
@@ -247,11 +247,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 167, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[76:78],
                         [[0.1928968, -0.62780447, 0.35166118],
                          [0.19572515, -0.63648426, 0.35838135]],
@@ -285,11 +285,11 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.17.0. Don't allow them to increase.
+        # SciPy 0.17.0. Don't allow them to increase.
         assert_(self.funccalls == 100, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.15.0
+        # Ensure that the function behaves the same; this is from SciPy 0.15.0
         assert_allclose(self.trace[50:52],
                         [[0.14687474, -0.5103282, 0.48252111],
                          [0.14474003, -0.5282084, 0.48743951]],
@@ -349,14 +349,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls <= 22, self.gradcalls)  # 0.13.0
         #assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
         #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
@@ -384,13 +384,13 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
@@ -418,13 +418,13 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
@@ -539,11 +539,11 @@ class TestOptimizeSimple(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
+        # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls == 5, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
         assert_allclose(self.trace[3:5],
                         [[0., -0.52489628, 0.48753042],
                          [0., -0.52489628, 0.48753042]],
@@ -1233,6 +1233,28 @@ class TestOptimizeResultAttributes(object):
                 assert_(attribute in dir(res))
 
 
+def f1(z, *params):
+    x, y = z
+    a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+    return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+
+
+def f2(z, *params):
+    x, y = z
+    a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+    return (-g*np.exp(-((x-h)**2 + (y-i)**2) / scale))
+
+
+def f3(z, *params):
+    x, y = z
+    a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+    return (-j*np.exp(-((x-k)**2 + (y-l)**2) / scale))
+
+
+def brute_func(z, *params):
+    return f1(z, *params) + f2(z, *params) + f3(z, *params)
+
+
 class TestBrute:
     # Test the "brute force" method
     def setup_method(self):
@@ -1240,39 +1262,32 @@ class TestBrute:
         self.rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
         self.solution = np.array([-1.05665192, 1.80834843])
 
-    def f1(self, z, *params):
-        x, y = z
-        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-        return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
-
-    def f2(self, z, *params):
-        x, y = z
-        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-        return (-g*np.exp(-((x-h)**2 + (y-i)**2) / scale))
-
-    def f3(self, z, *params):
-        x, y = z
-        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-        return (-j*np.exp(-((x-k)**2 + (y-l)**2) / scale))
-
-    def func(self, z, *params):
-        return self.f1(z, *params) + self.f2(z, *params) + self.f3(z, *params)
+    def brute_func(self, z, *params):
+        # an instance method optimizing
+        return brute_func(z, *params)
 
     def test_brute(self):
         # test fmin
-        resbrute = optimize.brute(self.func, self.rranges, args=self.params,
+        resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True, finish=optimize.fmin)
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
-        assert_allclose(resbrute[1], self.func(self.solution, *self.params),
+        assert_allclose(resbrute[1], brute_func(self.solution, *self.params),
                         atol=1e-3)
 
         # test minimize
-        resbrute = optimize.brute(self.func, self.rranges, args=self.params,
+        resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
                                   full_output=True,
                                   finish=optimize.minimize)
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
-        assert_allclose(resbrute[1], self.func(self.solution, *self.params),
+        assert_allclose(resbrute[1], brute_func(self.solution, *self.params),
                         atol=1e-3)
+
+        # test that brute can optimize an instance method (the other tests use
+        # a non-class based function
+        resbrute = optimize.brute(self.brute_func, self.rranges,
+                                  args=self.params, full_output=True,
+                                  finish=optimize.minimize)
+        assert_allclose(resbrute[0], self.solution, atol=1e-3)
 
     def test_1D(self):
         # test that for a 1D problem the test function is passed an array,
@@ -1283,6 +1298,17 @@ class TestBrute:
             return x ** 2
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
+
+    def test_workers(self):
+        # check that parallel evaluation works
+        resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
+                                  full_output=True, finish=None)
+
+        resbrute1 = optimize.brute(brute_func, self.rranges, args=self.params,
+                                  full_output=True, finish=None, workers=2)
+
+        assert_allclose(resbrute1[-1], resbrute[-1])
+        assert_allclose(resbrute1[0], resbrute[0])
 
 
 class TestIterationLimits(object):

@@ -427,9 +427,8 @@ class TestVertexNeighborVertices(object):
 
         indptr, indices = tri.vertex_neighbor_vertices
 
-        got = []
-        for j in range(tri.points.shape[0]):
-            got.append(set(map(int, indices[indptr[j]:indptr[j+1]])))
+        got = [set(map(int, indices[indptr[j]:indptr[j+1]]))
+               for j in range(tri.points.shape[0])]
 
         assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
 

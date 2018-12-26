@@ -76,7 +76,12 @@ all via hitting enter key at each step.
 
 We should be aware of the fact that these tools also install Python2, very similar to 
 a virtual environment, which is only usable within an MSYS2 terminal and we are **not**
-going to use it at any point.
+going to use it at any point. After updating, now we are going to use the build
+toolchain that we have installed in the previous step. Depending on 32/64bit choice,
+we will switch to another shell that MSYS2 created. In your start menu you should
+see three MSYS2 terminal shortcuts. Select the one with either 64 or 32bit indicator.
+The reason why we do this is that the toolchain and compilers are available to these
+shells and not to the standard MSYS2 terminal.
 
 If you already have a GitHub repository folder where you keep your own repos, it is better 
 to use that location to keep things nice and tidy since we are going to clone yet another 
@@ -146,10 +151,10 @@ Installing OpenBLAS
 ===================
 
 If you see that line, then you might have OpenBLAS correctly built, even if other failures
-occurred. Look in that folder for :code:`openblas.a`. If you find a file called something
-like :code:`libopenblas_5f998ef_gcc7_2_0.a`, just rename it to :code:`openblas.a` and continue.
-If the file isn't there, then poke around and try to find the file elsewhere in
-:code:`OPENBLAS_ROOT`. If you don't have that file, you'll probably need to find out what
+might have occurred. Look in that folder for :code:`openblas.a`. If you find a file called
+something like :code:`libopenblas_5f998ef_gcc7_2_0.a`, just rename it to :code:`openblas.a`
+and continue. If the file isn't there, then poke around and try to find the file elsewhere
+in :code:`OPENBLAS_ROOT`. If you don't have that file, you'll probably need to find out what
 happened and then build OpenBLAS again. But if you have that file, we'll assume that you've
 completed this step correctly. Proceeding on that assumption, let's build SciPy.
 
@@ -217,17 +222,14 @@ Now install the dependencies that we need to build and test SciPy. **It's import
 specify the full path to the native Python interpreter so that the built-in MSYS2 Python will
 not be used. Attempting to build with the MSYS2 Python will not work correctly.**
 
-**18 October 2017** Until NumPy 1.14 is officially released, we have to work with the latest
-development  version of the NumPy repository. See the NumPy documentation....
-
 .. code:: shell
 
     /c/Users/<user name>/AppData/Local/Programs/Python/Python36/python.exe \
-         -m pip install numpy cython pytest pytest-xdist pytest-faulthandler
+         -m pip install numpy>=1.14.0 cython pytest pytest-xdist pytest-faulthandler
 
 Please note that this is a simpler procedure than what is used for the official binaries.
 **Your binaries will only work with the latest NumPy (v1.14.0dev and higher)**. For
-building against older Numpy versions, see `Building Against an Older Numpy Version`_. 
+building against older NumPy versions, see `Building Against an Older NumPy Version`_.
 Make sure that you are in the same directory where  ``setup.py`` is (you should be if you 
 have not changed directories):
 
@@ -255,13 +257,13 @@ Congratulatations, you've built SciPy!
 .. _`pre-built zip files`: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/
 .. _WindowsCompilers: https://wiki.python.org/moin/WindowsCompilers
 
-Building Against an Older Numpy Version
+Building Against an Older NumPy Version
 ---------------------------------------
 
 If you want to build SciPy to work with an older numpy version, then you will need 
-to replace the Numpy "distutils" folder with the folder from the latest numpy.
-The following powershell snippet can upgrade Numpy distutils while retaining an older
-Numpy ABI_.
+to replace the NumPy "distutils" folder with the folder from the latest numpy.
+The following powershell snippet can upgrade NumPy distutils while retaining an older
+NumPy ABI_.
 
 .. code:: shell
 

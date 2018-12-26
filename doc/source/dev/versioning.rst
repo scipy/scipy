@@ -1,6 +1,6 @@
 Version numbering
 =================
-Scipy version numbering complies to `PEP 440`_.  Released final versions, which
+SciPy version numbering complies to `PEP 440`_.  Released final versions, which
 are the only versions appearing on `PyPI`_, are numbered ``MAJOR.MINOR.MICRO``
 where:
 
@@ -18,7 +18,7 @@ Released alpha, beta and rc (release candidate) versions are numbered
 like final versions but with postfixes ``a#``, ``b#`` and ``rc#`` respectively,
 with ``#`` an integer.  Development versions are postfixed with ``.dev0+<git-commit-hash>``.
 
-Examples of valid Scipy version strings are::
+Examples of valid SciPy version strings are::
 
     0.16.0
     0.15.1
@@ -27,7 +27,7 @@ Examples of valid Scipy version strings are::
     0.14.0rc1
     0.17.0.dev0+ac53f09
 
-An installed Scipy version contains these version identifiers::
+An installed SciPy version contains these version identifiers::
 
     scipy.__version__            # complete version string, including git commit hash for dev versions
     scipy.version.short_version  # string, only major.minor.micro

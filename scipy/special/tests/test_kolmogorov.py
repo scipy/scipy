@@ -1,6 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
+import sys
+import pytest
 
 import numpy as np
 from numpy.testing import assert_
@@ -228,6 +230,8 @@ class TestSmirnovp(object):
         dataset0 = np.column_stack([n, x, pp])
         FuncData(_smirnovp, dataset0, (0, 1), 2, rtol=_rtol).check(dtypes=[int, float, float])
 
+    @pytest.mark.xfail(sys.maxsize <= 2**32,
+                       reason="requires 64-bit platform")
     def test_oneovernclose(self):
         # Check derivative at x=1/n  (Discontinuous at x=1/n, test on either side: x=1/n +/- 2epsilon)
         n = np.arange(3, 20)
