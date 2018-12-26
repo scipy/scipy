@@ -224,27 +224,16 @@ del empty_module
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
 
-# single precision float
-# WIN : '?bBhH!!!!!!ef!!!!!!'
-# NIX : '?bBhH!!!!!!ef!!!!!!'
-
-# double precision float
-# WIN : '?bBhHiIlLqQefdg!!!!'
-# NIX : '?bBhHiIlLqQefd!!!!!'
-
-# single precision complex
-# WIN : '?bBhH!!!!!!ef!!F!!!'
-# NIX : '?bBhH!!!!!!ef!!F!!!'
-
-# double precision complex
-# WIN : '?bBhHiIlLqQefdgFDG!'
-# NIX : '?bBhHiIlLqQefd!FD!!'
+# single precision float   : '?bBhH!!!!!!ef!!!!!!'
+# double precision float   : '?bBhHiIlLqQefdg!!!!'
+# single precision complex : '?bBhH!!!!!!ef!!F!!!'
+# double precision complex : '?bBhHiIlLqQefdgFDG!'
 
 _type_score = {x: 1 for x in '?bBhHef'}
 _type_score.update({x: 2 for x in 'iIlLqQd'})
 
-# Handle float128 and complex256 separately for non-windows systems
-# otherwise it will overwrite the same key with same value
+# Handle float128(g) and complex256(G) separately in case non-windows systems.
+# On windows, the values will be rewritten to the same key with the same value.
 _type_score.update({'F': 3, 'D': 4, 'g': 2, 'G': 4})
 
 # Final mapping to the actual prefixes and dtypes
@@ -283,8 +272,6 @@ def find_best_blas_type(arrays=(), dtype=None):
         Inferred Numpy data type.
     prefer_fortran : bool
         Whether to prefer Fortran order routines over C order.
-
-    .. versionchanged:: 1.3.0
 
     Examples
     --------
