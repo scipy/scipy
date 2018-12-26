@@ -239,7 +239,6 @@ class LinprogCommonTests(object):
         A, b, c = lpgen_2d(20, 20)
         res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                       options={"disp": True})
-        # disp is independent of sparse/dense
         _assert_success(res, desired_fun=-64.049494229)
 
     def test_docstring_example(self):

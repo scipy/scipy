@@ -16,9 +16,6 @@ from numpy.linalg.linalg import LinAlgError as LinAlgError2
 from ._linprog_util import _postsolve
 from .optimize import OptimizeResult
 
-# TODO: add unit tests for initial guess
-# TODO: report status/message when initial guess is not BFS
-# TODO: add display?
 # TODO: cythonize c_hat = c - v.dot(A); c_hat = c_hat[~bl]
 # TODO: Pythranize?
 
@@ -62,6 +59,7 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
 
     # detect redundancy
     # TODO: consider removing this?
+    # if section is removed, make sure artificial columns are removed from A
     B = A[:, basis]
     try:
         rank_revealer = solve(B, A[:, :n])
@@ -103,8 +101,12 @@ def _get_more_basis_columns(A, basis):
     # form basis matrix
     B = np.zeros((m, m))
     B[:, 0:len(basis)] = A[:, basis]
-    rank = 0  # just enter the loop
 
+    if (basis.size > 0 and
+            np.linalg.matrix_rank(B[:, :len(basis)]) < len(basis)):
+        raise Exception("Basis has dependent columns")
+
+    rank = 0  # just enter the loop
     for i in range(n):  # somewhat arbitrary, but we need another way out
         # permute the options, and take as many as needed
         new_basis = np.random.permutation(options)[:m-len(basis)]
