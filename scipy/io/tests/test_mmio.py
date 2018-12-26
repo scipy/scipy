@@ -479,6 +479,24 @@ _symmetric_pattern_example = '''\
     5     4
 '''
 
+# example (without comment lines) from Figure 1 in
+# https://math.nist.gov/MatrixMarket/reports/MMformat.ps
+_empty_lines_example = '''\
+%%MatrixMarket  MATRIX    Coordinate    Real General
+
+   5  5         8
+
+1 1  1.0
+2 2       10.5
+3 3             1.5e-2
+4 4                     -2.8E2
+5 5                              12.
+     1      4      6
+     4      2      250.5
+     4      5      33.32
+
+'''
+
 
 class TestMMIOCoordinate(object):
     def setup_method(self):
@@ -540,6 +558,15 @@ class TestMMIOCoordinate(object):
              [0, 0, 0, 1, 1]]
         self.check_read(_symmetric_pattern_example, a,
                         (5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
+
+    def test_read_empty_lines(self):
+        a = [[1, 0, 0, 6, 0],
+             [0, 10.5, 0, 0, 0],
+             [0, 0, .015, 0, 0],
+             [0, 250.5, 0, -280, 33.32],
+             [0, 0, 0, 0, 12]]
+        self.check_read(_empty_lines_example, a,
+                        (5, 5, 8, 'coordinate', 'real', 'general'))
 
     def test_empty_write_read(self):
         # https://github.com/scipy/scipy/issues/1410 (Trac #883)
