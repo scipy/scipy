@@ -57,28 +57,33 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     if status == 0 and residual > tol:
         status = 2
 
-    # detect redundancy
-    # TODO: consider removing this?
-    # if section is removed, make sure artificial columns are removed from A
-    B = A[:, basis]
-    try:
-        rank_revealer = solve(B, A[:, :n])
-        z = _find_nonzero_rows(rank_revealer, tol)
-
-        # eliminate redundancy
-        A = A[z, :n]
-        b = b[z]
-    except (LinAlgError, LinAlgError2):
-        status = 4
+    # drive artificial variables out of basis
+    # TODO: test redundant row removal better
+    # TODO: make solve more efficient with BGLU? This could take a while.
+    keep_rows = np.ones(m, dtype=bool)
+    for basis_column in basis[basis >= n]:
+        B = A[:, basis]
+        try:
+            basis_finder = np.abs(solve(B, A))  # inefficient
+            pertinent_row = np.argmax(basis_finder[:, basis_column])
+            eligible_columns = np.ones(n, dtype=bool)
+            eligible_columns[basis[basis < n]] = 0
+            eligible_column_indices = np.where(eligible_columns)[0]
+            index = np.argmax(basis_finder[:, :n]
+                              [pertinent_row, eligible_columns])
+            new_basis_column = eligible_column_indices[index]
+            if basis_finder[pertinent_row, new_basis_column] < tol:
+                keep_rows[pertinent_row] = False
+            else:
+                basis[basis == basis_column] = new_basis_column
+        except (LinAlgError, LinAlgError2):
+            status = 4
 
     # form solution to original problem
+    A = A[keep_rows, :n]
+    basis = basis[keep_rows]
     x = x[:n]
     m = A.shape[0]
-    basis = basis[basis < n]
-
-    # if feasible, choose additional indices to complete basis
-    if status == 0 and len(basis) < m:
-        basis = _get_more_basis_columns(A, basis)
 
     return x, basis, A, b, residual, status, iter_k
 
@@ -156,8 +161,14 @@ def _generate_auxiliary_problem(A, b, x0, tol):
     b[r < 0] = -b[r < 0]  # to the auxiliary problem
     r[r < 0] *= -1
 
-    # rows which we will need to find a trivial way to zero
-    nonzero_constraints = np.where(r > tol)[0]
+    # Rows which we will need to find a trivial way to zero.
+    # This should just be the rows where there is a nonzero residual.
+    # But then we would not necessarily have a column singleton in every row.
+    # This makes it difficult to find an initial basis.
+    if x0 is None:
+        nonzero_constraints = np.arange(m)
+    else:
+        nonzero_constraints = np.where(r > tol)[0]
 
     # these are (at least some of) the initial basis columns
     basis = np.where(np.abs(x) > tol)[0]
@@ -379,7 +390,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
     return x, b, status, iteration
 
 
-def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=1000, tol=1e-12,
+def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
                 maxupdate=10, mast=False, pivot="mrc", _T_o=[], disp=False,
                 **unknown_options):
     """
