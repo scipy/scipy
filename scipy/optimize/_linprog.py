@@ -172,10 +172,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. math::
 
-        \min_x \ & c^T x \\\\
-        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\\\
+        \\min_x \\ & c^T x \\\\
+        \\mbox{such that} \\ & A_{ub} x \\leq b_{ub},\\\\
         & A_{eq} x = b_{eq},\\\\
-        & l \leq x \leq u ,
+        & l \\leq x \\leq u ,
 
     where :math:`x` is a vector of decision variables; :math:`c`,
     :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
@@ -206,7 +206,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     b_ub : 1D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
-    A_eq : 2D, optional
+    A_eq : 2D array, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
         coefficients of a linear equality constraint on ``x``.
     b_eq : 1D array, optional
@@ -221,8 +221,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will serve as bounds for all decision variables.
     method : str, optional
         The algorithm used to solve the standard form problem.
-        :ref:`'revised simplex' <optimize.linprog-revised_simplex>` (default),
-        :ref:`'interior-point' <optimize.linprog-interior-point>`, and
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are supported.
     callback : callable, optional
@@ -245,13 +245,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             phase : int
                 The phase of the algorithm being executed.
             status : int
-                An integer representing the status of the optimization::
+                An integer representing the status of the algorithm.
 
-                     0 : Algorithm proceeding nominally
-                     1 : Iteration limit reached
-                     2 : Problem appears to be infeasible
-                     3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties encountered
+                ``0`` : Optimization proceeding nominally.
+
+                ``1`` : Iteration limit reached.
+
+                ``2`` : Problem appears to be infeasible.
+
+                ``3`` : Problem appears to be unbounded.
+
+                ``4`` : Numerical difficulties encountered.
+
             nit : int
                 The current iteration number.
             message : str
@@ -287,21 +292,25 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 The optimal value of the objective function ``c @ x``.
             slack : 1D array
                 The (nominally positive) values of the slack variables,
-                ``b_ub - A_ub @ x``
+                ``b_ub - A_ub @ x``.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints,
-                ``b_eq - A_eq @ x``
+                ``b_eq - A_eq @ x``.
             success : bool
                 ``True`` when the algorithm succeeds in finding an optimal
                 solution.
             status : int
-                An integer representing the exit status of the algorithm::
+                An integer representing the exit status of the algorithm.
 
-                     0 : Optimization terminated successfully
-                     1 : Iteration limit reached
-                     2 : Problem appears to be infeasible
-                     3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties encountered
+                ``0`` : Optimization terminated successfully.
+
+                ``1`` : Iteration limit reached.
+
+                ``2`` : Problem appears to be infeasible.
+
+                ``3`` : Problem appears to be unbounded.
+
+                ``4`` : Numerical difficulties encountered.
 
             nit : int
                 The total number of iterations performed in all phases.
@@ -310,24 +319,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     See Also
     --------
-    show_options : Additional options accepted by the solvers
+    show_options : Additional options accepted by the solvers.
 
     Notes
     -----
     This section describes the available solvers that can be selected by the
     'method' parameter.
-    :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is the default.
-    :ref:`'interior-point' <optimize.linprog-interior-point>` is typically
-    faster, but may not be as accurate.
+    :ref:`'interior-point' <optimize.linprog-interior-point>` is the default
+    as it is typically the fastest and most robust method.
+    :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is more
+    accurate for the problems it solves.
     :ref:`'simplex' <optimize.linprog-simplex>` is the legacy method and is
-    included for backwards compatibility.
-
-    Method *revised simplex* uses the revised simplex method as decribed in
-    [9]_, except that a factorization [11]_ of the basis matrix, rather than
-    its inverse, is efficiently maintained and used to solve the linear systems
-    at each iteration of the algorithm.
-
-    .. versionadded:: 1.3.0
+    included for backwards compatibility and educational purposes.
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and
@@ -338,9 +341,17 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. versionadded:: 1.0.0
 
-    Method *simplex* uses Dantzig's simplex algorithm [1]_, [2]_ (*not* the
+    Method *revised simplex* uses the revised simplex method as decribed in
+    [9]_, except that a factorization [11]_ of the basis matrix, rather than
+    its inverse, is efficiently maintained and used to solve the linear systems
+    at each iteration of the algorithm.
+
+    .. versionadded:: 1.3.0
+
+    Method *simplex* uses a traditional, full-tableau implementation of
+    Dantzig's simplex algorithm [1]_, [2]_ (*not* the
     Nelder-Mead simplex). This algorithm is included for backwards
-    compatibility.
+    compatibility and educational purposes.
 
     .. versionadded:: 0.15.0
 
@@ -427,18 +438,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. math::
 
-        \min_{x_0, x_1} \ & -x_0 + 4x_1 & \\\\
-        \mbox{such that} \ & -3x_0 + x_1 & \leq 6,\\\\
-        & -x_0 - 2x_1 & \geq -4,\\\\
-        & x_1 & \geq -3.
+        \\min_{x_0, x_1} \\ -&x_0 &+ 4&x_1 && \\\\
+        \\mbox{such that} \\ -3&x_0 &+ &x_1 & \\leq &6,\\\\
+        -&x_0 &- 2&x_1 & \\geq -&4,\\\\
+        &&&x_1 & \\geq -&3.
 
     The problem is not presented in the form accepted by `linprog`. This is
     easily remedied by converting the "greater than" inequality
     constraint to a "less than" inequality constraint by
     multiplying both sides by a factor of :math:`-1`. Note also that the last
-    constraint is really the simple bound :math:`-3 \leq x_1 \leq \infty`.
+    constraint is really the simple bound :math:`-3 \\leq x_1 \\leq \\infty`.
     Finally, since there are no bounds on :math:`x_0`, we must explicitly
-    specify the bounds :math:`-\infty \leq x_0 \leq \infty`, as the
+    specify the bounds :math:`-\\infty \\leq x_0 \\leq \\infty`, as the
     default is for variables to be non-negative. After collecting coeffecients
     into arrays and tuples, the input for this problem is:
 
