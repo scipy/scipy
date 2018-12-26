@@ -1222,6 +1222,7 @@ class LinprogCommonTests(object):
 
     def test_bug_8663(self):
         # exposed a bug in presolve
+        # https://github.com/scipy/scipy/issues/8663
         c = [1, 5]
         A_eq = [[0, -7]]
         b_eq = [-6]
@@ -1233,6 +1234,7 @@ class LinprogCommonTests(object):
     def test_bug_8664(self):
         # interior-point has trouble with this when presolve is off
         # tested for interior-point with presolve off in TestLinprogIPSpecific
+        # https://github.com/scipy/scipy/issues/8664
         c = [4]
         A_ub = [[2], [5]]
         b_ub = [4, 4]
@@ -1493,7 +1495,7 @@ class TestLinprogIPSpecific(object):
             sup.filter(OptimizeWarning, "Solving system with option...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options={"presolve": False})
-        assert_equal(res.status, 4)
+        assert_(not res.success, "Incorrectly reported success")
 
 
 ########################################
