@@ -438,9 +438,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. math::
 
-        \\min_{x_0, x_1} \\ -&x_0 &+ 4&x_1 && \\\\
-        \\mbox{such that} \\ -3&x_0 &+ &x_1 & \\leq &6,\\\\
-        -&x_0 &- 2&x_1 & \\geq -&4,\\\\
+        \\min_{x_0, x_1} \\ -&x_0 &+ 4&x_1 && \\tabularnewline
+        \\mbox{such that} \\ -3&x_0 &+ &x_1 & \\leq &6,\\tabularnewline
+        -&x_0 &- 2&x_1 & \\geq -&4,\\tabularnewline
         &&&x_1 & \\geq -&3.
 
     The problem is not presented in the form accepted by `linprog`. This is
