@@ -275,6 +275,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             iprint = disp
 
     n_function_evals, fun = wrap_function(fun, ())
+    n_jac_evals, jac = wrap_function(jac, ())
     if jac is None:
         def func_and_grad(x):
             f = fun(x, *args)
@@ -368,6 +369,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
     return OptimizeResult(fun=f, jac=g, nfev=n_function_evals[0],
+                          njev=n_jac_evals[0],
                           nit=n_iterations, status=warnflag, message=task_str,
                           x=x, success=(warnflag == 0), hess_inv=hess_inv)
 
