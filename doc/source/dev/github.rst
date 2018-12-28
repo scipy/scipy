@@ -69,6 +69,12 @@ Typically, the developer who merges an important bugfix adds the
 whether and when the backport is done.  After the backport is completed, the
 ``backport-candidate`` label has to be removed again.
 
+A good strategy for a backport pull request is to combine several master
+branch pull requests, to reduce the burden on continuous integration tests
+and to reduce the merge commit cluttering of maintenance branch history. It
+is generally best to have a single commit for each of the master branch pull
+requests represented in the backport pull request. This way, history is clear
+and can be reverted in a straightforward manner if needed.
 
 Release notes
 -------------
