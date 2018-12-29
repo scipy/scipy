@@ -798,6 +798,9 @@ class burr_gen(rv_continuous):
     def _logcdf(self, x, c, d):
         return -d * np.log1p(x**(-c))
 
+    def _sf(self, x, c, d):
+        return 1 - (1 + x**(-c))**(-d)
+
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
@@ -948,7 +951,7 @@ class fisk_gen(burr_gen):
         return burr_gen._logcdf(self, x, c, 1.0)
 
     def _sf(self, x, c):
-        return 1. - (1 + x**(-c))**(-1.0)
+        return burr_gen._sf(self, x, c, 1.0)
 
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
