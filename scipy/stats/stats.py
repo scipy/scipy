@@ -83,6 +83,7 @@ Variability
     zmap
     zscore
     iqr
+    mad
 
 Trimming Functions
 ------------------
@@ -183,7 +184,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr',
+           'sem', 'zmap', 'zscore', 'iqr', 'mad',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -2517,6 +2518,116 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         out /= scale
 
     return out
+
+
+
+def mad(x, axis=None, nan_policy='propagate', keepdims=False):
+    """
+    Compute the median absolute deviation (MAD) of the data along the
+    specified axis [1]_.
+
+    The MAD computes the median over the absolute deviations from the median.
+    It is a measure of dispersion similar to the standard deviation, but is
+    more robust to outliers [2]_.
+
+    The MAD of an empty array is `np.nan`.
+
+    .. versionadded:: 1.2
+
+    Parameters
+    ----------
+    x : array_like
+        Input array or object that can be converted to an array.
+    axis : int or sequence of int, optional
+        Axis along which the range is computed. The default is to
+        compute the IQR for the entire array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate'
+        returns nan, 'raise' throws an error, 'omit' performs the
+        calculations ignoring nan values. Default is 'propagate'.
+    keepdims : bool, optional
+        If this is set to `True`, the reduced axes are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array `x`.
+
+    Returns
+    -------
+    mad : scalar or ndarray
+        If ``axis=None``, a scalar is returned. If the input contains
+        integers or floats of smaller precision than ``np.float64``, then the
+        output data-type is ``np.float64``. Otherwise, the output data-type is
+        the same as that of the input.
+
+    See Also
+    --------
+    numpy.std, numpy.var, numpy.median
+
+    Examples
+    --------
+    >>> from scipy.stats import mad
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> mad(x)
+    2.0
+    >>> iqr(x, axis=0)
+    array([3.5, 2.5, 1.5])
+    >>> iqr(x, axis=0, keepdims=True)
+    array([[3.5, 2.5, 1.5]])
+
+    References
+    ----------
+    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    """
+    x = asarray(x)
+
+    # This check prevents percentile from raising an error later. Also, it is
+    # consistent with `np.var` and `np.std`.
+    if not x.size:
+        return np.nan
+
+    # Select the percentile function to use based on nans and policy
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        # Way faster than carrying the masks around
+        arr = ma.masked_invalid(x).compressed()
+    else:
+        arr = x
+
+    try:
+        # Special processing if axis is an iterable
+        original_size = len(axis)
+    except TypeError:
+        # Axis is a scalar at this point
+        pass
+    else:
+        axis = np.unique(np.asarray(axis) % x.ndim)
+        if original_size > axis.size:
+            # mimic numpy if axes are duplicated
+            raise ValueError("duplicate value in axis")
+        if axis.size == x.ndim:
+            # axis includes all axes: revert to None
+            axis = None
+        elif axis.size == 1:
+            # no rolling necessary
+            axis = axis[0]
+        else:
+            # roll multiple axes to the end and flatten that part out
+            for ax in axis[::-1]:
+                arr = np.rollaxis(arr, ax, x.ndim)
+            arr = arr.reshape(arr.shape[:-axis.size] +
+                          (np.prod(arr.shape[-axis.size:]),))
+            axis = -1
+
+
+    med = np.median(arr, axis=axis, keepdims=keepdims)
+    mad = np.median(np.abs(arr - med), axis=axis, keepdims=keepdims)
+
+    return mad
+
 
 
 def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
