@@ -150,7 +150,6 @@ interpolate
 Ideas for new features:
 
   - Spline fitting routines with better user control.
-  - Integration and differentiation and arithmetic routines for splines
   - Transparent tensor-product splines.
   - NURBS support.
   - Mesh refinement and coarsening of B-splines and corresponding tensor products.
@@ -376,10 +375,13 @@ what's already present can continue to be added; more advanced statistical
 routines may fit better in ``statsmodels``.  Some ideas for new contributions
 are:
 
-- Implementing (well-kown) distributions to the ``stats.distributions``
+- Implementing (well-known) distributions to the ``stats.distributions``
   framework is always welcome.
 - Continuing work on making the function signatures of ``stats`` and
-``stats.mstats`` more consistent, and adding tests to ensure that that remains
-  the case.
+  ``stats.mstats`` more consistent, and adding tests to ensure that that
+  remains the case.
+- Return ``Bunch`` objects from functions that now return many values, and for
+  functions for which extra return values are desired (see
+  `gh-3665 <https://github.com/scipy/scipy/issues/3665>`__).
 - There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
   PR in `gh-4933 https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
