@@ -2521,34 +2521,37 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
 
 
-def mad(x, axis=None, nan_policy='propagate', keepdims=False):
+def mad(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
     """
-    Compute the median absolute deviation (MAD) of the data along the
-    specified axis [1]_.
+    Compute the median absolute deviation of the data along the given axis.
+    [1]_
 
-    The MAD computes the median over the absolute deviations from the median.
-    It is a measure of dispersion similar to the standard deviation, but is
-    more robust to outliers [2]_.
+    The median absolute deviation (MAD) computes the median over the absolute
+    deviations from the median.  It is a measure of dispersion similar to the
+    standard deviation, but is more robust to outliers [2]_.
 
     The MAD of an empty array is `np.nan`.
 
-    .. versionadded:: 1.2
+    .. versionadded:: 1.3.0
 
     Parameters
     ----------
     x : array_like
         Input array or object that can be converted to an array.
-    axis : int or sequence of int, optional
-        Axis along which the range is computed. The default is to
-        compute the IQR for the entire array.
+    axis : int or None, optional
+        Axis along which the range is computed. Default is 0. If None, compute
+        the MAD over the entire array.
+    center : func, optional
+        A function that will return the central value. The default is to use
+        np.median. Any user defined function used will need to have the function
+        signature `func(arr, axis)`.
+    scale : int, optional
+        The scaling factor applied to the MAD. The default scale ensures
+        consistency with the standard deviation for normally distributed data.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate'
         returns nan, 'raise' throws an error, 'omit' performs the
         calculations ignoring nan values. Default is 'propagate'.
-    keepdims : bool, optional
-        If this is set to `True`, the reduced axes are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the original array `x`.
 
     Returns
     -------
@@ -2560,21 +2563,29 @@ def mad(x, axis=None, nan_policy='propagate', keepdims=False):
 
     See Also
     --------
-    numpy.std, numpy.var, numpy.median
+    numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
+    scipt.stats.tstd, scipy.stats.tvar
 
     Examples
     --------
-    >>> from scipy.stats import mad
+    >>> from scipy import stats
     >>> x = np.array([[10, 7, 4], [3, 2, 1]])
     >>> x
     array([[10,  7,  4],
            [ 3,  2,  1]])
-    >>> mad(x)
-    2.0
-    >>> iqr(x, axis=0)
-    array([3.5, 2.5, 1.5])
-    >>> iqr(x, axis=0, keepdims=True)
-    array([[3.5, 2.5, 1.5]])
+    >>> stats.mad(x)
+    array([5.1891, 3.7065, 2.2239])
+    >>> stats.mad(x, axis=None)
+    2.9652
+
+
+    Notes
+    -----
+
+    The `center` argument only affects the calculation of the central value
+    around which the MAD is calculated. That is, passing in `center=np.mean`
+    will calculate the MAD around the mean - it will not calculate the _mean_
+    absolute deviation.
 
     References
     ----------
@@ -2597,36 +2608,25 @@ def mad(x, axis=None, nan_policy='propagate', keepdims=False):
     else:
         arr = x
 
-    try:
-        # Special processing if axis is an iterable
-        original_size = len(axis)
-    except TypeError:
-        # Axis is a scalar at this point
-        pass
+    if axis is None:
+        med = center(arr)
+        mad = np.median(np.abs(arr - med))
     else:
-        axis = np.unique(np.asarray(axis) % x.ndim)
-        if original_size > axis.size:
-            # mimic numpy if axes are duplicated
-            raise ValueError("duplicate value in axis")
-        if axis.size == x.ndim:
-            # axis includes all axes: revert to None
-            axis = None
-        elif axis.size == 1:
-            # no rolling necessary
-            axis = axis[0]
-        else:
-            # roll multiple axes to the end and flatten that part out
-            for ax in axis[::-1]:
-                arr = np.rollaxis(arr, ax, x.ndim)
-            arr = arr.reshape(arr.shape[:-axis.size] +
-                          (np.prod(arr.shape[-axis.size:]),))
-            axis = -1
+        # Make sure the right axes are used while calculating the MAD
+        ax = []
+        for ii in range(len(arr.shape)):
+            if ii == axis:
+                ax.append(0)
+            else:
+                ax.append(slice(None))
 
+        ax = tuple(ax)
+        med = center(arr, axis=axis)
+        arr = np.rollaxis(arr, axis, 0)
+        mad = np.median(np.abs(arr - med), axis=0)
+        mad = np.rollaxis(mad, 0, axis)
 
-    med = np.median(arr, axis=axis, keepdims=keepdims)
-    mad = np.median(np.abs(arr - med), axis=axis, keepdims=keepdims)
-
-    return mad
+    return scale * mad
 
 
 
