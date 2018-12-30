@@ -2569,11 +2569,10 @@ class rv_discrete(rv_generic):
     moment_tol : float, optional
         The tolerance for the generic calculation of moments.
     values : tuple of two array_like, optional
-        ``(xk, pk)`` where ``xk`` are integers with non-zero and
-        probabilities ``pk`` are ``sum(pk) = 1`` and bounded inside [0.0, 1.0].
-        ``xk`` and ``pk`` must have the same shape.
+        ``(xk, pk)`` where ``xk`` are integers with non-zero
         probabilities ``pk``  with ``sum(pk) = 1``. Note: pk should be
         assigned between 0 to 1.
+        ``xk`` and ``pk`` must have the same shape.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3358,7 +3357,7 @@ class rv_sample(rv_discrete):
         if np.shape(xk) != np.shape(pk):
             raise ValueError("xk and pk must have the same shape.")
         if np.less(pk, 0.0).any():
-            raise ValueError("pk cannot be negative values.")
+            raise ValueError("All elements of pk must be non-negative.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
 

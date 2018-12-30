@@ -1195,9 +1195,9 @@ class TestRvDiscrete(object):
 
     def test_multidimension(self):
         xk = np.arange(12).reshape((3, 4))
-        pk = np.array([[0.1,0.1,0.15,0.05],
-                       [0.1,0.1,0.05,0.05],
-                       [0.1,0.1,0.05,0.05]])
+        pk = np.array([[0.1, 0.1, 0.15, 0.05],
+                       [0.1, 0.1, 0.05, 0.05],
+                       [0.1, 0.1, 0.05, 0.05]])
         rv = stats.rv_discrete(values=(xk, pk))
 
         assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
