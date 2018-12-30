@@ -211,9 +211,11 @@ spatial location under *periodic wrapping* mode.  E.g., in a 1D array,
 you would have ``x[0]`` and ``x[-1]`` co-located.  A very common
 use-case, however, is for signals to be periodic, with equal spacing
 between the first and last element along an axis (instead of zero
-spacing).  Adding wrapping modes for this use-case and disambiguating
-them from the existing implementation should address several issues,
-including #1323, #1903, #2045 and #2640.
+spacing).  Wrapping modes for this use-case were added in
+`gh-8537 <https://github.com/scipy/scipy/pull/8537>`__, next the
+interpolation routines should be updated to use those modes.
+This should address several issues, including gh-1323, gh-1903, gh-2045
+and gh-2640.
 
 The morphology interface needs to be standardized:
 
@@ -383,5 +385,9 @@ are:
 - Return ``Bunch`` objects from functions that now return many values, and for
   functions for which extra return values are desired (see
   `gh-3665 <https://github.com/scipy/scipy/issues/3665>`__).
+- Improve statistical tests (p-value calculation, alternative hypothesis), for
+  example implement an exact two-sided KS test (see
+  `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
+  Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
 - There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
   PR in `gh-4933 https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
