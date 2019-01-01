@@ -531,6 +531,11 @@ class poisson_gen(rv_discrete):
 poisson = poisson_gen(name="poisson", longname='A Poisson')
 
 
+_planck_deprec_msg = """\
+The distribution `planck` is a special case of `geom` with suitable
+parameters; `planck` is therefore deprecated. Please use `scipy.stats.geom`."""
+
+
 class planck_gen(rv_discrete):
     r"""A Planck discrete exponential random variable.
 
@@ -556,26 +561,32 @@ class planck_gen(rv_discrete):
     def _argcheck(self, lambda_):
         return lambda_ > 0
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _pmf(self, k, lambda_):
         return (1-exp(-lambda_))*exp(-lambda_*k)
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _cdf(self, x, lambda_):
         k = floor(x)
         return 1-exp(-lambda_*(k+1))
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _sf(self, x, lambda_):
         return np.exp(self._logsf(x, lambda_))
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _logsf(self, x, lambda_):
         k = floor(x)
         return -lambda_*(k+1)
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
         vals1 = (vals-1).clip(self.a, np.inf)
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _stats(self, lambda_):
         mu = 1/(exp(lambda_)-1)
         var = exp(-lambda_)/(expm1(-lambda_))**2
@@ -583,6 +594,7 @@ class planck_gen(rv_discrete):
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2
 
+    @np.deprecate(old_name='planck', message=_planck_deprec_msg)
     def _entropy(self, lambda_):
         l = lambda_
         C = (1-exp(-l))
