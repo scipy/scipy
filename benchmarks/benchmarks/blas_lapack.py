@@ -24,7 +24,7 @@ class GetBlasLapackFuncs(Benchmark):
                    'size']
     params = [
         ['b', 'G', 'd'],
-        ['d', 'F', '?']
+        ['d', 'F', '?'],
         ['C', 'F'],
         ['C', 'F'],
         [10, 100, 1000]
