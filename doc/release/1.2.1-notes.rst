@@ -5,6 +5,8 @@ SciPy 1.2.1 Release Notes
 .. contents::
 
 SciPy 1.2.1 is a bug-fix release with no new features compared to 1.2.0.
+Most importantly, it solves the issue that 1.2.0 cannot be installed
+from source on Python 2.7 because of non-ascii character issues.
 
 Authors
 =======
