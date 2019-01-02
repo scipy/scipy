@@ -2569,10 +2569,9 @@ class rv_discrete(rv_generic):
     moment_tol : float, optional
         The tolerance for the generic calculation of moments.
     values : tuple of two array_like, optional
-        ``(xk, pk)`` where ``xk`` are integers with non-zero
-        probabilities ``pk``  with ``sum(pk) = 1``. Note: pk should be
-        assigned between 0 to 1.
-        ``xk`` and ``pk`` must have the same shape.
+        ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
+        probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
+        and ``pk`` must have the same shape.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
