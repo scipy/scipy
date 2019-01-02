@@ -239,13 +239,17 @@ def _contains_nan(a, nan_policy='propagate'):
         with np.errstate(invalid='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
-        # If the check cannot be properly performed we fallback to omitting
-        # nan values and raising a warning. This can happen when attempting to
-        # sum things that are not numbers (e.g. as in the function `mode`).
-        contains_nan = False
-        nan_policy = 'omit'
-        warnings.warn("The input array could not be properly checked for nan "
-                      "values. nan values will be ignored.", RuntimeWarning)
+        # This can happen when attempting to sum things which are not
+        # numbers (e.g. as in the function `mode`). Try an alternative method:
+        try:
+            contains_nan = np.nan in set(a.ravel())
+        except TypeError:
+            # Don't know what to do. Fall back to omitting nan values and
+            # issue a warning.
+            contains_nan = False
+            nan_policy = 'omit'
+            warnings.warn("The input array could not be properly checked for nan "
+                          "values. nan values will be ignored.", RuntimeWarning)
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
@@ -439,9 +443,8 @@ def mode(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
 
-    if (NumpyVersion(np.__version__) < '1.9.0') or (a.dtype == object and np.nan in set(a)):
+    if a.dtype == object and np.nan in set(a.ravel()):
         # Fall back to a slower method since np.unique does not work with NaN
-        # or for older numpy which does not support return_counts
         scores = set(np.ravel(a))  # get ALL unique values
         testshape = list(a.shape)
         testshape[axis] = 1
