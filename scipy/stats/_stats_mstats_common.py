@@ -11,6 +11,7 @@ LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                    'rvalue', 'pvalue',
                                                    'stderr'))
 
+
 def linregress(x, y=None):
     """
     Calculate a linear least-squares regression for two sets of measurements.
@@ -327,7 +328,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     .. [2] A. Stein and M. Werman, "Finding the repeated median regression
            line", Proceedings of the Third Annual ACM-SIAM Symposium on
-           Discrete Algorithms, pp. 409–413, 1992.
+           Discrete Algorithms, pp. 409-413, 1992.
 
     Examples
     --------
