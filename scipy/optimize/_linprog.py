@@ -164,7 +164,7 @@ def linprog_terse_callback(res):
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, method='simplex', callback=None,
             options=None, x0=None):
-    """
+    r"""
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints.
 
@@ -172,10 +172,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. math::
 
-        \\min_x \\ & c^T x \\\\
-        \\mbox{such that} \\ & A_{ub} x \\leq b_{ub},\\\\
-        & A_{eq} x = b_{eq},\\\\
-        & l \\leq x \\leq u ,
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
 
     where :math:`x` is a vector of decision variables; :math:`c`,
     :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
@@ -438,18 +438,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. math::
 
-        \\min_{x_0, x_1} \\ -&x_0 &+ 4&x_1 & & \\\\
-        \\mbox{such that} \\ -3&x_0 &+ &x_1 & \\leq &6,\\\\
-        -&x_0 &- 2&x_1 & \\geq -&4,\\\\
-        & & &x_1 & \\geq -&3.
+        \min_{x_0, x_1} \ -x_0 + 4x_1 & \\
+        \mbox{such that} \ -3x_0 + x_1 & \leq 6,\\
+        -x_0 - 2x_1 & \geq -4,\\
+        x_1 & \geq -3.
 
     The problem is not presented in the form accepted by `linprog`. This is
     easily remedied by converting the "greater than" inequality
     constraint to a "less than" inequality constraint by
     multiplying both sides by a factor of :math:`-1`. Note also that the last
-    constraint is really the simple bound :math:`-3 \\leq x_1 \\leq \\infty`.
+    constraint is really the simple bound :math:`-3 \leq x_1 \leq \infty`.
     Finally, since there are no bounds on :math:`x_0`, we must explicitly
-    specify the bounds :math:`-\\infty \\leq x_0 \\leq \\infty`, as the
+    specify the bounds :math:`-\infty \leq x_0 \leq \infty`, as the
     default is for variables to be non-negative. After collecting coeffecients
     into arrays and tuples, the input for this problem is:
 
