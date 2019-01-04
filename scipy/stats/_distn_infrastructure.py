@@ -13,7 +13,7 @@ import re
 import types
 import warnings
 
-from scipy.misc import doccer
+from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
