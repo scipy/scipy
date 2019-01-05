@@ -5421,13 +5421,18 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     ----------
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
-    method : {'fisher', 'stouffer'}, optional
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar-george'},
+    optional.
         Name of method to use to combine p-values. The following methods are
         available:
 
         - "fisher": Fisher's method (Fisher's combined probability test),
           the default.
+        - "pearson": Pearson's method (similar to Fisher's but uses 1-p
+          inside the logarithms).
+        - "tippett": Tippett's nethd=od (minimum of pvalues).
         - "stouffer": Stouffer's Z-score method.
+        - "mudholkar-george": a sum of fisher and pearson methods.
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -5436,7 +5441,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     statistic: float
         The statistic calculated by the specified method:
         - "fisher": The chi-squared statistic
+        - "pearson": Similar to Fisher but using complementary pval
+        - "tippett": smallest p-value
         - "stouffer": The Z-score
+        - "mudholkar-george": The sum of fisher and pearson methods
     pval: float
         The combined p-value.
 
@@ -5448,6 +5456,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     advantage of Stouffer's method is that it is straightforward to introduce
     weights, which can make Stouffer's method more powerful than Fisher's
     method when the p-values are from studies of different size [3]_ [4]_.
+    The Pearson method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
+    method uses :math:`log(p_i)` [6]_. The `mudholkar-george` method is the
+    sum of the fisher and the pearson test statistics.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -5466,6 +5477,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
     .. [5] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+    .. [6] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
+           combining p-values."  Biometrika 105.1 (2018): 239-246.
 
     """
     pvalues = np.asarray(pvalues)
@@ -5476,6 +5489,20 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         Xsq = -2 * np.sum(np.log(pvalues))
         pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
         return (Xsq, pval)
+    elif method == 'pearson':
+        Xsq = -2 * np.sum(np.log(1 - pvalues))
+        pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
+        return (Xsq, pval)
+    elif method == 'mudholkar_george':
+        Sg = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log(1-pvalues))
+        nu = 5 * len(pvalues) + 4
+        approx_factor = np.sqrt(nu / (nu - 2))
+        pval = distributions.t.sf(Sg * approx_factor, nu)
+        return (Sg, pval)
+    elif method == 'tippett':
+        St = np.min(pvalues)
+        pval = distributions.beta.sf(St,1, len(pvalues))
+        return (St, pval)
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
@@ -5493,7 +5520,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         return (Z, pval)
     else:
         raise ValueError(
-            "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
+            "Invalid method '%s'. Options are 'fisher', 'pearson', \
+            'mudholkar_george', 'tippett', 'or 'stouffer'", method)
 
 
 #####################################
