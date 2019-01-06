@@ -351,7 +351,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     A vectorized version of Newton, Halley, and secant methods for arrays.
 
     Do not use this method directly. This method is called from `newton`
-    when ``np.isscalar(x0)`` is True. For docstring, see `newton`.
+    when ``np.size(x0) > 1`` is ``True``. For docstring, see `newton`.
     """
     try:
         p = np.asarray(x0, dtype=float)
