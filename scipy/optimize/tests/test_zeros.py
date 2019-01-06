@@ -638,3 +638,18 @@ def test_gh_9608_preserve_array_shape():
     x0 = np.array([-2], dtype=np.float32)
     rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
     assert(r.converged)
+
+    x0_array = np.array([-2, -3], dtype=np.float32)
+    # This next invocation should fail
+    with pytest.raises(IndexError):
+        result = zeros.newton(
+            f, x0_array, fprime=fp, fprime2=fpp, full_output=True
+        )
+
+    def fpp_array(x):
+        return 2*np.ones(np.shape(x), dtype=np.float32)
+
+    result = zeros.newton(
+        f, x0_array, fprime=fp, fprime2=fpp_array, full_output=True
+    )
+    assert result.converged.all()
