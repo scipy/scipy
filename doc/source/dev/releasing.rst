@@ -94,8 +94,9 @@ sdists and docs successfully.  Then continue with building wheels.  Only push
 the release tag to the repo once all wheels have been built successfully on
 TravisCI and Appveyor (if it fails, you have to move the tag otherwise - which
 is bad practice).  Finally, after pushing the tag, also push a second
-commit which increment the version number and sets ``ISRELEASED`` to False
-again.
+commit which increments the version number and sets ``ISRELEASED`` to False
+again. This also applies with new release candidates, and for removing the
+``rc`` affix when switching from release candidate to release proper.
 
 
 Building release artifacts
@@ -111,18 +112,30 @@ Here is a complete list of artifacts created for a release:
 
 Source archives, Changelog and README are built by running ``paver release`` in
 the repo root, and end up in ``REPO_ROOT/release/``.  Do this after you've
-created the signed tag locally.  If this completes without issues, push the release
-commit (not the tag, see section above) to the scipy repo.
+created the signed tag locally. ``paver release`` will be sensitive to the version
+of Cython available in your build environment, so make sure your version matches the
+minimum requirements for the release. If this completes without issues, push the release
+commit (not the tag, see section above) to the scipy repo. If ``pavement.py`` is causing
+issues, it is also possible to simply use ``python setup.py sdist`` and perform the
+release notes task from ``pavement.py`` by hand.
 
-To build wheels, push a commit to the master branch of
-https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
+To build wheels, push a commit to a branch used for the current release at
+https://github.com/MacPython/scipy-wheels . This triggers builds for all needed
 Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
 config files what commit to build, and what Python and NumPy are used for the
 builds (it needs to be the lowest supported NumPy version for each Python
-version).  See the README file in the scipy-wheels repo for more details.
+version). See the README file in the scipy-wheels repo for more details. Note that
+because several months may pass between ``SciPy`` releases, it is sometimes necessary
+to update the versions of the ``gfortran-install`` and ``multibuild`` submodules
+used for wheel builds. If the wheels builds reveal issues that need to be fixed
+with backports on the maintenance branch, you may remove the local tags (for example
+``git tag -d v1.2.0rc1``) and restart with tagging above on the new candidate commit.
 
 The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,
 upload the wheels to a container pointed to at https://github.com/MacPython/scipy-wheels
+Once there are successful wheel builds, it is recommended to create a versioned branch
+in the ``scipy-wheels`` repo, which will for example be adjusted to point to different
+maintenance branch commits if there are multiple release candidates.
 
 From there you can download them for uploading to PyPI.  This can be
 done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy>`_
@@ -162,13 +175,23 @@ Upload first the wheels and then the sdist::
 **Github Releases:**
 
 Use GUI on https://github.com/scipy/scipy/releases to create release and
-upload all release artifacts.
+upload all release artifacts. At this stage, it is appropriate to push
+the tag and associate the new release (candidate) with this tag in the GUI.
+For example, ``git push upstream v1.2.0rc1``, where ``upstream`` represents
+``scipy/scipy``. It is useful to check a previous
+release to determine exactly which artifacts should be included in the GUI
+upload process. Also, note that the release notes are not automatically populated
+into the release description on GitHub, and some manual reformatting to markdown
+can be quite helpful to match the formatting of previous releases on the site.
+We generally do not include Issue and Pull Request lists in these GUI
+descriptions.
 
 **scipy.org:**
 
 Sources for the site are in https://github.com/scipy/scipy.org.
 Update the News section in ``www/index.rst`` and then do
-``make upload USERNAME=yourusername``.
+``make upload USERNAME=yourusername``. This is only for proper releases,
+not release candidates.
 
 **docs.scipy.org:**
 
@@ -181,7 +204,8 @@ don't have that.
 The sources for the website itself are maintained in
 https://github.com/scipy/docs.scipy.org/.  Add the new SciPy version in the
 table of releases in ``index.rst``.  Push that commit, then do ``make upload
-USERNAME=yourusername``.
+USERNAME=yourusername``. This is only for proper releases,
+not release candidates.
 
 
 Wrapping up
@@ -189,7 +213,6 @@ Wrapping up
 Send an email announcing the release to the following mailing lists:
 
 - scipy-dev
-- scipy-user
 - numpy-discussion
 - python-announce (not for beta/rc releases)
 
