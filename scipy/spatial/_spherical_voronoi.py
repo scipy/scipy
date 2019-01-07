@@ -98,8 +98,8 @@ class SphericalVoronoi:
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, 3)
-        Coordinates of points to construct a spherical
-        Voronoi diagram from
+        Coordinates of points from which to construct a spherical
+        Voronoi diagram.
     radius : float, optional
         Radius of the sphere (Default: 1)
     center : ndarray of floats, shape (3,)
@@ -112,18 +112,18 @@ class SphericalVoronoi:
     Attributes
     ----------
     points : double array of shape (npoints, 3)
-            the points in 3D to generate the Voronoi diagram from
+        the points in 3D to generate the Voronoi diagram from
     radius : double
-            radius of the sphere
-            Default: None (forces estimation, which is less precise)
+        radius of the sphere
+        Default: None (forces estimation, which is less precise)
     center : double array of shape (3,)
-            center of the sphere
-            Default: None (assumes sphere is centered at origin)
+        center of the sphere
+        Default: None (assumes sphere is centered at origin)
     vertices : double array of shape (nvertices, 3)
-            Voronoi vertices corresponding to points
+        Voronoi vertices corresponding to points
     regions : list of list of integers of shape (npoints, _ )
-            the n-th entry is a list consisting of the indices
-            of the vertices belonging to the n-th point in points
+        the n-th entry is a list consisting of the indices
+        of the vertices belonging to the n-th point in points
 
     Raises
     ------
@@ -132,7 +132,7 @@ class SphericalVoronoi:
         If the provided `radius` is not consistent with `points`.
 
     Notes
-    ----------
+    -----
     The spherical Voronoi diagram algorithm proceeds as follows. The Convex
     Hull of the input points (generators) is calculated, and is equivalent to
     their Delaunay triangulation on the surface of the sphere [Caroli]_.
@@ -161,7 +161,6 @@ class SphericalVoronoi:
 
     References
     ----------
-
     .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of
                 points on or close to a sphere. Research Report RR-7004, 2009.
     .. [Weisstein] "L'Huilier's Theorem." From MathWorld -- A Wolfram Web
@@ -173,6 +172,7 @@ class SphericalVoronoi:
 
     Examples
     --------
+    Do some imports and take some points on a cube:
 
     >>> from matplotlib import colors
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -182,13 +182,17 @@ class SphericalVoronoi:
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
     ...                    [0, 1, 0], [0, -1, 0], [-1, 0, 0], ])
-    >>> center = np.array([0, 0, 0])
+
+    Calculate the spherical Voronoi diagram:
+
     >>> radius = 1
-    >>> # calculate spherical Voronoi diagram
+    >>> center = np.array([0, 0, 0])
     >>> sv = SphericalVoronoi(points, radius, center)
+
+    Generate plot:
+
     >>> # sort vertices (optional, helpful for plotting)
     >>> sv.sort_vertices_of_regions()
-    >>> # generate plot
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111, projection='3d')
     >>> # plot the unit sphere for reference (optional)
@@ -214,18 +218,6 @@ class SphericalVoronoi:
     """
 
     def __init__(self, points, radius=None, center=None, threshold=1e-06):
-        """
-        Initializes the object and starts the computation of the Voronoi
-        diagram.
-
-        points : The generator points of the Voronoi diagram assumed to be
-         all on the sphere with radius supplied by the radius parameter and
-         center supplied by the center parameter.
-        radius : The radius of the sphere. Will default to 1 if not supplied.
-        center : The center of the sphere. Will default to the origin if not
-         supplied.
-        """
-
         self.points = points
         if np.any(center):
             self.center = center
@@ -311,26 +303,28 @@ class SphericalVoronoi:
         self.regions = groups
 
     def sort_vertices_of_regions(self):
-        """
-         For each region in regions, it sorts the indices of the Voronoi
-         vertices such that the resulting points are in a clockwise or
-         counterclockwise order around the generator point.
+        """Sort indices of the vertices to be (counter-)clockwise ordered.
 
-         This is done as follows: Recall that the n-th region in regions
-         surrounds the n-th generator in points and that the k-th
-         Voronoi vertex in vertices is the projected circumcenter of the
-         tetrahedron obtained by the k-th triangle in _tri.simplices (and the
-         origin). For each region n, we choose the first triangle (=Voronoi
-         vertex) in _tri.simplices and a vertex of that triangle not equal to
-         the center n. These determine a unique neighbor of that triangle,
-         which is then chosen as the second triangle. The second triangle
-         will have a unique vertex not equal to the current vertex or the
-         center. This determines a unique neighbor of the second triangle,
-         which is then chosen as the third triangle and so forth. We proceed
-         through all the triangles (=Voronoi vertices) belonging to the
-         generator in points and obtain a sorted version of the vertices
-         of its surrounding region.
+        Notes
+        -----
+        For each region in regions, it sorts the indices of the Voronoi
+        vertices such that the resulting points are in a clockwise or
+        counterclockwise order around the generator point.
+
+        This is done as follows: Recall that the n-th region in regions
+        surrounds the n-th generator in points and that the k-th
+        Voronoi vertex in vertices is the projected circumcenter of the
+        tetrahedron obtained by the k-th triangle in _tri.simplices (and the
+        origin). For each region n, we choose the first triangle (=Voronoi
+        vertex) in _tri.simplices and a vertex of that triangle not equal to
+        the center n. These determine a unique neighbor of that triangle,
+        which is then chosen as the second triangle. The second triangle
+        will have a unique vertex not equal to the current vertex or the
+        center. This determines a unique neighbor of the second triangle,
+        which is then chosen as the third triangle and so forth. We proceed
+        through all the triangles (=Voronoi vertices) belonging to the
+        generator in points and obtain a sorted version of the vertices
+        of its surrounding region.
         """
 
-        _voronoi.sort_vertices_of_regions(self._tri.simplices,
-                                                   self.regions)
+        _voronoi.sort_vertices_of_regions(self._tri.simplices, self.regions)

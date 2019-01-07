@@ -2349,13 +2349,13 @@ class rv_continuous(rv_generic):
             E[f(x)] = Integral(f(x) * dist.pdf(x)),
                     lb
 
-        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)`` 
-        distribution. If the bounds ``lb`` and ``ub`` correspond to the 
-        support of the distribution, e.g. ``[-inf, inf]`` in the default 
-        case, then the integral is the unrestricted expectation of ``f(x)``. 
-        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0`` 
-        outside a finite interval in which case the expectation is 
-        calculated within the finite range ``[lb, ub]``. 
+        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)``
+        distribution. If the bounds ``lb`` and ``ub`` correspond to the
+        support of the distribution, e.g. ``[-inf, inf]`` in the default
+        case, then the integral is the unrestricted expectation of ``f(x)``.
+        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0``
+        outside a finite interval in which case the expectation is
+        calculated within the finite range ``[lb, ub]``.
 
         Parameters
         ----------
@@ -2395,12 +2395,12 @@ class rv_continuous(rv_generic):
         Examples
         --------
 
-        To understand the effect of the bounds of integration consider 
+        To understand the effect of the bounds of integration consider
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
 
-        This is close to 
+        This is close to
 
         >>> expon(1).cdf(2.0) - expon(1).cdf(0.0)
         0.6321205588285577
