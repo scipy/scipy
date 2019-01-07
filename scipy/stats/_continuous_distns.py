@@ -42,14 +42,14 @@ class ksone_gen(rv_continuous):
     r"""General Kolmogorov-Smirnov one-sided test.
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
-    statistics :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-`
+    statistics :math:`D_n^+` and :math:`D_n^-`
     for a finite sample size ``n`` (the shape parameter).
 
     %(before_notes)s
 
     Notes
     -----
-    :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-` are given by
+    :math:`D_n^+` and :math:`D_n^-` are given by
 
     .. math::
 
@@ -143,6 +143,7 @@ class kstwo_gen(rv_continuous):
 
 
 kstwo = kstwo_gen(a=0.0, b=1.0, name='kstwo')
+
 
 
 class kstwobign_gen(rv_continuous):
