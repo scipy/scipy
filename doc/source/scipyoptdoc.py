@@ -135,20 +135,21 @@ def wrap_mangling_directive(base_directive):
             self.options['noindex'] = True
             self.arguments[0] = name + signature
             lines = textwrap.dedent(pydoc.getdoc(impl_obj)).splitlines()
+            # Change "Options" to "Other Parameters", run numpydoc, reset
             new_lines = []
             for line in lines:
                 if line.strip() == 'Options':
-                    new_lines.append("Other Parameters")
+                    line = "Other Parameters"
                 elif line.strip() == "-"*len('Options'):
-                    new_lines.append("-"*len("Other Parameters"))
-                else:
-                    new_lines.append(line)
+                    line = "-"*len("Other Parameters")
+                new_lines.append(line)
             mangle_docstrings(env.app, 'function', name, None, None, new_lines)
             lines = new_lines
             new_lines = []
             for line in lines:
                 if line.strip() == ':Other Parameters:':
                     new_lines.extend((BLURB % (name,)).splitlines())
+                    new_lines.append('\n')
                     new_lines.append(':Options:')
                 else:
                     new_lines.append(line)
