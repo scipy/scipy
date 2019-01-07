@@ -49,7 +49,7 @@ distcont_extra = [
 
 
 distslow = ['kappa4', 'rdist', 'gausshyper',
-            'recipinvgauss', 'ksone', 'genexpon',
+            'recipinvgauss', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
@@ -136,7 +136,7 @@ def test_cont_basic(distname, arg):
         check_pickling(distfn, arg)
 
         # Entropy
-        if distname not in ['ksone', 'kstwobign']:
+        if distname not in ['kstwobign']:
             check_entropy(distfn, arg, distname)
 
         if distfn.numargs == 0:
@@ -172,8 +172,8 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises', 'ksone'])
-    fail_higher = set(['vonmises', 'ksone', 'ncf'])
+    fail_normalization = set(['vonmises'])
+    fail_higher = set(['vonmises', 'ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
