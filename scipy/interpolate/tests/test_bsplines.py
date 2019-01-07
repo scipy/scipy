@@ -619,10 +619,9 @@ class TestInterop(object):
         # with n > 1
         x, y = self.xx, self.yy
         y2 = np.c_[y, y]
-        msg = "failed in converting 3rd argument `y' of dfitpack.curfit to C/Fortran array"
-        with assert_raises(Exception, message=msg):
+        with assert_raises(ValueError):
             splrep(x, y2)
-        with assert_raises(Exception, message=msg):
+        with assert_raises(ValueError):
             _impl.splrep(x, y2)
 
         # input below minimum size
