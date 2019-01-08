@@ -4,6 +4,7 @@ import numpy as np
 from .bdf import BDF
 from .radau import Radau
 from .rk import RK23, RK45
+from .dopri import DOP853
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
@@ -14,7 +15,8 @@ METHODS = {'RK23': RK23,
            'RK45': RK45,
            'Radau': Radau,
            'BDF': BDF,
-           'LSODA': LSODA}
+           'LSODA': LSODA,
+           'DOP853': DOP853}
 
 
 MESSAGES = {0: "The solver successfully reached the end of the integration interval.",

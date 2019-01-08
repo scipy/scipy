@@ -92,7 +92,7 @@ from .quadpack import *
 from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
-                   OdeSolver, RK23, RK45, Radau, BDF, LSODA)
+                   OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
