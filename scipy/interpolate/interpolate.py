@@ -101,7 +101,7 @@ def lagrange(x, w):
 class interp2d(object):
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
-             fill_value=nan)
+             fill_value=None)
 
     Interpolate over a 2-D grid.
 
