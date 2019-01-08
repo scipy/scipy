@@ -457,16 +457,30 @@ class gaussian_kde(object):
             size = int(self.neff)
 
         norm = transpose(multivariate_normal(zeros((self.d,), float),
-                         self.covariance, size=size))
+                                             self.covariance, size=size))
         indices = choice(self.n, size=size, p=self.weights)
         means = self.dataset[:, indices]
 
         return means + norm
 
     def scotts_factor(self):
+        """Compute Scott's factor.
+
+        Returns
+        -------
+        s : float
+            Scott's factor.
+        """
         return power(self.neff, -1./(self.d+4))
 
     def silverman_factor(self):
+        """Compute the Silverman factor.
+
+        Returns
+        -------
+        s : float
+            The silverman factor.
+        """
         return power(self.neff*(self.d+2.0)/4.0, -1./(self.d+4))
 
     #  Default method to calculate bandwidth, can be overwritten by subclass

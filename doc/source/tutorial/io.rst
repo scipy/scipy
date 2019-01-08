@@ -339,10 +339,10 @@ Arff files (:mod:`scipy.io.arff`)
 
    loadarff
 
-Netcdf (:mod:`scipy.io.netcdf`)
--------------------------------
+Netcdf
+------
 
-.. module:: scipy.io.netcdf
+.. module:: scipy.io
 
 .. autosummary::
 

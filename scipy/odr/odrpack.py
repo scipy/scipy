@@ -62,7 +62,7 @@ class OdrError(Exception):
     """
     Exception indicating an error in fitting.
 
-    This is raised by `scipy.odr` if an error occurs during fitting.
+    This is raised by `scipy.odr.odr` if an error occurs during fitting.
     """
     pass
 
@@ -72,7 +72,7 @@ class OdrStop(Exception):
     Exception stopping fitting.
 
     You can raise this exception in your objective function to tell
-    `scipy.odr` to stop fitting.
+    `scipy.odr.odr` to stop fitting.
     """
     pass
 

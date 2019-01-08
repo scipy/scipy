@@ -252,11 +252,6 @@ def savemat(file_name, mdict,
     oned_as : {'row', 'column'}, optional
         If 'column', write 1-D numpy arrays as column vectors.
         If 'row', write 1-D numpy arrays as row vectors.
-
-    See also
-    --------
-    mio4.MatFile4Writer
-    mio5.MatFile5Writer
     """
     file_opened = False
     if hasattr(file_name, 'write'):

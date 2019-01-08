@@ -38,6 +38,7 @@ Finding functions
 -----------------
 
 .. autosummary::
+   :toctree: generated/
 
    get_lapack_funcs
 

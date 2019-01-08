@@ -60,10 +60,10 @@ class LowLevelCallable(tuple):
     - ctypes function pointer
     - cffi function pointer
 
-    The signature of the low-level callback must match one of  those expected 
+    The signature of the low-level callback must match one of  those expected
     by the routine it is passed to.
 
-    If constructing low-level functions from a PyCapsule, the name of the 
+    If constructing low-level functions from a PyCapsule, the name of the
     capsule must be the corresponding signature, in the format::
 
         return_type (arg1_type, arg2_type, ...)
@@ -73,8 +73,8 @@ class LowLevelCallable(tuple):
         "void (double)"
         "double (double, int *, void *)"
 
-    The context of a PyCapsule passed in as ``function`` is used as ``user_data``, 
-    if an explicit value for `user_data` was not given.
+    The context of a PyCapsule passed in as ``function`` is used as ``user_data``,
+    if an explicit value for ``user_data`` was not given.
 
     """
 

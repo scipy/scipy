@@ -181,7 +181,7 @@ context manager `scipy.special.errstate`.
 
 The names of orthogonal polynomial root functions have been changed to
 be consistent with other functions relating to orthogonal
-polynomials. For example, `scipy.special.j_roots` has been renamed
+polynomials. For example, ``scipy.special.j_roots`` has been renamed
 `scipy.special.roots_jacobi` for consistency with the related
 functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
 preserve back-compatibility the old names have been left as aliases.

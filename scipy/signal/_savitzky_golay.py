@@ -231,7 +231,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     ----------
     x : array_like
         The data to be filtered.  If `x` is not a single or double precision
-        floating point array, it will be converted to type `numpy.float64`
+        floating point array, it will be converted to type ``numpy.float64``
         before filtering.
     window_length : int
         The length of the filter window (i.e. the number of coefficients).

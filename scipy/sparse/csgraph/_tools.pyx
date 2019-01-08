@@ -533,7 +533,7 @@ def construct_dist_matrix(graph,
     Notes
     -----
     The predecessor matrix is of the form returned by
-    :func:`graph_shortest_path`.  Row i of the predecessor matrix contains
+    `shortest_path`.  Row i of the predecessor matrix contains
     information on the shortest paths from point i: each entry
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then

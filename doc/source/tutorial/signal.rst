@@ -975,7 +975,7 @@ the spectrogram.
 Lomb-Scargle Periodograms (:func:`lombscargle`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Least-squares spectral analysis (LSSA) is a method of estimating a frequency
+Least-squares spectral analysis (LSSA) [1]_ [2]_ is a method of estimating a frequency
 spectrum, based on a least squares fit of sinusoids to data samples, similar
 to Fourier analysis. Fourier analysis, the most used spectral method in
 science, generally boosts long-periodic noise in long gapped records; LSSA

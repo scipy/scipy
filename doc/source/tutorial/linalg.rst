@@ -18,7 +18,10 @@ also a two-dimensional array.
 scipy.linalg vs numpy.linalg
 ----------------------------
 
-:mod:`scipy.linalg` contains all the functions in :mod:`numpy.linalg`.
+.. TODO: replace numpy.linalg HTML link with `numpy.linalg` once NumPy updates doc
+
+:mod:`scipy.linalg` contains all the functions in
+`numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__.
 plus some other more advanced ones not contained in ``numpy.linalg``.
 
 Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that

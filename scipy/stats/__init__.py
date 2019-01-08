@@ -351,8 +351,8 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/

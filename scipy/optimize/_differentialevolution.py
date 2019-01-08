@@ -148,7 +148,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel (uses `multiprocessing.Pool`).
+        sections and evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
         Supply -1 to use all available CPU cores.
         Alternatively supply a map-like callable, such as
         `multiprocessing.Pool.map` for evaluating the population in parallel.
@@ -396,7 +397,8 @@ class DifferentialEvolutionSolver(object):
         `workers` keyword can over-ride this option.
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel (uses `multiprocessing.Pool`).
+        sections and evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
         Supply `-1` to use all cores available to the Process.
         Alternatively supply a map-like callable, such as
         `multiprocessing.Pool.map` for evaluating the population in parallel.

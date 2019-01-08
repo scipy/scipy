@@ -81,7 +81,7 @@ with a leading underscore), for example ``veccdf``, are only available
 for internal calculation (those methods will give warnings when one tries to
 use them, and will be removed at some point).
 
-To obtain the `real` main methods, we list the methods of the frozen
+To obtain the *real* main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
 below).
 
@@ -158,8 +158,11 @@ argument:
     >>> norm.rvs(size=3)
     array([-0.35687759,  1.34347647, -0.11710531])   # random
 
+.. TODO: Replace numpy.random HTML with `numpy.random` once NumPy updates doc
+
 Note that drawing random numbers relies on generators from
-:mod:`numpy.random` package. In the example above, the specific stream of
+`numpy.random <https://www.numpy.org/devdocs/reference/routines.random.html>`__
+package. In the example above, the specific stream of
 random numbers is not reproducible across runs. To achieve reproducibility,
 you can explicitly seed a global variable
 

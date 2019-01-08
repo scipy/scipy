@@ -4729,8 +4729,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     See Also
     --------
-    power_divergence
-    mstats.chisquare
+    scipy.stats.power_divergence
 
     Notes
     -----
@@ -4905,7 +4904,7 @@ def tiecorrect(rankvals):
     ----------
     rankvals : array_like
         A 1-D sequence of ranks.  Typically this will be the array
-        returned by `stats.rankdata`.
+        returned by `~scipy.stats.rankdata`.
 
     Returns
     -------

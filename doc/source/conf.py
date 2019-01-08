@@ -33,23 +33,13 @@ extensions = [
     'numpydoc',
     'scipyoptdoc',
     'doi_role',
+    'matplotlib.sphinxext.plot_directive',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
-try:
-    from matplotlib.sphinxext import plot_directive
-except ImportError:
-    use_matplotlib_plot_directive = False
-else:
-    try:
-        use_matplotlib_plot_directive = (plot_directive.__version__ >= 2)
-    except AttributeError:
-        use_matplotlib_plot_directive = False
-
-if use_matplotlib_plot_directive:
-    extensions.append('matplotlib.sphinxext.plot_directive')
-else:
+from matplotlib.sphinxext import plot_directive
+if plot_directive.__version__ < 2:
     raise RuntimeError("You need a recent enough version of matplotlib")
 
 # Add any paths that contain templates here, relative to this directory.
@@ -352,8 +342,9 @@ coverage_ignore_c_items = {}
 
 
 #------------------------------------------------------------------------------
-# Plot
+# Matplotlib plot_directive options
 #------------------------------------------------------------------------------
+
 plot_pre_code = """
 import numpy as np
 np.random.seed(123)
@@ -383,10 +374,6 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
-
-if not use_matplotlib_plot_directive:
-    import matplotlib
-    matplotlib.rcParams.update(plot_rcparams)
 
 # -----------------------------------------------------------------------------
 # Source code links

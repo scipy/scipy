@@ -2018,7 +2018,7 @@ for k, v in _win_equiv_raw.items():
 
 def get_window(window, Nx, fftbins=True):
     """
-    Return a window.
+    Return a window of a given length and type.
 
     Parameters
     ----------
@@ -2041,13 +2041,26 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        `boxcar`, `triang`, `blackman`, `hamming`, `hann`, `bartlett`,
-        `flattop`, `parzen`, `bohman`, `blackmanharris`, `nuttall`,
-        `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
-        deviation), `general_gaussian` (needs power, width), `slepian`
-        (needs width), `dpss` (needs normalized half-bandwidth),
-        `chebwin` (needs attenuation), `exponential` (needs decay scale),
-        `tukey` (needs taper fraction)
+    - `~scipy.signal.windows.boxcar`
+    - `~scipy.signal.windows.triang`
+    - `~scipy.signal.windows.blackman`
+    - `~scipy.signal.windows.hamming`
+    - `~scipy.signal.windows.hann`
+    - `~scipy.signal.windows.bartlett`
+    - `~scipy.signal.windows.flattop`
+    - `~scipy.signal.windows.parzen`
+    - `~scipy.signal.windows.bohman`
+    - `~scipy.signal.windows.blackmanharris`
+    - `~scipy.signal.windows.nuttall`
+    - `~scipy.signal.windows.barthann`
+    - `~scipy.signal.windows.kaiser` (needs beta)
+    - `~scipy.signal.windows.gaussian` (needs standard deviation)
+    - `~scipy.signal.windows.general_gaussian` (needs power, width)
+    - `~scipy.signal.windows.slepian` (needs width)
+    - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
+    - `~scipy.signal.windows.chebwin` (needs attenuation)
+    - `~scipy.signal.windows.exponential` (needs decay scale)
+    - `~scipy.signal.windows.tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
 
@@ -2056,7 +2069,7 @@ def get_window(window, Nx, fftbins=True):
     arguments the needed parameters.
 
     If `window` is a floating point number, it is interpreted as the beta
-    parameter of the `kaiser` window.
+    parameter of the `~scipy.signal.windows.kaiser` window.
 
     Each of the window types listed above is also the name of
     a function that can be called directly to create a window of
