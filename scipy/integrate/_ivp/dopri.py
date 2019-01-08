@@ -232,7 +232,6 @@ class DOP853(OdeSolver):
         self.f = self.fun(self.t, self.y)
         self.h_abs = select_initial_step(self.fun, self.t, self.y, self.f, self.direction,
                                          self.order, self.rtol, self.atol)
-        self.nfev += 2
 
         self.n_steps = 0
         self.n_accepted = 0
@@ -270,7 +269,6 @@ class DOP853(OdeSolver):
                 a, c = self.A[s], self.C[s]
                 dy = np.dot(K[:s].T, a) * h
                 K[s] = self.fun(t + c * h, y + dy)
-            self.nfev += 11
 
             f_B = np.dot(K[:12].T, self.B)
             y_final = y + h * f_B
@@ -301,7 +299,6 @@ class DOP853(OdeSolver):
                     a, c = self.A[s], self.C[s]
                     dy = np.dot(K[:s].T, a) * h
                     K[s] = self.fun(t + c * h, y + dy)
-                self.nfev += 4
 
                 # prepare the dense output
                 self.interpolation[0] = y
