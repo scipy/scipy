@@ -529,7 +529,7 @@ Pull requests for 1.1.0
 * `#8301 <https://github.com/scipy/scipy/pull/8301>`__: DOC: make public API documentation cross-link to refguide.
 * `#8302 <https://github.com/scipy/scipy/pull/8302>`__: make sure _onenorm_matrix_power_nnm actually returns a float
 * `#8313 <https://github.com/scipy/scipy/pull/8313>`__: Change copyright to outdated 2008-2016 to 2008-year
-* `#8315 <https://github.com/scipy/scipy/pull/8315>`__: TST: Add tests for `scipy.sparse.linalg.isolve.minres`
+* `#8315 <https://github.com/scipy/scipy/pull/8315>`__: TST: Add tests for \`scipy.sparse.linalg.isolve.minres\`
 * `#8318 <https://github.com/scipy/scipy/pull/8318>`__: ENH: odeint: Add the argument 'tfirst' to odeint.
 * `#8328 <https://github.com/scipy/scipy/pull/8328>`__: ENH: optimize: ``trust-constr`` optimization algorithms [GSoC...
 * `#8330 <https://github.com/scipy/scipy/pull/8330>`__: ENH: add a maxiter argument to NNLS

@@ -1,5 +1,4 @@
 """
-========================================================
 Hierarchical clustering (:mod:`scipy.cluster.hierarchy`)
 ========================================================
 
@@ -82,53 +81,6 @@ Utility routines for plotting:
    :toctree: generated/
 
    set_link_color_palette
-
-References
-----------
-
-.. [1] "Statistics toolbox." API Reference Documentation. The MathWorks.
-   https://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
-   Accessed October 1, 2007.
-
-.. [2] "Hierarchical clustering." API Reference Documentation.
-   The Wolfram Research, Inc.
-   https://reference.wolfram.com/language/HierarchicalClustering/tutorial/HierarchicalClustering.html.
-   Accessed October 1, 2007.
-
-.. [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
-   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
-
-.. [4] Ward Jr, JH. "Hierarchical grouping to optimize an objective
-   function." Journal of the American Statistical Association. 58(301):
-   pp. 236--44. 1963.
-
-.. [5] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
-   32(2): pp. 241--54. 1966.
-
-.. [6] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
-   855--60. 1962.
-
-.. [7] Batagelj, V. "Comparing resemblance measures." Journal of
-   Classification. 12: pp. 73--90. 1995.
-
-.. [8] Sokal, RR and Michener, CD. "A statistical method for evaluating
-   systematic relationships." Scientific Bulletins. 38(22):
-   pp. 1409--38. 1958.
-
-.. [9] Edelbrock, C. "Mixture model tests of hierarchical clustering
-   algorithms: the problem of classifying everybody." Multivariate
-   Behavioral Research. 14: pp. 367--84. 1979.
-
-.. [10] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
-   Prentice-Hall. Englewood Cliffs, NJ. 1988.
-
-.. [11] Fisher, RA "The use of multiple measurements in taxonomic
-   problems." Annals of Eugenics, 7(2): 179-188. 1936
-
-
-* MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
-
-* Mathematica is a registered trademark of The Wolfram Research, Inc.
 
 """
 from __future__ import division, print_function, absolute_import

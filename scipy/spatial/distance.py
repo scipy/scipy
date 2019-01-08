@@ -1,5 +1,4 @@
 """
-=====================================================
 Distance computations (:mod:`scipy.spatial.distance`)
 =====================================================
 
@@ -361,8 +360,8 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `np.random.RandomState` seed. Default is 0, a random shuffling of
-        u and v that guarantees reproducibility.
+        Local `numpy.random.RandomState` seed. Default is 0, a random
+        shuffling of u and v that guarantees reproducibility.
 
     Returns
     -------

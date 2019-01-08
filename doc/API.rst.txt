@@ -96,10 +96,10 @@ change is made.
 * `scipy.io`
 
   - `scipy.io.arff`
-  - `scipy.io.harwell_boeing`
-  - `scipy.io.idl`
-  - `scipy.io.matlab`
-  - `scipy.io.netcdf`
+  - ``scipy.io.harwell_boeing``
+  - ``scipy.io.idl``
+  - ``scipy.io.matlab``
+  - ``scipy.io.netcdf``
   - `scipy.io.wavfile`
 
 * `scipy.linalg`
@@ -136,5 +136,5 @@ change is made.
 
 * `scipy.stats`
 
-  - `scipy.stats.distributions`
+  - ``scipy.stats.distributions``
   - `scipy.stats.mstats`

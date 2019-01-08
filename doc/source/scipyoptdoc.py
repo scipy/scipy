@@ -143,7 +143,9 @@ def wrap_mangling_directive(base_directive):
                 elif line.strip() == "-"*len('Options'):
                     line = "-"*len("Other Parameters")
                 new_lines.append(line)
-            mangle_docstrings(env.app, 'function', name, None, None, new_lines)
+            # use impl_name instead of name here to avoid duplicate refs
+            mangle_docstrings(env.app, 'function', impl_name,
+                              None, None, new_lines)
             lines = new_lines
             new_lines = []
             for line in lines:

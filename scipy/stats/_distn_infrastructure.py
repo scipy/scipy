@@ -1179,7 +1179,7 @@ class rv_generic(object):
 
         See Also
         --------
-        stats.distributions.rv_discrete.ppf
+        rv_discrete.ppf
             Inverse of the CDF
 
         """

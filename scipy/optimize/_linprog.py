@@ -271,7 +271,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             disp : bool
                 Set to ``True`` to print convergence messages.
 
-        For method-specific options, see :func:`show_options('linprog')`.
+        For method-specific options, see
+        :func:`show_options('linprog') <show_options>`.
 
     x0 : 1D array, optional
         Guess values of the decision variables, which will be refined by

@@ -22,9 +22,6 @@ Package Content
    OdrError      -- Error exception.
    OdrStop       -- Stop exception.
 
-   odr_error     -- Same as OdrError (for backwards compatibility)
-   odr_stop      -- Same as OdrStop (for backwards compatibility)
-
 Prebuilt models:
 
 .. autosummary::

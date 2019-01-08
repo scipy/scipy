@@ -56,7 +56,7 @@ adapted for Python in the PymatrixId package by K.L. Ho.
 Polar decomposition
 ^^^^^^^^^^^^^^^^^^^
 
-A new function `scipy.linalg.polar`, to compute the polar decomposition 
+A new function `scipy.linalg.polar`, to compute the polar decomposition
 of a matrix, was added.
 
 BLAS level 3 functions
@@ -94,7 +94,7 @@ Boolean comparisons and sparse matrices
 All sparse matrix types now support boolean data, and boolean operations.  Two
 sparse matrices `A` and `B` can be compared in all the expected ways `A < B`,
 `A >= B`, `A != B`, producing similar results as dense Numpy arrays.
-Comparisons with dense matrices and scalars are also supported. 
+Comparisons with dense matrices and scalars are also supported.
 
 CSR and CSC fancy indexing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,14 +136,14 @@ which gives proper orientation in 2-D.
 ``scipy.signal`` improvements
 -----------------------------
 
-The cosine window function `scipy.signal.cosine` was added.
+The cosine window function ``scipy.signal.cosine`` was added.
 
 
 ``scipy.special`` improvements
 ------------------------------
 
 New functions `scipy.special.xlogy` and `scipy.special.xlog1py` were added.
-These functions can simplify and speed up code that has to calculate 
+These functions can simplify and speed up code that has to calculate
 ``x * log(y)`` and give 0 when ``x == 0``.
 
 
@@ -172,9 +172,9 @@ point WAV files.
 B-spline derivatives and antiderivatives
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`scipy.interpolate.splder` and `scipy.interpolate.splantider` functions 
+`scipy.interpolate.splder` and `scipy.interpolate.splantider` functions
 for computing B-splines that represent derivatives and antiderivatives
-of B-splines were added.  These functions are also available in the 
+of B-splines were added.  These functions are also available in the
 class-based FITPACK interface as ``UnivariateSpline.derivative`` and
 ``UnivariateSpline.antiderivative``.
 
@@ -289,7 +289,7 @@ Cython is now required to build *unreleased* versions of scipy.
 The C files generated from Cython sources are not included in the git repo
 anymore.  They are however still shipped in source releases.
 
-The code base received a fairly large PEP8 cleanup.  A ``tox pep8`` 
+The code base received a fairly large PEP8 cleanup.  A ``tox pep8``
 command has been added; new code should pass this test command.
 
 Scipy cannot be compiled with gfortran 4.1 anymore (at least on RH5), likely

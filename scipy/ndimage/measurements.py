@@ -611,9 +611,7 @@ def mean(input, labels=None, index=None):
 
     See also
     --------
-    ndimage.variance, ndimage.standard_deviation, ndimage.minimum,
-    ndimage.maximum, ndimage.sum
-    ndimage.label
+    variance, standard_deviation, minimum, maximum, sum, label
 
     Examples
     --------
@@ -1104,7 +1102,7 @@ def minimum_position(input, labels=None, index=None):
     ...               [9, 3, 0, 0]])
 
     >>> from scipy import ndimage
-    
+
     >>> ndimage.minimum_position(a)
     (2, 0)
     >>> ndimage.minimum_position(b)

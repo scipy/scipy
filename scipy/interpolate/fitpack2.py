@@ -929,16 +929,17 @@ class BivariateSpline(_BivariateSplineBase):
 
     See Also
     --------
-    UnivariateSpline : a similar class for univariate spline interpolation
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
     SmoothBivariateSpline :
         to create a BivariateSpline through the given points
     LSQBivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
-    SphereBivariateSpline :
-        bivariate spline interpolation in spherical cooridinates
+    RectSphereBivariateSpline
+    SmoothSphereBivariateSpline :
+    LSQSphereBivariateSpline
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
-
     """
 
     @classmethod
