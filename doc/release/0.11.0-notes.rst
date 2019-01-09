@@ -32,7 +32,6 @@ The new submodule :mod:`scipy.sparse.csgraph` implements a number of efficient
 graph algorithms for graphs stored as sparse adjacency matrices.  Available
 routines are:
 
-
    - :func:`connected_components` - determine connected components of a graph
    - :func:`laplacian` - compute the laplacian of a graph
    - :func:`shortest_path` - compute the shortest path between points on a
@@ -47,6 +46,7 @@ routines are:
    - :func:`depth_first_tree` - construct a depth-first tree from a given node
    - :func:`minimum_spanning_tree` - construct the minimum spanning
      tree of a graph
+
 
 ``scipy.optimize`` improvements
 -------------------------------
