@@ -205,6 +205,9 @@ latex_documents = [
 #   _stdauthor, 'manual'),
 ]
 
+# Not available on many systems:
+latex_use_xindy = False
+
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
 #latex_logo = None
