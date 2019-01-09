@@ -36,6 +36,7 @@ from numpydoc.numpydoc import mangle_docstrings
 from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
+from scipy._lib._util import getargspec_no_self
 
 
 if sys.version_info[0] >= 3:
@@ -83,17 +84,12 @@ def wrap_mangling_directive(base_directive):
             # Interface function
             name = self.arguments[0].strip()
             obj = _import_object(name)
-            # XXX deprecation that we should fix eventually
-            with warnings.catch_warnings(record=True):
-                warnings.simplefilter('ignore')
-                args, varargs, keywords, defaults = inspect.getargspec(obj)
+            args, varargs, keywords, defaults = getargspec_no_self(obj)
 
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            with warnings.catch_warnings(record=True):  # deprecation
-                warnings.simplefilter('ignore')
-                impl_args, impl_varargs, impl_keywords, impl_defaults = inspect.getargspec(impl_obj)
+            impl_args, impl_varargs, impl_keywords, impl_defaults = getargspec_no_self(impl_obj)
 
             # Format signature taking implementation into account
             args = list(args)
@@ -129,7 +125,8 @@ def wrap_mangling_directive(base_directive):
                                                         'callback', 'method', 'options'):
                     remove_arg(arg)
 
-            with warnings.catch_warnings(record=True):  # deprecation
+            # XXX deprecation that we should fix someday using Signature (?)
+            with warnings.catch_warnings(record=True):
                 warnings.simplefilter('ignore')
                 signature = inspect.formatargspec(
                     args, varargs, keywords, defaults)
