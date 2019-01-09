@@ -390,4 +390,4 @@ are:
   `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
   Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
 - There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
-  PR in `gh-4933 https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
+  PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
