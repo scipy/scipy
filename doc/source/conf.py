@@ -61,7 +61,7 @@ import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print("Scipy (VERSION %s)" % (version,))
+print("%s (VERSION %s)" % (project, version))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -108,7 +108,6 @@ exclude_patterns = [  # glob-style
     '**/class_generated',
 ]
 
-"""
 # be strict about warnings in our examples, we should write clean code
 # (exceptions permitted for pedagogical purposes below)
 np.seterr(all='raise')  # be strict about our examples
@@ -116,15 +115,22 @@ warnings.resetwarnings()
 warnings.filterwarnings('error')
 # allow these and show them
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
+# interpolate.LSQSphereBivariateSpline example
 warnings.filterwarnings(
-    'always', '.*coefficients of the spline.*')  # LSQSphereBivariateSpline
+    'always', '.*coefficients of the spline.*')
+# stats.mielke example
+warnings.filterwarnings(
+    'always', '.*The integral is probably divergent.*')
+# numpydoc 0.8 has some bad escape chars
+warnings.filterwarnings(
+    'always', '.*invalid escape sequence.*')
 # safely ignore these
 for key in (
         "'U' mode is deprecated",  # sphinx io
+        "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*%s.*" % key, category=DeprecationWarning)
-"""
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -141,7 +147,7 @@ if os.path.isdir(themedir):
             "edit_link": True,
             "sidebar": "right",
             "scipy_org_logo": True,
-            "rootlinks": [("https://scipy.org/", "Scipy.org"),
+            "rootlinks": [("https://scipy.org/", "SciPy.org"),
                           ("https://docs.scipy.org/", "Docs")]
         }
     else:
