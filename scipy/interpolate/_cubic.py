@@ -12,6 +12,10 @@ from scipy._lib._util import _asarray_validated
 from scipy.linalg import solve_banded, solve
 
 
+__all__ = ["PchipInterpolator", "pchip_interpolate",
+           "Akima1DInterpolator", "CubicSpline"]
+
+
 class PchipInterpolator(BPoly):
     r"""PCHIP 1-d monotonic cubic interpolation.
 

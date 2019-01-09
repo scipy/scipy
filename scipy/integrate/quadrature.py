@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import functools
 import numpy as np
 import math
+import sys
 import types
 import warnings
 
@@ -28,7 +29,8 @@ def _copy_func(f):
 
 
 trapz = _copy_func(trapz)
-trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
+if sys.flags.optimize <= 1:
+    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
 
 
 class AccuracyWarning(Warning):
