@@ -83,7 +83,7 @@ Variability
     zmap
     zscore
     iqr
-    mad
+    median_absolute_deviation
 
 Trimming Functions
 ------------------
@@ -184,7 +184,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr', 'mad',
+           'sem', 'zmap', 'zscore', 'iqr', 'median_absolute_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -2520,8 +2520,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     return out
 
 
-
-def mad(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
+def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
     """
     Compute the median absolute deviation of the data along the given axis.
     [1]_
@@ -2546,8 +2545,9 @@ def mad(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
         np.median. Any user defined function used will need to have the function
         signature `func(arr, axis)`.
     scale : int, optional
-        The scaling factor applied to the MAD. The default scale ensures
-        consistency with the standard deviation for normally distributed data.
+        The scaling factor applied to the MAD. The default scale (1.4826)
+        ensures consistency with the standard deviation for normally distributed
+        data.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate'
         returns nan, 'raise' throws an error, 'omit' performs the
@@ -2573,9 +2573,9 @@ def mad(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
     >>> x
     array([[10,  7,  4],
            [ 3,  2,  1]])
-    >>> stats.mad(x)
+    >>> stats.median_absolute_deviation(x)
     array([5.1891, 3.7065, 2.2239])
-    >>> stats.mad(x, axis=None)
+    >>> stats.median_absolute_deviation(x, axis=None)
     2.9652
 
 
@@ -2594,13 +2594,14 @@ def mad(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
     """
     x = asarray(x)
 
-    # This check prevents percentile from raising an error later. Also, it is
-    # consistent with `np.var` and `np.std`.
+    # Consistent with `np.var` and `np.std`.
     if not x.size:
         return np.nan
 
-    # Select the percentile function to use based on nans and policy
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
 
     if contains_nan and nan_policy == 'omit':
         # Way faster than carrying the masks around
@@ -2612,22 +2613,10 @@ def mad(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
         med = center(arr)
         mad = np.median(np.abs(arr - med))
     else:
-        # Make sure the right axes are used while calculating the MAD
-        ax = []
-        for ii in range(len(arr.shape)):
-            if ii == axis:
-                ax.append(0)
-            else:
-                ax.append(slice(None))
-
-        ax = tuple(ax)
-        med = center(arr, axis=axis)
-        arr = np.rollaxis(arr, axis, 0)
-        mad = np.median(np.abs(arr - med), axis=0)
-        mad = np.rollaxis(mad, 0, axis)
+        med = np.apply_over_axes(center, arr, axis)
+        mad = np.median(np.abs(arr - med), axis=axis)
 
     return scale * mad
-
 
 
 def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
