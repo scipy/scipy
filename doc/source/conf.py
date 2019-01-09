@@ -96,6 +96,7 @@ pygments_style = 'sphinx'
 # Enusre all our internal links work
 nitpicky = True
 exclude_patterns = [  # glob-style
+    # these are all included directly in dev/index.rst:
     'dev/decisions.rst',
     'dev/deprecations.rst',
     'dev/distributing.rst',
@@ -105,6 +106,7 @@ exclude_patterns = [  # glob-style
     'dev/newfeatures.rst',
     'dev/releasing.rst',
     'dev/versioning.rst',
+    # these do not actually need to be parsed:
     '**/class_generated',
 ]
 
@@ -123,6 +125,7 @@ for key in (
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
 # warnings in examples (mostly) that we allow
+# TODO: eventually these should be eliminated!
 for key in (
         'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
         '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
