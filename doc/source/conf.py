@@ -115,16 +115,7 @@ warnings.resetwarnings()
 warnings.filterwarnings('error')
 # allow these and show them
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
-# interpolate.LSQSphereBivariateSpline example
-warnings.filterwarnings(
-    'always', '.*coefficients of the spline.*')
-# stats.mielke example
-warnings.filterwarnings(
-    'always', '.*The integral is probably divergent.*')
-# numpydoc 0.8 has some bad escape chars
-warnings.filterwarnings(
-    'always', '.*invalid escape sequence.*')
-# safely ignore these
+# global weird ones that can be safely ignored
 for key in (
         "'U' mode is deprecated",  # sphinx io
         "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
@@ -132,6 +123,21 @@ for key in (
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*%s.*" % key, category=DeprecationWarning)
+# warnings in examples (mostly) that we allow
+for key in (
+        'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
+        'coefficients of the spline',  # interpolate.LSQSphereBivariateSpline
+        'The integral is probably divergent',  # stats.mielke example
+        'underflow encountered in square',  # signal.filtfilt underflow
+        'slepian is deprecated',  # signal.windows.slepian deprecation
+        'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
+        '`frechet_l` is deprecated',  # stats.frechet_l
+        '`frechet_r` is deprecated',  # stats.frechet_r
+        # stats.skewnorm, stats.norminvgauss, stats.gaussian_kde
+        'underflow encountered in exp',
+        ):
+    warnings.filterwarnings(
+        'always', message='.*%s.*' % key)
 
 # -----------------------------------------------------------------------------
 # HTML output
