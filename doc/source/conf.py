@@ -121,11 +121,11 @@ for key in (
         "Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
-        'ignore', message=".*%s.*" % key, category=DeprecationWarning)
+        'ignore', message=".*" + key, category=DeprecationWarning)
 # warnings in examples (mostly) that we allow
 for key in (
         'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
-        'coefficients of the spline',  # interpolate.LSQSphereBivariateSpline
+        '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
         'The integral is probably divergent',  # stats.mielke example
         'underflow encountered in square',  # signal.filtfilt underflow
         'slepian is deprecated',  # signal.windows.slepian deprecation
@@ -138,7 +138,7 @@ for key in (
         'underflow encountered in exp',
         ):
     warnings.filterwarnings(
-        'once', message='.*%s.*' % key)
+        'once', message='.*' + key)
 
 # -----------------------------------------------------------------------------
 # HTML output
