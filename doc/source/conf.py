@@ -128,6 +128,7 @@ warnings.filterwarnings(
 for key in (
         "'U' mode is deprecated",  # sphinx io
         "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        "Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*%s.*" % key, category=DeprecationWarning)
