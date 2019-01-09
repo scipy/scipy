@@ -295,19 +295,6 @@ class DOP853(OdeSolver):
                 self.n_accepted += 1
                 K[12] = self.fun(t + h, y_final)
 
-                for s in range(13, 16):
-                    a, c = self.A[s], self.C[s]
-                    dy = np.dot(K[:s].T, a) * h
-                    K[s] = self.fun(t + c * h, y + dy)
-
-                # prepare the dense output
-                self.interpolation[0] = y
-                self.interpolation[1] = y_final - y
-                self.interpolation[2] = h * K[0] - self.interpolation[1]
-                self.interpolation[3] = self.interpolation[1] - h * K[12] - self.interpolation[2]
-                for n in range(4, 8):
-                    self.interpolation[n] = h * np.dot(K[:16].T, self.D[n])
-
                 self.y_old = y
                 self.t = t_new
                 self.y = y_final
@@ -321,6 +308,25 @@ class DOP853(OdeSolver):
                                       err_exp / self.safety_factor])
 
     def _dense_output_impl(self):
+        t = self.t
+        y = self.y_old
+        y_final = self.y
+        K = self.K
+        h = self.h_abs * self.direction
+
+        for s in range(13, 16):
+            a, c = self.A[s], self.C[s]
+            dy = np.dot(K[:s].T, a) * h
+            K[s] = self.fun(t + c * h, y + dy)
+
+        # prepare the dense output
+        self.interpolation[0] = y
+        self.interpolation[1] = y_final - y
+        self.interpolation[2] = h * K[0] - self.interpolation[1]
+        self.interpolation[3] = self.interpolation[1] - h * K[12] - self.interpolation[2]
+        for n in range(4, 8):
+            self.interpolation[n] = h * np.dot(K[:16].T, self.D[n])
+
         return DOP853DenseOutput(self.t_old, self.t, self.y_old, self.interpolation)
 
 
