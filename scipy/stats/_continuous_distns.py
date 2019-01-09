@@ -3352,8 +3352,9 @@ class norminvgauss_gen(rv_continuous):
         f(x, a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
                      (\pi \sqrt{1 + x^2} \, K_1(a \sqrt{1 + x^2}))
 
-    where `x` is a real number, the parameter `a` is the tail heaviness
-    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    where :math:`x` is a real number, the parameter :math:`a` is the tail
+    heaviness and :math:`b` is the asymmetry parameter satisfying
+    :math:`a > 0` and :math:`|b| <= a`.
     :math:`K_1` is the modified Bessel function of second kind
     (`scipy.special.k1`).
 
