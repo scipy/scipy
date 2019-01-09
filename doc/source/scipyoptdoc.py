@@ -129,7 +129,10 @@ def wrap_mangling_directive(base_directive):
                                                         'callback', 'method', 'options'):
                     remove_arg(arg)
 
-            signature = inspect.formatargspec(args, varargs, keywords, defaults)
+            with warnings.catch_warnings(record=True):  # deprecation
+                warnings.simplefilter('ignore')
+                signature = inspect.formatargspec(
+                    args, varargs, keywords, defaults)
 
             # Produce output
             self.options['noindex'] = True

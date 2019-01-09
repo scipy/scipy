@@ -1334,7 +1334,7 @@ def general_gaussian(M, p, sig, sym=True):
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title(r"Freq. resp. of the gen. Gaussian "
-    ...           "window (p=1.5, $\sigma$=7)")
+    ...           r"window (p=1.5, $\sigma$=7)")
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
