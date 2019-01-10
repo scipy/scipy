@@ -164,7 +164,10 @@ def test_integration():
         assert_(res.success)
         assert_equal(res.status, 0)
 
-        assert_(res.nfev < 40)
+        if method in ['DOP853']:
+            assert_(res.nfev < 50)
+        else:
+            assert_(res.nfev < 40)
 
         if method in ['RK23', 'RK45', 'DOP853', 'LSODA']:
             assert_equal(res.njev, 0)
