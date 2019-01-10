@@ -967,6 +967,89 @@ class TestPoisson(object):
         assert_allclose(result, expected)
 
 
+class TestKSTwo(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cdf(self):
+        for n in [1, 2, 3, 10, 100, 1000]:
+            x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
+            v1 = (1.0/n)**n
+            lg = scipy.special.gammaln(n+1)
+            elg = (np.exp(lg) if v1 != 0 else 0)
+            expected = np.array([0, 0, v1 * elg,
+                                 1 - 2*stats.ksone.sf(0.5, n),
+                                 max(1 - 2*v1, 0.0),
+                                 1.0])
+            vals_cdf = stats.kstwo.cdf(x, n)
+            assert_allclose(vals_cdf, expected)
+
+    def test_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
+            v1 = (1.0/n)**n
+            lg = scipy.special.gammaln(n+1)
+            elg = (np.exp(lg) if v1 != 0 else 0)
+            expected = np.array([1.0, 1.0,
+                                 1 - v1 * elg,
+                                 2*stats.ksone.sf(0.5, n),
+                                 min(2*v1, 1.0), 0])
+            vals_cdf = stats.kstwo.sf(x, n)
+            assert_allclose(vals_cdf, expected)
+
+    def test_cdf_sqrtn(self):
+        x = np.linspace(0, 2, 11)[1:]
+        # ns = [1, 2, 3, 10, 100, 1000]
+        ns = [50, 100, 200, 400, 1000, 2000]
+        for _x in x:
+            xn = _x / np.sqrt(ns)
+            probs = stats.kstwo.cdf(xn, ns)
+            diffs = np.diff(probs)
+            cond = (diffs >= 1e-8)
+            assert len(diffs[cond]) == 0
+
+    def test_cdf_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            vals_cdf = stats.kstwo.cdf(x, n)
+            vals_sf = stats.kstwo.sf(x, n)
+            assert_array_almost_equal(vals_cdf, 1 - vals_sf)
+
+    def test_cdf_sf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x / np.sqrt(n)
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            vals_sf = stats.kstwo.sf(xn, n)
+            assert_array_almost_equal(vals_cdf, 1 - vals_sf)
+
+    def test_ppf_of_cdf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x[x > 0.5/n]
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            cond = (0 < vals_cdf) & (vals_cdf < 1.0)
+            vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond], rtol=1e-4)
+
+    def test_ppf_of_cdf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = (x / np.sqrt(n))[x > 0.5/n]
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            cond = (0 < vals_cdf) & (vals_cdf < 1.0)
+            vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond])
+
+    def test_ppf(self):
+        probs = np.linspace(0, 1, 11)[1:]
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = stats.kstwo.ppf(probs, n)
+            vals_cdf = stats.kstwo.cdf(xn, n)
+            assert_allclose(vals_cdf, probs)
+
+
 class TestZipf(object):
     def setup_method(self):
         np.random.seed(1234)
