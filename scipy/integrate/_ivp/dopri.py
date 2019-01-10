@@ -351,7 +351,7 @@ class DOP853(OdeSolver):
             dh_factor = np.max([1.0 / self.max_step_change,
                                 np.min([1.0 / self.min_step_change,
                                         dh_factor / self.safety_factor])])
-            h_new_abs = h_abs / dh_factor
+            h_new_abs = min(h_abs / dh_factor, self.max_step)
 
             if err_E < 1.0:
                 self.factor_old = np.max([err_E, 1e-4])
