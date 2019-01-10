@@ -5428,8 +5428,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
         - "fisher": Fisher's method (Fisher's combined probability test),
           the default, the sum of the logarithm of the p-values.
-        - "pearson": Pearson's method (similar to Fisher's but uses 1-p
-          inside the logarithms).
+        - "pearson": Pearson's method (similar to Fisher's but uses sum of the
+          complement of the p-values inside the logarithms).
         - "tippett": Tippett's method (minimum of p-values).
         - "stouffer": Stouffer's Z-score method.
         - "mudholkar-george": a sum of Fisher's and Pearson's methods.
@@ -5488,21 +5488,17 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     if method == 'fisher':
         Xsq = -2 * np.sum(np.log(pvalues))
         pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
-        return (Xsq, pval)
     elif method == 'pearson':
         Xsq = -2 * np.sum(np.log(1 - pvalues))
         pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
-        return (Xsq, pval)
     elif method == 'mudholkar_george':
-        Sg = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log1p(-pvalues))
+        Xsq = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
         pval = distributions.t.sf(Sg * approx_factor, nu)
-        return (Sg, pval)
     elif method == 'tippett':
-        St = np.min(pvalues)
+        Xsq = np.min(pvalues)
         pval = distributions.beta.sf(St, 1, len(pvalues))
-        return (St, pval)
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
@@ -5514,14 +5510,15 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             raise ValueError("weights is not 1-D")
 
         Zi = distributions.norm.isf(pvalues)
-        Z = np.dot(weights, Zi) / np.linalg.norm(weights)
-        pval = distributions.norm.sf(Z)
+        Xsq = np.dot(weights, Zi) / np.linalg.norm(weights)
+        pval = distributions.norm.sf(Xsq)
 
-        return (Z, pval)
     else:
         raise ValueError(
             "Invalid method '%s'. Options are 'fisher', 'pearson', \
             'mudholkar_george', 'tippett', 'or 'stouffer'", method)
+
+    return (Xsq, pval)
 
 
 #####################################
