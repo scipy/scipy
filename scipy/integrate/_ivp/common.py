@@ -100,8 +100,8 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
         return np.inf
 
     scale = atol + np.abs(y0) * rtol
-    d0 = np.linalg.norm(y0 / scale)
-    d1 = np.linalg.norm(f0 / scale)
+    d0 = norm(y0 / scale)
+    d1 = norm(f0 / scale)
     if d0 < 1e-5 or d1 < 1e-5:
         h0 = 1e-6
     else:
@@ -109,12 +109,12 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
 
     y1 = y0 + h0 * direction * f0
     f1 = fun(t0 + h0 * direction, y1)
-    d2 = np.linalg.norm((f1 - f0) / scale) / h0
+    d2 = norm((f1 - f0) / scale) / h0
 
     if d1 <= 1e-15 and d2 <= 1e-15:
         h1 = max(1e-6, h0 * 1e-3)
     else:
-        h1 = (0.01 / max(d1, d2)) ** (1 / order)
+        h1 = (0.01 / max(d1, d2)) ** (1 / (order + 1))
 
     return min(100 * h0, h1)
 

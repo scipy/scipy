@@ -5,8 +5,7 @@ from copy import copy
 import numpy as np
 
 from .base import OdeSolver, DenseOutput
-from .common import (warn_extraneous, validate_max_step, validate_tol,
-                     select_initial_step)
+from .common import warn_extraneous, validate_max_step, validate_tol
 
 
 A = [np.array([]),
@@ -123,6 +122,70 @@ def validate_beta_stabilizer(beta_stabilizer):
     if beta_stabilizer < 0 or beta_stabilizer > 0.2:
         raise ValueError("`beta_stabilizer` must lie within 0 and 0.2.")
     return beta_stabilizer
+
+
+def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
+    """Empirically select a good initial step.
+
+    The algorithm is described in [1]_.
+
+    Parameters
+    ----------
+    fun : callable
+        Right-hand side of the system.
+    t0 : float
+        Initial value of the independent variable.
+    y0 : ndarray, shape (n,)
+        Initial value of the dependent variable.
+    f0 : ndarray, shape (n,)
+        Initial value of the derivative, i. e. ``fun(t0, y0)``.
+    direction : float
+        Integration direction.
+    order : float
+        Method order.
+    rtol : float
+        Desired relative tolerance.
+    atol : float
+        Desired absolute tolerance.
+
+    Returns
+    -------
+    h_abs : float
+        Absolute value of the suggested initial step.
+
+    Notes
+    -----
+    This implementation is slightly different
+    from the one in scipy.integrate.common
+    because it makes this method
+    behave exactly like the original Fortran implementation.
+
+    References
+    ----------
+    .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
+           Equations I: Nonstiff Problems", Sec. II.4.
+    """
+    if y0.size == 0:
+        return np.inf
+
+    scale = atol + np.abs(y0) * rtol
+    d0 = np.linalg.norm(y0 / scale)
+    d1 = np.linalg.norm(f0 / scale)
+    if d0 < 1e-5 or d1 < 1e-5:
+        h0 = 1e-6
+    else:
+        h0 = 0.01 * d0 / d1
+
+    y1 = y0 + h0 * direction * f0
+    f1 = fun(t0 + h0 * direction, y1)
+    d2 = np.linalg.norm((f1 - f0) / scale) / h0
+
+    if d1 <= 1e-15 and d2 <= 1e-15:
+        h1 = max(1e-6, h0 * 1e-3)
+    else:
+        h1 = (0.01 / max(d1, d2)) ** (1 / order)
+
+    return min(100 * h0, h1)
 
 
 class DOP853(OdeSolver):
