@@ -566,14 +566,14 @@ class planck_gen(rv_discrete):
         return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        return (1-exp(-lambda_))*exp(-lambda_*k)
+        return -expm1(-lambda_)*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
-        return 1-exp(-lambda_*(k+1))
+        return -expm1(-lambda_*(k+1))
 
     def _sf(self, x, lambda_):
-        return np.exp(self._logsf(x, lambda_))
+        return exp(self._logsf(x, lambda_))
 
     def _logsf(self, x, lambda_):
         k = floor(x)
@@ -587,18 +587,18 @@ class planck_gen(rv_discrete):
 
     def _rvs(self, lambda_):
         # use relation to geometric distribution for sampling
-        p = 1.0 - exp(-lambda_)
+        p = -expm1(-lambda_)
         return self._random_state.geometric(p, size=self._size) - 1.0
 
     def _stats(self, lambda_):
-        mu = 1/(exp(lambda_)-1)
+        mu = 1/expm1(lambda_)
         var = exp(-lambda_)/(expm1(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2
 
     def _entropy(self, lambda_):
-        C = 1 - exp(-lambda_)
+        C = -expm1(-lambda_)
         return lambda_*exp(-lambda_)/C - log(C)
 
 
