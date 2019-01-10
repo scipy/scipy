@@ -5427,12 +5427,12 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         available:
 
         - "fisher": Fisher's method (Fisher's combined probability test),
-          the default.
+          the default, the sum of the logarithm of the p-values.
         - "pearson": Pearson's method (similar to Fisher's but uses 1-p
           inside the logarithms).
-        - "tippett": Tippett's nethd=od (minimum of pvalues).
+        - "tippett": Tippett's method (minimum of p-values).
         - "stouffer": Stouffer's Z-score method.
-        - "mudholkar-george": a sum of fisher and pearson methods.
+        - "mudholkar-george": a sum of Fisher's and Pearson's methods.
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -5456,9 +5456,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     advantage of Stouffer's method is that it is straightforward to introduce
     weights, which can make Stouffer's method more powerful than Fisher's
     method when the p-values are from studies of different size [3]_ [4]_.
-    The Pearson method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
+    The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
     method uses :math:`log(p_i)` [6]_. The `mudholkar-george` method is the
-    sum of the fisher and the pearson test statistics.
+    sum of the Fisher's and Pearson's test statistics.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -5494,14 +5494,14 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
         return (Xsq, pval)
     elif method == 'mudholkar_george':
-        Sg = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log(1-pvalues))
+        Sg = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
         pval = distributions.t.sf(Sg * approx_factor, nu)
         return (Sg, pval)
     elif method == 'tippett':
         St = np.min(pvalues)
-        pval = distributions.beta.sf(St,1, len(pvalues))
+        pval = distributions.beta.sf(St, 1, len(pvalues))
         return (St, pval)
     elif method == 'stouffer':
         if weights is None:
