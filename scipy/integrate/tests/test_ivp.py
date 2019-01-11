@@ -446,8 +446,8 @@ def test_max_step():
             if method is not LSODA:
                 assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
-            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
-                          t_span[1], max_step=-1)
+            with assert_raises(ValueError, match="`max_step` must be positive."):
+                method(fun_rational, t_span[0], y0, t_span[1], max_step=-1)
 
             if method is not LSODA:
                 solver = method(fun_rational, t_span[0], y0, t_span[1],
