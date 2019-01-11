@@ -1,10 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Aug 18 22:07:15 2018
+# Author: Matt Haberland
 
-@author: matthaberland
-"""
 from __future__ import division, absolute_import, print_function
 import numpy as np
 from scipy.linalg import solve
@@ -15,9 +10,6 @@ from scipy.linalg import LinAlgError
 from numpy.linalg.linalg import LinAlgError as LinAlgError2
 from ._linprog_util import _postsolve
 from .optimize import OptimizeResult
-
-# TODO: cythonize c_hat = c - v.dot(A); c_hat = c_hat[~bl]
-# TODO: Pythranize?
 
 
 def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
@@ -290,7 +282,7 @@ def _display_iter(phase, iteration, slack, con, fun):
               "Constraint Residual",
               "Objective          ")
 
-    # no clue why this works
+    # :<X.Y left aligns Y digits in X digit spaces
     fmt = '{0:<6}{1:<10}{2:<20.13}{3:<20.13}{4:<20.13}'
     try:
         slack = np.min(slack)
@@ -336,11 +328,10 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
                                                     tol=tol)
 
             if callback is not None:
-                message = ""
                 res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                       'con': con, 'nit': iteration,
                                       'phase': phase, 'complete': False,
-                                      'status': 0, 'message': message,
+                                      'status': 0, 'message': "",
                                       'success': False})
                 callback(res)
             else:
@@ -358,12 +349,13 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
             status = 4
             break
 
+        # TODO: cythonize?
         c_hat = c - v.dot(A)    # reduced cost
         c_hat = c_hat[~bl]
         # Above is much faster than:
         # N = A[:, ~bl]                 # slow!
         # c_hat = c[~bl] - v.T.dot(N)
-        # Can we perform the mulitplication only on the nonbasic columns?
+        # Can we perform the multiplication only on the nonbasic columns?
 
         if np.all(c_hat >= -tol):  # all reduced costs positive -> terminate
             break
@@ -474,6 +466,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
     pivot : "mrc" or "bland"
         Pivot rule: Minimum Reduced Cost (default) or Bland's rule. Choose
         Bland's rule if iteration limit is reached and cycling is suspected.
+    disp : bool
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration.
 
     Returns
     -------

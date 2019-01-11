@@ -1,12 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Sep  4 15:57:00 2018
-
-@author: matthaberland
-"""
-
-# TODO: fix swap being a double?
+# Author: Matt Haberland
 
 from __future__ import division, absolute_import, print_function
 
@@ -23,20 +15,6 @@ except ImportError:
 
 __all__ = ['LU', 'BGLU']
 
-#ctypedef fused nparray:
-#    double[:, ::1]
-#    double[::1]
-
-#cdef extern from 'cblas.h':
-#    void daxpy 'cblas_daxpy'(int N, double A,
-#                             double* X, int incX,
-#                             double* Y, int incY) nogil
-#
-#cdef extern from 'cblas.h':
-#    void dswap 'cblas_dswap'(int N,
-#                             double* X, int incX,
-#                             double* Y, int incY) nogil
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef void swap_rows(self, double[:, ::1] H, int i):
@@ -44,23 +22,8 @@ cdef void swap_rows(self, double[:, ::1] H, int i):
     Swaps row i of H with next row; represents matrix product by PI_i
     matrix described after matrix 5.10
     """
-#    # Python
-#    H[[i, i+1]] = H[[i+1, i]]
-
-#    # Cython, high level
-#    if i == 0:
-#        H[i:i+2] = H[i+1::-1]
-#    else:
-#        H[i:i+2] = H[i+1:i-1:-1]
-
-#    # Cython, low level
-#    cdef double temp
-#    cdef int j
-#    for j in range(i, H.shape[1]):
-#        temp = H[i, j]
-#        H[i, j] = H[i+1, j]
-#        H[i+1, j] = temp
-
+    # Python
+    # H[[i, i+1]] = H[[i+1, i]]
     # Cython, using BLAS
     cdef int n = H.shape[1]-i
     cdef int one = 1
@@ -77,13 +40,8 @@ cdef double row_subtract(self, double[:, ::1] H, int i):
     """
     cdef double g = H[i+1, i]/H[i,i]
 
-#        # Python
-#        H[i+1, i:] -= g*H[i, i:]
-
-#        # Cython
-#        for j in range(i, H.shape[1]):
-#            H[i+1, j] -= H[i, j]*g
-
+    # Python
+    # H[i+1, i:] -= g*H[i, i:]
     # Cython, using BLAS
     cdef int n = H.shape[1]-i
     cdef double ng = -g
@@ -138,7 +96,7 @@ cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False):
             g = ops[j, 1]
             if swap:
                 y[k], y[k+1] = y[k+1], y[k]
-#                swap_rows(self, y, k)
+
             y[k+1] -= g*y[k]
     else:
         for k in range(m-2, i-1, -1):
@@ -148,7 +106,6 @@ cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False):
             y[k] -= g*y[k+1]
             if swap:
                 y[k], y[k+1] = y[k+1], y[k]
-#                swap_rows(self, y, k)
 
 def _consider_refactor(method):
     """
@@ -317,7 +274,7 @@ cdef class BGLU(LU):
         self.update_basis(i, j)
 
         # calculate last column of Hessenberg matrix
-        # FIXME: share this calculation with simplex method
+        # TODO: share this calculation with simplex method
         pla = self.A[self.pi, j]
         um = solve_triangular(self.L, pla, lower = True,
                               check_finite=False, unit_diagonal=True)
@@ -386,24 +343,3 @@ cdef class BGLU(LU):
         for i, row in enumerate(p):
             pi[i], pi[row] = pi[row], pi[i]
         return pi
-
-
-def testlu(m = 1000, n_updates = 20, seed = 0, transposed = False):
-    np.random.seed(seed)
-
-    n = m*2
-    A = np.random.rand(m, n)
-    b = np.arange(m)
-    v = np.random.rand(m)
-
-    myLU = BGLU(A, b.copy())
-    x0 = myLU.solve(v, transposed)
-
-    iz = np.random.permutation(np.arange(m))[:n_updates]
-    jz = np.random.permutation(np.arange(m, n))[:n_updates]
-
-    for i, j in zip(iz, jz):
-        v = np.random.rand(m)
-        myLU.update(i, j)
-        x0 = myLU.solve(v, transposed)
-    return x0

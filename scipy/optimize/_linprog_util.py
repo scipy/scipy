@@ -269,17 +269,17 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
                 x0 = np.asarray(x0, dtype=float).copy().squeeze()
             except BaseException:
                 raise TypeError
-            if x0.size == 1:
+            if x0.ndim == 0:
                 x0 = x0.reshape((-1))
-            if len(x0) == 0 or len(x0.shape) != 1:
+            if len(x0) == 0 or x0.ndim != 1:
                 raise ValueError(
                     "Invalid input for linprog: x0 should be a 1D array; it "
                     "must not have more than one non-singleton dimension")
-            if len(x0) != len(c):
+            if not x0.size == c.size:
                 raise ValueError(
                     "Invalid input for linprog: x0 and c should contain the "
                     "same number of elements")
-            if not(np.isfinite(x0).all()):
+            if not np.isfinite(x0).all():
                 raise ValueError(
                     "Invalid input for linprog: x0 must not contain values "
                     "inf, nan, or None")
