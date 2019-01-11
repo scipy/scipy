@@ -767,11 +767,10 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if callback is not None:
             x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
                                                     tol=tol)
-            message = ""
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,
                                   'complete': False, 'status': 0,
-                                  'message': message, 'success': False})
+                                  'message': "", 'success': False})
             callback(res)
 
         # [4] 4.5
