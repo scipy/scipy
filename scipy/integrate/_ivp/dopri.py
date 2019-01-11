@@ -5,8 +5,8 @@ from copy import copy
 import numpy as np
 
 from .base import OdeSolver, DenseOutput
-from .common import warn_extraneous, validate_max_step, validate_tol
-
+from .common import (warn_extraneous, validate_max_step, validate_tol,
+                     validate_first_step)
 
 A = [np.array([]),
      np.array([5.26001519587677318785587544488e-2]),
@@ -278,7 +278,7 @@ class DOP853(OdeSolver):
                  rtol=1e-7, atol=1e-12, safety_factor=0.9,
                  min_step_change=0.333, max_step_change=6.0,
                  beta_stabilizer=0.00, max_nsteps=100000,
-                 vectorized=False, **extraneous):
+                 vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized,
                          support_complex=True)
@@ -293,8 +293,13 @@ class DOP853(OdeSolver):
         self.order = 8
 
         self.f = self.fun(self.t, self.y)
-        self.h_abs = select_initial_step(self.fun, self.t, self.y, self.f, self.direction,
-                                         self.order, self.rtol, self.atol)
+
+        if first_step is None:
+            self.h_abs = select_initial_step(
+                self.fun, self.t, self.y, self.f, self.direction,
+                self.order, self.rtol, self.atol)
+        else:
+            self.h_abs = validate_first_step(first_step, t0, t_bound)
 
         self.n_steps = 0
         self.n_accepted = 0
