@@ -437,7 +437,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
     >>> print(sol.sol(sol.t_events[1][0]))
-    [1.00000000e+02 1.77635684e-15]
+    [100. 0.]
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
