@@ -118,6 +118,11 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
                                  return_predecessors=True)
     assert_array_almost_equal(SP, min_d_ans)
     assert_array_equal(min_ind_ans, sources)
+    SP = dijkstra(directed_G,
+                  directed=directed,
+                  indices=indices,
+                  min_only=True,
+                  return_predecessors=False)
 
 
 def test_shortest_path_indices():
