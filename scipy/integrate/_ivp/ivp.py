@@ -422,10 +422,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
 
-    Use dense_output and events to find apex of trajectory of cannonball.
-    Apex is not defined as terminal, so both apex and hit_ground are found.
-    There is no information at t=20, so the sol attribute is used to evaluate 
-    the solution.  The sol attribute is returned by setting dense_output=True.
+    Use dense_output and events to find position, which is 100, at apex of
+    trajectory of cannonball. Apex is not defined as terminal, so both apex
+    and hit_ground are found. There is no information at t=20, so the sol
+    attribute is used to evaluate the solution.  The sol attribute is
+    returned by setting dense_output=True.
 
     >>> def apex(t,y): return y[1]
     >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
