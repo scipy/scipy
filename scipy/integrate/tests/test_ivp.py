@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, assert_no_warnings)
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
@@ -137,169 +138,174 @@ def compute_error(y, y_true, rtol, atol):
     return np.sqrt(np.sum(np.real(e * e.conj()), axis=0) / e.shape[0])
 
 
-def test_integration():
+@pytest.mark.parametrize("method", ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+@pytest.mark.parametrize("t_span", [[5, 9], [5, 1]])
+@pytest.mark.parametrize("vectorized", [False, True])
+@pytest.mark.parametrize("jac", [None, jac_rational, jac_rational_sparse])
+def test_integration(method, t_span, vectorized, jac):
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
 
-    for vectorized, method, t_span, jac in product(
-            [False, True],
-            ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'],
-            [[5, 9], [5, 1]],
-            [None, jac_rational, jac_rational_sparse]):
+    if vectorized:
+        fun = fun_rational_vectorized
+    else:
+        fun = fun_rational
 
-        if vectorized:
-            fun = fun_rational_vectorized
-        else:
-            fun = fun_rational
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning,
+                   "The following arguments have no effect for a chosen solver: `jac`")
+        res = solve_ivp(fun, t_span, y0, rtol=rtol,
+                        atol=atol, method=method, dense_output=True,
+                        jac=jac, vectorized=vectorized)
+    assert_equal(res.t[0], t_span[0])
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen solver: `jac`")
-            res = solve_ivp(fun, t_span, y0, rtol=rtol,
-                            atol=atol, method=method, dense_output=True,
-                            jac=jac, vectorized=vectorized)
-        assert_equal(res.t[0], t_span[0])
-        assert_(res.t_events is None)
-        assert_(res.success)
-        assert_equal(res.status, 0)
+    if method in ['DOP853']:
+        assert_(res.nfev < 50)
+    else:
+        assert_(res.nfev < 40)
 
-        if method in ['DOP853']:
-            assert_(res.nfev < 50)
-        else:
-            assert_(res.nfev < 40)
+    if method in ['RK23', 'RK45', 'DOP853', 'LSODA']:
+        assert_equal(res.njev, 0)
+        assert_equal(res.nlu, 0)
+    else:
+        assert_(0 < res.njev < 3)
+        assert_(0 < res.nlu < 10)
 
-        if method in ['RK23', 'RK45', 'DOP853', 'LSODA']:
-            assert_equal(res.njev, 0)
-            assert_equal(res.nlu, 0)
-        else:
-            assert_(0 < res.njev < 3)
-            assert_(0 < res.nlu < 10)
+    y_true = sol_rational(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 5))
 
-        y_true = sol_rational(res.t)
-        e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 5))
+    tc = np.linspace(*t_span)
+    yc_true = sol_rational(tc)
+    yc = res.sol(tc)
 
-        tc = np.linspace(*t_span)
-        yc_true = sol_rational(tc)
-        yc = res.sol(tc)
+    e = compute_error(yc, yc_true, rtol, atol)
+    assert_(np.all(e < 5))
 
-        e = compute_error(yc, yc_true, rtol, atol)
-        assert_(np.all(e < 5))
+    tc = (t_span[0] + t_span[-1]) / 2
+    yc_true = sol_rational(tc)
+    yc = res.sol(tc)
 
-        tc = (t_span[0] + t_span[-1]) / 2
-        yc_true = sol_rational(tc)
-        yc = res.sol(tc)
+    e = compute_error(yc, yc_true, rtol, atol)
+    assert_(np.all(e < 5))
 
-        e = compute_error(yc, yc_true, rtol, atol)
-        assert_(np.all(e < 5))
-
-        # LSODA for some reasons doesn't pass the polynomial through the
-        # previous points exactly after the order change. It might be some
-        # bug in LSOSA implementation or maybe we missing something.
-        if method != 'LSODA':
-            assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+    # LSODA for some reasons doesn't pass the polynomial through the
+    # previous points exactly after the order change. It might be some
+    # bug in LSOSA implementation or maybe we missing something.
+    if method != 'LSODA':
+        assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
-def test_integration_complex():
+@pytest.mark.parametrize("method", ['RK23', 'RK45', 'BDF'])
+@pytest.mark.parametrize("jac", [None, jac_complex, jac_complex_sparse])
+def test_integration_complex(method, jac):
     rtol = 1e-3
     atol = 1e-6
     y0 = [0.5 + 1j]
     t_span = [0, 1]
     tc = np.linspace(t_span[0], t_span[1])
-    for method, jac in product(['RK23', 'RK45', 'BDF'],
-                               [None, jac_complex, jac_complex_sparse]):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen solver: `jac`")
-            res = solve_ivp(fun_complex, t_span, y0, method=method,
-                            dense_output=True, rtol=rtol, atol=atol, jac=jac)
 
-        assert_equal(res.t[0], t_span[0])
-        assert_(res.t_events is None)
-        assert_(res.success)
-        assert_equal(res.status, 0)
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning,
+                   "The following arguments have no effect for a chosen solver: `jac`")
+        res = solve_ivp(fun_complex, t_span, y0, method=method,
+                        dense_output=True, rtol=rtol, atol=atol, jac=jac)
 
-        assert_(res.nfev < 25)
-        if method == 'BDF':
-            assert_equal(res.njev, 1)
-            assert_(res.nlu < 6)
-        else:
-            assert_equal(res.njev, 0)
-            assert_equal(res.nlu, 0)
+    assert_equal(res.t[0], t_span[0])
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
 
-        y_true = sol_complex(res.t)
-        e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 5))
+    assert_(res.nfev < 25)
+    if method == 'BDF':
+        assert_equal(res.njev, 1)
+        assert_(res.nlu < 6)
+    else:
+        assert_equal(res.njev, 0)
+        assert_equal(res.nlu, 0)
 
-        yc_true = sol_complex(tc)
-        yc = res.sol(tc)
-        e = compute_error(yc, yc_true, rtol, atol)
+    y_true = sol_complex(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 5))
 
-        assert_(np.all(e < 5))
+    yc_true = sol_complex(tc)
+    yc = res.sol(tc)
+    e = compute_error(yc, yc_true, rtol, atol)
+
+    assert_(np.all(e < 5))
 
 
-def test_integration_sparse_difference():
+@pytest.mark.parametrize("method", ['BDF', 'Radau'])
+def test_integration_sparse_difference(method):
     n = 200
     t_span = [0, 20]
     y0 = np.zeros(2 * n)
     y0[1::2] = 1
     sparsity = medazko_sparsity(n)
 
-    for method in ['BDF', 'Radau']:
-        res = solve_ivp(fun_medazko, t_span, y0, method=method,
-                        jac_sparsity=sparsity)
+    res = solve_ivp(fun_medazko, t_span, y0, method=method,
+                    jac_sparsity=sparsity)
 
-        assert_equal(res.t[0], t_span[0])
-        assert_(res.t_events is None)
-        assert_(res.success)
-        assert_equal(res.status, 0)
+    assert_equal(res.t[0], t_span[0])
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
 
-        assert_allclose(res.y[78, -1], 0.233994e-3, rtol=1e-2)
-        assert_allclose(res.y[79, -1], 0, atol=1e-3)
-        assert_allclose(res.y[148, -1], 0.359561e-3, rtol=1e-2)
-        assert_allclose(res.y[149, -1], 0, atol=1e-3)
-        assert_allclose(res.y[198, -1], 0.117374129e-3, rtol=1e-2)
-        assert_allclose(res.y[199, -1], 0.6190807e-5, atol=1e-3)
-        assert_allclose(res.y[238, -1], 0, atol=1e-3)
-        assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
+    assert_allclose(res.y[78, -1], 0.233994e-3, rtol=1e-2)
+    assert_allclose(res.y[79, -1], 0, atol=1e-3)
+    assert_allclose(res.y[148, -1], 0.359561e-3, rtol=1e-2)
+    assert_allclose(res.y[149, -1], 0, atol=1e-3)
+    assert_allclose(res.y[198, -1], 0.117374129e-3, rtol=1e-2)
+    assert_allclose(res.y[199, -1], 0.6190807e-5, atol=1e-3)
+    assert_allclose(res.y[238, -1], 0, atol=1e-3)
+    assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
 
 
-def test_integration_const_jac():
+@pytest.mark.parametrize("method", ['Radau', 'BDF'])
+@pytest.mark.parametrize("jac_sparse", [False, True])
+def test_integration_const_jac(method, jac_sparse):
     rtol = 1e-3
     atol = 1e-6
     y0 = [0, 2]
     t_span = [0, 2]
     J = jac_linear()
-    J_sparse = csc_matrix(J)
 
-    for method, jac in product(['Radau', 'BDF'], [J, J_sparse]):
-        res = solve_ivp(fun_linear, t_span, y0, rtol=rtol, atol=atol,
-                        method=method, dense_output=True, jac=jac)
-        assert_equal(res.t[0], t_span[0])
-        assert_(res.t_events is None)
-        assert_(res.success)
-        assert_equal(res.status, 0)
+    if jac_sparse:
+        jac = csc_matrix(J)
+    else:
+        jac = J
 
-        assert_(res.nfev < 100)
-        assert_equal(res.njev, 0)
-        assert_(0 < res.nlu < 15)
+    res = solve_ivp(fun_linear, t_span, y0, rtol=rtol, atol=atol,
+                    method=method, dense_output=True, jac=jac)
+    assert_equal(res.t[0], t_span[0])
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
 
-        y_true = sol_linear(res.t)
-        e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 10))
+    assert_(res.nfev < 100)
+    assert_equal(res.njev, 0)
+    assert_(0 < res.nlu < 15)
 
-        tc = np.linspace(*t_span)
-        yc_true = sol_linear(tc)
-        yc = res.sol(tc)
+    y_true = sol_linear(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 10))
 
-        e = compute_error(yc, yc_true, rtol, atol)
-        assert_(np.all(e < 15))
+    tc = np.linspace(*t_span)
+    yc_true = sol_linear(tc)
+    yc = res.sol(tc)
 
-        assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
+    e = compute_error(yc, yc_true, rtol, atol)
+    assert_(np.all(e < 15))
+
+    assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
 
 
-def test_events():
+@pytest.mark.parametrize("method", ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+def test_events(method):
     def event_rational_1(t, y):
         return y[0] - y[1] ** 0.7
 
@@ -311,209 +317,221 @@ def test_events():
 
     event_rational_3.terminal = True
 
-    for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        res = solve_ivp(fun_rational, [5, 8], [1/3, 2/9], method=method,
-                        events=(event_rational_1, event_rational_2))
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 1)
-        assert_equal(res.t_events[1].size, 1)
-        assert_(5.3 < res.t_events[0][0] < 5.7)
-        assert_(7.3 < res.t_events[1][0] < 7.7)
+    res = solve_ivp(fun_rational, [5, 8], [1/3, 2/9], method=method,
+                    events=(event_rational_1, event_rational_2))
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 1)
+    assert_equal(res.t_events[1].size, 1)
+    assert_(5.3 < res.t_events[0][0] < 5.7)
+    assert_(7.3 < res.t_events[1][0] < 7.7)
 
-        event_rational_1.direction = 1
-        event_rational_2.direction = 1
-        res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
-                        events=(event_rational_1, event_rational_2))
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 1)
-        assert_equal(res.t_events[1].size, 0)
-        assert_(5.3 < res.t_events[0][0] < 5.7)
+    event_rational_1.direction = 1
+    event_rational_2.direction = 1
+    res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
+                    events=(event_rational_1, event_rational_2))
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 1)
+    assert_equal(res.t_events[1].size, 0)
+    assert_(5.3 < res.t_events[0][0] < 5.7)
 
-        event_rational_1.direction = -1
-        event_rational_2.direction = -1
-        res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
-                        events=(event_rational_1, event_rational_2))
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 0)
-        assert_equal(res.t_events[1].size, 1)
-        assert_(7.3 < res.t_events[1][0] < 7.7)
+    event_rational_1.direction = -1
+    event_rational_2.direction = -1
+    res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
+                    events=(event_rational_1, event_rational_2))
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 0)
+    assert_equal(res.t_events[1].size, 1)
+    assert_(7.3 < res.t_events[1][0] < 7.7)
 
-        event_rational_1.direction = 0
-        event_rational_2.direction = 0
+    event_rational_1.direction = 0
+    event_rational_2.direction = 0
 
-        res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
-                        events=(event_rational_1, event_rational_2,
-                                event_rational_3), dense_output=True)
-        assert_equal(res.status, 1)
-        assert_equal(res.t_events[0].size, 1)
-        assert_equal(res.t_events[1].size, 0)
-        assert_equal(res.t_events[2].size, 1)
-        assert_(5.3 < res.t_events[0][0] < 5.7)
-        assert_(7.3 < res.t_events[2][0] < 7.5)
+    res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
+                    events=(event_rational_1, event_rational_2,
+                            event_rational_3), dense_output=True)
+    assert_equal(res.status, 1)
+    assert_equal(res.t_events[0].size, 1)
+    assert_equal(res.t_events[1].size, 0)
+    assert_equal(res.t_events[2].size, 1)
+    assert_(5.3 < res.t_events[0][0] < 5.7)
+    assert_(7.3 < res.t_events[2][0] < 7.5)
 
-        res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
-                        events=event_rational_1, dense_output=True)
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 1)
-        assert_(5.3 < res.t_events[0][0] < 5.7)
+    res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
+                    events=event_rational_1, dense_output=True)
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 1)
+    assert_(5.3 < res.t_events[0][0] < 5.7)
 
-        # Also test that termination by event doesn't break interpolants.
-        tc = np.linspace(res.t[0], res.t[-1])
-        yc_true = sol_rational(tc)
-        yc = res.sol(tc)
-        e = compute_error(yc, yc_true, 1e-3, 1e-6)
-        assert_(np.all(e < 5))
+    # Also test that termination by event doesn't break interpolants.
+    tc = np.linspace(res.t[0], res.t[-1])
+    yc_true = sol_rational(tc)
+    yc = res.sol(tc)
+    e = compute_error(yc, yc_true, 1e-3, 1e-6)
+    assert_(np.all(e < 5))
 
     # Test in backward direction.
     event_rational_1.direction = 0
     event_rational_2.direction = 0
-    for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
-                        events=(event_rational_1, event_rational_2))
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 1)
-        assert_equal(res.t_events[1].size, 1)
-        assert_(5.3 < res.t_events[0][0] < 5.7)
-        assert_(7.3 < res.t_events[1][0] < 7.7)
 
-        event_rational_1.direction = -1
-        event_rational_2.direction = -1
-        res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
-                        events=(event_rational_1, event_rational_2))
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 1)
-        assert_equal(res.t_events[1].size, 0)
-        assert_(5.3 < res.t_events[0][0] < 5.7)
+    res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
+                    events=(event_rational_1, event_rational_2))
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 1)
+    assert_equal(res.t_events[1].size, 1)
+    assert_(5.3 < res.t_events[0][0] < 5.7)
+    assert_(7.3 < res.t_events[1][0] < 7.7)
 
-        event_rational_1.direction = 1
-        event_rational_2.direction = 1
-        res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
-                        events=(event_rational_1, event_rational_2))
-        assert_equal(res.status, 0)
-        assert_equal(res.t_events[0].size, 0)
-        assert_equal(res.t_events[1].size, 1)
-        assert_(7.3 < res.t_events[1][0] < 7.7)
+    event_rational_1.direction = -1
+    event_rational_2.direction = -1
+    res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
+                    events=(event_rational_1, event_rational_2))
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 1)
+    assert_equal(res.t_events[1].size, 0)
+    assert_(5.3 < res.t_events[0][0] < 5.7)
 
-        event_rational_1.direction = 0
-        event_rational_2.direction = 0
+    event_rational_1.direction = 1
+    event_rational_2.direction = 1
+    res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
+                    events=(event_rational_1, event_rational_2))
+    assert_equal(res.status, 0)
+    assert_equal(res.t_events[0].size, 0)
+    assert_equal(res.t_events[1].size, 1)
+    assert_(7.3 < res.t_events[1][0] < 7.7)
 
-        res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
-                        events=(event_rational_1, event_rational_2,
-                                event_rational_3), dense_output=True)
-        assert_equal(res.status, 1)
-        assert_equal(res.t_events[0].size, 0)
-        assert_equal(res.t_events[1].size, 1)
-        assert_equal(res.t_events[2].size, 1)
-        assert_(7.3 < res.t_events[1][0] < 7.7)
-        assert_(7.3 < res.t_events[2][0] < 7.5)
+    event_rational_1.direction = 0
+    event_rational_2.direction = 0
 
-        # Also test that termination by event doesn't break interpolants.
-        tc = np.linspace(res.t[-1], res.t[0])
-        yc_true = sol_rational(tc)
-        yc = res.sol(tc)
-        e = compute_error(yc, yc_true, 1e-3, 1e-6)
-        assert_(np.all(e < 5))
+    res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
+                    events=(event_rational_1, event_rational_2,
+                            event_rational_3), dense_output=True)
+    assert_equal(res.status, 1)
+    assert_equal(res.t_events[0].size, 0)
+    assert_equal(res.t_events[1].size, 1)
+    assert_equal(res.t_events[2].size, 1)
+    assert_(7.3 < res.t_events[1][0] < 7.7)
+    assert_(7.3 < res.t_events[2][0] < 7.5)
+
+    # Also test that termination by event doesn't break interpolants.
+    tc = np.linspace(res.t[-1], res.t[0])
+    yc_true = sol_rational(tc)
+    yc = res.sol(tc)
+    e = compute_error(yc, yc_true, 1e-3, 1e-6)
+    assert_(np.all(e < 5))
 
 
-def test_max_step():
+@pytest.mark.parametrize("method", [RK23, RK45, DOP853, Radau, BDF, LSODA])
+def test_max_step_must_be_positive(method):
+    with assert_raises(ValueError, match="`max_step` must be positive."):
+        method(fun_rational, 0, [1, 0], 1, max_step=-1)
+
+
+@pytest.mark.parametrize("method", [RK23, RK45, DOP853, Radau, BDF])
+@pytest.mark.parametrize("t_span", [[5, 9], [5, 1]])
+def test_max_step_must_be_respected(method, t_span):
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
-    for method in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
-        for t_span in ([5, 9], [5, 1]):
-            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
-                            max_step=0.5, atol=atol, method=method,
-                            dense_output=True)
-            assert_equal(res.t[0], t_span[0])
-            assert_equal(res.t[-1], t_span[-1])
-            assert_(np.all(np.abs(np.diff(res.t)) <= 0.5))
-            assert_(res.t_events is None)
-            assert_(res.success)
-            assert_equal(res.status, 0)
 
-            y_true = sol_rational(res.t)
-            e = compute_error(res.y, y_true, rtol, atol)
-            assert_(np.all(e < 5))
+    solver = method(fun_rational, t_span[0], y0, t_span[1],
+                    rtol=rtol, atol=atol, max_step=1e-20)
+    message = solver.step()
 
-            tc = np.linspace(*t_span)
-            yc_true = sol_rational(tc)
-            yc = res.sol(tc)
-
-            e = compute_error(yc, yc_true, rtol, atol)
-            assert_(np.all(e < 5))
-
-            # See comment in test_integration.
-            if method is not LSODA:
-                assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
-
-            with assert_raises(ValueError, match="`max_step` must be positive."):
-                method(fun_rational, t_span[0], y0, t_span[1], max_step=-1)
-
-            if method is not LSODA:
-                solver = method(fun_rational, t_span[0], y0, t_span[1],
-                                rtol=rtol, atol=atol, max_step=1e-20)
-                message = solver.step()
-
-                assert_equal(solver.status, 'failed')
-                assert_("step size is less" in message)
-                assert_raises(RuntimeError, solver.step)
+    assert_equal(solver.status, 'failed')
+    assert_("step size is less" in message)
+    assert_raises(RuntimeError, solver.step)
 
 
-def test_first_step():
+@pytest.mark.parametrize("method", [RK23, RK45, DOP853, Radau, BDF])
+@pytest.mark.parametrize("t_span", [[5, 9], [5, 1]])
+def test_max_step_keeps_error_low(method, t_span):
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [1/3, 2/9]
+
+    res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
+                    max_step=0.5, atol=atol, method=method,
+                    dense_output=True)
+    assert_equal(res.t[0], t_span[0])
+    assert_equal(res.t[-1], t_span[-1])
+    assert_(np.all(np.abs(np.diff(res.t)) <= 0.5))
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
+
+    y_true = sol_rational(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 5))
+
+    tc = np.linspace(*t_span)
+    yc_true = sol_rational(tc)
+    yc = res.sol(tc)
+
+    e = compute_error(yc, yc_true, rtol, atol)
+    assert_(np.all(e < 5))
+
+    # See comment in test_integration.
+    if method is not LSODA:
+        assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+
+@pytest.mark.parametrize("method", [RK23, RK45, DOP853, Radau, BDF, LSODA])
+@pytest.mark.parametrize("t_span", [[5, 9], [5, 1]])
+def test_first_step(method, t_span):
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
     first_step = 0.1
-    for method in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
-        for t_span in ([5, 9], [5, 1]):
-            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
-                            max_step=0.5, atol=atol, method=method,
-                            dense_output=True, first_step=first_step)
 
-            assert_equal(res.t[0], t_span[0])
-            assert_equal(res.t[-1], t_span[-1])
-            assert_allclose(first_step, np.abs(res.t[1] - 5))
-            assert_(res.t_events is None)
-            assert_(res.success)
-            assert_equal(res.status, 0)
+    res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
+                    max_step=0.5, atol=atol, method=method,
+                    dense_output=True, first_step=first_step)
 
-            y_true = sol_rational(res.t)
-            e = compute_error(res.y, y_true, rtol, atol)
-            assert_(np.all(e < 5))
+    assert_equal(res.t[0], t_span[0])
+    assert_equal(res.t[-1], t_span[-1])
+    assert_allclose(first_step, np.abs(res.t[1] - 5))
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
 
-            tc = np.linspace(*t_span)
-            yc_true = sol_rational(tc)
-            yc = res.sol(tc)
+    y_true = sol_rational(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 5))
 
-            e = compute_error(yc, yc_true, rtol, atol)
-            assert_(np.all(e < 5))
+    tc = np.linspace(*t_span)
+    yc_true = sol_rational(tc)
+    yc = res.sol(tc)
 
-            # See comment in test_integration.
-            if method is not LSODA:
-                assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+    e = compute_error(yc, yc_true, rtol, atol)
+    assert_(np.all(e < 5))
 
-            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
-                          t_span[1], first_step=-1)
-            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
-                          t_span[1], first_step=5)
-    
+    # See comment in test_integration.
+    if method is not LSODA:
+        assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
-def test_t_eval():
+    assert_raises(ValueError, method, fun_rational, t_span[0], y0,
+                  t_span[1], first_step=-1)
+    assert_raises(ValueError, method, fun_rational, t_span[0], y0,
+                  t_span[1], first_step=5)
+
+
+@pytest.mark.parametrize("t_span", [[5, 9], [5, 1]])
+def test_t_eval(t_span):
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
-    for t_span in ([5, 9], [5, 1]):
-        t_eval = np.linspace(t_span[0], t_span[1], 10)
-        res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
-                        t_eval=t_eval)
-        assert_equal(res.t, t_eval)
-        assert_(res.t_events is None)
-        assert_(res.success)
-        assert_equal(res.status, 0)
 
-        y_true = sol_rational(res.t)
-        e = compute_error(res.y, y_true, rtol, atol)
-        assert_(np.all(e < 5))
+    t_eval = np.linspace(t_span[0], t_span[1], 10)
+    res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
+                    t_eval=t_eval)
+    assert_equal(res.t, t_eval)
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
+
+    y_true = sol_rational(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 5))
 
     t_eval = [5, 5.01, 7, 8, 8.01, 9]
     res = solve_ivp(fun_rational, [5, 9], y0, rtol=rtol, atol=atol,
@@ -587,48 +605,47 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-def test_no_integration():
-    for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
-                        method=method, dense_output=True)
-        assert_equal(sol.sol(4), [2, 3])
-        assert_equal(sol.sol([4, 5, 6]), [[2, 2, 2], [3, 3, 3]])
+@pytest.mark.parametrize("method", ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+def test_no_integration(method):
+    sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
+                    method=method, dense_output=True)
+    assert_equal(sol.sol(4), [2, 3])
+    assert_equal(sol.sol([4, 5, 6]), [[2, 2, 2], [3, 3, 3]])
 
 
-def test_no_integration_class():
-    for method in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
-        solver = method(lambda t, y: -y, 0.0, [10.0, 0.0], 0.0)
-        solver.step()
-        assert_equal(solver.status, 'finished')
-        sol = solver.dense_output()
-        assert_equal(sol(0.0), [10.0, 0.0])
-        assert_equal(sol([0, 1, 2]), [[10, 10, 10], [0, 0, 0]])
+@pytest.mark.parametrize("method", [RK23, RK45, DOP853, Radau, BDF, LSODA])
+def test_no_integration_class(method):
+    solver = method(lambda t, y: -y, 0.0, [10.0, 0.0], 0.0)
+    solver.step()
+    assert_equal(solver.status, 'finished')
+    sol = solver.dense_output()
+    assert_equal(sol(0.0), [10.0, 0.0])
+    assert_equal(sol([0, 1, 2]), [[10, 10, 10], [0, 0, 0]])
 
-        solver = method(lambda t, y: -y, 0.0, [], np.inf)
-        solver.step()
-        assert_equal(solver.status, 'finished')
-        sol = solver.dense_output()
-        assert_equal(sol(100.0), [])
-        assert_equal(sol([0, 1, 2]), np.empty((0, 3)))
+    solver = method(lambda t, y: -y, 0.0, [], np.inf)
+    solver.step()
+    assert_equal(solver.status, 'finished')
+    sol = solver.dense_output()
+    assert_equal(sol(100.0), [])
+    assert_equal(sol([0, 1, 2]), np.empty((0, 3)))
 
 
-def test_empty():
+@pytest.mark.parametrize("method", ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+def test_empty(method):
     def fun(t, y):
         return np.zeros((0,))
 
     y0 = np.zeros((0,))
 
-    for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        sol = assert_no_warnings(solve_ivp, fun, [0, 10], y0,
-                                 method=method, dense_output=True)
-        assert_equal(sol.sol(10), np.zeros((0,)))
-        assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
+    sol = assert_no_warnings(solve_ivp, fun, [0, 10], y0,
+                             method=method, dense_output=True)
+    assert_equal(sol.sol(10), np.zeros((0,)))
+    assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
 
-    for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], y0,
-                                 method=method, dense_output=True)
-        assert_equal(sol.sol(10), np.zeros((0,)))
-        assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
+    sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], y0,
+                             method=method, dense_output=True)
+    assert_equal(sol.sol(10), np.zeros((0,)))
+    assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
 
 
 def test_ConstantDenseOutput():
@@ -641,42 +658,43 @@ def test_ConstantDenseOutput():
     assert_allclose(sol([1, 1.5, 2]), np.empty((0, 3)))
 
 
-def test_classes():
+@pytest.mark.parametrize("cls", [RK23, RK45, DOP853, Radau, BDF, LSODA])
+def test_classes(cls):
     y0 = [1 / 3, 2 / 9]
-    for cls in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
-        solver = cls(fun_rational, 5, y0, np.inf)
-        assert_equal(solver.n, 2)
-        assert_equal(solver.status, 'running')
-        assert_equal(solver.t_bound, np.inf)
-        assert_equal(solver.direction, 1)
-        assert_equal(solver.t, 5)
-        assert_equal(solver.y, y0)
-        assert_(solver.step_size is None)
-        if cls is not LSODA:
-            assert_(solver.nfev > 0)
-            assert_(solver.njev >= 0)
-            assert_equal(solver.nlu, 0)
-        else:
-            assert_equal(solver.nfev, 0)
-            assert_equal(solver.njev, 0)
-            assert_equal(solver.nlu, 0)
 
-        assert_raises(RuntimeError, solver.dense_output)
-
-        message = solver.step()
-        assert_equal(solver.status, 'running')
-        assert_equal(message, None)
-        assert_equal(solver.n, 2)
-        assert_equal(solver.t_bound, np.inf)
-        assert_equal(solver.direction, 1)
-        assert_(solver.t > 5)
-        assert_(not np.all(np.equal(solver.y, y0)))
-        assert_(solver.step_size > 0)
+    solver = cls(fun_rational, 5, y0, np.inf)
+    assert_equal(solver.n, 2)
+    assert_equal(solver.status, 'running')
+    assert_equal(solver.t_bound, np.inf)
+    assert_equal(solver.direction, 1)
+    assert_equal(solver.t, 5)
+    assert_equal(solver.y, y0)
+    assert_(solver.step_size is None)
+    if cls is not LSODA:
         assert_(solver.nfev > 0)
         assert_(solver.njev >= 0)
-        assert_(solver.nlu >= 0)
-        sol = solver.dense_output()
-        assert_allclose(sol(5), y0, rtol=1e-15, atol=0)
+        assert_equal(solver.nlu, 0)
+    else:
+        assert_equal(solver.nfev, 0)
+        assert_equal(solver.njev, 0)
+        assert_equal(solver.nlu, 0)
+
+    assert_raises(RuntimeError, solver.dense_output)
+
+    message = solver.step()
+    assert_equal(solver.status, 'running')
+    assert_equal(message, None)
+    assert_equal(solver.n, 2)
+    assert_equal(solver.t_bound, np.inf)
+    assert_equal(solver.direction, 1)
+    assert_(solver.t > 5)
+    assert_(not np.all(np.equal(solver.y, y0)))
+    assert_(solver.step_size > 0)
+    assert_(solver.nfev > 0)
+    assert_(solver.njev >= 0)
+    assert_(solver.nlu >= 0)
+    sol = solver.dense_output()
+    assert_allclose(sol(5), y0, rtol=1e-15, atol=0)
 
 
 def test_OdeSolution():
