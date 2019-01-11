@@ -430,14 +430,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     >>> def apex(t,y): return y[1]
     >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
-    >>>                 events=(hit_ground, apex), dense_output=True)
+    ...                 events=(hit_ground, apex), dense_output=True)
     >>> print(sol.t_events)
     [array([40.]), array([20.])]
     >>> print(sol.t)
     [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
     >>> print(sol.sol(sol.t_events[1][0]))
-    [100. 0.]
+    [100.   0.]
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
