@@ -5486,19 +5486,19 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         raise ValueError("pvalues is not 1-D")
 
     if method == 'fisher':
-        Xsq = -2 * np.sum(np.log(pvalues))
-        pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
+        statistic = -2 * np.sum(np.log(pvalues))
+        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'pearson':
-        Xsq = -2 * np.sum(np.log(1 - pvalues))
-        pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
+        statistic = -2 * np.sum(np.log1p(-pvalues))
+        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
-        Xsq = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log1p(-pvalues))
+        statistic = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
-        pval = distributions.t.sf(Sg * approx_factor, nu)
+        pval = distributions.t.sf(statistic * approx_factor, nu)
     elif method == 'tippett':
-        Xsq = np.min(pvalues)
-        pval = distributions.beta.sf(St, 1, len(pvalues))
+        statistic = np.min(pvalues)
+        pval = distributions.beta.sf(statistic, 1, len(pvalues))
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
@@ -5510,15 +5510,15 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             raise ValueError("weights is not 1-D")
 
         Zi = distributions.norm.isf(pvalues)
-        Xsq = np.dot(weights, Zi) / np.linalg.norm(weights)
-        pval = distributions.norm.sf(Xsq)
+        statistic = np.dot(weights, Zi) / np.linalg.norm(weights)
+        pval = distributions.norm.sf(statistic)
 
     else:
         raise ValueError(
             "Invalid method '%s'. Options are 'fisher', 'pearson', \
             'mudholkar_george', 'tippett', 'or 'stouffer'", method)
 
-    return (Xsq, pval)
+    return (statistic, pval)
 
 
 #####################################
