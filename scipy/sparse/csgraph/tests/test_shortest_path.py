@@ -4,8 +4,9 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
-    bellman_ford, construct_dist_matrix, NegativeCycleError)
-
+                                  bellman_ford, construct_dist_matrix,
+                                  NegativeCycleError)
+import pytest
 
 directed_G = np.array([[0, 3, 3, 0, 0],
                        [0, 0, 0, 2, 4],
@@ -97,32 +98,26 @@ def test_undirected():
             check(method, directed_in)
 
 
-def test_dijkstra_indices_min_only():
+@pytest.mark.parametrize('directed, SP_ans',
+                         ((True, directed_SP),
+                          (False, undirected_SP)))
+@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4]))
+def test_dijkstra_indices_min_only(directed, SP_ans, indices):
+    SP_ans = np.array(SP_ans)
+    indices = np.array(indices, dtype=np.int64)
+    min_ind_ans = indices[np.argmin(SP_ans[indices, :], axis=0)]
+    min_d_ans = np.zeros(SP_ans.shape[0], SP_ans.dtype)
+    for k in range(SP_ans.shape[0]):
+        min_d_ans[k] = SP_ans[min_ind_ans[k], k]
+    min_ind_ans[np.isinf(min_d_ans)] = -9999
 
-    SP_res = {True: directed_SP,
-              False: undirected_SP}
-    index_list = [np.array([0, 2, 4], np.int64),
-                  np.array([0, 4], np.int64),
-                  np.array([3, 4])]
-
-    def check(directed, indices):
-        SP_ans = np.array(SP_res[directed])
-        min_ind_ans = indices[np.argmin(SP_ans[indices, :], axis=0)]
-        min_d_ans = np.zeros(SP_ans.shape[0], SP_ans.dtype)
-        for k in range(SP_ans.shape[0]):
-            min_d_ans[k] = SP_ans[min_ind_ans[k], k]
-        min_ind_ans[np.isinf(min_d_ans)] = -9999
-
-        SP, pred, sources = dijkstra(directed_G,
-                                     directed=directed,
-                                     indices=indices,
-                                     min_only=True,
-                                     return_predecessors=True)
-        assert_array_almost_equal(SP, min_d_ans)
-        assert_array_equal(min_ind_ans, sources)
-    for indices in index_list:
-        for directed in (True, False):
-            check(directed, indices)
+    SP, pred, sources = dijkstra(directed_G,
+                                 directed=directed,
+                                 indices=indices,
+                                 min_only=True,
+                                 return_predecessors=True)
+    assert_array_almost_equal(SP, min_d_ans)
+    assert_array_equal(min_ind_ans, sources)
 
 
 def test_shortest_path_indices():
