@@ -394,7 +394,7 @@ class DOP853(OdeSolver):
 
 
 def get_coeffs(s):
-    coeffs = np.zeros((8))
+    coeffs = np.zeros((8, len(np.atleast_1d(s))))
     s_back = 1.0 - s
     coeffs[0] = 1.0
     for i in range(7):
@@ -402,7 +402,12 @@ def get_coeffs(s):
             coeffs[i + 1] = coeffs[i] * s
         else:
             coeffs[i + 1] = coeffs[i] * s_back
-    return np.array(coeffs)
+
+    if np.asarray(s).ndim < 1:
+        assert coeffs.shape[-1] == 1
+        coeffs = coeffs[..., 0]
+
+    return coeffs
 
 
 class DOP853DenseOutput(DenseOutput):
