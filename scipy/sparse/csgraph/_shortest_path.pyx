@@ -63,9 +63,9 @@ def shortest_path(csgraph, method='auto',
 
            'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
                      cost is approximately ``O[N(N*k + N*log(N))]``, where
-		     ``k`` is the average number of connected edges per node.
-		     The input csgraph will be converted to a csr
-		     representation.
+                     ``k`` is the average number of connected edges per node.
+                     The input csgraph will be converted to a csr
+                     representation.
 
            'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
                      weights are negative.  If a negative cycle is encountered,
@@ -104,7 +104,6 @@ def shortest_path(csgraph, method='auto',
     dist_matrix : ndarray
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
-
     predecessors : ndarray
         Returned only if return_predecessors == True.
         The N x N matrix of predecessors, which can be used to reconstruct
@@ -336,7 +335,7 @@ cdef void _floyd_warshall(
 
     cdef DTYPE_t d_ijk
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     #  Initialize distance matrix
     #   - set non-edges to infinity
     #   - set diagonal to zero
@@ -393,7 +392,7 @@ cdef void _floyd_warshall(
 
 def dijkstra(csgraph, directed=True, indices=None,
              return_predecessors=False,
-             unweighted=False, limit=np.inf, 
+             unweighted=False, limit=np.inf,
              min_only=False):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
@@ -409,10 +408,10 @@ def dijkstra(csgraph, directed=True, indices=None,
         The N x N array of non-negative distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
-        only move from point i to point j along paths csgraph[i, j] and from 
+        only move from point i to point j along paths csgraph[i, j] and from
         point j to i along paths csgraph[j, i].
         If False, then find the shortest path on an undirected graph: the
-        algorithm can progress from point i to j or j to i along either 
+        algorithm can progress from point i to j or j to i along either
         csgraph[i, j] or csgraph[j, i].
     indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
@@ -430,8 +429,8 @@ def dijkstra(csgraph, directed=True, indices=None,
         will be equal to np.inf (i.e., not connected).
 
         .. versionadded:: 0.14.0
-    min_only: bool, optional
-￼        If False (default), for every node in the graph, find the shortest path
+    min_only : bool, optional
+        If False (default), for every node in the graph, find the shortest path
         to every node in indices.
         If True, for every node in the graph, find the shortest path to any of
         the nodes in indices (which can be substantially faster).
@@ -456,13 +455,14 @@ def dijkstra(csgraph, directed=True, indices=None,
         predecessors[i, j] gives the index of the previous node in the
         path from point i to point j.  If no path exists between point
         i and j, then predecessors[i, j] = -9999
-    sources: ndarray, shape(n_nodes,)
+    sources : ndarray, shape(n_nodes,)
         Returned only if min_only=True and return_predecessors=True.
         Contains the index of the source which had the shortest path
         to each target.  If no path exists within the limit,
         this will contain -9999.  The value at the indices passed
         will be equal to that index (i.e. the fastest way to reach
         node i, is to start on node i).
+
     Notes
     -----
     As currently implemented, Dijkstra's algorithm does not work for
@@ -570,12 +570,14 @@ def dijkstra(csgraph, directed=True, indices=None,
     if directed:
         if min_only:
             _dijkstra_directed_multi(indices,
-                                     csr_data, csgraph.indices, csgraph.indptr,
-                                     dist_matrix, predecessor_matrix, source_matrix, limitf)
+                                     csr_data, csgraph.indices,
+                                     csgraph.indptr,
+                                     dist_matrix, predecessor_matrix,
+                                     source_matrix, limitf)
         else:
             _dijkstra_directed(indices,
-                              csr_data, csgraph.indices, csgraph.indptr,
-                              dist_matrix, predecessor_matrix, limitf)
+                               csr_data, csgraph.indices, csgraph.indptr,
+                               dist_matrix, predecessor_matrix, limitf)
     else:
         csgraphT = csgraph.T.tocsr()
         if unweighted:
@@ -584,9 +586,12 @@ def dijkstra(csgraph, directed=True, indices=None,
             csrT_data = csgraphT.data
         if min_only:
             _dijkstra_undirected_multi(indices,
-                                       csr_data, csgraph.indices, csgraph.indptr,
-                                       csrT_data, csgraphT.indices, csgraphT.indptr,
-                                       dist_matrix, predecessor_matrix, source_matrix, limitf)
+                                       csr_data, csgraph.indices,
+                                       csgraph.indptr,
+                                       csrT_data, csgraphT.indices,
+                                       csgraphT.indptr,
+                                       dist_matrix, predecessor_matrix,
+                                       source_matrix, limitf)
         else:
             _dijkstra_undirected(indices,
                                  csr_data, csgraph.indices, csgraph.indptr,
@@ -604,17 +609,19 @@ def dijkstra(csgraph, directed=True, indices=None,
     else:
         return dist_matrix.reshape(return_shape)
 
+
 cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
                                 FibonacciNode* nodes,
                                 int[:] source_indices,
                                 int[:] sources,
-                                double[:] dist_matrix):
+                                double[:] dist_matrix,
+                                int return_pred):
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
         unsigned int i, k, j_source
         FibonacciNode *current_node
-      
+
     for k in range(N):
         initialize_node(&nodes[k], k)
 
@@ -622,7 +629,8 @@ cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
     for i in range(Nind):
         j_source = source_indices[i]
         dist_matrix[j_source] = 0
-        sources[j_source] = j_source
+        if return_pred:
+            sources[j_source] = j_source
         current_node = &nodes[j_source]
         current_node.state = SCANNED
         current_node.source = j_source
@@ -643,7 +651,7 @@ cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
         ITYPE_t j
         DTYPE_t next_val
         FibonacciNode *current_node
- 
+
     for j in range(csr_indptr[v.index], csr_indptr[v.index + 1]):
         j_current = csr_indices[j]
         current_node = &nodes[j_current]
@@ -661,7 +669,7 @@ cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
                 elif current_node.val > next_val:
                     current_node.source = v.source
                     decrease_val(heap, current_node,
-                                    next_val)
+                                 next_val)
                     if return_pred:
                         pred[j_current] = v.index
                         sources[j_current] = v.source
@@ -672,7 +680,7 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                          double[:] csr_weights,
                          int[:] csr_indices,
                          int[:] csr_indptr,
-                         int[:,:] pred,
+                         int[:, :] pred,
                          int return_pred,
                          DTYPE_t limit,
                          int i):
@@ -681,7 +689,7 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
         ITYPE_t j
         DTYPE_t next_val
         FibonacciNode *current_node
- 
+
     for j in range(csr_indptr[v.index], csr_indptr[v.index + 1]):
         j_current = csr_indices[j]
         current_node = &nodes[j_current]
@@ -696,7 +704,7 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                         pred[i, j_current] = v.index
                 elif current_node.val > next_val:
                     decrease_val(heap, current_node,
-                                    next_val)
+                                 next_val)
                     if return_pred:
                         pred[i, j_current] = v.index
 
@@ -705,8 +713,8 @@ cdef _dijkstra_directed(
             double[:] csr_weights,
             int[:] csr_indices,
             int[:] csr_indptr,
-            double[:,:] dist_matrix,
-            int[:,:] pred,
+            double[:, :] dist_matrix,
+            int[:, :] pred,
             DTYPE_t limit):
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
@@ -718,7 +726,7 @@ cdef _dijkstra_directed(
         FibonacciHeap heap
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                        sizeof(FibonacciNode))
+                                                       sizeof(FibonacciNode))
 
     for i in range(Nind):
         j_source = source_indices[i]
@@ -738,7 +746,7 @@ cdef _dijkstra_directed(
                                 csr_weights, csr_indices, csr_indptr,
                                 pred, return_pred, limit, i)
 
-            #v has now been scanned: add the distance to the results
+            # v has now been scanned: add the distance to the results
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
@@ -764,15 +772,16 @@ cdef _dijkstra_directed_multi(
 
         FibonacciHeap heap
         FibonacciNode *v
-        FibonacciNode* nodes = <FibonacciNode*> malloc(N * sizeof(FibonacciNode))
+        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
+                                                       sizeof(FibonacciNode))
 
-    # initialize the heap with each of the starting 
+    # initialize the heap with each of the starting
     # nodes on the heap and in a scanned state with 0 values
     # and their entry of the distance matrix = 0
     # pred will lead back to one of the starting indices
     _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
-                               sources, dist_matrix)
-    
+                               sources, dist_matrix, return_pred)
+
     while heap.min_node:
         v = remove_min(&heap)
         v.state = SCANNED
@@ -781,7 +790,7 @@ cdef _dijkstra_directed_multi(
                                   csr_weights, csr_indices, csr_indptr,
                                   pred, sources, return_pred, limit)
 
-        #v has now been scanned: add the distance to the results
+        # v has now been scanned: add the distance to the results
         dist_matrix[v.index] = v.val
 
     free(nodes)
@@ -794,8 +803,8 @@ cdef _dijkstra_undirected(
             double[:] csrT_weights,
             int[:] csrT_indices,
             int[:] csrT_indptr,
-            double[:,:] dist_matrix,
-            int[:,:] pred,
+            double[:, :] dist_matrix,
+            int[:, :] pred,
             DTYPE_t limit):
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
@@ -807,7 +816,7 @@ cdef _dijkstra_undirected(
         FibonacciHeap heap
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                        sizeof(FibonacciNode))
+                                                       sizeof(FibonacciNode))
 
     for i in range(Nind):
         j_source = source_indices[i]
@@ -831,7 +840,7 @@ cdef _dijkstra_undirected(
                                 csrT_weights, csrT_indices, csrT_indptr,
                                 pred, return_pred, limit, i)
 
-            #v has now been scanned: add the distance to the results
+            # v has now been scanned: add the distance to the results
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
@@ -860,11 +869,11 @@ cdef _dijkstra_undirected_multi(
         FibonacciNode *v
         FibonacciNode *current_node
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
-                                                        sizeof(FibonacciNode))
+                                                       sizeof(FibonacciNode))
 
     _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
-                               sources, dist_matrix)
-    
+                               sources, dist_matrix, return_pred)
+
     while heap.min_node:
         v = remove_min(&heap)
         v.state = SCANNED
@@ -873,7 +882,7 @@ cdef _dijkstra_undirected_multi(
                                   csr_weights, csr_indices, csr_indptr,
                                   pred, sources, return_pred, limit)
 
-        _dijkstra_scan_heap_multi(&heap, v,nodes,
+        _dijkstra_scan_heap_multi(&heap, v, nodes,
                                   csrT_weights, csrT_indices, csrT_indptr,
                                   pred, sources, return_pred, limit)
 
@@ -970,13 +979,13 @@ def bellman_ford(csgraph, directed=True, indices=None,
     array([-9999,     0,     0,     1], dtype=int32)
 
     """
-    #------------------------------
+    # ------------------------------
     # validate csgraph and convert to csr matrix
     csgraph = validate_graph(csgraph, directed, DTYPE,
                              dense_output=False)
     N = csgraph.shape[0]
 
-    #------------------------------
+    # ------------------------------
     # intitialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
@@ -988,13 +997,13 @@ def bellman_ford(csgraph, directed=True, indices=None,
     return_shape = indices.shape + (N,)
     indices = np.atleast_1d(indices).reshape(-1)
 
-    #------------------------------
+    # ------------------------------
     # initialize dist_matrix for output
     dist_matrix = np.empty((len(indices), N), dtype=DTYPE)
     dist_matrix.fill(np.inf)
     dist_matrix[np.arange(len(indices)), indices] = 0
 
-    #------------------------------
+    # ------------------------------
     # initialize predecessors for output
     if return_predecessors:
         predecessor_matrix = np.empty((len(indices), N), dtype=ITYPE)
@@ -1033,8 +1042,8 @@ cdef int _bellman_ford_directed(
             double[:] csr_weights,
             int[:] csr_indices,
             int[:] csr_indptr,
-            double[:,:] dist_matrix,
-            int[:,:] pred):
+            double[:, :] dist_matrix,
+            int[:, :] pred):
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -1074,8 +1083,8 @@ cdef int _bellman_ford_undirected(
             double[:] csr_weights,
             int[:] csr_indices,
             int[:] csr_indptr,
-            double[:,:] dist_matrix,
-            int[:,:] pred):
+            double[:, :] dist_matrix,
+            int[:, :] pred):
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -1204,19 +1213,19 @@ def johnson(csgraph, directed=True, indices=None,
     array([-9999,     0,     0,     1], dtype=int32)
 
     """
-    #------------------------------
+    # ------------------------------
     # if unweighted, there are no negative weights: we just use dijkstra
     if unweighted:
         return dijkstra(csgraph, directed, indices,
                         return_predecessors, unweighted)
 
-    #------------------------------
+    # ------------------------------
     # validate csgraph and convert to csr matrix
     csgraph = validate_graph(csgraph, directed, DTYPE,
                              dense_output=False)
     N = csgraph.shape[0]
 
-    #------------------------------
+    # ------------------------------
     # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
@@ -1273,7 +1282,7 @@ def johnson(csgraph, directed=True, indices=None,
                            dist_matrix, predecessor_matrix, np.inf)
     else:
         csgraphT = csr_matrix((csr_data, csgraph.indices, csgraph.indptr),
-                          csgraph.shape).T.tocsr()
+                               csgraph.shape).T.tocsr()
         _johnson_add_weights(csgraphT.data, csgraphT.indices,
                              csgraphT.indptr, dist_array)
         _dijkstra_undirected(indices,
@@ -1281,7 +1290,7 @@ def johnson(csgraph, directed=True, indices=None,
                              csgraphT.data, csgraphT.indices, csgraphT.indptr,
                              dist_matrix, predecessor_matrix, np.inf)
 
-    #------------------------------
+    # ------------------------------
     # correct the distance matrix for the bellman-ford weights
     dist_matrix += dist_array
     dist_matrix -= dist_array[:, None][indices]
@@ -1403,7 +1412,7 @@ cdef struct FibonacciNode:
     FibonacciNode* left_sibling
     FibonacciNode* right_sibling
     FibonacciNode* children
- 
+
 
 cdef void initialize_node(FibonacciNode* node,
                           unsigned int index,
@@ -1420,7 +1429,7 @@ cdef void initialize_node(FibonacciNode* node,
     node.left_sibling = NULL
     node.right_sibling = NULL
     node.children = NULL
-    
+
 
 cdef FibonacciNode* rightmost_sibling(FibonacciNode* node):
     # Assumptions: - node is a valid pointer
