@@ -211,6 +211,36 @@ account and then create your local repository via::
     $ cd scipy
     $ git remote add upstream git://github.com/scipy/scipy.git
 
+Second to code review pull requests it is helpful to have a local copy of the
+code changes in the pull request. To ensure you have the pull request code in
+you local repository at the top level of your scipy repository open the file
+
+    $ .git/config
+
+When you open the file you should see 3 lines that look like this:
+
+    $ [remote "upstream"]
+    $         url = git://github.com/scipy/scipy.git
+    $         fetch = +refs/heads/*:refs/remotes/upstream/*
+
+After the `fetch` line you will add another line that reads:
+
+    $ fetch = +refs/pull/*/head:refs/remotes/upstream/pr/*
+
+Save the config file in the same place with no other changes.
+Now execute the command:
+
+    $ git fetch upstream pr
+
+This will bring all the pull requests to you local repository, including merged
+and closed pull requests. To investigate the pull request you will need to
+create a branch. For example to examine the code changes in pull request 1 you
+would create a branch via:
+
+    $ git checkout pr/1
+
+Now you have a branch in your local development area to execute test in python.
+
 To build the development version of Scipy and run tests, spawn
 interactive shells with the Python import paths properly set up etc.,
 do one of::
