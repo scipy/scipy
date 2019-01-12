@@ -5421,7 +5421,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     ----------
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
-    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar-george'},
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'},
     optional.
         Name of method to use to combine p-values. The following methods are
         available:
@@ -5432,7 +5432,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
           complement of the p-values inside the logarithms).
         - "tippett": Tippett's method (minimum of p-values).
         - "stouffer": Stouffer's Z-score method.
-        - "mudholkar-george": a sum of Fisher's and Pearson's methods.
+        - "mudholkar_george": a sum of Fisher's and Pearson's methods.
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -5444,7 +5444,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         - "pearson": Similar to Fisher but using complementary pval
         - "tippett": smallest p-value
         - "stouffer": The Z-score
-        - "mudholkar-george": The sum of fisher and pearson methods
+        - "mudholkar_george": The sum of fisher and pearson methods
     pval: float
         The combined p-value.
 
@@ -5457,7 +5457,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     weights, which can make Stouffer's method more powerful than Fisher's
     method when the p-values are from studies of different size [3]_ [4]_.
     The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
-    method uses :math:`log(p_i)` [6]_. The `mudholkar-george` method is the
+    method uses :math:`log(p_i)` [6]_. The `mudholkar_george` method is the
     sum of the Fisher's and Pearson's test statistics.
 
     Fisher's method may be extended to combine p-values from dependent tests

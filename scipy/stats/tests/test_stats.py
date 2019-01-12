@@ -4142,6 +4142,18 @@ class TestCombinePvalues(object):
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
 
+    def test_pearson(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='pearson')
+        assert_approx_equal(p, 0.97787, significant=4)
+
+    def test_tippett(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='tippett')
+        assert_approx_equal(p, 0.970299, significant=4)
+
+    def test_mudholkar_george(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
+        assert_approx_equal(p, 5.373858588862369e-12, significant=4)
+
 
 class TestCdfDistanceValidation(object):
     """
