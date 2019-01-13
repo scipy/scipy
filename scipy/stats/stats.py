@@ -5439,12 +5439,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     Returns
     -------
     statistic: float
-        The statistic calculated by the specified method:
-        - "fisher": The chi-squared statistic
-        - "pearson": Similar to Fisher but using complementary pval
-        - "tippett": smallest p-value
-        - "stouffer": The Z-score
-        - "mudholkar_george": The sum of fisher and pearson methods
+        The statistic calculated by the specified method.
     pval: float
         The combined p-value.
 
