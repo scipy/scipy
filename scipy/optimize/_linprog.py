@@ -478,13 +478,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                       method = 'revised simplex')
     >>> print(res)
          con: array([], dtype=float64)
-         fun: -22.0
+         fun: -22.0 # may vary
      message: 'Optimization terminated successfully.'
-         nit: 1
-       slack: array([39.,  0.])
+         nit: 1 # may vary
+       slack: array([39.,  0.]) # may vary
       status: 0
      success: True
-           x: array([10., -3.])
+           x: array([10., -3.]) # may vary
 
     """
     meth = method.lower()
