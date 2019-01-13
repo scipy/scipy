@@ -48,6 +48,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang',
          'tukeylambda', 'vonmises', 'vonmises_line', 'pearson3', 'gennorm',
          'halfgennorm', 'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus',
+         'ksone', 'kstwobign', 'kstwo',
          'crystalball']
 
 
@@ -98,6 +99,8 @@ def cases_test_all_distributions():
             yield dist, (10,), alpha
             yield dist, (101,), alpha
             args = tuple(1.0 + np.random.random(nargs))
+        elif dist in ['ksone', 'kstwo']: # Need integer args
+            args = tuple([int(_) for _ in (1+100*np.random.random(nargs))])
         else:
             args = tuple(1.0 + np.random.random(nargs))
 
