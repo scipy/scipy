@@ -162,7 +162,7 @@ def linprog_terse_callback(res):
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='simplex', callback=None,
+            bounds=None, method='interior-point', callback=None,
             options=None, x0=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -463,10 +463,25 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds])
     >>> print(res)
          con: array([], dtype=float64)
+         fun: -21.99999984082494 # may vary
+     message: 'Optimization terminated successfully.'
+         nit: 6 # may vary
+       slack: array([3.89999997e+01, 8.46872439e-08] # may vary
+      status: 0
+     success: True
+           x: array([ 9.99999989, -2.99999999]) # may vary
+
+    Note that the default method for `linprog` is 'interior-point', which is
+    approximate by nature. If you need greater accuracy, try 'revised simplex'.
+
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds],
+                      method = 'revised simplex')
+    >>> print(res)
+         con: array([], dtype=float64)
          fun: -22.0
      message: 'Optimization terminated successfully.'
-         nit: 5 # may vary
-       slack: array([39.,  0.]) # may vary
+         nit: 1
+       slack: array([39.,  0.])
       status: 0
      success: True
            x: array([10., -3.])
