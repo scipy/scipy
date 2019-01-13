@@ -9,7 +9,8 @@ import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
-from .optimize import OptimizeWarning, _check_unknown_options
+from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
+from ._linprog_util import _postsolve
 
 
 def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
@@ -85,7 +86,7 @@ def _get_delta(
         pc=True,
         ip=False,
         permc_spec='MMD_AT_PLUS_A'
-    ):
+        ):
     """
     Given standard form problem defined by ``A``, ``b``, and ``c``;
     current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``;
@@ -533,8 +534,8 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         obj))
 
 
-def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
-            sparse, lstsq, sym_pos, cholesky, pc, ip, permc_spec):
+def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
+            sym_pos, cholesky, pc, ip, permc_spec, callback, _T_o):
     r"""
     Solve a linear programming problem in standard form:
 
@@ -613,6 +614,36 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         interior point algorithm; test different values to determine which
         performs best for your problem. For more information, refer to
         ``scipy.sparse.linalg.splu``.
+    callback : callable, optional
+        If a callback function is provided, it will be called within each
+        iteration of the algorithm. The callback function must accept a single
+        `scipy.optimize.OptimizeResult` consisting of the following fields:
+
+            x : 1D array
+                Current solution vector
+            fun : float
+                Current value of the objective function
+            success : bool
+                True only when an algorithm has completed successfully,
+                so this is always False as the callback function is called
+                only while the algorithm is still iterating.
+            slack : 1D array
+                The values of the slack variables. Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints,
+                that is, ``b - A_eq @ x``
+            phase : int
+                The phase of the algorithm being executed. This is always
+                1 for the interior-point method because it has only one phase.
+            status : int
+                For revised simplex, this is always 0 because if a different
+                status is detected, the algorithm terminates.
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
 
     Returns
     -------
@@ -733,6 +764,14 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
 
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, float(rho_mu), obj)
+        if callback is not None:
+            x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
+                                                    tol=tol)
+            res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
+                                  'con': con, 'nit': iteration, 'phase': 1,
+                                  'complete': False, 'status': 0,
+                                  'message': "", 'success': False})
+            callback(res)
 
         # [4] 4.5
         inf1 = (rho_p < tol and rho_d < tol and rho_g < tol and tau < tol *
@@ -762,6 +801,7 @@ def _linprog_ip(
         A=None,
         b=None,
         callback=None,
+        _T_o=[],
         alpha0=.99995,
         beta=0.1,
         maxiter=1000,
@@ -1015,9 +1055,6 @@ def _linprog_ip(
     """
 
     _check_unknown_options(unknown_options)
-    if callback is not None:
-        raise NotImplementedError("method 'interior-point' does not support "
-                                  "callback functions.")
 
     # These should be warnings, not errors
     if sparse and lstsq:
@@ -1064,6 +1101,7 @@ def _linprog_ip(
     x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta,
                                             maxiter, disp, tol, sparse,
                                             lstsq, sym_pos, cholesky,
-                                            pc, ip, permc_spec)
+                                            pc, ip, permc_spec, callback,
+                                            _T_o)
 
     return x, status, message, iteration

@@ -65,11 +65,12 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
-                OptimizeWarning)
+             OptimizeWarning)
     return options, A_ub, A_eq
 
 
-def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
+def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
+                  x0=None):
     """
     Given user inputs for a linear programming problem, return the
     objective vector, upper bound constraints, equality constraints,
@@ -98,6 +99,9 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
         bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm.
 
     Returns
     -------
@@ -120,7 +124,9 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction. By default
         bounds are ``(0, None)`` (non-negative).
-
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm.
     """
 
     try:
@@ -257,6 +263,31 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
             "numerical values, each representing the right hand side of an "
             "equality constraints (row) in A_eq")
 
+    if x0 is not None:
+        try:
+            try:
+                x0 = np.asarray(x0, dtype=float).copy().squeeze()
+            except BaseException:
+                raise TypeError
+            if x0.ndim == 0:
+                x0 = x0.reshape((-1))
+            if len(x0) == 0 or x0.ndim != 1:
+                raise ValueError(
+                    "Invalid input for linprog: x0 should be a 1D array; it "
+                    "must not have more than one non-singleton dimension")
+            if not x0.size == c.size:
+                raise ValueError(
+                    "Invalid input for linprog: x0 and c should contain the "
+                    "same number of elements")
+            if not np.isfinite(x0).all():
+                raise ValueError(
+                    "Invalid input for linprog: x0 must not contain values "
+                    "inf, nan, or None")
+        except TypeError:
+            raise TypeError(
+                "Invalid input for linprog: x0 must be a 1D array of "
+                "numerical oefficients")
+
     # "If a sequence containing a single tuple is provided, then min and max
     # will be applied to all variables in the problem."
     # linprog doesn't treat this right: it didn't accept a list with one tuple
@@ -334,10 +365,10 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
             "Invalid input for linprog: bounds must be a sequence of "
             "(min,max) pairs, each defining bounds on an element of x ")
 
-    return c, A_ub, b_ub, A_eq, b_eq, bounds
+    return c, A_ub, b_ub, A_eq, b_eq, bounds, x0
 
 
-def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
+def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
     """
     Given inputs for a linear programming problem in preferred format,
     presolve the problem: identify trivial infeasibilities, redundancies,
@@ -364,6 +395,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction.
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm.
     rr : bool
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
@@ -400,6 +434,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
     x : 1D array
         Solution vector (when the solution is trivial and can be determined
         in presolve)
+    x0 : 1D array
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm (if solution is not determined in presolve)
     undo: list of tuples
         (index, value) pairs that record the original index and fixed value
         for each variable removed from the problem
@@ -489,7 +526,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
                        "nonzero corresponding constraint value.")
             complete = True
             return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, undo, complete, status, message)
+                    x, x0, undo, complete, status, message)
         else:  # test_zero_row_2
             # if RHS is zero, we can eliminate this equation entirely
             A_eq = A_eq[np.logical_not(zero_row), :]
@@ -506,7 +543,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
                        "nonzero corresponding  constraint value.")
             complete = True
             return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, undo, complete, status, message)
+                    x, x0, undo, complete, status, message)
         else:  # test_zero_row_2
             # if LHS is >= 0, we can eliminate this constraint entirely
             A_ub = A_ub[np.logical_not(zero_row), :]
@@ -530,7 +567,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
                        "turn presolve off.")
             complete = True
             return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, undo, complete, status, message)
+                    x, x0, undo, complete, status, message)
         # variables will equal upper/lower bounds will be removed later
         lb[np.logical_and(zero_col, c < 0)] = ub[
             np.logical_and(zero_col, c < 0)]
@@ -553,7 +590,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
                            "inconsistent with the bounds.")
                 complete = True
                 return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                        x, undo, complete, status, message)
+                        x, x0, undo, complete, status, message)
             else:
                 # sets upper and lower bounds at that fixed value - variable
                 # will be removed later
@@ -589,7 +626,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
                            "singleton row in the upper bound constraints is "
                            "inconsistent with the bounds.")
                 return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                        x, undo, complete, status, message)
+                        x, x0, undo, complete, status, message)
         A_ub = A_ub[np.logical_not(singleton_row), :]
         b_ub = b_ub[np.logical_not(singleton_row)]
 
@@ -609,7 +646,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
                        "the constraints")
             complete = True
             return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, undo, complete, status, message)
+                    x, x0, undo, complete, status, message)
 
     ub_mod = ub
     lb_mod = lb
@@ -619,6 +656,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         b_ub = b_ub - A_ub[:, i_f].dot(lb[i_f])
         c = c[i_nf]
         x = x[i_nf]
+        # user guess x0 stays separate from presolve solution x
+        if x0 is not None:
+            x0 = x0[i_nf]
         A_eq = A_eq[:, i_nf]
         A_ub = A_ub[:, i_nf]
         # record of variables to be added back in
@@ -690,7 +730,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
             if status != 0:
                 complete = True
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                x, undo, complete, status, message)
+                x, x0, undo, complete, status, message)
 
     # This is a wild guess for which redundancy removal algorithm will be
     # faster. More testing would be good.
@@ -718,10 +758,10 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         if status != 0:
             complete = True
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-            x, undo, complete, status, message)
+            x, x0, undo, complete, status, message)
 
 
-def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
+def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0):
     """
     Parse the provided linear programming problem
 
@@ -767,6 +807,11 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm. Currently compatible only with the
+        'revised simplex' method, and only if x0 is a basic feasible solution
+        of the problem.
 
     Returns
     -------
@@ -801,7 +846,11 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
-
+    x0 : 1D array, optional
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm. Currently compatible only with the
+        'revised simplex' method, and only if x0 is a basic feasible solution
+        of the problem.
     """
     if options is None:
         options = {}
@@ -809,13 +858,13 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
     solver_options = {k: v for k, v in options.items()}
     solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, A_ub, A_eq)
     # Convert lists to numpy arrays, etc...
-    c, A_ub, b_ub, A_eq, b_eq, bounds = _clean_inputs(
-        c, A_ub, b_ub, A_eq, b_eq, bounds)
-    return c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = _clean_inputs(
+        c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    return c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0
 
 
 def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-             undo=[]):
+             x0=None, undo=[]):
     """
     Given a linear programming problem of the form:
 
@@ -869,6 +918,9 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction. Bounds have been
         tightened where possible.
+    x0 : 1D array
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm
     undo: list of tuples
         (`index`, `value`) pairs that record the original index and fixed value
         for each variable removed from the problem
@@ -887,6 +939,9 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables.
+    x0 : 1D array
+        Starting values of the independent variables, which will be refined by
+        the optimization algorithm
 
     References
     ----------
@@ -952,6 +1007,8 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     lb_some = np.logical_not(lb_none)
     ub_some = np.logical_not(ub_none)
     c[i_nolb] *= -1
+    if x0 is not None:
+        x0[i_nolb] *= -1
     if len(i_nolb) > 0:
         if A_ub.shape[0] > 0:  # sometimes needed for sparse arrays... weird
             A_ub[:, i_nolb] *= -1
@@ -970,15 +1027,22 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     A1 = vstack((A_ub, A_eq))
     b = np.concatenate((b_ub, b_eq))
     c = np.concatenate((c, np.zeros((A_ub.shape[0],))))
-
+    if x0 is not None:
+        x0 = np.concatenate((x0, np.zeros((A_ub.shape[0],))))
     # unbounded: substitute xi = xi+ + xi-
     l_free = np.logical_and(lb_none, ub_none)
     i_free = np.nonzero(l_free)[0]
     n_free = len(i_free)
     A1 = hstack((A1, zeros((A1.shape[0], n_free))))
     c = np.concatenate((c, np.zeros(n_free)))
+    if x0 is not None:
+        x0 = np.concatenate((x0, np.zeros(n_free)))
     A1[:, range(n_ub, A1.shape[1])] = -A1[:, i_free]
     c[np.arange(n_ub, A1.shape[1])] = -c[i_free]
+    if x0 is not None:
+        i_free_neg = x0[i_free] < 0
+        x0[np.arange(n_ub, A1.shape[1])[i_free_neg]] = -x0[i_free[i_free_neg]]
+        x0[i_free[i_free_neg]] = 0
 
     # add slack variables
     A2 = vstack([eye(A_ub.shape[0]), zeros((A_eq.shape[0], A_ub.shape[0]))])
@@ -996,8 +1060,10 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         b = b.ravel()
     else:
         b -= (A[:, i_shift] * lb_shift).sum(axis=1)
+    if x0 is not None:
+        x0[i_shift] -= lb_shift
 
-    return A, b, c, c0
+    return A, b, c, c0, x0
 
 
 def _display_summary(message, status, fun, iteration):
@@ -1231,7 +1297,7 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     elif status == 2 and is_feasible:
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can make the solution
-        #basic, however, this solution is NOT optimal
+        # basic, however, this solution is NOT optimal
         raise ValueError(message)
 
     return status, message

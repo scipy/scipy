@@ -19,9 +19,11 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from .optimize import OptimizeResult
+from .optimize import OptimizeResult, OptimizeWarning
+from warnings import warn
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
+from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
     _parse_linprog, _presolve, _get_Abc, _postprocess
     )
@@ -75,7 +77,6 @@ def linprog_verbose_callback(res):
     """
     x = res['x']
     fun = res['fun']
-    success = res['success']
     phase = res['phase']
     status = res['status']
     nit = res['nit']
@@ -132,7 +133,7 @@ def linprog_terse_callback(res):
             corresponding constraint is active.
         con : 1D array
             The (nominally zero) residuals of the equality constraints, that is,
-            ``b - A_eq @ x``
+            ``b - A_eq @ x``.
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -162,98 +163,122 @@ def linprog_terse_callback(res):
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, method='simplex', callback=None,
-            options=None):
-    """
-    Minimize a linear objective function subject to linear
-    equality and inequality constraints. Linear Programming is intended to
-    solve the following problem form:
+            options=None, x0=None):
+    r"""
+    Linear programming: minimize a linear objective function subject to linear
+    equality and inequality constraints.
 
-    Minimize::
+    Linear programming solves problems of the following form:
+
+    .. math::
+
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
+
+    where :math:`x` is a vector of decision variables; :math:`c`,
+    :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
+    :math:`A_{ub}` and :math:`A_{eq}` are matrices.
+
+    Informally, that's:
+
+    minimize::
 
         c @ x
 
-    Subject to::
+    such that::
 
         A_ub @ x <= b_ub
         A_eq @ x == b_eq
-         lb <= x <= ub
+        lb <= x <= ub
 
-    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
+    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
+    ``bounds``.
 
     Parameters
     ----------
     c : 1D array
-        Coefficients of the linear objective function to be minimized.
+        The coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
     b_ub : 1D array, optional
-        1D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2D, optional
-        2D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
     b_eq : 1D array, optional
-        1D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
     bounds : sequence, optional
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative).
-        If a sequence containing a single tuple is provided, then ``min`` and
-        ``max`` will be applied to all variables in the problem.
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None`` to
+        indicate that there is no bound. By default, bounds are ``(0, None)``
+        (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
     method : str, optional
-        Type of solver.  :ref:`'simplex' <optimize.linprog-simplex>`
-        and :ref:`'interior-point' <optimize.linprog-interior-point>`
+        The algorithm used to solve the standard form problem.
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
+        :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are supported.
-    callback : callable, optional (simplex only)
-        If a callback function is provided, it will be called within each
-        iteration of the simplex algorithm. The callback must require a
+    callback : callable, optional
+        If a callback function is provided, it will be called at least once per
+        iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
             x : 1D array
-                The independent variable vector which optimizes the linear
-                programming problem.
+                The current solution vector.
             fun : float
-                Value of the objective function.
+                The current value of the objective function ``c @ x``.
             success : bool
-                True if the algorithm succeeded in finding an optimal solution.
+                ``True`` when the algorithm has completed successfully.
             slack : 1D array
-                The values of the slack variables. Each slack variable
-                corresponds to an inequality constraint. If the slack is zero,
-                the corresponding constraint is active.
+                The (nominally positive) values of the slack,
+                ``b_ub - A_ub @ x``.
             con : 1D array
-                The (nominally zero) residuals of the equality constraints
-                that is, ``b - A_eq @ x``
+                The (nominally zero) residuals of the equality constraints,
+                ``b_eq - A_eq @ x``.
             phase : int
-                The phase of the optimization being executed. In phase 1 a basic
-                feasible solution is sought and the T has an additional row
-                representing an alternate objective function.
+                The phase of the algorithm being executed.
             status : int
-                An integer representing the exit status of the optimization::
+                An integer representing the status of the algorithm.
 
-                     0 : Optimization terminated successfully
-                     1 : Iteration limit reached
-                     2 : Problem appears to be infeasible
-                     3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties encountered
+                ``0`` : Optimization proceeding nominally.
+
+                ``1`` : Iteration limit reached.
+
+                ``2`` : Problem appears to be infeasible.
+
+                ``3`` : Problem appears to be unbounded.
+
+                ``4`` : Numerical difficulties encountered.
 
             nit : int
-                The number of iterations performed.
+                The current iteration number.
             message : str
-                A string descriptor of the exit status of the optimization.
+                A string descriptor of the algorithm status.
 
     options : dict, optional
         A dictionary of solver options. All methods accept the following
-        generic options:
+        options:
 
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
-                Set to True to print convergence messages.
+                Set to ``True`` to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
+
+    x0 : 1D array, optional
+        Guess values of the decision variables, which will be refined by
+        the optimization algorithm. This argument is currently used only by the
+        'revised simplex' method, and can only be used if `x0` represents a
+        basic feasible solution.
+
 
     Returns
     -------
@@ -261,60 +286,77 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
             x : 1D array
-                The independent variable vector which optimizes the linear
-                programming problem.
+                The values of the decision variables that minimizes the
+                objective function while satisfying the constraints.
             fun : float
-                Value of the objective function.
+                The optimal value of the objective function ``c @ x``.
             slack : 1D array
-                The values of the slack variables. Each slack variable
-                corresponds to an inequality constraint. If the slack is zero,
-                then the corresponding constraint is active.
+                The (nominally positive) values of the slack variables,
+                ``b_ub - A_ub @ x``.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints,
-                that is, ``b - A_eq @ x``
+                ``b_eq - A_eq @ x``.
             success : bool
-                Returns True if the algorithm succeeded in finding an optimal
+                ``True`` when the algorithm succeeds in finding an optimal
                 solution.
             status : int
-                An integer representing the exit status of the optimization::
+                An integer representing the exit status of the algorithm.
 
-                     0 : Optimization terminated successfully
-                     1 : Iteration limit reached
-                     2 : Problem appears to be infeasible
-                     3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties encountered
+                ``0`` : Optimization terminated successfully.
+
+                ``1`` : Iteration limit reached.
+
+                ``2`` : Problem appears to be infeasible.
+
+                ``3`` : Problem appears to be unbounded.
+
+                ``4`` : Numerical difficulties encountered.
 
             nit : int
-                The number of iterations performed.
+                The total number of iterations performed in all phases.
             message : str
-                A string descriptor of the exit status of the optimization.
+                A string descriptor of the exit status of the algorithm.
 
     See Also
     --------
-    show_options : Additional options accepted by the solvers
+    show_options : Additional options accepted by the solvers.
 
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method
-    is :ref:`Simplex <optimize.linprog-simplex>`.
-    :ref:`Interior point <optimize.linprog-interior-point>` is also available.
+    'method' parameter.
+    :ref:`'interior-point' <optimize.linprog-interior-point>` is the default
+    as it is typically the fastest and most robust method.
+    :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is more
+    accurate for the problems it solves.
+    :ref:`'simplex' <optimize.linprog-simplex>` is the legacy method and is
+    included for backwards compatibility and educational purposes.
 
-    Method *simplex* uses the simplex algorithm (as it relates to linear
-    programming, NOT the Nelder-Mead simplex) [1]_, [2]_. This algorithm
-    should be reasonably reliable and fast for small problems.
+    Method *interior-point* uses the primal-dual path following algorithm
+    as outlined in [4]_. This algorithm supports sparse constraint matrices and
+    is typically faster than the simplex methods, especially for large, sparse
+    problems. Note, however, that the solution returned may be slightly less
+    accurate than those of the simplex methods and will not, in general,
+    correspond with a vertex of the polytope defined by the constraints.
+
+    .. versionadded:: 1.0.0
+
+    Method *revised simplex* uses the revised simplex method as decribed in
+    [9]_, except that a factorization [11]_ of the basis matrix, rather than
+    its inverse, is efficiently maintained and used to solve the linear systems
+    at each iteration of the algorithm.
+
+    .. versionadded:: 1.3.0
+
+    Method *simplex* uses a traditional, full-tableau implementation of
+    Dantzig's simplex algorithm [1]_, [2]_ (*not* the
+    Nelder-Mead simplex). This algorithm is included for backwards
+    compatibility and educational purposes.
 
     .. versionadded:: 0.15.0
 
-    Method *interior-point* uses the primal-dual path following algorithm
-    as outlined in [4]_. This algorithm is intended to provide a faster
-    and more reliable alternative to *simplex*, especially for large,
-    sparse problems. Note, however, that the solution returned may be slightly
-    less accurate than that of the simplex method and may not correspond with a
-    vertex of the polytope defined by the constraints.
-
-    Before applying either method a presolve procedure based on [8]_ attempts to
-    identify trivial infeasibilities, trivial unboundedness, and potential
+    Before applying any method, a presolve procedure based on [8]_ attempts
+    to identify trivial infeasibilities, trivial unboundedness, and potential
     problem simplifications. Specifically, it checks for:
 
     - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
@@ -329,13 +371,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     terminates with the appropriate status code. Note that presolve terminates
     as soon as any sign of unboundedness is detected; consequently, a problem
     may be reported as unbounded when in reality the problem is infeasible
-    (but infeasibility has not been detected yet). Therefore, if the output
-    message states that unboundedness is detected in presolve and it is
-    necessary to know whether the problem is actually infeasible, set option
-    ``presolve=False``.
+    (but infeasibility has not been detected yet). Therefore, if it is
+    important to know whether the problem is actually infeasible, solve the
+    problem again with option ``presolve=False``.
 
     If neither infeasibility nor unboundedness are detected in a single pass
-    of the presolve check, bounds are tightened where possible and fixed
+    of the presolve, bounds are tightened where possible and fixed
     variables are removed from the problem. Then, linearly dependent rows
     of the ``A_eq`` matrix are removed, (unless they represent an
     infeasibility) to avoid numerical difficulties in the primary solve
@@ -355,6 +396,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     the (tightened) simple bounds to upper bound constraints, introducing
     non-negative slack variables for inequality constraints, and expressing
     unbounded variables as the difference between two non-negative variables.
+    The selected algorithm solves the standard form problem, and a
+    postprocessing routine converts this to a solution to the original problem.
 
     References
     ----------
@@ -386,32 +429,29 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     .. [10] Andersen, Erling D., et al. Implementation of interior point
             methods for large scale linear programming. HEC/Universite de
             Geneve, 1996.
+    .. [11] Bartels, Richard H. "A stabilization of the simplex method."
+            Journal in  Numerische Mathematik 16.5 (1971): 414-434.
 
     Examples
     --------
     Consider the following problem:
 
-    Minimize::
+    .. math::
 
-        f = -1x[0] + 4x[1]
+        \min_{x_0, x_1} \ -x_0 + 4x_1 & \\
+        \mbox{such that} \ -3x_0 + x_1 & \leq 6,\\
+        -x_0 - 2x_1 & \geq -4,\\
+        x_1 & \geq -3.
 
-    Subject to::
-
-        -3x[0] + 1x[1] <= 6
-         1x[0] + 2x[1] <= 4
-                  x[1] >= -3
-          -inf <= x[0] <= inf
-
-    This problem deviates from the standard linear programming problem.
-    In standard form, linear programming problems assume the variables x are
-    non-negative. Since the problem variables don't have the standard bounds of
-    ``(0, None)``, the variable bounds must be set using ``bounds`` explicitly.
-
-    There are two upper-bound constraints, which can be expressed as
-
-    dot(A_ub, x) <= b_ub
-
-    The input for this problem is as follows:
+    The problem is not presented in the form accepted by `linprog`. This is
+    easily remedied by converting the "greater than" inequality
+    constraint to a "less than" inequality constraint by
+    multiplying both sides by a factor of :math:`-1`. Note also that the last
+    constraint is really the simple bound :math:`-3 \leq x_1 \leq \infty`.
+    Finally, since there are no bounds on :math:`x_0`, we must explicitly
+    specify the bounds :math:`-\infty \leq x_0 \leq \infty`, as the
+    default is for variables to be non-negative. After collecting coeffecients
+    into arrays and tuples, the input for this problem is:
 
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
@@ -419,11 +459,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> x0_bounds = (None, None)
     >>> x1_bounds = (-3, None)
     >>> from scipy.optimize import linprog
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
-    ...               options={"disp": True})
-    Optimization terminated successfully.
-    Current function value: -22.000000
-    Iterations: 5 # may vary
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds])
     >>> print(res)
          con: array([], dtype=float64)
          fun: -22.0
@@ -438,8 +474,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     meth = method.lower()
     default_tol = 1e-12 if meth == 'simplex' else 1e-9
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options = _parse_linprog(
-        c, A_ub, b_ub, A_eq, b_eq, bounds, options)
+    if x0 is not None and meth != "revised simplex":
+        warning_message = "x0 is used only when method is 'revised simplex'. "
+        warn(warning_message, OptimizeWarning)
+
+    c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0 = _parse_linprog(
+        c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0)
     tol = solver_options.get('tol', default_tol)
 
     iteration = 0
@@ -455,18 +495,22 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
-        (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status,
-            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol)
+        (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, x0, undo, complete, status,
+            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol)
 
     if not complete:
-        A, b, c, c0 = _get_Abc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
+        A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
+                                   b_eq, bounds, x0, undo)
         T_o = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
                 c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
-                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
+        elif meth == 'revised simplex':
+            x, status, message, iteration = _linprog_rs(
+                c, c0=c0, A=A, b=b, x0=x0, callback=callback, _T_o=T_o, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
 
