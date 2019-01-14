@@ -686,7 +686,7 @@ void csr_matmat_pass2(const I n_row,
  * Note:
  *   Input:  A and B column indices are not assumed to be in sorted order
  *   Output: C column indices are not generally in sorted order
- *           C will not contain any duplicate entries .
+ *           C will not contain any duplicate entries or explicit zeros.
  *
  */
 template <class I, class T, class T2, class binary_op>
@@ -745,7 +745,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         for(I jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
 
-            if(result != 0 || A_row[head] == 0){
+            if(result != 0){
                 Cj[nnz] = head;
                 Cx[nnz] = result;
                 nnz++;
