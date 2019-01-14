@@ -1555,13 +1555,31 @@ class exponweib_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, c) = a c (1-\exp(-x^c))^{a-1} \exp(-x^c) x^{c-1}
+        f(x, a, c) = a c [1-\exp(-x^c)]^{a-1} \exp(-x^c) x^{c-1}
 
-    for :math:`x >= 0`, :math:`a > 0`, :math:`c > 0`.
+    and its cumulative distribution function is:
 
-    `exponweib` takes :math:`a` and :math:`c` as shape parameters.
+    .. math::
+
+        F(x, a, c) = [1-\exp(-x^c)]^a
+
+    for :math:`x > 0`, :math:`a > 0`, :math:`c > 0`.
+
+    `exponweib` takes :math:`a` and :math:`c` as shape parameters:
+
+    * :math:`a` is the exponentiation parameter,
+      with the special case :math:`a=1` corresponding to the usual
+      (non-exponentiated) Weibull distribution.
+    * :math:`c` is the shape parameter of the usual Weibull law
+      (often named :math:`k`, but named :math:`a` in `numpy.random.weibull`).
+      Special values are :math:`c=1` and :math:`c=2` where Weibull distribution
+      reduces to the `expon` and `rayleigh` distributions respectively.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Exponentiated_Weibull_distribution
 
     %(example)s
 
