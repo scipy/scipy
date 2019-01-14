@@ -193,7 +193,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel']
+           'brunnermunzel', 'ttest_trimmed']
 
 
 def _chk_asarray(a, axis):
@@ -4276,6 +4276,139 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
+
+
+def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimming_percentage=20.0):
+    """
+    Calculate the Yuen T-test on TWO samples of scores, a and b.
+
+    Data sets with low kurtosis (i.e., a distribution flatter than the normal 
+    distribution) should be analyzed with the two-sample trimmed t-test 
+    for unequal population variances, also called Yuen’s t-test.
+    Yuen’s t-test, also called “20 percent trimmed means test”, is an extension 
+    of Welch’s t-test and is allegedly more robust in case of non-normal 
+    distributions.
+    Yuen’s t-test consists of removing the lowest and highest 20 percent 
+    of the data and applying Welch’s t-test on the remaining values.
+
+    Parameters
+    ----------
+    a, b : array_like
+        The arrays must have the same shape.
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+    trimming_percentage : percent of trimming for default it is set to 20% In the Yuen's paper
+         it is shown that a trimming of 20% gives the best results according 
+         to nominal values (see table 2 in paper Yuen 1974)
+    equal_var : bool, optional
+        If True (default), perform a standard independent 2 sample test
+        that assumes equal population variances.
+        If False, perform Welch's t-test, which does not assume equal
+        population variance.
+
+    Returns
+    -------
+    statistic : float or array
+        t-statistic
+    pvalue : float or array
+        two-tailed p-value
+
+    
+    References
+    ----------
+    Karen K. Yuen (1974), "The two-sample trimmed t for unequal population 
+    variances", Biometrika Volume 65, Number 1, 165–170, 
+    DOI: https://doi.org/10.1093/biomet/61.1.165 
+
+    Examples
+    --------
+    
+    >>> from scipy import stats    
+
+    >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+    >>> b = (1.1, 2.9, 4.2)
+
+    >>> t, p = stats.ttest_trimmed(a, b, equal_var=False)
+
+    (4.591598691181999, 0.00998909252078421)
+
+    """
+
+    a, b, axis = _chk2_asarray(a, b, axis)
+
+    # check both a and b
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
+
+    if contains_nan and nan_policy == 'omit':
+        a = ma.masked_invalid(a)
+        b = ma.masked_invalid(b)
+        return mstats_basic.ttest_ind(a, b, axis, equal_var)
+
+    if a.size == 0 or b.size == 0:
+        return Ttest_indResult(np.nan, np.nan)
+
+    n1 = a.shape[axis]
+    n2 = b.shape[axis]
+
+    a.sort()
+    b.sort()
+
+    trimmed_index_a = math.floor((n1 / 100.0) * trimming_percentage)
+    trimmed_index_b = math.floor((n2 / 100.0) * trimming_percentage)
+
+    trimmed_n1 = n1 - (2 * trimmed_index_a)
+    trimmed_n2 = n2 - (2 * trimmed_index_b)
+
+    trimmed_mean_a = _calculate_trimmed_mean(trimmed_index_a, n1, a)
+    trimmed_mean_b = _calculate_trimmed_mean(trimmed_index_b, n2, b)
+
+    trimmed_variance_a = _calculate_trimmed_variance(trimmed_index_a, trimmed_n1, n1, a)
+    trimmed_variance_b = _calculate_trimmed_variance(trimmed_index_b, trimmed_n2, n2, b)
+
+    t = ((trimmed_mean_a - trimmed_mean_b) / (math.sqrt((trimmed_variance_a / trimmed_n1)
+                                                        + (trimmed_variance_b / trimmed_n2))))
+    df = math.pow(((trimmed_variance_a / trimmed_n1)
+                   + (trimmed_variance_b / trimmed_n2)), 2) / ((math.pow((trimmed_variance_a / trimmed_n1), 2)
+                                                                / (trimmed_n1 - 1.0))
+                                                               + (math.pow((trimmed_variance_b / trimmed_n2), 2)
+                                                                  / (trimmed_n2 - 1.0)))
+    t, prob = _ttest_finish(df, t)
+
+    return Ttest_relResult(t, prob)
+
+
+def _calculate_trimmed_mean(trimmed_index, n, a):
+
+    trimmed_sum = sum(a[int(trimmed_index):int(n-trimmed_index)])
+    trimmed_mean = (1.0/(n-(2.0*trimmed_index)))*trimmed_sum
+    return trimmed_mean
+
+
+def _calculate_trimmed_variance(trimmed_index, trimmed_n, n, a):
+
+    trimmed_array = a[int(trimmed_index + 1):int(n - trimmed_index - 1)]
+    trimmed_sum = sum(trimmed_array)
+    trimmed_mean = (1.0/n)*(((trimmed_index + 1.0) * a[int(trimmed_index)]) + trimmed_sum
+                            + ((trimmed_index+1) * a[int(n - trimmed_index - 1)]))
+    sum_of_difference = sum([math.pow(value - trimmed_mean, 2) for value in trimmed_array])
+    trimmed_variance_temp = ((trimmed_index + 1.0)
+                             * math.pow((a[int(trimmed_index)]
+                                         - trimmed_mean), 2)) + sum_of_difference + ((trimmed_index + 1.0)
+                                                                                     * (math.pow((a[int(n
+                                                                                                        - trimmed_index
+                                                                                                        - 1)]
+                                                                                                  - trimmed_mean), 2)))
+    trimmed_variance = trimmed_variance_temp / (trimmed_n - 1.0)
+    return trimmed_variance
 
 
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
