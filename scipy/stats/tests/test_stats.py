@@ -1983,7 +1983,9 @@ class TestIQR(object):
                                     np.array([2, np.nan, 2]) / 1.3489795)
                 assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
                              [1, np.nan, 1])
-                _check_warnings(w, RuntimeWarning, 6)
+                # Since NumPy 1.17.0.dev, warnings are no longer emitted by
+                # np.percentile with nans, so we don't check the number of
+                # warnings here. See https://github.com/numpy/numpy/pull/12679.
 
         if numpy_version < '1.9.0a':
             with warnings.catch_warnings(record=True) as w:
