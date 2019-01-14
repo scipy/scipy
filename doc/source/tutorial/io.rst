@@ -333,7 +333,7 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 Arff files (:mod:`scipy.io.arff`)
 ---------------------------------
 
-.. automodule:: scipy.io.arff
+.. module:: scipy.io.arff
 
 .. autosummary::
 

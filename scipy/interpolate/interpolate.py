@@ -395,6 +395,10 @@ class interp1d(_Interpolator1D):
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
 
+    Attributes
+    ----------
+    fill_value
+
     Methods
     -------
     __call__

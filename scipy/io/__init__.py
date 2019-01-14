@@ -83,6 +83,7 @@ Arff files (:mod:`scipy.io.arff`)
 .. module:: scipy.io.arff
 
 .. autosummary::
+   :toctree: generated/
 
    loadarff
    MetaData
