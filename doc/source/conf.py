@@ -24,6 +24,8 @@ needs_sphinx = '1.6'
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
+import numpydoc.docscrape as np_docscrape  # noqa:E402
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -106,8 +108,6 @@ exclude_patterns = [  # glob-style
     'dev/newfeatures.rst',
     'dev/releasing.rst',
     'dev/versioning.rst',
-    # these do not actually need to be parsed:
-    '**/class_generated',
 ]
 
 # be strict about warnings in our examples, we should write clean code
@@ -328,7 +328,9 @@ phantom_import_file = 'dump.xml'
 
 # Generate plots for example sections
 numpydoc_use_plots = True
-numpydoc_class_members_toctree = False
+np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
+    '__call__', '__mul__', '__getitem__', '__len__',
+]
 
 # -----------------------------------------------------------------------------
 # Autosummary
