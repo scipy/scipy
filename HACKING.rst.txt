@@ -221,40 +221,7 @@ The value of `PULL_REQUEST_ID` will be the PR number and the `NEW_BRANCH_NAME`
 will be the name of the branch in your local repository where the diffs will
 reside.
 
-An alternate option is to ensure you have all the pull requests in you local
-repository. To configure your repository to grab all the updated PR data when
-you fetch from upstream first navigate to the top level of your scipy
-repository open the file::
-
-    $ .git/config
-
-When you open the file you should see 3 lines that look like this::
-
-    $ [remote "upstream"]
-    $         url = git://github.com/scipy/scipy.git
-    $         fetch = +refs/heads/*:refs/remotes/upstream/*
-
-After the `fetch` line you will add another line that reads::
-
-    $ fetch = +refs/pull/*/head:refs/remotes/upstream/pr/*
-
-Save the config file in the same place with no other changes.
-Alternately, you can add this in directly from the command line via::
-
-    $ git config --local --add remote.upstream.fetch '+refs/pull/*/head:refs/remotes/upstream/pr/*'
-
-Now execute the command::
-
-    $ git fetch upstream pr
-
-This will bring all the pull requests to you local repository, including merged
-and closed pull requests. To investigate the pull request you will need to
-create a branch. For example to examine the code changes in pull request 1 you
-would create a branch via::
-
-    $ git checkout pr/1
-
-Now you have a branch in your local development area to execute test in python.
+Now you have a branch in your local development area to code review in python.
 
 To build the development version of Scipy and run tests, spawn
 interactive shells with the Python import paths properly set up etc.,
