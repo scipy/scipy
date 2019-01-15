@@ -4154,6 +4154,12 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
         assert_approx_equal(p, 5.373858588862369e-12, significant=4)
 
+    def test_mudholkar_george_equal_fisher_plus_pearson(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
+        Z_f, p_f = stats.combine_pvalues([.01, .2, .3], method='fisher')
+        Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
+        assert_approx_equal(Z_f-Z_p, Z, significant=4)
+
 
 class TestCdfDistanceValidation(object):
     """
