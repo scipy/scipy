@@ -200,6 +200,8 @@ Josua Sassen for improvements to scipy.interpolate.Rbf
 Stiaan Gerber for a bug fix in scipy.optimize.
 Nicolas Hug for the Yeo-Johnson transformation.
 Petar Mlinarić for a bug fix in scipy.io.mmio.
+Mike Watson for the johnsonsl distribution in scipy.stats.
+
 
 Institutions
 ------------

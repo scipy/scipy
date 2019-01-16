@@ -3443,6 +3443,7 @@ class johnsonsb_gen(rv_continuous):
     See Also
     --------
     johnsonsu
+    johnsonsl
 
     Notes
     -----
@@ -3490,6 +3491,7 @@ class johnsonsu_gen(rv_continuous):
     See Also
     --------
     johnsonsb
+    johnsonsl
 
     Notes
     -----
@@ -3527,6 +3529,47 @@ class johnsonsu_gen(rv_continuous):
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
+
+class johnsonsl_gen(rv_continuous):
+    r"""A Johnson SL continuous random variable.
+    %(before_notes)s
+
+    See Also
+    --------
+    johnsonsb
+    johnsonsu
+
+    Notes
+    -----
+    The probability density funcition for a `johnsonsl` is::
+        johnsonsl.pdf(x, a, b) = b/x* phi(a + b * ln (x))
+    for x>0 where ``phi`` is the normal pdf.
+
+    %(after_notes)s
+
+    .. versionadded:: 1.3.0
+
+    %(example)s
+    """
+    def _argcheck(self, a, b):
+        return a==a
+
+    def _pdf(self, x, a, b):
+        #negatives = x<=0
+        #x[negatives] = 1
+        #trm = _norm_pdf(a+b*np.log(x))
+        #trm[negatives] = 0
+        return _lazywhere(x>0,(x,a,b),
+                          lambda x, a, b: b/x*_norm_pdf(a+b*np.log(x)),0)
+
+    def _cdf(self, x, a, b):
+        return _lazywhere(x>0,(x,a,b),
+                          lambda x, a, b: _norm_cdf(a+b*np.log(x)),0)
+
+    def _ppf(self, q, a, b):
+        return np.exp((_norm_ppf(q)-a)/b)
+
+johnsonsl = johnsonsl_gen(name='johnsonsl')
 
 
 class laplace_gen(rv_continuous):
