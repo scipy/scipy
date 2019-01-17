@@ -235,7 +235,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Times at which to store the computed solution, must be sorted and lie
         within `t_span`. If None (default), use points selected by the solver.
     events : callable, or list of callables, optional
-        Types of events to track. If `None` (default), events won't be tracked.
+        Types of events to track. If None (default), events won't be tracked.
         Each is defined by a continuous function of time and state that becomes
         zero value in case of an event. Each function must have the signature
         ``event(t, y)`` and return a float. The solver will find an accurate
