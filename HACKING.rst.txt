@@ -211,6 +211,18 @@ account and then create your local repository via::
     $ cd scipy
     $ git remote add upstream git://github.com/scipy/scipy.git
 
+Second to code review pull requests it is helpful to have a local copy of the
+code changes in the pull request. The preferred method to bring a PR from the
+github repository to your local repo in a new branch::
+
+    $ git fetch upstream pull/PULL_REQUEST_ID/head:NEW_BRANCH_NAME
+
+The value of `PULL_REQUEST_ID` will be the PR number and the `NEW_BRANCH_NAME`
+will be the name of the branch in your local repository where the diffs will
+reside.
+
+Now you have a branch in your local development area to code review in python.
+
 To build the development version of Scipy and run tests, spawn
 interactive shells with the Python import paths properly set up etc.,
 do one of::
