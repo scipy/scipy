@@ -190,7 +190,6 @@ misc
 ``scipy.misc`` will be removed as a public module.  Most functions in it have
 been moved to another submodule or deprecated.  The few that are left:
 
-  - ``doccer`` : move to ``scipy._lib`` (making it private)
   - ``info``, ``who`` : these are NumPy functions
   - ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
     with more extensive functionality for numerical differentiation.
