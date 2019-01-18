@@ -902,11 +902,11 @@ def medfilt(volume, kernel_size=None):
 
     See also
     --------
-    ndimage.filters.median_filter
+    ndimage.median_filter
 
     Notes
     -------
-    The more general function `ndimage.filters.median_filter` has a more
+    The more general function `ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
     volume = atleast_1d(volume)
@@ -1189,11 +1189,11 @@ def medfilt2d(input, kernel_size=3):
 
     See also
     --------
-    ndimage.filters.median_filter
+    ndimage.median_filter
 
     Notes
     -------
-    The more general function `ndimage.filters.median_filter` has a more
+    The more general function `ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
     image = asarray(input)
