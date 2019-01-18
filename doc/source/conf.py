@@ -43,6 +43,12 @@ extensions = [
 from matplotlib.sphinxext import plot_directive
 if plot_directive.__version__ < 2:
     raise RuntimeError("You need a recent enough version of matplotlib")
+# Do some matplotlib config in case users have a matplotlibrc that will break
+# things
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+plt.ioff()
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
