@@ -37,7 +37,7 @@ import warnings
 from . import _ni_support
 from . import _nd_image
 from ._ni_docstrings import docdict
-from scipy.misc import doccer
+from scipy._lib import doccer
 
 # Change the default 'reflect' to 'constant' via modifying a copy of docdict
 docdict_copy = docdict.copy()
