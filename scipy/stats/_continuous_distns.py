@@ -9,7 +9,7 @@ import warnings
 
 import numpy as np
 
-from scipy.misc.doccer import (extend_notes_in_docstring,
+from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring)
 from scipy import optimize
 from scipy import integrate
