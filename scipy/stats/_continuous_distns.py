@@ -3995,7 +3995,8 @@ class levy_stable_gen(rv_continuous):
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
 
         # group data in unique arrays of alpha, beta pairs
-        uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
+        uniq_param_pairs = np.vstack(
+            list({tuple(row) for row in data_in[:,1:]}))
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
