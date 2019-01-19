@@ -501,7 +501,7 @@ def _initialize_feasible(lb, ub):
     return p0
 
 
-def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
+def curve_fit(f, xdata, ydata, p0, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
               jac=None, **kwargs):
     """
@@ -519,11 +519,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         The independent variable where the data is measured.
     ydata : M-length sequence
         The dependent data --- nominally f(xdata, ...)
-    p0 : None, scalar, or N-length sequence, optional
-        Initial guess for the parameters.  If None, then the initial
-        values will all be 1 (if the number of parameters for the function
-        can be determined using introspection, otherwise a ValueError
-        is raised).
+    p0 : scalar, or N-length sequence.
+        Initial guess for the parameters.
     sigma : None or M-length sequence or MxM array, optional
         Determines the uncertainty in `ydata`. If we define residuals as
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
@@ -672,20 +669,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> plt.show()
 
     """
-    if p0 is None:
-        # determine number of parameters by inspecting the function
-        from scipy._lib._util import getargspec_no_self as _getargspec
-        args, varargs, varkw, defaults = _getargspec(f)
-        if len(args) < 2:
-            raise ValueError("Unable to determine number of fit parameters.")
-        n = len(args) - 1
-    else:
-        p0 = np.atleast_1d(p0)
-        n = p0.size
-
+    p0 = np.atleast_1d(p0)
+    n = p0.size
     lb, ub = prepare_bounds(bounds, n)
-    if p0 is None:
-        p0 = _initialize_feasible(lb, ub)
 
     bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
     if method is None:
