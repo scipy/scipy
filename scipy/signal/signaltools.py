@@ -902,7 +902,7 @@ def medfilt(volume, kernel_size=None):
 
     See also
     --------
-    ndimage.median_filter
+    scipy.ndimage.median_filter
 
     Notes
     -------
@@ -1189,7 +1189,7 @@ def medfilt2d(input, kernel_size=3):
 
     See also
     --------
-    ndimage.median_filter
+    scipy.ndimage.median_filter
 
     Notes
     -------
