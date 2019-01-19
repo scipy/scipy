@@ -233,6 +233,10 @@ class geom_gen(rv_discrete):
 
     %(after_notes)s
 
+    See Also
+    --------
+    planck
+
     %(example)s
 
     """
@@ -243,7 +247,6 @@ class geom_gen(rv_discrete):
         return (p <= 1) & (p >= 0)
 
     def _pmf(self, k, p):
-        # geom.pmf(k) = (1-p)**(k-1)*p
         return np.power(1-p, k-1) * p
 
     def _logpmf(self, k, p):
@@ -546,9 +549,15 @@ class planck_gen(rv_discrete):
 
     for :math:`k \ge 0` and :math:`\lambda > 0`.
 
-    `planck` takes :math:`\lambda` as shape parameter.
+    `planck` takes :math:`\lambda` as shape parameter. The Planck distribution
+    can be written as a geometric distribution (`geom`) with
+    :math:`p = 1 - \exp(-\lambda)` shifted by `loc = -1`.
 
     %(after_notes)s
+
+    See Also
+    --------
+    geom
 
     %(example)s
 
@@ -557,14 +566,14 @@ class planck_gen(rv_discrete):
         return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        return (1-exp(-lambda_))*exp(-lambda_*k)
+        return -expm1(-lambda_)*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
-        return 1-exp(-lambda_*(k+1))
+        return -expm1(-lambda_*(k+1))
 
     def _sf(self, x, lambda_):
-        return np.exp(self._logsf(x, lambda_))
+        return exp(self._logsf(x, lambda_))
 
     def _logsf(self, x, lambda_):
         k = floor(x)
@@ -576,17 +585,21 @@ class planck_gen(rv_discrete):
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
+    def _rvs(self, lambda_):
+        # use relation to geometric distribution for sampling
+        p = -expm1(-lambda_)
+        return self._random_state.geometric(p, size=self._size) - 1.0
+
     def _stats(self, lambda_):
-        mu = 1/(exp(lambda_)-1)
+        mu = 1/expm1(lambda_)
         var = exp(-lambda_)/(expm1(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2
 
     def _entropy(self, lambda_):
-        l = lambda_
-        C = (1-exp(-l))
-        return l*exp(-l)/C - log(C)
+        C = -expm1(-lambda_)
+        return lambda_*exp(-lambda_)/C - log(C)
 
 
 planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
