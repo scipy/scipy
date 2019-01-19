@@ -70,7 +70,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         axis.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
-        array. Default is `numpy.float64`.
+        array. Default is ``numpy.float64``.
     %(mode)s
 
     Returns

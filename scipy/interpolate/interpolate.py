@@ -373,7 +373,7 @@ class interp1d(_Interpolator1D):
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
-        By default, an error is raised unless `fill_value="extrapolate"`.
+        By default, an error is raised unless ``fill_value="extrapolate"``.
     fill_value : array-like or (array-like, array_like) or "extrapolate", optional
         - if a ndarray (or float), this value will be used to fill in for
           requested points outside of the data range. If not provided, then
@@ -394,6 +394,10 @@ class interp1d(_Interpolator1D):
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
+
+    Attributes
+    ----------
+    fill_value
 
     Methods
     -------
@@ -538,6 +542,7 @@ class interp1d(_Interpolator1D):
 
     @property
     def fill_value(self):
+        """The fill value."""
         # backwards compat: mimic a public attribute
         return self._fill_value_orig
 
@@ -758,8 +763,8 @@ class _PPolyBase(object):
         Construct the piecewise polynomial without making checks.
 
         Takes the same parameters as the constructor. Input arguments
-        `c` and `x` must be arrays of the correct shape and type.  The
-        `c` array can only be of dtypes float and complex, and `x`
+        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` array can only be of dtypes float and complex, and ``x``
         array must have dtype float.
         """
         self = object.__new__(cls)
@@ -790,10 +795,10 @@ class _PPolyBase(object):
         c : ndarray, size (k, m, ...)
             Additional coefficients for polynomials in intervals. Note that
             the first additional interval will be formed using one of the
-            `self.x` end points.
+            ``self.x`` end points.
         x : ndarray, size (m,)
             Additional breakpoints. Must be sorted in the same order as
-            `self.x` and either to the right or to the left of the current
+            ``self.x`` and either to the right or to the left of the current
             breakpoints.
         right
             Deprecated argument. Has no effect.
@@ -1380,16 +1385,18 @@ class BPoly(_PPolyBase):
 
     Notes
     -----
-    Properties of Bernstein polynomials are well documented in the literature.
-    Here's a non-exhaustive list:
+    Properties of Bernstein polynomials are well documented in the literature,
+    see for example [1]_ [2]_ [3]_.
 
+    References
+    ----------
     .. [1] https://en.wikipedia.org/wiki/Bernstein_polynomial
 
     .. [2] Kenneth I. Joy, Bernstein polynomials,
-      http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
+       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
 
     .. [3] E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
-         vol 2011, article ID 829546, :doi:`10.1155/2011/829543`.
+           vol 2011, article ID 829546, :doi:`10.1155/2011/829543`.
 
     Examples
     --------
@@ -1677,7 +1684,7 @@ class BPoly(_PPolyBase):
         Based on the number of derivatives provided, the order of the
         local polynomials is 2 on `[0, 1]` and 1 on `[1, 2]`.
         Notice that no restriction is imposed on the derivatives at
-        `x = 1` and `x = 2`.
+        ``x = 1`` and ``x = 2``.
 
         Indeed, the explicit form of the polynomial is::
 
@@ -1747,10 +1754,10 @@ class BPoly(_PPolyBase):
         given the values and derivatives at the edges.
 
         Return the coefficients of a polynomial in the Bernstein basis
-        defined on `[xa, xb]` and having the values and derivatives at the
-        endpoints ``xa`` and ``xb`` as specified by ``ya`` and ``yb``.
+        defined on ``[xa, xb]`` and having the values and derivatives at the
+        endpoints `xa` and `xb` as specified by `ya`` and `yb`.
         The polynomial constructed is of the minimal possible degree, i.e.,
-        if the lengths of ``ya`` and ``yb`` are ``na`` and ``nb``, the degree
+        if the lengths of `ya` and `yb` are `na` and `nb`, the degree
         of the polynomial is ``na + nb - 1``.
 
         Parameters
@@ -1760,10 +1767,10 @@ class BPoly(_PPolyBase):
         xb : float
             Right-hand end point of the interval
         ya : array_like
-            Derivatives at ``xa``. ``ya[0]`` is the value of the function, and
-            ``ya[i]`` for ``i > 0`` is the value of the ``i``-th derivative.
+            Derivatives at `xa`. `ya[0]` is the value of the function, and
+            `ya[i]` for ``i > 0`` is the value of the ``i``-th derivative.
         yb : array_like
-            Derivatives at ``xb``.
+            Derivatives at `xb`.
 
         Returns
         -------
@@ -1793,7 +1800,7 @@ class BPoly(_PPolyBase):
         This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and
         `c_q` are found one by one by iterating `q = 0, ..., na`.
 
-        At `x = xb` it's the same with `a = n - q`.
+        At ``x = xb`` it's the same with ``a = n - q``.
 
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
@@ -1872,7 +1879,7 @@ class NdPPoly(object):
     """
     Piecewise tensor product polynomial
 
-    The value at point `xp = (x', y', z', ...)` is evaluated by first
+    The value at point ``xp = (x', y', z', ...)`` is evaluated by first
     computing the interval indices `i` such that::
 
         x[0][i[0]] <= x' < x[0][i[0]+1]
@@ -1955,8 +1962,8 @@ class NdPPoly(object):
         Construct the piecewise polynomial without making checks.
 
         Takes the same parameters as the constructor. Input arguments
-        `c` and `x` must be arrays of the correct shape and type.  The
-        `c` array can only be of dtypes float and complex, and `x`
+        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` array can only be of dtypes float and complex, and ``x``
         array must have dtype float.
 
         """

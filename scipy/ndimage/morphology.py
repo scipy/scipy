@@ -815,7 +815,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
 
     See also
     --------
-    ndimage.morphology, binary_erosion
+    binary_erosion
 
     References
     ----------
@@ -1145,7 +1145,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     See also
     --------
     binary_erosion, grey_dilation, grey_opening, grey_closing
-    generate_binary_structure, ndimage.minimum_filter
+    generate_binary_structure, minimum_filter
 
     Notes
     -----
@@ -1255,7 +1255,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
     See also
     --------
     binary_dilation, grey_erosion, grey_closing, grey_opening
-    generate_binary_structure, ndimage.maximum_filter
+    generate_binary_structure, maximum_filter
 
     Notes
     -----
@@ -1568,7 +1568,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
 
     See also
     --------
-    grey_dilation, grey_erosion, ndimage.gaussian_gradient_magnitude
+    grey_dilation, grey_erosion, gaussian_gradient_magnitude
 
     Notes
     -----

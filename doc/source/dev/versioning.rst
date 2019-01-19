@@ -1,3 +1,5 @@
+.. _version-numbering:
+
 Version numbering
 =================
 SciPy version numbering complies to `PEP 440`_.  Released final versions, which

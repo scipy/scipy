@@ -6,7 +6,7 @@ These instructions describe how to build NumPy and SciPy libraries from
 source.
 
 If you just want to use NumPy or SciPy, install pre-built binaries as described
-in :doc:`/install`.
+in :ref:`installing-upgrading`.
 
 Python
 ------
@@ -15,8 +15,8 @@ Apple ships its own version of Python with OS X. However, we
 *strongly* recommend installing the `official Python distribution
 <https://www.python.org/downloads/>`__.
 
-Alternatively, use Python from one of the OS X package managers 
-(Homebrew, MacPorts, Fink).  
+Alternatively, use Python from one of the OS X package managers
+(Homebrew, MacPorts, Fink).
 
 Compilers (C/C++/FORTRAN/Cython)
 --------------------------------
@@ -51,7 +51,7 @@ recent LAPACK interface.
 Version-specific notes
 ----------------------
 
-This section notes only things specific to one version of OS X or Python. 
+This section notes only things specific to one version of OS X or Python.
 The build instructions in :ref:`Obtaining and Building NumPy and SciPy
 <osx-obtaining-and-building>` apply to all versions.
 
@@ -61,8 +61,8 @@ Obtaining and Building NumPy and SciPy
 --------------------------------------
 
 You may install NumPy and SciPy either by checking out the source
-files from the Git repositories, or unpacking them from a source
-archive file from :doc:`/scipylib/download`. If you choose the latter,
+files or downloading a source archive file from
+`GitHub <https://github.com/scipy/scipy>`__. If you choose the latter,
 simply expand the archive (generally a gzipped tar file), otherwise
 check out the following branches from the repository:
 
@@ -104,9 +104,10 @@ Be sure not to import numpy or scipy while you're in the numpy/scipy
 source tree. Change directory first.
 
 If you have any problems installing SciPy on your Mac
-based on these instructions, please check the :doc:`scipy-users and
+based on these instructions, please check the `scipy-users and
 scipy-dev mailing list archives
-</scipylib/mailing-lists>` for possible solutions. If you
+<https://www.scipy.org/scipylib/mailing-lists.html>`__
+for possible solutions. If you
 are still stuck, feel free to join scipy-users for further
 assistance. Please have the following information ready:
 

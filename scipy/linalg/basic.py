@@ -1097,7 +1097,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     See Also
     --------
-    optimize.nnls : linear least squares with non-negativity constraint
+    scipy.optimize.nnls : linear least squares with non-negativity constraint
 
     Notes
     -----

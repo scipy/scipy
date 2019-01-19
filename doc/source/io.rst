@@ -1,6 +1,4 @@
 .. automodule:: scipy.io
-
-.. toctree::
-   :hidden:
-
-   io.arff
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:

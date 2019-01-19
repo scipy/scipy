@@ -5775,7 +5775,7 @@ add_newdoc("scipy.special", "nrdtrisd",
 
     See Also
     --------
-    nrdtristd, ndtr
+    ndtr
 
     """)
 

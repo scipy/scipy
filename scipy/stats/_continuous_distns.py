@@ -1917,7 +1917,22 @@ Frechet distribution.  To preserve the existing behavior of the program, use
 `scipy.stats.weibull_min`.  For the Frechet distribution (i.e. the Type II
 extreme value distribution), use `scipy.stats.invweibull`."""
 
+
 class frechet_r_gen(weibull_min_gen):
+    """A Frechet right (or Weibull minimum) continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_min : The same distribution as `frechet_r`.
+
+    Notes
+    -----
+    %(after_notes)s
+
+    %(example)s
+    """
 
     @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
     def __call__(self, *args, **kwargs):
@@ -2022,7 +2037,22 @@ Frechet distribution.  To preserve the existing behavior of the program, use
 `scipy.stats.weibull_max`.  For the Frechet distribution (i.e. the Type II
 extreme value distribution), use `scipy.stats.invweibull`."""
 
+
 class frechet_l_gen(weibull_max_gen):
+    """A Frechet left (or Weibull maximum) continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_max : The same distribution as `frechet_l`.
+
+    Notes
+    -----
+    %(after_notes)s
+
+    %(example)s
+    """
 
     @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
     def __call__(self, *args, **kwargs):
@@ -3322,8 +3352,9 @@ class norminvgauss_gen(rv_continuous):
         f(x, a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
                      (\pi \sqrt{1 + x^2} \, K_1(a \sqrt{1 + x^2}))
 
-    where `x` is a real number, the parameter `a` is the tail heaviness
-    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    where :math:`x` is a real number, the parameter :math:`a` is the tail
+    heaviness and :math:`b` is the asymmetry parameter satisfying
+    :math:`a > 0` and :math:`|b| <= a`.
     :math:`K_1` is the modified Bessel function of second kind
     (`scipy.special.k1`).
 

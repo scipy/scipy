@@ -104,7 +104,6 @@ CYTHON_SPECIAL_PYX = """\
 \"\"\"
 .. highlight:: cython
 
-================================
 Cython API for Special Functions
 ================================
 
@@ -124,13 +123,13 @@ The module is usable from Cython via::
     cimport scipy.special.cython_special
 
 Error Handling
-==============
+--------------
 
 Functions can indicate an error by returning ``nan``; however they
 cannot emit warnings like their counterparts in ``scipy.special``.
 
 Available Functions
-===================
+-------------------
 
 FUNCLIST
 \"\"\"

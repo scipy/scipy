@@ -29,7 +29,7 @@ The module contains:
 
 5. Multivariate equation system solvers (:func:`root`) using a variety of
    algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
-   methods such as Newton-Krylov).
+   methods such as Newton-Krylov [KK]_).
 
 Below, several examples demonstrate their basic usage.
 
@@ -428,10 +428,10 @@ example using the Rosenbrock function follows:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-    
+
 .. [NW] J. Nocedal, S.J. Wright "Numerical optimization."
 	2nd edition. Springer Science (2006).
-.. [CGT] Conn, A. R., Gould, N. I., & Toint, P. L. 
+.. [CGT] Conn, A. R., Gould, N. I., & Toint, P. L.
         "Trust region methods". Siam. (2000). pp. 169-200.
 
 
@@ -523,7 +523,7 @@ The nonlinear constraint:
 
      \begin{equation*} c(x) =
      \begin{bmatrix} x_0^2 + x_1 \\ x_0^2 - x_1\end{bmatrix}
-      \leq 
+      \leq
       \begin{bmatrix} 1 \\ 1\end{bmatrix}, \end{equation*}
 
 with Jacobian matrix:
@@ -540,7 +540,7 @@ and linear combination of the Hessians:
    :nowrap:
 
      \begin{equation*} H(x, v) = \sum_{i=0}^1 v_i \nabla^2 c_i(x) =
-     v_0\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix} + 
+     v_0\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix} +
      v_1\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix},
      \end{equation*}
 
@@ -564,7 +564,7 @@ as a sparse matrix,
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1,
     ...                                            jac=cons_J, hess=cons_H_sparse)
 
-or as a :func:`LinearOperator` object.
+or as a :obj:`~scipy.sparse.linalg.LinearOperator` object.
 
     >>> from scipy.sparse.linalg import LinearOperator
     >>> def cons_H_linear_operator(x, v):
@@ -606,7 +606,7 @@ The optimization problem is solved using:
     >>> print(res.x)
     [0.41494531 0.17010937]
 
-When needed, the objective function Hessian can be defined using a :func:`LinearOperator` object,
+When needed, the objective function Hessian can be defined using a :obj:`~scipy.sparse.linalg.LinearOperator` object,
 
     >>> def rosen_hess_linop(x):
     ...     def matvec(p):
@@ -620,7 +620,7 @@ When needed, the objective function Hessian can be defined using a :func:`Linear
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
     >>> print(res.x)
     [0.41494531 0.17010937]
-  
+
 or a Hessian-vector product through the parameter ``hessp``.
 
     >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hessp=rosen_hess_p,
@@ -687,7 +687,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
 And the optimization problem is solved with:
 
     >>> x0 = np.array([0.5, 0])
-    >>> res = minimize(rosen, x0, method='SLSQP', jac=rosen_der, 
+    >>> res = minimize(rosen, x0, method='SLSQP', jac=rosen_der,
     ...                constraints=[eq_cons, ineq_cons], options={'ftol': 1e-9, 'disp': True},
     ...                bounds=bounds)
     # may vary
@@ -710,7 +710,7 @@ least-squares problems:
 
 .. math::
    :nowrap:
-   
+
    \begin{align}
    &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
    &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
@@ -720,12 +720,12 @@ Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
 The purpose of a scalar valued function :math:`\rho(\cdot)` is to reduce the
 influence of outlier residuals and contribute to robustness of the solution,
-we refer to it as a loss function. A linear loss function gives a standard 
+we refer to it as a loss function. A linear loss function gives a standard
 least-squares problem. Additionally, constraints in a form of lower and upper
 bounds on some of :math:`x_j` are allowed.
 
 All methods specific to least-squares minimization utilize a :math:`m \times n`
-matrix of partial derivatives called Jacobian and defined as 
+matrix of partial derivatives called Jacobian and defined as
 :math:`J_{ij} = \partial f_i / \partial x_j`. It is highly recommended to
 compute this matrix analytically and pass it to :func:`least_squares`,
 otherwise it will be estimated by finite differences which takes a lot of
@@ -733,7 +733,7 @@ additional time and can be very inaccurate in hard cases.
 
 Function :func:`least_squares` can be used for fitting a function
 :math:`\varphi(t; \mathbf{x})` to empirical data :math:`\{(t_i, y_i), i = 0, \ldots, m-1\}`.
-To do this one should simply precompute residuals as 
+To do this one should simply precompute residuals as
 :math:`f_i(\mathbf{x}) = w_i (\varphi(t_i; \mathbf{x}) - y_i)`, where :math:`w_i`
 are weights assigned to each observation.
 
@@ -989,7 +989,7 @@ endpoints of an interval in which a root is expected (because the function
 changes signs). In general :obj:`brentq` is the best choice, but the other
 methods may be useful in certain circumstances or for academic purposes.
 When a bracket is not available, but one or more derivatives are available,
-then :obj:`newton` (or :obj:`halley`, :obj:`secant`) may be applicable.
+then :obj:`newton` (or ``halley``, ``secant``) may be applicable.
 This is especially the case if the function is defined on a subset of the
 complex plane, and the bracketing methods cannot be used.
 
@@ -1231,7 +1231,8 @@ lot more depth to this topic than is shown here.
 
 .. rubric:: References
 
-Some further reading and related software:
+Some further reading and related software, such as Newton-Krylov [KK]_,
+PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
         J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010

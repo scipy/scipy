@@ -7,7 +7,8 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
 
 Spatial Transformations
 =======================
-Contained in the `scipy.spatial.transform` submodule.
+
+These are contained in the `scipy.spatial.transform` submodule.
 
 Nearest-neighbor Queries
 ========================
@@ -101,12 +102,11 @@ from .qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes
-from . import transform
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-__all__ += ['distance']
+__all__ += ['distance', 'transform']
 
-from . import distance
+from . import distance, transform
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

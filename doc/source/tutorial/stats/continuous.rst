@@ -247,6 +247,7 @@ Continuous Distributions in `scipy.stats`
    continuous_ncf
    continuous_nct
    continuous_norm
+   continuous_norminvgauss
    continuous_pareto
    continuous_lomax
    continuous_powerlognorm
@@ -259,6 +260,7 @@ Continuous Distributions in `scipy.stats`
    continuous_recipinvgauss
    continuous_semicircular
    continuous_t
+   continuous_trapz
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm

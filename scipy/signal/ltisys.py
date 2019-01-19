@@ -2163,7 +2163,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     See Also
     --------
-    impulse, lsim2, integrate.odeint
+    impulse, lsim2, scipy.integrate.odeint
 
     Notes
     -----

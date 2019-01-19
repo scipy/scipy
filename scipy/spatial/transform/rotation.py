@@ -193,8 +193,8 @@ class Rotation(object):
     Indexing within a rotation is supported since multiple rotation transforms
     can be stored within a single `Rotation` instance.
 
-    To create `Rotation` objects use `from_...` classmethods, `__init__` is not
-    supposed to be used directly.
+    To create `Rotation` objects use `from_...` classmethods, ``Rotation(...)``
+    is not supposed to be used directly.
 
     Methods
     -------

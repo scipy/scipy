@@ -1,5 +1,4 @@
 """
-========================================================
 Hierarchical clustering (:mod:`scipy.cluster.hierarchy`)
 ========================================================
 
@@ -82,53 +81,6 @@ Utility routines for plotting:
    :toctree: generated/
 
    set_link_color_palette
-
-References
-----------
-
-.. [1] "Statistics toolbox." API Reference Documentation. The MathWorks.
-   https://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
-   Accessed October 1, 2007.
-
-.. [2] "Hierarchical clustering." API Reference Documentation.
-   The Wolfram Research, Inc.
-   https://reference.wolfram.com/language/HierarchicalClustering/tutorial/HierarchicalClustering.html.
-   Accessed October 1, 2007.
-
-.. [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
-   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
-
-.. [4] Ward Jr, JH. "Hierarchical grouping to optimize an objective
-   function." Journal of the American Statistical Association. 58(301):
-   pp. 236--44. 1963.
-
-.. [5] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
-   32(2): pp. 241--54. 1966.
-
-.. [6] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
-   855--60. 1962.
-
-.. [7] Batagelj, V. "Comparing resemblance measures." Journal of
-   Classification. 12: pp. 73--90. 1995.
-
-.. [8] Sokal, RR and Michener, CD. "A statistical method for evaluating
-   systematic relationships." Scientific Bulletins. 38(22):
-   pp. 1409--38. 1958.
-
-.. [9] Edelbrock, C. "Mixture model tests of hierarchical clustering
-   algorithms: the problem of classifying everybody." Multivariate
-   Behavioral Research. 14: pp. 367--84. 1979.
-
-.. [10] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
-   Prentice-Hall. Englewood Cliffs, NJ. 1988.
-
-.. [11] Fisher, RA "The use of multiple measurements in taxonomic
-   problems." Annals of Eugenics, 7(2): 179-188. 1936
-
-
-* MATLAB and MathWorks are registered trademarks of The MathWorks, Inc.
-
-* Mathematica is a registered trademark of The Wolfram Research, Inc.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -1030,9 +982,9 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         If True, the linkage matrix will be reordered so that the distance
         between successive leaves is minimal. This results in a more intuitive
         tree structure when the data are visualized. defaults to False, because
-        this algorithm can be slow, particularly on large datasets [2]_. See 
+        this algorithm can be slow, particularly on large datasets [2]_. See
         also the `optimal_leaf_ordering` function.
-        
+
         .. versionadded:: 1.0.0
 
     Returns
@@ -1125,7 +1077,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         return result
 
 
-class ClusterNode:
+class ClusterNode(object):
     """
     A tree node class for representing a cluster.
 
@@ -1555,7 +1507,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
         observation vectors; ignored otherwise. See the ``pdist``
         function for a list of valid distance metrics. A custom distance
         function can also be used.
-    
+
     Returns
     -------
     Z_ordered : ndarray
@@ -1572,7 +1524,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     array([0, 5, 3, 9, 6, 8, 1, 4, 2, 7], dtype=int32)
     >>> hierarchy.leaves_list(hierarchy.optimal_leaf_ordering(Z, X))
     array([3, 9, 0, 5, 8, 2, 7, 4, 1, 6], dtype=int32)
-    
+
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
@@ -2480,7 +2432,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The criterion to use in forming flat clusters. This can
         be any of the following values:
 
-          ``inconsistent`` : 
+          ``inconsistent`` :
               If a cluster node and all its
               descendants have an inconsistent value less than or equal
               to `t` then all its leaf descendants belong to the
@@ -2488,18 +2440,18 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               this criterion, every node is assigned to its own
               cluster. (Default)
 
-          ``distance`` : 
+          ``distance`` :
               Forms flat clusters so that the original
               observations in each flat cluster have no greater a
               cophenetic distance than `t`.
 
-          ``maxclust`` : 
+          ``maxclust`` :
               Finds a minimum threshold ``r`` so that
               the cophenetic distance between any two original
               observations in the same flat cluster is no more than
               ``r`` and no more than `t` flat clusters are formed.
 
-          ``monocrit`` : 
+          ``monocrit`` :
               Forms a flat cluster from a cluster node c
               with index i when ``monocrit[j] <= t``.
 
@@ -2510,7 +2462,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
                   MR = maxRstat(Z, R, 3)
                   cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
-          ``maxclust_monocrit`` : 
+          ``maxclust_monocrit`` :
               Forms a flat cluster from a
               non-singleton cluster node ``c`` when ``monocrit[i] <=
               r`` for all cluster indices ``i`` below and including

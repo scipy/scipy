@@ -312,7 +312,7 @@ class _minmax_mixin(object):
         See Also
         --------
         min : The minimum value of a sparse matrix along a given axis.
-        np.matrix.max : NumPy's implementation of 'max' for matrices
+        numpy.matrix.max : NumPy's implementation of 'max' for matrices
 
         """
         return self._min_or_max(axis, out, np.maximum)
@@ -344,7 +344,7 @@ class _minmax_mixin(object):
         See Also
         --------
         max : The maximum value of a sparse matrix along a given axis.
-        np.matrix.min : NumPy's implementation of 'min' for matrices
+        numpy.matrix.min : NumPy's implementation of 'min' for matrices
 
         """
         return self._min_or_max(axis, out, np.minimum)
@@ -367,7 +367,7 @@ class _minmax_mixin(object):
 
         Returns
         -------
-        ind : np.matrix or int
+        ind : numpy.matrix or int
             Indices of maximum elements. If matrix, its size along `axis` is 1.
         """
         return self._arg_min_or_max(axis, out, np.argmax, np.greater)
@@ -390,7 +390,7 @@ class _minmax_mixin(object):
 
         Returns
         -------
-         ind : np.matrix or int
+         ind : numpy.matrix or int
             Indices of minimum elements. If matrix, its size along `axis` is 1.
         """
         return self._arg_min_or_max(axis, out, np.argmin, np.less)

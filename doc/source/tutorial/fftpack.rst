@@ -127,7 +127,7 @@ truncated for illustrative purposes).
     >>> from scipy.signal import blackman
     >>> w = blackman(N)
     >>> ywf = fft(y*w)
-    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
+    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
     >>> import matplotlib.pyplot as plt
     >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(yf[1:N//2]), '-b')
     >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(ywf[1:N//2]), '-r')
@@ -480,7 +480,7 @@ Cache Destruction
 To accelerate repeat transforms on arrays of the same shape and dtype,
 scipy.fftpack keeps a cache of the prime factorization of length of the array
 and pre-computed trigonometric functions.  These caches can be destroyed by
-calling the appropriate function in `scipy.fftpack._fftpack`.  
+calling the appropriate function in ``scipy.fftpack._fftpack``.
 dst(type=1) and idst(type=1) share a cache (``*dst1_cache``).  As do dst(type=2),
 dst(type=3), idst(type=3), and idst(type=3) (``*dst2_cache``).
 

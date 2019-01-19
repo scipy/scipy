@@ -12,14 +12,14 @@ from scipy._lib._util import _asarray_validated
 from scipy.linalg import solve_banded, solve
 
 
-__all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
+__all__ = ["PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
 
 
 class PchipInterpolator(BPoly):
     r"""PCHIP 1-d monotonic cubic interpolation.
 
-    `x` and `y` are arrays of values used to approximate some function f,
+    ``x`` and ``y`` are arrays of values used to approximate some function f,
     with ``y = f(x)``. The interpolant uses monotonic cubic splines
     to find the value of new points. (PCHIP stands for Piecewise Cubic
     Hermite Interpolating Polynomial).
@@ -27,11 +27,11 @@ class PchipInterpolator(BPoly):
     Parameters
     ----------
     x : ndarray
-        A 1-D array of monotonically increasing real values.  `x` cannot
+        A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray
-        A 1-D array of real values. `y`'s length along the interpolation
-        axis must be equal to the length of `x`. If N-D array, use `axis`
+        A 1-D array of real values. ``y``'s length along the interpolation
+        axis must be equal to the length of ``x``. If N-D array, use ``axis``
         parameter to select correct axis.
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
@@ -179,11 +179,12 @@ class PchipInterpolator(BPoly):
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
     """
     Convenience function for pchip interpolation.
+
     xi and yi are arrays of values used to approximate some function f,
     with ``yi = f(xi)``.  The interpolant uses monotonic cubic splines
     to find the value of new points x and the derivatives there.
 
-    See `PchipInterpolator` for details.
+    See `scipy.interpolate.PchipInterpolator` for details.
 
     Parameters
     ----------
@@ -221,10 +222,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
-# Backwards compatibility
-pchip = PchipInterpolator
-
-
 class Akima1DInterpolator(PPoly):
     """
     Akima interpolator
@@ -239,11 +236,11 @@ class Akima1DInterpolator(PPoly):
     x : ndarray, shape (m, )
         1-D array of monotonically increasing real values.
     y : ndarray, shape (m, ...)
-        N-D array of real values. The length of `y` along the first axis must
-        be equal to the length of `x`.
+        N-D array of real values. The length of ``y`` along the first axis
+        must be equal to the length of ``x``.
     axis : int, optional
-        Specifies the axis of `y` along which to interpolate. Interpolation
-        defaults to the first axis of `y`.
+        Specifies the axis of ``y`` along which to interpolate. Interpolation
+        defaults to the first axis of ``y``.
 
     Methods
     -------
@@ -363,8 +360,8 @@ class CubicSpline(PPoly):
         Values must be real, finite and in strictly increasing order.
     y : array_like
         Array containing values of the dependent variable. It can have
-        arbitrary number of dimensions, but the length along `axis` (see below)
-        must match the length of `x`. Values must be finite.
+        arbitrary number of dimensions, but the length along ``axis``
+        (see below) must match the length of ``x``. Values must be finite.
     axis : int, optional
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
@@ -397,27 +394,27 @@ class CubicSpline(PPoly):
 
         * `order`: the derivative order, 1 or 2.
         * `deriv_value`: array_like containing derivative values, shape must
-          be the same as `y`, excluding `axis` dimension. For example, if `y`
-          is 1D, then `deriv_value` must be a scalar. If `y` is 3D with the
-          shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
+          be the same as `y`, excluding ``axis`` dimension. For example, if
+          `y` is 1D, then `deriv_value` must be a scalar. If `y` is 3D with
+          the shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
           and have the shape (n0, n1).
     extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. If None (default), `extrapolate` is
+        periodic extrapolation is used. If None (default), ``extrapolate`` is
         set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
 
     Attributes
     ----------
     x : ndarray, shape (n,)
-        Breakpoints. The same `x` which was passed to the constructor.
+        Breakpoints. The same ``x`` which was passed to the constructor.
     c : ndarray, shape (4, n-1, ...)
         Coefficients of the polynomials on each segment. The trailing
-        dimensions match the dimensions of `y`, excluding `axis`. For example,
-        if `y` is 1-d, then ``c[k, i]`` is a coefficient for
+        dimensions match the dimensions of `y`, excluding ``axis``.
+        For example, if `y` is 1-d, then ``c[k, i]`` is a coefficient for
         ``(x-x[i])**(3-k)`` on the segment between ``x[i]`` and ``x[i+1]``.
     axis : int
-        Interpolation axis. The same `axis` which was passed to the
+        Interpolation axis. The same axis which was passed to the
         constructor.
 
     Methods
@@ -436,8 +433,9 @@ class CubicSpline(PPoly):
 
     Notes
     -----
-    Parameters `bc_type` and `interpolate` work independently, i.e. the former
-    controls only construction of a spline, and the latter only evaluation.
+    Parameters `bc_type` and ``interpolate`` work independently, i.e. the
+    former controls only construction of a spline, and the latter only
+    evaluation.
 
     When a boundary condition is 'not-a-knot' and n = 2, it is replaced by
     a condition that the first derivative is equal to the linear interpolant
