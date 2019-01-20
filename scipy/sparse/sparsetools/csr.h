@@ -745,7 +745,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         for(I jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
 
-            if(result != 0){
+            if(result != 0 || A_row[head] == 0){
                 Cj[nnz] = head;
                 Cx[nnz] = result;
                 nnz++;
@@ -893,7 +893,6 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
-	
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
         csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
