@@ -806,7 +806,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     return result
 
 
-# Coefficients for Netwon-Cotes quadrature
+# Coefficients for Newton-Cotes quadrature
 #
 # These are the points being used
 #  to construct the local interpolating polynomial
