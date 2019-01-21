@@ -204,6 +204,7 @@ Franz Forstmayr for documentation in scipy.signal
 Vega Theil Carstensen for a bug fix in scipy.optimize.linesearch.
 Jordi Montes for initial contribution of the Clarkson-Woodruff sketch.
 William Conner DiPaolo for improvements to the Clarkson-Woodruff transform.
+Forrest Collman for adding multi-target dijsktra to scipy.sparse.csgraph
 
 Institutions
 ------------
