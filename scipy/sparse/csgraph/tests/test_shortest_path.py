@@ -6,6 +6,7 @@ from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix,
                                   NegativeCycleError)
+import scipy.sparse
 import pytest
 
 directed_G = np.array([[0, 3, 3, 0, 0],
@@ -123,6 +124,30 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
                   indices=indices,
                   min_only=True,
                   return_predecessors=False)
+    assert_array_almost_equal(SP, min_d_ans)
+
+
+@pytest.mark.parametrize('n', (10, 100, 1000))
+def test_shortest_path_min_only_random(n):
+    np.random.seed(1234)
+    data = scipy.sparse.rand(n, n, density=0.5, format='lil',
+                             random_state=42, dtype=np.float)
+    data.setdiag(np.zeros(n, dtype=np.bool))
+    # choose some random vertices
+    v = np.arange(n)
+    np.random.shuffle(v)
+    indices = v[:int(n*.1)]
+    ds, pred, sources = dijkstra(data,
+                                 directed=False,
+                                 indices=indices,
+                                 min_only=True,
+                                 return_predecessors=True)
+    for k in range(n):
+        p = pred[k]
+        s = sources[k]
+        while(p != -9999):
+            assert(sources[p] == s)
+            p = pred[p]
 
 
 def test_shortest_path_indices():
@@ -227,4 +252,3 @@ def test_overwrite():
     foo = G.copy()
     shortest_path(foo, overwrite=False)
     assert_array_equal(foo, G)
-
