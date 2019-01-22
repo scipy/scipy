@@ -464,6 +464,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Note that the default method for `linprog` is 'interior-point', which is
     approximate by nature.
+
     >>> print(res)
          con: array([], dtype=float64)
          fun: -21.99999984082494 # may vary
@@ -475,6 +476,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            x: array([ 9.99999989, -2.99999999]) # may vary
 
     If you need greater accuracy, try 'revised simplex'.
+
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], method='revised simplex')
     >>> print(res)
          con: array([], dtype=float64)
