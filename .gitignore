@@ -179,6 +179,7 @@ scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
+scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/minpack2/minpack2module.c
