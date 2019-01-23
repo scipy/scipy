@@ -557,6 +557,7 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                        npy_intp stride_Y)
 {
+    Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
     @type@ *ptr_Z;
     @type@ *ptr_b = (@type@*)b;
@@ -599,12 +600,14 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
         ptr_y += stride_Y;      /* Move to next input/output point */
         ptr_x += stride_X;
     }
+    Py_END_ALLOW_THREADS
 }
 
 static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                         npy_intp stride_Y)
 {
+    Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
     @type@ *ptr_Z, *ptr_b;
     @type@ *ptr_a;
@@ -667,6 +670,7 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
         ptr_x += stride_X;
 
     }
+    Py_END_ALLOW_THREADS
 }
 /**end repeat**/
 
