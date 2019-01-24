@@ -2535,6 +2535,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'return_all': retall}
 
     res = _minimize_powell(func, x0, args, callback=callback, **opts)
+    res['x'] = squeeze(res['x'])
 
     if full_output:
         retlist = (res['x'], res['fun'], res['direc'], res['nit'],
@@ -2672,8 +2673,6 @@ def _minimize_powell(func, x0, args=(), callback=None,
             print("         Current function value: %f" % fval)
             print("         Iterations: %d" % iter)
             print("         Function evaluations: %d" % fcalls[0])
-
-    x = squeeze(x)
 
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
