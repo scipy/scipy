@@ -219,7 +219,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : str, optional
+    method : {'interior-point', 'revised simplex', 'simplex'}, optional
         The algorithm used to solve the standard form problem.
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
