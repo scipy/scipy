@@ -232,6 +232,7 @@ Continuous Distributions in `scipy.stats`
    continuous_johnsonsb
    continuous_johnsonsu
    continuous_ksone
+   continuous_kstwo
    continuous_kstwobign
    continuous_laplace
    continuous_levy_l

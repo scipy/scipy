@@ -40,7 +40,7 @@
 #     Communications of the ACM, 17(12), 703-704.
 # [3] Marsaglia G, Tsang WW, Wang J (2003).
 #     "Evaluating Kolmogorov's Distribution."
-#     Journal of Statistical Software, 8(18), 1-4
+#     Journal of Statistical Software, 8(18), 1-4.
 # [4] LI-CHIEN, C. (1956).
 #     "On the exact distribution of the statistics of A. N. Kolmogorov and
 #     their asymptotic expansion."
@@ -55,14 +55,14 @@
 #     Journal of the Royal Statistical Society, Series B, 38(2), 152-156.
 #  [7] Simard, R., L'Ecuyer, P. (2011)
 # 	  "Computing the Two-Sided Kolmogorov-Smirnov Distribution",
-# 	  Journal of Statistical Software, Vol 39, 11,
+# 	  Journal of Statistical Software, Vol 39, 11, 1-18.
 #  [8] Carvalho, Luis (2015)
 #     "An Improved Evaluation of Kolmogorov's Distribution"
-#     Journal of Statistical Software, Code Snippets; Vol 65(3), 1-8
+#     Journal of Statistical Software, Code Snippets; Vol 65(3), 1-8.
 #  [9] Amit Moscovich, Boaz Nadler (2017)
 #     "Fast calculation of boundary crossing probabilities for Poisson
 #     processes",
-#     Statistics & Probability Letters, Vol 123, 177-182
+#     Statistics & Probability Letters, Vol 123, 177-182.
 
 
 import numpy as np

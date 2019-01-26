@@ -62,6 +62,7 @@ distcont = [
     ['kappa4', (0.1, 0.0)],
     ['kappa3', (1.0,)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
+    ['kstwo', (100,)],
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],

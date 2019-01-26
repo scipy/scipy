@@ -65,7 +65,7 @@ class ksone_gen(rv_continuous):
 
     See Also
     --------
-    kstwobign, kstest
+    kstwobign, kstwo, kstest
 
     References
     ----------
@@ -92,62 +92,7 @@ class ksone_gen(rv_continuous):
         return sc.smirnovi(n, q)
 
 
-ksone = ksone_gen(a=0.0, name='ksone')
-
-
-class kstwobign_gen(rv_continuous):
-    r"""Kolmogorov-Smirnov two-sided test for large N.
-
-    This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
-    statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
-    distance of the theoretical CDF from the empirical CDF (see `kstest`).
-
-    %(before_notes)s
-
-    Notes
-    -----
-    :math:`\sqrt{n} D_n` is given by
-
-    .. math::
-
-        D_n = \text{sup}_x |F_n(x) - F(x)|
-
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
-    describes the asymptotic distribution (i.e. the limit of
-    :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
-    empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
-
-    %(after_notes)s
-
-    See Also
-    --------
-    ksone, kstest
-
-    References
-    ----------
-    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
-       Journal of Statistical Software, 8(18), 2003.
-
-    %(example)s
-
-    """
-    def _pdf(self, x):
-        return -scu._kolmogp(x)
-
-    def _cdf(self, x):
-        return scu._kolmogc(x)
-
-    def _sf(self, x):
-        return sc.kolmogorov(x)
-
-    def _ppf(self, q):
-        return scu._kolmogci(q)
-
-    def _isf(self, q):
-        return sc.kolmogi(q)
-
-
-kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
+ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
 
 
 class kstwo_gen(rv_continuous):
@@ -180,7 +125,9 @@ class kstwo_gen(rv_continuous):
 
     References
     ----------
-    .. [1]
+    .. [1] Simard, R., L'Ecuyer, P. "Computing the Two-Sided
+       Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
+       Vol 39, 11, 1-18 (2011).
 
     %(example)s
 
@@ -196,6 +143,62 @@ class kstwo_gen(rv_continuous):
 
 
 kstwo = kstwo_gen(a=0.0, b=1.0, name='kstwo')
+
+
+class kstwobign_gen(rv_continuous):
+    r"""Kolmogorov-Smirnov two-sided test for large N.
+
+    This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
+    statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
+    distance of the theoretical CDF from the empirical CDF (see `kstest`).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`\sqrt{n} D_n` is given by
+
+    .. math::
+
+        D_n = \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
+    describes the asymptotic distribution (i.e. the limit of
+    :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
+    empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    ksone, kstwo, kstest
+
+    References
+    ----------
+    .. [1] Feller, W. "On the Kolmogorov-Smirnov Limit Theorems for Empirical
+       Distributions",  Ann. Math. Statist. Vol 19, 177-189 (1948).
+
+    %(example)s
+
+    """
+    def _pdf(self, x):
+        return -scu._kolmogp(x)
+
+    def _cdf(self, x):
+        return scu._kolmogc(x)
+
+    def _sf(self, x):
+        return sc.kolmogorov(x)
+
+    def _ppf(self, q):
+        return scu._kolmogci(q)
+
+    def _isf(self, q):
+        return sc.kolmogi(q)
+
+
+kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
+
 
 ## Normal distribution
 
