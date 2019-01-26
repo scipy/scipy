@@ -222,7 +222,7 @@ def _kolmogn_Pomeranz(n, x, cdf=True):
     # Only a few (contiguous) entries in each row can be non-zero.
     #  - Keep track of start and end (j1 and j2 below)
     #  - V0s and V1s track the start in the two rows
-    # Only a few different Poisson distributions can occur
+    # Only a few different Poisson distributions can occur.
     t = n * x
     ll = int(np.floor(t))
     f = 1.0 * (t - ll)  # fractional part of t
