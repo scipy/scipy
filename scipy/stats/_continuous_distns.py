@@ -141,9 +141,13 @@ class kstwo_gen(rv_continuous):
     def _sf(self, x, n):
         return kolmogn(n, x, cdf=False)
 
+    def _cdf(self, x, n):
+        return kolmogn(n, x)
+
+    def _sf(self, x, n):
+        return kolmogn(n, x, cdf=False)
 
 kstwo = kstwo_gen(a=0.0, b=1.0, name='kstwo')
-
 
 
 class kstwobign_gen(rv_continuous):
