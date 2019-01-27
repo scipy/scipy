@@ -89,6 +89,7 @@ cdef extern from "qhull_src/src/libqhull_r.h":
         flagT flipped
         flagT upperdelaunay
         flagT toporient
+        flagT good
         unsigned visitid
 
     ctypedef struct vertexT:
@@ -541,6 +542,7 @@ cdef class _Qhull:
         cdef int i, j, ipoint, ipoint2, ncoplanar
         cdef object tmp
         cdef np.ndarray[np.npy_int, ndim=2] facets
+        cdef np.ndarray[np.npy_int, ndim=1] good
         cdef np.ndarray[np.npy_int, ndim=2] neighbors
         cdef np.ndarray[np.npy_int, ndim=2] coplanar
         cdef np.ndarray[np.double_t, ndim=2] equations
@@ -586,6 +588,7 @@ cdef class _Qhull:
 
         # Allocate output
         facets = np.zeros((j, facet_ndim), dtype=np.intc)
+        good = np.zeros(j, dtype=np.intc)
         neighbors = np.zeros((j, facet_ndim), dtype=np.intc)
         equations = np.zeros((j, facet_ndim+1), dtype=np.double)
 
@@ -655,10 +658,13 @@ cdef class _Qhull:
                         coplanar[ncoplanar, 2] = qh_pointid(self._qh, vertex.point)
                         ncoplanar += 1
 
+                # Save good info
+                good[j] = facet.good
+
                 j += 1
                 facet = facet.next
 
-        return facets, neighbors, equations, coplanar[:ncoplanar]
+        return facets, neighbors, equations, coplanar[:ncoplanar], good
 
     @cython.final
     @cython.boundscheck(False)
@@ -1833,9 +1839,10 @@ class Delaunay(_QhullUser):
         self.paraboloid_scale, self.paraboloid_shift = \
                                qhull.get_paraboloid_shift_scale()
 
-        self.simplices, self.neighbors, self.equations, self.coplanar = \
+        self.simplices, self.neighbors, self.equations, self.coplanar, self.good = \
                        qhull.get_simplex_facet_array()
 
+        self.good = self.good.astype(bool)
         self.nsimplex = self.simplices.shape[0]
         self._transform = None
         self._vertex_to_simplex = None
@@ -2288,6 +2295,9 @@ class ConvexHull(_QhullUser):
         the nearest facets and nearest vertex indices.  Coplanar
         points are input points which were *not* included in the
         triangulation due to numerical precision issues.
+    good : Boolean array indicated which facets (simplices) are good.
+        Used with options that compute good facets, e.g. QGn and 
+        QG-n.
 
         If option "Qc" is not specified, this list is not computed.
     area : float
@@ -2361,9 +2371,10 @@ class ConvexHull(_QhullUser):
     def _update(self, qhull):
         qhull.triangulate()
 
-        self.simplices, self.neighbors, self.equations, self.coplanar = \
+        self.simplices, self.neighbors, self.equations, self.coplanar, self.good = \
                        qhull.get_simplex_facet_array()
 
+        self.good = self.good.astype(bool)
         self.volume, self.area = qhull.volume_area()
 
         if qhull.ndim == 2:
