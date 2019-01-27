@@ -2487,7 +2487,7 @@ class Voronoi(_QhullUser):
            [ 0.5,  1.5],
            [ 1.5,  1.5]])
 
-    There is a single finite Voronoi region, and four finite Voronoi
+    There is a single finite Voronoi region, and eight infinite Voronoi
     ridges:
 
     >>> vor.regions
