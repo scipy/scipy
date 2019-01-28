@@ -158,6 +158,8 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     arX = (PyArrayObject *) PyArray_FromObject(X, typenum, 0, 0);
     /* XXX: fix failure handling here */
     if (ara == NULL || arb == NULL || arX == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "could not convert b, a, and x to a common type");
         goto fail;
     }
 
