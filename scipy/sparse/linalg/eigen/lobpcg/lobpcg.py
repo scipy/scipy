@@ -1,13 +1,20 @@
 """
-Pure SciPy implementation of Locally Optimal Block Preconditioned Conjugate
-Gradient Method (LOBPCG), see
-https://bitbucket.org/joseroman/blopex
+Locally Optimal Block Preconditioned Conjugate Gradient Method (LOBPCG).
 
-License: BSD
+References
+----------
+.. [1] A. V. Knyazev (2001),
+       Toward the Optimal Preconditioned Eigensolver: Locally Optimal
+       Block Preconditioned Conjugate Gradient Method.
+       SIAM Journal on Scientific Computing 23, no. 2,
+       pp. 517-541. http://dx.doi.org/10.1137/S1064827500366124
 
-Authors: Robert Cimrman, Andrew Knyazev
+.. [2] A. V. Knyazev, I. Lashuk, M. E. Argentati, and E. Ovchinnikov (2007),
+       Block Locally Optimal Preconditioned Eigenvalue Xolvers (BLOPEX)
+       in hypre and PETSc.  https://arxiv.org/abs/0705.2626
 
-Examples in tests directory contributed by Nils Wagner.
+.. [3] A. V. Knyazev's C and MATLAB implementations:
+       https://bitbucket.org/joseroman/blopex
 """
 
 from __future__ import division, print_function, absolute_import
@@ -201,9 +208,9 @@ def lobpcg(A, X,
     Here, ``invA`` could of course have been used directly as a preconditioner.
     Let us then solve the problem:
 
-    >>> eigs, vecs = lobpcg(A, X, Y=Y, M=M, tol=1e-4, maxiter=40, largest=False)
+    >>> eigs, vecs = lobpcg(A, X, Y=Y, M=M, largest=False)
     >>> eigs
-    array([ 4.,  5.,  6.])
+    array([4., 5., 6.])
 
     Note that the vectors passed in Y are the eigenvectors of the 3 smallest
     eigenvalues. The results returned are orthogonal to those.
