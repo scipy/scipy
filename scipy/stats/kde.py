@@ -197,7 +197,7 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
 
         if weights is not None:
-            self._weights = atleast_1d(weights)
+            self._weights = atleast_1d(weights).astype(float)
             self._weights /= sum(self._weights)
             if self.weights.ndim != 1:
                 raise ValueError("`weights` input should be one-dimensional.")
