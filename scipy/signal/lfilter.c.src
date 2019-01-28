@@ -239,7 +239,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                 zf_shape[k] = zi_size;
             } else if (k != theaxis && Vik == Xk) {
                 zf_shape[k] = Xk;
-            } else if (k != theaxis && Vik == 1) { 
+            } else if (k != theaxis && Vik == 1) {
                 zf_shape[k] = Xk;
                 Vi_needs_broadcasted = 1;
             } else {
@@ -254,7 +254,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                 goto fail;
             }
         }
-        
+
         if (Vi_needs_broadcasted) {
             /* Expand the singleton dimensions of arVi without copying by
              * creating a new view of arVi with the expanded dimensions
@@ -275,13 +275,13 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                     strides[k] = arVi_strides[k];
                 }
             }
-            
+
             /* PyArray_DESCR borrows a reference, but it will be stolen
              * by PyArray_NewFromDescr below, so increment it.
              */
             view_dtype = PyArray_DESCR(arVi);
             Py_INCREF(view_dtype);
-            
+
             arVi_view = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type,
                             view_dtype, ndim, zf_shape, strides,
                             PyArray_BYTES(arVi), 0, NULL);
@@ -307,7 +307,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             goto fail;
         }
     }
-    
+
     arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
                                               PyArray_DIMS(arX), typenum);
     if (arY == NULL) {
@@ -343,8 +343,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 }
 
 /*
- * Copy the first nxzfilled items of x into xzfilled , and fill the rest with
- * 0s
+ * Copy the first nx items of x into xzfilled , and fill the rest with 0s
  */
 static int
 zfill(const PyArrayObject * x, npy_intp nx, char *xzfilled, npy_intp nxzfilled)
@@ -490,9 +489,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
                     itx->dataptr, ity->dataptr, zfzfilled,
                     nfilt, PyArray_DIM(x, axis), itx->strides[axis],
                     ity->strides[axis]);
-    
+
         if (PyErr_Occurred()) {
-            goto clean_zfzfilled; 
+            goto clean_zfzfilled;
         }
         PyArray_ITER_NEXT(itx);
         PyArray_ITER_NEXT(ity);
@@ -707,7 +706,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             if (tmp3 == NULL) return;
             ptr_b++;
             ptr_a++;
-            
+
             /* Fill in middle delays */
             for (n = 0; n < len_b - 2; n++) {
                 tmp1 = PyNumber_Multiply(*xn, *ptr_b);
