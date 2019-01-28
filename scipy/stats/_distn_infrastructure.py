@@ -725,7 +725,10 @@ class rv_generic(object):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+            try:
+                self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+            except TypeError as e:
+                raise Exception("Unable to construct docstring for distribution \"%s\": %s" % (self.name, repr(e)))
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
