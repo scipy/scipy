@@ -162,7 +162,7 @@ def linprog_terse_callback(res):
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='simplex', callback=None,
+            bounds=None, method='interior-point', callback=None,
             options=None, x0=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -219,7 +219,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : str, optional
+    method : {'interior-point', 'revised simplex', 'simplex'}, optional
         The algorithm used to solve the standard form problem.
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
@@ -461,15 +461,32 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> x1_bounds = (-3, None)
     >>> from scipy.optimize import linprog
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds])
+
+    Note that the default method for `linprog` is 'interior-point', which is
+    approximate by nature.
+
     >>> print(res)
          con: array([], dtype=float64)
-         fun: -22.0
+         fun: -21.99999984082494 # may vary
      message: 'Optimization terminated successfully.'
-         nit: 5 # may vary
+         nit: 6 # may vary
+       slack: array([3.89999997e+01, 8.46872439e-08] # may vary
+      status: 0
+     success: True
+           x: array([ 9.99999989, -2.99999999]) # may vary
+
+    If you need greater accuracy, try 'revised simplex'.
+
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], method='revised simplex')
+    >>> print(res)
+         con: array([], dtype=float64)
+         fun: -22.0 # may vary
+     message: 'Optimization terminated successfully.'
+         nit: 1 # may vary
        slack: array([39.,  0.]) # may vary
       status: 0
      success: True
-           x: array([10., -3.])
+           x: array([10., -3.]) # may vary
 
     """
     meth = method.lower()
