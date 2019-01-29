@@ -3554,6 +3554,14 @@ class TestNdimage:
                                    border_value=True),
             b)
 
+    def test_binary_erosion38(self):
+        data = numpy.array([[1, 0, 1],
+                           [0, 1, 0],
+                           [1, 0, 1]], dtype=bool)
+        iterations = 2.0
+        with assert_raises(RuntimeError):
+            out = ndimage.binary_erosion(data, iterations=iterations)
+
     def test_binary_dilation01(self):
         for type_ in self.types:
             data = numpy.ones([], type_)
