@@ -298,7 +298,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
         Structuring element used for the erosion. Non-zero elements are
         considered True. If no structuring element is provided, an element
         is generated with a square connectivity equal to one.
-    iterations : {int, float}, optional
+    iterations : int, optional
         The erosion is repeated `iterations` times (one, by default).
         If iterations is less than 1, the erosion is repeated until the
         result does not change anymore.
@@ -393,7 +393,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
         Structuring element used for the dilation. Non-zero elements are
         considered True. If no structuring element is provided an element
         is generated with a square connectivity equal to one.
-    iterations : {int, float}, optional
+    iterations : int, optional
         The dilation is repeated `iterations` times (one, by default).
         If iterations is less than 1, the dilation is repeated until the
         result does not change anymore.
@@ -651,7 +651,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         is generated with a square connectivity equal to one (i.e., only
         nearest neighbors are connected to the center, diagonally-connected
         elements are not considered neighbors).
-    iterations : {int, float}, optional
+    iterations : int, optional
         The dilation step of the closing, then the erosion step are each
         repeated `iterations` times (one, by default). If iterations is
         less than 1, each operations is repeated until the result does
