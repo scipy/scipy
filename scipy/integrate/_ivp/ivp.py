@@ -262,7 +262,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
-    rtol, atol : float and array_like, optional
+    rtol, atol : float or array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits). But if a component of `y`
@@ -272,7 +272,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
-    jac : {None, array_like, sparse_matrix, callable}, optional
+    jac : array_like, sparse_matrix, callable or None, optional
         Jacobian matrix of the right-hand side of the system with respect to
         y, required by the 'Radau', 'BDF' and 'LSODA' method. The Jacobian matrix
         has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
@@ -289,7 +289,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
-    jac_sparsity : {None, array_like, sparse matrix}, optional
+    jac_sparsity : array_like, sparse matrix or None, optional
         Defines a sparsity structure of the Jacobian matrix for a
         finite-difference approximation. Its shape must be (n, n). This argument
         is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
@@ -298,14 +298,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         element in the Jacobian is always zero. If None (default), the Jacobian
         is assumed to be dense.
         Not supported by 'LSODA', see `lband` and `uband` instead.
-    lband, uband : int or None
+    lband, uband : int or None, optional
         Parameters defining the bandwidth of the Jacobian for the 'LSODA' method,
-        i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Setting
-        these requires your jac routine to return the Jacobian in the packed format:
-        the returned array must have ``n`` columns and ``uband + lband + 1``
-        rows in which Jacobian diagonals are written. Specifically
-        ``jac_packed[uband + i - j , j] = jac[i, j]``. The same format is used
-        in `scipy.linalg.solve_banded` (check for an illustration).
+        i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Default is
+        None. Setting these requires your jac routine to return the Jacobian in the
+        packed format: the returned array must have ``n`` columns and
+        ``uband + lband + 1`` rows in which Jacobian diagonals are written.
+        Specifically ``jac_packed[uband + i - j , j] = jac[i, j]``. The same format
+        is used in `scipy.linalg.solve_banded` (check for an illustration).
         These parameters can be also used with ``jac=None`` to reduce the
         number of Jacobian elements estimated by finite differences.
     min_step : float, optional
@@ -412,15 +412,32 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     because the event is terminal.
 
     >>> def upward_cannon(t, y): return [y[1], -0.5]
-    >>> def hit_ground(t, y): return y[1]
+    >>> def hit_ground(t, y): return y[0]
     >>> hit_ground.terminal = True
     >>> hit_ground.direction = -1
     >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], events=hit_ground)
     >>> print(sol.t_events)
-    [array([ 20.])]
+    [array([40.])]
     >>> print(sol.t)
     [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
-     1.11088891e-01 1.11098890e+00 1.11099890e+01 2.00000000e+01]
+     1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
+
+    Use `dense_output` and `events` to find position, which is 100, at the apex of
+    the cannonball's trajectory. Apex is not defined as terminal, so both apex
+    and hit_ground are found. There is no information at t=20, so the sol
+    attribute is used to evaluate the solution. The sol attribute is
+    returned by setting ``dense_output=True``.
+
+    >>> def apex(t,y): return y[1]
+    >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
+    ...                 events=(hit_ground, apex), dense_output=True)
+    >>> print(sol.t_events)
+    [array([40.]), array([20.])]
+    >>> print(sol.t)
+    [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
+     1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
+    >>> print(sol.sol(sol.t_events[1][0]))
+    [100.   0.]
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
