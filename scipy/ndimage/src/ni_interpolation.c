@@ -429,10 +429,10 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                         } else {
                             npy_intp s2 = 2 * len - 2;
                             if (idx < 0) {
-                                idx = s2 * (int)(-idx / s2) + idx;
+                                idx = s2 * (-idx / s2) + idx;
                                 idx = idx <= 1 - len ? idx + s2 : -idx;
                             } else if (idx >= len) {
-                                idx -= s2 * (int)(idx / s2);
+                                idx -= s2 * (idx / s2);
                                 if (idx >= len)
                                     idx = s2 - idx;
                             }
