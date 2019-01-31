@@ -407,17 +407,17 @@ def continuous_frechet(u, v):
         elif i == 0 and j == 0:
             ca[i,j] = np.linalg.norm(p[i]-q[j])
         elif i > 0 and j == 0:
-            ca[i,j] = max( _c(ca,i-1,0,p,q), np.linalg.norm(p[i]-q[j]) )
+            ca[i,j] = max(_c(ca,i-1,0,p,q), np.linalg.norm(p[i]-q[j]))
         elif i == 0 and j > 0:
-            ca[i,j] = max( _c(ca,0,j-1,p,q), np.linalg.norm(p[i]-q[j]) )
+            ca[i,j] = max(_c(ca,0,j-1,p,q), np.linalg.norm(p[i]-q[j]))
         elif i > 0 and j > 0:
-            ca[i,j] = max(                                                     \
-                min(                                                           \
-                    _c(ca,i-1,j,p,q),                                          \
-                    _c(ca,i-1,j-1,p,q),                                        \
-                    _c(ca,i,j-1,p,q)                                           \
-                ),                                                             \
-                np.linalg.norm(p[i]-q[j])                                      \
+            ca[i,j] = max(                                                     
+                min(                                                           
+                    _c(ca,i-1,j,p,q),                                          
+                    _c(ca,i-1,j-1,p,q),                                        
+                    _c(ca,i,j-1,p,q)                                           
+                ),                                                             
+                np.linalg.norm(p[i]-q[j])                                      
                 )                                                          
         else:
             ca[i,j] = float('inf')
@@ -433,8 +433,8 @@ def continuous_frechet(u, v):
 
     len_u = len(u)
     len_v = len(v)
-    ca    = ( np.ones((len_u,len_v), dtype=np.float64) * -1 ) 
-    d     = _c(ca,len_u-1,len_v-1,u,v)
+    ca = (np.ones((len_u,len_v), dtype=np.float64) * -1) 
+    d = _c(ca,len_u-1,len_v-1,u,v)
 
     return d
 
