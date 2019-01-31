@@ -30,6 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 import warnings
+import operator
 
 import numpy
 from . import _ni_support
@@ -240,8 +241,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         output = bool
     output = _ni_support._get_output(output, input)
 
-    if not isinstance(iterations, int):
-        raise RuntimeError('must run for an integer number of iterations')
+    iterations = operator.index(iterations)
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                  border_value, origin, invert, cit, 0)
