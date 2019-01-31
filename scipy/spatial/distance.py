@@ -85,6 +85,7 @@ __all__ = [
     'cosine',
     'dice',
     'directed_hausdorff',
+    'continuous_frechet',
     'euclidean',
     'hamming',
     'is_valid_dm',
@@ -346,6 +347,96 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
         kwargs['p'] = 2.
     return kwargs
 
+def continuous_frechet(u, v):
+    """
+    Compute the continuous Frechet distance between two N-D arrays.
+  
+    Parameters
+    ----------
+    u : (M,N) ndarray
+        Input array.
+    v : (O,N) ndarray
+        Input array.
+
+    Returns
+    -------
+    d : double
+        The continuous Frechet distance between arrays `u` and `v`,
+
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `u` and `v` do not have
+        the same number of columns.
+
+    Notes
+    -----
+    This is a quadratic time complexity dynamic programming 
+    implementation taken from [1] which calculates the discrete
+    Frechet distance (also called coupling distance).
+
+    .. versionadded:: xx.xx.xx
+
+    References
+    ----------
+    .. [1] Eiter, T. and Mannila, H., 1994. Computing discrete Fréchet 
+    distance. Tech. Report CD-TR 94/64, Information Systems Department, 
+    Technical University of Vienna.
+
+    Examples
+    --------
+    Find the continuous Frechet distance between two 2-D arrays of
+    coordinates:
+
+    >>> from scipy.spatial.distance import continuous_frechet
+    >>> u = np.array([(1.0, 1.0),
+    ...               (2.0, 1.0),
+    ...               (2.0, 2.0)])
+    >>> v = np.array([(2.0, 2.0),
+    ...               (0.0, 1.0),
+    ...               (2.0, 4.0)])
+    
+    >>> continuous_frechet(u, v)
+    2.0
+
+    """
+
+    def _c(ca,i,j,p,q):
+        if ca[i,j] > -1:
+            return ca[i,j]
+        elif i == 0 and j == 0:
+            ca[i,j] = np.linalg.norm(p[i]-q[j])
+        elif i > 0 and j == 0:
+            ca[i,j] = max( _c(ca,i-1,0,p,q), np.linalg.norm(p[i]-q[j]) )
+        elif i == 0 and j > 0:
+            ca[i,j] = max( _c(ca,0,j-1,p,q), np.linalg.norm(p[i]-q[j]) )
+        elif i > 0 and j > 0:
+            ca[i,j] = max(                                                     \
+                min(                                                           \
+                    _c(ca,i-1,j,p,q),                                          \
+                    _c(ca,i-1,j-1,p,q),                                        \
+                    _c(ca,i,j-1,p,q)                                           \
+                ),                                                             \
+                np.linalg.norm(p[i]-q[j])                                      \
+                )                                                          
+        else:
+            ca[i,j] = float('inf')
+        
+        return ca[i,j]
+
+    u = np.asarray(u, dtype=np.float64, order='c')
+    v = np.asarray(v, dtype=np.float64, order='c')
+
+    if u.shape[1] != v.shape[1]:
+        raise ValueError('u and v need to have the same '
+                         'number of columns')
+
+    len_u = len(u)
+    len_v = len(v)
+    ca    = ( np.ones((len_u,len_v), dtype=np.float64) * -1 ) 
+    d     = _c(ca,len_u-1,len_v-1,u,v)
+
+    return d
 
 def directed_hausdorff(u, v, seed=0):
     """
