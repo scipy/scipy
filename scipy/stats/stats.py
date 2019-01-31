@@ -5433,6 +5433,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         - "tippett": Tippett's method (minimum of p-values).
         - "stouffer": Stouffer's Z-score method.
         - "mudholkar_george": the difference of Fisher's and Pearson's methods.
+          Uses a t-distribution approximation to the logistic [7]_.
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -5452,8 +5453,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     weights, which can make Stouffer's method more powerful than Fisher's
     method when the p-values are from studies of different size [3]_ [4]_.
     The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
-    method uses :math:`log(p_i)` [6]_. The `mudholkar_george` method is the
-    difference of the Fisher's and Pearson's test statistics.
+    method uses :math:`log(p_i)` [6]_. Fisher's and Pearson's methods each
+    multiply the sum of the logged p-values quantity by `-2`. The
+    `mudholkar_george` method is the difference of the Fisher's and Pearson's
+    test statistics [7]_.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -5474,6 +5477,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     .. [5] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
     .. [6] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
            combining p-values."  Biometrika 105.1 (2018): 239-246.
+    .. [7] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
+           random variables." Metrika 30.1 (1983): 1-13.
 
     """
     pvalues = np.asarray(pvalues)
