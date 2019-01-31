@@ -115,6 +115,7 @@ Inferential Stats
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
+   ttest_trimmed
    chisquare
    power_divergence
    ks_2samp
