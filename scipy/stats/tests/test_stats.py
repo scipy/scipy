@@ -3071,8 +3071,8 @@ def test_ttest_trimmed1():
     pr = 0.53619490753126731
     tr = -0.68649512735572582
     t, p = stats.ttest_trimmed(a, b, equal_var=False)
-    assert_equal(t, tr)
-    assert_equal(p, pr)
+    assert_almost_equal(t, tr)
+    assert_almost_equal(p, pr)
 
 
 def test_ttest_trimmed2():
@@ -3082,8 +3082,8 @@ def test_ttest_trimmed2():
     pr = 0.00998909252078421
     tr = 4.591598691181999
     t, p = stats.ttest_trimmed(a, b, equal_var=False)
-    assert_equal(t, tr)
-    assert_equal(p, pr)
+    assert_almost_equal(t, tr)
+    assert_almost_equal(p, pr)
 
 
 def test_ttest_trimmed3():
@@ -3093,8 +3093,8 @@ def test_ttest_trimmed3():
     pr = 0.10512380092302633
     tr = 2.832256715395378
     t, p = stats.ttest_trimmed(a, b, equal_var=False, trimming_percentage=32)
-    assert_equal(t, tr)
-    assert_equal(p, pr)
+    assert_almost_equal(t, tr)
+    assert_almost_equal(p, pr)
 
 
 def test_ttest_ind_nan_2nd_arg():

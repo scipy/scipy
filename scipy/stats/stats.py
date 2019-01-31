@@ -4388,8 +4388,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
 
 def _calculate_trimmed_mean(trimmed_index, n, a):
 
-    trimmed_sum = sum(a[int(trimmed_index):int(n-trimmed_index)])
-    trimmed_mean = (1.0/(n-(2.0*trimmed_index)))*trimmed_sum
+    trimmed_sum = sum(a[int(trimmed_index):int(n - trimmed_index)])
+    trimmed_mean = (1.0 / (n - (2.0 * trimmed_index))) * trimmed_sum
     return trimmed_mean
 
 
@@ -4397,15 +4397,15 @@ def _calculate_trimmed_variance(trimmed_index, trimmed_n, n, a):
 
     trimmed_array = a[int(trimmed_index + 1):int(n - trimmed_index - 1)]
     trimmed_sum = sum(trimmed_array)
-    trimmed_mean = (1.0/n)*(((trimmed_index + 1.0) * a[int(trimmed_index)]) + trimmed_sum
-                            + ((trimmed_index+1) * a[int(n - trimmed_index - 1)]))
+    trimmed_mean = (1.0 / n) * (((trimmed_index + 1.0) * a[int(trimmed_index)]) + trimmed_sum
+                                + ((trimmed_index + 1.0) * a[int(n - trimmed_index - 1.0)]))
     sum_of_difference = sum([math.pow(value - trimmed_mean, 2) for value in trimmed_array])
     trimmed_variance_temp = ((trimmed_index + 1.0)
                              * math.pow((a[int(trimmed_index)]
                                          - trimmed_mean), 2)) + sum_of_difference + ((trimmed_index + 1.0)
                                                                                      * (math.pow((a[int(n
                                                                                                         - trimmed_index
-                                                                                                        - 1)]
+                                                                                                        - 1.0)]
                                                                                                   - trimmed_mean), 2)))
     trimmed_variance = trimmed_variance_temp / (trimmed_n - 1.0)
     return trimmed_variance
