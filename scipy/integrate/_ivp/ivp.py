@@ -179,11 +179,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
-        It can either have shape (n,); then ``fun`` must return array_like with
-        shape (n,). Alternatively it can have shape (n, k); then ``fun``
+        Here `t` is a scalar, and there are two options for the ndarray `y`:
+        It can either have shape (n,); then `fun` must return array_like with
+        shape (n,). Alternatively it can have shape (n, k); then `fun`
         must return an array_like with shape (n, k), i.e. each column
-        corresponds to a single column in ``y``. The choice between the two
+        corresponds to a single column in `y`. The choice between the two
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
         by finite differences (required for stiff solvers).
@@ -239,8 +239,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Each is defined by a continuous function of time and state that becomes
         zero value in case of an event. Each function must have the signature
         ``event(t, y)`` and return a float. The solver will find an accurate
-        value of ``t`` at which ``event(t, y(t)) = 0`` using a root-finding
-        algorithm. Additionally each ``event`` function might have the following
+        value of `t` at which ``event(t, y(t)) = 0`` using a root-finding
+        algorithm. Additionally each `event` function might have the following
         attributes:
 
             * terminal: bool, whether to terminate integration if this
@@ -258,7 +258,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
     first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorithm
+        Initial step size. Default is `None` which means that the algorithm
         should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
