@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import  assert_equal
+from numpy.testing import assert_equal
 from scipy.spatial.distance import continuous_frechet
 
 class TestFrechet(object):
@@ -9,8 +9,8 @@ class TestFrechet(object):
         # Test simple case            
         u = [(1.0, 1.0), (2.0, 1.0), (2.0, 2.0)]   
         v = [(2.0, 2.0), (0.0, 1.0), (2.0, 4.0)]
-        actual    = continuous_frechet(u,v)
-        expected  = 2.0
+        actual = continuous_frechet(u,v)
+        expected = 2.0
         assert_equal(actual, expected)
 
     def test_invalid_dimensions(self):
