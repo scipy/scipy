@@ -240,6 +240,7 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
+   ttest_trimmed
    kstest
    chisquare
    power_divergence
