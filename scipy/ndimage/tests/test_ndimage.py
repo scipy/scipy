@@ -3559,8 +3559,56 @@ class TestNdimage:
                            [0, 1, 0],
                            [1, 0, 1]], dtype=bool)
         iterations = 2.0
-        with assert_raises(RuntimeError):
+        with assert_raises(TypeError):
             out = ndimage.binary_erosion(data, iterations=iterations)
+
+    def test_binary_erosion39(self):
+        iterations = numpy.int32(3)
+        struct = [[0, 1, 0],
+                  [1, 1, 1],
+                  [0, 1, 0]]
+        expected = [[0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0]], bool)
+        out = numpy.zeros(data.shape, bool)
+        ndimage.binary_erosion(data, struct, border_value=1,
+                               iterations=iterations, output=out)
+        assert_array_almost_equal(out, expected)
+
+    def test_binary_erosion40(self):
+        iterations = numpy.int64(3)
+        struct = [[0, 1, 0],
+                  [1, 1, 1],
+                  [0, 1, 0]]
+        expected = [[0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0]], bool)
+        out = numpy.zeros(data.shape, bool)
+        ndimage.binary_erosion(data, struct, border_value=1,
+                               iterations=iterations, output=out)
+        assert_array_almost_equal(out, expected)
 
     def test_binary_dilation01(self):
         for type_ in self.types:
