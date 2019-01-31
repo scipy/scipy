@@ -187,8 +187,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
         where `Pxx` has units of V**2/Hz and computing the power
@@ -333,8 +333,8 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
         where `Pxx` has units of V**2/Hz and computing the power
@@ -498,8 +498,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
@@ -641,8 +641,8 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
         where `Sxx` has units of V**2/Hz and computing the power
@@ -1060,9 +1060,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         done. Defaults to `False`.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned. Defaults to
-        `True`.
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
     boundary : str or None, optional
         Specifies whether the input signal is extended at both ends, and
         how to generate the new values, in order to center the first
@@ -1203,7 +1202,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         parameter must be specified if the number of data points per
         segment is odd, or if the STFT was padded via ``nfft >
         nperseg``. If `None`, the value depends on the shape of
-        `Zxx` and `input_onesided`. If `input_onesided` is True,
+        `Zxx` and `input_onesided`. If `input_onesided` is `True`,
         ``nperseg=2*(Zxx.shape[freq_axis] - 1)``. Otherwise,
         ``nperseg=Zxx.shape[freq_axis]``. Defaults to `None`.
     noverlap : int, optional
@@ -1582,7 +1581,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                      nfft=None, detrend='constant', return_onesided=True,
-                     scaling='spectrum', axis=-1, mode='psd', boundary=None,
+                     scaling='density', axis=-1, mode='psd', boundary=None,
                      padded=False):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
@@ -1627,8 +1626,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Note that for complex
-        data, a two-sided spectrum is always returned.
+        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross

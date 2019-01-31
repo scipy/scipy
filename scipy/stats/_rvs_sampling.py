@@ -73,7 +73,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     If the bounding rectangle is not correctly specified (i.e. if it does not
     contain `A`), the algorithm samples from a distribution different from
     the one given by `pdf`. It is therefore recommended to perform a
-    test such as `stats.kstest` as a check.
+    test such as `~scipy.stats.kstest` as a check.
 
     References
     ----------

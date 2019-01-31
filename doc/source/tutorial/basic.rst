@@ -36,8 +36,8 @@ Index Tricks
 
 There are some class instances that make special use of the slicing
 functionality to provide efficient means for array construction. This
-part will discuss the operation of :obj:`np.mgrid` , :obj:`np.ogrid` ,
-:obj:`np.r_` , and :obj:`np.c_` for quickly constructing arrays.
+part will discuss the operation of :obj:`numpy.mgrid` , :obj:`numpy.ogrid` ,
+:obj:`numpy.r_` , and :obj:`numpy.c_` for quickly constructing arrays.
 
 For example, rather than writing something like the following
 
@@ -160,7 +160,7 @@ convert an ordinary Python function which accepts scalars and returns
 scalars into a "vectorized-function" with the same broadcasting rules
 as other NumPy functions (*i.e.* the Universal functions, or
 ufuncs). For example, suppose you have a Python function named
-:obj:`addsubtract` defined as:
+``addsubtract`` defined as:
 
     >>> def addsubtract(a,b):
     ...    if a > b:
@@ -180,14 +180,14 @@ result:
     array([1, 6, 1, 2])
 
 This particular function could have been written in vector form
-without the use of :obj:`vectorize`. However, functions that employ optimization 
+without the use of :obj:`vectorize`. However, functions that employ optimization
 or integration routines can likely only be vectorized using ``vectorize.``
 
 Type handling
 ^^^^^^^^^^^^^
 
-Note the difference between :func:`np.iscomplex`/:func:`np.isreal` and
-:func:`np.iscomplexobj`/:func:`np.isrealobj`. The former command is
+Note the difference between :func:`numpy.iscomplex`/:func:`numpy.isreal` and
+:func:`numpy.iscomplexobj`/:func:`numpy.isrealobj`. The former command is
 array based and returns byte arrays of ones and zeros providing the
 result of the element-wise test. The latter command is object based
 and returns a scalar describing the result of the test on the entire
@@ -197,27 +197,15 @@ Often it is required to get just the real and/or imaginary part of a
 complex number. While complex numbers and arrays have attributes that
 return those values, if one is not sure whether or not the object will
 be complex-valued, it is better to use the functional forms
-:func:`np.real` and :func:`np.imag` . These functions succeed for anything
+:func:`numpy.real` and :func:`numpy.imag` . These functions succeed for anything
 that can be turned into a NumPy array. Consider also the function
-:func:`np.real_if_close` which transforms a complex-valued number with
+:func:`numpy.real_if_close` which transforms a complex-valued number with
 tiny imaginary part into a real number.
 
 Occasionally the need to check whether or not a number is a scalar
 (Python (long)int, Python float, Python complex, or rank-0 array)
 occurs in coding. This functionality is provided in the convenient
-function :func:`np.isscalar` which returns a 1 or a 0.
-
-Finally, ensuring that objects are a certain NumPy type occurs often
-enough that it has been given a convenient interface in SciPy through
-the use of the :obj:`np.cast` dictionary. The dictionary is keyed by the
-type it is desired to cast to and the dictionary stores functions to
-perform the casting. Thus, ``np.cast['f'](d)`` returns an array
-of :class:`np.float32` from *d*. This function is also useful as an easy
-way to get a scalar of a certain type::
-
-    >>> np.cast['f'](np.pi)
-    array(3.1415927410125732, dtype=float32)
-
+function :func:`numpy.isscalar` which returns a 1 or a 0.
 
 Other useful functions
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -244,13 +232,16 @@ the array in a ``choicelist`` corresponding to the first condition in
     array([0, 0, 2, 3, 4])
 
 Some additional useful functions can also be found in the module
-:mod:`scipy.misc`. For example the :obj:`factorial` and :obj:`comb`
+:mod:`scipy.special`. For example the :obj:`~scipy.special.factorial`
+and :obj:`~scipy.special.comb`
 functions compute :math:`n!` and :math:`n!/k!(n-k)!` using either
 exact integer arithmetic (thanks to Python's Long integer object), or
-by using floating-point precision and the gamma function. Another
-function returns a common image used in image processing: :obj:`lena`.
+by using floating-point precision and the gamma function.
 
-Finally, two functions are provided that are useful for approximating
+.. currentmodule:: scipy.misc
+
+Other useful functions can be found in :mod:`scipy.misc`.
+For example, two functions are provided that are useful for approximating
 derivatives of functions using discrete-differences. The function
 :obj:`central_diff_weights` returns weighting coefficients for an
 equally-spaced :math:`N`-point approximation to the derivative of

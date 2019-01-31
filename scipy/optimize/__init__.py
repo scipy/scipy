@@ -243,6 +243,7 @@ The `linprog` function supports the following methods:
 
    optimize.linprog-simplex
    optimize.linprog-interior-point
+   optimize.linprog-revised_simplex
 
 The simplex method supports callback functions, such as:
 

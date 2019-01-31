@@ -99,9 +99,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     derivative `fprime2` of `func` is also provided, then Halley's method is
     used.
 
-    If `x0` is a sequence, then `newton` returns an array, and `func` must be
-    vectorized and return a sequence or array of the same shape as its first
-    argument.
+    If `x0` is a sequence with more than one item, then `newton` returns an
+    array, and `func` must be vectorized and return a sequence or array of the
+    same shape as its first argument. If `fprime` or `fprime2` is given then
+    its return must also have the same shape.
 
     Parameters
     ----------
@@ -259,7 +260,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    if not np.isscalar(x0):
+    if np.size(x0) > 1:
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                              full_output)
 
@@ -350,7 +351,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     A vectorized version of Newton, Halley, and secant methods for arrays.
 
     Do not use this method directly. This method is called from `newton`
-    when ``np.isscalar(x0)`` is True. For docstring, see `newton`.
+    when ``np.size(x0) > 1`` is ``True``. For docstring, see `newton`.
     """
     try:
         p = np.asarray(x0, dtype=float)
@@ -694,8 +695,12 @@ def brentq(f, a, b, args=(),
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
 
-    See Also
-    --------
+    Notes
+    -----
+    `f` must be continuous.  f(a) and f(b) must have opposite signs.
+
+    Related functions fall into several classes:
+
     multivariate local optimizers
       `fmin`, `fmin_powell`, `fmin_cg`, `fmin_bfgs`, `fmin_ncg`
     nonlinear least squares minimizer
@@ -712,10 +717,6 @@ def brentq(f, a, b, args=(),
       `brenth`, `ridder`, `bisect`, `newton`
     scalar fixed-point finder
       `fixed_point`
-
-    Notes
-    -----
-    `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
     References
     ----------

@@ -1028,7 +1028,7 @@ def variation(a, axis=0, nan_policy='propagate'):
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
-    Compute the skewness of a data set.
+    Compute the sample skewness of a data set.
 
     For normally distributed data, the skewness should be about 0. For
     unimodal continuous distributions, a skewness value > 0 means that
@@ -1055,6 +1055,25 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     skewness : ndarray
         The skewness of values along an axis, returning 0 where all values are
         equal.
+
+    Notes
+    -----
+    The sample skewness is computed as the Fisher-Pearson coefficient
+    of skewness, i.e.
+
+    .. math:: g_1=\\frac{m_3}{m_2^{3/2}}
+
+    where
+
+    .. math:: m_i=\\frac{1}{N}\\sum_{n=1}^N(x[n]-\\bar{x})^i
+
+    is the biased sample :math:`i\\texttt{th}` central moment, and :math:`\\bar{x}` is
+    the sample mean.  If ``bias`` is False, the calculations are
+    corrected for bias and the value computed is the adjusted
+    Fisher-Pearson standardized moment coefficient, i.e.
+
+    .. math:: G_1=\\frac{k_3}{k_2^{3/2}}=
+                  \\frac{\\sqrt{N(N-1)}}{N-2}\\frac{m_3}{m_2^{3/2}}.
 
     References
     ----------
@@ -4844,8 +4863,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     See Also
     --------
-    power_divergence
-    mstats.chisquare
+    scipy.stats.power_divergence
 
     Notes
     -----
@@ -5020,7 +5038,7 @@ def tiecorrect(rankvals):
     ----------
     rankvals : array_like
         A 1-D sequence of ranks.  Typically this will be the array
-        returned by `stats.rankdata`.
+        returned by `~scipy.stats.rankdata`.
 
     Returns
     -------

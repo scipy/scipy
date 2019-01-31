@@ -415,6 +415,11 @@ class MetaData(object):
         # Getting attribute type
         types = meta.types()
 
+    Methods
+    -------
+    names
+    types
+
     Notes
     -----
     Also maintains the list of attributes in order, i.e. doing for i in
@@ -454,11 +459,23 @@ class MetaData(object):
         return self._attributes[key]
 
     def names(self):
-        """Return the list of attribute names."""
+        """Return the list of attribute names.
+
+        Returns
+        -------
+        attrnames : list of str
+            The attribute names.
+        """
         return self._attrnames
 
     def types(self):
-        """Return the list of attribute types."""
+        """Return the list of attribute types.
+
+        Returns
+        -------
+        attr_types : list of str
+            The attribute types.
+        """
         attr_types = [self._attributes[name][0] for name in self._attrnames]
         return attr_types
 

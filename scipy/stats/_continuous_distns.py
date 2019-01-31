@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
@@ -8,7 +9,7 @@ import warnings
 
 import numpy as np
 
-from scipy.misc.doccer import (extend_notes_in_docstring,
+from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring)
 from scipy import optimize
 from scipy import integrate
@@ -40,14 +41,14 @@ class ksone_gen(rv_continuous):
     r"""General Kolmogorov-Smirnov one-sided test.
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
-    statistics :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-`
+    statistics :math:`D_n^+` and :math:`D_n^-`
     for a finite sample size ``n`` (the shape parameter).
 
     %(before_notes)s
 
     Notes
     -----
-    :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-` are given by
+    :math:`D_n^+` and :math:`D_n^-` are given by
 
     .. math::
 
@@ -90,7 +91,7 @@ class ksone_gen(rv_continuous):
         return sc.smirnovi(n, q)
 
 
-ksone = ksone_gen(a=0.0, name='ksone')
+ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
 
 
 class kstwobign_gen(rv_continuous):
@@ -1916,7 +1917,22 @@ Frechet distribution.  To preserve the existing behavior of the program, use
 `scipy.stats.weibull_min`.  For the Frechet distribution (i.e. the Type II
 extreme value distribution), use `scipy.stats.invweibull`."""
 
+
 class frechet_r_gen(weibull_min_gen):
+    """A Frechet right (or Weibull minimum) continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_min : The same distribution as `frechet_r`.
+
+    Notes
+    -----
+    %(after_notes)s
+
+    %(example)s
+    """
 
     @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
     def __call__(self, *args, **kwargs):
@@ -2021,7 +2037,22 @@ Frechet distribution.  To preserve the existing behavior of the program, use
 `scipy.stats.weibull_max`.  For the Frechet distribution (i.e. the Type II
 extreme value distribution), use `scipy.stats.invweibull`."""
 
+
 class frechet_l_gen(weibull_max_gen):
+    """A Frechet left (or Weibull maximum) continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_max : The same distribution as `frechet_l`.
+
+    Notes
+    -----
+    %(after_notes)s
+
+    %(example)s
+    """
 
     @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
     def __call__(self, *args, **kwargs):
@@ -3321,8 +3352,9 @@ class norminvgauss_gen(rv_continuous):
         f(x, a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
                      (\pi \sqrt{1 + x^2} \, K_1(a \sqrt{1 + x^2}))
 
-    where `x` is a real number, the parameter `a` is the tail heaviness
-    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    where :math:`x` is a real number, the parameter :math:`a` is the tail
+    heaviness and :math:`b` is the asymmetry parameter satisfying
+    :math:`a > 0` and :math:`|b| <= a`.
     :math:`K_1` is the modified Bessel function of second kind
     (`scipy.special.k1`).
 
@@ -3342,7 +3374,7 @@ class norminvgauss_gen(rv_continuous):
 
     O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
     Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
-    pp. 1–13, 1997.
+    pp. 1-13, 1997.
 
     %(example)s
 
@@ -3379,7 +3411,7 @@ norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):
-    r"""An inverted Weibull continuous random variable.
+    u"""An inverted Weibull continuous random variable.
 
     This distribution is also known as the Fréchet distribution or the
     type II extreme value distribution.
@@ -3392,7 +3424,7 @@ class invweibull_gen(rv_continuous):
 
     .. math::
 
-        f(x, c) = c x^{-c-1} \exp(-x^{-c})
+        f(x, c) = c x^{-c-1} \\exp(-x^{-c})
 
     for :math:`x > 0`, :math:`c > 0`.
 
@@ -3994,7 +4026,8 @@ class levy_stable_gen(rv_continuous):
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
 
         # group data in unique arrays of alpha, beta pairs
-        uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
+        uniq_param_pairs = np.vstack(
+            list({tuple(row) for row in data_in[:,1:]}))
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
@@ -4002,8 +4035,10 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn('Cumulative density calculations experimental for FFT method.' +
-                              ' Use zolatarev method instead.', RuntimeWarning)
+                warnings.warn(u'FFT method is considered experimental for ' +
+                              u'cumulative distribution function ' +
+                              u'evaluations. Use Zolotarev’s method instead).',
+                              RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
 

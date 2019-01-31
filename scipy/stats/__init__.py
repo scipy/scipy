@@ -3,7 +3,7 @@
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
 
-.. module:: scipy.stats
+.. currentmodule:: scipy.stats
 
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
@@ -351,8 +351,8 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/

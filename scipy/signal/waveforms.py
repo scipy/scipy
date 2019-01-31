@@ -329,7 +329,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
             ``f(t) = f1 - (f1 - f0) * (t1 - t)**2 / t1**2``
 
         To use a more general quadratic function, or an arbitrary
-        polynomial, use the function `scipy.signal.waveforms.sweep_poly`.
+        polynomial, use the function `scipy.signal.sweep_poly`.
 
     logarithmic, log, lo:
 
@@ -608,8 +608,8 @@ def unit_impulse(shape, idx=None, dtype=float):
         all dimensions.  If an int, the impulse will be at `idx` in all
         dimensions.
     dtype : data-type, optional
-        The desired data-type for the array, e.g., `numpy.int8`.  Default is
-        `numpy.float64`.
+        The desired data-type for the array, e.g., ``numpy.int8``.  Default is
+        ``numpy.float64``.
 
     Returns
     -------

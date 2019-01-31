@@ -84,7 +84,7 @@ def process_pyx(fromfile, tofile, cwd):
     except ImportError:
         pass
 
-    flags = ['--fast-fail']
+    flags = ['--fast-fail', '-3']
     if tofile.endswith('.cxx'):
         flags += ['--cplus']
 

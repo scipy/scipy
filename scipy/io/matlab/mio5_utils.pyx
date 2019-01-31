@@ -611,9 +611,7 @@ cdef class VarReader5:
             raise ValueError('Too many dimensions (%d) for numpy arrays'
                              % header.n_dims)
         # convert dims to list
-        header.dims = []
-        for i in range(header.n_dims):
-            header.dims.append(header.dims_ptr[i])
+        header.dims = [header.dims_ptr[i] for i in range(header.n_dims)]
         header.name = self.read_int8_string()
         return header
 

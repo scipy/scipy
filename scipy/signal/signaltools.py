@@ -882,7 +882,7 @@ def medfilt(volume, kernel_size=None):
     Perform a median filter on an N-dimensional array.
 
     Apply a median filter to the input array using a local window-size
-    given by `kernel_size`.
+    given by `kernel_size`. The array will automatically be zero-padded.
 
     Parameters
     ----------
@@ -900,6 +900,14 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
+    See also
+    --------
+    scipy.ndimage.median_filter
+
+    Notes
+    -------
+    The more general function `scipy.ndimage.median_filter` has a more
+    efficient implementation of a median filter and therefore runs much faster.
     """
     volume = atleast_1d(volume)
     if kernel_size is None:
@@ -1159,7 +1167,8 @@ def medfilt2d(input, kernel_size=3):
     Median filter a 2-dimensional array.
 
     Apply a median filter to the `input` array using a local window-size
-    given by `kernel_size` (must be odd).
+    given by `kernel_size` (must be odd). The array is zero-padded
+    automatically.
 
     Parameters
     ----------
@@ -1178,6 +1187,14 @@ def medfilt2d(input, kernel_size=3):
         An array the same size as input containing the median filtered
         result.
 
+    See also
+    --------
+    scipy.ndimage.median_filter
+
+    Notes
+    -------
+    The more general function `scipy.ndimage.median_filter` has a more
+    efficient implementation of a median filter and therefore runs much faster.
     """
     image = asarray(input)
     if kernel_size is None:

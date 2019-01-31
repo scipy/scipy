@@ -295,10 +295,8 @@ cdef class _Qhull:
 
         if incremental:
             incremental_bad_ops = set([b'Qbb', b'Qbk', b'QBk', b'QbB', b'Qz'])
-            bad_opts = []
-            for bad_opt in incremental_bad_ops:
-                if bad_opt in options:
-                    bad_opts.append(bad_opt)
+            bad_opts = [bad_opt for bad_opt in incremental_bad_ops
+                        if bad_opt in options]
             if bad_opts:
                 raise ValueError("Qhull options %r are incompatible "
                                  "with incremental mode" % (bad_opts,))
@@ -1860,7 +1858,7 @@ class Delaunay(_QhullUser):
         """
         Affine transform from ``x`` to the barycentric coordinates ``c``.
 
-        :type: ndarray of double, shape (nsimplex, ndim+1, ndim)
+        :type: *ndarray of double, shape (nsimplex, ndim+1, ndim)*
 
         This is defined by::
 
@@ -1885,7 +1883,7 @@ class Delaunay(_QhullUser):
         """
         Lookup array, from a vertex, to some simplex which it is a part of.
 
-        :type: ndarray of int, shape (npoints,)
+        :type: *ndarray of int, shape (npoints,)*
         """
         cdef int isimplex, k, ivertex, nsimplex, ndim
         cdef np.ndarray[np.npy_int, ndim=2] simplices
@@ -1963,7 +1961,7 @@ class Delaunay(_QhullUser):
         """
         Vertices of facets forming the convex hull of the point set.
 
-        :type: ndarray of int, shape (nfaces, ndim)
+        :type: *ndarray of int, shape (nfaces, ndim)*
 
         The array contains the indices of the points
         belonging to the (N-1)-dimensional facets that form the convex

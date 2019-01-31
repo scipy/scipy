@@ -1097,9 +1097,7 @@ class SHGO(object):
         cbounds : list of lists
             List of size dim with length-2 list of bounds for each dimension
         """
-        cbounds = []
-        for x_b_i in self.bounds:
-            cbounds.append([x_b_i[0], x_b_i[1]])
+        cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
 
         return cbounds
 

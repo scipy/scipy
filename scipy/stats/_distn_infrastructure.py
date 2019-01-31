@@ -13,7 +13,7 @@ import re
 import types
 import warnings
 
-from scipy.misc import doccer
+from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
@@ -354,11 +354,6 @@ docdict_discrete['default'] = _doc_default_disc
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
 del obj
-try:
-    del s
-except NameError:
-    # in Python 3, loop variables are not visible after the loop
-    pass
 
 
 def _moment(data, n, mu=None):
@@ -730,7 +725,10 @@ class rv_generic(object):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+            try:
+                self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+            except TypeError as e:
+                raise Exception("Unable to construct docstring for distribution \"%s\": %s" % (self.name, repr(e)))
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
@@ -1074,10 +1072,7 @@ class rv_generic(object):
                 place(out0, cond, g2)
                 output.append(out0)
         else:  # no valid args
-            output = []
-            for _ in moments:
-                out0 = default.copy()
-                output.append(out0)
+            output = [default.copy() for _ in moments]
 
         if len(output) == 1:
             return output[0]
@@ -1187,7 +1182,7 @@ class rv_generic(object):
 
         See Also
         --------
-        stats.distributions.rv_discrete.ppf
+        rv_discrete.ppf
             Inverse of the CDF
 
         """
@@ -2357,13 +2352,13 @@ class rv_continuous(rv_generic):
             E[f(x)] = Integral(f(x) * dist.pdf(x)),
                     lb
 
-        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)`` 
-        distribution. If the bounds ``lb`` and ``ub`` correspond to the 
-        support of the distribution, e.g. ``[-inf, inf]`` in the default 
-        case, then the integral is the unrestricted expectation of ``f(x)``. 
-        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0`` 
-        outside a finite interval in which case the expectation is 
-        calculated within the finite range ``[lb, ub]``. 
+        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)``
+        distribution. If the bounds ``lb`` and ``ub`` correspond to the
+        support of the distribution, e.g. ``[-inf, inf]`` in the default
+        case, then the integral is the unrestricted expectation of ``f(x)``.
+        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0``
+        outside a finite interval in which case the expectation is
+        calculated within the finite range ``[lb, ub]``.
 
         Parameters
         ----------
@@ -2403,12 +2398,12 @@ class rv_continuous(rv_generic):
         Examples
         --------
 
-        To understand the effect of the bounds of integration consider 
+        To understand the effect of the bounds of integration consider
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
 
-        This is close to 
+        This is close to
 
         >>> expon(1).cdf(2.0) - expon(1).cdf(0.0)
         0.6321205588285577
@@ -2577,8 +2572,9 @@ class rv_discrete(rv_generic):
     moment_tol : float, optional
         The tolerance for the generic calculation of moments.
     values : tuple of two array_like, optional
-        ``(xk, pk)`` where ``xk`` are integers with non-zero
-        probabilities ``pk``  with ``sum(pk) = 1``.
+        ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
+        probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
+        and ``pk`` must have the same shape.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3360,8 +3356,10 @@ class rv_sample(rv_discrete):
 
         xk, pk = values
 
-        if len(xk) != len(pk):
-            raise ValueError("xk and pk need to have the same length.")
+        if np.shape(xk) != np.shape(pk):
+            raise ValueError("xk and pk must have the same shape.")
+        if np.less(pk, 0.0).any():
+            raise ValueError("All elements of pk must be non-negative.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
 

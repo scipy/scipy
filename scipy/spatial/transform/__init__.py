@@ -1,5 +1,4 @@
 """
-========================================================
 Spatial Transformations (:mod:`scipy.spatial.transform`)
 ========================================================
 
@@ -9,7 +8,7 @@ This package implements various spatial transformations. For now,
 only rotations are supported.
 
 Rotations in 3 dimensions
-=========================
+-------------------------
 .. autosummary::
    :toctree: generated/
 

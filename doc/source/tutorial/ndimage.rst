@@ -312,8 +312,8 @@ general function that takes a function argument to calculate the
 second derivative along a given direction.
 
 - The function :func:`generic_laplace` calculates a laplace filter
-  using the function passed through :func:`derivative2` to calculate
-  second derivatives. The function :func:`derivative2` should have the
+  using the function passed through ``derivative2`` to calculate
+  second derivatives. The function ``derivative2`` should have the
   following signature
 
   .. code:: python
@@ -327,7 +327,7 @@ second derivative along a given direction.
 
   The *extra_arguments* and *extra_keywords* arguments can be used
   to pass a tuple of extra arguments and a dictionary of named
-  arguments that are passed to :func:`derivative2` at each call.
+  arguments that are passed to ``derivative2`` at each call.
 
   For example
 
@@ -395,8 +395,8 @@ function that calculats the gradient magnitude of an array.
 
 - The function :func:`generic_gradient_magnitude` calculates a
   gradient magnitude using the function passed through
-  :func:`derivative` to calculate first derivatives. The function
-  :func:`derivative` should have the following signature
+  ``derivative`` to calculate first derivatives. The function
+  ``derivative`` should have the following signature
 
   .. code:: python
 
@@ -459,9 +459,9 @@ information).
   one-dimensional filter function, where the actual filtering
   operation must be supplied as a python function (or other callable
   object). The :func:`generic_filter1d` function iterates over the
-  lines of an array and calls :func:`function` at each line. The
-  arguments that are passed to :func:`function` are one-dimensional
-  arrays of the :class:`np.float64` type. The first contains the values
+  lines of an array and calls ``function`` at each line. The
+  arguments that are passed to ``function`` are one-dimensional
+  arrays of the ``numpy.float64`` type. The first contains the values
   of the current line.  It is extended at the beginning end the end,
   according to the *filter_size* and *origin* arguments. The second
   array should be modified in-place to provide the output values of
@@ -523,8 +523,8 @@ information).
   function, where the actual filtering operation must be supplied as a
   python function (or other callable object). The
   :func:`generic_filter` function iterates over the array and calls
-  :func:`function` at each element. The argument of :func:`function`
-  is a one-dimensional array of the :class:`np.float64` type, that
+  ``function`` at each element. The argument of ``function``
+  is a one-dimensional array of the ``numpy.float64`` type, that
   contains the values around the current element that are within the
   footprint of the filter. The function should return a single value
   that can be converted to a double precision number. For example
@@ -1160,7 +1160,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type (both
-  :class:`np.int32`). The basics of the algorithm used to implement this
+  ``numpy.int32``). The basics of the algorithm used to implement this
   function is described in [2]_.
 
 - The function :func:`distance_transform_edt` calculates the exact
@@ -1182,7 +1182,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
-  (:class:`np.float64` and :class:`np.int32`).The algorithm used to
+  (``numpy.float64`` and ``numpy.int32``).The algorithm used to
   implement this function is described in [3]_.
 
 - The function :func:`distance_transform_bf` uses a brute-force
@@ -1207,7 +1207,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
-  (:class:`np.float64` and :class:`np.int32`).
+  (``numpy.float64`` and ``numpy.int32``).
 
   .. note::
 
@@ -1413,7 +1413,7 @@ for the objects:
   .. note::
 
      The implementation of :func:`watershed_ift` limits the data types
-     of the input to :class:`np.uint8` and :class:`np.uint16`.
+     of the input to ``numpy.uint8`` and ``numpy.uint16``.
 
 .. _ndimage-object-measurements:
 
@@ -1597,7 +1597,7 @@ lists, if *index* is a sequence.
   ``None``, all elements of *input* are used in the calculation.
   Histograms are defined by their minimum (*min*), maximum (*max*) and
   the number of bins (*bins*). They are returned as one-dimensional
-  arrays of type :class:`np.int32`.
+  arrays of type ``numpy.int32``.
 
 .. _ndimage-ccallbacks:
 
@@ -1750,20 +1750,20 @@ The function ``py_transform`` wraps the callback function in a
   the callback function.
 
 - The second argument is the function signature which must match exactly
-  the one expected by :mod:`ndimage`.
+  the one expected by :mod:`~scipy.ndimage`.
 
 - Above, we used  `scipy.LowLevelCallable` to specify ``user_data``
   that we generated with `ctypes`.
 
   A different approach would be to supply the data in the capsule context,
-  that can be set by :cfunc:`PyCapsule_SetContext` and omit specifying
+  that can be set by `PyCapsule_SetContext` and omit specifying
   ``user_data`` in `scipy.LowLevelCallable`. However, in this approach we would
   need to deal with allocation/freeing of the data --- freeing the data
   after the capsule is destroyed can be done by specifying a non-NULL
-  callback function in the third argument of :cfunc:`PyCapsule_New`.
+  callback function in the third argument of `PyCapsule_New`.
 
-C callback functions for :mod:`ndimage` all follow this scheme. The
-next section lists the :mod:`ndimage` functions that accept a C
+C callback functions for :mod:`~scipy.ndimage` all follow this scheme. The
+next section lists the :mod:`~scipy.ndimage` functions that accept a C
 callback function and gives the prototype of the function.
 
 .. seealso::

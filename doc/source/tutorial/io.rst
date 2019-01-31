@@ -5,7 +5,7 @@ File IO (:mod:`scipy.io`)
 
 .. currentmodule:: scipy.io
 
-.. seealso:: :ref:`numpy-reference.routines.io` (in numpy)
+.. seealso:: `NumPy IO routines <https://www.numpy.org/devdocs/reference/routines.io.html>`__
 
 MATLAB files
 ------------
@@ -243,7 +243,7 @@ like this:
    >>> dt = [('f1', 'f8'), ('f2', 'S10')]
    >>> arr = np.zeros((2,), dtype=dt)
    >>> arr
-   array([(0.0, ''), (0.0, '')], 
+   array([(0.0, ''), (0.0, '')],
          dtype=[('f1', '<f8'), ('f2', 'S10')])
    >>> arr[0]['f1'] = 0.5
    >>> arr[0]['f2'] = 'python'
@@ -333,16 +333,16 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 Arff files (:mod:`scipy.io.arff`)
 ---------------------------------
 
-.. automodule:: scipy.io.arff
+.. module:: scipy.io.arff
 
 .. autosummary::
 
    loadarff
 
-Netcdf (:mod:`scipy.io.netcdf`)
--------------------------------
+Netcdf
+------
 
-.. module:: scipy.io.netcdf
+.. module:: scipy.io
 
 .. autosummary::
 

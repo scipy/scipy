@@ -20,7 +20,7 @@ we work toward a SciPy 1.0.0 release.  The 1.0.0 release will mark a
 major milestone in the development of SciPy, after which changing the
 package structure or API will be much more difficult.  Whilst these
 pre-1.0 releases are considered to have "Beta" status, we are
-committed to making them as bug-free as possible.  
+committed to making them as bug-free as possible.
 
 However, until the 1.0 release, we are aggressively reviewing and
 refining the functionality, organization, and interface. This is being
@@ -52,7 +52,7 @@ New features
 ============
 
 Delaunay tessellations (``scipy.spatial``)
------------------------------------------
+------------------------------------------
 
 Scipy now includes routines for computing Delaunay tessellations in N
 dimensions, powered by the Qhull_ computational geometry library. Such
@@ -181,7 +181,7 @@ are mirrored in ``scipy.stats.mstats``.
 
 Several methods of the sparse matrix classes in ``scipy.sparse`` which had
 been deprecated since version 0.7 were removed: `save`, `rowcol`, `getdata`,
-`listprint`, `ensure_sorted_indices`, `matvec`, `matmat` and `rmatvec`. 
+`listprint`, `ensure_sorted_indices`, `matvec`, `matmat` and `rmatvec`.
 
 The functions ``spkron``, ``speye``, ``spidentity``, ``lil_eye`` and
 ``lil_diags`` were removed from ``scipy.sparse``.  The first three functions

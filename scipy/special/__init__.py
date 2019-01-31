@@ -3,7 +3,7 @@
 Special functions (:mod:`scipy.special`)
 ========================================
 
-.. module:: scipy.special
+.. currentmodule:: scipy.special
 
 Nearly all of the functions below are universal functions and follow
 broadcasting and automatic array-looping rules. Exceptions are
@@ -199,7 +199,7 @@ Raw Statistical Functions
    bdtri        -- Inverse function to `bdtr` with respect to `p`.
    bdtrik       -- Inverse function to `bdtr` with respect to `k`.
    bdtrin       -- Inverse function to `bdtr` with respect to `n`.
-   btdtr        -- Cumulative density function of the beta distribution.
+   btdtr        -- Cumulative distribution function of the beta distribution.
    btdtri       -- The `p`-th quantile of the beta distribution.
    btdtria      -- Inverse of `btdtr` with respect to `a`.
    btdtrib      -- btdtria(a, p, x)
@@ -207,7 +207,7 @@ Raw Statistical Functions
    fdtrc        -- F survival function.
    fdtri        -- The `p`-th quantile of the F-distribution.
    fdtridfd     -- Inverse to `fdtr` vs dfd
-   gdtr         -- Gamma distribution cumulative density function.
+   gdtr         -- Gamma distribution cumulative distribution function.
    gdtrc        -- Gamma distribution survival function.
    gdtria       -- Inverse of `gdtr` vs a.
    gdtrib       -- Inverse of `gdtr` vs b.
@@ -232,7 +232,7 @@ Raw Statistical Functions
    pdtrc        -- Poisson survival function
    pdtri        -- Inverse to `pdtr` vs m
    pdtrik       -- Inverse to `pdtr` vs k
-   stdtr        -- Student t distribution cumulative density function
+   stdtr        -- Student t distribution cumulative distribution function
    stdtridf     -- Inverse of `stdtr` vs df
    stdtrit      -- Inverse of `stdtr` vs `t`
    chdtr        -- Chi square cumulative distribution function
@@ -405,12 +405,12 @@ orthogonal polynomials:
    roots_sh_jacobi   -- Gauss-Jacobi (shifted) quadrature.
 
 The functions below, in turn, return the polynomial coefficients in
-:class:`~.orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
-The :class:`~.orthopoly1d` class also has an attribute ``weights`` which returns
+``orthopoly1d`` objects, which function similarly as `numpy.poly1d`.
+The ``orthopoly1d`` class also has an attribute ``weights`` which returns
 the roots, weights, and total weights for the appropriate form of Gaussian
 quadrature.  These are returned in an ``n x 3`` array with roots in the first
 column, weights in the second column, and total weights in the final column.
-Note that :class:`~.orthopoly1d` objects are converted to ``poly1d`` when doing
+Note that ``orthopoly1d`` objects are converted to `~numpy.poly1d` when doing
 arithmetic, and lose information of the original orthogonal polynomial.
 
 .. autosummary::
@@ -575,7 +575,7 @@ Lambert W and Related Functions
 -------------------------------
 
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
    lambertw    -- Lambert W function.
    wrightomega -- Wright Omega function.
@@ -651,11 +651,86 @@ from .lambertw import lambertw
 from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
                                 spherical_kn)
 
-from numpy import deprecate
+
+##############################################################################
+# Create copies of NumPy's _Deprecate and deprecate so that the message
+# is inserted where it won't break docstring parsing
+
+class _Deprecate(object):
+    """
+    Decorator class to deprecate old functions.
+
+    Refer to `deprecate` for details.
+
+    See Also
+    --------
+    deprecate
+
+    """
+
+    def __init__(self, old_name=None, new_name=None, message=None):
+        self.old_name = old_name
+        self.new_name = new_name
+        self.message = message
+
+    def __call__(self, func, *args, **kwargs):
+        """
+        Decorator call.  Refer to ``decorate``.
+
+        """
+        old_name = self.old_name
+        new_name = self.new_name
+        message = self.message
+
+        if old_name is None:
+            try:
+                old_name = func.__name__
+            except AttributeError:
+                old_name = func.__name__
+        if new_name is None:
+            depdoc = "`%s` is deprecated!" % old_name
+        else:
+            depdoc = "`%s` is deprecated, use `%s` instead!" % \
+                     (old_name, new_name)
+
+        if message is not None:
+            depdoc += "\n" + message
+
+        def newfunc(*args,**kwds):
+            """`arrayrange` is deprecated, use `arange` instead!"""
+            warnings.warn(depdoc, DeprecationWarning, stacklevel=2)
+            return func(*args, **kwds)
+
+        newfunc.__name__ = old_name
+        doc = func.__doc__
+        # insert in the correct place
+        doc = doc.splitlines()
+        doc.insert(3, '\n')
+        doc.insert(4, depdoc)
+        doc.insert(5, '\n')
+        doc = '\n'.join(doc)
+        newfunc.__doc__ = doc
+        try:
+            d = func.__dict__
+        except AttributeError:
+            pass
+        else:
+            newfunc.__dict__.update(d)
+        return newfunc
+
+
+def deprecate(*args, **kwargs):
+    fn = args[0]
+    args = args[1:]
+    return _Deprecate(*args, **kwargs)(fn)
+
+
 hyp2f0 = deprecate(hyp2f0, message="hyp2f0 is deprecated in SciPy 1.2")
 hyp1f2 = deprecate(hyp1f2, message="hyp1f2 is deprecated in SciPy 1.2")
 hyp3f0 = deprecate(hyp3f0, message="hyp3f0 is deprecated in SciPy 1.2")
-del deprecate
+del deprecate, _Deprecate
+
+##############################################################################
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

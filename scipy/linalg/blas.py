@@ -222,8 +222,25 @@ empty_module = None
 from scipy.linalg._fblas import *
 del empty_module
 
-# 'd' will be default for 'i',..
-_type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z', 'G': 'z'}
+# all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
+
+# single precision float   : '?bBhH!!!!!!ef!!!!!!'
+# double precision float   : '?bBhHiIlLqQefdg!!!!'
+# single precision complex : '?bBhH!!!!!!ef!!F!!!'
+# double precision complex : '?bBhHiIlLqQefdgFDG!'
+
+_type_score = {x: 1 for x in '?bBhHef'}
+_type_score.update({x: 2 for x in 'iIlLqQd'})
+
+# Handle float128(g) and complex256(G) separately in case non-windows systems.
+# On windows, the values will be rewritten to the same key with the same value.
+_type_score.update({'F': 3, 'D': 4, 'g': 2, 'G': 4})
+
+# Final mapping to the actual prefixes and dtypes
+_type_conv = {1: ('s', _np.dtype('float32')),
+              2: ('d', _np.dtype('float64')),
+              3: ('c', _np.dtype('complex64')),
+              4: ('z', _np.dtype('complex128'))}
 
 # some convenience alias for complex functions
 _blas_alias = {'cnrm2': 'scnrm2', 'znrm2': 'dznrm2',
@@ -270,26 +287,30 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     """
     dtype = _np.dtype(dtype)
+    max_score = _type_score.get(dtype.char, 5)
     prefer_fortran = False
 
     if arrays:
-        # use the most generic type in arrays
-        dtypes = [ar.dtype for ar in arrays]
-        dtype = _np.find_common_type(dtypes, ())
-        try:
-            index = dtypes.index(dtype)
-        except ValueError:
-            index = 0
-        if arrays[index].flags['FORTRAN']:
-            # prefer Fortran for leading array with column major order
-            prefer_fortran = True
+        # In most cases, single element is passed through, quicker route
+        if len(arrays) == 1:
+            max_score = _type_score.get(arrays[0].dtype.char, 5)
+            prefer_fortran = arrays[0].flags['FORTRAN']
+        else:
+            # use the most generic type in arrays
+            scores = [_type_score.get(x.dtype.char, 5) for x in arrays]
+            max_score = max(scores)
+            ind_max_score = scores.index(max_score)
+            # safe upcasting for mix of float64 and complex64 --> prefix 'z'
+            if max_score == 3 and (2 in scores):
+                max_score = 4
 
-    prefix = _type_conv.get(dtype.char, 'd')
-    if dtype.char == 'G':
-        # complex256 -> complex128 (i.e., C long double -> C double)
-        dtype = _np.dtype('D')
-    elif dtype.char not in 'fdFD':
-        dtype = _np.dtype('d')
+            if arrays[ind_max_score].flags['FORTRAN']:
+                # prefer Fortran for leading array with column major order
+                prefer_fortran = True
+
+    # Get the LAPACK prefix and the corresponding dtype if not fall back
+    # to 'd' and double precision float.
+    prefix, dtype = _type_conv.get(max_score, ('d', _np.dtype('float64')))
 
     return prefix, dtype, prefer_fortran
 
@@ -318,7 +339,7 @@ def _get_funcs(names, arrays, dtype,
     if prefer_fortran:
         module1, module2 = module2, module1
 
-    for i, name in enumerate(names):
+    for name in names:
         func_name = prefix + name
         func_name = alias.get(func_name, func_name)
         func = getattr(module1[0], func_name, None)

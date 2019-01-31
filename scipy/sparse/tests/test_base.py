@@ -3027,15 +3027,16 @@ class _TestFancyMultidimAssign(object):
         D = np.asmatrix(np.random.rand(5, 7))
         S = self.spmatrix(D)
 
-        I = [[1, 2, 3], [3, 4, 2]]
-        J = [[5, 6, 3], [2, 3, 1]]
+        I = [1, 2, 3, 3, 4, 2]
+        J = [5, 6, 3, 2, 3, 1]
 
-        I_bad = [[ii + 5 for ii in i] for i in I]
-        J_bad = [[jj + 7 for jj in j] for j in J]
+        I_bad = [ii + 5 for ii in I]
+        J_bad = [jj + 7 for jj in J]
 
-        C = [1, 2, 3, 4, 5, 6, 7]
-        assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
-        assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
+        C1 = [1, 2, 3, 4, 5, 6, 7]
+        C2 = np.arange(5)[:, None]
+        assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C1)
+        assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C2)
 
 
 class _TestArithmetic(object):
@@ -4237,6 +4238,30 @@ class TestBSR(sparse_test_class(getset=False,
         asp.eliminate_zeros()
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.todense(),bsp.todense())
+
+    # github issue #9687
+    def test_eliminate_zeros_all_zero(self):
+        np.random.seed(0)
+        m = bsr_matrix(np.random.random((12, 12)), blocksize=(2, 3))
+
+        # eliminate some blocks, but not all
+        m.data[m.data <= 0.9] = 0
+        m.eliminate_zeros()
+        assert_equal(m.nnz, 66)
+        assert_array_equal(m.data.shape, (11, 2, 3))
+
+        # eliminate all remaining blocks
+        m.data[m.data <= 1.0] = 0
+        m.eliminate_zeros()
+        assert_equal(m.nnz, 0)
+        assert_array_equal(m.data.shape, (0, 2, 3))
+        assert_array_equal(m.todense(), np.zeros((12,12)))
+
+        # test fast path
+        m.eliminate_zeros()
+        assert_equal(m.nnz, 0)
+        assert_array_equal(m.data.shape, (0, 2, 3))
+        assert_array_equal(m.todense(), np.zeros((12,12)))
 
     def test_bsr_matvec(self):
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))

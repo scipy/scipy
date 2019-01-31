@@ -1211,11 +1211,6 @@ def value(key):
     value : float
         Value in `physical_constants` corresponding to `key`
 
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
-
     Examples
     --------
     >>> from scipy import constants
@@ -1241,11 +1236,6 @@ def unit(key):
     unit : Python string
         Unit in `physical_constants` corresponding to `key`
 
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
-
     Examples
     --------
     >>> from scipy import constants
@@ -1270,11 +1260,6 @@ def precision(key):
     -------
     prec : float
         Relative precision in `physical_constants` corresponding to `key`
-
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
 
     Examples
     --------
@@ -1304,11 +1289,6 @@ def find(sub=None, disp=False):
     keys : list or None
         If `disp` is False, the list of keys is returned.
         Otherwise, None is returned.
-
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
 
     Examples
     --------

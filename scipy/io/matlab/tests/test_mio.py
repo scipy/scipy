@@ -311,9 +311,8 @@ def _whos_check_case(name, files, case, classes):
 
         whos = whosmat(file_name)
 
-        expected_whos = []
-        for k, expected in case.items():
-            expected_whos.append((k, expected.shape, classes[k]))
+        expected_whos = [
+            (k, expected.shape, classes[k]) for k, expected in case.items()]
 
         whos.sort()
         expected_whos.sort()

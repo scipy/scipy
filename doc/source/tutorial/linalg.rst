@@ -3,7 +3,7 @@ Linear Algebra (`scipy.linalg`)
 
 .. sectionauthor:: Travis E. Oliphant
 
-.. currentmodule: scipy
+.. currentmodule:: scipy
 
 When SciPy is built using the optimized ATLAS LAPACK and BLAS
 libraries, it has very fast linear algebra capabilities. If you dig
@@ -18,8 +18,11 @@ also a two-dimensional array.
 scipy.linalg vs numpy.linalg
 ----------------------------
 
-``scipy.linalg`` contains all the functions in ``numpy.linalg``.
-plus some other more advanced ones not contained in ``numpy.linalg``
+.. TODO: replace numpy.linalg HTML link with `numpy.linalg` once NumPy updates doc
+
+:mod:`scipy.linalg` contains all the functions in
+`numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__.
+plus some other more advanced ones not contained in ``numpy.linalg``.
 
 Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
 it is always compiled with BLAS/LAPACK support, while for numpy this is
@@ -27,7 +30,7 @@ optional. Therefore, the scipy version might be faster depending on how
 numpy was installed.
 
 Therefore, unless you don't want to add ``scipy`` as a dependency to
-your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``
+your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
 
 
 numpy.matrix vs 2D numpy.ndarray
@@ -35,8 +38,8 @@ numpy.matrix vs 2D numpy.ndarray
 
 The classes that represent matrices, and basic operations such as
 matrix multiplications and transpose are a part of ``numpy``.
-For convenience, we summarize the differences between ``numpy.matrix``
-and ``numpy.ndarray`` here.
+For convenience, we summarize the differences between :class:`numpy.matrix`
+and :class:`numpy.ndarray` here.
 
 ``numpy.matrix`` is matrix class that has a more convenient interface
 than ``numpy.ndarray`` for matrix operations. This class supports for
@@ -123,8 +126,8 @@ then
 .. math::
 
     \mathbf{A^{-1}} = \frac{1}{25}
-        \left[\begin{array}{ccc} -37 & 9 & 22 \\ 
-                                  14 & 2 & -9 \\ 
+        \left[\begin{array}{ccc} -37 & 9 & 22 \\
+                                  14 & 2 & -9 \\
                                   4 & -3 & 1
               \end{array}\right] = %
          \left[\begin{array}{ccc} -1.48 & 0.36 & 0.88  \\

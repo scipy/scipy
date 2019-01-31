@@ -7,15 +7,19 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib.six import zip as izip
+from scipy._lib.six import zip as izip, xrange
 from scipy._lib._util import _prune_array
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
 from .dia import dia_matrix
 from . import _sparsetools
+from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
+                           csr_sample_values, csr_row_index, csr_row_slice,
+                           csr_column_index1, csr_column_index2)
+from ._index import IndexMixin
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
-                      getdtype, isscalarlike, IndexMixin, get_index_dtype,
+                      getdtype, isscalarlike, isintlike, get_index_dtype,
                       downcast_intp_index, get_sum_dtype, check_shape)
 
 
@@ -343,7 +347,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         result = np.array(other, dtype=dtype, order=order, copy=True)
         M, N = self._swap(self.shape)
         y = result if result.flags.c_contiguous else result.T
-        _sparsetools.csr_todense(M, N, self.indptr, self.indices, self.data, y)
+        csr_todense(M, N, self.indptr, self.indices, self.data, y)
         return np.matrix(result, copy=False)
 
     def _add_sparse(self, other):
@@ -633,49 +637,188 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Getting and Setting #
     #######################
 
-    def __setitem__(self, index, x):
-        # Process arrays from IndexMixin
-        i, j = self._unpack_index(index)
-        i, j = self._index_to_arrays(i, j)
+    def _get_intXint(self, row, col):
+        M, N = self._swap(self.shape)
+        major, minor = self._swap((row, col))
+        indptr, indices, data = get_csr_submatrix(
+            M, N, self.indptr, self.indices, self.data,
+            major, major + 1, minor, minor + 1)
+        return np.array(data.sum(), dtype=self.dtype)
 
-        if isspmatrix(x):
-            broadcast_row = x.shape[0] == 1 and i.shape[0] != 1
-            broadcast_col = x.shape[1] == 1 and i.shape[1] != 1
-            if not ((broadcast_row or x.shape[0] == i.shape[0]) and
-                    (broadcast_col or x.shape[1] == i.shape[1])):
-                raise ValueError("shape mismatch in assignment")
+    def _get_sliceXslice(self, row, col):
+        major, minor = self._swap((row, col))
+        if major.step in (1, None) and minor.step in (1, None):
+            return self._get_submatrix(major, minor, copy=True)
+        return self._major_slice(major)._minor_slice(minor)
 
-            # clear entries that will be overwritten
-            ci, cj = self._swap((i.ravel(), j.ravel()))
-            self._zero_many(ci, cj)
+    def _get_arrayXarray(self, row, col):
+        # inner indexing
+        idx_dtype = self.indices.dtype
+        M, N = self._swap(self.shape)
+        major, minor = self._swap((row, col))
+        major = np.asarray(major, dtype=idx_dtype)
+        minor = np.asarray(minor, dtype=idx_dtype)
 
-            x = x.tocoo(copy=True)
-            x.sum_duplicates()
-            r, c = x.row, x.col
-            x = np.asarray(x.data, dtype=self.dtype)
-            if broadcast_row:
-                r = np.repeat(np.arange(i.shape[0]), len(r))
-                c = np.tile(c, i.shape[0])
-                x = np.tile(x, i.shape[0])
-            if broadcast_col:
-                r = np.repeat(r, i.shape[1])
-                c = np.tile(np.arange(i.shape[1]), len(c))
-                x = np.repeat(x, i.shape[1])
-            # only assign entries in the new sparsity structure
-            i = i[r, c]
-            j = j[r, c]
+        val = np.empty(major.size, dtype=self.dtype)
+        csr_sample_values(M, N, self.indptr, self.indices, self.data,
+                          major.size, major.ravel(), minor.ravel(), val)
+        if major.ndim == 1:
+            return np.asmatrix(val)
+        return self.__class__(val.reshape(major.shape))
+
+    def _get_columnXarray(self, row, col):
+        # outer indexing
+        major, minor = self._swap((row, col))
+        return self._major_index_fancy(major)._minor_index_fancy(minor)
+
+    def _major_index_fancy(self, idx):
+        """Index along the major axis where idx is an array of ints.
+        """
+        idx_dtype = self.indices.dtype
+        indices = np.asarray(idx, dtype=idx_dtype).ravel()
+
+        _, N = self._swap(self.shape)
+        M = len(indices)
+        new_shape = self._swap((M, N))
+        if M == 0:
+            return self.__class__(new_shape)
+
+        row_nnz = np.diff(self.indptr)
+        idx_dtype = self.indices.dtype
+        res_indptr = np.zeros(M+1, dtype=idx_dtype)
+        np.cumsum(row_nnz[idx], out=res_indptr[1:])
+
+        nnz = res_indptr[-1]
+        res_indices = np.empty(nnz, dtype=idx_dtype)
+        res_data = np.empty(nnz, dtype=self.dtype)
+        csr_row_index(M, indices, self.indptr, self.indices, self.data,
+                      res_indices, res_data)
+
+        return self.__class__((res_data, res_indices, res_indptr),
+                              shape=new_shape, copy=False)
+
+    def _major_slice(self, idx, copy=False):
+        """Index along the major axis where idx is a slice object.
+        """
+        if idx == slice(None):
+            return self.copy() if copy else self
+
+        M, N = self._swap(self.shape)
+        start, stop, step = idx.indices(M)
+        M = len(xrange(start, stop, step))
+        new_shape = self._swap((M, N))
+        if M == 0:
+            return self.__class__(new_shape)
+
+        row_nnz = np.diff(self.indptr)
+        idx_dtype = self.indices.dtype
+        res_indptr = np.zeros(M+1, dtype=idx_dtype)
+        np.cumsum(row_nnz[idx], out=res_indptr[1:])
+
+        if step == 1:
+            all_idx = slice(self.indptr[start], self.indptr[stop])
+            res_indices = np.array(self.indices[all_idx], copy=copy)
+            res_data = np.array(self.data[all_idx], copy=copy)
         else:
-            # Make x and i into the same shape
-            x = np.asarray(x, dtype=self.dtype)
-            x, _ = np.broadcast_arrays(x, i)
+            nnz = res_indptr[-1]
+            res_indices = np.empty(nnz, dtype=idx_dtype)
+            res_data = np.empty(nnz, dtype=self.dtype)
+            csr_row_slice(start, stop, step, self.indptr, self.indices,
+                          self.data, res_indices, res_data)
 
-            if x.shape != i.shape:
-                raise ValueError("shape mismatch in assignment")
+        return self.__class__((res_data, res_indices, res_indptr),
+                              shape=new_shape, copy=False)
 
-        if np.size(x) == 0:
-            return
-        i, j = self._swap((i.ravel(), j.ravel()))
-        self._set_many(i, j, x.ravel())
+    def _minor_index_fancy(self, idx):
+        """Index along the minor axis where idx is an array of ints.
+        """
+        idx_dtype = self.indices.dtype
+        idx = np.asarray(idx, dtype=idx_dtype).ravel()
+
+        M, N = self._swap(self.shape)
+        k = len(idx)
+        new_shape = self._swap((M, k))
+        if k == 0:
+            return self.__class__(new_shape)
+
+        # pass 1: count idx entries and compute new indptr
+        col_offsets = np.zeros(N, dtype=idx_dtype)
+        res_indptr = np.empty_like(self.indptr)
+        csr_column_index1(k, idx, M, N, self.indptr, self.indices,
+                          col_offsets, res_indptr)
+
+        # pass 2: copy indices/data for selected idxs
+        col_order = np.argsort(idx).astype(idx_dtype, copy=False)
+        nnz = res_indptr[-1]
+        res_indices = np.empty(nnz, dtype=idx_dtype)
+        res_data = np.empty(nnz, dtype=self.dtype)
+        csr_column_index2(col_order, col_offsets, len(self.indices),
+                          self.indices, self.data, res_indices, res_data)
+        return self.__class__((res_data, res_indices, res_indptr),
+                              shape=new_shape, copy=False)
+
+    def _minor_slice(self, idx, copy=False):
+        """Index along the minor axis where idx is a slice object.
+        """
+        if idx == slice(None):
+            return self.copy() if copy else self
+
+        M, N = self._swap(self.shape)
+        start, stop, step = idx.indices(N)
+        N = len(xrange(start, stop, step))
+        if N == 0:
+            return self.__class__(self._swap((M, N)))
+        if step == 1:
+            return self._get_submatrix(minor=idx, copy=copy)
+        # TODO: don't fall back to fancy indexing here
+        return self._minor_index_fancy(np.arange(start, stop, step))
+
+    def _get_submatrix(self, major=None, minor=None, copy=False):
+        """Return a submatrix of this matrix.
+
+        major, minor: None, int, or slice with step 1
+        """
+        M, N = self._swap(self.shape)
+        i0, i1 = _process_slice(major, M)
+        j0, j1 = _process_slice(minor, N)
+        if i0 == 0 and j0 == 0 and i1 == M and j1 == N:
+            return self.copy() if copy else self
+
+        indptr, indices, data = get_csr_submatrix(
+            M, N, self.indptr, self.indices, self.data, i0, i1, j0, j1)
+
+        shape = self._swap((i1 - i0, j1 - j0))
+        return self.__class__((data, indices, indptr), shape=shape,
+                              dtype=self.dtype, copy=False)
+
+    def _set_intXint(self, row, col, x):
+        i, j = self._swap((row, col))
+        self._set_many(i, j, x)
+
+    def _set_arrayXarray(self, row, col, x):
+        i, j = self._swap((row, col))
+        self._set_many(i, j, x)
+
+    def _set_arrayXarray_sparse(self, row, col, x):
+        # clear entries that will be overwritten
+        self._zero_many(*self._swap((row, col)))
+
+        M, N = row.shape  # matches col.shape
+        broadcast_row = M != 1 and x.shape[0] == 1
+        broadcast_col = N != 1 and x.shape[1] == 1
+        r, c = x.row, x.col
+        x = np.asarray(x.data, dtype=self.dtype)
+        if broadcast_row:
+            r = np.repeat(np.arange(M), len(r))
+            c = np.tile(c, M)
+            x = np.tile(x, M)
+        if broadcast_col:
+            r = np.repeat(r, N)
+            c = np.tile(np.arange(N), len(c))
+            x = np.repeat(x, N)
+        # only assign entries in the new sparsity structure
+        i, j = self._swap((row[r, c], col[r, c]))
+        self._set_many(i, j, x)
 
     def _setdiag(self, values, k):
         if 0 in self.shape:
@@ -720,11 +863,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise IndexError('index (%d) out of range (< -%d)' %
                                  (idx, bound))
 
+        i = np.array(i, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
+        j = np.array(j, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
         check_bounds(i, M)
         check_bounds(j, N)
-
-        i = np.asarray(i, dtype=self.indices.dtype)
-        j = np.asarray(j, dtype=self.indices.dtype)
         return i, j, M, N
 
     def _set_many(self, i, j, x):
@@ -734,17 +876,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
+        x = np.array(x, dtype=self.dtype, copy=False, ndmin=1).ravel()
 
-        n_samples = len(x)
+        n_samples = x.size
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
-        ret = _sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
-                                              n_samples, i, j, offsets)
+        ret = csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                                 i, j, offsets)
         if ret == 1:
             # rinse and repeat
             self.sum_duplicates()
-            _sparsetools.csr_sample_offsets(M, N, self.indptr,
-                                            self.indices, n_samples, i, j,
-                                            offsets)
+            csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                               i, j, offsets)
 
         if -1 not in offsets:
             # only affects existing non-zero cells
@@ -775,14 +917,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         n_samples = len(i)
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
-        ret = _sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
-                                              n_samples, i, j, offsets)
+        ret = csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                                 i, j, offsets)
         if ret == 1:
             # rinse and repeat
             self.sum_duplicates()
-            _sparsetools.csr_sample_offsets(M, N, self.indptr,
-                                            self.indices, n_samples, i, j,
-                                            offsets)
+            csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                               i, j, offsets)
 
         # only assign zeros to the existing sparsity structure
         self.data[offsets[offsets > -1]] = 0
@@ -859,86 +1000,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.check_format(full_check=False)
 
-    def _get_single_element(self, row, col):
-        M, N = self.shape
-        if (row < 0):
-            row += M
-        if (col < 0):
-            col += N
-        if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds: 0<=%d<%d, 0<=%d<%d" %
-                             (row, M, col, N))
-
-        major_index, minor_index = self._swap((row, col))
-
-        start = self.indptr[major_index]
-        end = self.indptr[major_index + 1]
-
-        if self.has_sorted_indices:
-            # Copies may be made, if dtypes of indices are not identical
-            minor_index = self.indices.dtype.type(minor_index)
-            minor_indices = self.indices[start:end]
-            insert_pos_left = np.searchsorted(
-                minor_indices, minor_index, side='left')
-            insert_pos_right = insert_pos_left + np.searchsorted(
-                minor_indices[insert_pos_left:], minor_index, side='right')
-            return self.data[start + insert_pos_left:
-                             start + insert_pos_right].sum(dtype=self.dtype)
-        else:
-            return np.compress(minor_index == self.indices[start:end],
-                               self.data[start:end]).sum(dtype=self.dtype)
-
-    def _get_submatrix(self, slice0, slice1):
-        """Return a submatrix of this matrix (new matrix is created)."""
-
-        slice0, slice1 = self._swap((slice0, slice1))
-        shape0, shape1 = self._swap(self.shape)
-
-        def _process_slice(sl, num):
-            if isinstance(sl, slice):
-                i0, i1 = sl.start, sl.stop
-                if i0 is None:
-                    i0 = 0
-                elif i0 < 0:
-                    i0 = num + i0
-
-                if i1 is None:
-                    i1 = num
-                elif i1 < 0:
-                    i1 = num + i1
-
-                return i0, i1
-
-            elif np.isscalar(sl):
-                if sl < 0:
-                    sl += num
-
-                return sl, sl + 1
-
-            else:
-                return sl[0], sl[1]
-
-        def _in_bounds(i0, i1, num):
-            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
-                raise IndexError("index out of bounds:"
-                                 " 0<={i0}<{num}, 0<={i1}<{num}, {i0}<{i1}"
-                                 "".format(i0=i0, num=num, i1=i1))
-
-        i0, i1 = _process_slice(slice0, shape0)
-        j0, j1 = _process_slice(slice1, shape1)
-        _in_bounds(i0, i1, shape0)
-        _in_bounds(j0, j1, shape1)
-
-        aux = _sparsetools.get_csr_submatrix(shape0, shape1,
-                                             self.indptr, self.indices,
-                                             self.data,
-                                             i0, i1, j0, j1)
-
-        data, indices, indptr = aux[2], aux[1], aux[0]
-        shape = self._swap((i1 - i0, j1 - j0))
-
-        return self.__class__((data, indices, indptr), shape=shape)
-
     ######################
     # Conversion methods #
     ######################
@@ -970,7 +1031,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             x = self.tocsc()
             y = out.T
         M, N = x._swap(x.shape)
-        _sparsetools.csr_todense(M, N, x.indptr, x.indices, x.data, y)
+        csr_todense(M, N, x.indptr, x.indices, x.data, y)
         return out
 
     toarray.__doc__ = spmatrix.toarray.__doc__
@@ -1204,3 +1265,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             out = r
 
         return out
+
+
+def _process_slice(sl, num):
+    if sl is None:
+        i0, i1 = 0, num
+    elif isinstance(sl, slice):
+        i0, i1, stride = sl.indices(num)
+        if stride != 1:
+            raise ValueError('slicing with step != 1 not supported')
+    elif isintlike(sl):
+        if sl < 0:
+            sl += num
+        i0, i1 = sl, sl + 1
+        if i0 < 0 or i1 > num:
+            raise IndexError('index out of bounds: 0 <= %d < %d <= %d' %
+                             (i0, i1, num))
+    else:
+        raise TypeError('expected slice or scalar')
+
+    return i0, i1

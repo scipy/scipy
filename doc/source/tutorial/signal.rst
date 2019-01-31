@@ -107,7 +107,7 @@ standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 A function to compute this Gaussian for arbitrary :math:`x` and :math:`o` is
 also available ( :func:`gauss_spline` ). The following code and Figure uses
 spline-filtering to compute an edge-image (the second-derivative of a smoothed
-spline) of a raccoon's face which is an array returned by the command :func:`misc.face`.
+spline) of a raccoon's face which is an array returned by the command :func:`scipy.misc.face`.
 The command :func:`sepfir2d` was used to apply a separable two-dimensional FIR
 filter with mirror- symmetric boundary conditions to the spline coefficients.
 This function is ideally suited for reconstructing samples from spline
@@ -213,7 +213,7 @@ Thus, the full discrete convolution of two finite sequences of lengths
 One dimensional convolution is implemented in SciPy with the function
 :func:`convolve`. This function takes as inputs the signals :math:`x,`
 :math:`h` , and two optional flags 'mode' and 'method' and returns the signal
-:math:`y.` 
+:math:`y.`
 
 The first optional flag 'mode' allows for specification of which part of the
 output signal to return. The default value of 'full' returns the entire signal.
@@ -345,7 +345,7 @@ If the filter function :math:`w[n,m]` can be factored according to
   h[n, m] = h_1[n] h_2[m],
 
 convolution can be calculated by means of the function :func:`sepfir2d`. As an
-example we consider a Gaussian filter :func:`gaussian`
+example we consider a Gaussian filter :func:`~scipy.signal.windows.gaussian`
 
 .. math::
 
@@ -975,7 +975,7 @@ the spectrogram.
 Lomb-Scargle Periodograms (:func:`lombscargle`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Least-squares spectral analysis (LSSA) is a method of estimating a frequency
+Least-squares spectral analysis (LSSA) [1]_ [2]_ is a method of estimating a frequency
 spectrum, based on a least squares fit of sinusoids to data samples, similar
 to Fourier analysis. Fourier analysis, the most used spectral method in
 science, generally boosts long-periodic noise in long gapped records; LSSA

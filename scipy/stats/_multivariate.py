@@ -7,7 +7,7 @@ import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
 import scipy.linalg
-from scipy.misc import doccer
+from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot

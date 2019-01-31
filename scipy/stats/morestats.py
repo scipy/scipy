@@ -886,7 +886,7 @@ def boxcox_llf(lmb, data):
     ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
     ...     ax_inset.set_xticklabels([])
     ...     ax_inset.set_yticklabels([])
-    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+    ...     ax_inset.set_title(r'$\lambda=%1.2f$' % lmbda)
 
     >>> plt.show()
 
@@ -1442,7 +1442,7 @@ def yeojohnson_llf(lmb, data):
     ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
     ...     ax_inset.set_xticklabels([])
     ...     ax_inset.set_yticklabels([])
-    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+    ...     ax_inset.set_title(r'$\lambda=%1.2f$' % lmbda)
 
     >>> plt.show()
 
@@ -2446,9 +2446,7 @@ def _apply_func(x, g, func):
     #  separating x into different groups
     #  func should be applied over the groups
     g = unique(r_[0, g, len(x)])
-    output = []
-    for k in range(len(g) - 1):
-        output.append(func(x[g[k]:g[k+1]]))
+    output = [func(x[g[k]:g[k+1]]) for k in range(len(g) - 1)]
 
     return asarray(output)
 

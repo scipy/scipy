@@ -37,7 +37,7 @@ import warnings
 from . import _ni_support
 from . import _nd_image
 from ._ni_docstrings import docdict
-from scipy.misc import doccer
+from scipy._lib import doccer
 
 # Change the default 'reflect' to 'constant' via modifying a copy of docdict
 docdict_copy = docdict.copy()
@@ -70,7 +70,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         axis.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
-        array. Default is `numpy.float64`.
+        array. Default is ``numpy.float64``.
     %(mode)s
 
     Returns
