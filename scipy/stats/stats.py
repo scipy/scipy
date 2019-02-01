@@ -5453,10 +5453,11 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     weights, which can make Stouffer's method more powerful than Fisher's
     method when the p-values are from studies of different size [3]_ [4]_.
     The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
-    method uses :math:`log(p_i)` [6]_. Fisher's and Pearson's methods each
-    multiply the sum of the logged p-values quantity by `-2`. The
+    method uses :math:`log(p_i)` [6]_. For Fisher's and Pearson's method, the
+    sum of the logarithms is multiplied by -2 in the implementation. This
+    quantity has a chisquare distribution that determines the p-value. The
     `mudholkar_george` method is the difference of the Fisher's and Pearson's
-    test statistics [7]_.
+    test statistics, each of which include the -2 factor [7]_.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
