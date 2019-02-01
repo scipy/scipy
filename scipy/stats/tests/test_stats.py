@@ -9,7 +9,6 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import sys
 import warnings
 from collections import namedtuple
 
@@ -21,14 +20,13 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy.ma.testutils as mat
-from numpy import array, arange, float32, float64, power
+from numpy import array, arange, float32, power
 import numpy as np
 
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
-from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
 from scipy.integrate import quad
