@@ -1487,6 +1487,8 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
     assert_raises(TypeError, lfilter, [1.0], [None], [1.0, 2.0, 3.0])
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
+    with assert_raises(ValueError, match='common type'):
+        lfilter([1.], [1., 1.], ['a', 'b', 'c'])
 
 
 def test_lfilter_notimplemented_input():
