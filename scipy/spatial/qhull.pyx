@@ -1718,8 +1718,6 @@ class Delaunay(_QhullUser):
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
-    furthest_site
-        True if this was a furthest site triangulation and False if not.
 
     Raises
     ------
@@ -1834,8 +1832,6 @@ class Delaunay(_QhullUser):
         qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt",
                        furthest_site=furthest_site, incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
-
-        self.furthest_site = furthest_site
 
     def _update(self, qhull):
         qhull.triangulate()
@@ -2448,8 +2444,6 @@ class Voronoi(_QhullUser):
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
-    furthest_site
-        True if this was a furthest site triangulation and False if not.
 
     Raises
     ------
@@ -2533,8 +2527,6 @@ class Voronoi(_QhullUser):
         qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site,
                        incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
-
-        self.furthest_site = furthest_site
 
     def _update(self, qhull):
         self.vertices, self.ridge_points, self.ridge_vertices, \
