@@ -19,7 +19,7 @@ cdef double scipy_zeros_functions_func(double x, void *params):
 # cythonized way to call scalar {{ROOT_FINDER}}
 cdef double {{ROOT_FINDER}}(
         callback_type f, double xa, double xb, void *args, double xtol,
-        double rtol, int iter, zeros_parameters *full_output):
+        double rtol, int iter, zeros_parameters *full_output) nogil:
     cdef zeros_parameters myparams
     # create params struct
     myparams.args = args
