@@ -2100,6 +2100,16 @@ def impulse(system, X0=None, T=None, N=None):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    Examples
+    --------
+    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+
+    >>> from scipy import signal
+    >>> system = ([1.0], [1.0, 2.0, 1.0])
+    >>> t, y = signal.impulse2(system)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, y)
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
