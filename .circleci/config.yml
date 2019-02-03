@@ -30,7 +30,7 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
 
       - run:
           name: build docs
@@ -95,32 +95,48 @@ jobs:
   # Run test suite on pypy3
   pypy3:
     docker:
-      - image: pypy:3-6.0.0
+      # Comment out official image for now, set up the nightly
+      # until they release a bugfix
+      # https://github.com/numpy/numpy/issues/12740
 
+      # image: pypy:3-6.0.0
+      - image: circleci/python:3.7.0
     steps:
       - restore_cache:
           keys:
-            - pypy3-ccache-{{ .Branch }}
-            - pypy3-ccache
+            - pypy3-nightly-ccache-{{ .Branch }}
+            - pypy3-nightly-ccache
       - checkout
       - run:
-          name: setup
+          name: install libs and set global env vars
           command: |
-            apt-get -yq update
-            apt-get -yq install libatlas-dev libatlas-base-dev liblapack-dev gfortran ccache
+            sudo apt-get -yq update
+            sudo apt-get -yq install libatlas-dev libatlas-base-dev liblapack-dev gfortran ccache
             ccache -M 512M
-            export CCACHE_COMPRESS=1
+            echo "export CCACHE_COMPRESS=1" >> $BASH_ENV
+            echo "export PATH=/usr/lib/ccache:$PATH" >> $BASH_ENV
+      - run:
+          name: install nightly
+          command: |
+            wget http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb
+            sudo dpkg --install libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb
+            wget http://buildbot.pypy.org/nightly/py3.6/pypy-c-jit-latest-linux64.tar.bz2 -O pypy.tar.bz2
+            mkdir -p pypy3.6-latest
+            (cd pypy3.6-latest; tar --strip-components=1 -xf ../pypy.tar.bz2)
+            export PATH=${PWD}/pypy3.6-latest/bin:$PATH
+            echo "export PATH=${PWD}/pypy3.6/latest/bin:$PATH" >> $BASH_ENV
+            pypy3 -mensurepip
+      - run:
+          name: setup pypy3
+          command: |
             export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
-            export PATH=/usr/lib/ccache:$PATH
             pypy3 -mpip install --upgrade pip setuptools wheel
             pypy3 -mpip install Cython>=0.28.5
             pypy3 -mpip install numpy>=1.15.0
             pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist Tempita mpmath
       - run:
-          name: build
+          name: build SciPy
           command: |
-            export CCACHE_COMPRESS=1
-            export PATH=/usr/lib/ccache:$PATH
             # Limit parallelism for Cythonization to 4 processes, to
             # avoid exceeding CircleCI memory limits
             export SCIPY_NUM_CYTHONIZE_JOBS=4
@@ -128,7 +144,7 @@ jobs:
             # Less aggressive optimization flags for faster compilation
             OPT="-O1" FOPT="-O1" pypy3 setup.py build
       - save_cache:
-          key: pypy3-ccache-{{ .Branch }}-{{ .BuildNum }}
+          key: pypy3-nightly-ccache-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
             - ~/.cache/pip

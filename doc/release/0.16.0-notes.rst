@@ -58,7 +58,7 @@ the square root of the i-th updated eigenvalue of a positive symmetric rank-one
 modification to a positive diagonal matrix. See its LAPACK documentation and
 unit tests for it to get more info.
 
-Added two extra wrappers for LAPACK least-square solvers. Namely, they are 
+Added two extra wrappers for LAPACK least-square solvers. Namely, they are
 ``*gelsd`` and ``*gelsy``.
 
 Wrappers for the LAPACK ``*lange`` functions, which calculate various matrix
@@ -94,8 +94,8 @@ New classes ``TransferFunction``, ``StateSpace`` and ``ZerosPolesGain`` were
 added.  These classes are now returned when instantiating `scipy.signal.lti`.
 Conversion between those classes can be done explicitly now.
 
-An exponential (Poisson) window was added as `scipy.signal.exponential`, and a
-Tukey window was added as `scipy.signal.tukey`.
+An exponential (Poisson) window was added as ``scipy.signal.exponential``, and a
+Tukey window was added as ``scipy.signal.tukey``.
 
 The function for computing digital filter group delay was added as
 `scipy.signal.group_delay`.
@@ -168,7 +168,7 @@ with ``statsmodels.distributions.ExpandedNormal``.
 deprecated.  These functions did not belong in ``scipy.stats`` and are rarely
 used.  See issue #609 for details.
 
-``scipy.stats.histogram2`` is deprecated. This function is unnecessary, 
+``scipy.stats.histogram2`` is deprecated. This function is unnecessary,
 ``numpy.histogram2d`` can be used instead.
 
 Backwards incompatible changes

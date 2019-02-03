@@ -1,7 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
+import functools
 import numpy as np
 import math
+import sys
+import types
 import warnings
 
 # trapz is a public function for scipy.integrate,
@@ -13,6 +16,21 @@ from scipy._lib.six import xrange
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
            'cumtrapz', 'newton_cotes']
+
+
+# Make See Also linking for our local copy work properly
+def _copy_func(f):
+    """Based on http://stackoverflow.com/a/6528148/190597 (Glenn Maynard)"""
+    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
+                           argdefs=f.__defaults__, closure=f.__closure__)
+    g = functools.update_wrapper(g, f)
+    g.__kwdefaults__ = f.__kwdefaults__
+    return g
+
+
+trapz = _copy_func(trapz)
+if sys.flags.optimize <= 1:
+    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
 
 
 class AccuracyWarning(Warning):
@@ -788,7 +806,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     return result
 
 
-# Coefficients for Netwon-Cotes quadrature
+# Coefficients for Newton-Cotes quadrature
 #
 # These are the points being used
 #  to construct the local interpolating polynomial

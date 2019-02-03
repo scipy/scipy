@@ -190,7 +190,6 @@ misc
 ``scipy.misc`` will be removed as a public module.  Most functions in it have
 been moved to another submodule or deprecated.  The few that are left:
 
-  - ``doccer`` : move to ``scipy._lib`` (making it private)
   - ``info``, ``who`` : these are NumPy functions
   - ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
     with more extensive functionality for numerical differentiation.
@@ -390,4 +389,4 @@ are:
   `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
   Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
 - There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
-  PR in `gh-4933 https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
+  PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ could be picked up.

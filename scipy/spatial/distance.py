@@ -1,5 +1,4 @@
 """
-=====================================================
 Distance computations (:mod:`scipy.spatial.distance`)
 =====================================================
 
@@ -361,8 +360,8 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `np.random.RandomState` seed. Default is 0, a random shuffling of
-        u and v that guarantees reproducibility.
+        Local `numpy.random.RandomState` seed. Default is 0, a random
+        shuffling of u and v that guarantees reproducibility.
 
     Returns
     -------
@@ -374,6 +373,12 @@ def directed_hausdorff(u, v, seed=0):
 
     index_2 : int
         index of point contributing to Hausdorff pair in `v`
+
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `u` and `v` do not have
+        the same number of columns.
 
     Notes
     -----
@@ -435,6 +440,9 @@ def directed_hausdorff(u, v, seed=0):
     """
     u = np.asarray(u, dtype=np.float64, order='c')
     v = np.asarray(v, dtype=np.float64, order='c')
+    if u.shape[1] != v.shape[1]:
+        raise ValueError('u and v need to have the same '
+                         'number of columns')
     result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
 

@@ -21,9 +21,9 @@ interest:
 
 - :ref:`backporting`
 - :ref:`labels-and-milestones`
-- :doc:`versioning`
+- :ref:`version-numbering`
 - :ref:`supported-py-numpy-versions`
-- :doc:`deprecations`
+- :ref:`deprecations`
 
 
 Proposing a release schedule

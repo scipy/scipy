@@ -929,16 +929,17 @@ class BivariateSpline(_BivariateSplineBase):
 
     See Also
     --------
-    UnivariateSpline : a similar class for univariate spline interpolation
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
     SmoothBivariateSpline :
         to create a BivariateSpline through the given points
     LSQBivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
-    SphereBivariateSpline :
-        bivariate spline interpolation in spherical cooridinates
+    RectSphereBivariateSpline
+    SmoothSphereBivariateSpline :
+    LSQSphereBivariateSpline
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
-
     """
 
     @classmethod
@@ -1483,7 +1484,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if ier < -2:
             deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
-            warnings.warn(message, stacklevel=3)
+            warnings.warn(message, stacklevel=2)
         elif ier not in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)

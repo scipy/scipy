@@ -49,6 +49,8 @@ the roadmap:
    roadmap
    roadmap-detailed
 
+.. module:: scipy
+
 API Reference
 -------------
 

@@ -333,16 +333,16 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 Arff files (:mod:`scipy.io.arff`)
 ---------------------------------
 
-.. automodule:: scipy.io.arff
+.. module:: scipy.io.arff
 
 .. autosummary::
 
    loadarff
 
-Netcdf (:mod:`scipy.io.netcdf`)
--------------------------------
+Netcdf
+------
 
-.. module:: scipy.io.netcdf
+.. module:: scipy.io
 
 .. autosummary::
 

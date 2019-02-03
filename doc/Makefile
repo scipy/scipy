@@ -33,6 +33,7 @@ help:
 	@echo "  clean     to clean all build files/directories"
 	@echo "  dist PYVER=... to make a distribution-ready tree"
 	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
+	@echo "  show      to show the html-scipyorg output"
 
 clean:
 	-rm -rf build/* source/generated
@@ -106,7 +107,7 @@ html:
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
@@ -157,3 +158,7 @@ linkcheck:
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/linkcheck/output.txt."
+
+show:
+	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
+

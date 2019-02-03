@@ -35,7 +35,7 @@ class _Interpolator1D(object):
         Additional trailing shape of the input arrays, excluding
         the interpolation axis.
     dtype
-        Dtype of the y-data arrays. Can be set via set_dtype, which
+        Dtype of the y-data arrays. Can be set via _set_dtype, which
         forces it to be float or complex.
 
     Methods

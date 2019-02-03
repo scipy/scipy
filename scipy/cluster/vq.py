@@ -1,5 +1,4 @@
 """
-====================================================================
 K-means clustering and vector quantization (:mod:`scipy.cluster.vq`)
 ====================================================================
 
@@ -17,7 +16,7 @@ centroids in a code book.
            -- for initializing centroids
 
 Background information
-======================
+----------------------
 The k-means algorithm takes as input the number of clusters to
 generate, k, and a set of observation vectors to cluster.  It
 returns a set of centroids, one for each of the k clusters.  An

@@ -886,7 +886,7 @@ def boxcox_llf(lmb, data):
     ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
     ...     ax_inset.set_xticklabels([])
     ...     ax_inset.set_yticklabels([])
-    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+    ...     ax_inset.set_title(r'$\lambda=%1.2f$' % lmbda)
 
     >>> plt.show()
 
@@ -1442,7 +1442,7 @@ def yeojohnson_llf(lmb, data):
     ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
     ...     ax_inset.set_xticklabels([])
     ...     ax_inset.set_yticklabels([])
-    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+    ...     ax_inset.set_title(r'$\lambda=%1.2f$' % lmbda)
 
     >>> plt.show()
 

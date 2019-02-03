@@ -97,8 +97,8 @@ value for the exponential integral:
 
 is desired (and the fact that this integral can be computed as
 ``special.expn(n,x)`` is forgotten). The functionality of the function
-:obj:`special.expn` can be replicated by defining a new function
-:obj:`vec_expint` based on the routine :obj:`quad`:
+:obj:`special.expn <scipy.special.expn>` can be replicated by defining a new function
+``vec_expint`` based on the routine :obj:`quad`:
 
     >>> from scipy.integrate import quad
     >>> def integrand(t, n, x):
@@ -240,7 +240,7 @@ performs fixed-order Gaussian quadrature. The second function is
 :obj:`quadrature` which performs Gaussian quadrature of multiple
 orders until the difference in the integral estimate is beneath some
 tolerance supplied by the user. These functions both use the module
-:mod:`special.orthogonal` which can calculate the roots and quadrature
+``scipy.special.orthogonal`` which can calculate the roots and quadrature
 weights of a large variety of orthogonal polynomials (the polynomials
 themselves are available as special functions returning instances of
 the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
@@ -264,8 +264,8 @@ trapezoid rule at step-sizes related by a power of two and then
 performs Richardson extrapolation on these estimates to approximate
 the integral with a higher-degree of accuracy.
 
-In case of arbitrary spaced samples, the two functions trapz (defined in numpy
-[NPT]_) and :obj:`simps` are available. They are using Newton-Coates formulas
+In case of arbitrary spaced samples, the two functions :func:`~numpy.trapz`
+and :obj:`simps` are available. They are using Newton-Coates formulas
 of order 1 and 2 respectively to perform integration. The trapezoidal rule
 approximates the function as a straight line between adjacent points, while
 Simpson's rule approximates the function between three adjacent points as a
@@ -351,7 +351,7 @@ etc. used.  On linux this looks like::
 
     $ gcc -shared -fPIC -o testlib.so testlib.c
 
-The output library will be referred to as ``testlib.so``, but it may have a 
+The output library will be referred to as ``testlib.so``, but it may have a
 different file extension. A library has now been created that can be loaded
 into Python with `ctypes`.
 
@@ -381,7 +381,7 @@ coordinates are passed in as an array of doubles rather than a separate argument
 >>> integrate.nquad(func, [[0, 10], [-10, 0], [-1, 1]])
 (1200.0, 1.1102230246251565e-11)
 
-The Python tuple is returned as expected in a reduced amount of time.  All 
+The Python tuple is returned as expected in a reduced amount of time.  All
 optional parameters can be used with this method including specifying
 singularities, infinite bounds, etc.
 
@@ -738,7 +738,5 @@ References
 ~~~~~~~~~~
 
 .. [WPR] https://en.wikipedia.org/wiki/Romberg's_method
-
-.. [NPT] https://docs.scipy.org/doc/numpy/reference/generated/numpy.trapz.html
 
 .. [MOL] https://en.wikipedia.org/wiki/Method_of_lines

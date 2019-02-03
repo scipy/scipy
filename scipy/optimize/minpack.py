@@ -129,7 +129,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-    functions. See the 'hybr' `method` in particular.
+           functions. See the ``method=='hybr'`` in particular.
 
     Notes
     -----

@@ -5,6 +5,7 @@ from numpy.testing import (assert_almost_equal,
                            assert_array_equal,
                            assert_equal,
                            assert_)
+import pytest
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
@@ -113,3 +114,12 @@ class TestHausdorff(object):
             rs2 = check_random_state(None)
             new_global_state = rs2.get_state()
             assert_equal(new_global_state, old_global_state)
+
+    def test_invalid_dimensions(self):
+        # Ensure that a ValueError is raised when the number of columns
+        # is not the same
+        np.random.seed(1234)
+        A = np.random.rand(3, 2)
+        B = np.random.rand(4, 5)
+        with pytest.raises(ValueError):
+            directed_hausdorff(A, B)
