@@ -737,8 +737,7 @@ class TestConvexHull:
              [-0.5,  4. ],
              [ 1.5,  0. ],
              [ 1.5,  6. ]], dtype=np.float64)
-
-         qhull.ConvexHull(arr)
+        qhull.ConvexHull(arr)
 
 
 class TestVoronoi:
