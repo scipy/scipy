@@ -2261,6 +2261,18 @@ def step(system, X0=None, T=None, N=None):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> lti = signal.lti([1.0], [1.0, 1.0])
+    >>> t, y = signal.step(lti)
+    >>> plt.plot(t, y)
+    >>> plt.xlabel('Time [s]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Step response for 1. Order Lowpass')
+    >>> plt.grid()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2329,6 +2341,19 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     .. versionadded:: 0.8.0
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> lti = signal.lti([1.0], [1.0, 1.0])
+    >>> t, y = signal.step2(lti)
+    >>> plt.plot(t, y)
+    >>> plt.xlabel('Time [s]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Step response for 1. Order Lowpass')
+    >>> plt.grid()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
