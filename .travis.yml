@@ -189,11 +189,6 @@ before_install:
   - cd ..
   - set -o pipefail
 script:
-  - python -m pip install scipy
-  - cd segfault
-  - python run_segfaulter.py
-  - cd ..
-  - python -m pip uninstall scipy -y
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
@@ -229,6 +224,14 @@ script:
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
   # Check dynamic symbol hiding works on Linux
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./tools/check_pyext_symbol_hiding.sh build; fi
+  - cd segfault
+  - python run_segfaulter.py
+  - python -m pip uninstall scipy -y
+  # install from pip
+  - python -m pip install scipy
+  - python run_segfaulter.py
+  - python -m pip uninstall scipy -y
+  - cd ..
 after_script:
   - ccache -s
   # Upload coverage information
