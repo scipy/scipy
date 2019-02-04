@@ -67,6 +67,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
+        - USE_WHEEL=1
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.6
     - os: osx
@@ -74,6 +75,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
+        - USE_WHEEL=1
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
 addons:
