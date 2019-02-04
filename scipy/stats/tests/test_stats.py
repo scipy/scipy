@@ -2769,8 +2769,6 @@ def test_friedmanchisquare():
 
 
 def test_kstest():
-    # from numpy.testing import assert_almost_equal
-
     # comparing with values from R
     x = np.linspace(-1,1,9)
     D,p = stats.kstest(x,'norm')
@@ -2804,37 +2802,106 @@ def test_kstest():
     # missing: no test that uses *args
 
 
-def test_ks_2samp():
-    # exact small sample solution
-    data1 = np.array([1.0,2.0])
-    data2 = np.array([1.0,2.0,3.0])
-    assert_almost_equal(np.array(stats.ks_2samp(data1+0.01,data2)),
-                np.array((0.33333333333333337, 0.99062316386915694)))
-    assert_almost_equal(np.array(stats.ks_2samp(data1-0.01,data2)),
-                np.array((0.66666666666666674, 0.42490954988801982)))
-    # these can also be verified graphically
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,100)+2+0.1)),
-        np.array((0.030000000000000027, 0.99999999996005062)))
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,100)+2-0.1)),
-        np.array((0.020000000000000018, 0.99999999999999933)))
-    # these are just regression tests
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,110)+20.1)),
-        np.array((0.21090909090909091, 0.015880386730710221)))
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,110)+20-0.1)),
-        np.array((0.20818181818181825, 0.017981441789762638)))
+class TestKSTwoSamples(object):
+    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob):
+        result = stats.ks_2samp(x1, x2, alternative)
+        expected = np.array([expected_statistic, expected_prob])
+        # print('%.16f' % result.statistic, '%.16e' % result.pvalue, result.statistic*10000*11000)
+        assert_array_almost_equal(np.array(result), expected)
 
-    # test for namedtuple attribute results
-    attributes = ('statistic', 'pvalue')
-    res = stats.ks_2samp(data1 - 0.01, data2)
-    check_named_results(res, attributes)
+    def testSmall(self):
+        self._testOne([0], [1], 'two-sided', 1.0/1, 1.0)
+        self._testOne([0], [1], 'greater', 1.0/1, 0.5)
+        self._testOne([0], [1], 'less', 0.0/1, 1.0)
+
+    def testTwoVsThree(self):
+        data1 = np.array([1.0, 2.0])
+        data1p = data1 + 0.01
+        data1m = data1 - 0.01
+        data2 = np.array([1.0, 2.0, 3.0])
+        self._testOne(data1p, data2, 'two-sided', 1.0 / 3, 1.0)
+        self._testOne(data1p, data2, 'greater', 1.0 / 3, 0.7)
+        self._testOne(data1p, data2, 'less', 1.0 / 3, 0.7)
+        self._testOne(data1m, data2, 'two-sided', 2.0 / 3, 0.6)
+        self._testOne(data1m, data2, 'greater', 2.0 / 3, 0.3)
+        self._testOne(data1m, data2, 'less', 0, 1.0)
+
+    def testTwoVsFour(self):
+        data1 = np.array([1.0, 2.0])
+        data1p = data1 + 0.01
+        data1m = data1 - 0.01
+        data2 = np.array([1.0, 2.0, 3.0, 4.0])
+        self._testOne(data1p, data2, 'two-sided', 2.0 / 4, 14.0/15)
+        self._testOne(data1p, data2, 'greater', 2.0 / 4, 8.0/15)
+        self._testOne(data1p, data2, 'less', 1.0 / 4, 12.0/15)
+
+        self._testOne(data1m, data2, 'two-sided', 3.0 / 4, 6.0/15)
+        self._testOne(data1m, data2, 'greater', 3.0 / 4, 3.0/15)
+        self._testOne(data1m, data2, 'less', 0, 1.0)
+
+    def test100_100(self):
+        x100 = np.linspace(1, 100, 100)
+        x100_2_p1 = x100 + 2 + 0.1
+        x100_2_m1 = x100 + 2 - 0.1
+        self._testOne(x100, x100_2_p1, 'two-sided', 3.0 / 100, 0.9999999999962055)
+        self._testOne(x100, x100_2_p1, 'greater', 3.0 / 100, 0.9143290114276248)
+        self._testOne(x100, x100_2_p1, 'less', 0, 1.0)
+        self._testOne(x100, x100_2_m1, 'two-sided', 2.0 / 100, 1.0)
+        self._testOne(x100, x100_2_m1, 'greater', 2.0 / 100, 0.960978450786184)
+        self._testOne(x100, x100_2_m1, 'less', 0, 1.0)
+
+    def test100_110(self):
+        x100 = np.linspace(1, 100, 100)
+        x110 = np.linspace(1, 100, 110)
+        x110_20_p1 = x110 + 20 + 0.1
+        x110_20_m1 = x110 + 20 - 0.1
+        # 100, 110
+        self._testOne(x100, x110_20_p1, 'two-sided', 232.0 / 1100, 0.015739183865607353)
+        self._testOne(x100, x110_20_p1, 'greater', 232.0 / 1100, 0.007869594319053203)
+        self._testOne(x100, x110_20_p1, 'less', 0, 1)
+        self._testOne(x100, x110_20_m1, 'two-sided', 229.0 / 1100, 0.017803803861026313)
+        self._testOne(x100, x110_20_m1, 'greater', 229.0 / 1100, 0.008901905958245056)
+        self._testOne(x100, x110_20_m1, 'less', 0.0, 1.0)
+
+    def testRepeatedValues(self):
+        x2233 = np.array([2] * 3 + [3] * 4 + [5] * 5 + [6] * 4, dtype=int)
+        x3344 = x2233 + 1
+        x2356 = np.array([2] * 3 + [3] * 4 + [5] * 10 + [6] * 4, dtype=int)
+        x3467 = np.array([3] * 10 + [4] * 2 + [6] * 10 + [7] * 4, dtype=int)
+        self._testOne(x2233, x3344, 'two-sided', 5.0/16, 0.4262934613454952)
+        self._testOne(x2233, x3344, 'greater', 5.0/16, 0.21465428276573786)
+        self._testOne(x2233, x3344, 'less', 0.0/16, 1.0)
+        self._testOne(x2356, x3467, 'two-sided', 190.0/21/26, 0.0919245790168125)
+        self._testOne(x2356, x3467, 'greater', 190.0/21/26, 0.0459633806858544)
+        self._testOne(x2356, x3467, 'less', 70.0/21/26, 0.6121593130022775)
+
+    def testEqualSizes(self):
+        data2 = np.array([1.0, 2.0, 3.0])
+        self._testOne(data2, data2+1, 'two-sided', 1.0/3, 1.0)
+        self._testOne(data2, data2+1, 'greater', 1.0/3, 0.75)
+        self._testOne(data2, data2+1, 'less', 0.0/3, 1.)
+
+    def testLarge(self):
+        x10000 = np.linspace(1, 200, 10000)
+        x110 = np.linspace(2, 100, 110)
+        # 10000, 110
+        self._testOne(x10000, x110, 'two-sided', 55275.0 / 10000 / 11, 4.2188474935755949e-15)
+        self._testOne(x10000, x110, 'greater', 561.0 / 10000 / 11, 0.99115454582047591)
+        self._testOne(x10000, x110, 'less', 55275.0 / 10000 / 11, 3.1317328311518713e-26)
+
+    def testLargeBoth(self):
+        x10000 = np.linspace(1, 200, 10000)
+        x11000 = np.linspace(2, 200, 11000)
+        # 10000, 11000
+        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561)
+        self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.99264586027885104)
+        self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.99990850226130423)
+
+    def testNamedAtributes(self):
+        # test for namedtuple attribute results
+        attributes = ('statistic', 'pvalue')
+        res = stats.ks_2samp([1, 2], [3])
+        check_named_results(res, attributes)
 
 
 def test_ttest_rel():

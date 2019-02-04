@@ -163,7 +163,12 @@ References
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import sys
 import math
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 from collections import namedtuple
 
 import numpy as np
@@ -5054,18 +5059,209 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
-def ks_2samp(data1, data2):
+def _compute_prob_inside_method(m, n, g, h):
+    """Count the proportion of paths that stay strictly inside two diagonal lines.
+
+    Parameters
+    ----------
+    m : integer
+        m > 0
+    n : integer
+        n > 0
+    g : integer
+        g is greatest common divisor of m and n
+    h : integer
+        0 <= h <= lcm(m,n)
+
+    Returns
+    -------
+    p : float
+        The proportion of paths that stay inside the two lines.
+
+
+    Count the integer lattice paths from (0, 0) to (m, n) which satisfy
+    |x/m - y/n| < h / lcm(m, n).
+    The paths make steps of size +1 in either positive x or positive y directions.
+
+    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
+    Hodges, J.L. Jr.,
+    "The Significance Probability of the Smirnov Two-Sample Test,"
+    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+    """
+    # Probability is symmetrical in m, n.  Computation below uses m >= n.
+    if m < n:
+        m, n = n, m
+    mg = m // g
+    ng = n // g
+
+    # Count the integer lattice paths from (0, 0) to (m, n) which satisfy
+    # |nx/g - my/g| < h.
+    # Compute matrix A such that:
+    #  A(x, 0) = A(0, y) = 1
+    #  A(x, y) = A(x, y-1) + A(x-1, y), for x,y>=1, except that
+    #  A(x, y) = 0 if |x/m - y/n|>= h
+    # Probability is A(m, n)/binom(m+n, n)
+    # Optimizations exist for m==n, m==n*p.
+    # Only need to preserve a single column of A, and only a sliding window of it.
+    # minj keeps track of the slide.
+    minj, maxj = 0, min(int(np.ceil(h / mg)), n + 1)
+    curlen = maxj - minj
+    # Make a vector long enough to hold maximum window needed.
+    lenA = min(2 * maxj + 2, n + 1)
+    # This is an integer calculation, but the entries are essentially
+    # binomial coefficients, hence grow quickly.
+    # In addition, scaling after each column avoids dividing by a
+    # large binomial coefficent at the end. Instead it is incorporated
+    # one factor at a time during the computation.
+    dtype = np.float64
+    A = np.zeros(lenA, dtype=dtype)
+    # Initialize the first column
+    A[minj:maxj] = 1
+    for i in range(1, m + 1):
+        # Generate the next column.
+        # First calculate the sliding window
+        lastminj, lastmaxj, lastlen = minj, maxj, curlen
+        minj = max(int(np.floor((ng * i - h) / mg)) + 1, 0)
+        minj = min(minj, n)
+        maxj = min(int(np.ceil((ng * i + h) / mg)), n + 1)
+        if maxj <= minj:
+            return 0
+        # Now fill in the values
+        A[0:maxj - minj] = np.cumsum(A[minj - lastminj:maxj - lastminj])
+        curlen = maxj - minj
+        if lastlen > curlen:
+            # Set some carried-over elements to 0
+            A[maxj - minj:maxj - minj + (lastlen - curlen)] = 0
+        # Peel off one factor from top and bottom of the binomial coefficient.
+        factor = i * 1.0 / (n + i)
+        A *= factor
+    return A[maxj - minj - 1]
+
+
+def _compute_prob_outside_square(n, h):
+    """Compute the proportion of paths that pass outside the two diagonal lines.
+
+    Parameters
+    ----------
+    n : integer
+        n > 0
+    h : integer
+        0 <= h <= n
+
+    Returns
+    -------
+    p : float
+        The proportion of paths that pass outside the lines x-y = +/-h.
+
+    """
+    # Compute Pr(Dn,n >= h/n)
+    # Prob = 2 * ( binom(2n, n-h) - binom(2n, n-2a) + binom(2n, n-3a) - ... )  / binom(2n, n)
+    # This formulation exhibits subtractive cancellation.
+    # Instead divide each term by binom(2n, n), then factor common terms
+    # and use a Horner-like algorithm
+    # P = 2 * A0 * (1 - A1*(1 - A2*(1 - A3*(1 - A4*(...)))))
+
+    P = 0.0
+    k = int(np.floor(n / h))
+    while k >= 0:
+        p1 = 1.0
+        # Each of the Ai terms has numerator and denominator with h simple terms.
+        for j in range(h):
+            p1 = (n - k * h - j) * p1 / (n + k * h + j + 1)
+        P = p1 * (1.0 - P)
+        k -= 1
+    return 2 * P
+
+
+def _count_paths_outside_method(m, n, g, h):
+    """Count the number of paths that pass outside the specified diagonal.
+
+    Parameters
+    ----------
+    m : integer
+        m > 0
+    n : integer
+        n > 0
+    g : integer
+        g is greatest common divisor of m and n
+    h : integer
+        0 <= h <= lcm(m,n)
+
+    Returns
+    -------
+    p : float
+        The number of paths that go low.
+        The calculation may overflow - check for a finite answer.
+
+    Count the integer lattice paths from (0, 0) to (m, n), which at some
+    point (x, y) along the path, satisfy:
+      m*y <= n*x - h*g
+    The paths make steps of size +1 in either positive x or positive y directions.
+
+    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
+    Hodges, J.L. Jr.,
+    "The Significance Probability of the Smirnov Two-Sample Test,"
+    Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+    """
+    # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
+    # B(x, y) = #{paths from (0,0) to (x,y) without previously crossing the boundary}
+    #         = binom(x, y) - #{paths which already reached the boundary}
+    # Multiply by the number of path extensions going from (x, y) to (m, n)
+    # Sum.
+
+    # Probability is symmetrical in m, n.  Computation below assumes m >= n.
+    if m < n:
+        m, n = n, m
+    mg = m // g
+    ng = n // g
+
+    #  0 <= x_j <= m is the smallest integer for which n*x_j - m*j < g*h
+    xj = [int(np.ceil((h + mg * j)/ng)) for j in range(n+1)]
+    xj = [_ for _ in xj if _ <= m]
+    lxj = len(xj)
+    # B is an array just holding a few values of B(x,y), the ones needed.
+    # B[j] == B(x_j, j)
+    if lxj == 0:
+        return np.round(special.binom(m + n, n))
+    B = np.zeros(lxj)
+    B[0] = 1
+    # Compute the B(x, y) terms
+    # The binomial coefficient is an integer, but special.binom() may return a float.
+    # Round it to the nearest integer.
+    for j in range(1, lxj):
+        B[j] = np.round(special.binom(xj[j] + j, j))
+        for i in range(j):
+            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
+            dec = bin * B[i]
+            B[j] -= dec
+        if not np.isfinite(B[j]):
+            return -np.inf
+    # Compute the number of path extensions...
+    num_paths = 0
+    for j in range(lxj):
+        bin = np.round(special.binom((m-xj[j]) + (n - j), n-j))
+        term = B[j] * bin
+        num_paths += term
+    return np.round(num_paths)
+
+
+def ks_2samp(data1, data2, alternative='two-sided'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    are drawn from the same continuous distribution.
+    are drawn from the same continuous distribution.  The
+    alternative hypothesis can be either 'two-sided' (default), 'less'
+    or 'greater'.
 
     Parameters
     ----------
     data1, data2 : sequence of 1-D ndarrays
         two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different
+    alternative : {'two-sided', 'less','greater'}, optional
+        Defines the alternative hypothesis (see explanation above).
+        Default is 'two-sided'.
 
     Returns
     -------
@@ -5080,12 +5276,18 @@ def ks_2samp(data1, data2):
     that, like in the case of the one-sample K-S test, the distribution is
     assumed to be continuous.
 
-    This is the two-sided test, one-sided tests are not implemented.
-    The test uses the two-sided asymptotic Kolmogorov-Smirnov distribution.
+    For small enough sample sizes, the computation is exact.  For large sizes,
+    the computation uses the Kolmogorov-Smirnov distributions to compute an
+    approximate value.
 
     If the K-S statistic is small or the p-value is high, then we cannot
     reject the hypothesis that the distributions of the two samples
     are the same.
+
+    In the one-sided test, the alternative is that the empirical
+    cumulative distribution function G(x) of the data1 variable is "less"
+    or "greater" than the empirical cumulative distribution function F(x)
+    of the data2 variable, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
 
     Examples
     --------
@@ -5100,14 +5302,14 @@ def ks_2samp(data1, data2):
     >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1)
     >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5)
     >>> stats.ks_2samp(rvs1, rvs2)
-    (0.20833333333333337, 4.6674975515806989e-005)
+    (0.20833333333333334, 5.129279597781977e-05)
 
     For a slightly different distribution, we cannot reject the null hypothesis
     at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
 
     >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0)
     >>> stats.ks_2samp(rvs1, rvs3)
-    (0.10333333333333333, 0.14498781825751686)
+    (0.10333333333333333, 0.14691437867433876)
 
     For an identical distribution, we cannot reject the null hypothesis since
     the p-value is high, 41%:
@@ -5122,19 +5324,53 @@ def ks_2samp(data1, data2):
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     data_all = np.concatenate([data1, data2])
+    # using searchsorted solves equal data problem
+    # Strictly speaking, the cdfs are not correct at the repeated data
+    # values, but the difference between the two cdfs is correct.
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
-    d = np.max(np.absolute(cdf1 - cdf2))
-    # Note: d absolute not signed distance
-    en = np.sqrt(n1 * n2 / (n1 + n2))
-    try:
-        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
-    except Exception:
-        warnings.warn('This should not happen! Please open an issue at '
-                    'https://github.com/scipy/scipy/issues and provide the code '
-                    'you used to trigger this warning.\n')
-        prob = 1.0
+    cddiffs = cdf1 - cdf2
+    minS = -np.min(cddiffs)
+    maxS = np.max(cddiffs)
+    d = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}[alternative]
+    g = gcd(n1, n2)
+    n1t = n1 // g
+    n2t = n2 // g
+    prob = -np.inf
+    if n1t < np.iinfo(np.int).max / n2t and min(n1, n2) <= 1000:
+        lcm = (n1 // g) * n2
+        h = int(np.round(d * lcm))
+        d = h * 1.0 / lcm
+        if h == 0:
+            prob = 1.0
+        else:
+            if alternative == 'two-sided':
+                if n1 == n2:
+                    prob = _compute_prob_outside_square(n1, h)
+                else:
+                    prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+            else:
+                if n1 == n2:
+                    # binom(2n, n-h) / binom(2n, n)
+                    # Evaluating in this form incurs roundoff errors from special.binom
+                    # Instead calculate directly
+                    prob = 1.0
+                    for j in range(h):
+                        prob = (n1 - j) * prob / (n1 + j + 1)
+                else:
+                    num_paths = _count_paths_outside_method(n1, n2, g, h)
+                    prob = num_paths / special.binom(n1 + n2, n1)
+    if not np.isfinite(prob):
+        # The product n1*n2 is large.  Use Smirnov's approximation
+        en = np.sqrt(n1 * n2 / (n1 + n2))
+        if alternative == 'two-sided':
+            # Switch to using kstwo.sf() when it becomes available.
+            # prob = distributions.kstwo.sf(d, int(np.round(en)))
+            prob = distributions.kstwobign.sf(en * d)
+        else:
+            prob = distributions.ksone.sf(d, int(np.round(en)))
 
+    prob = (0 if prob < 0 else (1 if prob > 1 else prob))
     return Ks_2sampResult(d, prob)
 
 
