@@ -20,6 +20,10 @@ error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
+curve_fit_missing_p0 =  """
+  Initial values p0 were not specified in curve_fit().
+  Random initial values will be used. This often fails."""
+
 
 def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 output_shape=None):
@@ -485,23 +489,22 @@ def _wrap_jac(jac, xdata, transform):
 
 
 def _initialize_feasible(lb, ub):
-    p0 = np.ones_like(lb)
-    lb_finite = np.isfinite(lb)
-    ub_finite = np.isfinite(ub)
-
-    mask = lb_finite & ub_finite
-    p0[mask] = 0.5 * (lb[mask] + ub[mask])
-
-    mask = lb_finite & ~ub_finite
-    p0[mask] = lb[mask] + 1
-
-    mask = ~lb_finite & ub_finite
-    p0[mask] = ub[mask] - 1
-
+    p0 = np.zeros(len(lb))
+    for i in range(len(lb)):
+        lo, hi = lb[i], ub[i]
+        if not np.isfinite(hi) and not np.isfinite(lo):
+            lo, hi = -1.0, 1.0
+        elif np.isfinite(hi) and not np.isfinite(lo):
+            lo = -1.0
+            if hi < -0.5: lo = 2*hi
+        elif np.isfinite(lo) and not np.isfinite(hi):
+            hi = 1.0
+            if lo > 0.5: hi = 2*lo
+        p0[i] = np.random.uniform(lo, hi)
     return p0
 
 
-def curve_fit(f, xdata, ydata, p0, sigma=None, absolute_sigma=False,
+def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
               jac=None, **kwargs):
     """
@@ -519,8 +522,12 @@ def curve_fit(f, xdata, ydata, p0, sigma=None, absolute_sigma=False,
         The independent variable where the data is measured.
     ydata : M-length sequence
         The dependent data --- nominally f(xdata, ...)
-    p0 : scalar, or N-length sequence.
-        Initial guess for the parameters.
+    p0 : N-length sequence, or None
+        Initial values for the parameters.  If None, and if the number of parameters can
+        be determined from introspection of the model function, initial values will be
+        set to random values between -1.0 and 1.0, or between provided finite bounds.
+        Using `p0=None` may cause the fit to be unable to move from the initial values,
+        and should be avoided.
     sigma : None or M-length sequence or MxM array, optional
         Determines the uncertainty in `ydata`. If we define residuals as
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
@@ -639,7 +646,7 @@ def curve_fit(f, xdata, ydata, p0, sigma=None, absolute_sigma=False,
 
     Define the data to be fit with some noise:
 
-    >>> xdata = np.linspace(0, 4, 50)
+    >>> xdata = np.linspace(0, 200, 50)
     >>> y = func(xdata, 2.5, 1.3, 0.5)
     >>> np.random.seed(1729)
     >>> y_noise = 0.2 * np.random.normal(size=xdata.size)
@@ -648,18 +655,28 @@ def curve_fit(f, xdata, ydata, p0, sigma=None, absolute_sigma=False,
 
     Fit for the parameters a, b, c of the function `func`:
 
-    >>> popt, pcov = curve_fit(func, xdata, ydata)
-    >>> popt
-    array([ 2.55423706,  1.35190947,  0.47450618])
+    >>> initvals = np.array([2.0, 0.5, 0.1])
+    >>> popt, pcov = curve_fit(func, xdata, ydata, p0=initvals)
+    >>> for i, val in enumerate(popt):
+    ...   print('  {val:f} +/- {stderr:f}'.format(val=val,
+    ...                                           stderr=np.sqrt(pcov[i,i])))
+      2.554237 +/- 0.126057
+      1.351910 +/- 0.142124
+      0.474506 +/- 0.053160
     >>> plt.plot(xdata, func(xdata, *popt), 'r-',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
     Constrain the optimization to the region of ``0 <= a <= 3``,
     ``0 <= b <= 1`` and ``0 <= c <= 0.5``:
 
-    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 1., 0.5]))
-    >>> popt
-    array([ 2.43708906,  1.        ,  0.35015434])
+    >>> popt, pcov = curve_fit(func, xdata, ydata, p0=initvals,
+    ...                        bounds=(0, [3., 1., 0.5]))
+    >>> for i, val in enumerate(popt):
+    ...   print('  {val:f} +/- {stderr:f}'.format(val=val,
+    ...                                           stderr=np.sqrt(pcov[i,i])))
+      2.437089 +/- 0.123364
+      1.000000 +/- 0.129528
+      0.350154 +/- 0.078441
     >>> plt.plot(xdata, func(xdata, *popt), 'g--',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
@@ -669,9 +686,20 @@ def curve_fit(f, xdata, ydata, p0, sigma=None, absolute_sigma=False,
     >>> plt.show()
 
     """
-    p0 = np.atleast_1d(p0)
-    n = p0.size
-    lb, ub = prepare_bounds(bounds, n)
+    if p0 is None:
+        # determine number of parameters by inspecting the function
+        from scipy._lib._util import getargspec_no_self as _getargspec
+        args, varargs, varkw, defaults = _getargspec(f)
+        if len(args) < 2:
+            raise ValueError("Unable to determine number of fit parameters.")
+        n = len(args) - 1
+        lb, ub = prepare_bounds(bounds, n)
+        p0 = _initialize_feasible(lb, ub)
+        warnings.warn(curve_fit_missing_p0, category=RuntimeWarning)
+    else:
+        p0 = np.atleast_1d(p0)
+        n = p0.size
+        lb, ub = prepare_bounds(bounds, n)
 
     bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
     if method is None:
