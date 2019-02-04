@@ -62,6 +62,7 @@ matrix:
 #        # flag. This environment variable starts all Py instances in -OO mode.
 #        - PYTHONOPTIMIZE=2
     - os: osx
+      osx_image: xcode9
       language: generic
       env:
         - TESTMODE=fast
