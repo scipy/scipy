@@ -182,7 +182,9 @@ before_install:
   - set -o pipefail
 script:
   - python -m pip install scipy
+  - cd segfault
   - python run_segfaulter.py
+  - cd ..
   - python -m pip uninstall scipy
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
