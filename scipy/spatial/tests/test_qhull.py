@@ -701,6 +701,45 @@ class TestConvexHull:
         assert_allclose(tri.volume, 1., rtol=1e-14)
         assert_allclose(tri.area, 6., rtol=1e-14)
 
+    def test_osx_segfaulter_9751(self):
+        # See discussion in
+        # https://github.com/scipy/scipy/issues/9751
+        arr = np.array(
+            [[ 0. ,  2.5],
+             [ 0. ,  3.5],
+             [ 0. ,  4.5],
+             [ 0. ,  1.5],
+             [ 2. ,  5.5],
+             [ 2. ,  6.5],
+             [ 2. ,  0.5],
+             [ 2. , -0.5],
+             [ 2.5,  0. ],
+             [ 2.5,  6. ],
+             [ 3.5,  0. ],
+             [ 3.5,  6. ],
+             [ 4. ,  5.5],
+             [ 4. ,  6.5],
+             [ 4. ,  0.5],
+             [ 4. , -0.5],
+             [ 4.5,  0. ],
+             [ 4.5,  6. ],
+             [ 5.5,  2. ],
+             [ 5.5,  4. ],
+             [ 6. ,  2.5],
+             [ 6. ,  3.5],
+             [ 6. ,  4.5],
+             [ 6. ,  1.5],
+             [ 6.5,  2. ],
+             [ 6.5,  4. ],
+             [ 0.5,  2. ],
+             [ 0.5,  4. ],
+             [-0.5,  2. ],
+             [-0.5,  4. ],
+             [ 1.5,  0. ],
+             [ 1.5,  6. ]], dtype=np.float64)
+
+         qhull.ConvexHull(arr)
+
 
 class TestVoronoi:
     def test_masked_array_fails(self):
