@@ -1005,6 +1005,18 @@ class TestPPoly(object):
         assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
         assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
 
+    def test_read_only(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        xnew = np.array([0, 0.1, 0.2])
+        p = PPoly(c, x, extrapolate='periodic')
+
+        for writeable in (True, False):
+            xnew.flags.writeable = writeable
+            f = PPoly(c, x)
+            vals = f(xnew)
+            assert_(np.isfinite(vals).all())
+
     def test_descending(self):
         def binom_matrix(power):
             n = np.arange(power + 1).reshape(-1, 1)
@@ -2766,4 +2778,3 @@ class TestInterpN(object):
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
             assert_allclose(v1, np.asmatrix(v2))
-
