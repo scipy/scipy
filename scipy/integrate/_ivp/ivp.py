@@ -235,20 +235,24 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Times at which to store the computed solution, must be sorted and lie
         within `t_span`. If None (default), use points selected by the solver.
     events : callable, or list of callables, optional
-        Types of events to track. If None (default), events won't be tracked.
-        Each is defined by a continuous function of time and state that becomes
-        zero value in case of an event. Each function must have the signature
-        ``event(t, y)`` and return a float. The solver will find an accurate
-        value of `t` at which ``event(t, y(t)) = 0`` using a root-finding
-        algorithm. Additionally each `event` function might have the following
+        Events to track. If None (default), no events will be tracked.
+        Each event occurs at the zeros of a continuous function of time and
+        state. Each function must have the signature ``event(t, y)`` and return
+        a float. The solver will find an accurate value of `t` at which
+        ``event(t, y(t)) = 0`` using a root-finding algorithm. By default, all
+        zeros will be found.  The solver looks for a sign change over each step,
+        so if multiple zero crossings occur within one step, events may be
+        missed. Additionally each `event` function might have the following
         attributes:
 
-            * terminal: bool, whether to terminate integration if this
-              event occurs. Implicitly False if not assigned.
-            * direction: float, direction of a zero crossing. If `direction`
-              is positive, `event` must go from negative to positive, and
-              vice versa if `direction` is negative. If 0, then either direction
-              will count. Implicitly 0 if not assigned.
+            terminal: bool, optional
+                Whether to terminate integration if this event occurs.
+                Implicitly False if not assigned.
+            direction: float, optional
+                Direction of a zero crossing. If `direction` is positive,
+                `event` will only trigger when going from negative to positive,
+                and vice versa if `direction` is negative. If 0, then either
+                direction will trigger event. Implicitly 0 if not assigned.
 
         You can assign attributes like ``event.terminal = True`` to any
         function in Python. 
