@@ -1786,12 +1786,10 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
 
-    >>> lp = signal.lti([1.0], [1.0, 1.0])
+    >>> lp = signal.lti([1.0], [1.0, 1.5])
     >>> bs = signal.lti(*signal.lp2bs(lp.num, lp.den))
     >>> w, mag_lp, p_lp = lp.bode()
-    >>> np.seterr(divide = 'ignore') # Divide by zero ignored
     >>> w, mag_bs, p_bs = bs.bode(w)
     >>> plt.plot(w, mag_lp, label='Lowpass')
     >>> plt.plot(w, mag_bs, label='Bandstop')
