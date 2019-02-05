@@ -85,7 +85,7 @@ __all__ = [
     'cosine',
     'dice',
     'directed_hausdorff',
-    'continuous_frechet',
+    'discrete_frechet',
     'euclidean',
     'hamming',
     'is_valid_dm',
@@ -347,9 +347,9 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
         kwargs['p'] = 2.
     return kwargs
 
-def continuous_frechet(u, v):
+def discrete_frechet(u, v):
     """
-    Compute the continuous Frechet distance between two N-D arrays.
+    Compute the discrete Frechet distance between two N-D arrays.
   
     Parameters
     ----------
@@ -361,7 +361,7 @@ def continuous_frechet(u, v):
     Returns
     -------
     d : double
-        The continuous Frechet distance between arrays `u` and `v`,
+        The discrete Frechet distance between arrays `u` and `v`,
 
     Raises
     ------
@@ -385,10 +385,10 @@ def continuous_frechet(u, v):
 
     Examples
     --------
-    Find the continuous Frechet distance between two 2-D arrays of
+    Find the discrete Frechet distance between two 2-D arrays of
     coordinates:
 
-    >>> from scipy.spatial.distance import continuous_frechet
+    >>> from scipy.spatial.distance import discrete_frechet
     >>> u = np.array([(1.0, 1.0),
     ...               (2.0, 1.0),
     ...               (2.0, 2.0)])
@@ -396,7 +396,7 @@ def continuous_frechet(u, v):
     ...               (0.0, 1.0),
     ...               (2.0, 4.0)])
     
-    >>> continuous_frechet(u, v)
+    >>> discrete_frechet(u, v)
     2.0
 
     """
