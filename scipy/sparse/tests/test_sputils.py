@@ -3,9 +3,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 from scipy.sparse import sputils
+from scipy.sparse.sputils import matrix
 from scipy._lib._numpy_compat import suppress_warnings
 
 
@@ -84,7 +85,7 @@ class TestSparseUtils(object):
 
     def test_isdense(self):
         assert_equal(sputils.isdense(np.array([1])), True)
-        assert_equal(sputils.isdense(np.matrix([1])), True)
+        assert_equal(sputils.isdense(matrix([1])), True)
 
     def test_validateaxis(self):
         assert_raises(TypeError, sputils.validateaxis, (0, 1))

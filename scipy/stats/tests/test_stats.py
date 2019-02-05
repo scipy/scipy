@@ -31,6 +31,7 @@ from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
+from scipy.sparse.sputils import matrix
 from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -3621,14 +3622,14 @@ class TestHarMean(object):
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        check_equal_hmean(np.matrix(a), desired, axis=0)
+        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
+        check_equal_hmean(matrix(a), desired, axis=0)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
-        check_equal_hmean(np.matrix(a), desired, axis=1)
+        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
+        check_equal_hmean(matrix(a), desired, axis=1)
 
 
 class TestGeoMean(object):
@@ -3689,27 +3690,27 @@ class TestGeoMean(object):
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        check_equal_gmean(np.matrix(a), desired, axis=0)
+        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
+        check_equal_gmean(matrix(a), desired, axis=0)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = np.matrix([1, 2, 3, 4])
-        check_equal_gmean(np.matrix(a), desired, axis=0, rtol=1e-14)
+        desired = matrix([1, 2, 3, 4])
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = np.matrix(stats.gmean(a, axis=0))
-        check_equal_gmean(np.matrix(a), desired, axis=0, rtol=1e-14)
+        desired = matrix(stats.gmean(a, axis=0))
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        check_equal_gmean(np.matrix(a), desired, axis=1)
+        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
+        check_equal_gmean(matrix(a), desired, axis=1)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         v = power(1 * 2 * 3 * 4, 1. / 4.)
-        desired = np.matrix([[v], [v], [v]])
-        check_equal_gmean(np.matrix(a), desired, axis=1, rtol=1e-14)
+        desired = matrix([[v], [v], [v]])
+        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
 
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])

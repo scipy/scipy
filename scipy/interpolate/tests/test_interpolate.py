@@ -29,6 +29,8 @@ from scipy.integrate import nquad
 
 from scipy.special import binom
 
+from scipy.sparse.sputils import matrix
+
 
 class TestInterp2D(object):
     def test_interp2d(self):
@@ -2783,11 +2785,11 @@ class TestInterpN(object):
         x = np.linspace(0, 2, 5)
         y = np.linspace(0, 1, 7)
 
-        values = np.matrix(np.random.rand(5, 7))
+        values = matrix(np.random.rand(5, 7))
 
         sample = np.random.rand(3, 7, 2)
 
         for method in ('nearest', 'linear', 'splinef2d'):
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
-            assert_allclose(v1, np.asmatrix(v2))
+            assert_allclose(v1, v2)
