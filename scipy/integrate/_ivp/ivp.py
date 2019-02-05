@@ -240,7 +240,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         state. Each function must have the signature ``event(t, y)`` and return
         a float. The solver will find an accurate value of `t` at which
         ``event(t, y(t)) = 0`` using a root-finding algorithm. By default, all
-        zeros will be found.  The solver looks for a sign change over each step,
+        zeros will be found. The solver looks for a sign change over each step,
         so if multiple zero crossings occur within one step, events may be
         missed. Additionally each `event` function might have the following
         attributes:
