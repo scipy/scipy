@@ -155,7 +155,7 @@ jobs:
             export SCIPY_AVAILABLE_MEM=1G
             # Try to limit per-process GC memory usage
             export PYPY_GC_MAX=900MB
-            pypy3 runtests.py -- -rfEX -n 3 --durations=30 -v --timeout=30
+            pypy3 runtests.py -- -rfEX -n 3 --durations=30 --timeout=45 --timeout-method=thread
 
 
 workflows:
