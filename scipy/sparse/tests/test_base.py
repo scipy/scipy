@@ -26,7 +26,7 @@ from distutils.version import LooseVersion
 
 import numpy as np
 from scipy._lib.six import xrange, zip as izip
-from numpy import (arange, zeros, array, dot, matrix, asmatrix, asarray,
+from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
                    int8, ComplexWarning)
 
