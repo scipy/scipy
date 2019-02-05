@@ -1630,17 +1630,59 @@ def normalize(b, a):
 
 
 def lp2lp(b, a, wo=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a different frequency.
 
     Return an analog low-pass filter with cutoff frequency `wo`
     from an analog low-pass filter prototype with unity cutoff frequency, in
     transfer function ('ba') representation.
 
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
+    wo : float
+        Desired cutoff, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+
+    Returns
+    -------
+    b : array_like
+        Numerator polynomial coefficients of the transformed low-pass filter.
+    a : array_like
+        Denominator polynomial coefficients of the transformed low-pass filter.
+
     See Also
     --------
     lp2hp, lp2bp, lp2bs, bilinear
     lp2lp_zpk
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s}{\omega_0}
+
+    Examples
+    --------
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> lp = signal.lti([1.0], [1.0, 1.0])
+    >>> lp2 = signal.lti(*signal.lp2lp(lp.num, lp.den, 2))
+    >>> w, mag_lp, p_lp = lp.bode()
+    >>> w, mag_lp2, p_lp2 = lp2.bode(w)
+
+    >>> plt.plot(w, mag_lp, label='Lowpass')
+    >>> plt.plot(w, mag_lp2, label='Transformed Lowpass')
+    >>> plt.semilogx()
+    >>> plt.grid()
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.legend()
 
     """
     a, b = map(atleast_1d, (a, b))
@@ -1676,7 +1718,7 @@ def lp2hp(b, a, wo=1.0):
     wo : float
         Desired cutoff, as angular frequency (e.g. rad/s).
         Defaults to no change.
-        
+
     Returns
     -------
     b : array_like
