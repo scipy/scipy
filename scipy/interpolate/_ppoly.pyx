@@ -39,7 +39,7 @@ DEF MAX_DIMS = 64
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate(double_or_complex[:,:,::1] c,
-             double[::1] x,
+             const double[::1] x,
              const double[::1] xp,
              int dx,
              bint extrapolate,
