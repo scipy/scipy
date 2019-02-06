@@ -133,7 +133,7 @@ jobs:
             pypy3 -mpip install --upgrade pip setuptools wheel
             pypy3 -mpip install Cython>=0.28.5
             pypy3 -mpip install numpy>=1.15.0
-            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist Tempita mpmath
+            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist pytest-timeout Tempita mpmath
       - run:
           name: build SciPy
           command: |
@@ -155,7 +155,7 @@ jobs:
             export SCIPY_AVAILABLE_MEM=1G
             # Try to limit per-process GC memory usage
             export PYPY_GC_MAX=900MB
-            pypy3 runtests.py -- -rfEX -n 3 --durations=30
+            pypy3 runtests.py -- -rfEX -n 3 --durations=30 --timeout=45 --timeout-method=thread
 
 
 workflows:
