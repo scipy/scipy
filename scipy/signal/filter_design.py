@@ -1871,15 +1871,54 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
 
 
 def bilinear(b, a, fs=1.0):
-    """Return a digital filter from an analog one using a bilinear transform.
+    """
+    Return a digital IIR filter from an analog one using a bilinear transform.
 
-    The bilinear transform substitutes ``(z-1) / (z+1)`` for ``s``.
+    Transform a set of poles and zeros from the analog s-plane to the digital
+    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    ``s``, maintaining the shape of the frequency response.
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator of the analog filter transfer function.
+    a : array_like
+        Denominator of the analog filter transfer function.
+    fs : float
+        Sample rate, as ordinary frequency (e.g. hertz). No prewarping is
+        done in this function.
+
+    Returns
+    -------
+    z : ndarray
+        Numerator of the transformed digital filter transfer function.
+    p : ndarray
+        Denominator of the transformed digital filter transfer function.
 
     See Also
     --------
     lp2lp, lp2hp, lp2bp, lp2bs
     bilinear_zpk
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+
+    >>> fs = 100
+    >>> bf = 2 * np.pi * np.array([7, 13])
+    >>> filts = signal.lti(*signal.butter(4, bf, btype='bandpass', analog=True))
+    >>> filtz = signal.lti(*signal.bilinear(filts.num, filts.den, fs))
+    >>> wz, hz = signal.freqz(filtz.num, filtz.den)
+    >>> ws, hs = signal.freqs(filts.num, filts.den, worN=fs*wz)
+
+    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hz), label=r'$|H(j \omega)|$ of analog bandpass')
+    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hs), label=r'$|H_z(j \omega)|$ of digital bandpass')
+    >>> plt.legend()
+    >>> plt.xlabel('Frequency [Hz]')
+    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.grid()
     """
     fs = float(fs)
     a, b = map(atleast_1d, (a, b))
