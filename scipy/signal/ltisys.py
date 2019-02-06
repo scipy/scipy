@@ -3414,6 +3414,19 @@ def dimpulse(system, x0=None, t=None, n=None):
     --------
     impulse, dstep, dlsim, cont2discrete
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+
+    >>> butter = signal.dlti(*signal.butter(3, 0.5))
+    >>> t, y = signal.dimpulse(butter, n=25)
+    >>> plt.stem(t, np.squeeze(y), basefmt=" ")
+    >>> plt.grid()
+    >>> plt.xlabel('n [samples]')
+    >>> plt.ylabel('Amplitude')
+
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, dlti):
