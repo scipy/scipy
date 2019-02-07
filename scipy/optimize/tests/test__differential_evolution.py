@@ -1,6 +1,8 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
+import sys
+
 from scipy.optimize import _differentialevolution
 from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
@@ -10,6 +12,8 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_almost_equal,
                            assert_string_equal, assert_)
 from pytest import raises as assert_raises, warns
+
+IS_PYPY = '__pypy__' in sys.modules
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -512,6 +516,8 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
+    @pytest.mark.skipif(IS_PYPY,
+                        reason="Parallel test might not be stable on PyPy")
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -524,6 +530,8 @@ class TestDifferentialEvolutionSolver(object):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
             assert_(solver._updating == 'deferred')
 
+    @pytest.mark.skipif(IS_PYPY,
+                        reason="Parallel test might not be stable on PyPy")
     def test_parallel(self):
         # smoke test for parallelisation with deferred updating
         bounds = [(0., 2.), (0., 2.)]
