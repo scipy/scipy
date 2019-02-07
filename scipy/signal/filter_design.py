@@ -1871,7 +1871,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
 
 
 def bilinear(b, a, fs=1.0):
-    """
+    r"""
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
@@ -1913,8 +1913,8 @@ def bilinear(b, a, fs=1.0):
     >>> wz, hz = signal.freqz(filtz.num, filtz.den)
     >>> ws, hs = signal.freqs(filts.num, filts.den, worN=fs*wz)
 
-    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hz), label=r'$|H(j \omega)|$ of analog bandpass')
-    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hs), label=r'$|H_z(j \omega)|$ of digital bandpass')
+    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hz), label=r'$|H(j \omega)|$')
+    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hs), label=r'$|H_z(j \omega)|$')
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Magnitude [dB]')
@@ -2353,8 +2353,8 @@ def bilinear_zpk(z, p, k, fs):
     >>> filtz = signal.lti(*signal.bilinear_zpk(filts.zeros, filts.poles, filts.gain, fs))
     >>> wz, hz = signal.freqz_zpk(filtz.zeros, filtz.poles, filtz.gain)
     >>> ws, hs = signal.freqs_zpk(filts.zeros, filts.poles, filts.gain, worN=fs*wz)
-    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hz), label=r'$|H(j \omega)|$ of analog bandpass')
-    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hs), label=r'$|H_z(j \omega)|$ of digital bandpass')
+    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hz), label=r'$|H(j \omega)|$')
+    >>> plt.semilogx(wz*fs/(2*np.pi), np.abs(hs), label=r'$|H_z(j \omega)|$')
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Magnitude [dB]')
