@@ -20,6 +20,8 @@ from __future__ import division, print_function, absolute_import
 # May 2015: Felix Berkenkamp
 #   Split lti class into subclasses
 #   Merged discrete systems and added dlti
+# February 2019: Jocelyn Veilleux
+#   Modified step, step2 and dstep (added step amplitude M as argument)
 
 import warnings
 
@@ -235,7 +237,7 @@ class lti(LinearTimeInvariant):
         """
         return impulse(self, X0=X0, T=T, N=N)
 
-    def step(self, X0=None, T=None, N=None):
+    def step(self, X0=None, M=1, T=None, N=None):
         """
         Return the step response of a continuous-time system.
         See `step` for details.
@@ -424,7 +426,7 @@ class dlti(LinearTimeInvariant):
         """
         return dimpulse(self, x0=x0, t=t, n=n)
 
-    def step(self, x0=None, t=None, n=None):
+    def step(self, x0=None, M=1, t=None, n=None):
         """
         Return the step response of the discrete-time `dlti` system.
         See `dstep` for details.
@@ -2222,7 +2224,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     return Tr, Yr
 
 
-def step(system, X0=None, T=None, N=None):
+def step(system, X0=None, M=1, T=None, N=None):
     """Step response of continuous-time system.
 
     Parameters
@@ -2239,6 +2241,8 @@ def step(system, X0=None, T=None, N=None):
 
     X0 : array_like, optional
         Initial state-vector (default is zero).
+    M : array_like, optional
+        Step amplitude (default is M=1)
     T : array_like, optional
         Time points (computed if not given).
     N : int, optional
@@ -2287,12 +2291,12 @@ def step(system, X0=None, T=None, N=None):
         T = _default_response_times(sys.A, N)
     else:
         T = asarray(T)
-    U = ones(T.shape, sys.A.dtype)
+    U = M*ones(T.shape, sys.A.dtype)
     vals = lsim(sys, U, T, X0=X0, interp=False)
     return vals[0], vals[1]
 
 
-def step2(system, X0=None, T=None, N=None, **kwargs):
+def step2(system, X0=None, M=1, T=None, N=None, **kwargs):
     """Step response of continuous-time system.
 
     This function is functionally the same as `scipy.signal.step`, but
@@ -2313,6 +2317,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     X0 : array_like, optional
         Initial state-vector (default is zero).
+    M : array_like, optional
+        Step amplitude (default is M=1)
     T : array_like, optional
         Time points (computed if not given).
     N : int, optional
@@ -2368,7 +2374,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         T = _default_response_times(sys.A, N)
     else:
         T = asarray(T)
-    U = ones(T.shape, sys.A.dtype)
+    U = M*ones(T.shape, sys.A.dtype)
     vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
 
@@ -3453,7 +3459,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     return tout, yout
 
 
-def dstep(system, x0=None, t=None, n=None):
+def dstep(system, x0=None, M=1, t=None, n=None):
     """
     Step response of discrete-time system.
 
@@ -3471,6 +3477,8 @@ def dstep(system, x0=None, t=None, n=None):
 
     x0 : array_like, optional
         Initial state-vector.  Defaults to zero.
+    M : array_like, optional
+        Step amplitude (default is M=1)
     t : array_like, optional
         Time points.  Computed if not given.
     n : int, optional
@@ -3513,7 +3521,7 @@ def dstep(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, system.inputs):
         u = np.zeros((t.shape[0], system.inputs))
-        u[:, i] = np.ones((t.shape[0],))
+        u[:, i] = M*np.ones((t.shape[0],))
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
