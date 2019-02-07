@@ -1,6 +1,7 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
+import multiprocessing
 import sys
 
 from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
@@ -541,6 +542,17 @@ class TestDifferentialEvolutionSolver(object):
             assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
+
+    def test_parallel_pool(self):
+        # parallelisation test with Pool, which might work better with pypy
+        bounds = [(0., 2.), (0., 2.)]
+        with multiprocessing.Pool(2) as p:
+            with DifferentialEvolutionSolver(rosen, bounds,
+                                             updating='deferred',
+                                             workers=p.map) as solver:
+                assert solver._mapwrapper.pool is not None
+                assert solver._updating == 'deferred'
+                solver.solve()
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
