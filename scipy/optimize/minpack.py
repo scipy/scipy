@@ -323,7 +323,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     cov_x : ndarray
         The inverse of the Hessian. fjac and ipvt are used to construct an
         estimate of the Hessian. A value of None indicates a singular matrix,
-        which may indicate very flat curvature in parameters x. To obtain
+        which means the curvature in parameters x is numerically flat. To obtain
         the covariance matrix of the parameters x, cov_x must be multiplied
         by the variance of the residuals -- see curve_fit.
     infodict : dict
