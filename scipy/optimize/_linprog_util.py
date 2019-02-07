@@ -7,7 +7,7 @@ import scipy.sparse as sps
 from warnings import warn
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
-    _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
+    _remove_redundancy_id, _remove_redundancy_sparse, _remove_redundancy_dense
     )
 
 
@@ -732,31 +732,29 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
                 x, x0, undo, complete, status, message)
 
-    # This is a wild guess for which redundancy removal algorithm will be
-    # faster. More testing would be good.
-    small_nullspace = 5
+    # TODO: add option to override default redundancy removal routine
+    rank = 0
     if rr and A_eq.size > 0:
-        try:  # TODO: instead use results of first SVD in _remove_redundancy
+        try:
             rank = np.linalg.matrix_rank(A_eq)
-        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
-            rank = 0
-    if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
-        warn(redundancy_warning, OptimizeWarning)
-        dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace <= small_nullspace:
-            A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
-        if dim_row_nullspace > small_nullspace or status == 4:
+            if rank < A_eq.shape[0]:
+                warn(redundancy_warning, OptimizeWarning)
+                A_eq, b_eq, status, message = _remove_redundancy_id(A_eq, b_eq,
+                                                                    rank)
+        except Exception:
             A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
-        if A_eq.shape[0] < rank:
-            message = ("Due to numerical issues, redundant equality "
-                       "constraints could not be removed automatically. "
-                       "Try providing your constraint matrices as sparse "
-                       "matrices to activate sparse presolve, try turning "
-                       "off redundancy removal, or try turning off presolve "
-                       "altogether.")
-            status = 4
-        if status != 0:
-            complete = True
+
+    if A_eq.shape[0] < rank:
+        message = ("Due to numerical issues, redundant equality "
+                   "constraints could not be removed automatically. "
+                   "Try providing your constraint matrices as sparse "
+                   "matrices to activate sparse presolve, try turning "
+                   "off redundancy removal, or try turning off presolve "
+                   "altogether.")
+        status = 4
+    if status != 0:
+        complete = True
+
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
             x, x0, undo, complete, status, message)
 
