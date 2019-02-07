@@ -3,7 +3,6 @@ Unit tests for the differential global minimization algorithm.
 """
 import sys
 
-from scipy.optimize import _differentialevolution
 from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
 import numpy as np
@@ -12,6 +11,7 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_almost_equal,
                            assert_string_equal, assert_)
 from pytest import raises as assert_raises, warns
+import pytest
 
 IS_PYPY = '__pypy__' in sys.modules
 
