@@ -388,7 +388,15 @@ class TestDifferentialEvolutionSolver(object):
         # Because we do not care about solving the optimization problem in
         # this test, we use maxiter=1 to reduce the testing time.
         bounds = [(-5, 5), (-5, 5)]
-        result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
+        # result = differential_evolution(rosen, bounds, popsize=1815,
+        #                                 maxiter=1)
+
+        # the original issue arose because of rounding error in arange, with
+        # linspace being a much better solution. 1815 is quite a large popsize
+        # to use and results in a long test time (~13s). I used the original
+        # issue to figure out the lowest number of samples that would cause
+        # this rounding error to occur, 49.
+        differential_evolution(rosen, bounds, popsize=49, maxiter=1)
 
     def test_calculate_population_energies(self):
         # if popsize is 3 then the overall generation has size (6,)
@@ -417,13 +425,14 @@ class TestDifferentialEvolutionSolver(object):
 
         # check a proper minimisation can be done by an iterable solver
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
+        x_prev, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
+            assert(fun_prev >= fun_current)
+            x_prev, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
-            if i == 1000:
+            if i == 50:
                 break
-
-        assert_almost_equal(fun_current, 0)
 
     def test_convergence(self):
         solver = DifferentialEvolutionSolver(rosen, self.bounds, tol=0.2,
@@ -506,7 +515,7 @@ class TestDifferentialEvolutionSolver(object):
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
-        bounds = [(0., 2.), (0., 2.), (0, 2), (0, 2)]
+        bounds = [(0., 2.), (0., 2.)]
         solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
         assert_(solver._updating == 'deferred')
         assert_(solver._mapwrapper._mapfunc is map)
