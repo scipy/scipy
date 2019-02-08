@@ -1200,9 +1200,8 @@ def test_miuint32_compromise():
     assert_equal(res['an_array'], np.arange(10)[None, :])
     # mat file with miUINT32 for miINT32, with negative value
     filename = pjoin(test_data_path, 'bad_miuint32.mat')
-    with suppress_warnings() as sup:
-        sup.filter(message="unclosed file")  # Py3k ResourceWarning
-        assert_raises(ValueError, loadmat, filename)
+    with assert_raises(ValueError), open(filename, 'rb') as f:
+        loadmat(f)
 
 
 def test_miutf8_for_miint8_compromise():
