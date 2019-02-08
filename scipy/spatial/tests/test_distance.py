@@ -543,7 +543,7 @@ class TestCdist(object):
             for metric in _METRICS_NAMES:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric == 'wminkowski':
+                if metric in ['whamming', 'wminkowski']:
                     continue
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
                               'rogerstanimoto', 'russellrao', 'sokalmichener',
@@ -600,7 +600,7 @@ class TestCdist(object):
             kwargs = dict()
             if metric in ['minkowski', 'wminkowski']:
                 kwargs['p'] = 1.23
-            if metric == 'wminkowski':
+            if metric in ['whamming', 'wminkowski']:
                 kwargs['w'] = 1.0 / X1.std(axis=0)
             out1 = np.empty((out_r, out_c), dtype=np.double)
             Y1 = cdist(X1, X2, metric, **kwargs)
@@ -643,7 +643,7 @@ class TestCdist(object):
             kwargs = dict()
             if metric in ['minkowski', 'wminkowski']:
                 kwargs['p'] = 1.23
-                if metric == 'wminkowski':
+                if metric in ['whamming', 'wminkowski']:
                     kwargs['w'] = 1.0 / X1.std(axis=0)
             Y1 = cdist(X1, X2, metric, **kwargs)
             Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
@@ -1405,7 +1405,7 @@ class TestPdist(object):
             # NOTE: num samples needs to be > than dimensions for mahalanobis
             X = eo[eo_name][::5, ::2]
             for metric in _METRICS_NAMES:
-                if metric == 'wminkowski':
+                if metric in ['whamming', 'wminkowski']:
                     continue
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
@@ -1459,7 +1459,7 @@ class TestPdist(object):
             kwargs = dict()
             if metric in ['minkowski', 'wminkowski']:
                 kwargs['p'] = 1.23
-            if metric == 'wminkowski':
+            if metric in ['whamming', 'wminkowski']:
                 kwargs['w'] = 1.0 / X.std(axis=0)
             out1 = np.empty(out_size, dtype=np.double)
             Y_right = pdist(X, metric, **kwargs)
@@ -1493,7 +1493,7 @@ class TestPdist(object):
             kwargs = dict()
             if metric in ['minkowski', 'wminkowski']:
                 kwargs['p'] = 1.23
-            if metric == 'wminkowski':
+            if  metric in ['whamming', 'wminkowski']:
                 kwargs['w'] = 1.0 / X.std(axis=0)
             Y1 = pdist(X, metric, **kwargs)
             Y2 = pdist(X_copy, metric, **kwargs)
@@ -2005,7 +2005,7 @@ def test_modifies_input():
     with suppress_warnings() as w:
         w.filter(message="`wminkowski` is deprecated")
         for metric in _METRICS_NAMES:
-            kwargs = {"w": 1.0 / X1.std(axis=0)} if metric == "wminkowski" or metric == "whamming" else {}
+            kwargs = {"w": 1.0 / X1.std(axis=0)} if metric in ['whamming', 'wminkowski'] else {}
             cdist(X1, X1, metric, **kwargs)
             pdist(X1, metric, **kwargs)
             assert_array_equal(X1, X1_copy)
@@ -2021,7 +2021,7 @@ def test_Xdist_deprecated_args():
     warn_msg_kwargs = "Got unexpected kwarg"
     warn_msg_args = "[0-9]* metric parameters have been passed as positional"
     for metric in _METRICS_NAMES:
-        kwargs = {"w": weights} if metric == "wminkowski" or metric == "whamming" else dict()
+        kwargs = {"w": weights} if metric in ['whamming', 'wminkowski'] else dict()
         with suppress_warnings() as w:
             log = w.record(message=warn_msg_args)
             w.filter(message=warn_msg_kwargs)
@@ -2033,7 +2033,7 @@ def test_Xdist_deprecated_args():
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-            if metric == "wminkowski" or metric == "whamming":
+            if metric in ['whamming', 'wminkowski']:
                 if "p" in kwargs or "w" in kwargs:
                     continue
                 kwargs["w"] = weights
