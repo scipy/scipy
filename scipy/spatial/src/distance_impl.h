@@ -187,10 +187,11 @@ hamming_distance_char(const char *u, const char *v, const npy_intp n)
 static NPY_INLINE double
 weighted_hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w)
 {
-    npy_intp i, s = 0;
+    npy_intp i;
+    double s = 0;
 
     for (i = 0; i < n; ++i) {
-        s += (u[i] != v[i]) * w[i];
+        s += ((double) (u[i] != v[i])) * w[i];
     }
     return (double)s / n;
 }
@@ -198,10 +199,11 @@ weighted_hamming_distance_double(const double *u, const double *v, const npy_int
 static NPY_INLINE double
 weighted_hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w)
 {
-    npy_intp i, s = 0;
+    npy_intp i;
+    double s = 0;
 
     for (i = 0; i < n; ++i) {
-        s += (u[i] != v[i]) * w[i];
+        s += ((double) (u[i] != v[i])) * w[i];
     }
     return (double)s / n;
 }
