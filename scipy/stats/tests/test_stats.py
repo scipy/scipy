@@ -2888,8 +2888,8 @@ class TestKSTwoSamples(object):
         # 500, 600
         self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='auto')
         self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='asymp')
-        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2,  0.87721554018921577, mode='exact')
-        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2,  0.87721554018921566, mode='asymp')
+        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.87721554018921577, mode='exact')
+        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.87721554018921566, mode='asymp')
         self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='exact')
         self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='asymp')
 
@@ -2900,10 +2900,10 @@ class TestKSTwoSamples(object):
         # 1000, 1100
         self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='asymp')
         self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='auto')
-        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2,  0.84125883587707861, mode='exact')
-        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2,  0.84125883587707861, mode='asymp')
-        self._testOne(x1000, x1100, 'less', 1000.0 /  n1 / n2, 0.97888432252447422, mode='exact')
-        self._testOne(x1000, x1100, 'less', 1000.0 /  n1 / n2, 0.97888432252447422, mode='asymp')
+        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.84125883587707861, mode='exact')
+        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.84125883587707861, mode='asymp')
+        self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.97888432252447422, mode='exact')
+        self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.97888432252447422, mode='asymp')
 
     def testLarge(self):
         x10000 = np.linspace(1, 200, 10000)

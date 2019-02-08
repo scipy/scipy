@@ -5391,7 +5391,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
                     try:
                         num_paths = _count_paths_outside_method(n1, n2, g, h)
                         bin = special.binom(n1 + n2, n1)
-                        if not np.isfinite(bin) or  not np.isfinite(num_paths) or num_paths > bin:
+                        if not np.isfinite(bin) or not np.isfinite(num_paths) or num_paths > bin:
                             raise FloatingPointError()
                         prob = num_paths / bin
                     except FloatingPointError:
