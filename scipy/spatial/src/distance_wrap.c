@@ -534,7 +534,7 @@ static PyObject *pdist_weighted_hamming_double_wrap(
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_weighted_hamming(X, dm, m, n, w);
+    pdist_weighted_hamming_double(X, dm, m, n, w);
     NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
@@ -563,7 +563,7 @@ static PyObject *pdist_weighted_hamming_char_wrap(
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_weighted_hamming(X, dm, m, n, w);
+    pdist_weighted_hamming_char(X, dm, m, n, w);
     NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
