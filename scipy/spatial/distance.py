@@ -1686,6 +1686,8 @@ _METRICS = {
     'sqeuclidean': MetricInfo(aka=['sqeuclidean', 'sqe', 'sqeuclid']),
     'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm'],
                              validator=_validate_wminkowski_kwargs),
+    'whamming': MetricInfo(aka=['matching', 'hamming', 'hamm', 'ha', 'h'],
+                           types=['double', 'bool']),
     'yule': MetricInfo(aka=['yule'], types=['bool']),
 }
 
