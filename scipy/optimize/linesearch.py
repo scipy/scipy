@@ -396,6 +396,9 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     if alpha1 < 0:
         alpha1 = 1.0
 
+    if amax is not None:
+        alpha1 = min(alpha1, amax)
+
     phi_a1 = phi(alpha1)
     #derphi_a1 = derphi(alpha1)  evaluated below
 
