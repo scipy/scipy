@@ -185,6 +185,28 @@ hamming_distance_char(const char *u, const char *v, const npy_intp n)
 }
 
 static NPY_INLINE double
+weighted_hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w)
+{
+    npy_intp i, s = 0;
+
+    for (i = 0; i < n; ++i) {
+        s += (u[i] != v[i]) * w[i];
+    }
+    return (double)s / n;
+}
+
+static NPY_INLINE double
+weighted_hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w)
+{
+    npy_intp i, s = 0;
+
+    for (i = 0; i < n; ++i) {
+        s += (u[i] != v[i]) * w[i];
+    }
+    return (double)s / n;
+}
+
+static NPY_INLINE double
 yule_distance_char(const char *u, const char *v, const npy_intp n)
 {
     npy_intp i;
@@ -518,6 +540,38 @@ pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
+static NPY_INLINE int
+pdist_weighted_hamming_double(const double *X, double *dm, npy_intp num_rows,
+                         const npy_intp num_cols, const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rows; ++i) {
+        const double *u = X + (num_cols * i);
+        for (j = i + 1; j < num_rows; ++j, ++dm) {
+            const double *v = X + (num_cols * j);
+            *dm = weighted_hamming_distance_double(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
+static NPY_INLINE int
+pdist_weighted_hamming_char(const char *X, char *dm, npy_intp num_rows,
+                         const npy_intp num_cols, const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rows; ++i) {
+        const char *u = X + (num_cols * i);
+        for (j = i + 1; j < num_rows; ++j, ++dm) {
+            const char *v = X + (num_cols * j);
+            *dm = weighted_hamming_distance_char(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
 static NPY_INLINE void
 dist_to_squareform_from_vector_generic(char *M, const char *v, const npy_intp n,
                                        npy_intp s)
@@ -677,6 +731,42 @@ cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
         for (j = 0; j < num_rowsB; ++j, ++dm) {
             const double *v = XB + (num_cols * j);
             *dm = weighted_minkowski_distance(u, v, num_cols, p, w);
+        }
+    }
+    return 0;
+}
+
+static NPY_INLINE int
+cdist_weighted_hamming_double(const double *XA, const double *XB, double *dm,
+                         const npy_intp num_rowsA, const npy_intp num_rowsB,
+                         const npy_intp num_cols,
+                         const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rowsA; ++i) {
+        const double *u = XA + (num_cols * i);
+        for (j = 0; j < num_rowsB; ++j, ++dm) {
+            const double *v = XB + (num_cols * j);
+            *dm = weighted_hamming_distance_double(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
+static NPY_INLINE int
+cdist_weighted_hamming_char(const char *XA, const char *XB, char *dm,
+                         const npy_intp num_rowsA, const npy_intp num_rowsB,
+                         const npy_intp num_cols,
+                         const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rowsA; ++i) {
+        const char *u = XA + (num_cols * i);
+        for (j = 0; j < num_rowsB; ++j, ++dm) {
+            const char *v = XB + (num_cols * j);
+            *dm = weighted_hamming_distance_char(u, v, num_cols, w);
         }
     }
     return 0;
