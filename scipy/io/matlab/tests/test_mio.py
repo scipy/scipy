@@ -1212,9 +1212,8 @@ def test_miutf8_for_miint8_compromise():
     assert_equal(res['array_name'], [[1]])
     # mat file with non-ascii utf8 name raises error
     filename = pjoin(test_data_path, 'bad_miutf8_array_name.mat')
-    with suppress_warnings() as sup:
-        sup.filter(message="unclosed file")  # Py3k ResourceWarning
-        assert_raises(ValueError, loadmat, filename)
+    with assert_raises(ValueError), open(filename, 'rb') as f:
+        loadmat(f)
 
 
 def test_bad_utf8():
