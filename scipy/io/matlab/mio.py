@@ -29,7 +29,9 @@ def _open_file(file_like, appendmat, mode='rb'):
     to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
     append '.mat' and try again.
     """
-    if hasattr(file_like, 'read') and hasattr(file_like, 'write'):
+    if hasattr(file_like, 'read'):
+        if 'w' in mode and hasattr(file_like, 'write') is False:
+            raise IOError("The file-like object does not have a write attribute")
         return file_like, False
 
     try:
