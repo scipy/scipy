@@ -161,8 +161,9 @@ class TestLineSearch(object):
         def derphi(alpha):
             return 2 * (alpha - 5)
 
-        alpha_star, _, _, _ = ls.scalar_search_wolfe2(phi, derphi, amax=0.001)
-        assert_(alpha_star is None)
+        s, _, _, _ = assert_warns(LineSearchWarning,
+                                  ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
+        assert_(s is None)
 
     def test_scalar_search_armijo(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
