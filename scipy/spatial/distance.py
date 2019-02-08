@@ -1690,7 +1690,7 @@ _METRICS = {
     'sqeuclidean': MetricInfo(aka=['sqeuclidean', 'sqe', 'sqeuclid']),
     'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm'],
                              validator=_validate_wminkowski_kwargs),
-    'whamming': MetricInfo(aka=['matching', 'hamming', 'hamm', 'ha', 'h'],
+    'whamming': MetricInfo(aka=['whamming', 'whamm'],
                            types=['double', 'bool']),
     'yule': MetricInfo(aka=['yule'], types=['bool']),
 }
@@ -1712,7 +1712,7 @@ def _select_weighted_metric(mstr, kwargs, out):
         # w=None is the same as omitting it
         kwargs.pop("w")
 
-    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka:
+    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka or mstr in _METRICS['whamming'].aka:
         # These support weights
         pass
     elif "w" in kwargs:
