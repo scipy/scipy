@@ -296,7 +296,7 @@ static PyObject *cdist_weighted_hamming_char_wrap(
   const double *w;
   static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
-            "O!O!O!O!:cdist_weighted_hamming_double_wrap", kwlist,
+            "O!O!O!O!:cdist_weighted_hamming_char_wrap", kwlist,
             &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
             &PyArray_Type, &dm_,
             &PyArray_Type, &w_)) {
@@ -549,7 +549,7 @@ static PyObject *pdist_weighted_hamming_char_wrap(
   double *w, *dm;
   static char *kwlist[] = {"X", "dm", "w", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
-            "O!O!O!:pdist_weighted_hamming_double_wrap", kwlist,
+            "O!O!O!:pdist_weighted_hamming_char_wrap", kwlist,
             &PyArray_Type, &X_,
             &PyArray_Type, &dm_,
             &PyArray_Type, &w_)) {
