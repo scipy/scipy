@@ -1701,7 +1701,7 @@ _METRICS = {
                              validator=_validate_wminkowski_kwargs),
     'whamming': MetricInfo(aka=['whamming', 'whamm'],
                            types=['double', 'bool'],
-                           validator=_validate_weights),
+                           validator=_validate_whamming_kwargs),
     'yule': MetricInfo(aka=['yule'], types=['bool']),
 }
 
