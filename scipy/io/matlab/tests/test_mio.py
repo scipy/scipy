@@ -377,11 +377,11 @@ def test_gzip_simple():
     tmpdir = mkdtemp()
     try:
         fname = pjoin(tmpdir,name)
-        mat_stream = gzip.open(fname,mode='wb')
+        mat_stream = gzip.open(fname, mode='wb')
         savemat(mat_stream, expected, format=format)
         mat_stream.close()
 
-        mat_stream = gzip.open(fname,mode='rb')
+        mat_stream = gzip.open(fname, mode='rb')
         actual = loadmat(mat_stream, struct_as_record=True)
         mat_stream.close()
     finally:
@@ -1200,8 +1200,8 @@ def test_miuint32_compromise():
     assert_equal(res['an_array'], np.arange(10)[None, :])
     # mat file with miUINT32 for miINT32, with negative value
     filename = pjoin(test_data_path, 'bad_miuint32.mat')
-    with assert_raises(ValueError), open(filename, 'rb') as f:
-        loadmat(f)
+    with assert_raises(ValueError):
+        loadmat(filename)
 
 
 def test_miutf8_for_miint8_compromise():
@@ -1211,8 +1211,8 @@ def test_miutf8_for_miint8_compromise():
     assert_equal(res['array_name'], [[1]])
     # mat file with non-ascii utf8 name raises error
     filename = pjoin(test_data_path, 'bad_miutf8_array_name.mat')
-    with assert_raises(ValueError), open(filename, 'rb') as f:
-        loadmat(f)
+    with assert_raises(ValueError):
+        loadmat(filename)
 
 
 def test_bad_utf8():
