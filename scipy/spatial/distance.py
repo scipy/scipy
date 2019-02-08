@@ -810,6 +810,10 @@ def hamming(u, v, w=None):
     return np.average(u_ne_v, weights=w)
 
 
+def whamming(u, v, w):
+    return hamming(u, v, w)
+
+
 def jaccard(u, v, w=None):
     """
     Compute the Jaccard-Needham dissimilarity between two boolean 1-D arrays.
