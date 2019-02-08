@@ -5193,6 +5193,11 @@ def _count_paths_outside_method(m, n, g, h):
         The number of paths that go low.
         The calculation may overflow - check for a finite answer.
 
+    Exceptions
+    ----------
+    FloatingPointError: Raised if the intermediate computation goes outside
+    the range of a float.
+
     Count the integer lattice paths from (0, 0) to (m, n), which at some
     point (x, y) along the path, satisfy:
       m*y <= n*x - h*g
@@ -5229,23 +5234,28 @@ def _count_paths_outside_method(m, n, g, h):
     # The binomial coefficient is an integer, but special.binom() may return a float.
     # Round it to the nearest integer.
     for j in range(1, lxj):
-        B[j] = np.round(special.binom(xj[j] + j, j))
+        Bj = np.round(special.binom(xj[j] + j, j))
+        if not np.isfinite(Bj):
+            raise FloatingPointError()
         for i in range(j):
             bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
             dec = bin * B[i]
-            B[j] -= dec
-        if not np.isfinite(B[j]):
-            return -np.inf
+            Bj -= dec
+        B[j] = Bj
+        if not np.isfinite(Bj):
+            raise FloatingPointError()
     # Compute the number of path extensions...
     num_paths = 0
     for j in range(lxj):
         bin = np.round(special.binom((m-xj[j]) + (n - j), n-j))
         term = B[j] * bin
+        if not np.isfinite(term):
+            raise FloatingPointError()
         num_paths += term
     return np.round(num_paths)
 
 
-def ks_2samp(data1, data2, alternative='two-sided'):
+def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
 
@@ -5262,6 +5272,12 @@ def ks_2samp(data1, data2, alternative='two-sided'):
     alternative : {'two-sided', 'less','greater'}, optional
         Defines the alternative hypothesis (see explanation above).
         Default is 'two-sided'.
+    mode : 'auto' (default), 'approx' or 'asymp', optional
+        Defines the method used for calculating the p-value.
+
+          - 'exact' : use approximation to exact distribution of test statistic
+          - 'asymp' : use asymptotic distribution of test statistic
+          - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
 
     Returns
     -------
@@ -5323,6 +5339,9 @@ def ks_2samp(data1, data2, alternative='two-sided'):
     data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
+    if min(n1, n2) == 0:
+        return Ks_2sampResult(1.0, 1.0)
+
     data_all = np.concatenate([data1, data2])
     # using searchsorted solves equal data problem
     # Strictly speaking, the cdfs are not correct at the repeated data
@@ -5334,10 +5353,20 @@ def ks_2samp(data1, data2, alternative='two-sided'):
     maxS = np.max(cddiffs)
     d = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}[alternative]
     g = gcd(n1, n2)
-    n1t = n1 // g
-    n2t = n2 // g
+    n1g = n1 // g
+    n2g = n2 // g
     prob = -np.inf
-    if n1t < np.iinfo(np.int).max / n2t and min(n1, n2) <= 1000:
+    if mode == 'auto':
+        if max(n1, n2) <= 100000:
+            mode = 'exact'
+        else:
+            mode = 'asymp'
+    elif mode == 'exact':
+        # If lcm(n1, n2) is too big, switch from exact to asymp
+        if n1g >= np.iinfo(np.int).max / n2g:
+            mode = 'asymp'
+
+    if mode == 'exact':
         lcm = (n1 // g) * n2
         h = int(np.round(d * lcm))
         d = h * 1.0 / lcm
@@ -5349,26 +5378,37 @@ def ks_2samp(data1, data2, alternative='two-sided'):
                     prob = _compute_prob_outside_square(n1, h)
                 else:
                     prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+                    print('prob=', prob)
             else:
                 if n1 == n2:
                     # binom(2n, n-h) / binom(2n, n)
-                    # Evaluating in this form incurs roundoff errors from special.binom
+                    # Evaluating in that form incurs roundoff errors from special.binom
                     # Instead calculate directly
                     prob = 1.0
                     for j in range(h):
                         prob = (n1 - j) * prob / (n1 + j + 1)
                 else:
-                    num_paths = _count_paths_outside_method(n1, n2, g, h)
-                    prob = num_paths / special.binom(n1 + n2, n1)
-    if not np.isfinite(prob):
-        # The product n1*n2 is large.  Use Smirnov's approximation
-        en = np.sqrt(n1 * n2 / (n1 + n2))
+                    try:
+                        num_paths = _count_paths_outside_method(n1, n2, g, h)
+                        bin = special.binom(n1 + n2, n1)
+                        if not np.isfinite(bin) or  not np.isfinite(num_paths) or num_paths > bin:
+                            raise FloatingPointError()
+                        prob = num_paths / bin
+                    except FloatingPointError:
+                        pass
+    if not np.isfinite(prob) or prob > 1 or prob < 0:
+        # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         if alternative == 'two-sided':
+            en = np.sqrt(n1 * n2 / (n1 + n2))
             # Switch to using kstwo.sf() when it becomes available.
             # prob = distributions.kstwo.sf(d, int(np.round(en)))
             prob = distributions.kstwobign.sf(en * d)
         else:
-            prob = distributions.ksone.sf(d, int(np.round(en)))
+            m, n = max(n1, n2), min(n1, n2)
+            z = np.sqrt(m*n/(m+n)) * d
+            # Use Hodges' suggested approximation
+            expt = -2 * z**2 - 2 * z * (m + 2*n)/(m+n)/3.0
+            prob = np.exp(expt)
 
     prob = (0 if prob < 0 else (1 if prob > 1 else prob))
     return Ks_2sampResult(d, prob)

@@ -2803,10 +2803,10 @@ def test_kstest():
 
 
 class TestKSTwoSamples(object):
-    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob):
-        result = stats.ks_2samp(x1, x2, alternative)
+    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto'):
+        result = stats.ks_2samp(x1, x2, alternative, mode=mode)
         expected = np.array([expected_statistic, expected_prob])
-        # print('%.16f' % result.statistic, '%.16e' % result.pvalue, result.statistic*10000*11000)
+        # print('%.16f' % result.statistic, '%.16e' % result.pvalue, result.statistic*500*600)
         assert_array_almost_equal(np.array(result), expected)
 
     def testSmall(self):
@@ -2881,6 +2881,30 @@ class TestKSTwoSamples(object):
         self._testOne(data2, data2+1, 'greater', 1.0/3, 0.75)
         self._testOne(data2, data2+1, 'less', 0.0/3, 1.)
 
+    def testMiddlingBoth(self):
+        x500 = np.linspace(1, 200, 500)
+        x600 = np.linspace(2, 200, 600)
+        n1, n2 = len(x500), len(x600)
+        # 500, 600
+        self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='auto')
+        self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='asymp')
+        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2,  0.87721554018921577, mode='exact')
+        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2,  0.87721554018921566, mode='asymp')
+        self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='exact')
+        self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='asymp')
+
+    def testMediumBoth(self):
+        x1000 = np.linspace(1, 200, 1000)
+        x1100 = np.linspace(2, 200, 1100)
+        n1, n2 = len(x1000), len(x1100)
+        # 1000, 1100
+        self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='asymp')
+        self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='auto')
+        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2,  0.84125883587707861, mode='exact')
+        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2,  0.84125883587707861, mode='asymp')
+        self._testOne(x1000, x1100, 'less', 1000.0 /  n1 / n2, 0.97888432252447422, mode='exact')
+        self._testOne(x1000, x1100, 'less', 1000.0 /  n1 / n2, 0.97888432252447422, mode='asymp')
+
     def testLarge(self):
         x10000 = np.linspace(1, 200, 10000)
         x110 = np.linspace(2, 100, 110)
@@ -2889,13 +2913,17 @@ class TestKSTwoSamples(object):
         self._testOne(x10000, x110, 'greater', 561.0 / 10000 / 11, 0.99115454582047591)
         self._testOne(x10000, x110, 'less', 55275.0 / 10000 / 11, 3.1317328311518713e-26)
 
+    @pytest.mark.slow
     def testLargeBoth(self):
         x10000 = np.linspace(1, 200, 10000)
         x11000 = np.linspace(2, 200, 11000)
         # 10000, 11000
-        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561)
-        self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.99264586027885104)
-        self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.99990850226130423)
+        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561, mode='asymp')
+        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 1.0, mode='auto')
+        self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617, mode='exact')
+        self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617)
+        self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157, mode='exact')
+        self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157)
 
     def testNamedAtributes(self):
         # test for namedtuple attribute results
