@@ -282,6 +282,15 @@ def _validate_minkowski_kwargs(X, m, n, **kwargs):
     return kwargs
 
 
+def _validate_whamming_kwargs(X, m, n, **kwargs):
+    if 'w' not in kwargs:
+        kwargs['w'] = 1.
+
+    w = kwargs['w']
+    _validate_weights(w)
+    return kwargs
+
+
 def _validate_pdist_input(X, m, n, metric_name, **kwargs):
     if metric_name is not None:
         # get supported types
@@ -1691,7 +1700,8 @@ _METRICS = {
     'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm'],
                              validator=_validate_wminkowski_kwargs),
     'whamming': MetricInfo(aka=['whamming', 'whamm'],
-                           types=['double', 'bool']),
+                           types=['double', 'bool'],
+                           validator=_validate_weights),
     'yule': MetricInfo(aka=['yule'], types=['bool']),
 }
 
