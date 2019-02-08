@@ -29,15 +29,12 @@ def _open_file(file_like, appendmat, mode='rb'):
     to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
     append '.mat' and try again.
     """
-    try:
-        if hasattr(file_like, 'read') and hasattr(file_like, 'write'):
-            # can't use file_like.read(0) to see if something is a file-like
-            # this is now being used to open a file for writing ('wb') and
-            # the resulting file may be write only.
-            # file_like.read(0)
-            return file_like, False
-    except AttributeError:
-        pass
+    if hasattr(file_like, 'read') and hasattr(file_like, 'write'):
+        # can't use file_like.read(0) to see if something is a file-like
+        # this is now being used to open a file for writing ('wb') and
+        # the resulting file may be write only.
+        # file_like.read(0)
+        return file_like, False
 
     try:
         return open(file_like, mode), True
