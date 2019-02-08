@@ -5272,7 +5272,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less','greater'}, optional
         Defines the alternative hypothesis (see explanation above).
         Default is 'two-sided'.
-    mode : 'auto' (default), 'approx' or 'asymp', optional
+    mode : 'auto' (default), 'exact' or 'asymp', optional
         Defines the method used for calculating the p-value.
 
           - 'exact' : use approximation to exact distribution of test statistic
