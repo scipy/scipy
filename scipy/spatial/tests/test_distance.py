@@ -2005,7 +2005,7 @@ def test_modifies_input():
     with suppress_warnings() as w:
         w.filter(message="`wminkowski` is deprecated")
         for metric in _METRICS_NAMES:
-            kwargs = {"w": 1.0 / X1.std(axis=0)} if metric == "wminkowski" else {}
+            kwargs = {"w": 1.0 / X1.std(axis=0)} if metric == "wminkowski" or metric == "whamming" else {}
             cdist(X1, X1, metric, **kwargs)
             pdist(X1, metric, **kwargs)
             assert_array_equal(X1, X1_copy)
@@ -2021,7 +2021,7 @@ def test_Xdist_deprecated_args():
     warn_msg_kwargs = "Got unexpected kwarg"
     warn_msg_args = "[0-9]* metric parameters have been passed as positional"
     for metric in _METRICS_NAMES:
-        kwargs = {"w": weights} if metric == "wminkowski" else dict()
+        kwargs = {"w": weights} if metric == "wminkowski" or metric == "whamming" else dict()
         with suppress_warnings() as w:
             log = w.record(message=warn_msg_args)
             w.filter(message=warn_msg_kwargs)
@@ -2033,7 +2033,7 @@ def test_Xdist_deprecated_args():
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-            if metric == "wminkowski":
+            if metric == "wminkowski" or metric == "whamming":
                 if "p" in kwargs or "w" in kwargs:
                     continue
                 kwargs["w"] = weights
