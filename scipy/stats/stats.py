@@ -5432,8 +5432,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
           complement of the p-values inside the logarithms).
         - "tippett": Tippett's method (minimum of p-values).
         - "stouffer": Stouffer's Z-score method.
-        - "mudholkar_george": the difference of Fisher's and Pearson's methods.
-          Uses a t-distribution approximation to the logistic [7]_.
+        - "mudholkar_george": the difference of Fisher's and Pearson's methods
+           divided by 2.
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -5451,14 +5451,17 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
     advantage of Stouffer's method is that it is straightforward to introduce
     weights, which can make Stouffer's method more powerful than Fisher's
-    method when the p-values are from studies of different size [3]_ [4]_.
+    method when the p-values are from studies of different size [6]_ [7]_.
     The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
-    method uses :math:`log(p_i)` [6]_. For Fisher's and Pearson's method, the
+    method uses :math:`log(p_i)` [4]_. For Fisher's and Pearson's method, the
     sum of the logarithms is multiplied by -2 in the implementation. This
     quantity has a chisquare distribution that determines the p-value. The
     `mudholkar_george` method is the difference of the Fisher's and Pearson's
-    test statistics, each of which include the -2 factor [7]_. However, the
-    `mudholkar_george` method does not include these -2 factors.
+    test statistics, each of which include the -2 factor [4]_. However, the
+    `mudholkar_george` method does not include these -2 factors. The test
+    statistic of `mudholkar_george` is the sum of logisitic random variables and
+    equation 3.6 in [3]_ is used to approximate the p-value based on Student's
+    t-distribution.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -5470,17 +5473,17 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
     .. [2] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
-    .. [3] Whitlock, M. C. "Combining probability from independent tests: the
+    .. [3] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
+           random variables." Metrika 30.1 (1983): 1-13.
+    .. [4] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
+           combining p-values."  Biometrika 105.1 (2018): 239-246.
+    .. [5] Whitlock, M. C. "Combining probability from independent tests: the
            weighted Z-method is superior to Fisher's approach." Journal of
            Evolutionary Biology 18, no. 5 (2005): 1368-1373.
-    .. [4] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
+    .. [6] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
-    .. [5] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
-    .. [6] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
-           combining p-values."  Biometrika 105.1 (2018): 239-246.
-    .. [7] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
-           random variables." Metrika 30.1 (1983): 1-13.
+    .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
     pvalues = np.asarray(pvalues)
