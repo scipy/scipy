@@ -5457,7 +5457,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     sum of the logarithms is multiplied by -2 in the implementation. This
     quantity has a chisquare distribution that determines the p-value. The
     `mudholkar_george` method is the difference of the Fisher's and Pearson's
-    test statistics, each of which include the -2 factor [7]_.
+    test statistics, each of which include the -2 factor [7]_. However, the
+    `mudholkar_george` method does not include these -2 factors.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -5493,7 +5494,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = -2 * np.sum(np.log1p(-pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
-        statistic = -2 * np.sum(np.log(pvalues)) + 2 * np.sum(np.log1p(-pvalues))
+        statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
         pval = distributions.t.sf(statistic * approx_factor, nu)
