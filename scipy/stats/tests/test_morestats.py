@@ -23,6 +23,8 @@ from .common_tests import check_named_results
 try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
+    matplotlib.rcParams['backend'] = 'Agg'
+
 except Exception:
     have_matplotlib = False
 
