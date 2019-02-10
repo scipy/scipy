@@ -1,48 +1,63 @@
 # Hungarian algorithm (Kuhn-Munkres) for solving the linear sum assignment
-# problem. Taken from scikit-learn. Based on original code by Brian Clapper,
-# adapted to NumPy by Gael Varoquaux.
-# Further improvements by Ben Root, Vlad Niculae and Lars Buitinck.
+# problem.
 #
-# Copyright (c) 2008 Brian M. Clapper <bmc@clapper.org>, Gael Varoquaux
-# Author: Brian M. Clapper, Gael Varoquaux
+# Copyright (c) 2019 Jacob Turner <jacob.turner870@gmail.com>
 # License: 3-clause BSD
 
 import numpy as np
+from collections import deque, namedtuple
 
+"""
+ Algorithm that solves the minimum / maximum weighted assignment problem
+ (or linear sum assignment problem) for bipartite graphs whose weighted
+ bi-adjacency matrices are not necessarily square.
 
-def linear_sum_assignment(cost_matrix):
-    """Solve the linear sum assignment problem.
+ Let C be an n x m matrix. Consider a set of pairs M = {(i, j) in [n] x [m]},
+ or equivalently, edges in the bipartite graph. We say that row i is assigned
+ to column j if (i, j) in M. M is a matching if every row is assigned to at
+ most one column and likewise each column is assigned to at most one row.
 
-    The linear sum assignment problem is also known as minimum weight matching
-    in bipartite graphs. A problem instance is described by a matrix C, where
-    each C[i,j] is the cost of matching vertex i of the first partite set
-    (a "worker") and vertex j of the second set (a "job"). The goal is to find
-    a complete assignment of workers to jobs of minimal cost.
+ The problem is to find a matching M of size min(n, m) such that the sum of
+ C[i,j] for (i, j) in M is minimized / maximized.
 
-    Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is
-    assigned to column j. Then the optimal assignment has cost
+ Definitions:
+    Many times we are performing operations on the graph whose edges are
+    designated by zero entries in the assignment matrix and non-zero entries
+    are non-edges. We call this graph the **0-induced graph**.
 
-    .. math::
-        \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
+    If a row has been assigned a column, we say that it is **saturated**. In
+    the algorithm, this is kept track of via the row_saturated and columns
+    saturated vectors.
 
-    s.t. each row is assignment to at most one column, and each column to at
-    most one row.
+    Marking is done when we determine a minimum vertex cover of the 0-induced
+    graph. We mark all vertices reachable by augmenting paths from free row
+    vertices. From the resulting set the column vertices are kept and the
+    complement of the row vertices are kept.
 
-    This function can also solve a generalization of the classic assignment
-    problem where the cost matrix is rectangular. If it has more rows than
-    columns, then not every row needs to be assigned to a column, and vice
-    versa.
+ The algorithm consists of six main parts:
+    1. A pre-processing of the input matrix for easy access in the main
+       algorithms
+    2. Adjust weights so that each row has a zero entry. (Step 1 Wikipedia)
+    3. The computation of a maximal matching, done greedily. If the maximal
+       matching is maximum, we terminate (Step 2 Wikipedia)
+    4. Otherwise, we compute a minimum vertex cover of the bipartite graph
+       defined by zeros in the weighted bi-adjacency matrix.
+       (Step 3 in Wikipedia)
+    5. Subtract smallest unmarked element. Subtract from each other unmarked
+       element and add to every doubly marked element.  Return to step 2 above.
+       (Step 4 Wikipedia)
+    6. Once a result is found, an assignment (i.e. a maximum matching) is found
+       from the current known maximal matching by finding augmenting paths.
 
-    The method used is the Hungarian algorithm, also known as the Munkres or
-    Kuhn-Munkres algorithm.
-
-    Parameters
-    ----------
+Parameters
+     ----------
     cost_matrix : array
         The cost matrix of the bipartite graph.
-
-    Returns
-    -------
+    maximize : boolean
+        Specifies if the maximum weight matching should be computed. Default is
+        False, meaning that minimum weight matching is computed
+Returns
+ -------
     row_ind, col_ind : array
         An array of row indices and one of corresponding column indices giving
         the optimal assignment. The cost of the assignment can be computed
@@ -50,43 +65,41 @@ def linear_sum_assignment(cost_matrix):
         sorted; in the case of a square cost matrix they will be equal to
         ``numpy.arange(cost_matrix.shape[0])``.
 
-    Notes
-    -----
-    .. versionadded:: 0.17.0
-
-    Examples
-    --------
-    >>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
-    >>> from scipy.optimize import linear_sum_assignment
-    >>> row_ind, col_ind = linear_sum_assignment(cost)
-    >>> col_ind
-    array([1, 0, 2])
-    >>> cost[row_ind, col_ind].sum()
-    5
-
     References
     ----------
-    1. http://csclab.murraystate.edu/bob.pilgrim/445/munkres.html
-
-    2. Harold W. Kuhn. The Hungarian Method for the assignment problem.
+    1. Harold W. Kuhn. The Hungarian Method for the assignment problem.
        *Naval Research Logistics Quarterly*, 2:83-97, 1955.
-
-    3. Harold W. Kuhn. Variants of the Hungarian method for assignment
+    2. Harold W. Kuhn. Variants of the Hungarian method for assignment
        problems. *Naval Research Logistics Quarterly*, 3: 253-258, 1956.
-
-    4. Munkres, J. Algorithms for the Assignment and Transportation Problems.
+    3. Munkres, J. Algorithms for the Assignment and Transportation Problems.
        *J. SIAM*, 5(1):32-38, March, 1957.
+    4. https://en.wikipedia.org/wiki/Hungarian_algorithm
 
-    5. https://en.wikipedia.org/wiki/Hungarian_algorithm
+"""
+
+Node = namedtuple('Node', 'previous next_row next_col')
+
+
+def linear_sum_assignment(cost_matrix, maximize=False):
     """
+       Outward facing function. Provides validation and accesses internal
+        algorithm
+    """
+
+    # This function should not have side effects on the cost matrix
+    cost_matrix = cost_matrix.copy()
     cost_matrix = np.asarray(cost_matrix)
+
+    # Validation
+
     if len(cost_matrix.shape) != 2:
         raise ValueError("expected a matrix (2-d array), got a %r array"
                          % (cost_matrix.shape,))
 
     if not (np.issubdtype(cost_matrix.dtype, np.number) or
             cost_matrix.dtype == np.dtype(np.bool)):
-        raise ValueError("expected a matrix containing numerical entries, got %s"
+        raise ValueError("expected a matrix containing numerical entries,"
+                         " got %s"
                          % (cost_matrix.dtype,))
 
     if np.any(np.isinf(cost_matrix) | np.isnan(cost_matrix)):
@@ -95,188 +108,197 @@ def linear_sum_assignment(cost_matrix):
     if cost_matrix.dtype == np.dtype(np.bool):
         cost_matrix = cost_matrix.astype(np.int)
 
-    # The algorithm expects more columns than rows in the cost matrix.
-    if cost_matrix.shape[1] < cost_matrix.shape[0]:
-        cost_matrix = cost_matrix.T
-        transposed = True
+    # The internal algorithm assumes that there are at
+    # least as many columns as rows
+    if cost_matrix.shape[0] <= cost_matrix.shape[1]:
+        return Munkres(cost_matrix,
+                       transposed=False,
+                       maximize=maximize).optimal_weight_matching()
     else:
-        transposed = False
-
-    state = _Hungary(cost_matrix)
-
-    # No need to bother with assignments if one of the dimensions
-    # of the cost matrix is zero-length.
-    step = None if 0 in cost_matrix.shape else _step1
-
-    while step is not None:
-        step = step(state)
-
-    if transposed:
-        marked = state.marked.T
-    else:
-        marked = state.marked
-    return np.nonzero(marked == 1)
+        return Munkres(cost_matrix.transpose(),
+                       transposed=True,
+                       maximize=maximize).optimal_weight_matching()
 
 
-class _Hungary(object):
-    """State of the Hungarian algorithm.
-
-    Parameters
-    ----------
-    cost_matrix : 2D matrix
-        The cost matrix. Must have shape[1] >= shape[0].
+class Munkres(object):
+    """
+    Class for finding maximum weight matchings and minimum vertex covers
+    in bipartite graph
     """
 
-    def __init__(self, cost_matrix):
-        self.C = cost_matrix.copy()
+    def __init__(self, matrix, transposed=False, maximize=False):
+        if maximize:
+            matrix = -matrix
+        self.shape = matrix.shape
+        self.marked = np.zeros(self.shape, dtype=bool)
+        self.row_saturated = np.zeros(self.shape[0], dtype=bool)
+        self.col_saturated = np.zeros(self.shape[1], dtype=bool)
+        self.row_marked = np.zeros(self.shape[0], dtype=bool)
+        self.col_marked = np.zeros(self.shape[1], dtype=bool)
+        self.matrix = matrix
+        self.transposed = transposed
+        self.col_saturated_size = 0
 
-        n, m = self.C.shape
-        self.row_uncovered = np.ones(n, dtype=bool)
-        self.col_uncovered = np.ones(m, dtype=bool)
-        self.Z0_r = 0
-        self.Z0_c = 0
-        self.path = np.zeros((n + m, 2), dtype=int)
-        self.marked = np.zeros((n, m), dtype=int)
+    def _maximal_matching(self):
+        """Find a maximal matching greedily"""
 
-    def _clear_covers(self):
-        """Clear all covered matrix cells"""
-        self.row_uncovered[:] = True
-        self.col_uncovered[:] = True
+        # For each row, find the smallest element in that row and
+        # subtract it from each element in its row.
+        self.matrix -= self.matrix.min(axis=1)[:, np.newaxis]
 
+        # Iterating through each zero-valued matrix entry, if neither the row
+        # or column of the entry has been marked, add entry to the matching
+        # and mark the its row and column as being assigned.
+        for row, col in zip(*np.nonzero(self.matrix == 0)):
+            if not self.row_saturated[row] and not self.col_saturated[col]:
+                self.marked[row, col] = self.row_saturated[row]\
+                    = self.col_saturated[col] = True
+        self.col_saturated_size = self.col_saturated.sum()
 
-# Individual steps of the algorithm follow, as a state machine: they return
-# the next step to be taken (function to be called), if any.
+    def _remove_covers(self):
+        self.row_marked *= False
+        self.col_marked *= False
+        self.row_saturated *= False
+        self.col_saturated *= False
+        self.marked *= False
+        self.col_saturated_size = 0
 
-def _step1(state):
-    """Steps 1 and 2 in the Wikipedia page."""
+    def _min_vertex_cover(self):
+        """Find a minimum vertex cover of 0-induced graph"""
 
-    # Step 1: For each row of the matrix, find the smallest element and
-    # subtract it from every element in its row.
-    state.C -= state.C.min(axis=1)[:, np.newaxis]
-    # Step 2: Find a zero (Z) in the resulting matrix. If there is no
-    # starred zero in its row or column, star Z. Repeat for each element
-    # in the matrix.
-    for i, j in zip(*np.nonzero(state.C == 0)):
-        if state.col_uncovered[j] and state.row_uncovered[i]:
-            state.marked[i, j] = 1
-            state.col_uncovered[j] = False
-            state.row_uncovered[i] = False
+        # Start with all unsaturated row vertices
+        self.row_marked = self.row_saturated == False
 
-    state._clear_covers()
-    return _step3
-
-
-def _step3(state):
-    """
-    Cover each column containing a starred zero. If n columns are covered,
-    the starred zeros describe a complete set of unique assignments.
-    In this case, Go to DONE, otherwise, Go to Step 4.
-    """
-    marked = (state.marked == 1)
-    state.col_uncovered[np.any(marked, axis=0)] = False
-
-    if marked.sum() < state.C.shape[0]:
-        return _step4
-
-
-def _step4(state):
-    """
-    Find a noncovered zero and prime it. If there is no starred zero
-    in the row containing this primed zero, Go to Step 5. Otherwise,
-    cover this row and uncover the column containing the starred
-    zero. Continue in this manner until there are no uncovered zeros
-    left. Save the smallest uncovered value and Go to Step 6.
-    """
-    # We convert to int as numpy operations are faster on int
-    C = (state.C == 0).astype(int)
-    covered_C = C * state.row_uncovered[:, np.newaxis]
-    covered_C *= np.asarray(state.col_uncovered, dtype=int)
-    n = state.C.shape[0]
-    m = state.C.shape[1]
-
-    while True:
-        # Find an uncovered zero
-        row, col = np.unravel_index(np.argmax(covered_C), (n, m))
-        if covered_C[row, col] == 0:
-            return _step6
-        else:
-            state.marked[row, col] = 2
-            # Find the first starred element in the row
-            star_col = np.argmax(state.marked[row] == 1)
-            if state.marked[row, star_col] != 1:
-                # Could not find one
-                state.Z0_r = row
-                state.Z0_c = col
-                return _step5
+        # We keep trying to find new vertices reachable by augmenting paths.
+        while True:
+            found = self.col_marked.sum()
+            # Saturated column neighbors of rows from previous round
+            self.col_marked = np.any(self.matrix[self.row_marked] == 0, axis=0)
+            if found == self.col_marked.sum():
+                self.col_saturated_size = found
+                return
             else:
-                col = star_col
-                state.row_uncovered[row] = False
-                state.col_uncovered[col] = True
-                covered_C[:, col] = C[:, col] * (
-                    np.asarray(state.row_uncovered, dtype=int))
-                covered_C[row] = 0
+                # Mark rows that are matched with columns found above
+                self.row_marked[np.any(self.marked[:, self.col_marked],
+                                       axis=1)] = True
 
+    def _aug_paths(self):
+        """Find an augmenting path if one exists from maximal matching."""
+        # Check unsaturated row vertices for augmenting paths
+        for row in np.nonzero(self.row_saturated == False)[0]:
+            path_row, path_col = self._aug_path(row)
+            if not path_col:
+                continue
+            if not len(path_row + path_col) % 2:
+                for i in range(len(path_row) - 1):
+                    self.marked[path_row[i], path_col[i]] = 1
+                    self.marked[path_row[i], path_col[i + 1]] = 0
+                self.marked[path_row[-1], path_col[-1]] = 1
+                self.row_saturated[path_row[-1]] = \
+                    self.col_saturated[path_col[0]] = True
 
-def _step5(state):
-    """
-    Construct a series of alternating primed and starred zeros as follows.
-    Let Z0 represent the uncovered primed zero found in Step 4.
-    Let Z1 denote the starred zero in the column of Z0 (if any).
-    Let Z2 denote the primed zero in the row of Z1 (there will always be one).
-    Continue until the series terminates at a primed zero that has no starred
-    zero in its column. Unstar each starred zero of the series, star each
-    primed zero of the series, erase all primes and uncover every line in the
-    matrix. Return to Step 3
-    """
-    count = 0
-    path = state.path
-    path[count, 0] = state.Z0_r
-    path[count, 1] = state.Z0_c
+    def _aug_path(self, row):
+        """"
+        Recursively search for augmenting paths starting at row vertex 'row' in
+        the 0-induced graph.
+        """
 
-    while True:
-        # Find the first starred element in the col defined by
-        # the path.
-        row = np.argmax(state.marked[:, path[count, 1]] == 1)
-        if state.marked[row, path[count, 1]] != 1:
-            # Could not find one
-            break
+        queue = deque()
+        queue.append(Node(previous=None, next_col=None, next_row=row))
+        visited_columns = set([])
+        last_col = None
+        path_row = []
+        path_col = []
+        found = False
+
+        # We proceed to search for an augmented path
+        # via a breadth-first search approach
+        while queue and not found:
+            current_node = queue.popleft()
+
+            # We now check every column to see if we can extend
+            # tentative augmented path with column vertex. We iterate
+            # over column vertex neighbors of the 0-induced graph
+            for col in np.nonzero(self.matrix[current_node.next_row] == 0)[0]:
+
+                # We do not check vertices already on a tentative path
+                if col in visited_columns:
+                    continue
+
+                # If col vertex is saturated, it we check to see if
+                # it can extend tentative path
+                if self.col_saturated[col]:
+
+                    # We find row vertex it is matched with
+                    row_index = np.argmax(self.marked[:, col])
+                    visited_columns.add(col)
+
+                    # We extend the tentative augmented path via linked list
+                    queue.append(Node(previous=current_node,
+                                      next_row=row_index,
+                                      next_col=col))
+
+                else:
+
+                    # We have found the end of an augmented path.
+                    # We add column vertex.
+                    last_col = Node(previous=current_node,
+                                    next_row=None,
+                                    next_col=col)
+                    found = True
+                    break
+
+        # Recreate augmented path from linked list if possible
+        if last_col is not None:
+
+            # add final column vertex
+            path_col.append(last_col.next_col)
+            last_col = last_col.previous
+
+            # iterate back through linked list
+            while last_col.previous is not None:
+                path_row.append(last_col.next_row)
+                path_col.append(last_col.next_col)
+                last_col = last_col.previous
+
+            # add initial row vertex
+            path_row.append(last_col.next_row)
+
+        return path_row, path_col
+
+    def optimal_weight_matching(self):
+        """Main algorithm. Runs the Hungarian Algorithm."""
+
+        while True:
+            # Subtract the smallest element in each row from every other
+            # entry in same row and compute maximal matching of resulting
+            # 0-inducted graph. (Steps 1 and 2 in Wikipedia)
+            self._maximal_matching()
+
+            # Find a minimum vertex cover of the 0-induced graph
+            # (Step 3 in Wikipedia)
+            self._min_vertex_cover()
+
+            # If all rows are saturated, find the maximum matching and stop
+            if self.row_marked.sum() == self.col_saturated_size:
+                self._aug_paths()
+                break
+
+            # Find minimum value of uncovered edge weights
+            minval = np.min(self.matrix[self.row_marked][:, self.col_marked !=
+                                                         True])
+
+            # Adjust the matrix weights according to Hungarian algorithm
+            # (step 4 Wikipedia)
+            self.matrix[self.row_marked] -= minval
+            self.matrix[:, self.col_marked] += minval
+
+            # Reset process and run again
+            self._remove_covers()
+
+        # If we transposed the input so that it was wide, undo that now
+        # before returning answer.
+        if self.transposed:
+            return np.nonzero(self.marked.transpose() == 1)
         else:
-            count += 1
-            path[count, 0] = row
-            path[count, 1] = path[count - 1, 1]
-
-        # Find the first prime element in the row defined by the
-        # first path step
-        col = np.argmax(state.marked[path[count, 0]] == 2)
-        if state.marked[row, col] != 2:
-            col = -1
-        count += 1
-        path[count, 0] = path[count - 1, 0]
-        path[count, 1] = col
-
-    # Convert paths
-    for i in range(count + 1):
-        if state.marked[path[i, 0], path[i, 1]] == 1:
-            state.marked[path[i, 0], path[i, 1]] = 0
-        else:
-            state.marked[path[i, 0], path[i, 1]] = 1
-
-    state._clear_covers()
-    # Erase all prime markings
-    state.marked[state.marked == 2] = 0
-    return _step3
-
-
-def _step6(state):
-    """
-    Add the value found in Step 4 to every element of each covered row,
-    and subtract it from every element of each uncovered column.
-    Return to Step 4 without altering any stars, primes, or covered lines.
-    """
-    # the smallest uncovered value in the matrix
-    if np.any(state.row_uncovered) and np.any(state.col_uncovered):
-        minval = np.min(state.C[state.row_uncovered], axis=0)
-        minval = np.min(minval[state.col_uncovered])
-        state.C[~state.row_uncovered] += minval
-        state.C[:, state.col_uncovered] -= minval
-    return _step4
+            return np.nonzero(self.marked == 1)

@@ -11,6 +11,7 @@ been left off, please email the "SciPy Developers List" <scipy-dev@python.org>.
 
 Please add names as needed so that we can keep up with all the contributors.
 
+Jacob Turner for performance improvements to scipy.optimize.linear_sum_assignment.
 Kumar Appaiah for Dolph Chebyshev window.
 Nathan Bell for sparsetools, help with scipy.sparse and scipy.splinalg.
 Robert Cimrman for UMFpack wrapper for sparse matrix module.
