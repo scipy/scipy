@@ -24,7 +24,6 @@ try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
     matplotlib.rcParams['backend'] = 'Agg'
-
 except Exception:
     have_matplotlib = False
 
