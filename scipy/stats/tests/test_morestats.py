@@ -903,21 +903,114 @@ class TestProbplot(object):
                           (np.nan, np.nan, 0.0)))
 
 
-def test_wilcoxon_bad_arg():
-    # Raise ValueError when two args of different lengths are given or
-    # zero_method is unknown.
-    assert_raises(ValueError, stats.wilcoxon, [1], [1, 2])
-    assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2], "dummy")
+class TestWilcoxon(object):
+    def test_wilcoxon_bad_arg(self):
+        # Raise ValueError when two args of different lengths are given or
+        # zero_method is unknown.
+        assert_raises(ValueError, stats.wilcoxon, [1], [1, 2])
+        assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2], "dummy")
+        assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2],
+                      alternative="dummy")
 
+    def test_wilcoxon_arg_type(self):
+        # Should be able to accept list as arguments.
+        # Address issue 6070.
+        arr = [1, 2, 3, 0, -1, 3, 1, 2, 1, 1, 2]
 
-def test_wilcoxon_arg_type():
-    # Should be able to accept list as arguments.
-    # Address issue 6070.
-    arr = [1, 2, 3, 0, -1, 3, 1, 2, 1, 1, 2]
+        _ = stats.wilcoxon(arr, zero_method="pratt")
+        _ = stats.wilcoxon(arr, zero_method="zsplit")
+        _ = stats.wilcoxon(arr, zero_method="wilcox")
 
-    _ = stats.wilcoxon(arr, zero_method="pratt")
-    _ = stats.wilcoxon(arr, zero_method="zsplit")
-    _ = stats.wilcoxon(arr, zero_method="wilcox")
+    def test_accuracy_wilcoxon(self):
+        freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
+        nums = range(-4, 5)
+        x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
+        y = np.zeros(x.size)
+
+        T, p = stats.wilcoxon(x, y, "pratt")
+        assert_allclose(T, 423)
+        assert_allclose(p, 0.00197547303533107)
+
+        T, p = stats.wilcoxon(x, y, "zsplit")
+        assert_allclose(T, 441)
+        assert_allclose(p, 0.0032145343172473055)
+
+        T, p = stats.wilcoxon(x, y, "wilcox")
+        assert_allclose(T, 327)
+        assert_allclose(p, 0.00641346115861)
+
+        # Test the 'correction' option, using values computed in R with:
+        # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
+        x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+        y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+        T, p = stats.wilcoxon(x, y, correction=False)
+        assert_equal(T, 34)
+        assert_allclose(p, 0.6948866, rtol=1e-6)
+        T, p = stats.wilcoxon(x, y, correction=True)
+        assert_equal(T, 34)
+        assert_allclose(p, 0.7240817, rtol=1e-6)
+
+    def test_wilcoxon_result_attributes(self):
+        x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+        y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+        res = stats.wilcoxon(x, y, correction=False)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
+
+    def test_wilcoxon_tie(self):
+        # Regression test for gh-2391.
+        # Corresponding R code is:
+        #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=FALSE)
+        #   > result$p.value
+        #   [1] 0.001565402
+        #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=TRUE)
+        #   > result$p.value
+        #   [1] 0.001904195
+        stat, p = stats.wilcoxon([0.1] * 10)
+        expected_p = 0.001565402
+        assert_equal(stat, 0)
+        assert_allclose(p, expected_p, rtol=1e-6)
+
+        stat, p = stats.wilcoxon([0.1] * 10, correction=True)
+        expected_p = 0.001904195
+        assert_equal(stat, 0)
+        assert_allclose(p, expected_p, rtol=1e-6)
+
+    def test_onesided(self):
+        # tested against "R version 3.4.1 (2017-06-30)"
+        # x <- c(125, 115, 130, 140, 140, 115, 140, 125, 140, 135)
+        # y <- c(110, 122, 125, 120, 140, 124, 123, 137, 135, 145)
+        # cfg <- list(x = x, y = y, paired = TRUE, exact = FALSE)
+        # do.call(wilcox.test, c(cfg, list(alternative = "less", correct = FALSE)))
+        # do.call(wilcox.test, c(cfg, list(alternative = "less", correct = TRUE)))
+        # do.call(wilcox.test, c(cfg, list(alternative = "greater", correct = FALSE)))
+        # do.call(wilcox.test, c(cfg, list(alternative = "greater", correct = TRUE)))
+        x = [125, 115, 130, 140, 140, 115, 140, 125, 140, 135]
+        y = [110, 122, 125, 120, 140, 124, 123, 137, 135, 145]
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message="Warning: sample size too small")
+            w, p = stats.wilcoxon(x, y, alternative="less")
+        assert_equal(w, 27)
+        assert_almost_equal(p, 0.7031847, decimal=6)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message="Warning: sample size too small")
+            w, p = stats.wilcoxon(x, y, alternative="less", correction=True)
+        assert_equal(w, 27)
+        assert_almost_equal(p, 0.7233656, decimal=6)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message="Warning: sample size too small")
+            w, p = stats.wilcoxon(x, y, alternative="greater")
+        assert_equal(w, 27)
+        assert_almost_equal(p, 0.2968153, decimal=6)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message="Warning: sample size too small")
+            w, p = stats.wilcoxon(x, y, alternative="greater", correction=True)
+        assert_equal(w, 27)
+        assert_almost_equal(p, 0.3176447, decimal=6)
 
 
 class TestKstat(object):
@@ -1460,63 +1553,6 @@ class TestCircFuncs(object):
         assert_equal(stats.circmean(x, high=180), 170.0)
         assert_allclose(stats.circvar(x, high=180), 437.45871686, rtol=1e-7)
         assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
-
-def test_accuracy_wilcoxon():
-    freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
-    nums = range(-4, 5)
-    x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
-    y = np.zeros(x.size)
-
-    T, p = stats.wilcoxon(x, y, "pratt")
-    assert_allclose(T, 423)
-    assert_allclose(p, 0.00197547303533107)
-
-    T, p = stats.wilcoxon(x, y, "zsplit")
-    assert_allclose(T, 441)
-    assert_allclose(p, 0.0032145343172473055)
-
-    T, p = stats.wilcoxon(x, y, "wilcox")
-    assert_allclose(T, 327)
-    assert_allclose(p, 0.00641346115861)
-
-    # Test the 'correction' option, using values computed in R with:
-    # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
-    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
-    y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-    T, p = stats.wilcoxon(x, y, correction=False)
-    assert_equal(T, 34)
-    assert_allclose(p, 0.6948866, rtol=1e-6)
-    T, p = stats.wilcoxon(x, y, correction=True)
-    assert_equal(T, 34)
-    assert_allclose(p, 0.7240817, rtol=1e-6)
-
-
-def test_wilcoxon_result_attributes():
-    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
-    y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-    res = stats.wilcoxon(x, y, correction=False)
-    attributes = ('statistic', 'pvalue')
-    check_named_results(res, attributes)
-
-
-def test_wilcoxon_tie():
-    # Regression test for gh-2391.
-    # Corresponding R code is:
-    #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=FALSE)
-    #   > result$p.value
-    #   [1] 0.001565402
-    #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=TRUE)
-    #   > result$p.value
-    #   [1] 0.001904195
-    stat, p = stats.wilcoxon([0.1] * 10)
-    expected_p = 0.001565402
-    assert_equal(stat, 0)
-    assert_allclose(p, expected_p, rtol=1e-6)
-
-    stat, p = stats.wilcoxon([0.1] * 10, correction=True)
-    expected_p = 0.001904195
-    assert_equal(stat, 0)
-    assert_allclose(p, expected_p, rtol=1e-6)
 
 
 class TestMedianTest(object):
