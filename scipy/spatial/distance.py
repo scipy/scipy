@@ -283,11 +283,8 @@ def _validate_minkowski_kwargs(X, m, n, **kwargs):
 
 
 def _validate_whamming_kwargs(X, m, n, **kwargs):
-    if 'w' not in kwargs:
-        kwargs['w'] = 1.
-
-    w = kwargs['w']
-    _validate_weights(w)
+    w = kwargs.get('w', 1.)
+    kwargs['w'] = _validate_weights(w)
     return kwargs
 
 
