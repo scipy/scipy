@@ -2880,13 +2880,13 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     # compute statistic and p-value using normal approximation
     z = (T - mn - d) / se
     if alternative == "two-sided":
-        prob = 2. * stats.norm.sf(abs(z))
+        prob = 2. * distributions.norm.sf(abs(z))
     elif alternative == "greater":
         # large T = r_plus indicates x is greater than y; i.e.
         # accept alternative in that case and return small p-value (sf)
-        prob = stats.norm.sf(z)
+        prob = distributions.norm.sf(z)
     else:
-        prob = stats.norm.cdf(z)
+        prob = distributions.norm.cdf(z)
 
     return WilcoxonResult(T, prob)
 
