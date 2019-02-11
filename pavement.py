@@ -74,7 +74,7 @@ try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
         raise RuntimeError("paver version >= 1.0 required (was %s)" % _PVER)
-except ImportError, e:
+except (ImportError, e):
     raise RuntimeError("paver version >= 1.0 required")
 
 import paver
@@ -113,10 +113,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.2.1-notes.rst'
+RELEASE = 'doc/release/1.2.2-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.2.0'
+LOG_START = 'v1.2.1'
 LOG_END = 'maintenance/1.2.x'
 
 
@@ -319,7 +319,7 @@ def sdist():
     sh('git submodule update')
 
     # Fix file permissions
-    sh('chmod a+rX -R *')
+    sh('chmod -R a+rX *')
 
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
@@ -658,7 +658,7 @@ def compute_md5(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
     for f in sorted(released):
-        m = md5(open(f, 'r').read())
+        m = md5(open(f, 'rb').read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -669,7 +669,7 @@ def compute_sha256(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
     for f in sorted(released):
-        m = sha256(open(f, 'r').read())
+        m = sha256(open(f, 'rb').read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -716,7 +716,7 @@ def write_log_task(filename='Changelog'):
             ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
             stdout=subprocess.PIPE)
 
-    out = st.communicate()[0]
+    out = st.communicate()[0].decode()
     a = open(filename, 'w')
     a.writelines(out)
     a.close()
