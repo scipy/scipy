@@ -283,9 +283,8 @@ def _validate_minkowski_kwargs(X, m, n, **kwargs):
 
 
 def _validate_whamming_kwargs(X, m, n, **kwargs):
-    w = kwargs.get('w', np.ones_like(n))
-    _validate_weights(w)
-    kwargs['w'] = w
+    w = kwargs.get('w', 1)
+    kwargs['w'] = _validate_weights(w)
     return kwargs
 
 
