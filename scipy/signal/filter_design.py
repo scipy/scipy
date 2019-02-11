@@ -2304,7 +2304,7 @@ def _relative_degree(z, p):
 
 
 def bilinear_zpk(z, p, k, fs):
-    """
+    r"""
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
