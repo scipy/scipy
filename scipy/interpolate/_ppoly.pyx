@@ -332,7 +332,7 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def integrate(double_or_complex[:,:,::1] c,
-              double[::1] x,
+              const double[::1] x,
               double a,
               double b,
               bint extrapolate,

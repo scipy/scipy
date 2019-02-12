@@ -1012,7 +1012,7 @@ class TestPPoly(object):
         p = PPoly(c, x, extrapolate='periodic')
 
         for writeable in (True, False):
-            xnew.flags.writeable = writeable
+            x.flags.writeable = writeable
             f = PPoly(c, x)
             vals = f(xnew)
             assert_(np.isfinite(vals).all())
@@ -1278,6 +1278,19 @@ class TestPPoly(object):
         assert_allclose(ig, ipp(b) - ipp(a))
 
         assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+
+    def test_integrate_readonly(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        for writeable in (True, False):
+            x.flags.writeable = writeable
+
+            P = PPoly(c, x)
+            I = P.antiderivative()
+
+            vals = I(4) - I(1)
+            assert_(np.isfinite(vals).all())
 
     def test_integrate_periodic(self):
         x = np.array([1, 2, 4])
