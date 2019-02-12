@@ -4391,15 +4391,15 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
     trimmed_mean_a = _calculate_trimmed_mean(trimmed_index_a, n1, a)
     trimmed_mean_b = _calculate_trimmed_mean(trimmed_index_b, n2, b)
 
-    trimmed_variance_a = _calculate_trimmed_variance(trimmed_index_a, trimmed_n1, n1, a)
-    trimmed_variance_b = _calculate_trimmed_variance(trimmed_index_b, trimmed_n2, n2, b)
+    winsorized_variance_a = _calculate_winsorized_variance(trimmed_index_a, trimmed_n1, n1, a)
+    winsorized_variance_b = _calculate_winsorized_variance(trimmed_index_b, trimmed_n2, n2, b)
 
-    t = ((trimmed_mean_a - trimmed_mean_b) / (math.sqrt((trimmed_variance_a / trimmed_n1)
-                                                        + (trimmed_variance_b / trimmed_n2))))
-    df = math.pow(((trimmed_variance_a / trimmed_n1)
-                   + (trimmed_variance_b / trimmed_n2)), 2) / ((math.pow((trimmed_variance_a / trimmed_n1), 2)
-                                                                / (trimmed_n1 - 1.0))
-                                                               + (math.pow((trimmed_variance_b / trimmed_n2), 2)
+    t = ((trimmed_mean_a - trimmed_mean_b) / (math.sqrt((winsorized_variance_a / trimmed_n1)
+                                                        + (winsorized_variance_b / trimmed_n2))))
+    df = math.pow(((winsorized_variance_a / trimmed_n1)
+                   + (winsorized_variance_b / trimmed_n2)), 2) / ((math.pow((winsorized_variance_a / trimmed_n1), 2)
+                                                                  / (trimmed_n1 - 1.0))
+                                                                  + (math.pow((winsorized_variance_b / trimmed_n2), 2)
                                                                   / (trimmed_n2 - 1.0)))
     t, prob = _ttest_finish(df, t)
 
@@ -4413,22 +4413,21 @@ def _calculate_trimmed_mean(trimmed_index, n, a):
     return trimmed_mean
 
 
-def _calculate_trimmed_variance(trimmed_index, trimmed_n, n, a):
+def _calculate_winsorized_variance(trimmed_index, trimmed_n, n, a):
 
     trimmed_array = a[int(trimmed_index + 1):int(n - trimmed_index - 1)]
     trimmed_sum = sum(trimmed_array)
-    trimmed_mean = (1.0 / n) * (((trimmed_index + 1.0) * a[int(trimmed_index)]) + trimmed_sum
-                                + ((trimmed_index + 1.0) * a[int(n - trimmed_index - 1.0)]))
-    sum_of_difference = sum([math.pow(value - trimmed_mean, 2) for value in trimmed_array])
-    trimmed_variance_temp = ((trimmed_index + 1.0)
-                             * math.pow((a[int(trimmed_index)]
-                                         - trimmed_mean), 2)) + sum_of_difference + ((trimmed_index + 1.0)
-                                                                                     * (math.pow((a[int(n
-                                                                                                        - trimmed_index
-                                                                                                        - 1.0)]
-                                                                                                  - trimmed_mean), 2)))
-    trimmed_variance = trimmed_variance_temp / (trimmed_n - 1.0)
-    return trimmed_variance
+    winsorized_mean = (1.0 / n) * (((trimmed_index + 1.0) * a[int(trimmed_index)]) + trimmed_sum
+                                   + ((trimmed_index + 1.0) * a[int(n - trimmed_index - 1.0)]))
+    internal_sum_of_squares = sum([math.pow(value - winsorized_mean, 2) for value in trimmed_array])
+    winsorized_sum_of_squares = ((trimmed_index + 1.0)
+                                 * math.pow((a[int(trimmed_index)]
+                                             - winsorized_mean), 2)) + internal_sum_of_squares \
+                                                                     + ((trimmed_index + 1.0)
+                                                                        * (math.pow((a[int(n - trimmed_index - 1.0)]
+                                                                                    - winsorized_mean), 2)))
+    winsorized_variance = winsorized_sum_of_squares / (trimmed_n - 1.0)
+    return winsorized_variance
 
 
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
