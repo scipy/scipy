@@ -701,6 +701,43 @@ class TestConvexHull:
         assert_allclose(tri.volume, 1., rtol=1e-14)
         assert_allclose(tri.area, 6., rtol=1e-14)
 
+    def test_good2d(self):
+        # Make sure the QGn option gives the correct value of "good".
+        points = np.array([[0.2, 0.2],
+                           [0.2, 0.4],
+                           [0.4, 0.4],
+                           [0.4, 0.2],
+                           [0.3, 0.6]])
+        hull = ConvexHull(points=points, qhull_options='QG4')
+        expected = np.array([False, True, False, False], dtype=bool)
+        actual = hull.good
+        assert_equal(actual, expected)
+
+    def test_good2d_inside(self):
+        # Make sure the QGn option gives the correct value of "good".
+        # When point n is inside the convex hull of the rest, good i
+        # all False.
+        points = np.array([[0.2, 0.2],
+                           [0.2, 0.4],
+                           [0.4, 0.4],
+                           [0.4, 0.2],
+                           [0.3, 0.3]])
+        hull = ConvexHull(points=points, qhull_options='QG4')
+        expected = np.array([False, False, False, False], dtype=bool)
+        actual = hull.good
+        assert_equal(actual, expected)
+
+    def test_good3d(self):
+        # Make sure the QGn option gives the correct value of "good"
+        # for a 3d figure..
+         points = np.array([[0.0,         0.0,         0.0       ],
+                            [0.90029516, -0.39187448,  0.18948093],
+                            [0.48676420, -0.72627633,  0.48536925],
+                            [0.57651530, -0.81179274, -0.09285832],
+                            [0.67846893, -0.71119562,  0.18406710]])
+         hull = ConvexHull(points=points, qhull_options='QG0')
+         expected = np.array([True, False, False, False], dtype=bool)
+         assert_equal(hull.good, expected)
 
 class TestVoronoi:
     def test_masked_array_fails(self):
