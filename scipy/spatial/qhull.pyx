@@ -323,7 +323,6 @@ cdef class _Qhull:
         self._dual_point_arrays = []
         self.options = b" ".join(option_set)
         self.mode_option = mode_option
-        self.furthest_site = furthest_site
 
         options = b"qhull "  + mode_option +  b" " + self.options
 
@@ -1718,6 +1717,10 @@ class Delaunay(_QhullUser):
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
+    furthest_site
+        True if this was a furthest site triangulation and False if not.
+
+        .. versionadded:: 1.3.x
 
     Raises
     ------
@@ -1833,6 +1836,8 @@ class Delaunay(_QhullUser):
                        furthest_site=furthest_site, incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
+        self.furthest_site = furthest_site
+
     def _update(self, qhull):
         qhull.triangulate()
 
@@ -1842,7 +1847,6 @@ class Delaunay(_QhullUser):
         self.simplices, self.neighbors, self.equations, self.coplanar, self.good = \
                        qhull.get_simplex_facet_array()
 
-        self.good = self.good.astype(bool)
         self.nsimplex = self.simplices.shape[0]
         self._transform = None
         self._vertex_to_simplex = None
@@ -2295,11 +2299,18 @@ class ConvexHull(_QhullUser):
         the nearest facets and nearest vertex indices.  Coplanar
         points are input points which were *not* included in the
         triangulation due to numerical precision issues.
-    good : Boolean array indicated which facets (simplices) are good.
-        Used with options that compute good facets, e.g. QGn and 
-        QG-n.
 
         If option "Qc" is not specified, this list is not computed.
+    good : A one-dimensional Boolean array indicating which facets are
+        good.  Used with options that compute good facets, e.g. QGn
+        and QG-n.  When QGn and QG-n are used, ConvexHull computes the
+        facets of the convex hull that are visible from point n, where
+        n is the nth point in 'points'.  The 'good' attribute may be
+        used as an index into 'simplices' to return the good (visible)
+        facets: simplices[good].
+
+
+        .. versionadded:: 1.3.x
     area : float
         Area of the convex hull.
 
@@ -2344,6 +2355,56 @@ class ConvexHull(_QhullUser):
     >>> plt.plot(points[hull.vertices,0], points[hull.vertices,1], 'r--', lw=2)
     >>> plt.plot(points[hull.vertices[0],0], points[hull.vertices[0],1], 'ro')
     >>> plt.show()
+
+    Facets visible from a point:
+
+    Import some modules.
+    >>> import numpy as np
+    >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+    >>> import matplotlib.pyplot as plt
+
+    Create a square and add a point above the square.
+    >>> generators = np.array([[0.2, 0.2],
+    >>>                        [0.2, 0.4],
+    >>>                        [0.4, 0.4],
+    >>>                        [0.4, 0.2],
+    >>>                        [0.3, 0.6]])
+
+    Call ConvexHull with the QG option.  QG4 means 
+    compute the portions of the hull not including
+    point 4 indicating the facets that are visible 
+    from point 4.
+    >>> hull = ConvexHull(points=generators,
+    >>>                   qhull_options='QG4')
+
+    Print the result.  The "good" array indicates which 
+    facets are visible from point 4.
+    >>> print(hull.simplices)
+    >>> print(hull.good)
+
+    Now plot it, highlighting the visible facets.
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(1,1,1)
+
+    >>> for visible_facet in hull.simplices[hull.good]:
+    >>>     ax.plot(hull.points[visible_facet, 0],
+    >>>             hull.points[visible_facet, 1],
+    >>>             color='violet',
+    >>>             lw=6)
+    >>> convex_hull_plot_2d(hull, ax=ax)
+    >>> plt.show()
+
+    Note that, in the above example, if the point have been
+    inside the square, e.g.
+    >>> generators = np.array([[0.2, 0.2],
+    >>>                        [0.2, 0.4],
+    >>>                        [0.4, 0.4],
+    >>>                        [0.4, 0.2],
+    >>>                        [0.3, 0.3]])
+    then the "good" array would be entirely false.  This
+    is because the outside edge of the facet must face the
+    reference point for the facet to be visible from the
+    point.
 
     References
     ----------
@@ -2444,6 +2505,10 @@ class Voronoi(_QhullUser):
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
+    furthest_site
+        True if this was a furthest site tesselation and False if not.
+
+        .. versionadded:: 1.3.x
 
     Raises
     ------
@@ -2527,6 +2592,8 @@ class Voronoi(_QhullUser):
         qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site,
                        incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
+
+        self.furthest_site = furthest_site
 
     def _update(self, qhull):
         self.vertices, self.ridge_points, self.ridge_vertices, \
