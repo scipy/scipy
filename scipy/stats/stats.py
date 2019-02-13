@@ -4388,8 +4388,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
     trimmed_n1 = n1 - (2 * trimmed_index_a)
     trimmed_n2 = n2 - (2 * trimmed_index_b)
 
-    trimmed_mean_a = _calculate_trimmed_mean(trimmed_index_a, n1, a)
-    trimmed_mean_b = _calculate_trimmed_mean(trimmed_index_b, n2, b)
+    trimmed_mean_a = trim_mean(a, trimming_percentage / 100.0)
+    trimmed_mean_b = trim_mean(b, trimming_percentage / 100.0)
 
     winsorized_variance_a = _calculate_winsorized_variance(trimmed_index_a, trimmed_n1, n1, a)
     winsorized_variance_b = _calculate_winsorized_variance(trimmed_index_b, trimmed_n2, n2, b)
@@ -4401,16 +4401,10 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
                                                                   / (trimmed_n1 - 1.0))
                                                                   + (math.pow((winsorized_variance_b / trimmed_n2), 2)
                                                                   / (trimmed_n2 - 1.0)))
+
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
-
-
-def _calculate_trimmed_mean(trimmed_index, n, a):
-
-    trimmed_sum = sum(a[int(trimmed_index):int(n - trimmed_index)])
-    trimmed_mean = (1.0 / (n - (2.0 * trimmed_index))) * trimmed_sum
-    return trimmed_mean
 
 
 def _calculate_winsorized_variance(trimmed_index, trimmed_n, n, a):
