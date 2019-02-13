@@ -189,6 +189,7 @@ Summary statistics
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
+   gstd              -- Geometric Standard Deviation
    iqr
    sem
    bayes_mvs
