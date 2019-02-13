@@ -703,8 +703,9 @@ class TestInterp1D(object):
         y = np.exp(-x / 3.0)
         xnew = np.arange(0, 9, 0.1)
         # Check both read-only and not read-only:
-        for writeable in (True, False):
-            xnew.flags.writeable = writeable
+        for xnew_writeable in (True, False):
+            xnew.flags.writeable = xnew_writeable
+            x.flags.writeable = False
             for kind in ('linear', 'nearest', 'zero', 'slinear', 'quadratic',
                          'cubic'):
                 f = interp1d(x, y, kind=kind)
@@ -1287,9 +1288,8 @@ class TestPPoly(object):
             x.flags.writeable = writeable
 
             P = PPoly(c, x)
-            I = P.antiderivative()
+            vals = P.integrate(1, 4)
 
-            vals = I(4) - I(1)
             assert_(np.isfinite(vals).all())
 
     def test_integrate_periodic(self):
