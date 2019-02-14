@@ -1,3 +1,20 @@
+"""Revised simplex method for linear programming
+
+The *revised simplex* method uses the method decribed in [1]_, except
+that a factorization [2]_ of the basis matrix, rather than its inverse,
+is efficiently maintained and used to solve the linear systems at each
+iteration of the algorithm.
+
+.. versionadded:: 1.3.0
+
+References
+----------
+.. [1] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
+           programming." Athena Scientific 1 (1997): 997.
+.. [2] Bartels, Richard H. "A stabilization of the simplex method."
+            Journal in  Numerische Mathematik 16.5 (1971): 414-434.
+
+"""
 # Author: Matt Haberland
 
 from __future__ import division, absolute_import, print_function

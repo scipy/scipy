@@ -1,5 +1,31 @@
-"""
-Simplex method for solving linear programming problems
+"""Simplex method for  linear programming
+
+The *simplex* method uses a traditional, full-tableau implementation of
+Dantzig's simplex algorithm [1]_, [2]_ (*not* the Nelder-Mead simplex).
+This algorithm is included for backwards compatibility and educational
+purposes.
+
+    .. versionadded:: 0.15.0
+
+Warnings
+--------
+
+The simplex method may encounter numerical difficulties when pivot
+values are close to the specified tolerance. If encountered try
+remove any redundant constraints, change the pivot strategy to Bland's
+rule or increase the tolerance value.
+
+Alternatively, more robust methods maybe be used. See
+:ref:`'interior-point' <optimize.linprog-interior-point>` and
+:ref:`'revised simplex' <optimize.linprog-revised_simplex>`.
+
+References
+----------
+.. [1] Dantzig, George B., Linear programming and extensions. Rand
+       Corporation Research Study Princeton Univ. Press, Princeton, NJ,
+       1963
+.. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
+       Mathematical Programming", McGraw-Hill, Chapter 4.
 """
 
 import numpy as np
