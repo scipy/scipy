@@ -2398,40 +2398,12 @@ def gstd(a, axis=0, ddof=1):
     The default value for `ddof` is different to the default value (0) used
     by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
 
-
-    Parameters
-    ----------
-    a : array_like
-        An array like object containing the sample data.
-    axis : int, tuple or None, optional
-        Axis along which to operate. Default is 0. If None, compute over
-        the whole array `a`.
-    ddof : int, optional
-        Degree of freedom correction in the calculation of the
-        geometric standard deviation. Default is 1.
-
-    Returns
-    -------
-    ndarray or float
-        An array of the geometric standard deviation. If `axis` is None or `a`
-        is a 1d array a float is returned.
-
-    Notes
-    -----
-    As the calculation requires the use of logarithms the geometric standard
-    deviation only supports strictly positive values. Any non-positive or
-    infinite values will raise a `ValueError`.
-    The geometric standard deviation is sometimes confused with the exponent of
-    the standard deviation, ``exp(std(a))``. Instead the geometric standard
-    deviation is ``exp(std(log(a)))``.
-    The default value for `ddof` is different to the default value (0) used
-    by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
-
     Examples
     --------
     Find the geometric standard deviation of a log-normally distributed sample.
     Note that the standard deviation of the distribution is one, on a
     log scale this evaluates to approximately ``exp(1)``.
+
     >>> from scipy.stats import gstd
     >>> np.random.seed(123)
     >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
