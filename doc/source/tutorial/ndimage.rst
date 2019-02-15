@@ -1772,9 +1772,10 @@ callback function and gives the prototype of the function.
 
    `generic_filter`, `generic_filter1d`, `geometric_transform`
 
-Below, we show alternative ways to write the code, using Cython_,
+Below, we show alternative ways to write the code, using Numba_, Cython_,
 ctypes_, or cffi_ instead of writing wrapper code in C.
 
+.. _Numba: https://numba.pydata.org/
 .. _Cython: https://cython.org/
 .. _ctypes: https://docs.python.org/3/library/ctypes.html
 .. _cffi: https://cffi.readthedocs.io/
