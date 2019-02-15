@@ -1775,7 +1775,7 @@ callback function and gives the prototype of the function.
 Below, we show alternative ways to write the code, using Cython_,
 ctypes_, or cffi_ instead of writing wrapper code in C.
 
-.. _Cython: http://cython.org/
+.. _Cython: https://cython.org/
 .. _ctypes: https://docs.python.org/3/library/ctypes.html
 .. _cffi: https://cffi.readthedocs.io/
 
