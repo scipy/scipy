@@ -4322,9 +4322,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
-    trimming_percentage : percent of trimming for default it is set to 20% In the Yuen's paper
-         it is shown that a trimming of 20% gives the best results according 
-         to nominal values (see table 2 in paper Yuen 1974)
+    trimming_percentage : percent of trimming for default it is set to 20% For information about
+        trimming values (see table 2 in paper Yuen 1974)
     equal_var : bool, optional
         If True (default), perform a standard independent 2 sample test
         that assumes equal population variances.
@@ -4342,7 +4341,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
     References
     ----------
     Karen K. Yuen (1974), "The two-sample trimmed t for unequal population 
-    variances", Biometrika Volume 65, Number 1, 165–170, 
+    variances", Biometrika Volume 61, Number 1, 165–170,
     DOI: https://doi.org/10.1093/biomet/61.1.165 
 
     Examples
