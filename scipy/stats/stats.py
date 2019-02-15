@@ -4341,7 +4341,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
     References
     ----------
     Karen K. Yuen (1974), "The two-sample trimmed t for unequal population 
-    variances", Biometrika Volume 61, Number 1, 165–170,
+    variances", Biometrika Volume 61, Number 1, 165-170,
     DOI: https://doi.org/10.1093/biomet/61.1.165 
 
     Examples
