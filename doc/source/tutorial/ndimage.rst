@@ -1819,8 +1819,6 @@ We can write the above using Numba as:
    im = np.arange(12).reshape(4, 3).astype(np.float64)
    print(ndimage.geometric_transform(im, callback))
 
-.. _Numba: http://numba.pydata.org/
-
 
 .. rubric:: Cython
 
