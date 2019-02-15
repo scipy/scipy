@@ -4304,12 +4304,12 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
 
     Data sets with low kurtosis (i.e., a distribution flatter than the normal 
     distribution) should be analyzed with the two-sample trimmed t-test 
-    for unequal population variances, also called Yuen’s t-test.
-    Yuen’s t-test, also called “20 percent trimmed means test”, is an extension 
-    of Welch’s t-test and is allegedly more robust in case of non-normal 
+    for unequal population variances, also called Yuen t-test.
+    Yuen t-test, also called "20 percent trimmed means test", is an extension
+    of Welch t-test and is allegedly more robust in case of non-normal
     distributions.
-    Yuen’s t-test consists of removing the lowest and highest 20 percent 
-    of the data and applying Welch’s t-test on the remaining values.
+    Yuen t-test consists of removing the lowest and highest 20 percent
+    of the data and applying Welch t-test on the remaining values.
 
     Parameters
     ----------
