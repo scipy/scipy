@@ -212,6 +212,38 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         return res['x']
 
 
+class KKT(dict):
+    """ Represents the KKT multipliers from an optimization result.
+
+    Attributes
+    ----------
+    equality : ndarray
+        KKT multipliers associated with the equality constraints.
+    inequality : ndarray
+        KKT multipliers associated with the inequality constraints.
+
+    """
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, list(self.keys()))) + 1
+            return ''.join([k.rjust(m) + ': ' + repr(v)
+                              for k, v in sorted(self.items())])
+        else:
+            return self.__class__.__name__ + "()"
+
+    def __dir__(self):
+        return list(self.keys())
+
+
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
@@ -474,7 +506,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
                           nfev=feval[0], njev=geval[0], status=int(mode),
-                          message=exit_modes[int(mode)], success=(mode == 0))
+                          message=exit_modes[int(mode)], success=(mode == 0),
+                          kkt=KKT(equality=w[:meq], inequality=w[meq:meq+mieq]))
 
 
 if __name__ == '__main__':
