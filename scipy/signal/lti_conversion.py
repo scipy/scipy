@@ -467,13 +467,11 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     elif method == 'foh':
         # Build an exponential matrix similar to 'zoh' method
-        em_upper = np.hstack((a, b, np.zeros((a.shape[0], b.shape[1]))))
-        em_middle = np.hstack((np.zeros((b.shape[1], a.shape[0] + b.shape[1])),
-                               np.eye(b.shape[1]) / dt))
-        em_lower = np.zeros((b.shape[1], a.shape[0] + 2 * b.shape[1]))
-        em = np.vstack((em_upper, em_middle, em_lower))
+        em_upper = linalg.block_diag(np.block([a, b]) * dt, np.eye(b.shape[1]))
+        em_lower = zeros((b.shape[1], a.shape[0] + 2 * b.shape[1]))
+        em = np.block([[em_upper], [em_lower]])
 
-        ms = linalg.expm(dt * em)
+        ms = linalg.expm(em)
 
         # Get the three blocks from upper rows
         ms11 = ms[:a.shape[0], :a.shape[0]]

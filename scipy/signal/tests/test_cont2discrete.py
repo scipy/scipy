@@ -39,6 +39,7 @@ class TestC2D(object):
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
+        # True values are computed with c2d(..., 'foh') in Matlab
         ad_truth = 1.648721270700128 * np.eye(2)
         bd_truth = 0.420839287058789 * np.ones((2, 1))
         cd_truth = cc
