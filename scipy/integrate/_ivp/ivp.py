@@ -413,8 +413,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      [8.         7.5534414  4.25308709 1.73277247 0.7059579  0.287618
       0.11717996 0.05403753]]
 
-
-     
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(sol.t, sol.y[0], label='y0 = 2')
     >>> plt.plot(sol.t, sol.y[1], label='y0 = 4')
