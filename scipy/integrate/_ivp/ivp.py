@@ -409,6 +409,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     [[2.         1.21305369 0.73534021 0.27066736 0.01350938]
      [4.         2.42610739 1.47068043 0.54133472 0.02701876]
      [8.         4.85221478 2.94136085 1.08266944 0.05403753]]
+     
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(sol.t, sol.y[0][0], label='y0 = 2')
+    >>> plt.plot(sol.t, sol.y[0][1], label='y0 = 4')
+    >>> plt.plot(sol.t, sol.y[0][2], label='y0 = 8')
+    >>> plt.legend()
+    >>> plt.xlabel('t')
+    >>> plt.show()
 
     Cannon fired upward with terminal event upon impact. The ``terminal`` and
     ``direction`` fields of an event are applied by monkey patching a function.
