@@ -359,6 +359,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
             * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default)
+            * foh: first-order hold
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
@@ -381,7 +382,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     an Euler's method technique, or a backwards differencing technique.
 
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
-    approximation is based on [2]_ and [3]_.
+    approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
+    is based on [4]_.
 
     References
     ----------
@@ -393,6 +395,10 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
         2009.
         (https://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
+
+    .. [4] G. F. Franklin, J. D. Powell, and M. L. Workman, Digital control of dynamic systems,
+        3rd ed. Menlo Park, Calif: Addison-Wesley, pp. 204-206, 1998.
+
 
     """
     if len(system) == 1:
@@ -458,6 +464,27 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
         cd = c
         dd = d
+
+    elif method == 'foh':
+        # Build an exponential matrix similar to 'zoh' method
+        em_upper = np.hstack((a, b, np.zeros((a.shape[0], b.shape[1]))))
+        em_middle = np.hstack((np.zeros((b.shape[1], a.shape[0] + b.shape[1])),
+                               np.eye(b.shape[1]) / dt))
+        em_lower = np.zeros((b.shape[1], a.shape[0] + 2 * b.shape[1]))
+        em = np.vstack((em_upper, em_middle, em_lower))
+
+        ms = linalg.expm(dt * em)
+
+        # Get the three blocks from upper rows
+        ms11 = ms[:a.shape[0], :a.shape[0]]
+        ms12 = ms[:a.shape[0], a.shape[0]:a.shape[0] + b.shape[1]]
+        ms13 = ms[:a.shape[0], a.shape[0] + b.shape[1]:]
+
+        ad = ms11
+        bd = ms12 - ms13 + ms11.dot(ms13)
+
+        cd = c
+        dd = d + c.dot(ms13)
 
     else:
         raise ValueError("Unknown transformation method '%s'" % method)
