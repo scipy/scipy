@@ -1699,19 +1699,66 @@ def lp2hp(b, a, wo=1.0):
 
 
 def lp2bp(b, a, wo=1.0, bw=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a bandpass filter.
 
     Return an analog band-pass filter with center frequency `wo` and
     bandwidth `bw` from an analog low-pass filter prototype with unity
     cutoff frequency, in transfer function ('ba') representation.
 
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
+    wo : float
+        Desired passband center, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+    bw : float
+        Desired passband width, as angular frequency (e.g. rad/s).
+        Defaults to 1.
+
+    Returns
+    -------
+    b : array_like
+        Numerator polynomial coefficients of the transformed band-pass filter.
+    a : array_like
+        Denominator polynomial coefficients of the transformed band-pass filter.
+
     See Also
     --------
     lp2lp, lp2hp, lp2bs, bilinear
     lp2bp_zpk
 
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s^2 + {\omega_0}^2}{s \cdot \mathrm{BW}}
+
+    This is the "wideband" transformation, producing a passband with
+    geometric (log frequency) symmetry about `wo`.
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> lp = signal.lti([1.0], [1.0, 1.0])
+    >>> bp = signal.lti(*signal.lp2bp(lp.num, lp.den))
+    >>> w, mag_lp, p_lp = lp.bode()
+    >>> w, mag_bp, p_bp = bp.bode(w)
+
+    >>> plt.plot(w, mag_lp, label='Lowpass')
+    >>> plt.plot(w, mag_bp, label='Bandpass')
+    >>> plt.semilogx()
+    >>> plt.grid()
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.legend()
     """
+
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
@@ -1741,18 +1788,63 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
 
 
 def lp2bs(b, a, wo=1.0, bw=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a bandstop filter.
 
     Return an analog band-stop filter with center frequency `wo` and
     bandwidth `bw` from an analog low-pass filter prototype with unity
     cutoff frequency, in transfer function ('ba') representation.
 
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
+    wo : float
+        Desired stopband center, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+    bw : float
+        Desired stopband width, as angular frequency (e.g. rad/s).
+        Defaults to 1.
+
+    Returns
+    -------
+    b : array_like
+        Numerator polynomial coefficients of the transformed band-stop filter.
+    a : array_like
+        Denominator polynomial coefficients of the transformed band-stop filter.
+
     See Also
     --------
     lp2lp, lp2hp, lp2bp, bilinear
     lp2bs_zpk
 
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s \cdot \mathrm{BW}}{s^2 + {\omega_0}^2}
+
+    This is the "wideband" transformation, producing a stopband with
+    geometric (log frequency) symmetry about `wo`.
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> lp = signal.lti([1.0], [1.0, 1.5])
+    >>> bs = signal.lti(*signal.lp2bs(lp.num, lp.den))
+    >>> w, mag_lp, p_lp = lp.bode()
+    >>> w, mag_bs, p_bs = bs.bode(w)
+    >>> plt.plot(w, mag_lp, label='Lowpass')
+    >>> plt.plot(w, mag_bs, label='Bandstop')
+    >>> plt.semilogx()
+    >>> plt.grid()
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.legend()
     """
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
@@ -1897,6 +1989,41 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     Notes
     -----
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    Examples
+    --------
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> import matplotlib.ticker
+    >>> import numpy as np
+
+    >>> wp = 0.2
+    >>> ws = 0.3
+    >>> gpass = 1
+    >>> gstop = 40
+
+    >>> system = signal.iirdesign(wp, ws, gpass, gstop)
+    >>> w, h = signal.freqz(*system)
+
+    >>> fig, ax1 = plt.subplots()
+    >>> ax1.set_title('Digital filter frequency response')
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
+    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
+    >>> ax1.set_xlabel('Frequency [rad/sample]')
+    >>> ax1.grid()
+    >>> ax1.set_ylim([-120, 20])
+    >>> ax2 = ax1.twinx()
+    >>> angles = np.unwrap(np.angle(h))
+    >>> ax2.plot(w, angles, 'g')
+    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> ax2.grid()
+    >>> ax2.axis('tight')
+    >>> ax2.set_ylim([-6, 1])
+    >>> nticks = 8
+    >>> ax1.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+    >>> ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+
     """
     try:
         ordfunc = filter_dict[ftype][1]

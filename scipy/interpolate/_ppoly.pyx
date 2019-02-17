@@ -39,8 +39,8 @@ DEF MAX_DIMS = 64
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate(double_or_complex[:,:,::1] c,
-             double[::1] x,
-             double[::1] xp,
+             const double[::1] x,
+             const double[::1] xp,
              int dx,
              bint extrapolate,
              double_or_complex[:,::1] out):
@@ -332,7 +332,7 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def integrate(double_or_complex[:,:,::1] c,
-              double[::1] x,
+              const double[::1] x,
               double a,
               double b,
               bint extrapolate,
@@ -1047,7 +1047,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
     # special-case lowest orders
     if k == 0:
         res = c[0, ci, cj]
-    elif k == 1: 
+    elif k == 1:
         res = c[0, ci, cj] * s1 + c[1, ci, cj] * s
     elif k == 2:
         res = c[0, ci, cj] * s1*s1 + c[1, ci, cj] * 2.*s1*s + c[2, ci, cj] * s*s
@@ -1073,7 +1073,7 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              int nu,
                                              double_or_complex[:,:,::1] wrk) nogil:
     """
-    Evaluate the derivative of a polynomial in the Bernstein basis 
+    Evaluate the derivative of a polynomial in the Bernstein basis
     in a single interval.
 
     A Bernstein polynomial is defined as
@@ -1182,7 +1182,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
         else:
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
-        
+
 
     interval = 0
     cdef bint ascending = x[x.shape[0] - 1] >= x[0]

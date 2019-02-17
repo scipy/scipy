@@ -703,8 +703,9 @@ class TestInterp1D(object):
         y = np.exp(-x / 3.0)
         xnew = np.arange(0, 9, 0.1)
         # Check both read-only and not read-only:
-        for writeable in (True, False):
-            xnew.flags.writeable = writeable
+        for xnew_writeable in (True, False):
+            xnew.flags.writeable = xnew_writeable
+            x.flags.writeable = False
             for kind in ('linear', 'nearest', 'zero', 'slinear', 'quadratic',
                          'cubic'):
                 f = interp1d(x, y, kind=kind)
@@ -1005,6 +1006,18 @@ class TestPPoly(object):
         assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
         assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
 
+    def test_read_only(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        xnew = np.array([0, 0.1, 0.2])
+        p = PPoly(c, x, extrapolate='periodic')
+
+        for writeable in (True, False):
+            x.flags.writeable = writeable
+            f = PPoly(c, x)
+            vals = f(xnew)
+            assert_(np.isfinite(vals).all())
+
     def test_descending(self):
         def binom_matrix(power):
             n = np.arange(power + 1).reshape(-1, 1)
@@ -1266,6 +1279,18 @@ class TestPPoly(object):
         assert_allclose(ig, ipp(b) - ipp(a))
 
         assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+
+    def test_integrate_readonly(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        for writeable in (True, False):
+            x.flags.writeable = writeable
+
+            P = PPoly(c, x)
+            vals = P.integrate(1, 4)
+
+            assert_(np.isfinite(vals).all())
 
     def test_integrate_periodic(self):
         x = np.array([1, 2, 4])
@@ -2766,4 +2791,3 @@ class TestInterpN(object):
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
             assert_allclose(v1, np.asmatrix(v2))
-
