@@ -467,23 +467,26 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         dd = d
 
     elif method == 'foh':
+        # Size parameters for convenience
+        n = a.shape[0]
+        m = b.shape[1]
+
         # Build an exponential matrix similar to 'zoh' method
-        em_upper = linalg.block_diag(np.block([a, b]) * dt, np.eye(b.shape[1]))
-        em_lower = zeros((b.shape[1], a.shape[0] + 2 * b.shape[1]))
+        em_upper = linalg.block_diag(np.block([a, b]) * dt, np.eye(m))
+        em_lower = zeros((m, n + 2 * m))
         em = np.block([[em_upper], [em_lower]])
 
         ms = linalg.expm(em)
 
         # Get the three blocks from upper rows
-        ms11 = ms[:a.shape[0], :a.shape[0]]
-        ms12 = ms[:a.shape[0], a.shape[0]:a.shape[0] + b.shape[1]]
-        ms13 = ms[:a.shape[0], a.shape[0] + b.shape[1]:]
+        ms11 = ms[:n, 0:n]
+        ms12 = ms[:n, n:n + m]
+        ms13 = ms[:n, n + m:]
 
         ad = ms11
-        bd = ms12 - ms13 + ms11.dot(ms13)
-
+        bd = ms12 - ms13 + ms11 @ ms13
         cd = c
-        dd = d + c.dot(ms13)
+        dd = d + c @ ms13
 
     elif method == 'impulse':
         if not np.allclose(d, 0):
@@ -492,8 +495,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
         ad = linalg.expm(a * dt)
         bd = b * dt
-        cd = c.dot(ad)
-        dd = c.dot(bd)
+        cd = c @ ad
+        dd = c @ bd
 
     else:
         raise ValueError("Unknown transformation method '%s'" % method)
