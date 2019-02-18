@@ -103,8 +103,8 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - pypy3-nightly-ccache-{{ .Branch }}
-            - pypy3-nightly-ccache
+            - pypy3.6v7.0-ccache-{{ .Branch }}
+            - pypy3.6v7.0-ccache
       - checkout
       - run:
           name: install libs and set global env vars
