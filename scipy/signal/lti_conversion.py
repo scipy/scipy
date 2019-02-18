@@ -360,6 +360,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default)
             * foh: first-order hold
+            * impulse: equivalent impulse response
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
@@ -483,6 +484,16 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
         cd = c
         dd = d + c.dot(ms13)
+
+    elif method == 'impulse':
+        if not np.allclose(d, 0):
+            raise ValueError("Impulse method is only applicable"
+                             "to strictly proper systems")
+
+        ad = linalg.expm(a * dt)
+        bd = b * dt
+        cd = c.dot(ad)
+        dd = c.dot(bd)
 
     else:
         raise ValueError("Unknown transformation method '%s'" % method)

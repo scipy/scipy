@@ -56,6 +56,29 @@ class TestC2D(object):
         assert_array_almost_equal(dd_truth, dd)
         assert_almost_equal(dt_requested, dt)
 
+    def test_impulse(self):
+        ac = np.eye(2)
+        bc = 0.5 * np.ones((2, 1))
+        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = np.array([[0.0], [0.0], [0.0]])
+
+        # True values
+        ad_truth = 1.648721270700128 * np.eye(2)
+        bd_truth = 0.25 * np.ones((2, 1))
+        cd_truth = np.array([[1.236540953025096, 1.648721270700128],
+                             [1.648721270700128, 1.648721270700128],
+                             [1.648721270700128, 0.412180317675032]])
+        dd_truth = np.array([[0.4375], [0.5], [0.3125]])
+        dt_requested = 0.5
+
+        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested, method='impulse')
+
+        assert_array_almost_equal(ad_truth, ad)
+        assert_array_almost_equal(bd_truth, bd)
+        assert_array_almost_equal(cd_truth, cd)
+        assert_array_almost_equal(dd_truth, dd)
+        assert_almost_equal(dt_requested, dt)
+
     def test_gbt(self):
         ac = np.eye(2)
         bc = 0.5 * np.ones((2, 1))
