@@ -4583,7 +4583,7 @@ maxwell = maxwell_gen(a=0.0, name='maxwell')
 
 
 class mielke_gen(rv_continuous):
-    r"""A Mielke's Beta-Kappa continuous random variable.
+    r"""Mielke's Beta-Kappa continuous random variable[1]_.
 
     %(before_notes)s
 
@@ -4600,6 +4600,11 @@ class mielke_gen(rv_continuous):
     `mielke` takes ``k`` and ``s`` as shape parameters.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Mielke, P.W., 1973 "Another Family of Distributions for Describing
+          and Analyzing Precipitation Data." J. Appl. Meteor., 12, 275-280
 
     %(example)s
 
