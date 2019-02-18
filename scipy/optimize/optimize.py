@@ -102,6 +102,9 @@ class OptimizeResult(dict):
         Number of iterations performed by the optimizer.
     maxcv : float
         The maximum constraint violation.
+    kkt : list
+        The kkt multipliers associated with constraint functions returned as
+        a list of ndarrays. Not available for all solvers.
 
     Notes
     -----

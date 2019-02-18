@@ -212,38 +212,6 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         return res['x']
 
 
-class KKT(dict):
-    """ Represents the KKT multipliers from an optimization result.
-
-    Attributes
-    ----------
-    equality : ndarray
-        KKT multipliers associated with the equality constraints.
-    inequality : ndarray
-        KKT multipliers associated with the inequality constraints.
-
-    """
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __repr__(self):
-        if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
-            return ''.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in sorted(self.items())])
-        else:
-            return self.__class__.__name__ + "()"
-
-    def __dir__(self):
-        return list(self.keys())
-
-
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
@@ -496,6 +464,26 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
+    # Get the KKT multipliers from SLSQP result
+    # TODO: This call is required to get the correct kkt values. I'm not sure why. This is out of place.
+    # Comment this out to get incorrect multipliers.
+    slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
+          alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+          iexact, incons, ireset, itermx, line,
+          n1, n2, n3)
+
+    w_ind = 0
+    ind_mapper = []
+    kkt = []
+    for constraint in cons['eq'] + cons['ineq']:
+        cv = atleast_1d(constraint['fun'](x))
+        dim = len(cv)
+        kkt += [w[w_ind:(w_ind + dim)]]
+        w_ind += dim
+        ind_mapper += [ii for ii, item in enumerate(constraints) if item['fun'] == constraint['fun']]
+
+    kkt_sorted = [kkt[i] for i in ind_mapper]
+
     # Optimization loop complete.  Print status if requested
     if iprint >= 1:
         print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
@@ -507,7 +495,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
                           nfev=feval[0], njev=geval[0], status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0),
-                          kkt=KKT(equality=w[:meq], inequality=w[meq:meq+mieq]))
+                          kkt=kkt_sorted)
 
 
 if __name__ == '__main__':
