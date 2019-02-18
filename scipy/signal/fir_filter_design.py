@@ -9,7 +9,7 @@ import warnings
 import numpy as np
 from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
-from scipy.linalg import toeplitz, hankel, pinv
+from scipy.linalg import toeplitz, hankel, solve, pinvh, LinAlgError
 from scipy._lib.six import string_types
 
 from . import sigtools
@@ -965,6 +965,8 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     bands = np.asarray(bands).flatten() / nyq
     if len(bands) % 2 != 0:
         raise ValueError("bands must contain frequency pairs.")
+    if (bands < 0).any() or (bands > 1).any():
+        raise ValueError("bands must be between 0 and 1 relative to Nyquist")
     bands.shape = (-1, 2)
 
     # check remaining params
@@ -1032,8 +1034,11 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     b[1:] += m * np.cos(n[1:] * np.pi * bands) / (np.pi * n[1:]) ** 2
     b = np.dot(np.diff(b, axis=2)[:, :, 0], weight)
 
-    # Now we can solve the equation (use pinv because Q can be rank deficient)
-    a = np.dot(pinv(Q), b)
+    # Now we can solve the equation
+    try:  # try the fast way
+        a = solve(Q, b, sym_pos=True, check_finite=False)
+    except LinAlgError:  # in case Q is rank deficient
+        a = np.dot(pinvh(Q, check_finite=False), b)
 
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))
