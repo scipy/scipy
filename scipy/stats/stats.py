@@ -2449,8 +2449,7 @@ def gstd(a, axis=0, ddof=1):
             [False,  True,  True]],
       fill_value=999999)
     """
-    if not isinstance(a, np.ndarray):
-        a = np.array(a)
+    a = np.asanyarray(a)
     log = ma.log if isinstance(a, ma.MaskedArray) else np.log
 
     try:
