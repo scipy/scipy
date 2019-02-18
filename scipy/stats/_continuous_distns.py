@@ -4604,7 +4604,7 @@ class mielke_gen(rv_continuous):
     References
     ----------
     .. [1] Mielke, P.W., 1973 "Another Family of Distributions for Describing
-          and Analyzing Precipitation Data." J. Appl. Meteor., 12, 275-280
+           and Analyzing Precipitation Data." J. Appl. Meteor., 12, 275-280
 
     %(example)s
 
