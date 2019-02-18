@@ -95,11 +95,10 @@ jobs:
   # Run test suite on pypy3
   pypy3:
     docker:
-      # Comment out official image for now, set up the nightly
-      # until they release a bugfix
-      # https://github.com/numpy/numpy/issues/12740
-
-      # image: pypy:3-6.0.0
+      # circle CI doesn't provide a pypy image. There is pypy:3.6-7.0 from
+      # https://github.com/docker-library/pypy, but it seems to be based on jessie
+      # so prefer one based on the same image as cpython
+      # image: pypy:3.6-7.0
       - image: circleci/python:3.7.0
     steps:
       - restore_cache:
@@ -120,10 +119,10 @@ jobs:
           command: |
             wget http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb
             sudo dpkg --install libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb
-            wget http://buildbot.pypy.org/nightly/py3.6/pypy-c-jit-latest-linux64.tar.bz2 -O pypy.tar.bz2
-            mkdir -p pypy3.6-latest
-            (cd pypy3.6-latest; tar --strip-components=1 -xf ../pypy.tar.bz2)
-            export PATH=${PWD}/pypy3.6-latest/bin:$PATH
+            wget https://bitbucket.org/pypy/pypy/downloads/pypy3.6-v7.0.0-linux64.tar.bz2 -O pypy.tar.bz2
+            mkdir -p pypy3.6-7.0
+            (cd pypy3.6-7.0; tar --strip-components=1 -xf ../pypy.tar.bz2)
+            export PATH=${PWD}/pypy3.6-7.0/bin:$PATH
             echo "export PATH=${PWD}/pypy3.6/latest/bin:$PATH" >> $BASH_ENV
             pypy3 -mensurepip
       - run:
