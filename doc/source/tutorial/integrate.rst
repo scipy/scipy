@@ -506,6 +506,9 @@ airy(sol2.t)[0]: [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162
  0.01908572 0.01529826 0.01219993 0.00968052 0.00764377 0.00600651
  0.00469765 0.00364769 0.00280179 0.00212679 0.0015935  0.00117682
  0.00095156]
+ 
+Further optimisation of the solution can be achieved by using a different integration
+method or by passing a jacobian matrix to the function.
      
 
 Solving a system with a banded Jacobian matrix
