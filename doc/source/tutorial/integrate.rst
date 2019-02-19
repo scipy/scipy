@@ -459,47 +459,52 @@ usage of the *jac* option which allows the user to specify a gradient
 (with respect to :math:`\mathbf{y}` ) of the function,
 :math:`\mathbf{f}\left(\mathbf{y},t\right)`.
 
-    >>> import numpy as np
-    >>> from scipy.integrate import solve_ivp
-    >>> from scipy.special import gamma, airy
-    >>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
-    >>> y0_0 = -1 / 3**(1/3) / gamma(1/3)
-    >>> y0 = [y0_0, y1_0]
-    >>> def func(t, y):
-    ...     return [t*y[1],y[0]]
-    ...
-    >>> t_span = [0, 4]
-    >>> sol1 = solve_ivp(func, t_span, y0)
-    >>> print("sol1.t:    {}".format(sol1.t))
-    sol.t:          [0.         0.10097672 1.04643602 1.86341289 2.45798743 2.99814154
-     3.54800133 4.        ]
+>>> import numpy as np
+>>> from scipy.integrate import solve_ivp
+>>> from scipy.special import gamma, airy
+>>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
+>>> y0_0 = -1 / 3**(1/3) / gamma(1/3)
+>>> y0 = [y0_0, y1_0]
+>>> def func(t, y):
+...     return [t*y[1],y[0]]
+...
+>>> t_span = [0, 4]
+>>> sol1 = solve_ivp(func, t_span, y0)
+>>> print("sol1.t:    {}".format(sol1.t))
+sol.t:          [0.         0.10097672 1.04643602 1.86341289 2.45798743 2.99814154
+ 3.54800133 4.        ]
 
-    It can be seen that the time steps are automatically calculated if no `t_eval` option is specified. To compare the solution of `solve_ivp` with the `airy` function a time vector created by `solve_ivp` is passed to the `airy` function and both solutions are printed.
+It can be seen that the time steps are automatically calculated if no `t_eval` 
+option is specified. To compare the solution of `solve_ivp` with the `airy` 
+function a time vector created by `solve_ivp` is passed to the `airy` function
+and both solutions are printed.
     
-    >>> print("sol1.y[1]: {}".format(sol1.y[1]))
-    >>> print("airy(sol.t):  {}".format(airy(sol1.t))
-    sol.y[1]:       [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
-     0.00371189 0.00410178]
-    airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
-     0.00235403 0.00095156]
+>>> print("sol1.y[1]: {}".format(sol1.y[1]))
+>>> print("airy(sol.t):  {}".format(airy(sol1.t))
+sol.y[1]:       [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
+ 0.00371189 0.00410178]
+airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
+ 0.00235403 0.00095156]
 
-   Using `solve_ivp` without any further parameters than the required ones shows a big deviation between the to functions. To minimize the deviation the relative and absolute tolerances can be used.
+Using `solve_ivp` without any further parameters than the required ones shows
+a big deviation between the to functions. To minimize the deviation relative
+and absolute tolerances can be used.
    
-    >>> rtol, atol = (1e-8, 1e-8)
-    >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
-    >>> print("sol2.y[1]: {}".format(sol2.y[1]))
-    sol2.y[1]:       [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
-     0.19133491 0.16203676 0.13363647 0.11127801 0.09180607 0.07705457
-     0.06422892 0.05321708 0.04383569 0.03590249 0.02924155 0.02368706
-     0.01908572 0.01529826 0.01219994 0.00968053 0.00764377 0.00600652
-     0.00469766 0.0036477  0.0028018  0.00212681 0.00159352 0.00117685
-     0.00095159]
-    airy(sol2.t)[0]: [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
-     0.19133491 0.16203675 0.13363647 0.111278   0.09180606 0.07705456
-     0.06422892 0.05321708 0.04383569 0.03590248 0.02924155 0.02368705
-     0.01908572 0.01529826 0.01219993 0.00968052 0.00764377 0.00600651
-     0.00469765 0.00364769 0.00280179 0.00212679 0.0015935  0.00117682
-     0.00095156]
+>>> rtol, atol = (1e-8, 1e-8)
+>>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
+>>> print("sol2.y[1]: {}".format(sol2.y[1]))
+sol2.y[1]:       [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
+ 0.19133491 0.16203676 0.13363647 0.11127801 0.09180607 0.07705457
+ 0.06422892 0.05321708 0.04383569 0.03590249 0.02924155 0.02368706
+ 0.01908572 0.01529826 0.01219994 0.00968053 0.00764377 0.00600652
+ 0.00469766 0.0036477  0.0028018  0.00212681 0.00159352 0.00117685
+ 0.00095159]
+airy(sol2.t)[0]: [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
+ 0.19133491 0.16203675 0.13363647 0.111278   0.09180606 0.07705456
+ 0.06422892 0.05321708 0.04383569 0.03590248 0.02924155 0.02368705
+ 0.01908572 0.01529826 0.01219993 0.00968052 0.00764377 0.00600651
+ 0.00469765 0.00364769 0.00280179 0.00212679 0.0015935  0.00117682
+ 0.00095156]
      
 
 Solving a system with a banded Jacobian matrix
