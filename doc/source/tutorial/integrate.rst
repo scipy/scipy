@@ -449,7 +449,7 @@ There are many optional inputs and outputs available when using `solve_ivp`
 which can help tune the solver. These additional inputs and outputs
 are not needed much of the time, however, and the three required input
 arguments and the output solution suffice. The required inputs are the
-function defining the derivative, *fprime*, the time span `[t_start, t_end']
+function defining the derivative, *fprime*, the time span `[t_start, t_end]`
 and the initial conditions vector, *y0*. The output to :obj:`solve_ivp` is 
 a matrix where each row contains the solution vector for the given time 
 intervall. The initial conditions are therefore given in the first output row.
