@@ -487,12 +487,13 @@ airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661
  0.00235403 0.00095156]
 
 Using `solve_ivp` without any further parameters than the required ones shows
-a big deviation between the to functions. To minimize the deviation relative
-and absolute tolerances can be used.
+a big deviation between the airy function and the differential equation. To 
+minimize the deviation relative and absolute tolerances can be used.
    
 >>> rtol, atol = (1e-8, 1e-8)
 >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
 >>> print("sol2.y[1]: {}".format(sol2.y[1]))
+>>> print("airy(sol2.t)[0]: {}".format(airy(sol2.t)[0]))
 sol2.y[1]:       [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
  0.19133491 0.16203676 0.13363647 0.11127801 0.09180607 0.07705457
  0.06422892 0.05321708 0.04383569 0.03590249 0.02924155 0.02368706
