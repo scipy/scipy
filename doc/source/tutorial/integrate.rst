@@ -459,7 +459,6 @@ usage of the *jac* option which allows the user to specify a gradient
 (with respect to :math:`\mathbf{y}` ) of the function,
 :math:`\mathbf{f}\left(\mathbf{y},t\right)`.
 
->>> import numpy as np
 >>> from scipy.integrate import solve_ivp
 >>> from scipy.special import gamma, airy
 >>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
