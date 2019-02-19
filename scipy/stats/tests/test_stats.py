@@ -3068,7 +3068,6 @@ def test_ttest_ind_with_uneq_var():
 
 
 def test_ttest_trimmed1():
-    # check vs. R
     a = (1, 2, 3)
     b = (1.1, 2.9, 4.2)
     pr = 0.53619490753126731
@@ -3079,7 +3078,6 @@ def test_ttest_trimmed1():
 
 
 def test_ttest_trimmed2():
-    # check vs. R
     a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
     b = (1.1, 2.9, 4.2)
     pr = 0.00998909252078421
@@ -3090,7 +3088,6 @@ def test_ttest_trimmed2():
 
 
 def test_ttest_trimmed3():
-    # check vs. R
     a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
     b = (1.1, 2.9, 4.2)
     pr = 0.10512380092302633
