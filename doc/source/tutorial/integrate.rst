@@ -385,12 +385,12 @@ The Python tuple is returned as expected in a reduced amount of time.  All
 optional parameters can be used with this method including specifying
 singularities, infinite bounds, etc.
 
-Ordinary differential equations (:func:`odeint`)
+Ordinary differential equations (:func:`solve_ivp`)
 ------------------------------------------------
 
 Integrating a set of ordinary differential equations (ODEs) given
 initial conditions is another useful example. The function
-:obj:`odeint` is available in SciPy for integrating a first-order
+:obj:`solve_ivp` is available in SciPy for integrating a first-order
 vector differential equation:
 
 .. math::
@@ -445,49 +445,62 @@ has an exact solution using the matrix exponential:
 
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
-There are many optional inputs and outputs available when using odeint
+There are many optional inputs and outputs available when using `solve_ivp`
 which can help tune the solver. These additional inputs and outputs
 are not needed much of the time, however, and the three required input
 arguments and the output solution suffice. The required inputs are the
-function defining the derivative, *fprime*, the initial conditions
-vector, *y0*, and the time points to obtain a solution, *t*, (with
-the initial value point as the first element of this sequence).  The
-output to :obj:`odeint` is a matrix where each row contains the
-solution vector at each requested time point (thus, the initial
-conditions are given in the first output row).
+function defining the derivative, *fprime*, the time span `[t_start, t_end']
+and the initial conditions vector, *y0*. The output to :obj:`solve_ivp` is 
+a matrix where each row contains the solution vector for the given time 
+intervall. The initial conditions are therefore given in the first output row.
 
-The following example illustrates the use of odeint including the
-usage of the *Dfun* option which allows the user to specify a gradient
+The following example illustrates the use of `solve_ivp` including the
+usage of the *jac* option which allows the user to specify a gradient
 (with respect to :math:`\mathbf{y}` ) of the function,
 :math:`\mathbf{f}\left(\mathbf{y},t\right)`.
 
-    >>> from scipy.integrate import odeint
+    >>> import numpy as np
+    >>> from scipy.integrate import solve_ivp
     >>> from scipy.special import gamma, airy
-    >>> y1_0 = 1.0 / 3**(2.0/3.0) / gamma(2.0/3.0)
-    >>> y0_0 = -1.0 / 3**(1.0/3.0) / gamma(1.0/3.0)
+    >>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
+    >>> y0_0 = -1 / 3**(1/3) / gamma(1/3)
     >>> y0 = [y0_0, y1_0]
-    >>> def func(y, t):
+    >>> def func(t, y):
     ...     return [t*y[1],y[0]]
     ...
+    >>> t_span = [0, 4]
+    >>> sol1 = solve_ivp(func, t_span, y0)
+    >>> print("sol1.t:    {}".format(sol1.t))
+    sol.t:          [0.         0.10097672 1.04643602 1.86341289 2.45798743 2.99814154
+     3.54800133 4.        ]
 
-    >>> def gradient(y, t):
-    ...     return [[0,t], [1,0]]
-    ...
+    It can be seen that the time steps are automatically calculated if no `t_eval` option is specified. To compare the solution of `solve_ivp` with the `airy` function a time vector created by `solve_ivp` is passed to the `airy` function and both solutions are printed.
+    
+    >>> print("sol1.y[1]: {}".format(sol1.y[1]))
+    >>> print("airy(sol.t):  {}".format(airy(sol1.t))
+    sol.y[1]:       [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
+     0.00371189 0.00410178]
+    airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
+     0.00235403 0.00095156]
 
-    >>> x = np.arange(0, 4.0, 0.01)
-    >>> t = x
-    >>> ychk = airy(x)[0]
-    >>> y = odeint(func, y0, t)
-    >>> y2 = odeint(func, y0, t, Dfun=gradient)
-
-    >>> ychk[:36:6]
-    array([0.355028, 0.339511, 0.324068, 0.308763, 0.293658, 0.278806])
-
-    >>> y[:36:6,1]
-    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
-
-    >>> y2[:36:6,1]
-    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
+   Using `solve_ivp` without any further parameters than the required ones shows a big deviation between the to functions. To minimize the deviation the relative and absolute tolerances can be used.
+   
+    >>> rtol, atol = (1e-8, 1e-8)
+    >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
+    >>> print("sol2.y[1]: {}".format(sol2.y[1]))
+    sol2.y[1]:       [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
+     0.19133491 0.16203676 0.13363647 0.11127801 0.09180607 0.07705457
+     0.06422892 0.05321708 0.04383569 0.03590249 0.02924155 0.02368706
+     0.01908572 0.01529826 0.01219994 0.00968053 0.00764377 0.00600652
+     0.00469766 0.0036477  0.0028018  0.00212681 0.00159352 0.00117685
+     0.00095159]
+    airy(sol2.t)[0]: [0.35502805 0.351446   0.31791417 0.28514662 0.25295646 0.22162462
+     0.19133491 0.16203675 0.13363647 0.111278   0.09180606 0.07705456
+     0.06422892 0.05321708 0.04383569 0.03590248 0.02924155 0.02368705
+     0.01908572 0.01529826 0.01219993 0.00968052 0.00764377 0.00600651
+     0.00469765 0.00364769 0.00280179 0.00212679 0.0015935  0.00117682
+     0.00095156]
+     
 
 Solving a system with a banded Jacobian matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
