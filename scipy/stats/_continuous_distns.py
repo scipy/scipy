@@ -4583,7 +4583,7 @@ maxwell = maxwell_gen(a=0.0, name='maxwell')
 
 
 class mielke_gen(rv_continuous):
-    r"""Mielke's Beta-Kappa continuous random variable[1]_.
+    r"""A Mielke Beta-Kappa continuous random variable.
 
     %(before_notes)s
 
