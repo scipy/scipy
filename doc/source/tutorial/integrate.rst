@@ -454,11 +454,6 @@ and the initial conditions vector, *y0*. The output to :obj:`solve_ivp` is
 a matrix where each row contains the solution vector for the given time 
 intervall. The initial conditions are therefore given in the first output row.
 
-The following example illustrates the use of `solve_ivp` including the
-usage of the *jac* option which allows the user to specify a gradient
-(with respect to :math:`\mathbf{y}` ) of the function,
-:math:`\mathbf{f}\left(\mathbf{y},t\right)`.
-
 >>> from scipy.integrate import solve_ivp
 >>> from scipy.special import gamma, airy
 >>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
