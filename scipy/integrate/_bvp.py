@@ -334,8 +334,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
             df_dy, df_dp = fun_jac(x, y, p)
             df_dy_middle, df_dp_middle = fun_jac(x_middle, y_middle, p)
 
-        if bc_jac is None:
-        
+        if bc_jac is None:        
             dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(bc, y[:, 0], y[:, -1],
                                                        p, bc0)
         else:
@@ -490,7 +489,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
 
         if njev == max_njev:
             break
-		
+
         if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
                 np.all(bc_res < tol_bc)):
             break
@@ -1100,12 +1099,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         # calculate boundary residuals for y and p, handling zeros in boundary jacobian
         bc_yp_res=np.divide(bc_res, bcstack, out=np.zeros_like(bcstack), where=bcstack!=0 )
         max_bc_res=np.max(abs(bc_yp_res))
-        
-#         dfdyL,dfdyR,dfdp= dbc
-#         fL=np.divide(bc_res,dfdyL, out=np.zeros_like(dfdyL), where=dfdyL!=0 )
-#         fR=np.divide(bc_res,dfdyR, out=np.zeros_like(dfdyR), where=dfdyR!=0 )
-#         max_bc_res1=np.max([np.max(abs(fL),axis=0), np.max(abs(fR),axis=0)])
-                        
+                       
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
@@ -1113,7 +1107,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
                                          r_middle, f_middle)
         max_rms_res = np.max(rms_res)
         max_res = np.max([max_rms_res, max_bc_res])
-		
+        
         if singular:
             status = 2
             break

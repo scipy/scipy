@@ -172,9 +172,11 @@ def shock_sol(x):
     k = np.sqrt(2 * eps)
     return np.cos(np.pi * x) + erf(x / k) / erf(1 / k)
 
+
 def nonlin_bc_fun(x,y):
     # laplace eq.
     return np.stack([y[1], np.zeros_like(x)])
+
 
 def nonlin_bc_bc(ya, yb):
     phiA, phipA= ya
@@ -193,9 +195,11 @@ def nonlin_bc_bc(ya, yb):
     res1= iC - kappa*phipC
 
     return np.array([  res0, res1 ] )
+
     
 def nonlin_bc_sol(x):
     return -0.13426436116763119 - 1.1308709 * x
+
     
 def test_modify_mesh():
     x = np.array([0, 1, 3, 9], dtype=float)
@@ -552,6 +556,7 @@ def test_shock_layer():
     assert_(np.all(norm_res < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
+
 
 def test_nonlin_bc():
     x=np.linspace(0,0.1,5)
