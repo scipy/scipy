@@ -393,7 +393,7 @@ cdef void _floyd_warshall(
 def dijkstra(csgraph, directed=True, indices=None,
              return_predecessors=False,
              unweighted=False, limit=np.inf,
-             min_only=False):
+             bint min_only=False):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf)
@@ -609,7 +609,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     else:
         return dist_matrix.reshape(return_shape)
 
-
+@cython.boundscheck(False)
 cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
                                 FibonacciNode* nodes,
                                 int[:] source_indices,
@@ -636,6 +636,7 @@ cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
         current_node.source = j_source
         insert_node(heap, &nodes[j_source])
 
+@cython.boundscheck(False)
 cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
                                FibonacciNode *v,
                                FibonacciNode* nodes,
@@ -674,6 +675,7 @@ cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
                         pred[j_current] = v.index
                         sources[j_current] = v.source
 
+@cython.boundscheck(False)
 cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                          FibonacciNode *v,
                          FibonacciNode* nodes,
@@ -708,6 +710,7 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                     if return_pred:
                         pred[i, j_current] = v.index
 
+@cython.boundscheck(False)
 cdef _dijkstra_directed(
             int[:] source_indices,
             double[:] csr_weights,
@@ -751,6 +754,7 @@ cdef _dijkstra_directed(
 
     free(nodes)
 
+@cython.boundscheck(False)
 cdef _dijkstra_directed_multi(
             int[:] source_indices,
             double[:] csr_weights,
@@ -795,6 +799,7 @@ cdef _dijkstra_directed_multi(
 
     free(nodes)
 
+@cython.boundscheck(False)
 cdef _dijkstra_undirected(
             int[:] source_indices,
             double[:] csr_weights,
@@ -845,7 +850,7 @@ cdef _dijkstra_undirected(
 
     free(nodes)
 
-
+@cython.boundscheck(False)
 cdef _dijkstra_undirected_multi(
             int[:] source_indices,
             double[:] csr_weights,
