@@ -335,6 +335,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
             df_dy_middle, df_dp_middle = fun_jac(x_middle, y_middle, p)
 
         if bc_jac is None:
+        
             dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(bc, y[:, 0], y[:, -1],
                                                        p, bc0)
         else:
@@ -489,7 +490,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
 
         if njev == max_njev:
             break
-
+		
         if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
                 np.all(bc_res < tol_bc)):
             break
@@ -1078,13 +1079,41 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
+        bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
+
+        # calculate boundary jacobian
+        if bc_jac_wrapped is None:
+            dbc=estimate_bc_jac(bc_wrapped,y[:, 0], y[:, -1], p)
+        else:
+            dbc=bc_jac_wrapped(y[:, 0], y[:, -1], p)
+            
+        #breakpoint()
+        
+        # stack the boundary jacobian with n+k columns, handling optional parameters
+        if len(p)>0:
+            ystack=np.vstack(dbc[0:2])
+            pstack=np.vstack([dbc[2],np.zeros_like(dbc[2])])
+            bcstack=np.hstack([ystack,pstack])
+        else:
+            bcstack=np.vstack(dbc[0:2])
+
+        # calculate boundary residuals for y and p, handling zeros in boundary jacobian
+        bc_yp_res=np.divide(bc_res, bcstack, out=np.zeros_like(bcstack), where=bcstack!=0 )
+        max_bc_res=np.max(abs(bc_yp_res))
+        
+#         dfdyL,dfdyR,dfdp= dbc
+#         fL=np.divide(bc_res,dfdyL, out=np.zeros_like(dfdyL), where=dfdyL!=0 )
+#         fR=np.divide(bc_res,dfdyR, out=np.zeros_like(dfdyR), where=dfdyR!=0 )
+#         max_bc_res1=np.max([np.max(abs(fL),axis=0), np.max(abs(fR),axis=0)])
+                        
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
         rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
                                          r_middle, f_middle)
         max_rms_res = np.max(rms_res)
-
+        max_res = np.max([max_rms_res, max_bc_res])
+		
         if singular:
             status = 2
             break
@@ -1097,18 +1126,18 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             status = 1
             if verbose == 2:
                 nodes_added = "({})".format(nodes_added)
-                print_iteration_progress(iteration, max_rms_res, m,
+                print_iteration_progress(iteration, max_res, m,
                                          nodes_added)
             break
 
         if verbose == 2:
-            print_iteration_progress(iteration, max_rms_res, m, nodes_added)
+            print_iteration_progress(iteration, max_res, m, nodes_added)
 
         if nodes_added > 0:
             x = modify_mesh(x, insert_1, insert_2)
             h = np.diff(x)
             y = sol(x)
-        else:
+        elif max_res <= tol:
             status = 0
             break
 
@@ -1116,15 +1145,15 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if status == 0:
             print("Solved in {} iterations, number of nodes {}, "
                   "maximum relative residual {:.2e}."
-                  .format(iteration, x.shape[0], max_rms_res))
+                  .format(iteration, x.shape[0], max_res))
         elif status == 1:
             print("Number of nodes is exceeded after iteration {}, "
                   "maximum relative residual {:.2e}."
-                  .format(iteration, max_rms_res))
+                  .format(iteration, max_res))
         elif status == 2:
             print("Singular Jacobian encountered when solving the collocation "
                   "system on iteration {}, maximum relative residual {:.2e}."
-                  .format(iteration, max_rms_res))
+                  .format(iteration, max_res))
 
     if p.size == 0:
         p = None
