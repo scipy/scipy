@@ -334,7 +334,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
             df_dy, df_dp = fun_jac(x, y, p)
             df_dy_middle, df_dp_middle = fun_jac(x_middle, y_middle, p)
 
-        if bc_jac is None:        
+        if bc_jac is None:
             dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(bc, y[:, 0], y[:, -1],
                                                        p, bc0)
         else:
@@ -1086,8 +1086,6 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         else:
             dbc=bc_jac_wrapped(y[:, 0], y[:, -1], p)
             
-        #breakpoint()
-        
         # stack the boundary jacobian with n+k columns, handling optional parameters
         if len(p)>0:
             ystack=np.vstack(dbc[0:2])
