@@ -326,6 +326,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     -----
     This section describes the available solvers that can be selected by the
     'method' parameter.
+
     :ref:`'interior-point' <optimize.linprog-interior-point>` is the default
     as it is typically the fastest and most robust method.
     :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is more

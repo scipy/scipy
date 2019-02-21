@@ -160,8 +160,8 @@ class BarrierSubproblem:
                 if sps.issparse(J_eq):
                     J_eq = J_eq.toarray()
                 # Concatenate matrices
-                return np.asarray(np.bmat([[J_eq, zeros],
-                                           [J_ineq, S]]))
+                return np.block([[J_eq, zeros],
+                                 [J_ineq, S]])
 
     def _assemble_sparse_jacobian(self, J_eq, J_ineq, s):
         """Assemble sparse jacobian given its components.
@@ -250,7 +250,7 @@ class BarrierSubproblem:
         """
         x = self.get_variables(z)
         if self.global_stop_criteria(state, x,
-                                     last_iteration_failed, 
+                                     last_iteration_failed,
                                      trust_radius, penalty,
                                      cg_info,
                                      self.barrier_parameter,
