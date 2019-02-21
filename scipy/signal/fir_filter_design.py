@@ -410,26 +410,32 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         window = ('kaiser', beta)
 
     if isinstance(pass_zero, str):
-        if pass_zero == 'bandstop':
-            pass_zero = True
-        elif pass_zero == 'lowpass':
-            if cutoff.size != 1:
-                raise ValueError('cutoff must be shape (1,) if '
-                                 'pass_zero=="lowpass", got %s'
+        if pass_zero in ('bandstop', 'lowpass'):
+            if pass_zero == 'lowpass':
+                if cutoff.size != 1:
+                    raise ValueError('cutoff must have one element if '
+                                     'pass_zero=="lowpass", got %s'
+                                     % (cutoff.shape,))
+            elif cutoff.size <= 1:
+                raise ValueError('cutoff must have at least two elements if '
+                                 'pass_zero=="bandstop", got %s'
                                  % (cutoff.shape,))
             pass_zero = True
-        elif pass_zero == 'bandpass':
+        elif pass_zero in ('bandpass', 'highpass'):
+            if pass_zero == 'highpass':
+                if cutoff.size != 1:
+                    raise ValueError('cutoff must have one element if '
+                                     'pass_zero=="highpass", got %s'
+                                     % (cutoff.shape,))
+            elif cutoff.size <= 1:
+                raise ValueError('cutoff must have at least two elements if '
+                                 'pass_zero=="bandpass", got %s'
+                                 % (cutoff.shape,))
             pass_zero = False
         else:
-            if pass_zero != 'highpass':
-                raise ValueError('pass_zero must be True, False, "bandpass", '
-                                 '"lowpass", "highpass", or "bandstop", got '
-                                 '%s' % (pass_zero,))
-            if cutoff.size != 1:
-                raise ValueError('cutoff must be shape (1,) if '
-                                 'pass_zero=="highpass", got %s'
-                                 % (cutoff.shape,))
-            pass_zero = False
+            raise ValueError('pass_zero must be True, False, "bandpass", '
+                             '"lowpass", "highpass", or "bandstop", got '
+                             '%s' % (pass_zero,))
     pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero

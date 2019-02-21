@@ -265,10 +265,12 @@ class TestFirWinMore(object):
             firwin(41, 0.5, pass_zero='foo')
         with assert_raises(TypeError, match='cannot be interpreted'):
             firwin(41, 0.5, pass_zero=1.)
-        with assert_raises(ValueError, match='cutoff must be shape'):
-            firwin(41, [0.5, 0.6], pass_zero='lowpass')
-        with assert_raises(ValueError, match='cutoff must be shape'):
-            firwin(41, [0.5, 0.6], pass_zero='highpass')
+        for pass_zero in ('lowpass', 'highpass'):
+            with assert_raises(ValueError, match='cutoff must have one'):
+                firwin(41, [0.5, 0.6], pass_zero=pass_zero)
+        for pass_zero in ('bandpass', 'bandstop'):
+            with assert_raises(ValueError, match='must have at least two'):
+                firwin(41, [0.5], pass_zero=pass_zero)
 
 
 class TestFirwin2(object):
