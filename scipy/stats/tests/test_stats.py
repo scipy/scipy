@@ -1635,15 +1635,9 @@ class TestVariability(object):
         assert_almost_equal(stats.median_absolute_deviation(dat, axis=None), 0.526323)
 
         dat = dat.reshape(6, 4)
-
         mad = stats.median_absolute_deviation(dat, axis=0)
         mad_expected = np.asarray([0.644931, 0.7413, 0.66717, 0.59304])
         assert_array_almost_equal(mad, mad_expected)
-
-    def test_mad_empty(self):
-        dat = []
-        mad = stats.median_absolute_deviation(dat)
-        assert_equal(mad, np.nan)
 
     def test_mad_empty(self):
         dat = []
@@ -1664,7 +1658,7 @@ class TestVariability(object):
                 3.7, 3.7,3.77, 5.28, np.nan])
 
         with assert_raises(ValueError):
-            mad = stats.median_absolute_deviation(dat, nan_policy='raise')
+            stats.median_absolute_deviation(dat, nan_policy='raise')
 
     def test_mad_nan_omit(self):
         dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
@@ -1673,6 +1667,7 @@ class TestVariability(object):
 
         mad = stats.median_absolute_deviation(dat, nan_policy='omit')
         assert_almost_equal(mad, 0.504084)
+
 
 class _numpy_version_warn_context_mgr(object):
     """

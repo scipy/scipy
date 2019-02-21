@@ -2520,16 +2520,16 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     return out
 
 
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826, nan_policy='propagate'):
+def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
+                              nan_policy='propagate'):
     """
     Compute the median absolute deviation of the data along the given axis.
-    [1]_
 
-    The median absolute deviation (MAD) computes the median over the absolute
-    deviations from the median.  It is a measure of dispersion similar to the
-    standard deviation, but is more robust to outliers [2]_.
+    The median absolute deviation (MAD, [1]_) computes the median over the
+    absolute deviations from the median. It is a measure of dispersion
+    similar to the standard deviation, but is more robust to outliers [2]_.
 
-    The MAD of an empty array is `np.nan`.
+    The MAD of an empty array is ``np.nan``.
 
     .. versionadded:: 1.3.0
 
@@ -2540,10 +2540,10 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826, nan_pol
     axis : int or None, optional
         Axis along which the range is computed. Default is 0. If None, compute
         the MAD over the entire array.
-    center : func, optional
+    center : callable, optional
         A function that will return the central value. The default is to use
         np.median. Any user defined function used will need to have the function
-        signature `func(arr, axis)`.
+        signature ``func(arr, axis)``.
     scale : int, optional
         The scaling factor applied to the MAD. The default scale (1.4826)
         ensures consistency with the standard deviation for normally distributed
@@ -2564,11 +2564,40 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826, nan_pol
     See Also
     --------
     numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
-    scipt.stats.tstd, scipy.stats.tvar
+    scipy.stats.tstd, scipy.stats.tvar
+
+    Notes
+    -----
+    The `center` argument only affects the calculation of the central value
+    around which the MAD is calculated. That is, passing in ``center=np.mean``
+    will calculate the MAD around the mean - it will not calculate the *mean*
+    absolute deviation.
+
+    References
+    ----------
+    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
 
     Examples
     --------
+    When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+    the latter is affected when we change a single value of an array to have an
+    outlier value while the MAD hardly changes:
+
     >>> from scipy import stats
+    >>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
+    >>> x.std()
+    0.9973906394005013
+    >>> stats.median_absolute_deviation(x)
+    1.2280762773108278
+    >>> x[0] = 345.6
+    >>> x.std()
+    34.42304872314415
+    >>> stats.median_absolute_deviation(x)
+    1.2340335571164334
+
+    Axis handling example:
+
     >>> x = np.array([[10, 7, 4], [3, 2, 1]])
     >>> x
     array([[10,  7,  4],
@@ -2578,19 +2607,6 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826, nan_pol
     >>> stats.median_absolute_deviation(x, axis=None)
     2.9652
 
-
-    Notes
-    -----
-
-    The `center` argument only affects the calculation of the central value
-    around which the MAD is calculated. That is, passing in `center=np.mean`
-    will calculate the MAD around the mean - it will not calculate the _mean_
-    absolute deviation.
-
-    References
-    ----------
-    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
-    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
     """
     x = asarray(x)
 
