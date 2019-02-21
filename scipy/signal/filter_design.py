@@ -1904,7 +1904,6 @@ def bilinear(b, a, fs=1.0):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
 
     >>> fs = 100
     >>> bf = 2 * np.pi * np.array([7, 13])
@@ -2029,7 +2028,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> import matplotlib.ticker
-    >>> import numpy as np
 
     >>> wp = 0.2
     >>> ws = 0.3
@@ -2345,7 +2343,6 @@ def bilinear_zpk(z, p, k, fs):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
 
     >>> fs = 100
     >>> bf = 2 * np.pi * np.array([7, 13])
@@ -4516,7 +4513,6 @@ def iirnotch(w0, Q, fs=2.0):
     signal sampled at 200 Hz, using a quality factor Q = 30
 
     >>> from scipy import signal
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> fs = 200.0  # Sample frequency (Hz)
@@ -4597,7 +4593,6 @@ def iirpeak(w0, Q, fs=2.0):
     component from a signal sampled at 1000 Hz, using a quality factor Q = 30
 
     >>> from scipy import signal
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> fs = 1000.0  # Sample frequency (Hz)
