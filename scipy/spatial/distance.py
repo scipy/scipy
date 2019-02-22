@@ -260,7 +260,7 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_name, **kwargs):
 
 
 def _validate_hamming_kwargs(X, m, n, **kwargs):
-    w = kwargs.get('w', np.ones((n,), dtype=X.dtype))
+    w = kwargs.get('w', np.ones((n,), dtype='double'))
     kwargs['w'] = _validate_weights(w)
     return kwargs
 

@@ -364,7 +364,8 @@ static PyObject *pdist_hamming_double_wrap(
 {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
-  double *dm, *X, *w;
+  double *dm;
+  const double *X, *w;
   static char *kwlist[] = {"X", "dm", "w", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
             "O!O!O!:pdist_hamming_double_wrap", kwlist,
@@ -375,9 +376,9 @@ static PyObject *pdist_hamming_double_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (double*)X_->data;
+    X = (const double*)X_->data;
     dm = (double*)dm_->data;
-    w = (double*)w_->data;
+    w = (const double*)w_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
@@ -392,8 +393,9 @@ static PyObject *pdist_hamming_char_wrap(
 {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
-  char *X;
-  double *w, *dm;
+  const char *X;
+  const double *w;
+  double *dm;
   static char *kwlist[] = {"X", "dm", "w", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
             "O!O!O!:pdist_hamming_char_wrap", kwlist,
@@ -404,9 +406,9 @@ static PyObject *pdist_hamming_char_wrap(
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    X = (char*)X_->data;
-    dm = (char*)dm_->data;
-    w = (double*)w_->data;
+    X = (const char*)X_->data;
+    dm = (double*)dm_->data;
+    w = (const double*)w_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 

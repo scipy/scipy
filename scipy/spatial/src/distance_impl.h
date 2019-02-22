@@ -537,7 +537,7 @@ pdist_hamming_double(const double *X, double *dm, npy_intp num_rows,
 }
 
 static NPY_INLINE int
-pdist_hamming_char(const char *X, char *dm, npy_intp num_rows,
+pdist_hamming_char(const char *X, double *dm, npy_intp num_rows,
                          const npy_intp num_cols, const double *w)
 {
     npy_intp i, j;
@@ -735,7 +735,7 @@ cdist_hamming_double(const double *XA, const double *XB, double *dm,
 }
 
 static NPY_INLINE int
-cdist_hamming_char(const char *XA, const char *XB, char *dm,
+cdist_hamming_char(const char *XA, const char *XB, double *dm,
                          const npy_intp num_rowsA, const npy_intp num_rowsB,
                          const npy_intp num_cols,
                          const double *w)
