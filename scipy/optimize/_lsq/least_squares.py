@@ -111,7 +111,7 @@ def check_tolerance(ftol, xtol, gtol):
             tol = 0
         elif tol < EPS:
             warn("Setting `{}` below the machine epsilon ({:.2e}) effectively "
-                 "disables the corresponding termination condtion."
+                 "disables the corresponding termination condition."
                  .format(name, EPS))
         return tol
 
