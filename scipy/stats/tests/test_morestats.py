@@ -989,13 +989,13 @@ class TestWilcoxon(object):
         y = [110, 122, 125, 120, 140, 124, 123, 137, 135, 145]
 
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, message="Warning: sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="less")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7031847, decimal=6)
 
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, message="Warning: sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="less", correction=True)
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7233656, decimal=6)
@@ -1007,7 +1007,7 @@ class TestWilcoxon(object):
         assert_almost_equal(p, 0.2968153, decimal=6)
 
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, message="Warning: sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="greater", correction=True)
         assert_equal(w, 27)
         assert_almost_equal(p, 0.3176447, decimal=6)
