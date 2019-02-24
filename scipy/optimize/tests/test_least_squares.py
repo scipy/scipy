@@ -367,6 +367,13 @@ class BaseMixin(object):
         assert_(res.nfev < max_nfev)
         assert_(res.cost < 0.5)
 
+    def test_none_tolerance(self):
+        # Test that all options are None the algorithm terminates by the
+        # maximum number of function evaluations.
+        res = least_squares(fun_trivial, 2., method=self.method,
+                            ftol=None, xtol=None, gtol=None, max_nfev=10)
+        assert_equal(res.nfev, 10)
+
 
 class BoundsMixin(object):
     def test_inconsistent(self):
