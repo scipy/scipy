@@ -2722,15 +2722,15 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         The second set of measurements.  If `y` is not given, then the `x`
         array is considered to be the differences between the two sets of
         measurements.
-    zero_method : {"pratt", "wilcox", "zsplit"}, optional
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
         "pratt":
             includes zero-differences in the ranking process,
-            but drop ranks of the zeros, see [4]_, (more conservative)
+            but drops the ranks of the zeros, see [4]_, (more conservative)
         "wilcox":
-            Wilcox treatment: discards all zero-differences, the default
+            discards all zero-differences, the default
         "zsplit":
-            Zero rank split: just like Pratt, but splitting the zero rank
-            between positive and negative ones
+            includes zero-differences in the ranking process and split the
+            zero rank between positive and negative ones
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
@@ -2742,7 +2742,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Returns
     -------
     statistic : float
-        If `alternative` is two-sided, the sum of the ranks of the
+        If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
@@ -2755,9 +2755,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Notes
     -----
     The test has been introduced in [4]_. Given n independent samples
-    (xi, yi) from a bivariate distribution, compute the differences
-    di = xi - yi. One assumption of the test is that the differences
-    are symmetric, see [2]_.
+    (xi, yi) from a bivariate distribution (i.e. paired samples),
+    it computes the differences di = xi - yi. One assumption of the test
+    is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
     zero. The one-sided test has the null that the median is positive against
@@ -2775,8 +2775,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     .. [3] Pratt, J.W., Remarks on Zeros and Ties in the Wilcoxon Signed
        Rank Procedures, Journal of the American Statistical Association,
        Vol. 54, 1959, pp. 655-667.
+       https://doi.org/10.1080/01621459.1959.10501526
     .. [4] Wilcoxon, F., Individual Comparisons by Ranking Methods,
        Biometrics Bulletin, Vol. 1, 1945, pp. 80-83.
+       https://doi.org/10.2307/3001968
 
     Examples
     --------
@@ -2785,8 +2787,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d = [6, 8, 14, 16, 23, 24, 28, 29, 41, -48, 49, 56, 60, -67, 75]
 
-    Cross-fertilized plants appear to be be higher. To test the null that
-    there is no height difference, we can apply the two-sided test:
+    Cross-fertilized plants appear to be be higher. To test the null
+    hypothesis that there is no height difference, we can apply the
+    two-sided test:
 
     >>> from scipy.stats import wilcoxon
     >>> w, p = wilcoxon(d)
@@ -2833,7 +2836,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     count = len(d)
     if count < 10:
-        warnings.warn("Warning: sample size too small for normal approximation.")
+        warnings.warn("Sample size too small for normal approximation.")
 
     r = stats.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r, axis=0)
