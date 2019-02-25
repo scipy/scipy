@@ -452,7 +452,10 @@ arguments and the output solution suffice. The required inputs are the
 function defining the derivative, *fprime*, the time span `[t_start, t_end]`
 and the initial conditions vector, *y0*. The output to :obj:`solve_ivp` is 
 a matrix where each row contains the solution vector for the given time 
-intervall. The initial conditions are therefore given in the first output row.
+function defining the derivative, *fprime*, the time span `[t_start, t_end]`
+and the initial conditions vector, *y0*. :obj:`solve_ivp` outputs an object
+whose *y* field is an array with consecutive solution values as columns.
+The initial conditions are therefore given in the first output column.
 
 >>> from scipy.integrate import solve_ivp
 >>> from scipy.special import gamma, airy
