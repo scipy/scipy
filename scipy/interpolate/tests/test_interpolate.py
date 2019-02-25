@@ -29,6 +29,8 @@ from scipy.integrate import nquad
 
 from scipy.special import binom
 
+from scipy.sparse.sputils import matrix
+
 
 class TestInterp2D(object):
     def test_interp2d(self):
@@ -703,8 +705,9 @@ class TestInterp1D(object):
         y = np.exp(-x / 3.0)
         xnew = np.arange(0, 9, 0.1)
         # Check both read-only and not read-only:
-        for writeable in (True, False):
-            xnew.flags.writeable = writeable
+        for xnew_writeable in (True, False):
+            xnew.flags.writeable = xnew_writeable
+            x.flags.writeable = False
             for kind in ('linear', 'nearest', 'zero', 'slinear', 'quadratic',
                          'cubic'):
                 f = interp1d(x, y, kind=kind)
@@ -1012,7 +1015,7 @@ class TestPPoly(object):
         p = PPoly(c, x, extrapolate='periodic')
 
         for writeable in (True, False):
-            xnew.flags.writeable = writeable
+            x.flags.writeable = writeable
             f = PPoly(c, x)
             vals = f(xnew)
             assert_(np.isfinite(vals).all())
@@ -1278,6 +1281,18 @@ class TestPPoly(object):
         assert_allclose(ig, ipp(b) - ipp(a))
 
         assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+
+    def test_integrate_readonly(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        for writeable in (True, False):
+            x.flags.writeable = writeable
+
+            P = PPoly(c, x)
+            vals = P.integrate(1, 4)
+
+            assert_(np.isfinite(vals).all())
 
     def test_integrate_periodic(self):
         x = np.array([1, 2, 4])
@@ -2770,11 +2785,11 @@ class TestInterpN(object):
         x = np.linspace(0, 2, 5)
         y = np.linspace(0, 1, 7)
 
-        values = np.matrix(np.random.rand(5, 7))
+        values = matrix(np.random.rand(5, 7))
 
         sample = np.random.rand(3, 7, 2)
 
         for method in ('nearest', 'linear', 'splinef2d'):
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
-            assert_allclose(v1, np.asmatrix(v2))
+            assert_allclose(v1, v2)

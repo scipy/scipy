@@ -3,6 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 from math import ceil, log
+import operator
 import warnings
 
 import numpy as np
@@ -292,9 +293,13 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     window : string or tuple of string and parameter values, optional
         Desired window to use. See `scipy.signal.get_window` for a list
         of windows and required parameters.
-    pass_zero : bool, optional
+    pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
-        Otherwise the DC gain is 0.
+        If False, the DC gain is 0. Can also be a string argument for the
+        desired filter type (equivalent to ``btype`` in IIR design functions).
+
+        .. versionadded:: 1.3.0
+           Support for string arguments.
     scale : bool, optional
         Set to True to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency.
@@ -376,7 +381,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     >>> signal.firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
     array([ 0.04890915,  0.91284326,  0.04890915])
 
-    """
+    """  # noqa: E501
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
 
@@ -403,6 +408,35 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         atten = kaiser_atten(numtaps, float(width) / nyq)
         beta = kaiser_beta(atten)
         window = ('kaiser', beta)
+
+    if isinstance(pass_zero, str):
+        if pass_zero in ('bandstop', 'lowpass'):
+            if pass_zero == 'lowpass':
+                if cutoff.size != 1:
+                    raise ValueError('cutoff must have one element if '
+                                     'pass_zero=="lowpass", got %s'
+                                     % (cutoff.shape,))
+            elif cutoff.size <= 1:
+                raise ValueError('cutoff must have at least two elements if '
+                                 'pass_zero=="bandstop", got %s'
+                                 % (cutoff.shape,))
+            pass_zero = True
+        elif pass_zero in ('bandpass', 'highpass'):
+            if pass_zero == 'highpass':
+                if cutoff.size != 1:
+                    raise ValueError('cutoff must have one element if '
+                                     'pass_zero=="highpass", got %s'
+                                     % (cutoff.shape,))
+            elif cutoff.size <= 1:
+                raise ValueError('cutoff must have at least two elements if '
+                                 'pass_zero=="bandpass", got %s'
+                                 % (cutoff.shape,))
+            pass_zero = False
+        else:
+            raise ValueError('pass_zero must be True, False, "bandpass", '
+                             '"lowpass", "highpass", or "bandstop", got '
+                             '%s' % (pass_zero,))
+    pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
     if pass_nyquist and numtaps % 2 == 0:

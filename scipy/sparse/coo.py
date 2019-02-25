@@ -16,7 +16,7 @@ from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                       get_index_dtype, downcast_intp_index, check_shape,
-                      check_reshape_kwargs)
+                      check_reshape_kwargs, matrix)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -88,7 +88,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     Examples
     --------
-    
+
     >>> # Constructing an empty matrix
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
@@ -570,7 +570,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         M, N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
-        return np.matrix(result, copy=False)
+        return matrix(result, copy=False)
 
     def _mul_vector(self, other):
         #output array
