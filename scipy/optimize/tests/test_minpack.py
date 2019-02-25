@@ -4,10 +4,10 @@ Unit tests for optimization routines from minpack.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, assert_allclose)
+                           assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 import numpy as np
-from numpy import array, float64, matrix
+from numpy import array, float64
 from multiprocessing.pool import ThreadPool
 
 from scipy import optimize
@@ -224,7 +224,7 @@ class TestRootHybr(object):
         # root/hybr with gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
-        initial_guess = matrix([2., 0., 2., 0.])
+        initial_guess = array([[2., 0., 2., 0.]])
         final_flows = optimize.root(pressure_network, initial_guess,
                                     args=(Qtot, k), method='hybr',
                                     jac=pressure_network_jacobian).x
@@ -289,7 +289,7 @@ class TestLeastSq(object):
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
     def test_full_output(self):
-        p0 = matrix([0,0,0])
+        p0 = array([[0,0,0]])
         full_output = leastsq(self.residuals, p0,
                               args=(self.y_meas, self.x),
                               full_output=True)

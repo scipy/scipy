@@ -194,6 +194,7 @@ Summary statistics
    bayes_mvs
    mvsdist
    entropy
+   median_absolute_deviation
 
 Frequency statistics
 ====================

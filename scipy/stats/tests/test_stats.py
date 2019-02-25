@@ -31,6 +31,7 @@ from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
+from scipy.sparse.sputils import matrix
 from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -1628,10 +1629,50 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    def test_mad(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, 28.95])
+        assert_almost_equal(stats.median_absolute_deviation(dat, axis=None), 0.526323)
+
+        dat = dat.reshape(6, 4)
+        mad = stats.median_absolute_deviation(dat, axis=0)
+        mad_expected = np.asarray([0.644931, 0.7413, 0.66717, 0.59304])
+        assert_array_almost_equal(mad, mad_expected)
+
+    def test_mad_empty(self):
+        dat = []
+        mad = stats.median_absolute_deviation(dat)
+        assert_equal(mad, np.nan)
+
+    def test_mad_nan_propagate(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        mad = stats.median_absolute_deviation(dat, nan_policy='propagate')
+        assert_equal(mad, np.nan)
+
+    def test_mad_nan_raise(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        with assert_raises(ValueError):
+            stats.median_absolute_deviation(dat, nan_policy='raise')
+
+    def test_mad_nan_omit(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        mad = stats.median_absolute_deviation(dat, nan_policy='omit')
+        assert_almost_equal(mad, 0.504084)
+
 
 class _numpy_version_warn_context_mgr(object):
     """
-    A simple context maneger class to avoid retyping the same code for
+    A simple context manager class to avoid retyping the same code for
     different versions of numpy when the only difference is that older
     versions raise warnings.
 
@@ -3621,14 +3662,14 @@ class TestHarMean(object):
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        check_equal_hmean(np.matrix(a), desired, axis=0)
+        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
+        check_equal_hmean(matrix(a), desired, axis=0)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
-        check_equal_hmean(np.matrix(a), desired, axis=1)
+        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
+        check_equal_hmean(matrix(a), desired, axis=1)
 
 
 class TestGeoMean(object):
@@ -3689,27 +3730,27 @@ class TestGeoMean(object):
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        check_equal_gmean(np.matrix(a), desired, axis=0)
+        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
+        check_equal_gmean(matrix(a), desired, axis=0)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = np.matrix([1, 2, 3, 4])
-        check_equal_gmean(np.matrix(a), desired, axis=0, rtol=1e-14)
+        desired = matrix([1, 2, 3, 4])
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = np.matrix(stats.gmean(a, axis=0))
-        check_equal_gmean(np.matrix(a), desired, axis=0, rtol=1e-14)
+        desired = matrix(stats.gmean(a, axis=0))
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        check_equal_gmean(np.matrix(a), desired, axis=1)
+        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
+        check_equal_gmean(matrix(a), desired, axis=1)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         v = power(1 * 2 * 3 * 4, 1. / 4.)
-        desired = np.matrix([[v], [v], [v]])
-        check_equal_gmean(np.matrix(a), desired, axis=1, rtol=1e-14)
+        desired = matrix([[v], [v], [v]])
+        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
 
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])

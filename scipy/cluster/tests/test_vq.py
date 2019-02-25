@@ -14,6 +14,7 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
+from scipy.sparse.sputils import matrix
 
 
 TESTDATA_2D = np.array([
@@ -79,7 +80,7 @@ class TestWhiten(object):
                             [4.51041982, 0.02640918],
                             [4.38567074, 0.95120889],
                             [2.32191480, 1.63195503]])
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             obs = tp([[0.98744510, 0.82766775],
                       [0.62093317, 0.19406729],
                       [0.87545741, 0.00735733],
@@ -91,7 +92,7 @@ class TestWhiten(object):
         desired = np.array([[0., 1.0, 2.86666544],
                             [0., 1.0, 1.32460034],
                             [0., 1.0, 3.74382172]])
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             obs = tp([[0., 1., 0.74109533],
                       [0., 1., 0.34243798],
                       [0., 1., 0.96785929]])
@@ -102,7 +103,7 @@ class TestWhiten(object):
                 assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_whiten_not_finite(self):
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             for bad_value in np.nan, np.inf, -np.inf:
                 obs = tp([[0.98744510, bad_value],
                           [0.62093317, 0.19406729],
@@ -115,13 +116,13 @@ class TestWhiten(object):
 class TestVq(object):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             label1 = py_vq(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
@@ -192,7 +193,7 @@ class TestKMean(object):
     def test_kmeans_simple(self):
         np.random.seed(54321)
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
 
@@ -215,7 +216,7 @@ class TestKMean(object):
     def test_kmeans2_simple(self):
         np.random.seed(12345678)
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
 

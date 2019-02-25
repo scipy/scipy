@@ -1,6 +1,7 @@
 import pytest
 from scipy.optimize import _hungarian
 import numpy as np
+from scipy.sparse.sputils import matrix
 from numpy.testing import assert_array_equal
 from pytest import raises as assert_raises
 
@@ -59,8 +60,12 @@ def test_linear_sum_assignment_input_validation():
     assert_raises(ValueError, _hungarian.linear_sum_assignment, [1, 2, 3])
 
     C = [[1, 2, 3], [4, 5, 6]]
-    assert_array_equal(_hungarian.linear_sum_assignment(C),
-                       _hungarian.linear_sum_assignment(np.asarray(C)))
+
+    assert_array_equal(linear_sum_assignment(C),
+                       linear_sum_assignment(np.asarray(C)))
+    assert_array_equal(linear_sum_assignment(C),
+                       linear_sum_assignment(matrix(C)))
+
 
     I = np.identity(3)
     assert_array_equal(_hungarian.linear_sum_assignment(I.astype(np.bool)),

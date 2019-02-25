@@ -33,13 +33,14 @@ from scipy.linalg._decomp_qz import _select_function
 
 from numpy import array, transpose, sometrue, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
-     ravel, sqrt, iscomplex, shape, sort, conjugate, bmat, sign, \
-     asarray, matrix, isfinite, all, ndarray, outer, eye, dtype, empty,\
+     ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
+     asarray, isfinite, all, ndarray, outer, eye, dtype, empty,\
      triu, tril
 
 from numpy.random import normal, seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy.sparse.sputils import bmat, matrix
 
 # digit precision to use in asserts for different types
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
