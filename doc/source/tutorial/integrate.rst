@@ -445,17 +445,11 @@ has an exact solution using the matrix exponential:
 
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
-There are many optional inputs and outputs available when using `solve_ivp`
-which can help tune the solver. These additional inputs and outputs
-are not needed much of the time, however, and the three required input
-arguments and the output solution suffice. The required inputs are the
-function defining the derivative, *fprime*, the time span `[t_start, t_end]`
-and the initial conditions vector, *y0*. The output to :obj:`solve_ivp` is 
-a matrix where each row contains the solution vector for the given time 
-function defining the derivative, *fprime*, the time span `[t_start, t_end]`
-and the initial conditions vector, *y0*. :obj:`solve_ivp` outputs an object
-whose *y* field is an array with consecutive solution values as columns.
-The initial conditions are therefore given in the first output column.
+To solve this differential equation the function :obj:`solve_ivp` can be used.
+It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+and the initial conditions vector, *y0*, as input arguments and returns 
+an object whose *y* field is an array with consecutive solution values as 
+columns. The initial conditions are therefore given in the first output column.
 
 >>> from scipy.integrate import solve_ivp
 >>> from scipy.special import gamma, airy
@@ -473,8 +467,7 @@ sol.t:          [0.         0.10097672 1.04643602 1.86341289 2.45798743 2.998141
 
 As it can be seen `solve_ivp` determines its time steps automatically if not
 specified otherwise. To compare the solution of `solve_ivp` with the `airy` 
-function the time vector created `solve_ivp` by  is passed to the `airy` function
-and both solutions are given in the following:
+function the time vector created by `solve_ivp` is passed to the `airy` function.
     
 >>> print("sol1.y[1]: {}".format(sol1.y[1]))
 >>> print("airy(sol.t):  {}".format(airy(sol1.t))
@@ -483,10 +476,9 @@ sol1.y[1]:       [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714
 airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
  0.00235403 0.00095156]
 
-Using `solve_ivp` without any further parameters than the required ones shows
-a big deviation between the airy function and the differential equation. To 
-minimize the deviation between the two results relative and absolute tolerances
-can be used.
+The solution of `solve_ivp` with its standard parameters shows a big deviation
+to the airy function. To minimize this deviation relative and absolute
+tolerances can be used.
    
 >>> rtol, atol = (1e-8, 1e-8)
 >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
