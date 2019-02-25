@@ -52,7 +52,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     In the algorithm description below, [3] refers to reference 3 below:
     Munkres, J. Algorithms for the Assignment and Transportation Problems.
     *J. SIAM*, 5(1):32-38, March, 1957.
-       
+
     The algorithm consists of six main parts:
         1. A pre-processing of the input matrix for easy access in the main
            algorithms
@@ -63,21 +63,21 @@ def linear_sum_assignment(cost_matrix, maximize=False):
            defined by zeros in the weighted bi-adjacency matrix.
            (Step B in [3])
         5. Subtract smallest unmarked element. Subtract from each other
-           unmarked element and add to every doubly marked element.  Return to 
+           unmarked element and add to every doubly marked element.  Return to
            step 2 above. (Step C in [3])
-        6. Once a result is found, an assignment (i.e. a maximum matching) is 
+        6. Once a result is found, an assignment (i.e. a maximum matching) is
            found from the current known maximal matching by finding augmenting
            paths.
     N.B. in the above the description, we follow [3] at a high level. However,
     the particular algorithm for performing Step B in [3] (steps 3. and 4.
     above) differs from the procedure in the paper.
-    
+
     Rephrasing Step B in [3] says that we must find a minimum vertex cover
     of the 0-induced graph. Our particular implementation of this is based on
     the proof of Konig's Theorem which provides an algorithm for finding
-    a minimum vertex cover from a maximal matching (see e.g. reference [4] 
+    a minimum vertex cover from a maximal matching (see e.g. reference [4]
     below).
-     
+
 
     Parameters
      ----------
@@ -86,7 +86,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     maximize : boolean
         Specifies if the maximum weight matching should be computed. Default is
         False, meaning that minimum weight matching is computed
-    
+
     Returns
     -------
     row_ind, col_ind : array
