@@ -17,14 +17,14 @@ run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
 1.3.x branch, and on adding new features on the master branch.
 
-This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
+This release requires Python 3.5+ and NumPy 1.13.3 or greater.
 
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
 --------------------------
 
-- 
+-
 
 New features
 ============
@@ -44,7 +44,7 @@ and ``spltopp``) and functions from ``scipy.misc`` (``bytescale``, ``fromimage``
 and the latter has been deprecated since v1.0.0.
 Similarly, aliases from ``scipy.misc`` (``comb``, ``factorial``, ``factorial2``,
 ``factorialk``, ``logsumexp``, ``pade``, ``info``, ``source``, ``who``)which have
-been deprecated since v1.0.0 are removed. `SciPy documentation for 
+been deprecated since v1.0.0 are removed. `SciPy documentation for
 v1.1.0 <https://docs.scipy.org/doc/scipy-1.1.0/reference/misc.html>`__
 can be used to track the new import locations for the relocated functions.
 
