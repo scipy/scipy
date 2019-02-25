@@ -21,31 +21,9 @@ environment:
       TEST_TIMEOUT: 1000
 
   matrix:
-    - PYTHON: C:\Python36
-      PYTHON_VERSION: 3.6
-      PYTHON_ARCH: 32
-      TEST_MODE: fast
-
-    - PYTHON: C:\Python35-x64
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 64
-      TEST_MODE: fast
-
     - PYTHON: C:\Python37-x64
       PYTHON_VERSION: 3.7
       PYTHON_ARCH: 64
-      TEST_MODE: full
-
-    - PYTHON: C:\Python35-x64
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 64
-      SKIP_NOTAG: true
-      TEST_MODE: full
-
-    - PYTHON: C:\Python35
-      PYTHON_VERSION: 3.5
-      PYTHON_ARCH: 32
-      SKIP_NOTAG: true
       TEST_MODE: full
 
 init:
