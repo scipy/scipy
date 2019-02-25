@@ -167,11 +167,14 @@ hamming_distance_double(const double *u, const double *v, const npy_intp n, cons
 {
     npy_intp i;
     double s = 0;
+    double w_sum = 0;
 
     for (i = 0; i < n; ++i) {
         s += ((double) (u[i] != v[i])) * w[i];
+        w_sum += w[i];
     }
-    return s / n;
+
+    return s / w_sum;
 }
 
 static NPY_INLINE double
@@ -179,11 +182,14 @@ hamming_distance_char(const char *u, const char *v, const npy_intp n, const doub
 {
     npy_intp i;
     double s = 0;
+    double w_sum = 0;
 
     for (i = 0; i < n; ++i) {
         s += ((double) (u[i] != v[i])) * w[i];
+        w_sum += w[i];
     }
-    return s / n;
+
+    return s / w_sum;
 }
 
 static NPY_INLINE double
