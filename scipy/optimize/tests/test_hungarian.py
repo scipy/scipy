@@ -62,10 +62,10 @@ def test_linear_sum_assignment_input_validation():
 
     C = [[1, 2, 3], [4, 5, 6]]
 
-    assert_array_equal(linear_sum_assignment(C),
-                       linear_sum_assignment(np.asarray(C)))
-    assert_array_equal(linear_sum_assignment(C),
-                       linear_sum_assignment(matrix(C)))
+    assert_array_equal(_hungarian.linear_sum_assignment(C),
+                       _hungarian.linear_sum_assignment(np.asarray(C)))
+    assert_array_equal(_hungarian.linear_sum_assignment(C),
+                       _hungarian.linear_sum_assignment(matrix(C)))
 
 
     I = np.identity(3)
