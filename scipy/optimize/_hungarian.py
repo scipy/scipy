@@ -83,7 +83,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
      ----------
     cost_matrix : array
         The cost matrix of the bipartite graph.
-    maximize : boolean
+    maximize : bool
         Specifies if the maximum weight matching should be computed. Default is
         False, meaning that minimum weight matching is computed
 

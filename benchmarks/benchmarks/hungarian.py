@@ -16,12 +16,8 @@ class Hungarian(Benchmark):
     param_names = ['matrix_size']
 
     def setup(self, matrix_size):
-        self.cost_matrix_1 = rand(matrix_size, matrix_size)
-        self.cost_matrix_2 = rand(matrix_size, matrix_size)
+        self.cost_matrix = rand(matrix_size, matrix_size)
 
-    def time_solve_minimize(self, matrix_size):
-        linear_sum_assignment(self.cost_matrix_1)
-
-    def time_solve_maximize(self, matrix_size):
-        linear_sum_assignment(self.cost_matrix_2, maximize=True)
+    def time_solve(self, matrix_size):
+        linear_sum_assignment(self.cost_matrix)
 
