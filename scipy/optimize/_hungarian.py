@@ -35,10 +35,9 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     The problem is to find a matching M of size min(n, m) such that the sum of
     C[i,j] for (i, j) in M is minimized / maximized.
 
-    Definitions:
-        Many times we are performing operations on the graph whose edges are
-        designated by zero entries in the assignment matrix and non-zero
-        entries are non-edges. We call this graph the **0-induced graph**.
+    Many times we are performing operations on the graph whose edges are
+    designated by zero entries in the assignment matrix and non-zero
+    entries are non-edges. We call this graph the **0-induced graph**.
 
     If a row has been assigned a column, we say that it is **saturated**. In
     the algorithm, this is kept track of via the row_saturated and columns
@@ -68,6 +67,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
         6. Once a result is found, an assignment (i.e. a maximum matching) is
            found from the current known maximal matching by finding augmenting
            paths.
+
     N.B. in the above the description, we follow [3] at a high level. However,
     the particular algorithm for performing Step B in [3] (steps 3. and 4.
     above) differs from the procedure in the paper.
