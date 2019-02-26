@@ -9,6 +9,10 @@ from .common import Benchmark
 
 
 class Hungarian(Benchmark):
+    """
+    Test the speed of the Munkres algorithm for solving the
+    assignment problem
+    """
     params = [
         [100, 300, 500, 700]
     ]
