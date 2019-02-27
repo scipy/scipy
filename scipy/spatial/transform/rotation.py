@@ -826,8 +826,8 @@ class Rotation(object):
             if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
                 raise ValueError("Expected `angles` to be at most "
                                  "2-dimensional with width equal to number "
-                                 "of axes specified, got {} for shape").format(
-                                 angles.shape)
+                                 "of axes specified, got {} for shape".format(
+                                 angles.shape))
 
             if angles.ndim == 1:
                 # (1, num_axes)
