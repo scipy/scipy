@@ -81,9 +81,11 @@ class TestDualAnnealing(TestCase):
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         vd = VisitingDistribution(lower, upper, self.qv, self.rs)
-        values = np.zeros(self.nbtestvalues)
-        for i in np.arange(self.nbtestvalues):
-            values[i] = vd.visit_fn(self.high_temperature)
+        # values = np.zeros(self.nbtestvalues)
+        # for i in np.arange(self.nbtestvalues):
+        #     values[i] = vd.visit_fn(self.high_temperature)
+        values = vd.visit_fn(self.high_temperature, self.nbtestvalues)
+
         # Visiting distribution is a distorted version of Cauchy-Lorentz
         # distribution, and as no 1st and higher moments (no mean defined,
         # no variance defined).

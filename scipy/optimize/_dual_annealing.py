@@ -38,7 +38,8 @@ class VisitingDistribution(object):
         Parameter for visiting distribution. Default value is 2.62.
         Higher values give the visiting distribution a heavier tail, this
         makes the algorithm jump to a more distant region.
-        The value range is (0, 3].
+        The value range is (0, 3]. It's value is fixed for the life of the
+        object.
     rand_state : RandomState object
         A numpy.random.RandomState object for using the current state of the
         created random generator container.
@@ -47,11 +48,28 @@ class VisitingDistribution(object):
     MIN_VISIT_BOUND = 1.e-10
 
     def __init__(self, lb, ub, visiting_param, rand_state):
-        self.visiting_param = visiting_param
+        # if you wish to make _visiting_param adjustable during the life of
+        # the object then _factor2, _factor3, _factor5, _d1, _factor6 will
+        # have to be dynamically calculated in `visit_fn`. They're factored
+        # out here so they don't need to be recalculated all the time.
+        self._visiting_param = visiting_param
         self.rand_state = rand_state
         self.lower = lb
         self.upper = ub
         self.bound_range = ub - lb
+
+        # these are invariant numbers unless visiting_param changes
+        self._factor2 = np.exp((4.0 - self._visiting_param) * np.log(
+            self._visiting_param - 1.0))
+        self._factor3 = np.exp((2.0 - self._visiting_param) * np.log(2.0)
+                               / (self._visiting_param - 1.0))
+        self._factor4_p = np.sqrt(np.pi) * self._factor2 / (self._factor3 * (
+            3.0 - self._visiting_param))
+
+        self._factor5 = 1.0 / (self._visiting_param - 1.0) - 0.5
+        self._d1 = 2.0 - self._factor5
+        self._factor6 = np.pi * (1.0 - self._factor5) / np.sin(
+            np.pi * (1.0 - self._factor5)) / np.exp(gammaln(self._d1))
 
     def visiting(self, x, step, temperature):
         """ Based on the step in the strategy chain, new coordinated are
@@ -60,9 +78,8 @@ class VisitingDistribution(object):
         """
         dim = x.size
         if step < dim:
-            # Changing all coordinates with a new visting value
-            visits = np.array([self.visit_fn(
-                temperature) for _ in range(dim)])
+            # Changing all coordinates with a new visiting value
+            visits = self.visit_fn(temperature, dim)
             upper_sample = self.rand_state.random_sample()
             lower_sample = self.rand_state.random_sample()
             visits[visits > self.TAIL_LIMIT] = self.TAIL_LIMIT * upper_sample
@@ -77,7 +94,7 @@ class VisitingDistribution(object):
             # Changing only one coordinate at a time based on strategy
             # chain step
             x_visit = np.copy(x)
-            visit = self.visit_fn(temperature)
+            visit = self.visit_fn(temperature, 1)
             if visit > self.TAIL_LIMIT:
                 visit = self.TAIL_LIMIT * self.rand_state.random_sample()
             elif visit < -self.TAIL_LIMIT:
@@ -93,26 +110,20 @@ class VisitingDistribution(object):
                 x_visit[index] += self.MIN_VISIT_BOUND
         return x_visit
 
-    def visit_fn(self, temperature):
+    def visit_fn(self, temperature, dim):
         """ Formula Visita from p. 405 of reference [2] """
-        factor1 = np.exp(np.log(temperature) / (self.visiting_param - 1.0))
-        factor2 = np.exp((4.0 - self.visiting_param) * np.log(
-            self.visiting_param - 1.0))
-        factor3 = np.exp((2.0 - self.visiting_param) * np.log(2.0) / (
-            self.visiting_param - 1.0))
-        factor4 = np.sqrt(np.pi) * factor1 * factor2 / (factor3 * (
-            3.0 - self.visiting_param))
-        factor5 = 1.0 / (self.visiting_param - 1.0) - 0.5
-        d1 = 2.0 - factor5
-        factor6 = np.pi * (1.0 - factor5) / np.sin(
-            np.pi * (1.0 - factor5)) / np.exp(gammaln(d1))
-        sigmax = np.exp(-(self.visiting_param - 1.0) * np.log(
-            factor6 / factor4) / (3.0 - self.visiting_param))
-        x = sigmax * self.rand_state.normal()
-        y = self.rand_state.normal()
-        den = np.exp(
-            (self.visiting_param - 1.0) * np.log((np.fabs(y))) / (
-                3.0 - self.visiting_param))
+        x, y = self.rand_state.normal(size=(dim, 2)).T
+
+        factor1 = np.exp(np.log(temperature) / (self._visiting_param - 1.0))
+        factor4 = self._factor4_p * factor1
+
+        # sigmax
+        x *= np.exp(-(self._visiting_param - 1.0) * np.log(
+            self._factor6 / factor4) / (3.0 - self._visiting_param))
+
+        den = np.exp((self._visiting_param - 1.0) * np.log(np.fabs(y)) /
+                     (3.0 - self._visiting_param))
+
         return x / den
 
 
