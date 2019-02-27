@@ -491,7 +491,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
             break
 
         if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
-                np.all(bc_res < tol_bc)):
+                np.all(np.abs(bc_res) < tol_bc)):
             break
 
         # If the full step was taken, then we are going to continue with
@@ -1082,30 +1082,27 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
         # calculate boundary jacobian
         if bc_jac_wrapped is None:
-            dbc=estimate_bc_jac(bc_wrapped,y[:, 0], y[:, -1], p)
+            dbc = estimate_bc_jac(bc_wrapped, y[:, 0], y[:, -1], p)
         else:
-            dbc=bc_jac_wrapped(y[:, 0], y[:, -1], p)
-            
-        # stack the boundary jacobian with n+k columns, handling optional parameters
-        if len(p)>0:
-            ystack=np.vstack(dbc[0:2])
-            pstack=np.vstack([dbc[2],np.zeros_like(dbc[2])])
-            bcstack=np.hstack([ystack,pstack])
-        else:
-            bcstack=np.vstack(dbc[0:2])
+            dbc = bc_jac_wrapped(y[:, 0], y[:, -1], p)
 
-        # calculate boundary residuals for y and p, handling zeros in boundary jacobian
-        bc_yp_res=np.divide(bc_res, bcstack, out=np.zeros_like(bcstack), where=bcstack!=0 )
-        max_bc_res=np.max(abs(bc_yp_res))
-                       
+        # Normalize bc_res
+        denom = (np.dot(dbc[0], 1 + np.abs(y[:,  0]))
+               + np.dot(dbc[1], 1 + np.abs(y[:, -1])))
+        if p.size > 0:
+            denom += np.dot(dbc[2], 1 + np.abs(p))
+
+        bc_res_norm = np.divide(bc_res, denom, out=np.zeros_like(bc_res), where=denom != 0)
+        max_bc_res_norm = np.max(abs(bc_res_norm))
+
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
         rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
                                          r_middle, f_middle)
         max_rms_res = np.max(rms_res)
-        max_res = np.max([max_rms_res, max_bc_res])
-        
+        max_res = np.max([max_rms_res, max_bc_res_norm])
+
         if singular:
             status = 2
             break

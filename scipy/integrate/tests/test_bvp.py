@@ -173,34 +173,34 @@ def shock_sol(x):
     return np.cos(np.pi * x) + erf(x / k) / erf(1 / k)
 
 
-def nonlin_bc_fun(x,y):
+def nonlin_bc_fun(x, y):
     # laplace eq.
     return np.stack([y[1], np.zeros_like(x)])
 
 
 def nonlin_bc_bc(ya, yb):
-    phiA, phipA= ya
-    phiC, phipC= yb
+    phiA, phipA = ya
+    phiC, phipC = yb
 
     kappa, ioA, ioC, V, f = 1.64, 0.01, 1.0e-4, 0.5, 38.9
 
     # Butler-Volmer Kinetics at Anode
-    hA=0.0-phiA-0.0
-    iA= ioA * ( np.exp(f*hA) - np.exp(-f*hA) )
-    res0= iA + kappa*phipA
+    hA = 0.0-phiA-0.0
+    iA = ioA * (np.exp(f*hA) - np.exp(-f*hA))
+    res0 = iA + kappa * phipA
 
     # Butler-Volmer Kinetics at Cathode
-    hC= V - phiC - 1.0
-    iC= ioC * ( np.exp(f*hC) - np.exp(-f*hC) )
-    res1= iC - kappa*phipC
+    hC = V - phiC - 1.0
+    iC = ioC * (np.exp(f*hC) - np.exp(-f*hC))
+    res1 = iC - kappa*phipC
 
-    return np.array([  res0, res1 ] )
+    return np.array([res0, res1])
 
-    
+
 def nonlin_bc_sol(x):
     return -0.13426436116763119 - 1.1308709 * x
 
-    
+
 def test_modify_mesh():
     x = np.array([0, 1, 3, 9], dtype=float)
     x_new = modify_mesh(x, np.array([0]), np.array([2]))
@@ -559,10 +559,10 @@ def test_shock_layer():
 
 
 def test_nonlin_bc():
-    x=np.linspace(0,0.1,5)
-    x_test=x
-    y=np.zeros([2,x.size])
-    sol = solve_bvp(nonlin_bc_fun, nonlin_bc_bc, x, y)
+    x = np.linspace(0, 0.1, 5)
+    x_test = x
+    y = np.zeros([2, x.size])
+    sol = solve_bvp(nonlin_bc_fun, nonlin_bc_bc, x, y, tol=1e-5)
 
     assert_equal(sol.status, 0)
     assert_(sol.success)
@@ -602,4 +602,3 @@ def test_verbose():
             assert_("Solved in" in text, text)
         if verbose >= 2:
             assert_("Max residual" in text, text)
-
