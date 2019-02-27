@@ -80,10 +80,10 @@ def linear_sum_assignment(cost_matrix, maximize=False):
 
 
     Parameters
-     ----------
+    ----------
     cost_matrix : array
         The cost matrix of the bipartite graph.
-    maximize : bool
+    maximize : bool, optional
         Specifies if the maximum weight matching should be computed. Default is
         False, meaning that minimum weight matching is computed
 
@@ -214,8 +214,11 @@ class Munkres(object):
                 continue
             if not len(path_row + path_col) % 2:
                 for i in range(len(path_row) - 1):
+                    # Switch the internal edges along the augmenting path
                     self.marked[path_row[i], path_col[i]] = 1
                     self.marked[path_row[i], path_col[i + 1]] = 0
+
+                # Adjust the last edges in the augmenting path
                 self.marked[path_row[-1], path_col[-1]] = 1
                 self.row_saturated[path_row[-1]] = \
                     self.col_saturated[path_col[0]] = True
