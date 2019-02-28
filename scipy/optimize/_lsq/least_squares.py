@@ -115,7 +115,15 @@ def check_tolerance(ftol, xtol, gtol):
                  .format(name, EPS))
         return tol
 
-    return check(ftol, "ftol"), check(xtol, "xtol"), check(gtol, "gtol")
+    ftol = check(ftol, "ftol")
+    xtol = check(xtol, "xtol")
+    gtol = check(gtol, "gtol")
+
+    if ftol < EPS and xtol < EPS and gtol < EPS:
+        raise ValueError("At least one of the tolerances must be higher than "
+                         "machine epsilon ({:.2e}).".format(EPS))
+
+    return ftol, xtol, gtol
 
 
 def check_x_scale(x_scale, x0):
