@@ -1,7 +1,7 @@
 """ Sketching-based Matrix Computations """
 
-# Author: Jordi Montes <jomsdev@gmail.com>	
-# August 28, 2017	
+# Author: Jordi Montes <jomsdev@gmail.com>
+# August 28, 2017
 
 from __future__ import division, print_function, absolute_import
 
@@ -60,7 +60,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     Given an input_matrix ``A`` of size ``(n, d)``, compute a matrix ``A'`` of
     size (sketch_size, d) so that
+
     .. math:: \|Ax\| \approx \|A'x\|
+
     with high probability via the Clarkson-Woodruff Transform, otherwise
     known as the CountSketch matrix.
 
@@ -85,7 +87,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     Notes
     -----
     To make the statement
+
     .. math:: \|Ax\| \approx \|A'x\|
+
     precise, observe the following result which is adapted from the
     proof of Theorem 14 of [2] via Markov's Inequality. If we have
     a sketch size ``sketch_size=k`` which is at least
@@ -93,7 +97,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     .. math:: k \geq \frac{2}{\epsilon^2\delta}
 
     Then for any fixed vector ``x``,
+
     .. math:: \|Ax\| = (1\pm\epsilon)\|A'x\|
+
     with probability at least one minus delta.
 
     This implementation takes advantage of sparsity: computing
@@ -101,17 +107,17 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     is in ``scipy.sparse.csc_matrix`` format gives the quickest
     computation time for sparse input.
 
-    >>> from scipy.linalg import clarkson_woodruff_transform
+    >>> from scipy import linalg
     >>> from scipy import sparse
     >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
     >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
     >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
     >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
     >>> D = np.random.randn(n_rows,n_columns)
-    >>> clarkson_woodruff_transform(A) # fastest
-    >>> clarkson_woodruff_transform(B) # fast
-    >>> clarkson_woodruff_transform(C) # slower
-    >>> clarkson_woodruff_transform(D) # slowest
+    >>> linalg.clarkson_woodruff_transform(A) # fastest
+    >>> linalg.clarkson_woodruff_transform(B) # fast
+    >>> linalg.clarkson_woodruff_transform(C) # slower
+    >>> linalg.clarkson_woodruff_transform(D) # slowest
 
     Examples
     --------
@@ -129,15 +135,15 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     the sketched norm ``norm_sketch`` in absolute value.
 
     Similarly, applying our sketch preserves the solution to a linear
-    regression of ``min ||Ax - b||``.
+    regression of :math:`\min \|Ax - b\|`.
 
-    >>> from scipy.linalg import clarkson_woodruff_transform
+    >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
     >>> A = np.random.randn(n_rows,n_columns)
     >>> b = np.random.randn(n_rows)
     >>> x = np.linalg.lstsq(A,b)
     >>> Ab = np.hstack((A,b.reshape(-1,1)))
-    >>> SAb = clarkson_woodruff_transform(Ab, sketch_size=sketch_n_rows)
+    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_size=sketch_n_rows)
     >>> SA, Sb = SAb[:,:-1], SAb[:,-1]
     >>> x_sketched = np.linalg.lstsq(SA,Sb,rcond=None)
 
