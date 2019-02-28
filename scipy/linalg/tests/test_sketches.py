@@ -76,8 +76,10 @@ class TestClarksonWoodruffTransform(object):
                 sketch2 = clarkson_woodruff_transform(
                     A, self.n_sketch_rows, seed=seed
                 )
-                if issparse(sketch1): sketch1 = sketch1.todense()
-                if issparse(sketch2): sketch2 = sketch2.todense()
+                if issparse(sketch1):
+                    sketch1 = sketch1.todense()
+                if issparse(sketch2):
+                    sketch2 = sketch2.todense()
                 assert_equal(sketch1,sketch2)
 
     def test_sketch_preserves_frobenius_norm(self):
@@ -100,16 +102,8 @@ class TestClarksonWoodruffTransform(object):
         assert_(n_errors == 0)
 
     def test_sketch_preserves_vector_norm(self):
-        # Testing that the with-high-probability bound presented
-        # in the documentation is right. In particular, sketch
-        # dimension >= 2 / (delta * eps**2) should ensure that
-        # the Euclidean norm of a sketched vector ought to be
-        # within an epsilon multiplicative factor of the original.
-        # Here, we try eps=0.5 and delta=0.01 so that over
-        # all our seeds this norm should be presered to a 0.5
-        # factor.
         n_errors = 0
-        n_sketch_rows = int(np.ceil(2. / (0.01 * 0.5**2))) # = 800
+        n_sketch_rows = int(np.ceil(2. / (0.01 * 0.5**2)))
         true_norm = np.linalg.norm(self.x)
         for seed in self.seeds:
             sketch = clarkson_woodruff_transform(
