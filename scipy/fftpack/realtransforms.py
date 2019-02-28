@@ -147,7 +147,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     x : array_like
         The input array.
     type : {1, 2, 3, 4}, optional
-        Type of the DCT (see Notes). Default type is 2.
+        Type of the DST (see Notes). Default type is 2.
     shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
@@ -577,7 +577,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     There are theoretically 8 types of the DST for different combinations of
     even/odd boundary conditions and boundary off sets [1]_, only the first
-    3 types are implemented in scipy.
+    4 types are implemented in scipy.
 
     **Type I**
 
