@@ -1087,7 +1087,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             dbc = bc_jac_wrapped(y[:, 0], y[:, -1], p)
 
         # Normalize bc_res
-        denom = (np.dot(dbc[0], 1 + np.abs(y[:,  0]))
+        denom = (np.dot(dbc[0], 1 + np.abs(y[:, 0]))
                + np.dot(dbc[1], 1 + np.abs(y[:, -1])))
         if p.size > 0:
             denom += np.dot(dbc[2], 1 + np.abs(p))
