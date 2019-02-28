@@ -42,6 +42,9 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     ----------
     A : {matrix, sparse matrix, ndarray, LinearOperator}
         Matrix A in the linear system.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` and ``A^T x`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : array_like, shape (m,)
         Vector b in the linear system.
     damp : float
