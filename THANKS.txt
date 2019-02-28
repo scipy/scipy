@@ -202,7 +202,7 @@ Nicolas Hug for the Yeo-Johnson transformation.
 Petar Mlinarić for a bug fix in scipy.io.mmio.
 Franz Forstmayr for documentation in scipy.signal
 Jordi Montes for initial contribution of the Clarkson-Woodruff sketch.
-William Conner DiPaolo for improvements to randomized numerical linear algebra methods.
+William Conner DiPaolo for improvements to the Clarkson-Woodruff transform.
 
 Institutions
 ------------
