@@ -1,4 +1,8 @@
 """ Sketching-based Matrix Computations """
+
+# Author: Jordi Montes <jomsdev@gmail.com>	
+# August 28, 2017	
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
@@ -34,7 +38,7 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     Returns
     -------
     S : (n_rows, n_columns) csc_matrix
-        The returned matrix has ``n_columns'' nonzero entries.
+        The returned matrix has ``n_columns`` nonzero entries.
 
     Notes
     -----
@@ -84,19 +88,20 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     .. math:: \|Ax\| \approx \|A'x\|
     precise, observe the following result which is adapted from the
     proof of Theorem 14 of [2] via Markov's Inequality. If we have
-    a sketch size ``sketch_size=k'' which is at least
+    a sketch size ``sketch_size=k`` which is at least
     
     .. math:: k \geq \frac{2}{\epsilon^2\delta}
 
-    Then for any fixed vector ``x'',
+    Then for any fixed vector ``x``,
     .. math:: \|Ax\| = (1\pm\epsilon)\|A'x\|
     with probability at least one minus delta.
 
     This implementation takes advantage of sparsity: computing
-    a sketch takes time proportional to ``A.nnz''. Data ``A'' which
-    is in ``scipy.sparse.csc_matrix'' format gives the quickest
+    a sketch takes time proportional to ``A.nnz``. Data ``A`` which
+    is in ``scipy.sparse.csc_matrix`` format gives the quickest
     computation time for sparse input.
 
+    >>> from scipy.linalg import clarkson_woodruff_transform
     >>> from scipy import sparse
     >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
     >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
@@ -120,12 +125,13 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     >>> norm_A = np.linalg.norm(A)
     >>> norm_sketch = np.linalg.norm(sketch)
 
-    Now with high probability, thee true norm ``norm_A'' is close to
-    the sketched norm ``norm_sketch'' in absolute value.
+    Now with high probability, the true norm ``norm_A`` is close to
+    the sketched norm ``norm_sketch`` in absolute value.
 
     Similarly, applying our sketch preserves the solution to a linear
-    regression of ``min ||Ax - b||''.
+    regression of ``min ||Ax - b||``.
 
+    >>> from scipy.linalg import clarkson_woodruff_transform
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
     >>> A = np.random.randn(n_rows,n_columns)
     >>> b = np.random.randn(n_rows)
@@ -133,10 +139,10 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     >>> Ab = np.hstack((A,b.reshape(-1,1)))
     >>> SAb = clarkson_woodruff_transform(Ab, sketch_size=sketch_n_rows)
     >>> SA, Sb = SAb[:,:-1], SAb[:,-1]
-    >>> x_sketched = np.linalg.lstsq(SA,Sb)
+    >>> x_sketched = np.linalg.lstsq(SA,Sb,rcond=None)
 
-    As with the matrix norm example, ``np.linalg.norm(A @ x - b)''
-    is close to ``np.linalg.norm(A @ x_sketched - b)'' with high
+    As with the matrix norm example, ``np.linalg.norm(A @ x - b)``
+    is close to ``np.linalg.norm(A @ x_sketched - b)`` with high
     probability.
 
     References

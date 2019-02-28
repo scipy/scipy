@@ -88,14 +88,18 @@ class TestClarksonWoodruffTransform(object):
         # we pass all/almost all the tries.
         n_errors = 0
         for A in self.test_matrices:
-            true_norm = norm(A) if issparse(A) \
-                        else np.linalg.norm(A)
+            if issparse(A):
+                true_norm = norm(A)
+            else:
+                true_norm = np.linalg.norm(A)
             for seed in self.seeds:
                 sketch = clarkson_woodruff_transform(
                     A, self.n_sketch_rows, seed=seed,
                 )
-                sketch_norm = norm(sketch) if issparse(sketch) \
-                              else np.linalg.norm(sketch)
+                if issparse(sketch):
+                    sketch_norm = norm(sketch)
+                else:
+                    sketch_norm = np.linalg.norm(sketch)
 
                 if np.abs(true_norm - sketch_norm) > 0.1 * true_norm:
                     n_errors += 1
@@ -114,7 +118,3 @@ class TestClarksonWoodruffTransform(object):
             if np.abs(true_norm - sketch_norm) > 0.5 * true_norm:
                 n_errors += 1
         assert_(n_errors == 0)
-
-
-if __name__ == "__main__":
-    np.testing.run_module_suite()
