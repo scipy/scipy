@@ -719,7 +719,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
-        size = numpy.product(input.shape, axis=0)
+        size = numpy.prod(input.shape, axis=0)
         size //= input.shape[axes[0]]
         size //= input.shape[axes[1]]
         for ii in range(input.ndim):

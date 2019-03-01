@@ -212,7 +212,7 @@ class TestPlacePoles(object):
         assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       maxiter=-42)
 
-        # should fail as rank(B) is two
+        # should fail as ndim(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
         #unctrollable system

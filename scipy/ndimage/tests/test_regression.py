@@ -31,7 +31,7 @@ def test_ticket_742():
 
     if np.dtype(np.intp) != np.dtype('i'):
         shape = (3,1240,1240)
-        a = np.random.rand(np.product(shape)).reshape(shape)
+        a = np.random.rand(np.prod(shape)).reshape(shape)
         # shouldn't crash
         SE(a)
 
