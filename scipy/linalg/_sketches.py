@@ -114,10 +114,10 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
     >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
     >>> D = np.random.randn(n_rows,n_columns)
-    >>> linalg.clarkson_woodruff_transform(A,sketch_n_rows) # fastest
-    >>> linalg.clarkson_woodruff_transform(B,sketch_n_rows) # fast
-    >>> linalg.clarkson_woodruff_transform(C,sketch_n_rows) # slower
-    >>> linalg.clarkson_woodruff_transform(D,sketch_n_rows) # slowest
+    >>> SA = linalg.clarkson_woodruff_transform(A,sketch_n_rows) # fastest
+    >>> SB = linalg.clarkson_woodruff_transform(B,sketch_n_rows) # fast
+    >>> SC = linalg.clarkson_woodruff_transform(C,sketch_n_rows) # slower
+    >>> SD = linalg.clarkson_woodruff_transform(D,sketch_n_rows) # slowest
 
     That said, this method does perform well on dense inputs, just slower
     on a relative scale.
@@ -131,7 +131,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     >>> A = np.random.randn(n_rows, n_columns)
     >>> sketch = linalg.clarkson_woodruff_transform(A,sketch_n_rows)
     >>> sketch.shape
-    (150, 100)
+    (200, 100)
     >>> norm_A = np.linalg.norm(A)
     >>> norm_sketch = np.linalg.norm(sketch)
 
