@@ -453,6 +453,8 @@ class interp1d(_Interpolator1D):
 
         if x.ndim != 1:
             raise ValueError("the x array must have exactly one dimension.")
+        if not (np.all(x[1:] - x[:-1] > 0) or np.all(x[1:] - x[:-1] < 0)):
+            raise ValueError("Expect x to be a 1-D sorted array_like.")
         if y.ndim == 0:
             raise ValueError("the y array must have at least one dimension.")
 

@@ -714,6 +714,16 @@ class TestInterp1D(object):
                 vals = f(xnew)
                 assert_(np.isfinite(vals).all())
 
+    def test_duplicate_x(self):
+        # gh-9886: duplicate values of `x` are not allowed
+        x = np.array([0, 1, 1])
+        y = np.array([0, 1, 0])
+        kinds = ['nearest', 'linear', 'previous', 'next']
+
+        for kind in kinds:
+            with assert_raises(ValueError):
+                interp1d(x,y,kind=kind)
+
 
 class TestLagrange(object):
 
