@@ -2404,8 +2404,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
     """
-    Minimize a function using modified Powell's method. This method
-    only uses function values, not derivatives.
+    Minimize a function using modified Powell's method.
+
+    This method only uses function values, not derivatives.
 
     Parameters
     ----------
@@ -2415,12 +2416,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func.
-    callback : callable, optional
-        An optional user-supplied function, called after each
-        iteration.  Called as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
-    direc : ndarray, optional
-        Initial direction set.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
@@ -2430,12 +2425,25 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     maxfun : int, optional
         Maximum number of function evaluations to make.
     full_output : bool, optional
-        If True, fopt, xi, direc, iter, funcalls, and
-        warnflag are returned.
+        If True, ``fopt``, ``xi``, ``direc``, ``iter``, ``funcalls``, and
+        ``warnflag`` are returned.
     disp : bool, optional
         If True, print convergence messages.
     retall : bool, optional
         If True, return a list of the solution at each iteration.
+    callback : callable, optional
+        An optional user-supplied function, called after each
+        iteration.  Called as ``callback(xk)``, where ``xk`` is the
+        current parameter vector.
+    direc : ndarray, optional
+        Initial fitting step and parameter order set as an (N, N) array, where N
+        is the number of fitting parameters in `x0`.  Defaults to step size 1.0
+        fitting all parameters simultaneously (``np.ones((N, N))``).  To
+        prevent initial consideration of values in a step or to change initial
+        step size, set to 0 or desired step size in the Jth position in the Mth
+        block, where J is the position in `x0` and M is the desired evaluation
+        step, with steps being evaluated in index order.  Step size and ordering
+        will change freely as minimization proceeds.
 
     Returns
     -------
@@ -2459,7 +2467,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     See also
     --------
     minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Powell' `method` in particular.
+        multivariate functions. See the 'Powell' method in particular.
 
     Notes
     -----
@@ -2467,13 +2475,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     a function of N variables. Powell's method is a conjugate
     direction method.
 
-    The algorithm has two loops. The outer loop
-    merely iterates over the inner loop. The inner loop minimizes
-    over each current direction in the direction set. At the end
-    of the inner loop, if certain conditions are met, the direction
-    that gave the largest decrease is dropped and replaced with
-    the difference between the current estimated x and the estimated
-    x from the beginning of the inner-loop.
+    The algorithm has two loops.  The outer loop merely iterates over the inner
+    loop. The inner loop minimizes over each current direction in the direction
+    set. At the end of the inner loop, if certain conditions are met, the
+    direction that gave the largest decrease is dropped and replaced with the
+    difference between the current estimated x and the estimated x from the
+    beginning of the inner-loop.
 
     The technical conditions for replacing the direction of greatest
     increase amount to checking that
@@ -2483,6 +2490,15 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     2. The direction of greatest increase accounted for a large sufficient
        fraction of the decrease in the function value from that iteration of
        the inner loop.
+
+    References
+    ----------
+    Powell M.J.D. (1964) An efficient method for finding the minimum of a
+    function of several variables without calculating derivatives,
+    Computer Journal, 7 (2):155-162.
+
+    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
+    Numerical Recipes (any edition), Cambridge University Press
 
     Examples
     --------
@@ -2498,15 +2514,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
              Function evaluations: 18
     >>> minimum
     array(0.0)
-
-    References
-    ----------
-    Powell M.J.D. (1964) An efficient method for finding the minimum of a
-    function of several variables without calculating derivatives,
-    Computer Journal, 7 (2):155-162.
-
-    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
-    Numerical Recipes (any edition), Cambridge University Press
 
     """
     opts = {'xtol': xtol,
