@@ -31,10 +31,10 @@ from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
 from scipy.linalg.misc import norm
 from scipy.linalg._decomp_qz import _select_function
 
-from numpy import array, transpose, sometrue, diag, ones, linalg, \
+from numpy import array, transpose, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
      ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
-     asarray, isfinite, all, ndarray, outer, eye, dtype, empty,\
+     asarray, isfinite, ndarray, outer, eye, dtype, empty,\
      triu, tril
 
 from numpy.random import normal, seed, random
@@ -265,7 +265,7 @@ class TestEig(object):
         val2 = dot(B, vr) * w
         res = val1 - val2
         for i in range(res.shape[1]):
-            if all(isfinite(res[:,i])):
+            if np.all(isfinite(res[:,i])):
                 assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
 
         w_fin = w[isfinite(w)]
@@ -1222,7 +1222,7 @@ class TestQR(object):
         a = np.asarray([[8,2,3],[2,9,3],[5,3,6]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1253,7 +1253,7 @@ class TestQR(object):
         a = np.asarray([[8,2,3],[2,9,3]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1272,7 +1272,7 @@ class TestQR(object):
         a = np.asarray([[8,2],[2,9],[5,3]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1293,7 +1293,7 @@ class TestQR(object):
         a = np.asarray([[8,2],[2,9],[5,3]])
         q,r,p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p], mode='economic')
@@ -1356,7 +1356,7 @@ class TestQR(object):
         a = np.asarray([[8,2,5],[2,9,3]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         assert_equal(q.shape, (2,2))
@@ -1379,7 +1379,7 @@ class TestQR(object):
         a = np.asarray([[8,2,3],[2,9,5]])
         q,r,p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(transpose(q),q),identity(2))
         assert_array_almost_equal(dot(q,r),a[:,p])
         assert_equal(q.shape, (2,2))
@@ -1488,7 +1488,7 @@ class TestQR(object):
         a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
         q,r,p = qr(a, pivoting=True)
         d = abs(diag(r))
-        assert_(all(d[1:] <= d[:-1]))
+        assert_(np.all(d[1:] <= d[:-1]))
         assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
         assert_array_almost_equal(dot(q,r),a[:,p])
         q2,r2 = qr(a[:,p])
@@ -1545,7 +1545,7 @@ class TestQR(object):
             a = random([n,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1596,7 +1596,7 @@ class TestQR(object):
             a = random([m,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(m))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1623,7 +1623,7 @@ class TestQR(object):
             a = random([m,n])
             q,r,p = qr(a, pivoting=True, mode='economic')
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(n))
             assert_array_almost_equal(dot(q,r),a[:,p])
             assert_equal(q.shape, (m,n))
@@ -1648,7 +1648,7 @@ class TestQR(object):
             a = random([m,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(transpose(q),q),identity(m))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1691,7 +1691,7 @@ class TestQR(object):
             a = random([n,n])+1j*random([n,n])
             q,r,p = qr(a, pivoting=True)
             d = abs(diag(r))
-            assert_(all(d[1:] <= d[:-1]))
+            assert_(np.all(d[1:] <= d[:-1]))
             assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
             assert_array_almost_equal(dot(q,r),a[:,p])
             q2,r2 = qr(a[:,p])
@@ -1833,7 +1833,6 @@ class TestRQ(object):
 
 
 transp = transpose
-any = sometrue
 
 
 class TestSchur(object):
@@ -1843,7 +1842,7 @@ class TestSchur(object):
         t,z = schur(a)
         assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
         tc,zc = schur(a,'complex')
-        assert_(any(ravel(iscomplex(zc))) and any(ravel(iscomplex(tc))))
+        assert_(np.any(ravel(iscomplex(zc))) and np.any(ravel(iscomplex(tc))))
         assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
         tc2,zc2 = rsf2csf(tc,zc)
         assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
@@ -2017,7 +2016,7 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.T), B, decimal=5)
         assert_array_almost_equal(dot(Q,Q.T), eye(n), decimal=5)
         assert_array_almost_equal(dot(Z,Z.T), eye(n), decimal=5)
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double(self):
         n = 5
@@ -2028,7 +2027,7 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
         assert_array_almost_equal(dot(Q,Q.T), eye(n))
         assert_array_almost_equal(dot(Z,Z.T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
     def test_qz_complex(self):
         n = 5
@@ -2039,8 +2038,8 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.conjugate().T), B)
         assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n))
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
-        assert_(all(diag(BB) >= 0))
-        assert_(all(diag(BB).imag == 0))
+        assert_(np.all(diag(BB) >= 0))
+        assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_complex64(self):
         n = 5
@@ -2051,8 +2050,8 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.conjugate().T), B, decimal=5)
         assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n), decimal=5)
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n), decimal=5)
-        assert_(all(diag(BB) >= 0))
-        assert_(all(diag(BB).imag == 0))
+        assert_(np.all(diag(BB) >= 0))
+        assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_double_complex(self):
         n = 5
@@ -2067,7 +2066,7 @@ class TestQZ(object):
         assert_array_almost_equal(bb.imag, 0)
         assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n))
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
         # from https://www.nag.com/lapack-ex/node119.html
@@ -2167,8 +2166,8 @@ class TestQZ(object):
     #    AAS,BBS,QS,ZS,sdim = qz(cA,cB,sort='lhp')
 
     #    eigenvalues = diag(AAS)/diag(BBS)
-    #    assert_(all(np.real(eigenvalues[:sdim] < 0)))
-    #    assert_(all(np.real(eigenvalues[sdim:] > 0)))
+    #    assert_(np.all(np.real(eigenvalues[:sdim] < 0)))
+    #    assert_(np.all(np.real(eigenvalues[sdim:] > 0)))
 
     def test_check_finite(self):
         n = 5
@@ -2179,7 +2178,7 @@ class TestQZ(object):
         assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
         assert_array_almost_equal(dot(Q,Q.T), eye(n))
         assert_array_almost_equal(dot(Z,Z.T), eye(n))
-        assert_(all(diag(BB) >= 0))
+        assert_(np.all(diag(BB) >= 0))
 
 
 def _make_pos(X):

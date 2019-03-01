@@ -6,7 +6,7 @@ from . import _minpack
 
 import numpy as np
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
-                   transpose, zeros, product, greater, array,
+                   transpose, zeros, prod, greater, array,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
@@ -817,7 +817,7 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     fvecp = fvecp.reshape((m,))
     _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
 
-    good = (product(greater(err, 0.5), axis=0))
+    good = (prod(greater(err, 0.5), axis=0))
 
     return (good, err)
 
