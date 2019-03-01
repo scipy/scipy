@@ -1320,11 +1320,11 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Cutoff for 'small' singular values.
         Singular values smaller than ``rcond*largest_singular_value``
         are considered zero.
-        If None and the dtype of `a` is `np.float32`,
-        it is set to ``np.finfo('float32').eps * 1E3``.
-        Otherwise, it is set to ``np.finfo('float64').eps * 1E6``.
+        If None and the dtype of `a` is ``np.float32``, it is set to
+        ``np.finfo('float32').eps * 1e3``.
+        Otherwise, it is set to ``np.finfo('float64').eps * 1e6``.
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1335,7 +1335,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.  Returned if `return_rank` is True.
 
     Raises
     ------
@@ -1392,14 +1392,14 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         Cutoff for 'small' singular values.
         Singular values smaller than ``rcond*largest_singular_value``
         are considered zero.
-        If None and the dtype of `a` is `'float32'`,
-        it is set to ``np.finfo('float32').eps * 1E3``.
-        Otherwise, it is set to ``np.finfo('float64').eps * 1E6``.
+        If None and the dtype of `a` is ``np.float32``, it is set to
+        ``np.finfo('float32').eps * 1e3``.
+        Otherwise, it is set to ``np.finfo('float64').eps * 1e6``.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of a. (Default: lower)
+        triangle of `a`. (Default: lower)
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1410,7 +1410,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     B : (N, N) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.  Returned if `return_rank` is True.
 
     Raises
     ------
