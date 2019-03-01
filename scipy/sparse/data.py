@@ -199,7 +199,7 @@ class _minmax_mixin(object):
             if self.nnz == 0:
                 return zero
             m = min_or_max.reduce(self._deduped_data().ravel())
-            if self.nnz != np.product(self.shape):
+            if self.nnz != np.prod(self.shape):
                 m = min_or_max(zero, m)
             return m
 
@@ -272,7 +272,7 @@ class _minmax_mixin(object):
                 if compare(m, zero):
                     return mat.row[am] * mat.shape[1] + mat.col[am]
                 else:
-                    size = np.product(mat.shape)
+                    size = np.prod(mat.shape)
                     if size == mat.nnz:
                         return am
                     else:

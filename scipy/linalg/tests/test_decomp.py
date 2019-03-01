@@ -31,7 +31,7 @@ from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
 from scipy.linalg.misc import norm
 from scipy.linalg._decomp_qz import _select_function
 
-from numpy import array, transpose, sometrue, diag, ones, linalg, \
+from numpy import array, transpose, any, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
      ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
      asarray, isfinite, all, ndarray, outer, eye, dtype, empty,\
@@ -1833,7 +1833,6 @@ class TestRQ(object):
 
 
 transp = transpose
-any = sometrue
 
 
 class TestSchur(object):

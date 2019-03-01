@@ -226,7 +226,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise RuntimeError('structure and input must have same dimensionality')
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if numpy.product(structure.shape, axis=0) < 1:
+    if numpy.prod(structure.shape, axis=0) < 1:
         raise RuntimeError('structure must not be empty')
     if mask is not None:
         mask = numpy.asarray(mask)
@@ -2014,7 +2014,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        sz = numpy.product(dt.shape, axis=0)
+        sz = numpy.prod(dt.shape, axis=0)
         ft = numpy.arange(sz, dtype=numpy.int32)
         ft.shape = dt.shape
     else:

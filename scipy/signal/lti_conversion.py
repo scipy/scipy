@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,
-                   asarray, product, zeros, array, outer)
+                   asarray, prod, zeros, array, outer)
 from scipy import linalg
 
 from .filter_design import tf2zpk, zpk2tf, normalize
@@ -268,9 +268,9 @@ def ss2tf(A, B, C, D, input=0):
     except ValueError:
         den = 1
 
-    if (product(B.shape, axis=0) == 0) and (product(C.shape, axis=0) == 0):
+    if (prod(B.shape, axis=0) == 0) and (prod(C.shape, axis=0) == 0):
         num = numpy.ravel(D)
-        if (product(D.shape, axis=0) == 0) and (product(A.shape, axis=0) == 0):
+        if (prod(D.shape, axis=0) == 0) and (prod(A.shape, axis=0) == 0):
             den = []
         return num, den
 

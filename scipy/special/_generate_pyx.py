@@ -840,7 +840,7 @@ class FusedFunc(Func):
         all_codes = tuple([codes for _unused, codes in fused_types])
 
         codelens = list(map(lambda x: len(x), all_codes))
-        last = numpy.product(codelens) - 1
+        last = numpy.prod(codelens) - 1
         for m, codes in enumerate(itertools.product(*all_codes)):
             fused_codes, decs = [], []
             for n, fused_type in enumerate(fused_types):

@@ -23,7 +23,7 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
+from numpy import zeros, concatenate, ravel, all, diff, array, ones
 import numpy as np
 
 from . import fitpack
@@ -748,7 +748,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             xe = x[-1]
         t = concatenate(([xb]*(k+1), t, [xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
+        if not all(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
                              'Schoenberg-Whitney conditions')
         if not dfitpack.fpchec(x, t, k) == 0:
