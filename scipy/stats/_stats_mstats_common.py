@@ -19,23 +19,23 @@ def linregress(x, y=None):
     Parameters
     ----------
     x, y : array_like
-        Two sets of measurements.  Both arrays should have the same length.
-        If only x is given (and y=None), then it must be a two-dimensional
+        Two sets of measurements.  Both arrays should have the same length.  If
+        only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
-        are then found by splitting the array along the length-2 dimension.
-        In the case where y=None and x is a 2x2 array, linregress(x) is
-        equivalent to linregress(x[0], x[1]).
+        are then found by splitting the array along the length-2 dimension.  In
+        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
+        equivalent to ``linregress(x[0], x[1])``.
 
     Returns
     -------
     slope : float
-        slope of the regression line
+        Slope of the regression line.
     intercept : float
-        intercept of the regression line
+        Intercept of the regression line.
     rvalue : float
-        correlation coefficient
+        Correlation coefficient.
     pvalue : float
-        two-sided p-value for a hypothesis test whose null hypothesis is
+        Two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero, using Wald Test with t-distribution of
         the test statistic.
     stderr : float
@@ -50,8 +50,8 @@ def linregress(x, y=None):
 
     Notes
     -----
-    Missing values are considered pair-wise: if a value is missing in x,
-    the corresponding value in y is masked.
+    Missing values are considered pair-wise: if a value is missing in `x`,
+    the corresponding value in `y` is masked.
 
     Examples
     --------
@@ -70,10 +70,10 @@ def linregress(x, y=None):
     >>> print("slope: %f    intercept: %f" % (slope, intercept))
     slope: 1.944864    intercept: 0.268578
 
-    To get coefficient of determination (r_squared):
+    To get coefficient of determination (R-squared):
 
-    >>> print("r-squared: %f" % r_value**2)
-    r-squared: 0.735498
+    >>> print("R-squared: %f" % r_value**2)
+    R-squared: 0.735498
 
     Plot the data along with the fitted line:
 
