@@ -82,6 +82,7 @@ Variability
     sem
     zmap
     zscore
+    gstd
     iqr
     median_absolute_deviation
 
@@ -184,7 +185,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr', 'median_absolute_deviation',
+           'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -2354,6 +2355,127 @@ def zmap(scores, compare, axis=0, ddof=0):
                 np.expand_dims(sstd, axis=axis))
     else:
         return (scores - mns) / sstd
+
+
+def gstd(a, axis=0, ddof=1):
+    """Calculate the geometric standard deviation of an array
+
+    The geometric standard deviation describes the spread of a set of numbers
+    where the geometric mean is preferred. It is a multiplicative factor, and
+    so a dimensionless quantity.
+
+    It is defined as the exponent of the standard deviation of ``log(a)``.
+    Mathematically the population geometric standard deviation can be
+    evaluated as::
+
+        gstd = exp(std(log(a)))
+
+    .. versionadded:: 1.3.0
+
+    Parameters
+    ----------
+    a : array_like
+        An array like object containing the sample data.
+    axis : int, tuple or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+    ddof : int, optional
+        Degree of freedom correction in the calculation of the
+        geometric standard deviation. Default is 1.
+
+    Returns
+    -------
+    ndarray or float
+        An array of the geometric standard deviation. If `axis` is None or `a`
+        is a 1d array a float is returned.
+
+    Notes
+    -----
+    As the calculation requires the use of logarithms the geometric standard
+    deviation only supports strictly positive values. Any non-positive or
+    infinite values will raise a `ValueError`.
+    The geometric standard deviation is sometimes confused with the exponent of
+    the standard deviation, ``exp(std(a))``. Instead the geometric standard
+    deviation is ``exp(std(log(a)))``.
+    The default value for `ddof` is different to the default value (0) used
+    by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+
+    Examples
+    --------
+    Find the geometric standard deviation of a log-normally distributed sample.
+    Note that the standard deviation of the distribution is one, on a
+    log scale this evaluates to approximately ``exp(1)``.
+
+    >>> from scipy.stats import gstd
+    >>> np.random.seed(123)
+    >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
+    >>> gstd(sample)
+    2.7217860664589946
+
+    Compute the geometric standard deviation of a multidimensional array and
+    of a given axis.
+
+    >>> a = np.arange(1, 25).reshape(2, 3, 4)
+    >>> gstd(a, axis=None)
+    2.2944076136018947
+    >>> gstd(a, axis=2)
+    array([[1.82424757, 1.22436866, 1.13183117],
+           [1.09348306, 1.07244798, 1.05914985]])
+    >>> gstd(a, axis=(1,2))
+    array([2.12939215, 1.22120169])
+
+    The geometric standard deviation further handles masked arrays.
+
+    >>> a = np.arange(1, 25).reshape(2, 3, 4)
+    >>> ma = np.ma.masked_where(a > 16, a)
+    >>> ma
+    masked_array(
+      data=[[[1, 2, 3, 4],
+             [5, 6, 7, 8],
+             [9, 10, 11, 12]],
+            [[13, 14, 15, 16],
+             [--, --, --, --],
+             [--, --, --, --]]],
+      mask=[[[False, False, False, False],
+             [False, False, False, False],
+             [False, False, False, False]],
+            [[False, False, False, False],
+             [ True,  True,  True,  True],
+             [ True,  True,  True,  True]]],
+      fill_value=999999)
+    >>> gstd(ma, axis=2)
+    masked_array(
+      data=[[1.8242475707663655, 1.2243686572447428, 1.1318311657788478],
+            [1.0934830582350938, --, --]],
+      mask=[[False, False, False],
+            [False,  True,  True]],
+      fill_value=999999)
+    """
+    a = np.asanyarray(a)
+    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+    except RuntimeWarning as w:
+        if np.isinf(a).any():
+            raise ValueError(
+                'Infinite value encountered. The geometric standard deviation '
+                'is defined for strictly positive values only.')
+        elif np.less_equal(a, 0).any():
+            raise ValueError(
+                'Non positive value encountered. The geometric standard '
+                'deviation is defined for strictly positive values only.')
+        elif 'Degrees of freedom <= 0 for slice' == str(w):
+            raise ValueError(w)
+        else:
+            #  Remaining warnings don't need to be exceptions.
+            warnings.warn(w)
+    except TypeError:
+        raise ValueError(
+            'Invalid array input. The inputs could not be '
+            'safely coerced to any supported types')
 
 
 # Private dictionary initialized only once at module level
