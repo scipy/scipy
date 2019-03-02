@@ -230,11 +230,12 @@ def update_tr_radius(Delta, actual_reduction, predicted_reduction,
     Delta : float
         New radius.
     ratio : float
-        Ratio between actual and predicted reductions. Zero if predicted
-        reduction is zero.
+        Ratio between actual and predicted reductions.
     """
     if predicted_reduction > 0:
         ratio = actual_reduction / predicted_reduction
+    elif predicted_reduction == actual_reduction == 0:
+        ratio = 1
     else:
         ratio = 0
 

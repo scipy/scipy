@@ -367,6 +367,22 @@ class BaseMixin(object):
         assert_(res.nfev < max_nfev)
         assert_(res.cost < 0.5)
 
+    def test_error_raised_when_all_tolerances_below_eps(self):
+        # Test that all 0 tolerances are not allowed.
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0,
+                      method=self.method, ftol=None, xtol=None, gtol=None)
+
+    def test_convergence_with_only_one_tolerance_enabled(self):
+        x0 = [-2, 1]
+        x_opt = [1, 1]
+        for ftol, xtol, gtol in [(1e-8, None, None),
+                                  (None, 1e-8, None),
+                                  (None, None, 1e-8)]:
+            res = least_squares(fun_rosenbrock, x0, jac=jac_rosenbrock,
+                                ftol=ftol, gtol=gtol, xtol=xtol,
+                                method=self.method)
+            assert_allclose(res.x, x_opt)
+
 
 class BoundsMixin(object):
     def test_inconsistent(self):
@@ -732,4 +748,3 @@ def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
-
