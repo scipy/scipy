@@ -348,6 +348,19 @@ class Test_random_ball_compiled_periodic(ball_consistency):
         c[l] = False
         assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
 
+class Test_random_ball_compiled_largep_issue9890(ball_consistency):
+
+    def setup_method(self):
+        n = 1000
+        m = 2
+        np.random.seed(1234)
+        self.data = np.random.randn(n,m) * 1000
+        self.T = cKDTree(self.data,leafsize=2)
+        self.x = np.random.randn(m)
+        self.p = 13.2
+        self.eps = 0
+        self.d = 100
+
 class Test_random_ball_approx(Test_random_ball):
 
     def setup_method(self):
