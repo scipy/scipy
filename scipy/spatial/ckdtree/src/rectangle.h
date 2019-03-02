@@ -167,6 +167,12 @@ template<typename MinMaxDist>
               const npy_intp split_dim, const npy_float64 split_val) {
 
         const npy_float64 p = this->p;
+        /* subnomial is 1 if round-off is expected to taint the incremental distance tracking.
+         * in that case we always recompute the distances.
+         * Recomputing costs more calls to pow, thus if the round-off error does not seem
+         * to wipe out the value, then we still do the incremental update.
+         * */
+        int subnomial = 0;
 
         Rectangle *rect;
         if (which == 1)
@@ -192,6 +198,8 @@ template<typename MinMaxDist>
 
         MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
 
+        subnomial = subnomial || (min < min_distance * 1e-7 || max < max_distance * 1e-7);
+
         min_distance -= min;
         max_distance -= max;
 
@@ -205,6 +213,10 @@ template<typename MinMaxDist>
         min_distance += min;
         max_distance += max;
 
+        subnomial = subnomial || (min < min_distance * 1e-7 || max < max_distance * 1e-7);
+
+        if (subnomial)
+            MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
     };
 
     inline void push_less_of(const npy_intp which,
