@@ -2368,7 +2368,9 @@ def gstd(a, axis=0, ddof=1):
     Mathematically the population geometric standard deviation can be
     evaluated as::
 
-        gstd = exp(std(log(a))
+        gstd = exp(std(log(a)))
+
+    .. versionadded:: 1.3.0
 
     Parameters
     ----------
