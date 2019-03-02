@@ -394,6 +394,13 @@ class TestLeastSq(object):
 
 
 class TestCurveFit(object):
+    def test_empty_array_with_bounds(self):
+        # This test is regarding the issue #9864
+        # Test that Curve_fit checks for empty input data
+        # if called with bounds
+        # Calling this function will produce a meaningful error message.
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [], bounds=(1, 2))
+
     def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
@@ -707,7 +714,6 @@ class TestCurveFit(object):
                 assert_allclose(popt1, popt2, atol=1e-14)
                 assert_allclose(pcov1, pcov2, atol=1e-14)
 
-
 class TestFixedPoint(object):
 
     def test_scalar_trivial(self):
@@ -787,4 +793,3 @@ class TestFixedPoint(object):
 
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)
-
