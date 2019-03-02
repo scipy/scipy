@@ -7189,6 +7189,77 @@ class argus_gen(rv_continuous):
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
 
+class irwinhall_gen(rv_continuous):
+    r"""
+    Irwin Hall distribution
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The `irwinhall` cumulative distribution function is:
+
+    .. math::
+
+        F(x) = \frac{1}{n!}\sum_{k=0}^{\lfloor x\rfloor}
+                    (-1)^k\binom{n}{k}(x-k)^n
+
+    for :math:`x \in [0,n]`, where :math:`n > 0` is an integer.
+    For more on the Irwin Hall distribution see [1]_.
+
+    For large :math:`n` values the calculations may be slow as most methods
+    scale at :math:`O(n)`.
+
+    References
+    ----------
+
+    .. [1] "Irwin-Hall distribution",
+           https://en.wikipedia.org/wiki/Irwin-Hall_distribution
+
+    %(after_notes)s
+
+    %(example)s
+    """
+
+    def _argcheck(self, n):
+        return (n > 0) & (np.floor(n) == n)
+
+    def _cdf_helper(x,n):
+        if x < 0:
+            cdf_x = 0.0
+        elif x >= n:
+            cdf_x = 1.0
+        else:
+            fl_x = int(np.floor(x)) + 1
+            kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
+                    for k in range(0, fl_x)]
+            cdf_x = np.sum(kernel_list) / sc.factorial(n)
+        return cdf_x
+
+    _vec_cdf_helper = np.vectorize(_cdf_helper)
+
+    def _cdf(self, x, n):
+        return self._vec_cdf_helper(x,n)
+
+    def _sf(self, x, n):
+        return 1. - self._cdf(x,n)
+
+    def _logsf(self, x, n):
+        return np.log(self._sf(x, n))
+
+    def _logpdf(self, x, n):
+        return np.log(self._pdf(x, n))
+
+    def _logcdf(self, x, n):
+        return np.log(self._cdf(x, n))
+
+    def _stats(self, n):
+        return n/2, n/12, 0.0, -6/(5*n)
+
+
+irwinhall = irwinhall_gen(a=0.0, name='irwinhall')
+
+
 class rv_histogram(rv_continuous):
     """
     Generates a distribution given by a histogram.

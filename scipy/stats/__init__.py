@@ -73,6 +73,7 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   irwinhall         -- Irwin-Hall
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
