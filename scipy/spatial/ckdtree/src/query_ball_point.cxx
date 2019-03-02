@@ -33,8 +33,9 @@ traverse_no_checking(const ckdtree *self,
         lnode = node;
         const npy_intp start = lnode->start_idx;
         const npy_intp end = lnode->end_idx;
-        for (i = start; i < end; ++i)
+        for (i = start; i < end; ++i) {
             results->push_back(indices[i]);
+        }
     }
     else {
         traverse_no_checking(self, results, node->less);
@@ -53,10 +54,12 @@ traverse_checking(const ckdtree *self,
     npy_float64 d;
     npy_intp i;
 
-    if (tracker->min_distance > tracker->upper_bound * tracker->epsfac)
+    if (tracker->min_distance > tracker->upper_bound * tracker->epsfac) {
         return;
-    else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac)
+    }
+    else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac) {
         traverse_no_checking(self, results, node);
+    }
     else if (node->split_dim == -1)  { /* leaf node */
 
         /* brute-force */
