@@ -382,6 +382,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         args = (args,)
     shape, dtype = _check_func('leastsq', 'func', func, x0, args, n)
     m = shape[0]
+
     if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
     if epsfcn is None:
@@ -671,6 +672,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> plt.show()
 
     """
+    
+    if len(xdata) == 0 or len(ydata) == 0:
+        raise ValueError("Improper input: N=1 must not exceed M=0")
+        
     if p0 is None:
         # determine number of parameters by inspecting the function
         from scipy._lib._util import getargspec_no_self as _getargspec
