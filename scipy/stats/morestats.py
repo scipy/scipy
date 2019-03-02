@@ -2774,11 +2774,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     .. [2] Conover, W.J., Practical Nonparametric Statistics, 1971.
     .. [3] Pratt, J.W., Remarks on Zeros and Ties in the Wilcoxon Signed
        Rank Procedures, Journal of the American Statistical Association,
-       Vol. 54, 1959, pp. 655-667.
-       https://doi.org/10.1080/01621459.1959.10501526
+       Vol. 54, 1959, pp. 655-667. :doi:`10.1080/01621459.1959.10501526`
     .. [4] Wilcoxon, F., Individual Comparisons by Ranking Methods,
-       Biometrics Bulletin, Vol. 1, 1945, pp. 80-83.
-       https://doi.org/10.2307/3001968
+       Biometrics Bulletin, Vol. 1, 1945, pp. 80-83. :doi:`10.2307/3001968`
 
     Examples
     --------
@@ -2796,18 +2794,19 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     >>> w, p
     (24.0, 0.04088813291185591)
 
-    Hence, we would reject the null at a confidence level of 5%, concluding
-    that there is a difference in height between the groups. To confirm
-    that the median of the differences can be assumed to be positive, we use:
+    Hence, we would reject the null hypothesis at a confidence level of 5%,
+    concluding that there is a difference in height between the groups.
+    To confirm that the median of the differences can be assumed to be
+    positive, we use:
 
     >>> w, p = wilcoxon(d, alternative='greater')
     >>> w, p
     (96.0, 0.020444066455927955)
 
-    This shows that the null that the median is negative can be rejected at
-    a confidence level of 5% in favor of the alternative that the median is
-    greater than zero. The p-value based on the approximation is within the
-    range of 0.019 and 0.054 given in [2]_.
+    This shows that the null hypothesis that the median is negative can be
+    rejected at a confidence level of 5% in favor of the alternative that
+    the median is greater than zero. The p-value based on the approximation
+    is within the range of 0.019 and 0.054 given in [2]_.
     Note that the statistic changed to 96 in the one-sided case (the sum
     of ranks of positive differences) whereas it is 24 in the two-sided
     case (the minimum of sum of ranks above and below zero).
