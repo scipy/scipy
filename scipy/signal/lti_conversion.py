@@ -359,8 +359,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
             * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default)
-            * foh: first-order hold
-            * impulse: equivalent impulse response
+            * foh: first-order hold (*versionadded: 1.3.0*)
+            * impulse: equivalent impulse response (*versionadded: 1.3.0*)
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
