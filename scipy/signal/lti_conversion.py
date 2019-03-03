@@ -351,7 +351,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     dt : float
         The discretization time step.
-    method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}, optional
+    method : str, optional
         Which method to use:
 
             * gbt: generalized bilinear transformation
@@ -359,6 +359,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
             * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default)
+            * foh: first-order hold (*versionadded: 1.3.0*)
+            * impulse: equivalent impulse response (*versionadded: 1.3.0*)
 
     alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
@@ -381,7 +383,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     an Euler's method technique, or a backwards differencing technique.
 
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
-    approximation is based on [2]_ and [3]_.
+    approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
+    is based on [4]_.
 
     References
     ----------
@@ -393,6 +396,10 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
         2009.
         (https://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
+
+    .. [4] G. F. Franklin, J. D. Powell, and M. L. Workman, Digital control
+        of dynamic systems, 3rd ed. Menlo Park, Calif: Addison-Wesley,
+        pp. 204-206, 1998.
 
     """
     if len(system) == 1:
@@ -458,6 +465,38 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
         cd = c
         dd = d
+
+    elif method == 'foh':
+        # Size parameters for convenience
+        n = a.shape[0]
+        m = b.shape[1]
+
+        # Build an exponential matrix similar to 'zoh' method
+        em_upper = linalg.block_diag(np.block([a, b]) * dt, np.eye(m))
+        em_lower = zeros((m, n + 2 * m))
+        em = np.block([[em_upper], [em_lower]])
+
+        ms = linalg.expm(em)
+
+        # Get the three blocks from upper rows
+        ms11 = ms[:n, 0:n]
+        ms12 = ms[:n, n:n + m]
+        ms13 = ms[:n, n + m:]
+
+        ad = ms11
+        bd = ms12 - ms13 + ms11 @ ms13
+        cd = c
+        dd = d + c @ ms13
+
+    elif method == 'impulse':
+        if not np.allclose(d, 0):
+            raise ValueError("Impulse method is only applicable"
+                             "to strictly proper systems")
+
+        ad = linalg.expm(a * dt)
+        bd = ad @ b * dt
+        cd = c
+        dd = c @ b * dt
 
     else:
         raise ValueError("Unknown transformation method '%s'" % method)
