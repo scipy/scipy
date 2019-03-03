@@ -436,7 +436,8 @@ class TestC2dInvariants:
     def test_impulse_invariant(self, sys, sample_time, samples_number):
         time = np.arange(samples_number) * sample_time
         _, yout_cont = impulse2(sys, T=time, **self.tolerances)
-        _, yout_disc = dimpulse(c2d(sys, sample_time, method='impulse'), n=len(time))
+        _, yout_disc = dimpulse(c2d(sys, sample_time, method='impulse'),
+                                n=len(time))
         assert_allclose(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
 
     # Step invariant should hold for ZOH discretized systems
