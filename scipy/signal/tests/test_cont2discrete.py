@@ -65,10 +65,8 @@ class TestC2D(object):
 
         # True values are verified with Matlab
         ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = 0.25 * np.ones((2, 1))
-        cd_truth = np.array([[1.236540953025096, 1.648721270700128],
-                             [1.648721270700128, 1.648721270700128],
-                             [1.648721270700128, 0.412180317675032]])
+        bd_truth = 0.412180317675032 * np.ones((2, 1))
+        cd_truth = cc
         dd_truth = np.array([[0.4375], [0.5], [0.3125]])
         dt_requested = 0.5
 

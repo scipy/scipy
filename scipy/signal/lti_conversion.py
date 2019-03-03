@@ -494,9 +494,9 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
                              "to strictly proper systems")
 
         ad = linalg.expm(a * dt)
-        bd = b * dt
-        cd = c @ ad
-        dd = c @ bd
+        bd = ad @ b * dt
+        cd = c
+        dd = c @ b * dt
 
     else:
         raise ValueError("Unknown transformation method '%s'" % method)
