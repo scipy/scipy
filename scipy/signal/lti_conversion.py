@@ -351,7 +351,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     dt : float
         The discretization time step.
-    method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}, optional
+    method : str, optional
         Which method to use:
 
             * gbt: generalized bilinear transformation
