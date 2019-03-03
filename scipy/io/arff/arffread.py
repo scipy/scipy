@@ -633,7 +633,9 @@ class MetaData(object):
         return iter(self._attributes)
 
     def __getitem__(self, key):
-        return self._attributes[key]
+        attr = self._attributes[key]
+        
+        return (attr.type_name, attr.range)
 
     def names(self):
         """Return the list of attribute names.
