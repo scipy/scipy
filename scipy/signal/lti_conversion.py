@@ -397,9 +397,9 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         2009.
         (https://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
 
-    .. [4] G. F. Franklin, J. D. Powell, and M. L. Workman, Digital control of dynamic systems,
-        3rd ed. Menlo Park, Calif: Addison-Wesley, pp. 204-206, 1998.
-
+    .. [4] G. F. Franklin, J. D. Powell, and M. L. Workman, Digital control
+        of dynamic systems, 3rd ed. Menlo Park, Calif: Addison-Wesley,
+        pp. 204-206, 1998.
 
     """
     if len(system) == 1:

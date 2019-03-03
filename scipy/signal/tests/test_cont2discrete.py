@@ -13,9 +13,6 @@ from scipy.signal import tf2ss, impulse2, dimpulse, step2, dstep
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011
 
-# You can run these tests isolated as follows:
-# $ python runtests.py --tests scipy/signal/tests/test_cont2discrete.py
-
 
 class TestC2D(object):
     def test_zoh(self):
@@ -75,7 +72,8 @@ class TestC2D(object):
         dd_truth = np.array([[0.4375], [0.5], [0.3125]])
         dt_requested = 0.5
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested, method='impulse')
+        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
+                                 method='impulse')
 
         assert_array_almost_equal(ad_truth, ad)
         assert_array_almost_equal(bd_truth, bd)
@@ -432,7 +430,8 @@ class TestC2dInvariants:
     # Some options for lsim2 and derived routines
     tolerances = {'rtol': 1e-9, 'atol': 1e-11}
 
-    # Check that systems discretized with the impulse-invariant method really hold the invariant
+    # Check that systems discretized with the impulse-invariant
+    # method really hold the invariant
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
     def test_impulse_invariant(self, sys, sample_time, samples_number):
         time = np.arange(samples_number) * sample_time
