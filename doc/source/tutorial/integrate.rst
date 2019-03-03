@@ -503,7 +503,7 @@ the calculated time points of the solution.
 
 >>> import numpy as np
 >>> t = np.linspace(t_start, t_end, 50)
->>> sol4 = solve_ivp(func, [t_start, t_end], y0, t_eval = t)
+>>> sol4 = solve_ivp(func, [t_start, t_end], y0, t_eval=t)
 
 If the jacobian matrix of function is known it can can of passed to the `solve_ivp`
 to achieve better results. Please be aware however that the default integration method
