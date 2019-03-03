@@ -489,21 +489,22 @@ sol2.y[1][::5]:      [0.35502805 0.22162462 0.09180607 0.03590249 0.01219994 0.0
 airy(sol2.t)[0][::5]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.00364769
  0.00095156]
  
-Further more `solve_ivp` offers different options for different user cases. By passing
-`dense_output=True` to `solve_ivp` a continuous solution is calculated giving the
-possibility the evaluate the solution at any arbitrary time within the used time span
-without specifying it prior to the function call.
-
->>> sol3 = solve_ivp(func, t_span, y0, dense_ouput=True)
->>> print("sol3.sol(2)[1]: {}".format(sol3.sol(2)[1])
-sol3.sol(2)[1]: 0.035042622042422505
-
-Besides the `dense_output` option also a time array `t_eval` can be used to specify
-the calculated time points of the solution.
+To specify used defined time points for the solution of `solve_ivp`, `solve_ivp`
+offers two possibilites that can also be used complementary. By passing the `t_eval`
+option to the function call `solve_ivp` returns the solutions of these time points
+of `t_eval` in its output.
 
 >>> import numpy as np
 >>> t = np.linspace(t_start, t_end, 50)
->>> sol4 = solve_ivp(func, [t_start, t_end], y0, t_eval=t)
+>>> sol3 = solve_ivp(func, t_span, y0, t_eval=t)
+
+If the time points of interest are however unknown, the `dense_ouput` option can be
+used. Setting it to `True` returns a continuous solution and the solution at
+any arbitrary time point within the time span can be calculated.
+
+>>> sol4 = solve_ivp(func, t_span, y0, dense_ouput=True)
+>>> print("sol4.sol(2)[1]: {}".format(sol4.sol(2)[1])
+sol4.sol(2)[1]: 0.035042622042422505
 
 If the jacobian matrix of function is known it can can of passed to the `solve_ivp`
 to achieve better results. Please be aware however that the default integration method
