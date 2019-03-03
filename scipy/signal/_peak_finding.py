@@ -760,7 +760,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         Required width of peaks in samples. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
         element is always interpreted as the  minimal and the second, if
-        supplied, as the maximal required prominence.
+        supplied, as the maximal required width.
     wlen : int, optional
         Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
