@@ -68,7 +68,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     Parameters
     ----------
-    input_matrix: array_like or `scipy.sparse.spmatrix'.
+    input_matrix: array_like
         Input matrix, of shape ``(n, d)``.
     sketch_size: int
         Number of rows for the sketch.
@@ -91,7 +91,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     .. math:: \|Ax\| \approx \|A'x\|
 
     precise, observe the following result which is adapted from the
-    proof of Theorem 14 of [2] via Markov's Inequality. If we have
+    proof of Theorem 14 of [2]_ via Markov's Inequality. If we have
     a sketch size ``sketch_size=k`` which is at least
     
     .. math:: k \geq \frac{2}{\epsilon^2\delta}
