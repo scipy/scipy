@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from scipy._lib._util import check_random_state
-from scipy.sparse import coo_matrix
+from scipy.sparse import csc_matrix
 
 __all__ = ['clarkson_woodruff_transform']
 
@@ -48,10 +48,10 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     """
     rng = check_random_state(seed)
     rows = rng.randint(0, n_rows, n_columns)
-    cols = np.arange(n_columns)
+    cols = np.arange(n_columns+1)
     signs = rng.choice([1, -1], n_columns)
-    S = coo_matrix((signs, (rows, cols)),shape=(n_rows, n_columns))
-    return S.tocsc()
+    S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
+    return S
 
 
 def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
