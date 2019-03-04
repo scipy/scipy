@@ -44,13 +44,13 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     -----
     Given a matrix A, with probability at least 9/10,
     .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
-    Where the error epsilon is related to the size of S
+    Where the error epsilon is related to the size of S.
     """
     rng = check_random_state(seed)
-    rows = rng.randint(0,n_rows,n_columns)
+    rows = rng.randint(0, n_rows, n_columns)
     cols = np.arange(n_columns)
     signs = rng.choice([1, -1], n_columns)
-    S = coo_matrix((signs,(rows,cols)),shape=(n_rows,n_columns))
+    S = coo_matrix((signs, (rows, cols)),shape=(n_rows, n_columns))
     return S.tocsc()
 
 
@@ -113,11 +113,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
     >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
     >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
-    >>> D = np.random.randn(n_rows,n_columns)
-    >>> SA = linalg.clarkson_woodruff_transform(A,sketch_n_rows) # fastest
-    >>> SB = linalg.clarkson_woodruff_transform(B,sketch_n_rows) # fast
-    >>> SC = linalg.clarkson_woodruff_transform(C,sketch_n_rows) # slower
-    >>> SD = linalg.clarkson_woodruff_transform(D,sketch_n_rows) # slowest
+    >>> D = np.random.randn(n_rows, n_columns)
+    >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
+    >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
+    >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
+    >>> SD = linalg.clarkson_woodruff_transform(D, sketch_n_rows) # slowest
 
     That said, this method does perform well on dense inputs, just slower
     on a relative scale.
@@ -129,7 +129,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
     >>> A = np.random.randn(n_rows, n_columns)
-    >>> sketch = linalg.clarkson_woodruff_transform(A,sketch_n_rows)
+    >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
     >>> sketch.shape
     (200, 100)
     >>> norm_A = np.linalg.norm(A)
@@ -143,13 +143,13 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows,n_columns)
+    >>> A = np.random.randn(n_rows, n_columns)
     >>> b = np.random.randn(n_rows)
-    >>> x = np.linalg.lstsq(A,b,rcond=None)
-    >>> Ab = np.hstack((A,b.reshape(-1,1)))
-    >>> SAb = linalg.clarkson_woodruff_transform(Ab,sketch_n_rows)
+    >>> x = np.linalg.lstsq(A, b, rcond=None)
+    >>> Ab = np.hstack((A, b.reshape(-1,1)))
+    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows)
     >>> SA, Sb = SAb[:,:-1], SAb[:,-1]
-    >>> x_sketched = np.linalg.lstsq(SA,Sb,rcond=None)
+    >>> x_sketched = np.linalg.lstsq(SA, Sb, rcond=None)
 
     As with the matrix norm example, ``np.linalg.norm(A @ x - b)``
     is close to ``np.linalg.norm(A @ x_sketched - b)`` with high
