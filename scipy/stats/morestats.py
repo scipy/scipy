@@ -2850,6 +2850,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     # the literature is not consistent here
     # r_plus is more informative since r_plus + r_minus = count*(count+1)/2,
     # i.e. the sum of the ranks, so r_minus and the min can be inferred
+    # (If alternative='pratt', r_plus + r_minus = count*(count+1)/2 - r_zero.)
     # [3] uses the r_plus for the one-sided test, keep min for two-sided test
     # to keep backwards compatability
     if alternative == "two-sided":
