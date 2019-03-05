@@ -637,11 +637,16 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # Strategy chain instance
     strategy_chain = StrategyChain(accept, visit_dist, func_wrapper,
                                minimizer_wrapper, rand_state, energy_state)
-    # Run the search loop
     need_to_stop = False
     iteration = 0
     message = []
+    # OptimizeResult object to be returned
+    optimize_res = OptimizeResult()
+    optimize_res.success = True
+    optimize_res.status = 0
+    
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
+    # Run the search loop
     while(not need_to_stop):
         for i in range(maxiter):
             # Compute temperature for this step
@@ -661,6 +666,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
             if val is not None:
                 message.append(val)
                 need_to_stop = True
+                optimize_res.success = False
                 break
             # Possible local search at the end of the strategy chain
             if not no_local_search:
@@ -668,16 +674,16 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
                 if val is not None:
                     message.append(val)
                     need_to_stop = True
+                    optimize_res.success = False
                     break
             iteration += 1
 
-    # Return the OptimizeResult
-    res = OptimizeResult()
-    res.x = energy_state.xbest
-    res.fun = energy_state.ebest
-    res.nit = iteration
-    res.nfev = func_wrapper.nfev
-    res.njev = func_wrapper.ngev
-    res.nhev = func_wrapper.nhev
-    res.message = message
-    return res
+    # Setting the OptimizeResult values
+    optimize_res.x = energy_state.xbest
+    optimize_res.fun = energy_state.ebest
+    optimize_res.nit = iteration
+    optimize_res.nfev = func_wrapper.nfev
+    optimize_res.njev = func_wrapper.ngev
+    optimize_res.nhev = func_wrapper.nhev
+    optimize_res.message = message
+    return optimize_res
