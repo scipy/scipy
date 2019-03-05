@@ -642,7 +642,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     message = []
     # OptimizeResult object to be returned
     optimize_res = OptimizeResult()
-    optimize_res.sucess = True
+    optimize_res.success = True
     optimize_res.status = 0
     
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
