@@ -241,6 +241,8 @@ class RotationSpline(object):
     are continuous. Such interpolation are analogous to cubic spline
     interpolation.
 
+    Refer to [1]_ for math and implementation details.
+
     Parameters
     ----------
     times : array_like, shape (N,)
@@ -255,8 +257,8 @@ class RotationSpline(object):
 
     References
     ----------
-    .. [1] `Quaternion Spline
-            <http://qspline.sourceforge.net/qspline.pdf>`_
+    .. [1] `Smooth Attitude Interpolation
+            <https://github.com/scipy/scipy/files/2932755/attitude_interpolation.pdf>`_
 
     Examples
     --------
