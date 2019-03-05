@@ -4,7 +4,7 @@ from .rotation import Rotation
 
 
 def _create_skew_matrix(x):
-    """Create skew-symmetric matrix corresponding to vector.
+    """Create skew-symmetric matrices corresponding to vectors.
 
     Parameters
     ----------
@@ -30,10 +30,10 @@ def _matrix_vector_product_of_stacks(A, b):
     return np.einsum("ijk,ik->ij", A, b)
 
 
-def _angular_rate_to_rotvec_rate_matrix(rotvecs):
-    """Compute matrix to transform angular rate to rotation vector rates.
+def _angular_rate_to_rotvec_dot_matrix(rotvecs):
+    """Compute matrices to transform angular rates to rot. vector derivatives.
 
-    The matrix depends on the current attitude represented as the rotation
+    The matrices depend on the current attitude represented as a rotation
     vector.
 
     Parameters
@@ -65,10 +65,10 @@ def _angular_rate_to_rotvec_rate_matrix(rotvecs):
     return result
 
 
-def _rotvec_rate_to_angular_rate_matrix(rotvecs):
-    """Compute matrix to transform rotation vector derivative to angular rate.
+def _rotvec_dot_to_angular_rate_matrix(rotvecs):
+    """Compute matrices to transform rot. vector derivatives to angular rates.
 
-    The matrix depends on the current attitude represented through the rotation
+    The matrices depend on the current attitude represented as a rotation
     vector.
 
     Parameters
@@ -104,28 +104,28 @@ def _rotvec_rate_to_angular_rate_matrix(rotvecs):
     return result
 
 
-def _angular_acceleration_nonlinear_term(rotvecs, rotvec_rates):
+def _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot):
     """Compute the non-linear term in angular acceleration.
 
     The angular acceleration contains a quadratic term with respect to
-    the derivative of rotation vector. This function computes that.
+    the derivative of the rotation vector. This function computes that.
 
     Parameters
     ----------
     rotvecs : ndarray, shape (n, 3)
         Set of rotation vectors.
-    rotvec_rates: ndarray, shape (n, 3)
-        Set of rotation vector rates.
+    rotvecs_dot: ndarray, shape (n, 3)
+        Set of rotation vector derivatives.
 
     Returns
     -------
     ndarray, shape (n, 3)
     """
     norm = np.linalg.norm(rotvecs, axis=1)
-    dp = np.sum(rotvecs * rotvec_rates, axis=1)
-    cp = np.cross(rotvecs, rotvec_rates)
+    dp = np.sum(rotvecs * rotvecs_dot, axis=1)
+    cp = np.cross(rotvecs, rotvecs_dot)
     ccp = np.cross(rotvecs, cp)
-    dccp = np.cross(rotvec_rates, cp)
+    dccp = np.cross(rotvecs_dot, cp)
 
     k1 = np.empty_like(norm)
     k2 = np.empty_like(norm)
@@ -151,27 +151,42 @@ def _angular_acceleration_nonlinear_term(rotvecs, rotvec_rates):
     return dp * (k1 * cp + k2 * ccp) + k3 * dccp
 
 
-def _angular_rate(rotvecs, rotvec_rates):
-    """Compute angular rate given rotation vector and its rate.
+def _angular_rate(rotvecs, rotvecs_dot):
+    """Compute angular rates given rotation vectors and its derivatives.
 
     Parameters
     ----------
     rotvecs : ndarray, shape (n, 3)
         Set of rotation vectors.
-    rotvec_rates : ndarray, shape (n, 3)
-        Set of rotation vector rates.
+    rotvecs_dot : ndarray, shape (n, 3)
+        Set of rotation vector derivatives.
 
     Returns
     -------
     ndarray, shape (n, 3)
     """
     return _matrix_vector_product_of_stacks(
-        _rotvec_rate_to_angular_rate_matrix(rotvecs), rotvec_rates)
+        _rotvec_dot_to_angular_rate_matrix(rotvecs), rotvecs_dot)
 
 
-def _compute_angular_acceleration(rotvec, rotvec_rate, rotvec_acceleration):
-    return (_angular_rate(rotvec, rotvec_acceleration) +
-            _angular_acceleration_nonlinear_term(rotvec, rotvec_rate))
+def _compute_angular_acceleration(rotvecs, rotvecs_dot, rotvecs_dot_dot):
+    """Compute angular acceleration given rotation vector and its derivatives.
+
+    Parameters
+    ----------
+    rotvecs : ndarray, shape (n, 3)
+        Set of rotation vectors.
+    rotvecs_dot : ndarray, shape (n, 3)
+        Set of rotation vector derivatives.
+    rotvecs_dot_dot : ndarray, shape (n, 3)
+        Set of rotation vector second derivatives.
+
+    Returns
+    -------
+    ndarray, shape (n, 3)
+    """
+    return (_angular_rate(rotvecs, rotvecs_dot_dot) +
+            _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot))
 
 
 def _create_block_3_diagonal_matrix(A, B, d):
@@ -315,8 +330,8 @@ class RotationSpline(object):
     def _solve_for_angular_rates(self, dt, angular_rates, rotvecs):
         angular_rates_first = angular_rates[0].copy()
 
-        A = _angular_rate_to_rotvec_rate_matrix(rotvecs)
-        A_inv = _rotvec_rate_to_angular_rate_matrix(rotvecs)
+        A = _angular_rate_to_rotvec_dot_matrix(rotvecs)
+        A_inv = _rotvec_dot_to_angular_rate_matrix(rotvecs)
         M = _create_block_3_diagonal_matrix(
             2 * A_inv[1:-1] / dt[1:-1, None, None],
             2 * A[1:-1] / dt[1:-1, None, None],
@@ -328,9 +343,9 @@ class RotationSpline(object):
         b0[-1] -= 2 / dt[-1] * A[-1].dot(angular_rates[-1])
 
         for iteration in range(self.MAX_ITER):
-            rotvec_rates = _matrix_vector_product_of_stacks(A, angular_rates)
+            rotvecs_dot = _matrix_vector_product_of_stacks(A, angular_rates)
             delta_beta = _angular_acceleration_nonlinear_term(
-                rotvecs[:-1], rotvec_rates[:-1])
+                rotvecs[:-1], rotvecs_dot[:-1])
             b = b0 - delta_beta
             angular_rates_new = solve_banded((5, 5), M, b.ravel())
             angular_rates_new = angular_rates_new.reshape((-1, 3))
@@ -340,10 +355,10 @@ class RotationSpline(object):
             if np.all(delta < self.TOL * (1 + np.abs(angular_rates_new))):
                 break
 
-        rotvec_rates = _matrix_vector_product_of_stacks(A, angular_rates)
+        rotvecs_dot = _matrix_vector_product_of_stacks(A, angular_rates)
         angular_rates = np.vstack((angular_rates_first, angular_rates[:-1]))
 
-        return angular_rates, rotvec_rates
+        return angular_rates, rotvecs_dot
 
     def __init__(self, times, rotations):
         from scipy.interpolate import PPoly
@@ -370,17 +385,17 @@ class RotationSpline(object):
         angular_rates = rotvecs / dt[:, None]
 
         if len(rotations) == 2:
-            rotvec_rates = angular_rates
+            rotvecs_dot = angular_rates
         else:
-            angular_rates, rotvec_rates = self._solve_for_angular_rates(
+            angular_rates, rotvecs_dot = self._solve_for_angular_rates(
                 dt, angular_rates, rotvecs)
 
         dt = dt[:, None]
         coeff = np.empty((4, len(times) - 1, 3))
         coeff[0] = (-2 * rotvecs + dt * angular_rates
-                    + dt * rotvec_rates) / dt ** 3
+                    + dt * rotvecs_dot) / dt ** 3
         coeff[1] = (3 * rotvecs - 2 * dt * angular_rates
-                    - dt * rotvec_rates) / dt ** 2
+                    - dt * rotvecs_dot) / dt ** 2
         coeff[2] = angular_rates
         coeff[3] = 0
 
@@ -425,13 +440,13 @@ class RotationSpline(object):
             index[index > n_segments - 1] = n_segments - 1
             result = self.rotations[index] * Rotation.from_rotvec(rotvecs)
         elif order == 1:
-            rotvec_rate = self.interpolator(times, 1)
-            result = _angular_rate(rotvecs, rotvec_rate)
+            rotvecs_dot = self.interpolator(times, 1)
+            result = _angular_rate(rotvecs, rotvecs_dot)
         elif order == 2:
-            rotvec_rate = self.interpolator(times, 1)
-            rotvec_acceleration = self.interpolator(times, 2)
-            result = _compute_angular_acceleration(rotvecs, rotvec_rate,
-                                                   rotvec_acceleration)
+            rotvecs_dot = self.interpolator(times, 1)
+            rotvecs_dot_dot = self.interpolator(times, 2)
+            result = _compute_angular_acceleration(rotvecs, rotvecs_dot,
+                                                   rotvecs_dot_dot)
         else:
             assert False
 

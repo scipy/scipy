@@ -4,8 +4,8 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, RotationSpline
 from scipy.spatial.transform._rotation_spline import (
-    _angular_rate_to_rotvec_rate_matrix,
-    _rotvec_rate_to_angular_rate_matrix,
+    _angular_rate_to_rotvec_dot_matrix,
+    _rotvec_dot_to_angular_rate_matrix,
     _matrix_vector_product_of_stacks,
     _angular_acceleration_nonlinear_term,
     _create_block_3_diagonal_matrix)
@@ -14,8 +14,8 @@ from scipy.spatial.transform._rotation_spline import (
 def test_angular_rate_to_rotvec_conversions():
     np.random.seed(0)
     rv = np.random.randn(4, 3)
-    A = _angular_rate_to_rotvec_rate_matrix(rv)
-    A_inv = _rotvec_rate_to_angular_rate_matrix(rv)
+    A = _angular_rate_to_rotvec_dot_matrix(rv)
+    A_inv = _rotvec_dot_to_angular_rate_matrix(rv)
 
     # When the rotation vector is aligned with the angular rate, then
     # the rotation vector rate and angular rate are the same.
