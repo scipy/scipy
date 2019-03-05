@@ -2369,9 +2369,12 @@ class genextreme_gen(rv_continuous):
 
     """
     def _argcheck(self, c):
-        self.b = np.where(c > 0, 1.0 / np.maximum(c, _XMIN), np.inf)
-        self.a = np.where(c < 0, 1.0 / np.minimum(c, -_XMIN), -np.inf)
         return np.where(abs(c) == np.inf, 0, 1)
+
+    def _get_support(self, c):
+        _b = np.where(c > 0, 1.0 / np.maximum(c, _XMIN), np.inf)
+        _a = np.where(c < 0, 1.0 / np.minimum(c, -_XMIN), -np.inf)
+        return _a, _b
 
     def _loglogcdf(self, x, c):
         return _lazywhere((x == x) & (c != 0), (x, c),
@@ -4714,6 +4717,9 @@ class kappa4_gen(rv_continuous):
 
     """
     def _argcheck(self, h, k):
+        return h == h
+
+    def _get_support(self, h, k):
         condlist = [np.logical_and(h > 0, k > 0),
                     np.logical_and(h > 0, k == 0),
                     np.logical_and(h > 0, k < 0),
@@ -4735,7 +4741,7 @@ class kappa4_gen(rv_continuous):
         def f5(h, k):
             return 1.0/k
 
-        self.a = _lazyselect(condlist,
+        _a = _lazyselect(condlist,
                              [f0, f1, f0, f3, f3, f5],
                              [h, k],
                              default=np.nan)
@@ -4748,11 +4754,11 @@ class kappa4_gen(rv_continuous):
             a[:] = np.inf
             return a
 
-        self.b = _lazyselect(condlist,
+        _b = _lazyselect(condlist,
                              [f0, f1, f1, f0, f1, f1],
                              [h, k],
                              default=np.nan)
-        return h == h
+        return _a, _b
 
     def _pdf(self, x, h, k):
         # kappa4.pdf(x, h, k) = (1.0 - k*x)**(1.0/k - 1.0)*
@@ -5917,15 +5923,18 @@ class reciprocal_gen(rv_continuous):
         self.d = np.log(b*1.0 / a)
         return (a > 0) & (b > a)
 
+    def _get_support(self, a, b):
+        return a, b
+
     def _pdf(self, x, a, b):
         # reciprocal.pdf(x, a, b) = 1 / (x*log(b/a))
-        return 1.0 / (x * self.d)
+        return 1.0 / (x * np.log(b * 1.0 / a))
 
     def _logpdf(self, x, a, b):
-        return -np.log(x) - np.log(self.d)
+        return -np.log(x) - np.log(np.log(b * 1.0 / a))
 
     def _cdf(self, x, a, b):
-        return (np.log(x)-np.log(a)) / self.d
+        return (np.log(x)-np.log(a)) / np.log(b * 1.0 / a)
 
     def _ppf(self, q, a, b):
         return a*pow(b*1.0/a, q)
@@ -5934,7 +5943,7 @@ class reciprocal_gen(rv_continuous):
         return 1.0/self.d / n * (pow(b*1.0, n) - pow(a*1.0, n))
 
     def _entropy(self, a, b):
-        return 0.5*np.log(a*b)+np.log(np.log(b/a))
+        return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
 
 reciprocal = reciprocal_gen(name="reciprocal")
@@ -6120,10 +6129,11 @@ class skew_norm_gen(rv_continuous):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
 
     def _cdf_single(self, x, *args):
+        _a, _b = self._get_support(*args)
         if x <= 0:
-            cdf = integrate.quad(self._pdf, self.a, x, args=args)[0]
+            cdf = integrate.quad(self._pdf, _a, x, args=args)[0]
         else:
-            t1 = integrate.quad(self._pdf, self.a, 0, args=args)[0]
+            t1 = integrate.quad(self._pdf, _a, 0, args=args)[0]
             t2 = integrate.quad(self._pdf, 0, x, args=args)[0]
             cdf = t1 + t2
         if cdf > 1:
@@ -6314,8 +6324,10 @@ class truncexpon_gen(rv_continuous):
 
     """
     def _argcheck(self, b):
-        self.b = b
         return b > 0
+
+    def _get_support(self, b):
+        return self.a, b
 
     def _pdf(self, x, b):
         # truncexpon.pdf(x, b) = exp(-x) / (1-exp(-b))
@@ -6372,36 +6384,47 @@ class truncnorm_gen(rv_continuous):
 
     """
     def _argcheck(self, a, b):
-        self.a = a
-        self.b = b
-        self._nb = _norm_cdf(b)
-        self._na = _norm_cdf(a)
-        self._sb = _norm_sf(b)
-        self._sa = _norm_sf(a)
-        self._delta = np.where(self.a > 0,
-                               -(self._sb - self._sa),
-                               self._nb - self._na)
-        self._logdelta = np.log(self._delta)
         return a < b
 
+    def _get_support(self, a, b):
+        return a, b
+
+    def _get_norms(self, a, b):
+        _nb = _norm_cdf(b)
+        _na = _norm_cdf(a)
+        _sb = _norm_sf(b)
+        _sa = _norm_sf(a)
+        _delta = np.where(a > 0, _sa - _sb, _nb - _na)
+        with np.errstate(divide='ignore'):
+            return _na, _nb, _sa, _sb, _delta, np.log(_delta)
+
     def _pdf(self, x, a, b):
-        return _norm_pdf(x) / self._delta
+        ans = self._get_norms(a, b)
+        _delta = ans[4]
+        return _norm_pdf(x) / _delta
 
     def _logpdf(self, x, a, b):
-        return _norm_logpdf(x) - self._logdelta
+        ans = self._get_norms(a, b)
+        _logdelta = ans[5]
+        return _norm_logpdf(x) - _logdelta
 
     def _cdf(self, x, a, b):
-        return (_norm_cdf(x) - self._na) / self._delta
+        ans = self._get_norms(a, b)
+        _na, _delta = ans[0], ans[4]
+        return (_norm_cdf(x) - _na) / _delta
 
     def _ppf(self, q, a, b):
         # XXX Use _lazywhere...
-        ppf = np.where(self.a > 0,
-                       _norm_isf(q*self._sb + self._sa*(1.0-q)),
-                       _norm_ppf(q*self._nb + self._na*(1.0-q)))
+        ans = self._get_norms(a, b)
+        _na, _nb, _sa, _sb = ans[:4]
+        ppf = np.where(a > 0,
+                       _norm_isf(q*_sb + _sa*(1.0-q)),
+                       _norm_ppf(q*_nb + _na*(1.0-q)))
         return ppf
 
     def _stats(self, a, b):
-        nA, nB = self._na, self._nb
+        ans = self._get_norms(a, b)
+        nA, nB = ans[:2]
         d = nB - nA
         pA, pB = _norm_pdf(a), _norm_pdf(b)
         mu = (pA - pB) / d   # correction sign

@@ -43,8 +43,10 @@ class binom_gen(rv_discrete):
         return self._random_state.binomial(n, p, self._size)
 
     def _argcheck(self, n, p):
-        self.b = n
         return (n >= 0) & (p >= 0) & (p <= 1)
+
+    def _get_support(self, n, p):
+        return self.a, n
 
     def _logpmf(self, x, n, p):
         k = floor(x)
@@ -118,6 +120,10 @@ class bernoulli_gen(binom_gen):
 
     def _argcheck(self, p):
         return (p >= 0) & (p <= 1)
+
+    def _get_support(self, p):
+        # Overrides binom_gen._get_support!x
+        return self.a, self.b
 
     def _logpmf(self, x, p):
         return binom._logpmf(x, 1, p)
@@ -345,11 +351,12 @@ class hypergeom_gen(rv_discrete):
     def _rvs(self, M, n, N):
         return self._random_state.hypergeometric(n, M-n, N, size=self._size)
 
+    def _get_support(self, M, n, N):
+        return np.maximum(N-(M-n), 0), np.minimum(n, N)
+
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
-        self.a = np.maximum(N-(M-n), 0)
-        self.b = np.minimum(n, N)
         return cond
 
     def _logpmf(self, k, M, n, N):
@@ -581,7 +588,7 @@ class planck_gen(rv_discrete):
 
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
-        vals1 = (vals-1).clip(self.a, np.inf)
+        vals1 = (vals-1).clip(*(self._get_support(lambda_)))
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
@@ -628,9 +635,11 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_, N):
-        self.a = 0
-        self.b = N - 1
+        # self.b = N - 1
         return (lambda_ > 0) & (N > 0)
+
+    def _get_support(self, lambda_, N):
+        return self.a, N - 1
 
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
@@ -663,7 +672,7 @@ class boltzmann_gen(rv_discrete):
         return mu, var, g1, g2
 
 
-boltzmann = boltzmann_gen(name='boltzmann',
+boltzmann = boltzmann_gen(name='boltzmann', a=0,
                           longname='A truncated discrete exponential ')
 
 
@@ -690,9 +699,10 @@ class randint_gen(rv_discrete):
 
     """
     def _argcheck(self, low, high):
-        self.a = low
-        self.b = high - 1
         return (high > low)
+
+    def _get_support(self, low, high):
+        return low, high-1
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
