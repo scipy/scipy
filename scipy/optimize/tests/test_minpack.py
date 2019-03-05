@@ -707,6 +707,13 @@ class TestCurveFit(object):
                 assert_allclose(popt1, popt2, atol=1e-14)
                 assert_allclose(pcov1, pcov2, atol=1e-14)
 
+    def test_empty_array_with_bounds():
+        # This test is regarding the issue #9864
+        # Test that Curve_fit checks for empty input data
+        # if called with bounds
+        # Calling this function will produce a meaningful error message.
+        curve_fit(lambda x, a: a*x, [], [], bounds = (0, 1))
+
 
 class TestFixedPoint(object):
 
@@ -787,4 +794,3 @@ class TestFixedPoint(object):
 
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)
-
