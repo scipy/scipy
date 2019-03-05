@@ -399,12 +399,12 @@ class RotationSpline(object):
             Order of differentiation:
 
                 * 0 (default) : return Rotation
-                * 1 : return the angular velocity in rad/sec
+                * 1 : return the angular rate in rad/sec
                 * 2 : return the angular acceleration in rad/sec/sec
 
         Returns
         -------
-        Rotation, angular velocity or acceleration interpolated at `times`.
+        Interpolated Rotation, angular rate or acceleration.
         """
         if order not in [0, 1, 2]:
             raise ValueError("`order` must be 0, 1 or 2.")
