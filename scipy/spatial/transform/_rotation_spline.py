@@ -151,7 +151,7 @@ def _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot):
     return dp * (k1 * cp + k2 * ccp) + k3 * dccp
 
 
-def _angular_rate(rotvecs, rotvecs_dot):
+def _compute_angular_rate(rotvecs, rotvecs_dot):
     """Compute angular rates given rotation vectors and its derivatives.
 
     Parameters
@@ -185,7 +185,7 @@ def _compute_angular_acceleration(rotvecs, rotvecs_dot, rotvecs_dot_dot):
     -------
     ndarray, shape (n, 3)
     """
-    return (_angular_rate(rotvecs, rotvecs_dot_dot) +
+    return (_compute_angular_rate(rotvecs, rotvecs_dot_dot) +
             _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot))
 
 
@@ -328,7 +328,7 @@ class RotationSpline(object):
     TOL = 1e-9
 
     def _solve_for_angular_rates(self, dt, angular_rates, rotvecs):
-        angular_rates_first = angular_rates[0].copy()
+        angular_rate_first = angular_rates[0].copy()
 
         A = _angular_rate_to_rotvec_dot_matrix(rotvecs)
         A_inv = _rotvec_dot_to_angular_rate_matrix(rotvecs)
@@ -339,7 +339,7 @@ class RotationSpline(object):
 
         b0 = 6 * (rotvecs[:-1] * dt[:-1, None] ** -2 +
                   rotvecs[1:] * dt[1:, None] ** -2)
-        b0[0] -= 2 / dt[0] * A_inv[0].dot(angular_rates_first)
+        b0[0] -= 2 / dt[0] * A_inv[0].dot(angular_rate_first)
         b0[-1] -= 2 / dt[-1] * A[-1].dot(angular_rates[-1])
 
         for iteration in range(self.MAX_ITER):
@@ -356,7 +356,7 @@ class RotationSpline(object):
                 break
 
         rotvecs_dot = _matrix_vector_product_of_stacks(A, angular_rates)
-        angular_rates = np.vstack((angular_rates_first, angular_rates[:-1]))
+        angular_rates = np.vstack((angular_rate_first, angular_rates[:-1]))
 
         return angular_rates, rotvecs_dot
 
@@ -441,7 +441,7 @@ class RotationSpline(object):
             result = self.rotations[index] * Rotation.from_rotvec(rotvecs)
         elif order == 1:
             rotvecs_dot = self.interpolator(times, 1)
-            result = _angular_rate(rotvecs, rotvecs_dot)
+            result = _compute_angular_rate(rotvecs, rotvecs_dot)
         elif order == 2:
             rotvecs_dot = self.interpolator(times, 1)
             rotvecs_dot_dot = self.interpolator(times, 2)
