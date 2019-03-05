@@ -23,7 +23,7 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
+from numpy import zeros, concatenate, ravel, diff, array, ones
 import numpy as np
 
 from . import fitpack
@@ -173,7 +173,7 @@ class UnivariateSpline(object):
                     not w_finite):
                 raise ValueError("x and y array must not contain "
                                  "NaNs or infs.")
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -597,7 +597,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -736,7 +736,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -748,7 +748,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             xe = x[-1]
         t = concatenate(([xb]*(k+1), t, [xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
+        if not np.all(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
                              'Schoenberg-Whitney conditions')
         if not dfitpack.fpchec(x, t, k) == 0:
@@ -1163,9 +1163,9 @@ class RectBivariateSpline(BivariateSpline):
 
     def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
         x, y = ravel(x), ravel(y)
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
-        if not all(diff(y) > 0.0):
+        if not np.all(diff(y) > 0.0):
             raise ValueError('y must be strictly increasing')
         if not ((x.min() == x[0]) and (x.max() == x[-1])):
             raise ValueError('x must be strictly ascending')

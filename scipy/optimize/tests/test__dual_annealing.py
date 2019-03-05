@@ -81,9 +81,11 @@ class TestDualAnnealing(TestCase):
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         vd = VisitingDistribution(lower, upper, self.qv, self.rs)
-        values = np.zeros(self.nbtestvalues)
-        for i in np.arange(self.nbtestvalues):
-            values[i] = vd.visit_fn(self.high_temperature)
+        # values = np.zeros(self.nbtestvalues)
+        # for i in np.arange(self.nbtestvalues):
+        #     values[i] = vd.visit_fn(self.high_temperature)
+        values = vd.visit_fn(self.high_temperature, self.nbtestvalues)
+
         # Visiting distribution is a distorted version of Cauchy-Lorentz
         # distribution, and as no 1st and higher moments (no mean defined,
         # no variance defined).
@@ -103,10 +105,12 @@ class TestDualAnnealing(TestCase):
         ret = dual_annealing(
             self.func, self.ld_bounds, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-12)
+        assert ret.success
 
     def test_high_dim(self):
         ret = dual_annealing(self.func, self.hd_bounds)
         assert_allclose(ret.fun, 0., atol=1e-12)
+        assert ret.success
 
     def test_low_dim_no_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
@@ -165,11 +169,13 @@ class TestDualAnnealing(TestCase):
             LocalSearchWrapper.LS_MAXITER_MIN),
             LocalSearchWrapper.LS_MAXITER_MAX)
         assert ret.nfev <= 100 + ls_max_iter
+        assert not ret.success
 
     def test_max_fun_no_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
                              no_local_search=True, maxfun=500)
         assert ret.nfev <= 500
+        assert not ret.success
 
     def test_maxiter(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxiter=700)
@@ -194,6 +200,7 @@ class TestDualAnnealing(TestCase):
                              callback=self.callback)
         assert ret.fun <= 1.0
         assert 'stop early' in ret.message[0]
+        assert not ret.success
 
     def test_neldermed_ls_minimizer(self):
         minimizer_opts = {

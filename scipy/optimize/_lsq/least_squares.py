@@ -106,16 +106,22 @@ def prepare_bounds(bounds, n):
 
 
 def check_tolerance(ftol, xtol, gtol):
-    message = "{} is too low, setting to machine epsilon {}."
-    if ftol < EPS:
-        warn(message.format("`ftol`", EPS))
-        ftol = EPS
-    if xtol < EPS:
-        warn(message.format("`xtol`", EPS))
-        xtol = EPS
-    if gtol < EPS:
-        warn(message.format("`gtol`", EPS))
-        gtol = EPS
+    def check(tol, name):
+        if tol is None:
+            tol = 0
+        elif tol < EPS:
+            warn("Setting `{}` below the machine epsilon ({:.2e}) effectively "
+                 "disables the corresponding termination condition."
+                 .format(name, EPS))
+        return tol
+
+    ftol = check(ftol, "ftol")
+    xtol = check(xtol, "xtol")
+    gtol = check(gtol, "gtol")
+
+    if ftol < EPS and xtol < EPS and gtol < EPS:
+        raise ValueError("At least one of the tolerances must be higher than "
+                         "machine epsilon ({:.2e}).".format(EPS))
 
     return ftol, xtol, gtol
 
@@ -293,12 +299,13 @@ def least_squares(
               efficient method for small unconstrained problems.
 
         Default is 'trf'. See Notes for more information.
-    ftol : float, optional
+    ftol : float or None, optional
         Tolerance for termination by the change of the cost function. Default
         is 1e-8. The optimization process is stopped when  ``dF < ftol * F``,
         and there was an adequate agreement between a local quadratic model and
-        the true model in the last step.
-    xtol : float, optional
+        the true model in the last step. If None, the termination by this
+        condition is disabled.
+    xtol : float or None, optional
         Tolerance for termination by the change of the independent variables.
         Default is 1e-8. The exact condition depends on the `method` used:
 
@@ -307,7 +314,8 @@ def least_squares(
               a trust-region radius and ``xs`` is the value of ``x``
               scaled according to `x_scale` parameter (see below).
 
-    gtol : float, optional
+        If None, the termination by this condition is disabled.
+    gtol : float or None, optional
         Tolerance for termination by the norm of the gradient. Default is 1e-8.
         The exact condition depends on a `method` used:
 
@@ -321,6 +329,7 @@ def least_squares(
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
 
+        If None, the termination by this condition is disabled.
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.

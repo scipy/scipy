@@ -250,11 +250,11 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % nfun[0])
         print("         Gradient evaluations: %d" % njac[0])
-        print("         Hessian evaluations: %d" % nhess[0])
+        print("         Hessian evaluations: %d" % (nhess[0] + nhessp[0]))
 
     result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
                             fun=m.fun, jac=m.jac, nfev=nfun[0], njev=njac[0],
-                            nhev=nhess[0], nit=k,
+                            nhev=nhess[0] + nhessp[0], nit=k,
                             message=status_messages[warnflag])
 
     if hess is not None:

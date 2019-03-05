@@ -189,11 +189,13 @@ Summary statistics
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
+   gstd              -- Geometric Standard Deviation
    iqr
    sem
    bayes_mvs
    mvsdist
    entropy
+   median_absolute_deviation
 
 Frequency statistics
 ====================

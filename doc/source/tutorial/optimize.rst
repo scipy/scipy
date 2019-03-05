@@ -795,6 +795,7 @@ finally plots the original data and the fitted model function:
     ...               4.56e-2, 3.42e-2, 3.23e-2, 2.35e-2, 2.46e-2])
     >>> x0 = np.array([2.5, 3.9, 4.15, 3.9])
     >>> res = least_squares(fun, x0, jac=jac, bounds=(0, 100), args=(u, y), verbose=1)
+    # may vary
     `ftol` termination condition is satisfied.
     Function evaluations 130, initial cost 4.4383e+00, final cost 1.5375e-04, first-order optimality 4.92e-08.
     >>> res.x

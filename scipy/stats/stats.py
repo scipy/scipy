@@ -82,7 +82,9 @@ Variability
     sem
     zmap
     zscore
+    gstd
     iqr
+    median_absolute_deviation
 
 Trimming Functions
 ------------------
@@ -184,7 +186,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr',
+           'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -2356,6 +2358,127 @@ def zmap(scores, compare, axis=0, ddof=0):
         return (scores - mns) / sstd
 
 
+def gstd(a, axis=0, ddof=1):
+    """Calculate the geometric standard deviation of an array
+
+    The geometric standard deviation describes the spread of a set of numbers
+    where the geometric mean is preferred. It is a multiplicative factor, and
+    so a dimensionless quantity.
+
+    It is defined as the exponent of the standard deviation of ``log(a)``.
+    Mathematically the population geometric standard deviation can be
+    evaluated as::
+
+        gstd = exp(std(log(a)))
+
+    .. versionadded:: 1.3.0
+
+    Parameters
+    ----------
+    a : array_like
+        An array like object containing the sample data.
+    axis : int, tuple or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+    ddof : int, optional
+        Degree of freedom correction in the calculation of the
+        geometric standard deviation. Default is 1.
+
+    Returns
+    -------
+    ndarray or float
+        An array of the geometric standard deviation. If `axis` is None or `a`
+        is a 1d array a float is returned.
+
+    Notes
+    -----
+    As the calculation requires the use of logarithms the geometric standard
+    deviation only supports strictly positive values. Any non-positive or
+    infinite values will raise a `ValueError`.
+    The geometric standard deviation is sometimes confused with the exponent of
+    the standard deviation, ``exp(std(a))``. Instead the geometric standard
+    deviation is ``exp(std(log(a)))``.
+    The default value for `ddof` is different to the default value (0) used
+    by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+
+    Examples
+    --------
+    Find the geometric standard deviation of a log-normally distributed sample.
+    Note that the standard deviation of the distribution is one, on a
+    log scale this evaluates to approximately ``exp(1)``.
+
+    >>> from scipy.stats import gstd
+    >>> np.random.seed(123)
+    >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
+    >>> gstd(sample)
+    2.7217860664589946
+
+    Compute the geometric standard deviation of a multidimensional array and
+    of a given axis.
+
+    >>> a = np.arange(1, 25).reshape(2, 3, 4)
+    >>> gstd(a, axis=None)
+    2.2944076136018947
+    >>> gstd(a, axis=2)
+    array([[1.82424757, 1.22436866, 1.13183117],
+           [1.09348306, 1.07244798, 1.05914985]])
+    >>> gstd(a, axis=(1,2))
+    array([2.12939215, 1.22120169])
+
+    The geometric standard deviation further handles masked arrays.
+
+    >>> a = np.arange(1, 25).reshape(2, 3, 4)
+    >>> ma = np.ma.masked_where(a > 16, a)
+    >>> ma
+    masked_array(
+      data=[[[1, 2, 3, 4],
+             [5, 6, 7, 8],
+             [9, 10, 11, 12]],
+            [[13, 14, 15, 16],
+             [--, --, --, --],
+             [--, --, --, --]]],
+      mask=[[[False, False, False, False],
+             [False, False, False, False],
+             [False, False, False, False]],
+            [[False, False, False, False],
+             [ True,  True,  True,  True],
+             [ True,  True,  True,  True]]],
+      fill_value=999999)
+    >>> gstd(ma, axis=2)
+    masked_array(
+      data=[[1.8242475707663655, 1.2243686572447428, 1.1318311657788478],
+            [1.0934830582350938, --, --]],
+      mask=[[False, False, False],
+            [False,  True,  True]],
+      fill_value=999999)
+    """
+    a = np.asanyarray(a)
+    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+    except RuntimeWarning as w:
+        if np.isinf(a).any():
+            raise ValueError(
+                'Infinite value encountered. The geometric standard deviation '
+                'is defined for strictly positive values only.')
+        elif np.less_equal(a, 0).any():
+            raise ValueError(
+                'Non positive value encountered. The geometric standard '
+                'deviation is defined for strictly positive values only.')
+        elif 'Degrees of freedom <= 0 for slice' == str(w):
+            raise ValueError(w)
+        else:
+            #  Remaining warnings don't need to be exceptions.
+            warnings.warn(w)
+    except TypeError:
+        raise ValueError(
+            'Invalid array input. The inputs could not be '
+            'safely coerced to any supported types')
+
+
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
 _scale_conversions = {'raw': 1.0,
@@ -2518,6 +2641,121 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         out /= scale
 
     return out
+
+
+def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
+                              nan_policy='propagate'):
+    """
+    Compute the median absolute deviation of the data along the given axis.
+
+    The median absolute deviation (MAD, [1]_) computes the median over the
+    absolute deviations from the median. It is a measure of dispersion
+    similar to the standard deviation, but is more robust to outliers [2]_.
+
+    The MAD of an empty array is ``np.nan``.
+
+    .. versionadded:: 1.3.0
+
+    Parameters
+    ----------
+    x : array_like
+        Input array or object that can be converted to an array.
+    axis : int or None, optional
+        Axis along which the range is computed. Default is 0. If None, compute
+        the MAD over the entire array.
+    center : callable, optional
+        A function that will return the central value. The default is to use
+        np.median. Any user defined function used will need to have the function
+        signature ``func(arr, axis)``.
+    scale : int, optional
+        The scaling factor applied to the MAD. The default scale (1.4826)
+        ensures consistency with the standard deviation for normally distributed
+        data.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate'
+        returns nan, 'raise' throws an error, 'omit' performs the
+        calculations ignoring nan values. Default is 'propagate'.
+
+    Returns
+    -------
+    mad : scalar or ndarray
+        If ``axis=None``, a scalar is returned. If the input contains
+        integers or floats of smaller precision than ``np.float64``, then the
+        output data-type is ``np.float64``. Otherwise, the output data-type is
+        the same as that of the input.
+
+    See Also
+    --------
+    numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
+    scipy.stats.tstd, scipy.stats.tvar
+
+    Notes
+    -----
+    The `center` argument only affects the calculation of the central value
+    around which the MAD is calculated. That is, passing in ``center=np.mean``
+    will calculate the MAD around the mean - it will not calculate the *mean*
+    absolute deviation.
+
+    References
+    ----------
+    .. [1] "Median absolute deviation" https://en.wikipedia.org/wiki/Median_absolute_deviation
+    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+
+    Examples
+    --------
+    When comparing the behavior of `median_absolute_deviation` with ``np.std``,
+    the latter is affected when we change a single value of an array to have an
+    outlier value while the MAD hardly changes:
+
+    >>> from scipy import stats
+    >>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
+    >>> x.std()
+    0.9973906394005013
+    >>> stats.median_absolute_deviation(x)
+    1.2280762773108278
+    >>> x[0] = 345.6
+    >>> x.std()
+    34.42304872314415
+    >>> stats.median_absolute_deviation(x)
+    1.2340335571164334
+
+    Axis handling example:
+
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> stats.median_absolute_deviation(x)
+    array([5.1891, 3.7065, 2.2239])
+    >>> stats.median_absolute_deviation(x, axis=None)
+    2.9652
+
+    """
+    x = asarray(x)
+
+    # Consistent with `np.var` and `np.std`.
+    if not x.size:
+        return np.nan
+
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
+
+    if contains_nan and nan_policy == 'omit':
+        # Way faster than carrying the masks around
+        arr = ma.masked_invalid(x).compressed()
+    else:
+        arr = x
+
+    if axis is None:
+        med = center(arr)
+        mad = np.median(np.abs(arr - med))
+    else:
+        med = np.apply_over_axes(center, arr, axis)
+        mad = np.median(np.abs(arr - med), axis=axis)
+
+    return scale * mad
 
 
 def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
@@ -5549,22 +5787,26 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     ----------
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
-    method : {'fisher', 'stouffer'}, optional
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'},
+    optional.
         Name of method to use to combine p-values. The following methods are
         available:
 
         - "fisher": Fisher's method (Fisher's combined probability test),
-          the default.
+          the default, the sum of the logarithm of the p-values.
+        - "pearson": Pearson's method (similar to Fisher's but uses sum of the
+          complement of the p-values inside the logarithms).
+        - "tippett": Tippett's method (minimum of p-values).
         - "stouffer": Stouffer's Z-score method.
+        - "mudholkar_george": the difference of Fisher's and Pearson's methods
+           divided by 2.
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
     Returns
     -------
     statistic: float
-        The statistic calculated by the specified method:
-        - "fisher": The chi-squared statistic
-        - "stouffer": The Z-score
+        The statistic calculated by the specified method.
     pval: float
         The combined p-value.
 
@@ -5575,7 +5817,17 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
     advantage of Stouffer's method is that it is straightforward to introduce
     weights, which can make Stouffer's method more powerful than Fisher's
-    method when the p-values are from studies of different size [3]_ [4]_.
+    method when the p-values are from studies of different size [6]_ [7]_.
+    The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
+    method uses :math:`log(p_i)` [4]_. For Fisher's and Pearson's method, the
+    sum of the logarithms is multiplied by -2 in the implementation. This
+    quantity has a chisquare distribution that determines the p-value. The
+    `mudholkar_george` method is the difference of the Fisher's and Pearson's
+    test statistics, each of which include the -2 factor [4]_. However, the
+    `mudholkar_george` method does not include these -2 factors. The test
+    statistic of `mudholkar_george` is the sum of logisitic random variables and
+    equation 3.6 in [3]_ is used to approximate the p-value based on Student's
+    t-distribution.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -5587,13 +5839,17 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
     .. [2] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
-    .. [3] Whitlock, M. C. "Combining probability from independent tests: the
+    .. [3] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
+           random variables." Metrika 30.1 (1983): 1-13.
+    .. [4] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
+           combining p-values."  Biometrika 105.1 (2018): 239-246.
+    .. [5] Whitlock, M. C. "Combining probability from independent tests: the
            weighted Z-method is superior to Fisher's approach." Journal of
            Evolutionary Biology 18, no. 5 (2005): 1368-1373.
-    .. [4] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
+    .. [6] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
-    .. [5] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+    .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
     pvalues = np.asarray(pvalues)
@@ -5601,9 +5857,19 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         raise ValueError("pvalues is not 1-D")
 
     if method == 'fisher':
-        Xsq = -2 * np.sum(np.log(pvalues))
-        pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
-        return (Xsq, pval)
+        statistic = -2 * np.sum(np.log(pvalues))
+        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+    elif method == 'pearson':
+        statistic = -2 * np.sum(np.log1p(-pvalues))
+        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+    elif method == 'mudholkar_george':
+        statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
+        nu = 5 * len(pvalues) + 4
+        approx_factor = np.sqrt(nu / (nu - 2))
+        pval = distributions.t.sf(statistic * approx_factor, nu)
+    elif method == 'tippett':
+        statistic = np.min(pvalues)
+        pval = distributions.beta.sf(statistic, 1, len(pvalues))
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
@@ -5615,13 +5881,15 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             raise ValueError("weights is not 1-D")
 
         Zi = distributions.norm.isf(pvalues)
-        Z = np.dot(weights, Zi) / np.linalg.norm(weights)
-        pval = distributions.norm.sf(Z)
+        statistic = np.dot(weights, Zi) / np.linalg.norm(weights)
+        pval = distributions.norm.sf(statistic)
 
-        return (Z, pval)
     else:
         raise ValueError(
-            "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
+            "Invalid method '%s'. Options are 'fisher', 'pearson', \
+            'mudholkar_george', 'tippett', 'or 'stouffer'", method)
+
+    return (statistic, pval)
 
 
 #####################################

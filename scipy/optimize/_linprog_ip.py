@@ -1,5 +1,20 @@
-"""
-An interior-point method for linear programming.
+"""Interior-point method for linear programming
+
+The *interior-point* method uses the primal-dual path following algorithm
+outlined in [1]_. This algorithm supports sparse constraint matrices and
+is typically faster than the simplex methods, especially for large, sparse
+problems. Note, however, that the solution returned may be slightly less
+accurate than those of the simplex methods and will not, in general,
+correspond with a vertex of the polytope defined by the constraints.
+
+    .. versionadded:: 1.0.0
+
+References
+----------
+.. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+       optimizer for linear programming: an implementation of the
+       homogeneous algorithm." High performance optimization. Springer US,
+       2000. 197-232.
 """
 # Author: Matt Haberland
 

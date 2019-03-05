@@ -362,6 +362,12 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     is determined from the input image at position
     ``np.dot(matrix, o) + offset``.
 
+    This does 'pull' (or 'backward') resampling, transforming the output space
+    to the input to locate data. Affine transformations are often described in
+    the 'push' (or 'forward') direction, transforming input to output. If you
+    have a matrix for the 'push' transformation, use its inverse
+    (:func:`numpy.linalg.inv`) in this function.
+
     Parameters
     ----------
     %(input)s
@@ -719,7 +725,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
-        size = numpy.product(input.shape, axis=0)
+        size = numpy.prod(input.shape, axis=0)
         size //= input.shape[axes[0]]
         size //= input.shape[axes[1]]
         for ii in range(input.ndim):

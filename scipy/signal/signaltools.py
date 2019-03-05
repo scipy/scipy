@@ -18,7 +18,7 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
-                   product, r_, ravel, real_if_close, reshape,
+                   prod, r_, ravel, real_if_close, reshape,
                    roots, sort, take, transpose, unique, where, zeros,
                    zeros_like)
 import numpy as np
@@ -922,7 +922,7 @@ def medfilt(volume, kernel_size=None):
 
     domain = ones(kernel_size)
 
-    numels = product(kernel_size, axis=0)
+    numels = prod(kernel_size, axis=0)
     order = numels // 2
     return sigtools._order_filterND(volume, domain, order)
 
@@ -960,11 +960,11 @@ def wiener(im, mysize=None, noise=None):
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, ones(mysize), 'same') / product(mysize, axis=0)
+    lMean = correlate(im, ones(mysize), 'same') / prod(mysize, axis=0)
 
     # Estimate the local variance
     lVar = (correlate(im ** 2, ones(mysize), 'same') /
-            product(mysize, axis=0) - lMean ** 2)
+            prod(mysize, axis=0) - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:

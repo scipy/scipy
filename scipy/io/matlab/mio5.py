@@ -685,7 +685,7 @@ class VarWriter5(object):
             # transpose here, because we're flattening the array, before
             # we write the bytes.  The bytes have to be written in
             # Fortran order.
-            n_chars = np.product(shape)
+            n_chars = np.prod(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order

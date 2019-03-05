@@ -9,7 +9,7 @@ import pytest
 
 from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
-from numpy import matrix, diag, dot
+from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np
 
@@ -28,10 +28,10 @@ MUST_WORK = {'anderson': nonlin.anderson, 'broyden1': nonlin.broyden1,
 
 
 def F(x):
-    x = np.asmatrix(x).T
-    d = matrix(diag([3,2,1.5,1,0.5]))
+    x = np.asarray(x).T
+    d = diag([3,2,1.5,1,0.5])
     c = 0.01
-    f = -d*x - c*float(x.T*x)*x
+    f = -d @ x - c * float(x.T @ x) * x
     return f
 
 
@@ -57,9 +57,9 @@ F2_lucky.KNOWN_BAD = {}
 
 
 def F3(x):
-    A = np.mat('-2 1 0; 1 -2 1; 0 1 -2')
-    b = np.mat('1 2 3')
-    return np.dot(A, x) - b
+    A = np.array([[-2, 1, 0.], [1, -2, 1], [0, 1, -2]])
+    b = np.array([1, 2, 3.])
+    return A @ x - b
 
 
 F3.xin = [1,2,3]

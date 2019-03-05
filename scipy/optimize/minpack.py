@@ -6,7 +6,7 @@ from . import _minpack
 
 import numpy as np
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
-                   transpose, zeros, product, greater, array,
+                   transpose, zeros, prod, greater, array,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
@@ -321,14 +321,13 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         The solution (or the result of the last iteration for an unsuccessful
         call).
     cov_x : ndarray
-        Uses the fjac and ipvt optional outputs to construct an
-        estimate of the jacobian around the solution. None if a
-        singular matrix encountered (indicates very flat curvature in
-        some direction).  This matrix must be multiplied by the
-        residual variance to get the covariance of the
-        parameter estimates -- see curve_fit.
+        The inverse of the Hessian. `fjac` and `ipvt` are used to construct an
+        estimate of the Hessian. A value of None indicates a singular matrix,
+        which means the curvature in parameters `x` is numerically flat. To
+        obtain the covariance matrix of the parameters `x`, `cov_x` must be
+        multiplied by the variance of the residuals -- see curve_fit.
     infodict : dict
-        a dictionary of optional outputs with the key s:
+        a dictionary of optional outputs with the keys:
 
         ``nfev``
             The number of function calls
@@ -818,7 +817,7 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     fvecp = fvecp.reshape((m,))
     _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
 
-    good = (product(greater(err, 0.5), axis=0))
+    good = (prod(greater(err, 0.5), axis=0))
 
     return (good, err)
 

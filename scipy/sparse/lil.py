@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_matrix','isspmatrix_lil']
+__all__ = ['lil_matrix', 'isspmatrix_lil']
 
 from bisect import bisect_left
 
@@ -15,7 +15,8 @@ from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                      get_index_dtype, check_shape, check_reshape_kwargs)
+                      get_index_dtype, check_shape, check_reshape_kwargs,
+                      asmatrix)
 from . import _csparsetools
 
 
@@ -118,7 +119,7 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             # assume A is dense
             try:
-                A = np.asmatrix(arg1)
+                A = asmatrix(arg1)
             except TypeError:
                 raise TypeError('unsupported matrix type')
             else:

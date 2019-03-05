@@ -29,6 +29,7 @@ import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from .common_tests import check_named_results
 from scipy.special import kv
+from scipy.sparse.sputils import matrix
 from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -1626,10 +1627,50 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    def test_mad(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, 28.95])
+        assert_almost_equal(stats.median_absolute_deviation(dat, axis=None), 0.526323)
+
+        dat = dat.reshape(6, 4)
+        mad = stats.median_absolute_deviation(dat, axis=0)
+        mad_expected = np.asarray([0.644931, 0.7413, 0.66717, 0.59304])
+        assert_array_almost_equal(mad, mad_expected)
+
+    def test_mad_empty(self):
+        dat = []
+        mad = stats.median_absolute_deviation(dat)
+        assert_equal(mad, np.nan)
+
+    def test_mad_nan_propagate(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        mad = stats.median_absolute_deviation(dat, nan_policy='propagate')
+        assert_equal(mad, np.nan)
+
+    def test_mad_nan_raise(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        with assert_raises(ValueError):
+            stats.median_absolute_deviation(dat, nan_policy='raise')
+
+    def test_mad_nan_omit(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        mad = stats.median_absolute_deviation(dat, nan_policy='omit')
+        assert_almost_equal(mad, 0.504084)
+
 
 class _numpy_version_warn_context_mgr(object):
     """
-    A simple context maneger class to avoid retyping the same code for
+    A simple context manager class to avoid retyping the same code for
     different versions of numpy when the only difference is that older
     versions raise warnings.
 
@@ -3649,14 +3690,14 @@ class TestHarMean(object):
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        check_equal_hmean(np.matrix(a), desired, axis=0)
+        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
+        check_equal_hmean(matrix(a), desired, axis=0)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
-        check_equal_hmean(np.matrix(a), desired, axis=1)
+        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
+        check_equal_hmean(matrix(a), desired, axis=1)
 
 
 class TestGeoMean(object):
@@ -3717,27 +3758,27 @@ class TestGeoMean(object):
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        check_equal_gmean(np.matrix(a), desired, axis=0)
+        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
+        check_equal_gmean(matrix(a), desired, axis=0)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = np.matrix([1, 2, 3, 4])
-        check_equal_gmean(np.matrix(a), desired, axis=0, rtol=1e-14)
+        desired = matrix([1, 2, 3, 4])
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = np.matrix(stats.gmean(a, axis=0))
-        check_equal_gmean(np.matrix(a), desired, axis=0, rtol=1e-14)
+        desired = matrix(stats.gmean(a, axis=0))
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
 
     def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        check_equal_gmean(np.matrix(a), desired, axis=1)
+        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
+        check_equal_gmean(matrix(a), desired, axis=1)
 
         a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
         v = power(1 * 2 * 3 * 4, 1. / 4.)
-        desired = np.matrix([[v], [v], [v]])
-        check_equal_gmean(np.matrix(a), desired, axis=1, rtol=1e-14)
+        desired = matrix([[v], [v], [v]])
+        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
 
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
@@ -3763,6 +3804,87 @@ class TestGeoMean(object):
             check_equal_gmean(a, desired)
         finally:
             np.seterr(**olderr)
+
+
+class TestGeometricStandardDeviation(object):
+    # must add 1 as `gstd` is only defined for positive values
+    array_1d = np.arange(2 * 3 * 4) + 1
+    gstd_array_1d = 2.294407613602
+    array_3d = array_1d.reshape(2, 3, 4)
+
+    def test_1d_array(self):
+        gstd_actual = stats.gstd(self.array_1d)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
+
+    def test_1d_numeric_array_like_input(self):
+        gstd_actual = stats.gstd(tuple(self.array_1d))
+        assert_allclose(gstd_actual, self.gstd_array_1d)
+
+    def test_raises_value_error_non_array_like_input(self):
+        with pytest.raises(ValueError, match='Invalid array input'):
+            stats.gstd('This should fail as it can not be cast to an array.')
+
+    def test_raises_value_error_zero_entry(self):
+        with pytest.raises(ValueError, match='Non positive value'):
+            stats.gstd(np.append(self.array_1d, [0]))
+
+    def test_raises_value_error_negative_entry(self):
+        with pytest.raises(ValueError, match='Non positive value'):
+            stats.gstd(np.append(self.array_1d, [-1]))
+
+    def test_raises_value_error_inf_entry(self):
+        with pytest.raises(ValueError, match='Infinite value'):
+            stats.gstd(np.append(self.array_1d, [np.inf]))
+
+    def test_propogates_nan_values(self):
+        a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
+        gstd_actual = stats.gstd(a, axis=1)
+        assert_allclose(gstd_actual, np.array([4, np.nan]))
+
+    def test_ddof_equal_to_number_of_observations(self):
+        with pytest.raises(ValueError, match='Degrees of freedom <= 0'):
+            stats.gstd(self.array_1d, ddof=self.array_1d.size)
+
+    def test_3d_array(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=None)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
+
+    def test_3d_array_axis_type_tuple(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=(1,2))
+        assert_allclose(gstd_actual, [2.12939215, 1.22120169])
+
+    def test_3d_array_axis_0(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=0)
+        gstd_desired = np.array([
+            [6.1330555493918, 3.958900210120, 3.1206598248344, 2.6651441426902],
+            [2.3758135028411, 2.174581428192, 2.0260062829505, 1.9115518327308],
+            [1.8205343606803, 1.746342404566, 1.6846557065742, 1.6325269194382]
+        ])
+        assert_allclose(gstd_actual, gstd_desired)
+
+    def test_3d_array_axis_1(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=1)
+        gstd_desired = np.array([
+            [3.118993630946, 2.275985934063, 1.933995977619, 1.742896469724],
+            [1.271693593916, 1.254158641801, 1.238774141609, 1.225164057869]
+        ])
+        assert_allclose(gstd_actual, gstd_desired)
+
+    def test_3d_array_axis_2(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=2)
+        gstd_desired = np.array([
+            [1.8242475707664, 1.2243686572447, 1.1318311657788],
+            [1.0934830582351, 1.0724479791887, 1.0591498540749]
+        ])
+        assert_allclose(gstd_actual, gstd_desired)
+
+    def test_masked_3d_array(self):
+        ma = np.ma.masked_where(self.array_3d > 16, self.array_3d)
+        gstd_actual = stats.gstd(ma, axis=2)
+        gstd_desired = stats.gstd(self.array_3d, axis=2)
+        mask = [[0, 0, 0], [0, 1, 1]]
+        assert_allclose(gstd_actual, gstd_desired)
+        assert_equal(gstd_actual.mask, mask)
 
 
 def test_binomtest():
@@ -4174,6 +4296,25 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
+
+    def test_pearson(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='pearson')
+        assert_approx_equal(p, 0.97787, significant=4)
+
+    def test_tippett(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='tippett')
+        assert_approx_equal(p, 0.970299, significant=4)
+
+    def test_mudholkar_george(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
+        assert_approx_equal(p, 3.7191571041915e-07, significant=4)
+
+    def test_mudholkar_george_equal_fisher_minus_pearson(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
+        Z_f, p_f = stats.combine_pvalues([.01, .2, .3], method='fisher')
+        Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
+        # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
+        assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
 
 class TestCdfDistanceValidation(object):

@@ -804,10 +804,12 @@ class DifferentialEvolutionSolver(object):
     def __exit__(self, *args):
         # to make sure resources are closed down
         self._mapwrapper.close()
+        self._mapwrapper.terminate()
 
     def __del__(self):
         # to make sure resources are closed down
         self._mapwrapper.close()
+        self._mapwrapper.terminate()
 
     def __next__(self):
         """
