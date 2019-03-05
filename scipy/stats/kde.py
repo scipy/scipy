@@ -599,8 +599,6 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=float)
-
         if m >= self.n:
             # there are more points than data, so loop over data
             energy = zeros((self.n, m), dtype=float)
@@ -609,10 +607,11 @@ class gaussian_kde(object):
                 tdiff = dot(self.inv_cov, diff)
                 energy[i] = sum(diff*tdiff, axis=0) / 2.0
             result = logsumexp(-energy,
-                               b=self.weights[i]*self.n/self._norm_factor,
+                               b=self.weights*self.n/self._norm_factor,
                                axis=0)
         else:
             # loop over points
+            result = zeros((m,), dtype=float)
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
