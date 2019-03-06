@@ -159,6 +159,17 @@ def test_support(dist):
     assert_equal(dist.logpdf(dist.b, *args), -np.inf)
 
 
+@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+def test_retrieving_support(dist, args, alpha):
+    """"""
+    dist = getattr(stats, dist)
+
+    loc, scale = 1, 2
+    supp = dist.support(*args)
+    supp_loc_scale = dist.support(*args, loc=loc, scale=scale)
+    assert_almost_equal(np.array(supp)*scale + loc, np.array(supp_loc_scale))
+
+
 class TestRandInt(object):
     def setup_method(self):
         np.random.seed(1234)
