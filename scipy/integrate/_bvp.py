@@ -712,7 +712,7 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
 
 
 def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
-              tol=1e-3, max_nodes=1000, verbose=0):
+              tol=1e-3, tol_bc=None, max_nodes=1000, verbose=0):
     """Solve a boundary-value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
@@ -810,6 +810,10 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         mesh interval ``norm(r / (1 + abs(f)) < tol``, where ``norm`` is
         estimated in a root mean squared sense (using a numerical quadrature
         formula). Default is 1e-3.
+    tol_bc : float, optional
+        Desired tolerance applied to boundary conditions. Boundary condition 
+        residuals are adjusted by a factor ``tol_bc / tol`` prior to tolerance
+        checking. Default is ``tol``.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
         terminates. Default is 1000.
@@ -1048,7 +1052,10 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     else:
         B = None
         D = None
-
+    
+    if tol_bc is None:
+        tol_bc = tol
+    
     fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped = wrap_functions(
         fun, bc, fun_jac, bc_jac, k, a, S, D, dtype)
 
@@ -1079,21 +1086,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
         bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
-
-        # calculate boundary jacobian
-        if bc_jac_wrapped is None:
-            dbc = estimate_bc_jac(bc_wrapped, y[:, 0], y[:, -1], p)
-        else:
-            dbc = bc_jac_wrapped(y[:, 0], y[:, -1], p)
-
-        # Normalize bc_res
-        denom = (np.dot(dbc[0], 1 + np.abs(y[:, 0]))
-               + np.dot(dbc[1], 1 + np.abs(y[:, -1])))
-        if p.size > 0:
-            denom += np.dot(dbc[2], 1 + np.abs(p))
-
-        bc_res_norm = np.divide(bc_res, denom, out=np.zeros_like(bc_res), where=denom != 0)
-        max_bc_res_norm = np.max(abs(bc_res_norm))
+        max_bc_res = np.max(abs(bc_res)) * tol_bc / tol
 
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
@@ -1101,7 +1094,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
                                          r_middle, f_middle)
         max_rms_res = np.max(rms_res)
-        max_res = np.max([max_rms_res, max_bc_res_norm])
+        max_res = np.max([max_rms_res, max_bc_res])
 
         if singular:
             status = 2

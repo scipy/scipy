@@ -562,7 +562,7 @@ def test_nonlin_bc():
     x = np.linspace(0, 0.1, 5)
     x_test = x
     y = np.zeros([2, x.size])
-    sol = solve_bvp(nonlin_bc_fun, nonlin_bc_bc, x, y, tol=1e-5)
+    sol = solve_bvp(nonlin_bc_fun, nonlin_bc_bc, x, y)
 
     assert_equal(sol.status, 0)
     assert_(sol.success)
