@@ -4759,6 +4759,13 @@ class TestEppsSingleton(object):
         x, y = (1, 2, 3, 4), np.arange(10)
         assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
 
+    def test_epps_singleton_nonfinite(self):
+        # raise error if there are non-finite values
+        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+
     def test_epps_singleton_1d_input(self):
         x = np.arange(100).reshape(-1, 1)
         assert_raises(ValueError, stats.epps_singleton_2samp, x, x)
