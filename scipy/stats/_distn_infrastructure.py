@@ -3445,10 +3445,8 @@ class rv_sample(rv_discrete):
         indx = np.argsort(np.ravel(xk))
         self.xk = np.take(np.ravel(xk), indx, 0)
         self.pk = np.take(np.ravel(pk), indx, 0)
-        # self.a = self.xk[0]
-        # self.b = self.xk[-1]
-        self.a = -np.inf
-        self.b = np.inf
+        self.a = self.xk[0]
+        self.b = self.xk[-1]
 
         self.qvals = np.cumsum(self.pk, axis=0)
 
@@ -3473,9 +3471,7 @@ class rv_sample(rv_discrete):
         a, b : numeric (float, or int or +/-np.inf)
             end-points of the distribution's support.
         """
-        _a = self.xk[0]
-        _b = self.xk[-1]
-        return _a, _b
+        return self.a, self.b
 
     def _pmf(self, x):
         return np.select([x == k for k in self.xk],

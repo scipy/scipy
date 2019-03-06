@@ -7286,8 +7286,8 @@ class rv_histogram(rv_continuous):
         self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
         self._hcdf = np.hstack([0.0, self._hcdf])
         # Set support
-        kwargs['a'] = self._hbins[0]
-        kwargs['b'] = self._hbins[-1]
+        kwargs['a'] = self.a = self._hbins[0]
+        kwargs['b'] = self.b = self._hbins[-1]
         super(rv_histogram, self).__init__(*args, **kwargs)
 
     def _pdf(self, x):
