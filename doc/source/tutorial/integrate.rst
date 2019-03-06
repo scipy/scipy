@@ -477,7 +477,7 @@ airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661
  0.00235403 0.00095156]
 
 The solution of `solve_ivp` with its standard parameters shows a big deviation
-to the airy function. To minimize this deviation relative and absolute
+to the airy function. To minimize this deviation, relative and absolute
 tolerances can be used.
    
 >>> rtol, atol = (1e-8, 1e-8)
