@@ -1086,7 +1086,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
         bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
-        max_bc_res = np.max(abs(bc_res)) * tol_bc / tol
+        max_bc_res = np.max(abs(bc_res)) * tol / tol_bc
 
         # This relation is not trivial, but can be verified.
         r_middle = 1.5 * col_res / h
