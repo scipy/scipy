@@ -812,7 +812,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         formula). Default is 1e-3.
     tol_bc : float, optional
         Desired tolerance applied to boundary conditions. Boundary condition 
-        residuals are adjusted by a factor ``tol_bc / tol`` prior to tolerance
+        residuals are adjusted by a factor ``tol / tol_bc`` prior to tolerance
         checking. Default is ``tol``.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
