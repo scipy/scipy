@@ -635,7 +635,6 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_, N):
-        # self.b = N - 1
         return (lambda_ > 0) & (N > 0)
 
     def _get_support(self, lambda_, N):
