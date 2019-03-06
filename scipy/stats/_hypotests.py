@@ -78,25 +78,26 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """
 
     x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
+    # check if x and y are valid inputs
     if x.ndim > 1:
         raise ValueError('x must be 1d, but x.ndim equals {}.'.format(x.ndim))
     if y.ndim > 1:
         raise ValueError('y must be 1d, but y.ndim equals {}.'.format(y.ndim))
+    nx, ny = len(x), len(y)
+    if (nx < 5) or (ny < 5):
+        raise ValueError('x and y should have at least 5 elements, but len(x) '
+                         '= {} and len(y) = {}.'.format(nx, ny))
+    if not np.isfinite(x).all():
+        raise ValueError('x must not contain nonfinite values.')
+    if not np.isfinite(y).all():
+        raise ValueError('y must not contain nonfinite values.')
+    n = nx + ny
+
+    # check if t is valid
     if t.ndim > 1:
         raise ValueError('t must be 1d, but t.ndim equals {}.'.format(t.ndim))
-
-    t = t[np.nonzero(t)]
-    if len(t) == 0:
-        raise ValueError('t must contain at least one non-zero element.')
-    nx = len(x)
-    if nx < 5:
-        raise ValueError('x should have at least 5 elements, but len(x) '
-                         'equals {}.'.format(nx))
-    ny = len(y)
-    if ny < 5:
-        raise ValueError('y should have at least 5 elements, but len(y) '
-                         'equals {}.'.format(ny))
-    n = nx + ny
+    if np.less_equal(t, 0).any():
+        raise ValueError('t must contain positive elements only.')
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
     # circular import
