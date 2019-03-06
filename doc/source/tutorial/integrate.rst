@@ -490,7 +490,7 @@ airy(sol2.t)[0][::5]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.
  0.00095156]
  
 To specify used defined time points for the solution of `solve_ivp`, `solve_ivp`
-offers two possibilites that can also be used complementary. By passing the `t_eval`
+offers two possibilites that can also be used complementarily. By passing the `t_eval`
 option to the function call `solve_ivp` returns the solutions of these time points
 of `t_eval` in its output.
 
