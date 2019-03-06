@@ -500,7 +500,8 @@ of `t_eval` in its output.
 
 If the time points of interest are however unknown, the `dense_ouput` option can be
 used. Setting it to `True` returns a continuous solution and the solution at
-any arbitrary time point within the time span can be calculated.
+any arbitrary time point within the time span can be calculated
+via interpolation.
 
 >>> sol4 = solve_ivp(func, t_span, y0, dense_ouput=True)
 >>> print("sol4.sol(2)[1]: {}".format(sol4.sol(2)[1])
