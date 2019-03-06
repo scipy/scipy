@@ -506,7 +506,7 @@ any arbitrary time point within the time span can be calculated.
 >>> print("sol4.sol(2)[1]: {}".format(sol4.sol(2)[1])
 sol4.sol(2)[1]: 0.035042622042422505
 
-If the jacobian matrix of function is known it can can of passed to the `solve_ivp`
+If the jacobian matrix of function is known, it can be passed to the `solve_ivp`
 to achieve better results. Please be aware however that the default integration method
 `RK45` does not support jacobian matrices and thereby another integration method has
 to be chosen. The `Radau` method of following example was chosen arbitrarily at this
