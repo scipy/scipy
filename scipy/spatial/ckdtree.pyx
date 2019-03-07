@@ -397,7 +397,8 @@ cdef extern from "ckdtree_methods.h":
                             const np.float64_t p,
                             const np.float64_t eps,
                             const np.intp_t n_queries,
-                            vector[np.intp_t] **results)
+                            vector[np.intp_t] **results,
+                            const int return_length)
 
     object query_ball_tree(const ckdtree *self,
                            const ckdtree *other,
@@ -858,7 +859,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     def query_ball_point(cKDTree self, object x, object r,
                          np.float64_t p=2., np.float64_t eps=0, n_jobs=1,
-                         return_sorted=None):
+                         return_sorted=None,
+                         return_length=False):
         """
         query_ball_point(self, x, r, p=2., eps=0)
         
@@ -888,6 +890,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             was added.
 
             .. versionadded:: 1.2.0
+        return_length: bool, optional
+            Return the number of points inside the radius instead of a list
+            of the indices.
+            .. versionadded:: 1.3.0
 
         Returns
         -------
@@ -921,6 +927,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             np.float64_t[::1] vrr
             np.float64_t[:, ::1] vxx
             object[::1] vout
+            np.intp_t[::1] vlen
             np.uintp_t vvres_uintp
             np.intp_t *cur
             list tmp
@@ -942,12 +949,17 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 rr = r
                 vres = new vector[np.intp_t]()
                 xx = np.ascontiguousarray(x, dtype=np.float64)
-                query_ball_point(<ckdtree*> self, &xx[0], &rr, p, eps, 1, &vres)
+                query_ball_point(<ckdtree*> self, &xx[0], &rr, p, eps, 1, &vres, return_length)
+
+                cur = npy_intp_vector_buf(vres)
+
+                if return_length:
+                    return cur[0]
 
                 n = <np.intp_t> vres.size()
+
                 tmp = n * [None]
                 if NPY_LIKELY(n > 0):
-                    cur = npy_intp_vector_buf(vres)
                     for i in range(n):
                         tmp[i] = cur[0]
                         cur += 1
@@ -966,9 +978,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         # allocate an array of std::vector<npy_intp>
         n = np.prod(retshape)
-        result = np.empty(retshape, dtype=object)
 
-        vout = result.reshape(-1)
+        if return_length:
+            result = np.empty(retshape, dtype=np.intp)
+            vlen = result.reshape(-1)
+        else:
+            result = np.empty(retshape, dtype=object)
+            vout = result.reshape(-1)
 
         vxx = np.reshape(x, (-1, x.shape[-1]))
         vrr = np.reshape(r, (-1))
@@ -992,11 +1008,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                     vvres[i] = new vector[np.intp_t]()
 
                 query_ball_point(<ckdtree*>self, &vxx[start, 0],
-                    &vrr[start + 0], p, eps, stop - start, vvres)
+                    &vrr[start + 0], p, eps, stop - start, vvres, return_length)
 
                 for i in range(stop - start):
-                    m = <np.intp_t> (vvres[i].size())
                     cur = npy_intp_vector_buf(vvres[i])
+                    if return_length:
+                        vlen[start + i] = cur[0]
+                        continue
+
+                    m = <np.intp_t> (vvres[i].size())
                     tmp = m * [None]
                     for j in range(m):
                         tmp[j] = cur[0]

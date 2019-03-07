@@ -1373,6 +1373,22 @@ def test_query_ball_point_vector_r():
     for a, b in zip(rvector, rscalar):
         assert_array_equal(sorted(a), sorted(b))
 
+def test_query_ball_point_length():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = 0.3
+
+    length = tree.query_ball_point(query, d, return_length=True)
+    length2 = [len(ind) for ind in tree.query_ball_point(query, d, return_length=False)]
+    length3 = [len(tree.query_ball_point(qi, d)) for qi in query]
+    length4 = [tree.query_ball_point(qi, d, return_length=True) for qi in query]
+    assert_array_equal(length, length2)
+    assert_array_equal(length, length3)
+    assert_array_equal(length, length4)
+
 class Test_sorted_query_ball_point(object):
 
     def setup_method(self):

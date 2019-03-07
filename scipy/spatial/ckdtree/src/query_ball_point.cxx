@@ -22,6 +22,7 @@
 
 static void
 traverse_no_checking(const ckdtree *self,
+                     const int return_length,
                      std::vector<npy_intp> *results,
                      const ckdtreenode *node)
 {
@@ -34,21 +35,27 @@ traverse_no_checking(const ckdtree *self,
         const npy_intp start = lnode->start_idx;
         const npy_intp end = lnode->end_idx;
         for (i = start; i < end; ++i) {
-            results->push_back(indices[i]);
+            if (return_length) {
+                (*results)[0] ++;
+            } else {
+                results->push_back(indices[i]);
+            }
         }
     }
     else {
-        traverse_no_checking(self, results, node->less);
-        traverse_no_checking(self, results, node->greater);
+        traverse_no_checking(self, return_length, results, node->less);
+        traverse_no_checking(self, return_length, results, node->greater);
     }
 }
 
 
 template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self,
+                  const int return_length,
                   std::vector<npy_intp> *results,
                   const ckdtreenode *node,
-                  RectRectDistanceTracker<MinMaxDist> *tracker)
+                  RectRectDistanceTracker<MinMaxDist> *tracker
+)
 {
     const ckdtreenode *lnode;
     npy_float64 d;
@@ -58,7 +65,7 @@ traverse_checking(const ckdtree *self,
         return;
     }
     else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac) {
-        traverse_no_checking(self, results, node);
+        traverse_no_checking(self, return_length, results, node);
     }
     else if (node->split_dim == -1)  { /* leaf node */
 
@@ -85,17 +92,21 @@ traverse_checking(const ckdtree *self,
             d = MinMaxDist::point_point_p(self, data + indices[i] * m, tpt, p, m, tub);
 
             if (d <= tub) {
-                results->push_back((npy_intp) indices[i]);
+                if(return_length) {
+                    (*results)[0] ++;
+                } else {
+                    results->push_back((npy_intp) indices[i]);
+                }
             }
         }
     }
     else {
         tracker->push_less_of(2, node);
-        traverse_checking(self, results, node->less, tracker);
+        traverse_checking(self, return_length, results, node->less, tracker);
         tracker->pop();
 
         tracker->push_greater_of(2, node);
-        traverse_checking(self, results, node->greater, tracker);
+        traverse_checking(self, return_length, results, node->greater, tracker);
         tracker->pop();
     }
 }
@@ -104,12 +115,14 @@ traverse_checking(const ckdtree *self,
 extern "C" PyObject*
 query_ball_point(const ckdtree *self, const npy_float64 *x,
                  const npy_float64 *r, const npy_float64 p, const npy_float64 eps,
-                 const npy_intp n_queries, std::vector<npy_intp> **results)
+                 const npy_intp n_queries,
+                 std::vector<npy_intp> **results, const int return_length)
 {
 #define HANDLE(cond, kls) \
     if(cond) { \
+        if(return_length) results[i]->push_back(0); \
         RectRectDistanceTracker<kls> tracker(self, point, rect, p, eps, r[i]); \
-        traverse_checking(self, results[i], self->ctree, &tracker); \
+        traverse_checking(self, return_length, results[i], self->ctree, &tracker); \
     } else
 
     /* release the GIL */

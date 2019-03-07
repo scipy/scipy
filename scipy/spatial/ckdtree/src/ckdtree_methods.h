@@ -193,7 +193,8 @@ query_ball_point(const ckdtree *self,
                  const npy_float64 p,
                  const npy_float64 eps,
                  const npy_intp n_queries,
-                 std::vector<npy_intp> **results);
+                 std::vector<npy_intp> **results,
+                 const int return_length);
 
 CKDTREE_EXTERN PyObject*
 query_ball_tree(const ckdtree *self,
@@ -201,7 +202,8 @@ query_ball_tree(const ckdtree *self,
                 const npy_float64 r,
                 const npy_float64 p,
                 const npy_float64 eps,
-                std::vector<npy_intp> **results);
+                std::vector<npy_intp> **results
+                );
 
 CKDTREE_EXTERN PyObject*
 sparse_distance_matrix(const ckdtree *self,
