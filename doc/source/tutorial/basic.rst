@@ -225,11 +225,11 @@ a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
 ``condlist`` that is true. For example
 
-    >>> x = np.r_[-2:3]
-    >>> x
-    array([-2, -1,  0,  1,  2])
-    >>> np.select([x > 3, x >= 0], [0, x+2])
-    array([0, 0, 2, 3, 4])
+    >>> x = np.arange(10)
+    >>> condlist = [x<3, x>5]
+    >>> choicelist = [x, x**2]
+    >>> np.select(condlist, choicelist)
+    array([ 0,  1,  2,  0,  0,  0, 36, 49, 64, 81])
 
 Some additional useful functions can also be found in the module
 :mod:`scipy.special`. For example the :obj:`~scipy.special.factorial`
