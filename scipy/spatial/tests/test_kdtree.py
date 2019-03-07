@@ -284,7 +284,7 @@ class ball_consistency:
         for i, ind in enumerate(l):
             dist = self.distance(self.data[ind], x[i],self.p) - d[i]*(1.+self.eps)
             norm = self.distance(self.data[ind], x[i],self.p) + d[i]*(1.+self.eps)
-            assert_array_equal(dist < self.tol * norm, True )
+            assert_array_equal(dist < self.tol * norm, True)
 
     def test_found_all(self):
         x = np.atleast_2d(self.x)
@@ -359,7 +359,9 @@ class Test_random_ball_compiled_periodic(ball_consistency):
 
 class Test_random_ball_compiled_largep_issue9890(ball_consistency):
 
-    tol = 1e-13 # allow some roundoff errors due to numerical issues
+    # allow some roundoff errors due to numerical issues
+    tol = 1e-13
+
     def setup_method(self):
         n = 1000
         m = 2
