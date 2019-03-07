@@ -163,7 +163,10 @@ template<typename MinMaxDist>
 
         /* Compute initial min and max distances */
         MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
-
+        if(ckdtree_isinf(max_distance)) {
+            const char *msg = "floating point overlow error. The value of p is too high for this dataset.";
+            throw std::invalid_argument(msg); // raises ValueError
+        }
         inaccurate_distance_limit = max_distance;
     };
 
