@@ -3189,7 +3189,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be at least "
+        raise ValueError("The length of the input vector x must be greater than "
                          "padlen, which is %d." % edge)
 
     if padtype is not None and edge > 0:
