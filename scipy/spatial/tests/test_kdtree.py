@@ -277,16 +277,20 @@ class ball_consistency:
         return minkowski_distance(a, b, p)
 
     def test_in_ball(self):
-        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
-        for i in l:
-            assert_(self.distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
+        x = np.atleast_2d(self.x)
+        d = np.broadcast_to(self.d, x.shape[:-1])
+        l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
+        for i, ind in enumerate(l):
+            assert_(np.all(self.distance(self.data[ind], x[i],self.p) <= d[i]*(1.+self.eps)))
 
     def test_found_all(self):
-        c = np.ones(self.T.n,dtype=bool)
-        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
-        c[l] = False
-        assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
-
+        x = np.atleast_2d(self.x)
+        d = np.broadcast_to(self.d, x.shape[:-1])
+        l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
+        for i, ind in enumerate(l):
+            c = np.ones(self.T.n, dtype=bool)
+            c[ind] = False
+            assert_(np.all(self.distance(self.data[c], x[i],self.p) >= d[i]/(1.+self.eps)))
 
 class Test_random_ball(ball_consistency):
 
