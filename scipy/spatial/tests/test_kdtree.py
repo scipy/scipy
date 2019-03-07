@@ -357,13 +357,13 @@ class Test_random_ball_compiled_largep_issue9890(ball_consistency):
     def setup_method(self):
         n = 1000
         m = 2
-        np.random.seed(1234)
-        self.data = np.random.randn(n,m) * 1000
-        self.T = cKDTree(self.data,leafsize=2)
-        self.x = np.random.randn(m)
-        self.p = 13.2
+        np.random.seed(123)
+        self.data = np.random.randint(100, 1000, size=(n, m))
+        self.T = cKDTree(self.data)
+        self.x = self.data#[3] #np.random.randn(m)
+        self.p = 15.0
         self.eps = 0
-        self.d = 100
+        self.d = 10
 
 class Test_random_ball_approx(Test_random_ball):
 
