@@ -944,18 +944,17 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 vres = new vector[np.intp_t]()
                 xx = np.ascontiguousarray(x, dtype=np.float64)
                 query_ball_point(<ckdtree*> self, &xx[0], &rr, p, eps, 1, &vres)
+
                 n = <np.intp_t> vres.size()
                 tmp = n * [None]
-                # FIXME: this does not seem to be doing any sorting, cur[0] is
-                # a scalar.
                 if NPY_LIKELY(n > 0):
                     cur = npy_intp_vector_buf(vres)
                     for i in range(n):
-                        if return_sorted:
-                            tmp[i] = sorted(cur[0])
-                        else:
-                            tmp[i] = cur[0]
+                        tmp[i] = cur[0]
                         cur += 1
+                if return_sorted:
+                    tmp = sorted(tmp)
+
                 result = tmp
 
                 return result

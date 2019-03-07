@@ -1385,6 +1385,10 @@ class Test_sorted_query_ball_point(object):
         for idxs in idxs_list:
             assert_array_equal(idxs, sorted(idxs))
 
+        for xi in self.x:
+            idxs = self.ckdt.query_ball_point(xi, 1., return_sorted=True)
+            assert_array_equal(idxs, sorted(idxs))
+
     def test_return_sorted_None(self):
         """Previous behavior was to sort the returned indices if there were
         multiple points per query but not sort them if there was a single point
