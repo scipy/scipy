@@ -216,9 +216,9 @@ and :obj:`unwrap` are useful. Also, the :obj:`linspace` and
 :obj:`logspace` functions return equally spaced samples in a linear or
 log scale.  Finally, it's useful to be aware of the indexing
 capabilities of NumPy. Mention should be made of the function
-:obj:`select` which extends the functionality of :obj:`where` to
+:obj:`~numpy.select` which extends the functionality of :obj:`where` to
 include multiple conditions and multiple choices. The calling
-convention is ``select(condlist,choicelist,default=0).`` :obj:`select`
+convention is ``select(condlist, choicelist, default=0)``. :obj:`numpy.select`
 is a vectorized form of the multiple if-statement. It allows rapid
 construction of a function which returns an array of results based on
 a list of conditions. Each element of the return array is taken from
