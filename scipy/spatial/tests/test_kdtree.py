@@ -271,17 +271,20 @@ class Test_vectorization_compiled:
         assert_(np.all(~np.isfinite(d[:,:,-s:])))
         assert_(np.all(i[:,:,-s:] == self.kdtree.n))
 
-
 class ball_consistency:
+    tol = 0.0
+
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski_distance(a * 1.0, b * 1.0, p)
 
     def test_in_ball(self):
         x = np.atleast_2d(self.x)
         d = np.broadcast_to(self.d, x.shape[:-1])
         l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
         for i, ind in enumerate(l):
-            assert_(np.all(self.distance(self.data[ind], x[i],self.p) <= d[i]*(1.+self.eps)))
+            dist = self.distance(self.data[ind], x[i],self.p) - d[i]*(1.+self.eps)
+            norm = self.distance(self.data[ind], x[i],self.p) + d[i]*(1.+self.eps)
+            assert_array_equal(dist < self.tol * norm, True )
 
     def test_found_all(self):
         x = np.atleast_2d(self.x)
@@ -290,7 +293,9 @@ class ball_consistency:
         for i, ind in enumerate(l):
             c = np.ones(self.T.n, dtype=bool)
             c[ind] = False
-            assert_(np.all(self.distance(self.data[c], x[i],self.p) >= d[i]/(1.+self.eps)))
+            dist = self.distance(self.data[c], x[i],self.p) - d[i]/(1.+self.eps)
+            norm = self.distance(self.data[c], x[i],self.p) + d[i]/(1.+self.eps)
+            assert_array_equal(dist > -self.tol * norm, True)
 
 class Test_random_ball(ball_consistency):
 
