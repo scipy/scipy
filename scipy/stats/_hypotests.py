@@ -69,10 +69,10 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     ----------
     .. [1] T. W. Epps and K. J. Singleton, "An omnibus test for the two-sample
        problem using the empirical characteristic function", Journal of
-       Statistical Computation and Simulation 26, p. 177–-203, 1986.
+       Statistical Computation and Simulation 26, p. 177--203, 1986.
 
-    .. [2] S. J. Goerg and J. Kaiser, "Nonparametric testing of distributions -
-       the Epps–Singleton two-sample test using the empirical characteristic
+    .. [2] S. J. Goerg and J. Kaiser, "Nonparametric testing of distributions
+       - the Epps-Singleton two-sample test using the empirical characteristic
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
