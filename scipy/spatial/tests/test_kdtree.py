@@ -359,14 +359,15 @@ class Test_random_ball_compiled_periodic(ball_consistency):
 
 class Test_random_ball_compiled_largep_issue9890(ball_consistency):
 
+    tol = 1e-13 # allow some roundoff errors due to numerical issues
     def setup_method(self):
         n = 1000
         m = 2
         np.random.seed(123)
         self.data = np.random.randint(100, 1000, size=(n, m))
         self.T = cKDTree(self.data)
-        self.x = self.data#[3] #np.random.randn(m)
-        self.p = 15.0
+        self.x = self.data
+        self.p = 100
         self.eps = 0
         self.d = 10
 
