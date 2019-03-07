@@ -393,7 +393,7 @@ cdef extern from "ckdtree_methods.h":
 
     object query_ball_point(const ckdtree *self,
                             const np.float64_t *x,
-                            const np.float64_t r,
+                            const np.float64_t *r,
                             const np.float64_t p,
                             const np.float64_t eps,
                             const np.intp_t n_queries,
@@ -856,7 +856,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # query_ball_point
     # ----------------
 
-    def query_ball_point(cKDTree self, object x, np.float64_t r,
+    def query_ball_point(cKDTree self, object x, object r,
                          np.float64_t p=2., np.float64_t eps=0, n_jobs=1,
                          return_sorted=None):
         """
@@ -868,8 +868,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ----------
         x : array_like, shape tuple + (self.m,)
             The point or points to search for neighbors of.
-        r : positive float
-            The radius of points to return.
+        r : array_like, float
+            The radius of points to return, shall broadcast to the length of x.
         p : float, optional
             Which Minkowski p-norm to use.  Should be in the range [1, inf].
             A finite large p may cause a ValueError if overflow can occur.
@@ -912,33 +912,42 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         [4, 8, 9, 12]
 
         """
-        
+
         cdef:
-            np.ndarray[np.float64_t, ndim=1, mode="c"] xx
-            np.ndarray[np.float64_t, ndim=2, mode="c"] vxx
+            np.float64_t[::1] xx
+            np.float64_t rr
             vector[np.intp_t] *vres
+
+            np.float64_t[::1] vrr
+            np.float64_t[:, ::1] vxx
             vector[np.intp_t] **vvres
             np.uintp_t vvres_uintp
             np.intp_t *cur
             list tmp
             np.intp_t i, j, n, m
-        
+
         vres = NULL
         vvres = NULL
-        
-        try:
-               
-            x = np.asarray(x, dtype=np.float64)
-            if x.shape[-1] != self.m:
-                raise ValueError("Searching for a %d-dimensional point in a "
-                                 "%d-dimensional KDTree" % 
-                                     (int(x.shape[-1]), int(self.m)))
-            if len(x.shape) == 1:
+
+        x = np.asarray(x, dtype=np.float64)
+        if x.shape[-1] != self.m:
+            raise ValueError("Searching for a %d-dimensional point in a "
+                             "%d-dimensional KDTree" % 
+                                 (int(x.shape[-1]), int(self.m)))
+
+        r = np.array(np.broadcast_to(r, x.shape[:-1]), order='C', dtype=np.float64)
+
+        if len(x.shape) == 1:
+            try:
+                # special case: query a single point
+                rr = r
                 vres = new vector[np.intp_t]()
                 xx = np.ascontiguousarray(x, dtype=np.float64)
-                query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, 1, &vres)
+                query_ball_point(<ckdtree*> self, &xx[0], &rr, p, eps, 1, &vres)
                 n = <np.intp_t> vres.size()
                 tmp = n * [None]
+                # FIXME: this does not seem to be doing any sorting, cur[0] is
+                # a scalar.
                 if NPY_LIKELY(n > 0):
                     cur = npy_intp_vector_buf(vres)
                     for i in range(n):
@@ -948,97 +957,95 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                             tmp[i] = cur[0]
                         cur += 1
                 result = tmp
-            
+
+                return result
+            finally:
+                if vres != NULL:
+                    del vres
+
+        try:
+            # query many points
+            retshape = x.shape[:-1]
+
+            # allocate an array of std::vector<npy_intp>
+            n = np.prod(retshape)
+            vvres = (<vector[np.intp_t] **>
+                PyMem_Malloc(n * sizeof(intvector_ptr_t)))
+            if vvres == NULL:
+                raise MemoryError()
+
+            memset(<void*> vvres, 0, n * sizeof(intvector_ptr_t))
+
+            for i in range(n):
+                vvres[i] = new vector[np.intp_t]()
+
+            result = np.empty(retshape, dtype=object)
+
+            vxx = np.reshape(x, (-1, x.shape[-1]))
+            vrr = np.reshape(r, (-1))
+
+            # multithreading logic is similar to cKDTree.query
+            if (n_jobs == -1): 
+                n_jobs = number_of_processors
+
+            if n_jobs > 1:
+                CHUNK = n//n_jobs if n//n_jobs else n
+
+                def _thread_func(self, np.intp_t j,
+                        np.float64_t[:, ::1] vxx,
+                        np.float64_t[::1] vrr,
+                        p, eps, _vvres, CHUNK):
+                    cdef:
+                        vector[np.intp_t] **vvres
+                        np.intp_t start = j * CHUNK
+                        np.intp_t stop = start + CHUNK
+                    stop = n if stop > n else stop
+                    vvres = (<vector[np.intp_t] **>
+                              (<void*> (<np.uintp_t> _vvres)))
+                    if start < n:
+                        query_ball_point(<ckdtree*>self, &vxx[start, 0],
+                            &vrr[start], p, eps, stop - start, vvres + start)
+
+                vvres_uintp = <np.uintp_t> (<void*> vvres)
+                threads = [threading.Thread(target=_thread_func,
+                           args=(self, j, vxx, vrr, p, eps, vvres_uintp, CHUNK))
+                           for j in range(1+(n//CHUNK))]
+                for t in threads:
+                    t.daemon = True
+                    t.start()
+                for t in threads:
+                    t.join()
+
             else:
-                retshape = x.shape[:-1]
-                
-                # allocate an array of std::vector<npy_intp>
-                n = np.prod(retshape)
-                vvres = (<vector[np.intp_t] **> 
-                    PyMem_Malloc(n * sizeof(intvector_ptr_t)))
-                if vvres == NULL:
-                    raise MemoryError()
-                
-                memset(<void*> vvres, 0, n * sizeof(intvector_ptr_t))      
-            
-                for i in range(n):
-                    vvres[i] = new vector[np.intp_t]()
-                
-                result = np.empty(retshape, dtype=object)
-                
-                vxx = np.zeros((n,self.m), dtype=np.float64)
-                i = 0
-                for c in np.ndindex(retshape):
-                    vxx[i,:] = x[c]
-                    i += 1
-                    
-                # multithreading logic is similar to cKDTree.query
-                                        
-                if (n_jobs == -1): 
-                    n_jobs = number_of_processors
-        
-                if n_jobs > 1:
-                
-                    CHUNK = n//n_jobs if n//n_jobs else n
-                             
-                    def _thread_func(self, _j, _vxx, r, p, eps, _vvres, CHUNK): 
-                        cdef: 
-                            np.intp_t j = _j
-                            np.ndarray[np.float64_t,ndim=2] vxx = _vxx
-                            vector[np.intp_t] **vvres                   
-                            np.intp_t start = j*CHUNK
-                            np.intp_t stop = start + CHUNK
-                        stop = n if stop > n else stop
-                        vvres = (<vector[np.intp_t] **> 
-                                  (<void*> (<np.uintp_t> _vvres)))                                    
-                        if start < n:
-                            query_ball_point(<ckdtree*>self, &vxx[start,0], 
-                                r, p, eps, stop-start, vvres+start)
-                                
-                    vvres_uintp = <np.uintp_t> (<void*> vvres)
-                    threads = [threading.Thread(target=_thread_func,
-                               args=(self, j, vxx, r, p, eps,vvres_uintp,CHUNK))
-                                  for j in range(1+(n//CHUNK))]
-                    for t in threads:
-                        t.daemon = True
-                        t.start()
-                    for t in threads: 
-                        t.join()
-                                                                
-                else:
-                
-                    query_ball_point(<ckdtree*>self, &vxx[0,0], r, p, eps, 
-                        n, vvres)
-                
-                i = 0
-                for c in np.ndindex(retshape):
-                    m = <np.intp_t> (vvres[i].size())
-                    if NPY_LIKELY(m > 0):
-                        tmp = m * [None]
-                        cur = npy_intp_vector_buf(vvres[i])
-                        for j in range(m):
-                            tmp[j] = cur[0]
-                            cur += 1
-                        if return_sorted or return_sorted is None:
-                            result[c] = sorted(tmp)
-                        else:
-                            result[c] = tmp
+                query_ball_point(<ckdtree*>self, &vxx[0,0], &vrr[0], p, eps,
+                    n, vvres)
+
+            i = 0
+            for c in np.ndindex(retshape):
+                m = <np.intp_t> (vvres[i].size())
+                if NPY_LIKELY(m > 0):
+                    tmp = m * [None]
+                    cur = npy_intp_vector_buf(vvres[i])
+                    for j in range(m):
+                        tmp[j] = cur[0]
+                        cur += 1
+                    if return_sorted or return_sorted is None:
+                        result[c] = sorted(tmp)
                     else:
-                        result[c] = []
-                    i += 1
-        
+                        result[c] = tmp
+                else:
+                    result[c] = []
+                i += 1
+
+            return result
+
         finally:
-            if vres != NULL: 
-                del vres
-                
             if vvres != NULL:
                 for i in range(n):
                     if vvres[i] != NULL:
-                        del vvres[i]     
+                        del vvres[i]
                 PyMem_Free(vvres)
-                
-        return result   
-            
+
 
     # ---------------
     # query_ball_tree
