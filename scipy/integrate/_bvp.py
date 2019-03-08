@@ -419,7 +419,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
     # seems that they become very small eventually as the solver progresses,
     # i. e. the tolerance for BC are not very important. We set it 1.5 orders
     # lower than the BVP tolerance as well.
-    bc_tol = 5e-2 * bvp_tol
+    tol_bc = 5e-2 * bvp_tol
 
     # Maximum allowed number of Jacobian evaluation and factorization, in
     # other words the maximum number of full Newton iterations. A small value
@@ -491,7 +491,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
             break
 
         if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
-                np.all(np.abs(bc_res) < bc_tol)):
+                np.all(np.abs(bc_res) < tol_bc)):
             break
 
         # If the full step was taken, then we are going to continue with
@@ -813,8 +813,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         estimated in a root mean squared sense (using a numerical quadrature
         formula). Default is 1e-3.
     bc_tol : float, optional
-        Desired tolerance applied to boundary condition residuals. Default is
-        `tol`.
+        Desired absolute tolerance for the boundary condition residuals: `bc` 
+        value should satisfy ``abs(bc) < bc_tol`` component-wise. Equals to
+        `tol` by default.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
         terminates. Default is 1000.
