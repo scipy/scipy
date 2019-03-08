@@ -181,8 +181,12 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
-                else:
-                    self._shape = check_shape(M.shape)
+
+                self._shape = check_shape(M.shape)
+                if shape is not None:
+                    if check_shape(shape) != self._shape:
+                        raise ValueError('inconsistent shapes: %s != %s' %
+                                         (shape, self._shape))
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]

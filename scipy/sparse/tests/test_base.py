@@ -4034,6 +4034,14 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat.reshape(1,-1))
 
+        # error if second arg interpreted as shape (gh-9919)
+        with pytest.raises(TypeError, match=r'object cannot be interpreted'):
+            coo_matrix([0, 11, 22, 33], ([0, 1, 2, 3], [0, 0, 0, 0]))
+
+        # error if explicit shape arg doesn't match the dense matrix
+        with pytest.raises(ValueError, match=r'inconsistent shapes'):
+            coo_matrix([0, 11, 22, 33], shape=(4, 4))
+
     @pytest.mark.xfail(run=False, reason='COO does not have a __getitem__')
     def test_iterator(self):
         pass
