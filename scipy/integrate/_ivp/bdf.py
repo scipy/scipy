@@ -422,7 +422,8 @@ class BDF(OdeSolver):
             error_p_norm = np.inf
 
         error_norms = np.array([error_m_norm, error_norm, error_p_norm])
-        factors = error_norms ** (-1 / np.arange(order, order + 3))
+        with np.errstate(divide='ignore'): 
+            factors = error_norms ** (-1 / np.arange(order, order + 3))
 
         delta_order = np.argmax(factors) - 1
         order += delta_order
