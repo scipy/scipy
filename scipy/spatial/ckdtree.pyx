@@ -416,7 +416,7 @@ cdef extern from "ckdtree_methods.h":
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     """
     cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True)
+            balanced_tree=True, boxsize=None)
 
     kd-tree for quick nearest-neighbor lookup
 
