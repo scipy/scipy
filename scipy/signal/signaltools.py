@@ -2505,7 +2505,7 @@ def vectorstrength(events, period):
     return strength, phase
 
 
-def detrend(data, axis=-1, type='linear', bp=0):
+def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     """
     Remove linear trend along axis from data.
 
@@ -2525,6 +2525,8 @@ def detrend(data, axis=-1, type='linear', bp=0):
         A sequence of break points. If given, an individual linear fit is
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`.
+    overwrite_data : bool, optional
+        If True, perform in place detrending and avoid a copy. Default is False
 
     Returns
     -------
@@ -2567,7 +2569,8 @@ def detrend(data, axis=-1, type='linear', bp=0):
         newdims = r_[axis, 0:axis, axis + 1:rnk]
         newdata = reshape(transpose(data, tuple(newdims)),
                           (N, _prod(dshape) // N))
-        newdata = newdata.copy()  # make sure we have a copy
+        if not overwrite_data:
+            newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
         # Find leastsq fit and remove it for each piece
