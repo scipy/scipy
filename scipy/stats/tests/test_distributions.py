@@ -1223,8 +1223,18 @@ class TestKSTwo(object):
         for n in [1, 2, 3, 10, 100, 1000]:
             xn = x[x > 0.5/n]
             vals_cdf = stats.kstwo.cdf(xn, n)
-            cond = (0 < vals_cdf) & (vals_cdf < 1.0)
+            # CDFs close to 1 are better dealt with using the SF
+            cond = (0 < vals_cdf) & (vals_cdf < 0.99)
             vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond], rtol=1e-4)
+
+    def test_isf_of_sf(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = x[x > 0.5/n]
+            vals_isf = stats.kstwo.isf(xn, n)
+            cond = (0 < vals_isf) & (vals_isf < 1.0)
+            vals = stats.kstwo.sf(vals_isf, n)
             assert_allclose(vals[cond], xn[cond], rtol=1e-4)
 
     def test_ppf_of_cdf_sqrtn(self):
@@ -1234,6 +1244,16 @@ class TestKSTwo(object):
             vals_cdf = stats.kstwo.cdf(xn, n)
             cond = (0 < vals_cdf) & (vals_cdf < 1.0)
             vals = stats.kstwo.ppf(vals_cdf, n)
+            assert_allclose(vals[cond], xn[cond])
+
+    def test_isf_of_sf_sqrtn(self):
+        x = np.linspace(0, 1, 11)
+        for n in [1, 2, 3, 10, 100, 1000]:
+            xn = (x / np.sqrt(n))[x > 0.5/n]
+            vals_sf = stats.kstwo.sf(xn, n)
+            # SFs close to 1 are better dealt with using the CDF
+            cond = (0 < vals_sf) & (vals_sf < 0.95)
+            vals = stats.kstwo.isf(vals_sf, n)
             assert_allclose(vals[cond], xn[cond])
 
     def test_ppf(self):
