@@ -227,8 +227,7 @@ class _kde_subclass3(stats.gaussian_kde):
 
     def _compute_covariance(self):
         self.inv_cov = np.linalg.inv(self.covariance)
-        self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance)) \
-                                   * self.n
+        self._norm_factor = np.sqrt(np.linalg.det(2 * np.pi * self.covariance))
 
 
 class _kde_subclass4(stats.gaussian_kde):
@@ -362,7 +361,7 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(logpdf, logpdf2, decimal=12)
 
     # There are more points than data
-    gkde = stats.gaussian_kde(xs)
+    gkde = stats.gaussian_kde(xs, weights=np.random.rand(len(xs)))
     pdf = np.log(gkde.evaluate(xn))
     pdf2 = gkde.logpdf(xn)
     assert_almost_equal(pdf, pdf2, decimal=12)
