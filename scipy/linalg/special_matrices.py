@@ -1040,12 +1040,13 @@ def dft(n, scale=None):
 
 
 def fiedler(a):
-    """Returns a symmetric Fiedler matrix ``F[i, j] = np.abs(a[i] - a[j])``
+    """Returns a symmetric Fiedler matrix
 
-    Fiedler matrices have zero diagonals and nonnegative entries. A Fiedler
-    matrix has a dominant positive eigenvalue and other eigenvalues are
-    negative. Although not valid generally, for certain inputs, the inverse
-    and the determinant can be derived explicitly as given in [1]_.
+    Given an sequence of numbers `a`, Fiedler matrices have the structure
+    ``F[i, j] = np.abs(a[i] - a[j])``, and hence zero diagonals and nonnegative
+    entries. A Fiedler matrix has a dominant positive eigenvalue and other
+    eigenvalues are negative. Although not valid generally, for certain inputs,
+    the inverse and the determinant can be derived explicitly as given in [1]_.
 
     Parameters
     ----------
@@ -1060,8 +1061,10 @@ def fiedler(a):
     --------
     circulant, toeplitz
 
+    Notes
+    -----
 
-    .. versionadded:: 1.13.0
+    .. versionadded:: 1.3.0
 
     References
     ----------
@@ -1123,7 +1126,7 @@ def fiedler_companion(a):
     ----------
     a : (N,) array_like
         1-D array of polynomial coefficients in descending order with a nonzero
-        leading coefficient. For N < 2, an empty array is returned.
+        leading coefficient. For ``N < 2``, an empty array is returned.
 
     Returns
     -------
@@ -1132,17 +1135,16 @@ def fiedler_companion(a):
 
     Notes
     -----
-    Similar to `scipy.linalg.companion` the leading coefficient should be
-    nonzero. In case the leading coefficient is not 1., other coefficients
-    are rescaled before the array generation. To avoid numerical issues, it is
-    best to provide a monic polynomial.
+    Similar to `companion` the leading coefficient should be nonzero. In case
+    the leading coefficient is not 1., other coefficients are rescaled before
+    the array generation. To avoid numerical issues, it is best to provide a
+    monic polynomial.
+
+    .. versionadded:: 1.3.0
 
     See Also
     --------
     companion
-
-
-    .. versionadded:: 1.13.0
 
     References
     ----------
