@@ -67,6 +67,7 @@
 
 import numpy as np
 import scipy.special
+import scipy.special._ufuncs as scu
 import scipy.misc
 
 _E128 = 128
@@ -543,6 +544,30 @@ def _kolmogn_p(n, x):
     return pdf
 
 
+def _kolmogni(n, p, q):
+    """Compute the PPF/ISF of kolmogn.
+
+    n of type integer, n>= 1
+    p is the CDF, q the SF, p+q=1
+    """
+    if p <= 0:
+        return 1.0/n
+    if q <= 0:
+        return 1.0
+    delta = np.exp((np.log(p) - scipy.special.loggamma(n+1))/n)
+    if delta <= 1.0/n:
+        x = (delta + 1.0 / n) / 2
+        return x
+    x = -np.expm1(np.log(q/2.0)/n)
+    if x >= 1-1.0/n:
+        return x
+    x1 = scu._kolmogci(p)/np.sqrt(n)
+    x1 = min(x1, 1.0 - 1.0/n)
+    f = lambda x: _kolmogn(n, x) - p
+    x =  scipy.optimize.brentq(f, 1.0/n, x1,  xtol=1e-14)
+    return x
+
+
 def kolmogn(n, x, cdf=True):
     """Compute the CDF for the two-sided Kolmogorov-Smirnov distribution.
 
@@ -567,6 +592,20 @@ def kolmognp(n, x):
     it = np.nditer([n, x, None])
     for _n, _x, z in it:
         z[...] = _kolmogn_p(int(_n), _x)
+    result = it.operands[2]
+
+    return result
+
+
+def kolmogni(n, q, cdf=True):
+    """Compute the PPF(ISF) for the two-sided Kolmogorov-Smirnov distribution.
+
+    n may be an integer, or a numpy iterable of same.
+    q may be a float, or a numpy iterable of same.
+    The return value has shape the result of numpy broadcasting n and q."""
+    it = np.nditer([n, q, None])
+    for _n, _q, z in it:
+        z[...] = _kolmogni(int(_n), _q if cdf else 1.0-_q, 1.0-_q if cdf else _q)
     result = it.operands[2]
 
     return result

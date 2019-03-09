@@ -1659,8 +1659,6 @@ class rv_continuous(rv_generic):
         _a, _b = self._get_support(*args)
         if _a > -np.inf:
             left = _a
-        if _b < np.inf:
-            right = _b
 
         factor = 10.
         if not left:  # i.e. self.a = -inf
@@ -1669,7 +1667,10 @@ class rv_continuous(rv_generic):
                 right = left
                 left *= factor
             # left is now such that cdf(left) < q
-        if not right:  # i.e. self.b = inf
+
+        if _b < np.inf:
+            right = _b
+        else:
             right = factor
             while self._ppf_to_solve(right, q, *args) < 0.:
                 left = right

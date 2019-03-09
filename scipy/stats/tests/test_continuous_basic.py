@@ -155,15 +155,15 @@ def test_cont_basic(distname, arg):
         check_freezing(distfn, arg)
 
         # Entropy
-        if distname not in ['kstwobign']:
+        if distname not in ['kstwobign', 'kstwo']:
             check_entropy(distfn, arg, distname)
 
-        if distfn.numargs == 0:
-            check_vecentropy(distfn, arg)
+            if distfn.numargs == 0:
+                check_vecentropy(distfn, arg)
 
-        if (distfn.__class__._entropy != stats.rv_continuous._entropy
-                and distname != 'vonmises'):
-            check_private_entropy(distfn, arg, stats.rv_continuous)
+            if (distfn.__class__._entropy != stats.rv_continuous._entropy
+                    and distname != 'vonmises'):
+                check_private_entropy(distfn, arg, stats.rv_continuous)
 
         with npt.suppress_warnings() as sup:
             sup.filter(IntegrationWarning, "The occurrence of roundoff error")
