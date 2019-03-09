@@ -347,7 +347,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
     return col_fun, sys_jac
 
 
-def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
+def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     """Solve the nonlinear collocation system by a Newton method.
 
     This is a simple Newton method with a backtracking line search. As
@@ -389,6 +389,8 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
         singular term. If None, the singular term is assumed to be absent.
     bvp_tol : float
         Tolerance to which we want to solve a BVP.
+    bvp_tol : float
+        Tolerance to which we want to satisfy the boundary conditions.
 
     Returns
     -------
@@ -414,12 +416,6 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
     # the condition as col_res < tol_r * (1 + np.abs(f_middle)), then tol_r
     # should be computed as follows:
     tol_r = 2/3 * h * 5e-2 * bvp_tol
-
-    # We also need to control residuals of the boundary conditions. But it
-    # seems that they become very small eventually as the solver progresses,
-    # i. e. the tolerance for BC are not very important. We set it 1.5 orders
-    # lower than the BVP tolerance as well.
-    tol_bc = 5e-2 * bvp_tol
 
     # Maximum allowed number of Jacobian evaluation and factorization, in
     # other words the maximum number of full Newton iterations. A small value
@@ -491,7 +487,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
             break
 
         if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
-                np.all(np.abs(bc_res) < tol_bc)):
+                np.all(np.abs(bc_res) < bc_tol)):
             break
 
         # If the full step was taken, then we are going to continue with
@@ -1082,7 +1078,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped,
                                        fun_jac_wrapped, bc_jac_wrapped, x, h)
         y, p, singular = solve_newton(n, m, h, col_fun, bc_wrapped, jac_sys,
-                                      y, p, B, tol)
+                                      y, p, B, tol, bc_tol)
         iteration += 1
 
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
