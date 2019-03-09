@@ -2932,11 +2932,14 @@ class TestKSTwoSamples(object):
         x11000 = np.linspace(2, 200, 11000)
         # 10000, 11000
         self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561, mode='asymp')
-        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 1.0, mode='auto')
-        self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617, mode='exact')
+        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 1.0, mode='exact')
+        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561, mode='auto')
         self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617)
-        self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157, mode='exact')
         self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617, mode='exact')
+            self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157, mode='exact')
 
     def testNamedAtributes(self):
         # test for namedtuple attribute results
