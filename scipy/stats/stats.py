@@ -5267,17 +5267,17 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Parameters
     ----------
     data1, data2 : sequence of 1-D ndarrays
-        two arrays of sample observations assumed to be drawn from a continuous
-        distribution, sample sizes can be different
+        Two arrays of sample observations assumed to be drawn from a continuous
+        distribution, sample sizes can be different.
     alternative : {'two-sided', 'less','greater'}, optional
         Defines the alternative hypothesis (see explanation above).
         Default is 'two-sided'.
     mode : 'auto' (default), 'exact' or 'asymp', optional
         Defines the method used for calculating the p-value.
 
-          - 'exact' : use approximation to exact distribution of test statistic
-          - 'asymp' : use asymptotic distribution of test statistic
-          - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
+        - 'exact' : use approximation to exact distribution of test statistic
+        - 'asymp' : use asymptotic distribution of test statistic
+        - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
 
     Returns
     -------
@@ -5292,18 +5292,19 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     that, like in the case of the one-sample K-S test, the distribution is
     assumed to be continuous.
 
-    For small enough sample sizes, the computation is exact.  For large sizes,
-    the computation uses the Kolmogorov-Smirnov distributions to compute an
-    approximate value.
+    In the one-sided test, the alternative is that the empirical
+    cumulative distribution function G(x) of the data1 variable is "less"
+    or "greater" than the empirical cumulative distribution function F(x)
+    of the data2 variable, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
 
     If the K-S statistic is small or the p-value is high, then we cannot
     reject the hypothesis that the distributions of the two samples
     are the same.
 
-    In the one-sided test, the alternative is that the empirical
-    cumulative distribution function G(x) of the data1 variable is "less"
-    or "greater" than the empirical cumulative distribution function F(x)
-    of the data2 variable, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
+    If the mode is 'auto', the computation is exact for small enough
+    sample sizes.  For larger sizes, the computation uses the
+    Kolmogorov-Smirnov distributions to compute an approximate value.
+
 
     Examples
     --------
@@ -5335,29 +5336,30 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     (0.07999999999999996, 0.41126949729859719)
 
     """
+    LARGE_N = 10000  # 'auto' will be exact if n1,n2 <= LARGE_N
     data1 = np.sort(data1)
     data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     if min(n1, n2) == 0:
-        return Ks_2sampResult(1.0, 1.0)
+        raise ValueError('Data passed to ks_2samp must not be empty')
 
     data_all = np.concatenate([data1, data2])
     # using searchsorted solves equal data problem
-    # Strictly speaking, the cdfs are not correct at the repeated data
-    # values, but the difference between the two cdfs is correct.
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     cddiffs = cdf1 - cdf2
     minS = -np.min(cddiffs)
     maxS = np.max(cddiffs)
-    d = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}[alternative]
+    alt2Dvalue = {'less': minS, 'greater': maxS, 'two-sided': max(minS, maxS)}
+    d = alt2Dvalue[alternative]
     g = gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
+    original_mode = mode
     if mode == 'auto':
-        if max(n1, n2) <= 100000:
+        if max(n1, n2) <= LARGE_N:
             mode = 'exact'
         else:
             mode = 'asymp'
@@ -5365,7 +5367,11 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         # If lcm(n1, n2) is too big, switch from exact to asymp
         if n1g >= np.iinfo(np.int).max / n2g:
             mode = 'asymp'
+            warnings.warn(
+                "Exact ks_2samp calculation not possible with samples sizes "
+                "%d and %d. Switching to 'asymp' " % (n1, n2), RuntimeWarning)
 
+    saw_fp_error = False
     if mode == 'exact':
         lcm = (n1 // g) * n2
         h = int(np.round(d * lcm))
@@ -5373,30 +5379,48 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         if h == 0:
             prob = 1.0
         else:
-            if alternative == 'two-sided':
-                if n1 == n2:
-                    prob = _compute_prob_outside_square(n1, h)
+            try:
+                if alternative == 'two-sided':
+                    if n1 == n2:
+                        prob = _compute_prob_outside_square(n1, h)
+                    else:
+                        prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
                 else:
-                    prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
-                    print('prob=', prob)
-            else:
-                if n1 == n2:
-                    # binom(2n, n-h) / binom(2n, n)
-                    # Evaluating in that form incurs roundoff errors from special.binom
-                    # Instead calculate directly
-                    prob = 1.0
-                    for j in range(h):
-                        prob = (n1 - j) * prob / (n1 + j + 1)
-                else:
-                    try:
+                    if n1 == n2:
+                        # prob = binom(2n, n-h) / binom(2n, n)
+                        # Evaluating in that form incurs roundoff errors
+                        # from special.binom. Instead calculate directly
+                        prob = 1.0
+                        for j in range(h):
+                            prob = (n1 - j) * prob / (n1 + j + 1)
+                    else:
                         num_paths = _count_paths_outside_method(n1, n2, g, h)
                         bin = special.binom(n1 + n2, n1)
                         if not np.isfinite(bin) or not np.isfinite(num_paths) or num_paths > bin:
                             raise FloatingPointError()
                         prob = num_paths / bin
-                    except FloatingPointError:
-                        pass
-    if not np.isfinite(prob) or prob > 1 or prob < 0:
+
+            except FloatingPointError:
+                # Switch mode
+                mode = 'asymp'
+                saw_fp_error = True
+                # Can't raise warning here, inside the try
+            finally:
+                if saw_fp_error:
+                    if original_mode == 'exact':
+                        warnings.warn(
+                            "ks_2samp: Exact calculation overflowed. "
+                            "Switching to mode=%s" % mode, RuntimeWarning)
+                else:
+                    if prob > 1 or prob < 0:
+                        mode = 'asymp'
+                        if original_mode == 'exact':
+                            warnings.warn(
+                                "ks_2samp: Exact calculation incurred large"
+                                " rounding error. Switching to mode=%s" % mode,
+                                RuntimeWarning)
+
+    if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         if alternative == 'two-sided':
             en = np.sqrt(n1 * n2 / (n1 + n2))
