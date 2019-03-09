@@ -182,6 +182,7 @@ class kstwo_gen(rv_continuous):
     # Fixed a general bug in rv_continuous._ppf_single: If self.a is 0, it incorrectly
     # used -10 as the left-hand endpoint of the serach interval.
 
+
 # Use the pdf, (not the ppf) to compute moments
 kstwo = kstwo_gen(momtype=0, a=0.0, b=1.0, name='kstwo')
 
