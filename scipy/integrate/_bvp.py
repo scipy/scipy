@@ -389,7 +389,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
         singular term. If None, the singular term is assumed to be absent.
     bvp_tol : float
         Tolerance to which we want to solve a BVP.
-    bvp_tol : float
+    bc_tol : float
         Tolerance to which we want to satisfy the boundary conditions.
 
     Returns
