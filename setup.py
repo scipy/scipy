@@ -256,6 +256,8 @@ def generate_cython():
                                    "to `pip` being too old, found version {}, "
                                    "needed is >= 18.0.0.".format(
                                    pip.__version__))
+            else:
+                raise RuntimeError("Running cythonize failed!")
         except ImportError:
             raise RuntimeError("Running cythonize failed!")
 
