@@ -24,6 +24,7 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
+from distutils.version import LooseVersion
 
 
 if sys.version_info[:2] < (3, 5):
@@ -246,7 +247,17 @@ def generate_cython():
                          'scipy'],
                         cwd=cwd)
     if p != 0:
-        raise RuntimeError("Running cythonize failed!")
+        # Could be due to a too old pip version and build isolation, check that
+        try:
+            # Note, pip may not be installed or not have been used
+            import pip
+            if LooseVersion(pip.__version__) < LooseVersion('18.0.0'):
+                raise RuntimeError("Cython not found or too old. Possibly due "
+                                   "to `pip` being too old, found version {}, "
+                                   "needed is >= 18.0.0.".format(
+                                   pip.__version__))
+        except ImportError:
+            raise RuntimeError("Running cythonize failed!")
 
 
 def parse_setuppy_commands():
@@ -370,8 +381,9 @@ def parse_setuppy_commands():
             return False
 
     # If we got here, we didn't detect what setup.py command was given
-    warnings.warn("Unrecognized setuptools command, proceeding with "
-                  "generating Cython sources and expanding templates")
+    warnings.warn("Unrecognized setuptools command ('{}'), proceeding with "
+                  "generating Cython sources and expanding templates".format(
+                  ' '.join(sys.argv[1:])))
     return True
 
 
