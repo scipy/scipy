@@ -586,6 +586,11 @@ class gaussian_kde(object):
     def logpdf(self, x):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
+        
+        Notes
+        -----
+        See the ``evaluate`` docstring for more details.
+        
         """
         points = atleast_2d(x)
 
@@ -624,6 +629,7 @@ class gaussian_kde(object):
     def pdf_marginal(self, x, axis):
         """
         Evaluate the estimated marginal pdf on a provided set of points.
+        
         Parameters
         ----------
         points : (# of dimensions, # of points)-array
@@ -632,16 +638,19 @@ class gaussian_kde(object):
         axis : int or 1-d array-like
             Axis (axes) along which marginal pdf is evaluated. In the case of
             1-d array-like, the elements should also be integers.
+        
         Returns
         -------
         values : (# of points,)-array
             The values at each point.
+        
         Raises
         ------
         ValueError : if the dimensionality of the input points is larger than
                      the dimensionality of the KDE, or if it's different from
                      the length of axis, or if the input axis is not consisted 
                      of integers.
+        
         """
         points = atleast_2d(x)
         ax = atleast_1d(axis)
@@ -694,8 +703,11 @@ class gaussian_kde(object):
     def logpdf_marginal(self, x, axis):
         """
         Evaluate the log of estimated marginal pdf on a provided set of points.
+        
+        Notes
         -----
         See the ``pdf_marginal`` docstring for more details.
+        
         """
         points = atleast_2d(x)
         ax = atleast_1d(axis)
