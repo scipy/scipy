@@ -20,7 +20,7 @@
 from __future__ import division, print_function, absolute_import
 
 # Standard library imports.
-import warnings
+import warnings, numbers
 
 # SciPy imports.
 from scipy._lib.six import callable, string_types
@@ -96,6 +96,8 @@ class gaussian_kde(object):
     integrate_kde
     pdf
     logpdf
+    pdf_marginal
+    logpdf_marginal
     resample
     set_bandwidth
     covariance_factor
@@ -585,7 +587,6 @@ class gaussian_kde(object):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
         """
-
         points = atleast_2d(x)
 
         d, m = points.shape
@@ -617,6 +618,125 @@ class gaussian_kde(object):
                 energy = sum(diff * tdiff, axis=0) / 2.0
                 result[i] = logsumexp(-energy, b=self.weights / 
                                       self._norm_factor)
+
+        return result
+      
+    def pdf_marginal(self, x, axis):
+        """
+        Evaluate the estimated marginal pdf on a provided set of points.
+        Parameters
+        ----------
+        points : (# of dimensions, # of points)-array
+            Alternatively, a (# of dimensions,) vector can be passed in and
+            treated as a single point.
+        axis : int or 1-d array-like
+            Axis (axes) along which marginal pdf is evaluated. In the case of
+            1-d array-like, the elements should also be integers.
+        Returns
+        -------
+        values : (# of points,)-array
+            The values at each point.
+        Raises
+        ------
+        ValueError : if the dimensionality of the input points is larger than
+                     the dimensionality of the KDE, or if it's different from
+                     the length of axis, or if the input axis is not consisted 
+                     of integers.
+        """
+        points = atleast_2d(x)
+        ax = atleast_1d(axis)
+
+        if not issubclass(ax.dtype.type, numbers.Integral):
+            msg = "elements of axis should be intergers"
+            raise ValueError(msg)
+
+        d, m = points.shape
+        if ax.size > self.d or ax.size == 0:
+            msg = "axis have dimension %s, dataset has dimension %s" % \
+                (ax.size, self.d)
+            raise ValueError(msg)
+
+        if d != ax.size:
+            if d == 1 and m == ax.size:
+                # points was passed in as a row vector
+                points = reshape(points, (m, 1))
+                d = ax.size
+                m = 1
+            else:
+                msg = "points have dimension %s, axis has dimension %s" % \
+                (d, ax.size)
+
+        cov = self.covariance[ax[:, newaxis], ax]
+        inv_cov = linalg.inv(cov)
+        
+        whitening = linalg.cholesky(inv_cov).T
+        scaled_dataset = dot(whitening, self.dataset[ax])
+        scaled_points = dot(whitening, points)
+        norm_factor = sqrt(linalg.det(2*pi*cov))
+
+        if m >= self.n:
+            # there are more points than data, so loop over data
+            energy = np.array([sum((scaled_dataset[:, i, newaxis] - scaled_points)
+                * (scaled_dataset[:, i, newaxis] - scaled_points), axis=0) / 2.0 
+                for i in range(self.n)])
+            result = dot(self.weights, exp(-energy))
+        else:
+            # loop over points
+            result = np.array([sum(exp(-sum((scaled_dataset - 
+                scaled_points[:, i, newaxis]) * (scaled_dataset - 
+                scaled_points[:, i, newaxis]), axis=0) / 2.0) * self.weights, 
+                axis=0) for i in range(m)])
+
+        result = result / norm_factor
+
+        return result
+
+    def logpdf_marginal(self, x, axis):
+        """
+        Evaluate the log of estimated marginal pdf on a provided set of points.
+        -----
+        See the ``pdf_marginal`` docstring for more details.
+        """
+        points = atleast_2d(x)
+        ax = atleast_1d(axis)
+
+        if not issubclass(ax.dtype.type, numbers.Integral):
+            msg = "elements of axis should be intergers"
+            raise ValueError(msg)
+
+        d, m = points.shape
+        if ax.size > self.d or ax.size == 0:
+            msg = "axis have dimension %s, dataset has dimension %s" % \
+                (ax.size, self.d)
+            raise ValueError(msg)
+
+        if d != ax.size:
+            if d == 1 and m == ax.size:
+                # points was passed in as a row vector
+                points = reshape(points, (m, 1))
+                d = ax.size
+                m = 1
+            else:
+                msg = "points have dimension %s, axis has dimension %s" % \
+                (d, ax.size)
+
+        cov = self.covariance[ax[:, newaxis], ax]
+        inv_cov = linalg.inv(cov)
+        dataset = self.dataset[ax]
+        norm_factor = sqrt(linalg.det(2*pi*cov))
+
+        if m >= self.n:
+            # there are more points than data, so loop over data
+            energy = np.array([sum((dataset[:, i, newaxis] - points) * 
+                dot(inv_cov, dataset[:, i, newaxis] - points), axis=0) / 2.0 
+                for i in range(self.n)])
+            result = logsumexp(-energy.T, b = self.weights / norm_factor,
+                axis = 1)
+        else:
+            # loop over points
+            result = np.array([logsumexp(-sum((dataset - points[:, i, newaxis]) *
+                dot(inv_cov, dataset - points[:, i, newaxis]), axis = 0) /
+                2.0, b = self.weights / norm_factor) for i in range(m)])
 
         return result
 
