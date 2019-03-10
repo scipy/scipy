@@ -15,10 +15,11 @@ jobs:
            docker pull i386/ubuntu:bionic
            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
            apt-get -y update && \
-           apt-get -y install python3.6-dev pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
-           python3 -m ensurepip && \
-           pip3 install --upgrade pip && \
-           pip3 install setuptools wheel numpy cython==0.29 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib && \
+           apt-get -y install curl python3.6-dev python3.6 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
+           curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+           python3.6 get-pip.py && \
+           pip3 --version && \
+           pip3 install setuptools wheel numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib --user && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
@@ -27,7 +28,7 @@ jobs:
            cp -r ./usr/local/lib/* /usr/lib && \
            cp ./usr/local/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml"
+           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     inputs:
