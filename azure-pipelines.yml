@@ -91,7 +91,7 @@ jobs:
       choco install -y mingw --forcex86 --force --version=5.3.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: eq(variables['BITS'], 32)
-  - script: python -m pip install numpy cython==0.28.5 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib
+  - script: python -m pip install numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib
     displayName: 'Install dependencies'
   - powershell: |
       # need a version of NumPy distutils that can build
