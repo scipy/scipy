@@ -210,67 +210,53 @@ class gaussian_kde(object):
 
         self.set_bandwidth(bw_method=bw_method)
 
-    def evaluate(self, points):
+    def evaluate(self, x):
         """Evaluate the estimated pdf on a set of points.
-
+        
         Parameters
         ----------
-        points : (# of dimensions, # of points)-array
+        x : (# of dimensions, # of points)-array
             Alternatively, a (# of dimensions,) vector can be passed in and
             treated as a single point.
-
+            
         Returns
         -------
         values : (# of points,)-array
             The values at each point.
-
+            
         Raises
         ------
-        ValueError : if the dimensionality of the input points is different than
-                     the dimensionality of the KDE.
-
+        ValueError
+            If the dimensionality of the input points is different than
+            the dimensionality of the KDE.
+        
         """
-        points = atleast_2d(points)
+        points = atleast_2d(x)
 
         d, m = points.shape
         if d != self.d:
             if d == 1 and m == self.d:
                 # points was passed in as a row vector
                 points = reshape(points, (self.d, 1))
+                d = self.d
                 m = 1
             else:
                 msg = "points have dimension %s, dataset has dimension %s" % (d,
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=float)
+        diff = self.dataset[:, :, np.newaxis] - points[:, np.newaxis, :]
+        # (# of dim, # of data, # of points)
 
-        whitening = linalg.cholesky(self.inv_cov)
-        scaled_dataset = dot(whitening, self.dataset)
-        scaled_points = dot(whitening, points)
-
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            for i in range(self.n):
-                diff = scaled_dataset[:, i, newaxis] - scaled_points
-                energy = sum(diff * diff, axis=0) / 2.0
-                result += self.weights[i]*exp(-energy)
-        else:
-            # loop over points
-            for i in range(m):
-                diff = scaled_dataset - scaled_points[:, i, newaxis]
-                energy = sum(diff * diff, axis=0) / 2.0
-                result[i] = sum(exp(-energy)*self.weights, axis=0)
-
-        result = result / self._norm_factor
+        energy = np.einsum('ijk, il, ljk-> jk', diff, self.inv_cov, diff) / 2
+        result = (self.weights @ np.exp(-energy)) / self._norm_factor
 
         return result
 
     __call__ = evaluate
 
     def integrate_gaussian(self, mean, cov):
-        """
-        Multiply estimated density by a multivariate Gaussian and integrate
+        """Multiply estimated density by a multivariate Gaussian and integrate
         over the whole space.
 
         Parameters
@@ -440,8 +426,7 @@ class gaussian_kde(object):
         return result
 
     def resample(self, size=None):
-        """
-        Randomly sample a dataset from the estimated pdf.
+        """Randomly sample a dataset from the estimated pdf.
 
         Parameters
         ----------
@@ -473,6 +458,7 @@ class gaussian_kde(object):
         -------
         s : float
             Scott's factor.
+        
         """
         return power(self.neff, -1./(self.d+4))
 
@@ -483,6 +469,7 @@ class gaussian_kde(object):
         -------
         s : float
             The silverman factor.
+        
         """
         return power(self.neff*(self.d+2.0)/4.0, -1./(self.d+4))
 
@@ -559,6 +546,7 @@ class gaussian_kde(object):
     def _compute_covariance(self):
         """Computes the covariance matrix for each Gaussian kernel using
         covariance_factor().
+        
         """
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
@@ -585,8 +573,7 @@ class gaussian_kde(object):
         return self.evaluate(x)
 
     def logpdf(self, x):
-        """
-        Evaluate the log of the estimated pdf on a provided set of points.
+        """Evaluate the log of the estimated pdf on a provided set of points.
         
         Notes
         -----
@@ -600,43 +587,31 @@ class gaussian_kde(object):
             if d == 1 and m == self.d:
                 # points was passed in as a row vector
                 points = reshape(points, (self.d, 1))
+                d = self.d
                 m = 1
             else:
                 msg = "points have dimension %s, dataset has dimension %s" % (d,
                     self.d)
                 raise ValueError(msg)
 
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            energy = zeros((self.n, m), dtype=float)
-            for i in range(self.n):
-                diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
-                energy[i] = sum(diff*tdiff, axis=0) / 2.0
-            result = logsumexp(-energy.T,
-                               b=self.weights / self._norm_factor, axis=1)
-        else:
-            # loop over points
-            result = zeros((m,), dtype=float)
-            for i in range(m):
-                diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=self.weights / 
-                                      self._norm_factor)
+        diff = self.dataset[:, :, np.newaxis] - points[:, np.newaxis, :]
+        # (# of dim, # of data, # of points)
+
+        energy = np.einsum('ijk, il, ljk-> jk', diff, self.inv_cov, diff) / 2
+        result = logsumexp(-energy.T, b = self.weights / self._norm_factor,
+            axis = 1)
 
         return result
-      
+    
     def pdf_marginal(self, x, axis):
-        """
-        Evaluate the estimated marginal pdf on a provided set of points.
-        
+        """Evaluate the estimated marginal pdf on a provided set of points.
+
         Parameters
         ----------
-        points : (# of dimensions, # of points)-array
+        x : (# of dimensions, # of points)-array
             Alternatively, a (# of dimensions,) vector can be passed in and
             treated as a single point.
-        axis : int or 1-d array-like
+        axis : int or 1-d array_like
             Axis (axes) along which marginal pdf is evaluated. In the case of
             1-d array-like, the elements should also be integers.
         
@@ -647,67 +622,14 @@ class gaussian_kde(object):
         
         Raises
         ------
-        ValueError : if the dimensionality of the input points is larger than
-                     the dimensionality of the KDE, or if it's different from
-                     the length of axis, or if the input axis is not consisted 
-                     of integers.
-        
-        """
-        points = atleast_2d(x)
-        ax = atleast_1d(axis)
-
-        if not issubclass(ax.dtype.type, numbers.Integral):
-            msg = "elements of axis should be intergers"
-            raise ValueError(msg)
-
-        d, m = points.shape
-        if ax.size > self.d or ax.size == 0:
-            msg = "axis have dimension %s, dataset has dimension %s" % \
-                (ax.size, self.d)
-            raise ValueError(msg)
-
-        if d != ax.size:
-            if d == 1 and m == ax.size:
-                # points was passed in as a row vector
-                points = reshape(points, (m, 1))
-                d = ax.size
-                m = 1
-            else:
-                msg = "points have dimension %s, axis has dimension %s" % \
-                (d, ax.size)
-
-        cov = self.covariance[ax[:, newaxis], ax]
-        inv_cov = linalg.inv(cov)
-        
-        whitening = linalg.cholesky(inv_cov)
-        scaled_dataset = dot(whitening, self.dataset[ax])
-        scaled_points = dot(whitening, points)
-        norm_factor = sqrt(linalg.det(2*pi*cov))
-
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            energy = np.array([sum((scaled_dataset[:, i, newaxis] - scaled_points)
-                * (scaled_dataset[:, i, newaxis] - scaled_points), axis=0) / 2.0 
-                for i in range(self.n)])
-            result = dot(self.weights, exp(-energy))
-        else:
-            # loop over points
-            result = np.array([sum(exp(-sum((scaled_dataset - 
-                scaled_points[:, i, newaxis]) * (scaled_dataset - 
-                scaled_points[:, i, newaxis]), axis=0) / 2.0) * self.weights, 
-                axis=0) for i in range(m)])
-
-        result = result / norm_factor
-
-        return result
-
-    def logpdf_marginal(self, x, axis):
-        """
-        Evaluate the log of estimated marginal pdf on a provided set of points.
+        ValueError
+            If the dimensionality of the input points is larger than the 
+            dimensionality of the KDE, or if it's different from the length of
+            axis, or if the input axis is not consisted of integers.
         
         Notes
         -----
-        See the ``pdf_marginal`` docstring for more details.
+        .. versionadded:: 1.3.0
         
         """
         points = atleast_2d(x)
@@ -734,22 +656,69 @@ class gaussian_kde(object):
                 (d, ax.size)
 
         cov = self.covariance[ax[:, newaxis], ax]
-        inv_cov = linalg.inv(cov)
         dataset = self.dataset[ax]
-        norm_factor = sqrt(linalg.det(2*pi*cov))
+        diff = dataset[:, :, np.newaxis] - points[:, np.newaxis, :]
+        # (# of dim, # of data, # of points)
 
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            energy = np.array([sum((dataset[:, i, newaxis] - points) * 
-                dot(inv_cov, dataset[:, i, newaxis] - points), axis=0) / 2.0 
-                for i in range(self.n)])
-            result = logsumexp(-energy.T, b = self.weights / norm_factor,
-                axis = 1)
+        if d == 1:
+            norm_factor = sqrt(2 * pi * cov[0, 0])
+            inv_cov_diff = diff / cov
         else:
-            # loop over points
-            result = np.array([logsumexp(-sum((dataset - points[:, i, newaxis]) *
-                dot(inv_cov, dataset - points[:, i, newaxis]), axis = 0) /
-                2.0, b = self.weights / norm_factor) for i in range(m)])
+            norm_factor = (2 * pi) ** (d / 2) * linalg.det(cov) ** (1 / 2)
+            inv_cov_diff = linalg.solve(cov, diff, assume_a='pos')
+
+        energy = np.einsum('ijk, ijk-> jk', diff, inv_cov_diff) / 2
+        result = (self.weights @ np.exp(-energy)) / norm_factor
+
+        return result
+    
+    def logpdf_marginal(self, x, axis):
+        """Evaluate the log of estimated marginal pdf on a provided set of points.
+        
+        Notes
+        -----
+        .. versionadded:: 1.3.0
+
+        See the ``pdf_marginal`` docstring for more details.
+        """
+        points = atleast_2d(x)
+        ax = atleast_1d(axis)
+
+        if not issubclass(ax.dtype.type, numbers.Integral):
+            msg = "elements of axis should be intergers"
+            raise ValueError(msg)
+
+        d, m = points.shape
+        if ax.size > self.d or ax.size == 0:
+            msg = "axis have dimension %s, dataset has dimension %s" % \
+                (ax.size, self.d)
+            raise ValueError(msg)
+
+        if d != ax.size:
+            if d == 1 and m == ax.size:
+                # points was passed in as a row vector
+                points = reshape(points, (m, 1))
+                d = ax.size
+                m = 1
+            else:
+                msg = "points have dimension %s, axis has dimension %s" % \
+                (d, ax.size)
+
+        cov = self.covariance[ax[:, newaxis], ax]
+        dataset = self.dataset[ax]
+        diff = dataset[:, :, np.newaxis] - points[:, np.newaxis, :]
+        # (# of dim, # of data, # of points)
+
+        if d == 1:
+            norm_factor = sqrt(2 * pi * cov[0, 0])
+            inv_cov_diff = diff / cov
+        else:
+            norm_factor = (2 * pi) ** (d / 2) * linalg.det(cov) ** (1 / 2)
+            inv_cov_diff = linalg.solve(cov, diff, assume_a='pos')
+
+        energy = np.einsum('ijk, ijk-> jk', diff, inv_cov_diff) / 2
+        result = logsumexp(-energy.T, b = self.weights / norm_factor,
+            axis = 1)
 
         return result
 
