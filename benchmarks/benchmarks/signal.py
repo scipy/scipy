@@ -176,9 +176,10 @@ class Upfirdn1D(Benchmark):
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512, 2048]:
-                    h = np.random.randn(nfilt)
-                    x = np.random.randn(n)
-                    pairs.append((h, x))
+                h = np.random.randn(nfilt)
+                x = np.random.randn(n)
+                pairs.append((h, x))
+
         self.pairs = pairs
 
     def time_upfirdn1d(self, up, down):
@@ -200,9 +201,10 @@ class Upfirdn2D(Benchmark):
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512]:
-                    h = np.random.randn(nfilt)
-                    x = np.random.randn(n, n)
-                    pairs.append((h, x))
+                h = np.random.randn(nfilt)
+                x = np.random.randn(n, n)
+                pairs.append((h, x))
+
         self.pairs = pairs
 
     def time_upfirdn2d(self, up, down, axis):
