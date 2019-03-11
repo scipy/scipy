@@ -3627,6 +3627,14 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+    def test_binop_explicit_zeros(self):
+        # Check that binary ops don't introduce spurious explicit zeros.
+        # See gh-9619 for context.
+        a = csr_matrix([0, 1, 0])
+        b = csr_matrix([1, 1, 0])
+        assert (a + b).nnz == 2
+        assert a.multiply(b).nnz == 1
+
 
 TestCSR.init_class()
 
