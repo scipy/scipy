@@ -1176,7 +1176,7 @@ def fiedler_companion(a):
         return np.array([], dtype=a.dtype)
 
     if a[0] == 0.:
-            raise ValueError('Leading coefficient is zero.')
+        raise ValueError('Leading coefficient is zero.')
 
     a = a/a[0]
     n = a.size - 1
