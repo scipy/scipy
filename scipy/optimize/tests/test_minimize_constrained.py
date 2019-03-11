@@ -631,13 +631,23 @@ class TestEmptyConstraint(TestCase):
     """
     def test_empty_constraint(self):
 
-        def function(x): return x[0]**2 + x[1]**2
-        def functionjacobian(x): return np.array([2.*x[0], 2.*x[1]])
-        def functionhvp(x, v): return 2.*v
+        def function(x):
+            return x[0]**2 + x[1]**2
 
-        def constraint(x): return np.array([x[0]**2 - x[1]**2])
-        def constraintjacobian(x): return np.array([[2*x[0], -2*x[1]]])
-        def constraintlcoh(x, v): return np.array([[2., 0.], [0., -2.]]) * v[0]
+        def functionjacobian(x):
+            return np.array([2.*x[0], 2.*x[1]])
+
+        def functionhvp(x, v):
+            return 2.*v
+
+        def constraint(x):
+            return np.array([x[0]**2 - x[1]**2])
+
+        def constraintjacobian(x):
+            return np.array([[2*x[0], -2*x[1]]])
+
+        def constraintlcoh(x, v):
+            return np.array([[2., 0.], [0., -2.]]) * v[0]
 
         constraint = NonlinearConstraint(constraint, 1., np.inf, constraintjacobian, constraintlcoh)
 
