@@ -20,7 +20,8 @@
 from __future__ import division, print_function, absolute_import
 
 # Standard library imports.
-import warnings, numbers
+import warnings
+import numbers
 
 # SciPy imports.
 from scipy._lib.six import callable, string_types
