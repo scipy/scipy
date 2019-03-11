@@ -678,7 +678,7 @@ class gaussian_kde(object):
         cov = self.covariance[ax[:, newaxis], ax]
         inv_cov = linalg.inv(cov)
         
-        whitening = linalg.cholesky(inv_cov).T
+        whitening = linalg.cholesky(inv_cov)
         scaled_dataset = dot(whitening, self.dataset[ax])
         scaled_points = dot(whitening, points)
         norm_factor = sqrt(linalg.det(2*pi*cov))
