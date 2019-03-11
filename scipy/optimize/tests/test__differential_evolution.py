@@ -538,11 +538,11 @@ class TestDifferentialEvolutionSolver(object):
     def test_parallel(self):
         # smoke test for parallelisation with deferred updating
         bounds = [(0., 2.), (0., 2.)]
-        with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(rosen, bounds,
-             updating='deferred', workers=p.map) as solver:
-                assert_(solver._mapwrapper.pool is not None)
-                assert_(solver._updating == 'deferred')
-                solver.solve()
+        with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
+                rosen, bounds, updating='deferred', workers=p.map) as solver:
+            assert_(solver._mapwrapper.pool is not None)
+            assert_(solver._updating == 'deferred')
+            solver.solve()
 
         with DifferentialEvolutionSolver(rosen, bounds, updating='deferred',
                                          workers=2) as solver:
