@@ -745,7 +745,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         for(I jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
 
-            if(result != 0 || A_row[head] == 0){
+            if(result != 0){
                 Cj[nnz] = head;
                 Cx[nnz] = result;
                 nnz++;
@@ -776,7 +776,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
  * Note:
  *   Input:  A and B column indices are assumed to be in sorted order
  *   Output: C column indices will be in sorted order
- *           Cx will contain non zero and explicit zero entries
+ *           Cx will not contain any zero entries
  *
  */
 template <class I, class T, class T2, class binary_op>
@@ -804,7 +804,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 
             if(A_j == B_j){
                 T result = op(Ax[A_pos],Bx[B_pos]);
-                if(result != 0 || Ax[A_pos] == 0){
+                if(result != 0){
                     Cj[nnz] = A_j;
                     Cx[nnz] = result;
                     nnz++;
@@ -813,16 +813,20 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
                 B_pos++;
             } else if (A_j < B_j) {
                 T result = op(Ax[A_pos],0);
-                Cj[nnz] = A_j;
-                Cx[nnz] = result;
-                nnz++;
+                if (result != 0){
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
                 A_pos++;
             } else {
                 //B_j < A_j
                 T result = op(0,Bx[B_pos]);
-                Cj[nnz] = B_j;
-                Cx[nnz] = result;
-                nnz++;
+                if (result != 0){
+                    Cj[nnz] = B_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
                 B_pos++;
             }
         }
@@ -830,16 +834,20 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
         //tail
         while(A_pos < A_end){
             T result = op(Ax[A_pos],0);
-            Cj[nnz] = Aj[A_pos];
-            Cx[nnz] = result;
-            nnz++;
+            if (result != 0){
+                Cj[nnz] = Aj[A_pos];
+                Cx[nnz] = result;
+                nnz++;
+            }
             A_pos++;
         }
         while(B_pos < B_end){
             T result = op(0,Bx[B_pos]);
-            Cj[nnz] = Bj[B_pos];
-            Cx[nnz] = result;
-            nnz++;
+            if (result != 0){
+                Cj[nnz] = Bj[B_pos];
+                Cx[nnz] = result;
+                nnz++;
+            }
             B_pos++;
         }
 
