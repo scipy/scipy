@@ -589,8 +589,51 @@ class TestHypergeom(object):
         N = 5e4
 
         result = stats.hypergeom.logsf(k, M, n, N)
-        exspected = -2239.771   # From R
-        assert_almost_equal(result, exspected, decimal=3)
+        expected = -2239.771   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        k = 1
+        M = 1600
+        n = 600
+        N = 300
+
+        result = stats.hypergeom.logsf(k, M, n, N)
+        expected = -2.566567e-68   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+    def test_logcdf(self):
+        # Test logcdf for very large numbers. See issue #8692
+        # Results compare with those from R (v3.3.2):
+        # phyper(k, n, M-n, N, lower.tail=TRUE, log.p=TRUE)
+        # -5273.335
+
+        k = 1
+        M = 1e7
+        n = 1e6
+        N = 5e4
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -5273.335   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        # Same example as in issue #8692
+        k = 40
+        M = 1600
+        n = 50
+        N = 300
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -7.565148879229e-23    # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        k = 125
+        M = 1600
+        n = 250
+        N = 500
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -4.242688e-12    # From R
+        assert_almost_equal(result, expected, decimal=3)
 
 
 class TestLoggamma(object):
