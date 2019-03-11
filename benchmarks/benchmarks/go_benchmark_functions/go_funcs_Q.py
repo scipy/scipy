@@ -7,8 +7,7 @@ from .go_benchmark import Benchmark
 
 
 class Qing(Benchmark):
-
-    """
+    r"""
     Qing objective function.
 
     This class defines the Qing [1]_ global optimization problem. This is a
@@ -48,8 +47,7 @@ class Qing(Benchmark):
 
 
 class Quadratic(Benchmark):
-
-    """
+    r"""
     Quadratic objective function.
 
     This class defines the Quadratic [1]_ global optimization problem. This
@@ -89,8 +87,7 @@ class Quadratic(Benchmark):
 
 
 class Quintic(Benchmark):
-
-    """
+    r"""
     Quintic objective function.
 
     This class defines the Quintic [1]_ global optimization problem. This is a
