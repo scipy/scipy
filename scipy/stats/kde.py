@@ -248,7 +248,8 @@ class gaussian_kde(object):
         diff = self.dataset[:, :, np.newaxis] - points[:, np.newaxis, :]
         # (# of dim, # of data, # of points)
 
-        energy = np.einsum('ijk, il, ljk-> jk', diff, self.inv_cov, diff) / 2
+        icd = np.tensordot(self.inv_cov, diff, axes=1)
+        energy = sum(diff * icd, axis=0) / 2
         result = (self.weights @ np.exp(-energy)) / self._norm_factor
 
         return result
@@ -597,7 +598,8 @@ class gaussian_kde(object):
         diff = self.dataset[:, :, np.newaxis] - points[:, np.newaxis, :]
         # (# of dim, # of data, # of points)
 
-        energy = np.einsum('ijk, il, ljk-> jk', diff, self.inv_cov, diff) / 2
+        icd = np.tensordot(self.inv_cov, diff, axes=1)
+        energy = sum(diff * icd, axis=0) / 2
         result = logsumexp(-energy.T, b = self.weights / self._norm_factor,
             axis = 1)
 
@@ -662,12 +664,12 @@ class gaussian_kde(object):
 
         if d == 1:
             norm_factor = sqrt(2 * pi * cov[0, 0])
-            inv_cov_diff = diff / cov
+            icd = diff / cov
         else:
             norm_factor = (2 * pi) ** (d / 2) * linalg.det(cov) ** (1 / 2)
-            inv_cov_diff = linalg.solve(cov, diff, assume_a='pos')
+            icd = linalg.solve(cov, diff, assume_a='pos')
 
-        energy = np.einsum('ijk, ijk-> jk', diff, inv_cov_diff) / 2
+        energy = sum(diff * icd, axis=0) / 2
         result = (self.weights @ np.exp(-energy)) / norm_factor
 
         return result
@@ -711,12 +713,12 @@ class gaussian_kde(object):
 
         if d == 1:
             norm_factor = sqrt(2 * pi * cov[0, 0])
-            inv_cov_diff = diff / cov
+            icd = diff / cov
         else:
             norm_factor = (2 * pi) ** (d / 2) * linalg.det(cov) ** (1 / 2)
-            inv_cov_diff = linalg.solve(cov, diff, assume_a='pos')
+            icd = linalg.solve(cov, diff, assume_a='pos')
 
-        energy = np.einsum('ijk, ijk-> jk', diff, inv_cov_diff) / 2
+        energy = sum(diff * icd, axis=0) / 2
         result = logsumexp(-energy.T, b = self.weights / norm_factor,
             axis = 1)
 
