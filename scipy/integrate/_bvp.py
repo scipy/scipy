@@ -710,7 +710,7 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
 
 
 def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
-              tol=1e-3, bc_tol=None, max_nodes=1000, verbose=0):
+              tol=1e-3, max_nodes=1000, verbose=0, bc_tol=None):
     """Solve a boundary-value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
@@ -808,10 +808,6 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         mesh interval ``norm(r / (1 + abs(f)) < tol``, where ``norm`` is
         estimated in a root mean squared sense (using a numerical quadrature
         formula). Default is 1e-3.
-    bc_tol : float, optional
-        Desired absolute tolerance for the boundary condition residuals: `bc` 
-        value should satisfy ``abs(bc) < bc_tol`` component-wise. Equals to
-        `tol` by default.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
         terminates. Default is 1000.
@@ -821,6 +817,10 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             * 0 (default) : work silently.
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+    bc_tol : float, optional
+        Desired absolute tolerance for the boundary condition residuals: `bc` 
+        value should satisfy ``abs(bc) < bc_tol`` component-wise. Equals to
+        `tol` by default.
 
     Returns
     -------
