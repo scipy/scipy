@@ -98,17 +98,6 @@ install:
   # Install the scipy test dependencies.
   - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2 -r tools/ci/appveyor/requirements.txt'
 
-  # Replace numpy distutils with a version that can build with msvc + mingw-gfortran
-  - ps: |
-      $NumpyDir = $((python -c 'import os; import numpy; print(os.path.dirname(numpy.__file__))') | Out-String).Trim()
-      rm -r -Force "$NumpyDir\distutils"
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-
-      echo $env:NUMPY_HEAD
-      echo $env:NUMPY_BRANCH
-      git clone -q --depth=1 -b $env:NUMPY_BRANCH $env:NUMPY_HEAD $tmpdir
-      mv $tmpdir\numpy\distutils $NumpyDir
-
 build_script:
   - ps: |
       $PYTHON_ARCH = $env:PYTHON_ARCH
