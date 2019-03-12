@@ -95,15 +95,6 @@ jobs:
   - script: python -m pip install numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib
     displayName: 'Install dependencies'
   - powershell: |
-      # need a version of NumPy distutils that can build
-      # with msvc + mingw-gfortran
-      $NumpyDir = $((python -c 'import os; import numpy; print(os.path.dirname(numpy.__file__))') | Out-String).Trim()
-      rm -r -Force "$NumpyDir\distutils"
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-      git clone -q --depth=1 -b master https://github.com/numpy/numpy.git $tmpdir
-      mv $tmpdir\numpy\distutils $NumpyDir
-    displayName: 'Replace NumPy distutils'
-  - powershell: |
       If ($(BITS) -eq 32) {
           # 32-bit build requires careful adjustments
           # until Microsoft has a switch we can use
