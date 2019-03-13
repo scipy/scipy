@@ -4738,3 +4738,59 @@ class TestRatioUniforms(object):
 
         assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
                      True)
+
+
+class TestEppsSingleton(object):
+    def test_statistic_1(self):
+        # first example in Goerg & Kaiser, also in original paper of
+        # Epps & Singleton. Note: values do not match exactly, the
+        # value of the interquartile range varies depending on how
+        # quantiles are computed
+        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35, 2.69, 0.46, -0.94, -0.37, 12.07])
+        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71, 4.29, 5.00, 7.74, 8.38, 8.60])
+        w, p = stats.epps_singleton_2samp(x, y)
+        assert_almost_equal(w, 15.14, decimal=1)
+        assert_almost_equal(p, 0.00442, decimal=3)
+
+    def test_statistic_2(self):
+        # second example in Goerg & Kaiser, again not a perfect match
+        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
+                      10, 10, 10))
+        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
+                      5, 8, 10))
+        w, p = stats.epps_singleton_2samp(x, y)
+        assert_allclose(w, 8.900, atol=0.001)
+        assert_almost_equal(p, 0.06364, decimal=3)
+
+    def test_epps_singleton_array_like(self):
+        np.random.seed(1234)
+        x, y = np.arange(30), np.arange(28)
+
+        w1, p1 = stats.epps_singleton_2samp(list(x), list(y))
+        w2, p2 = stats.epps_singleton_2samp(tuple(x), tuple(y))
+        w3, p3 = stats.epps_singleton_2samp(x, y)
+
+        assert_(w1 == w2 == w3)
+        assert_(p1 == p2 == p3)
+
+    def test_epps_singleton_size(self):
+        # raise error if less than 5 elements
+        x, y = (1, 2, 3, 4), np.arange(10)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+
+    def test_epps_singleton_nonfinite(self):
+        # raise error if there are non-finite values
+        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+
+    def test_epps_singleton_1d_input(self):
+        x = np.arange(100).reshape(-1, 1)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, x)
+
+    def test_names(self):
+        x, y = np.arange(20), np.arange(30)
+        res = stats.epps_singleton_2samp(x, y)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
