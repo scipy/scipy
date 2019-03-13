@@ -271,22 +271,31 @@ class Test_vectorization_compiled:
         assert_(np.all(~np.isfinite(d[:,:,-s:])))
         assert_(np.all(i[:,:,-s:] == self.kdtree.n))
 
-
 class ball_consistency:
+    tol = 0.0
+
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski_distance(a * 1.0, b * 1.0, p)
 
     def test_in_ball(self):
-        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
-        for i in l:
-            assert_(self.distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
+        x = np.atleast_2d(self.x)
+        d = np.broadcast_to(self.d, x.shape[:-1])
+        l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
+        for i, ind in enumerate(l):
+            dist = self.distance(self.data[ind], x[i],self.p) - d[i]*(1.+self.eps)
+            norm = self.distance(self.data[ind], x[i],self.p) + d[i]*(1.+self.eps)
+            assert_array_equal(dist < self.tol * norm, True)
 
     def test_found_all(self):
-        c = np.ones(self.T.n,dtype=bool)
-        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
-        c[l] = False
-        assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
-
+        x = np.atleast_2d(self.x)
+        d = np.broadcast_to(self.d, x.shape[:-1])
+        l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
+        for i, ind in enumerate(l):
+            c = np.ones(self.T.n, dtype=bool)
+            c[ind] = False
+            dist = self.distance(self.data[c], x[i],self.p) - d[i]/(1.+self.eps)
+            norm = self.distance(self.data[c], x[i],self.p) + d[i]/(1.+self.eps)
+            assert_array_equal(dist > -self.tol * norm, True)
 
 class Test_random_ball(ball_consistency):
 
@@ -347,6 +356,22 @@ class Test_random_ball_compiled_periodic(ball_consistency):
         l = self.T.query_ball_point(self.x - 1.0, self.d, p=self.p, eps=self.eps)
         c[l] = False
         assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
+
+class Test_random_ball_compiled_largep_issue9890(ball_consistency):
+
+    # allow some roundoff errors due to numerical issues
+    tol = 1e-13
+
+    def setup_method(self):
+        n = 1000
+        m = 2
+        np.random.seed(123)
+        self.data = np.random.randint(100, 1000, size=(n, m))
+        self.T = cKDTree(self.data)
+        self.x = self.data
+        self.p = 100
+        self.eps = 0
+        self.d = 10
 
 class Test_random_ball_approx(Test_random_ball):
 
