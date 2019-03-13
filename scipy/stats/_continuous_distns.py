@@ -805,32 +805,20 @@ class burr_gen(rv_continuous):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
-        e1, e2, e3, e4 = sc.beta(d + np.arange(1, 5)/c, 1. - np.arange(1, 5)/c)
+        nc = np.arange(1, 5).reshape(4,1) / c
+        e1, e2, e3, e4 = d * sc.beta(d + nc, 2. - nc)
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
-<<<<<<< HEAD
-        if c > 3.0:
-            g1 = (e3 - 3 * e2 * e1 + 2 * mu**3) / np.sqrt((mu2_if_c)**3)
-        else:
-            g1 = np.nan
-        if c > 4.0:
-            g2 = (e4 - 4 * e3 * mu + 6 * e2 * mu**2 - 3 * mu**4) /\
-                    mu2_if_c**2
-            g2 -= 3
-        else:
-            g2 = np.nan
-=======
         g1 = _lazywhere(c > 3.0, (c, e1, e2, e3, mu2_if_c),
              lambda c, e1, e2, e3, mu2_if_c:
              (e3 - 3 * e2 * e1 + 2 * e1**3) / np.sqrt((mu2_if_c)**3),
-             np.nan)
+             fillvalue=np.nan)
         g2 = _lazywhere(c > 3.0, (c, e1, e2, e3, e4, mu2_if_c),
              lambda c, e1, e2, e3, e4, mu2_if_c:
              ((e4 - 4 * e3 * e1 + 6 * e2 * e1**2 - 3 * e1**4) /
              mu2_if_c**2) - 3,
-             np.nan)
->>>>>>> 43c25b19c... WIP: add _lazywhere to _stats addresses comment in PR
+             fillvalue=np.nan)
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
