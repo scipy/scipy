@@ -799,19 +799,24 @@ class burr_gen(rv_continuous):
         return -d * np.log1p(x**(-c))
 
     def _sf(self, x, c, d):
-        return 1 - (1 + x**(-c))**(-d)
+        return 1 - (1 + x**(-c))**(-d) #=1 - _cdf(x)
 
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
-        e1 = self._munp(1, c, d)
-        e2 = self._munp(2, c, d)
-        e3 = self._munp(3, c, d)
-        e4 = self._munp(4, c, d)
+        e = lambda k: sc.beta(d + k / c, 1.0 - k / c) / sc.beta(d, 1.0)
+        e1 = e(1.0)
+        e2 = e(2.0)
+        e3 = e(3.0)
+        e4 = e(4.0)
+        # now convert
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
+        g1_if_c = (e3 - 3 * e2 * e1 + 2 * mu**3) / np.sqrt((mu2_if_c)**3)
+        g2_if_c = (e4 - 4 * e3 * mu + 6 * e2 * mu**2 - 3 * mu**4) / mu2_if_c**2
+        g1 = np.where(c > 3.0, g1_if_c, np.nan)
         g1 = _lazywhere(c > 3.0, (c, e1, e2, e3, mu2_if_c),
              lambda c, e1, e2, e3, mu2_if_c:
              (e3 - 3 * e2 * e1 + 2 * e1**3) / np.sqrt((mu2_if_c)**3),
@@ -821,9 +826,11 @@ class burr_gen(rv_continuous):
              ((e4 - 4 * e3 * e1 + 6 * e2 * e1**2 - 3 * e1**4) /
              mu2_if_c**2) - 3.,
              fillvalue=np.nan)
+        g2 = np.where(c > 4.0, g2_if_c, np.nan)
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
+        # TODO: figure out if we still need this in light of _stats()
         nc = 1. * n / c
         return d * sc.beta(1.0 - nc, d + nc)
 
@@ -977,6 +984,9 @@ class fisk_gen(burr_gen):
              mu2_if_c**2) - 3.,
              fillvalue=np.nan)
         return mu, mu2, g1, g2
+
+    def _stats(self, c):
+        return burr_gen._stats(self, c, 1.0)
 
     def _entropy(self, c):
         return 2 - np.log(c)
