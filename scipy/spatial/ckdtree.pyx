@@ -666,6 +666,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             1 is the sum-of-absolute-values "Manhattan" distance
             2 is the usual Euclidean distance
             infinity is the maximum-coordinate-difference distance
+            A finite large p may cause a ValueError if overflow can occur.
         distance_upper_bound : nonnegative float
             Return only neighbors within this distance.  This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
@@ -871,6 +872,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             The radius of points to return.
         p : float, optional
             Which Minkowski p-norm to use.  Should be in the range [1, inf].
+            A finite large p may cause a ValueError if overflow can occur.
         eps : nonnegative float, optional
             Approximate search. Branches of the tree are not explored if their
             nearest points are further than ``r / (1 + eps)``, and branches are
@@ -1058,6 +1060,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         p : float, optional
             Which Minkowski norm to use.  `p` has to meet the condition
             ``1 <= p <= infinity``.
+            A finite large p may cause a ValueError if overflow can occur.
         eps : float, optional
             Approximate search.  Branches of the tree are not explored
             if their nearest points are further than ``r/(1+eps)``, and
@@ -1145,6 +1148,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         p : float, optional
             Which Minkowski norm to use.  ``p`` has to meet the condition
             ``1 <= p <= infinity``.
+            A finite large p may cause a ValueError if overflow can occur.
         eps : float, optional
             Approximate search.  Branches of the tree are not explored
             if their nearest points are further than ``r/(1+eps)``, and
@@ -1246,6 +1250,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             1<=p<=infinity. 
             Which Minkowski p-norm to use.
             Default 2.0.
+            A finite large p may cause a ValueError if overflow can occur.
         weights : tuple, array_like, or None, optional
             If None, the pair-counting is unweighted.
             If given as a tuple, weights[0] is the weights of points in ``self``, and
@@ -1462,7 +1467,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         max_distance : positive float
         
         p : float, 1<=p<=infinity
-            Which Minkowski p-norm to use. 
+            Which Minkowski p-norm to use.
+            A finite large p may cause a ValueError if overflow can occur.
         
         output_type : string, optional
             Which container to use for output data. Options: 'dok_matrix',
