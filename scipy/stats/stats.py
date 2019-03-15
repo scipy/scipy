@@ -4552,9 +4552,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     """
     Perform the Kolmogorov-Smirnov test for goodness of fit.
 
-    This performs a test of the distribution G(x) of an observed
-    random variable against a given distribution F(x). Under the null
-    hypothesis the two distributions are identical, G(x)=F(x). The
+    This performs a test of the distribution F(x) of an observed
+    random variable against a given distribution G(x). Under the null
+    hypothesis the two distributions are identical, F(x)=G(x). The
     alternative hypothesis can be either 'two-sided' (default), 'less'
     or 'greater'. The KS test is only valid for continuous distributions.
 
@@ -4594,8 +4594,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     -----
     In the one-sided test, the alternative is that the empirical
     cumulative distribution function of the random variable is "less"
-    or "greater" than the cumulative distribution function F(x) of the
-    hypothesis, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
+    or "greater" than the cumulative distribution function G(x) of the
+    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
 
     Examples
     --------
@@ -5269,15 +5269,16 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     data1, data2 : sequence of 1-D ndarrays
         Two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different.
-    alternative : {'two-sided', 'less','greater'}, optional
+    alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis (see explanation above).
         Default is 'two-sided'.
-    mode : 'auto' (default), 'exact' or 'asymp', optional
+    mode : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
 
         - 'exact' : use approximation to exact distribution of test statistic
         - 'asymp' : use asymptotic distribution of test statistic
         - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
+        Default is 'auto'.
 
     Returns
     -------
@@ -5293,18 +5294,17 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     assumed to be continuous.
 
     In the one-sided test, the alternative is that the empirical
-    cumulative distribution function G(x) of the data1 variable is "less"
-    or "greater" than the empirical cumulative distribution function F(x)
-    of the data2 variable, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
+    cumulative distribution function F(x) of the data1 variable is "less"
+    or "greater" than the empirical cumulative distribution function G(x)
+    of the data2 variable, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
 
     If the K-S statistic is small or the p-value is high, then we cannot
     reject the hypothesis that the distributions of the two samples
     are the same.
 
-    If the mode is 'auto', the computation is exact for small enough
-    sample sizes.  For larger sizes, the computation uses the
+    If the mode is 'auto', the computation is exact if the sample sizes are
+    less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
-
 
     Examples
     --------
