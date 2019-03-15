@@ -5274,11 +5274,11 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         Default is 'two-sided'.
     mode : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
+        Default is 'auto'.
 
         - 'exact' : use approximation to exact distribution of test statistic
         - 'asymp' : use asymptotic distribution of test statistic
         - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
-        Default is 'auto'.
 
     Returns
     -------
