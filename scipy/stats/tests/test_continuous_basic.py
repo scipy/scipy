@@ -334,6 +334,35 @@ def test_broadcast_gh9990_regression():
     ans = [stats.reciprocal.cdf(_b, _a, _b) for _a, _b in zip(a,b)]
     npt.assert_array_almost_equal(stats.reciprocal.cdf(b, a, b), ans)
 
+def test_broadcast_gh7933_regression():
+    # Check broadcast works
+    stats.truncnorm.logpdf(
+        np.array([3.0, 2.0, 1.0]),
+        a=(1.5 - np.array([6.0, 5.0, 4.0])) / 3.0,
+        b=np.inf,
+        loc=np.array([6.0, 5.0, 4.0]),
+        scale=3.0
+    )
+
+def test_gh2002_regression():
+    # Add a check that broadcast works in situations where only some
+    # x-values are compatible with some of the shape arguments.
+    x = np.r_[-2:2:101j]
+    a = np.r_[-np.ones(50), np.ones(51)]
+    expected = [stats.truncnorm.pdf(_x, _a, np.inf) for _x, _a in zip(x, a)]
+    ans = stats.truncnorm.pdf(x, a, np.inf)
+    npt.assert_array_almost_equal(ans, expected)
+
+def test_gh1320_regression():
+    # Check that the first example from gh-1320 now works.
+    c = 2.62
+    stats.genextreme.ppf(0.5, np.array([[c], [c + 0.5]]))
+    # The other examples in gh-1320 appear to have stopped working
+    # some time ago.
+    # ans = stats.genextreme.moment(2, np.array([c, c + 0.5]))
+    # expected = np.array([25.50105963, 115.11191437])
+    # stats.genextreme.moment(5, np.array([[c], [c + 0.5]]))
+    # stats.genextreme.moment(5, np.array([c, c + 0.5]))
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
