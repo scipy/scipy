@@ -444,7 +444,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     >>> a = np.array([[1, 1, 2, 3], [1, 2, 2, np.nan], [1, 1, 1, np.nan]])
     >>> a
     array([[ 1.,  1.,  2.,  3.],
-           [ 1.,  2.,  2.,  nan.],
+           [ 1.,  2.,  2.,  nan],
            [ 1.,  1.,  1., nan]])
     >>> stats.mode(a, nan_policy='propagate')
     ModeResult(mode=array([[1., 1., 2., 3.]]), count=array([[3, 2, 2, 1]]))
