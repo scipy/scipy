@@ -4,7 +4,7 @@
 Arcsine Distribution
 ====================
 
-Defined over :math:`x\in\left(0,1\right)` . To get the JKB definition put :math:`x=\frac{u+1}{2}.` i.e. :math:`L=-1` and :math:`S=2.`
+Defined over :math:`x\in\left[0,1\right]`.  To get the JKB definition put :math:`x=\frac{u+1}{2}.` i.e. :math:`L=-1` and :math:`S=2.`
 
 .. math::
    :nowrap:
@@ -18,7 +18,8 @@ Defined over :math:`x\in\left(0,1\right)` . To get the JKB definition put :math:
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \mu_{n}^{\prime} & = & \frac{1}{\pi}\int_{0}^{1}dx\, x^{n-1/2}\left(1-x\right)^{-1/2}\\  & = & \frac{1}{\pi}B\left(\frac{1}{2},n+\frac{1}{2}\right)=\frac{\left(2n-1\right)!!}{2^{n}n!}\end{eqnarray*}
+    \begin{eqnarray*} \mu_{n}^{\prime} & = & \frac{1}{\pi}\int_{0}^{1} x^{n-1/2}\left(1-x\right)^{-1/2} dx\\
+     & = & \frac{1}{\pi}B\left(\frac{1}{2},n+\frac{1}{2}\right)=\frac{\left(2n-1\right)!!}{2^{n}n!}\end{eqnarray*}
 
 .. math::
    :nowrap:
@@ -27,7 +28,7 @@ Defined over :math:`x\in\left(0,1\right)` . To get the JKB definition put :math:
 
 .. math::
 
-     h\left[X\right]\approx-0.24156447527049044468
+     h\left[X\right] = \log(\frac{\pi}{4}) \approx-0.24156447527049044468
 
 .. math::
 

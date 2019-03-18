@@ -29,7 +29,10 @@ There are no shape parameters, and the support is :math:`x\in\left[0,\infty\righ
 .. math::
     :nowrap:
 
-    \begin{eqnarray*}  F\left(x\right) & = & 1 - 2 \sum_{k=1}^{\infty} (-1)^{k-1} e^{-2k^2 x^2}\\  & = & \frac{\sqrt{2\pi}}{x} \sum_{k=1}^{\infty} e^{-(2k-1)^2 \pi^2/(8x^2)}\\  & = & 1 - \textrm{scipy.special.kolmogorov}(n, x) \\ f\left(x\right) & = & 8x \sum_{k=1}^{\infty} (-1)^{k-1} k^2 e^{-2k^2 x^2} \end{eqnarray*}
+    \begin{eqnarray*}  F\left(x\right) & = & 1 - 2 \sum_{k=1}^{\infty} (-1)^{k-1} e^{-2k^2 x^2}\\
+    & = & \frac{\sqrt{2\pi}}{x} \sum_{k=1}^{\infty} e^{-(2k-1)^2 \pi^2/(8x^2)}\\
+    & = & 1 - \textrm{scipy.special.kolmogorov}(n, x) \\
+    f\left(x\right) & = & 8x \sum_{k=1}^{\infty} (-1)^{k-1} k^2 e^{-2k^2 x^2} \end{eqnarray*}
 
 
 References
