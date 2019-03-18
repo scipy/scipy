@@ -712,9 +712,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
     bounds = bounds.tolist()
     for i, row in enumerate(bounds):
         for j, col in enumerate(row):
-            if str(
-                    col) == "nan":  # comparing col to float("nan") and
-                                    # np.nan doesn't work. should use np.isnan
+            if str(col) == "nan":
+                # comparing col to float("nan") and np.nan doesn't work.
+                # should use np.isnan
                 bounds[i][j] = None
 
     # remove redundant (linearly dependent) rows from equality constraints

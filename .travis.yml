@@ -16,7 +16,7 @@ matrix:
         - PEP8=1
         - NUMPYSPEC="--upgrade numpy"
       before_install:
-        - pip install pycodestyle==2.3.1
+        - pip install pycodestyle==2.5.0
         - pip install pyflakes==1.1.0
       script:
         # pyflakes doesn't respect "# noqa" and cannot ignore files, so filter out six.py

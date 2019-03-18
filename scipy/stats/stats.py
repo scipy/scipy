@@ -121,6 +121,7 @@ Inferential Stats
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    ranksums
    wilcoxon
@@ -178,6 +179,7 @@ from . import mstats_basic
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 from ._rvs_sampling import rvs_ratio_uniforms
+from ._hypotests import epps_singleton_2samp
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -196,7 +198,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'ttest_trimmed']
+           'brunnermunzel', 'epps_singleton_2samp', 'ttest_trimmed']
 
 
 def _chk_asarray(a, axis):
@@ -3165,13 +3167,14 @@ def f_oneway(*args):
 
     References
     ----------
-    .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
-           Statistics". Chapter 14.
-           https://web.archive.org/web/20171027235250/http://vassarstats.net:80/textbook/ch14pt1.html
+    .. [1] R. Lowry, "Concepts and Applications of Inferential Statistics",
+           Chapter 14, 2014, http://vassarstats.net/textbook/
 
-    .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
+    .. [2] G.W. Heiman, "Understanding research methods and statistics: An
+           integrated introduction for psychology", Houghton, Mifflin and
+           Company, 2001.
 
-    .. [3] McDonald, G. H. "Handbook of Biological Statistics", One-way ANOVA.
+    .. [3] G.H. McDonald, "Handbook of Biological Statistics", One-way ANOVA.
            http://www.biostathandbook.com/onewayanova.html
 
     Examples

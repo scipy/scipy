@@ -24,7 +24,7 @@ from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients)
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
@@ -2654,3 +2654,17 @@ class TestDeconvolve(object):
         recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
+
+        
+class TestDetrend(object):
+
+    def test_basic(self):
+        detrended = detrend(array([1, 2, 3]))
+        detrended_exact = array([0, 0, 0])
+        assert_array_almost_equal(detrended, detrended_exact)
+
+    def test_copy(self):
+        x = array([1, 1.2, 1.5, 1.6, 2.4]) 
+        copy_array = detrend(x, overwrite_data=False)
+        inplace = detrend(x, overwrite_data=True)
+        assert_array_almost_equal(copy_array, inplace)

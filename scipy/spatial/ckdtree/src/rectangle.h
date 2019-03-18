@@ -114,6 +114,10 @@ template<typename MinMaxDist>
     std::vector<RR_stack_item> stack_arr;
     RR_stack_item *stack;
 
+    /* if min/max distance / adjustment is less than this,
+     * we believe the incremental tracking is inaccurate */
+    npy_float64 inaccurate_distance_limit;
+
     void _resize_stack(const npy_intp new_max_size) {
         stack_arr.resize(new_max_size);
         stack = &stack_arr[0];
@@ -159,7 +163,13 @@ template<typename MinMaxDist>
 
         /* Compute initial min and max distances */
         MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
-
+        if(ckdtree_isinf(max_distance)) {
+            const char *msg = "Encountering floating point overflow. "
+                              "The value of p too large for this dataset; "
+                              "For such large p, consider using the special case p=np.inf . ";
+            throw std::invalid_argument(msg); // raises ValueError
+        }
+        inaccurate_distance_limit = max_distance;
     };
 
 
@@ -167,6 +177,12 @@ template<typename MinMaxDist>
               const npy_intp split_dim, const npy_float64 split_val) {
 
         const npy_float64 p = this->p;
+        /* subnomial is 1 if round-off is expected to taint the incremental distance tracking.
+         * in that case we always recompute the distances.
+         * Recomputing costs more calls to pow, thus if the round-off error does not seem
+         * to wipe out the value, then we still do the incremental update.
+         * */
+        int subnomial = 0;
 
         Rectangle *rect;
         if (which == 1)
@@ -188,23 +204,30 @@ template<typename MinMaxDist>
         item->max_along_dim = rect->maxes()[split_dim];
 
         /* update min/max distances */
-        npy_float64 min, max;
+        npy_float64 min1, max1;
+        npy_float64 min2, max2;
 
-        MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
-
-        min_distance -= min;
-        max_distance -= max;
+        MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min1, &max1);
 
         if (direction == LESS)
             rect->maxes()[split_dim] = split_val;
         else
             rect->mins()[split_dim] = split_val;
 
-        MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
+        MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min2, &max2);
 
-        min_distance += min;
-        max_distance += max;
+        subnomial = subnomial || (min_distance < inaccurate_distance_limit || max_distance < inaccurate_distance_limit);
 
+        subnomial = subnomial || ((min1 != 0 && min1 < inaccurate_distance_limit) || max1 < inaccurate_distance_limit);
+        subnomial = subnomial || ((min2 != 0 && min2 < inaccurate_distance_limit) || max2 < inaccurate_distance_limit);
+        subnomial = subnomial || (min_distance < inaccurate_distance_limit || max_distance < inaccurate_distance_limit);
+
+        if (NPY_UNLIKELY(subnomial)) {
+            MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
+        } else {
+            min_distance += (min2 - min1);
+            max_distance += (max2 - max1);
+        }
     };
 
     inline void push_less_of(const npy_intp which,

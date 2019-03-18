@@ -153,6 +153,8 @@ Special Matrices
    circulant - Circulant matrix
    companion - Companion matrix
    dft - Discrete Fourier transform matrix
+   fiedler - Fiedler matrix
+   fiedler_companion - Fiedler companion matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
    helmert - Helmert matrix
