@@ -437,7 +437,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     >>> stats.mode(a, axis=None)
     (array([3]), array([3]))
 
-    When ''nan_policy=propagate'' nan values will be treated as
+    When ``nan_policy=propagate`` nan values will be treated as
     unique elements as it calls np.unique (which treats all nan values
     as a unique element) :
 
