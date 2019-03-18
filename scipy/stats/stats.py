@@ -409,10 +409,10 @@ def mode(a, axis=0, nan_policy='propagate'):
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -438,7 +438,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     (array([3]), array([3]))
 
     When ''nan_policy=propagate'' nan values will be treated as
-    a unique element as it calls np.unique (which treats all nan values
+    unique elements as it calls np.unique (which treats all nan values
     as a unique element) :
 
     >>> a = np.array([[1, 1, 2, 3], [1, 2, 2, np.nan], [1, 1, 1, np.nan]])
@@ -669,10 +669,10 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -728,10 +728,10 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -890,10 +890,10 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
        Axis along which the central moment is computed. Default is 0.
        If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1016,10 +1016,10 @@ def variation(a, axis=0, nan_policy='propagate'):
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1069,10 +1069,10 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1170,10 +1170,10 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1247,10 +1247,10 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         If False, then the skewness and kurtosis calculations are corrected for
         statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1332,10 +1332,10 @@ def skewtest(a, axis=0, nan_policy='propagate'):
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1414,10 +1414,10 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1510,10 +1510,10 @@ def normaltest(a, axis=0, nan_policy='propagate'):
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -2226,10 +2226,10 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         for bias in limited samples relative to the population estimate
         of variance. Defaults to 1.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -2552,10 +2552,10 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         depend on the input array, `x`, the `axis` argument, and the
         `keepdims` flag.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}, optional
         Specifies the interpolation method to use when the percentile
         boundaries lie between two data points `i` and `j`:
@@ -2698,10 +2698,10 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         ensures consistency with the standard deviation for normally distributed
         data.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3539,10 +3539,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         each row represents a variable, while the columns contain observations.
         If axis=None, then both arrays will be raveled.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3773,10 +3773,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     initial_lexsort : bool, optional
         Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'. Note that if the input contains nan
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'. Note that if the input contains nan
         'omit' delegates to mstats_basic.kendalltau(), which has a different
         implementation.
     method: {'auto', 'asymptotic', 'exact'}, optional
@@ -4155,10 +4155,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
         Axis along which to compute test. If None, compute over the whole
         array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -4371,11 +4371,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
 
         .. versionadded:: 0.11.0
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
-
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -4491,10 +4490,10 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -5380,10 +5379,10 @@ def kruskal(*args, **kwargs):
        Two or more arrays with the sample measurements can be given as
        arguments.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -5580,10 +5579,10 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         distribution.
         Defaults value is 't' .
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        performs calculations keeping nan values,'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default
-        is 'propagate'.
+        Defines how to handle when the input contains nan. 'propagate' 
+        attempts to performs calculations keeping nan values,'raise'
+        throws an error,'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
