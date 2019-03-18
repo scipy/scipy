@@ -1229,22 +1229,21 @@ add_newdoc("scipy.special", "ellipe",
 
     >>> a = 3.5
     >>> b = 2.1
-    >>> e_sq = 1.0 - b**2/a**2 # eccentricity squared
+    >>> e_sq = 1.0 - b**2/a**2  # eccentricity squared
 
     Then the circumference is found using the following:
 
-    >>> C = 4*a*special.ellipe(e_sq) # circumference formula
+    >>> C = 4*a*special.ellipe(e_sq)  # circumference formula
     >>> C
     17.868899204378693
 
     When `a` and `b` are the same (meaning eccentricity is 0),
     this reduces to the circumference of a circle.
 
-    >>> 4*a*special.ellipe(0.0) # formula for ellipse with a = b
+    >>> 4*a*special.ellipe(0.0)  # formula for ellipse with a = b
     21.991148575128552
-    >>> 2*np.pi*a # formula for circle of radius a
+    >>> 2*np.pi*a  # formula for circle of radius a
     21.991148575128552
-
 
     """)
 
