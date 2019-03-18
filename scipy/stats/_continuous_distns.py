@@ -468,7 +468,7 @@ class beta_gen(rv_continuous):
         f(x, a, b) = \frac{\Gamma(a+b) x^{a-1} (1-x)^{b-1}}
                           {\Gamma(a) \Gamma(b)}
 
-    for :math:`0 < x < 1`, :math:`a > 0`, :math:`b > 0`, where
+    for :math:`0 <= x <= 1`, :math:`a > 0`, :math:`b > 0`, where
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
     `beta` takes :math:`a` and :math:`b` as shape parameters.
@@ -633,7 +633,7 @@ class betaprime_gen(rv_continuous):
 
         f(x, a, b) = \frac{x^{a-1} (1+x)^{-a-b}}{\beta(a, b)}
 
-    for :math:`x > 0`, :math:`a > 0`, :math:`b > 0`, where
+    for :math:`x >= 0`, :math:`a > 0`, :math:`b > 0`, where
     :math:`\beta(a, b)` is the beta function (see `scipy.special.beta`).
 
     `betaprime` takes ``a`` and ``b`` as shape parameters.
@@ -699,7 +699,7 @@ class bradford_gen(rv_continuous):
 
         f(x, c) = \frac{c}{\log(1+c) (1+cx)}
 
-    for :math:`0 < x < 1` and :math:`c > 0`.
+    for :math:`0 <= x <= 1` and :math:`c > 0`.
 
     `bradford` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -759,7 +759,7 @@ class burr_gen(rv_continuous):
 
         f(x, c, d) = c d x^{-c-1} (1+x^{-c})^{-d-1}
 
-    for :math:`x > 0` and :math:`c, d > 0`.
+    for :math:`x >= 0` and :math:`c, d > 0`.
 
     `burr` takes :math:`c` and :math:`d` as shape parameters.
 
@@ -814,7 +814,7 @@ class burr12_gen(rv_continuous):
 
         f(x, c, d) = c d x^{c-1} (1+x^c)^{-d-1}
 
-    for :math:`x > 0` and :math:`c, d > 0`.
+    for :math:`x >= 0` and :math:`c, d > 0`.
 
     `burr12` takes ``c`` and ``d`` as shape parameters for :math:`c`
     and :math:`d`.
@@ -887,7 +887,7 @@ class fisk_gen(burr_gen):
 
         f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
 
-    for :math:`x > 0` and :math:`c > 0`.
+    for :math:`x >= 0` and :math:`c > 0`.
 
     `fisk` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -988,7 +988,7 @@ class chi_gen(rv_continuous):
         f(x, k) = \frac{1}{2^{k/2-1} \Gamma \left( k/2 \right)}
                    x^{k-1} \exp \left( -x^2/2 \right)
 
-    for :math:`x > 0` and :math:`k > 0` (degrees of freedom, denoted ``df``
+    for :math:`x >= 0` and :math:`k > 0` (degrees of freedom, denoted ``df``
     in the implementation). :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
@@ -1448,7 +1448,7 @@ class exponweib_gen(rv_continuous):
 
         f(x, a, c) = a c (1-\exp(-x^c))^{a-1} \exp(-x^c) x^{c-1}
 
-    for :math:`x > 0`, :math:`a > 0`, :math:`c > 0`.
+    for :math:`x >= 0`, :math:`a > 0`, :math:`c > 0`.
 
     `exponweib` takes :math:`a` and :math:`c` as shape parameters.
 
@@ -1546,7 +1546,7 @@ class fatiguelife_gen(rv_continuous):
 
         f(x, c) = \frac{x+1}{2c\sqrt{2\pi x^3}} \exp(-\frac{(x-1)^2}{2x c^2})
 
-    for :math:`x > 0` and :math:`c > 0`.
+    for :math:`x >= 0` and :math:`c > 0`.
 
     `fatiguelife` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -1807,7 +1807,7 @@ class weibull_min_gen(rv_continuous):
 
         f(x, c) = c x^{c-1} \exp(-x^c)
 
-    for :math:`x > 0`, :math:`c > 0`.
+    for :math:`x >= 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -2164,7 +2164,7 @@ class genlogistic_gen(rv_continuous):
         f(x, c) = c \frac{\exp(-x)}
                          {(1 + \exp(-x))^{c+1}}
 
-    for :math:`x > 0`, :math:`c > 0`.
+    for :math:`x >= 0`, :math:`c > 0`.
 
     `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -3091,7 +3091,7 @@ class halfnorm_gen(rv_continuous):
 
         f(x) = \sqrt{2/\pi} \exp(-x^2 / 2)
 
-    for :math:`x > 0`.
+    for :math:`x >= 0`.
 
     `halfnorm` is a special case of `chi` with ``df=1``.
 
@@ -3227,7 +3227,7 @@ class invgamma_gen(rv_continuous):
 
         f(x, a) = \frac{x^{-a-1}}{\Gamma(a)} \exp(-\frac{1}{x})
 
-    for :math:`x > 0`, :math:`a > 0`. :math:`\Gamma` is the gamma function
+    for :math:`x >= 0`, :math:`a > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
     `invgamma` takes ``a`` as a shape parameter for :math:`a`.
@@ -3298,7 +3298,7 @@ class invgauss_gen(rv_continuous):
         f(x, \mu) = \frac{1}{\sqrt{2 \pi x^3}}
                     \exp(-\frac{(x-\mu)^2}{2 x \mu^2})
 
-    for :math:`x > 0` and :math:`\mu > 0`.
+    for :math:`x >= 0` and :math:`\mu > 0`.
 
     `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
@@ -3483,7 +3483,7 @@ class johnsonsb_gen(rv_continuous):
 
         f(x, a, b) = \frac{b}{x(1-x)}  \phi(a + b \log \frac{x}{1-x} )
 
-    for :math:`0 < x < 1` and :math:`a, b > 0`, and :math:`\phi` is the normal
+    for :math:`0 <= x < =1` and :math:`a, b > 0`, and :math:`\phi` is the normal
     pdf.
 
     `johnsonsb` takes :math:`a` and :math:`b` as shape parameters.
@@ -3620,7 +3620,7 @@ class levy_gen(rv_continuous):
 
         f(x) = \frac{1}{\sqrt{2\pi x^3}} \exp\left(-\frac{1}{2x}\right)
 
-    for :math:`x > 0`.
+    for :math:`x >= 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=1`.
@@ -3668,7 +3668,7 @@ class levy_l_gen(rv_continuous):
     .. math::
         f(x) = \frac{1}{|x| \sqrt{2\pi |x|}} \exp{ \left(-\frac{1}{2|x|} \right)}
 
-    for :math:`x < 0`.
+    for :math:`x <= 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=-1`.
@@ -4545,7 +4545,7 @@ class maxwell_gen(rv_continuous):
 
         f(x) = \sqrt{2/\pi}x^2 \exp(-x^2/2)
 
-    for :math:`x > 0`.
+    for :math:`x >= 0`.
 
     %(after_notes)s
 
@@ -4595,7 +4595,7 @@ class mielke_gen(rv_continuous):
 
         f(x, k, s) = \frac{k x^{k-1}}{(1+x^s)^{1+k/s}}
 
-    for :math:`x > 0` and :math:`k, s > 0`.
+    for :math:`x >= 0` and :math:`k, s > 0`.
 
     `mielke` takes ``k`` and ``s`` as shape parameters.
 
@@ -5035,7 +5035,7 @@ class nakagami_gen(rv_continuous):
 
         f(x, \nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
-    for :math:`x > 0`, :math:`\nu > 0`.
+    for :math:`x >= 0`, :math:`\nu > 0`.
 
     `nakagami` takes ``nu`` as a shape parameter for :math:`\nu`.
 
@@ -5081,7 +5081,7 @@ class ncx2_gen(rv_continuous):
         f(x, k, \lambda) = \frac{1}{2} \exp(-(\lambda+x)/2)
             (x/\lambda)^{(k-2)/4}  I_{(k-2)/2}(\sqrt{\lambda x})
 
-    for :math:`x > 0` and :math:`k, \lambda > 0`. :math:`k` specifies the
+    for :math:`x >= 0` and :math:`k, \lambda > 0`. :math:`k` specifies the
     degrees of freedom (denoted ``df`` in the implementation) and
     :math:`\lambda` is the non-centrality parameter (denoted ``nc`` in the
     implementation). :math:`I_\nu` denotes the modified Bessel function of
@@ -5748,7 +5748,7 @@ class powernorm_gen(rv_continuous):
         f(x, c) = c \phi(x) (\Phi(-x))^{c-1}
 
     where :math:`\phi` is the normal pdf, and :math:`\Phi` is the normal cdf,
-    and :math:`x > 0`, :math:`c > 0`.
+    and :math:`x >= 0`, :math:`c > 0`.
 
     `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -5953,7 +5953,7 @@ class rice_gen(rv_continuous):
 
         f(x, b) = x \exp(- \frac{x^2 + b^2}{2}) I_0(x b)
 
-    for :math:`x > 0`, :math:`b > 0`. :math:`I_0` is the modified Bessel
+    for :math:`x >= 0`, :math:`b > 0`. :math:`I_0` is the modified Bessel
     function of order zero (`scipy.special.i0`).
 
     `rice` takes ``b`` as a shape parameter for :math:`b`.
@@ -6304,7 +6304,7 @@ class truncexpon_gen(rv_continuous):
 
         f(x, b) = \frac{\exp(-x)}{1 - \exp(-b)}
 
-    for :math:`0 < x < b`.
+    for :math:`0 <= x <= b`.
 
     `truncexpon` takes ``b`` as a shape parameter for :math:`b`.
 
@@ -6722,7 +6722,7 @@ class wald_gen(invgauss_gen):
 
         f(x) = \frac{1}{\sqrt{2\pi x^3}} \exp(- \frac{ (x-1)^2 }{ 2x })
 
-    for :math:`x > 0`.
+    for :math:`x >= 0`.
 
     `wald` is a special case of `invgauss` with ``mu=1``.
 
