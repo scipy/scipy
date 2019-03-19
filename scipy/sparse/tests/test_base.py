@@ -3638,16 +3638,16 @@ class TestCSR(sparse_test_class()):
     def test_explicit_zeros(self):
         # Ensures that binary ops of addition and subtraction does not 
         # remove the explicit zeros.
-        row  = np.array([0, 3, 1, 0])
-        col  = np.array([0, 3, 1, 2])
+        row = np.array([0, 3, 1, 0])
+        col = np.array([0, 3, 1, 2])
         data1 = np.array([0, 5, 7, 9])
         data2 = np.array([0, 4, 6, 8])
         m1 = coo_matrix((data1, (row, col)), shape=(4, 4))
         m2 = coo_matrix((data2, (row, col)), shape=(4, 4))
         m = m1 - m2
-        assert(m1.nnz == 4)
-        assert(m2.nnz == 4)
-        assert(m.nnz == 4)
+        assert m1.nnz == 4
+        assert m2.nnz == 4
+        assert m.nnz == 4
 
 
 TestCSR.init_class()
