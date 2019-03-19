@@ -1219,6 +1219,32 @@ add_newdoc("scipy.special", "ellipe",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    This function is used in finding the circumference of an
+    ellipse with semi-major axis `a` and semi-minor axis `b`.
+
+    >>> from scipy import special
+
+    >>> a = 3.5
+    >>> b = 2.1
+    >>> e_sq = 1.0 - b**2/a**2  # eccentricity squared
+
+    Then the circumference is found using the following:
+
+    >>> C = 4*a*special.ellipe(e_sq)  # circumference formula
+    >>> C
+    17.868899204378693
+
+    When `a` and `b` are the same (meaning eccentricity is 0),
+    this reduces to the circumference of a circle.
+
+    >>> 4*a*special.ellipe(0.0)  # formula for ellipse with a = b
+    21.991148575128552
+    >>> 2*np.pi*a  # formula for circle of radius a
+    21.991148575128552
+
     """)
 
 add_newdoc("scipy.special", "ellipeinc",
