@@ -1139,6 +1139,10 @@ class RectBivariateSpline(BivariateSpline):
     ----------
     x,y : array_like
         1-D arrays of coordinates in strictly ascending order.
+    tx, ty : array_like
+        Strictly ordered 1-D sequences of knots coordinates.
+    w : array_like, optional
+        Positive 1-D array of weights, of the same length as `x`, `y` and `z`.
     z : array_like
         2-D array of data with shape (x.size,y.size).
     bbox : array_like, optional
