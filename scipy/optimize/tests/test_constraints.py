@@ -130,3 +130,17 @@ def test_old_bounds_to_new():
     lb, ub = old_bound_to_new(bounds)
     assert_array_equal(lb, lb_true)
     assert_array_equal(ub, ub_true)
+
+def test_bounds_repr():
+    from numpy import array, inf #so that eval works
+    for args in (
+        (-1.0, 5.0),
+        (-1.0, np.inf, True),
+        (np.array([1.0, -np.inf]), np.array([2.0, np.inf])),
+        (np.array([1.0, -np.inf]), np.array([2.0, np.inf]), np.array([True, False])),
+    ):
+        bounds = Bounds(*args)
+        bounds2 = eval(repr(Bounds(*args)))
+        assert_array_equal(bounds.lb, bounds2.lb)
+        assert_array_equal(bounds.ub, bounds2.ub)
+        assert_array_equal(bounds.keep_feasible, bounds2.keep_feasible)
