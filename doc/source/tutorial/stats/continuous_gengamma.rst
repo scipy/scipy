@@ -15,15 +15,15 @@ The support is :math:`x\geq0`.
     F\left(x;a,c\right) & = &
       \left\{
         \begin{array}{cc}
-          \frac{\gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)} & & c>0\\
-          1-\frac{\gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)} & & c<0
+          \frac{\gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)} & c>0\\
+          1-\frac{\gamma\left(a,x^{c}\right)}{\Gamma\left(a\right)} & c<0
         \end{array}
       \right. \\
     G\left(q;a,c\right) & = &
       \left\{
         \begin{array}{cc}
-          \gamma^{-1} \left(a, \Gamma\left(a\right) q \right)^{1/c} & &  c>0 \\
-          \gamma^{-1} \left(a, \Gamma\left(a\right) \left(1-q\right) \right)^{1/c} & & c<0
+          \gamma^{-1} \left(a, \Gamma\left(a\right) q \right)^{1/c} &  c>0 \\
+          \gamma^{-1} \left(a, \Gamma\left(a\right) \left(1-q\right) \right)^{1/c} & c<0
         \end{array}
       \right. \end{eqnarray*}
 

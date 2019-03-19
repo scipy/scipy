@@ -22,8 +22,8 @@ where :math:`U` and :math:`\chi_{\nu}` are independent and distributed as a stan
      &  & \times\left(\frac{\nu}{\nu+x^{2}}\right)^{\left(\nu-1\right)/2}Hh_{\nu}\left(-\frac{\lambda x}{\sqrt{\nu+x^{2}}}\right)\\
      F\left(x;\lambda,\nu\right) & = & \left\{
                                   \begin{array}{cc}
-                                    {\tilde{F}}_{{\nu ,\mu }}(x) & & x\geq0 \\
-                                    1 - {\tilde{F}}_{{\nu ,-\mu }}(x) & & x<0
+                                    {\tilde{F}}_{{\nu ,\mu }}(x) & x\geq0 \\
+                                    1 - {\tilde{F}}_{{\nu ,-\mu }}(x) & x<0
                                     \end{array}
                                  \right. \\
     \text{where} \\
