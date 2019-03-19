@@ -169,6 +169,13 @@ class Bounds(object):
         self.keep_feasible = keep_feasible
 
 
+    def __repr__(self):
+        if np.any(self.keep_feasible):
+            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+        else:
+            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+
+
 class PreparedConstraint(object):
     """Constraint prepared from a user defined constraint.
 
