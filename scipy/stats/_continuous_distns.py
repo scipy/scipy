@@ -7224,6 +7224,21 @@ class irwinhall_gen(rv_continuous):
     def _argcheck(self, n):
         return (n > 0) & (np.floor(n) == n)
 
+    def _pdf_helper(x,n):
+        if x <= 0.0 or x >= n:
+            pdf_x = 0.0
+        else:
+            fl_x = int(np.floor(x)) + 1
+            kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
+                    for k in range(0, fl_x)]
+            pdf_x = np.sum(kernel_list) / sc.factorial(n - 1)
+        return pdf_x
+
+    _vec_pdf_helper = np.vectorize(_pdf_helper)
+
+    def _pdf(self, x, n):
+        return self._vec_pdf_helper(x,n)
+
     def _cdf_helper(x,n):
         if x < 0:
             cdf_x = 0.0
@@ -7257,7 +7272,7 @@ class irwinhall_gen(rv_continuous):
         return n/2, n/12, 0.0, -6/(5*n)
 
 
-irwinhall = irwinhall_gen(a=0.0, name='irwinhall')
+irwinhall = irwinhall_gen(a=0, name='irwinhall')
 
 
 class rv_histogram(rv_continuous):

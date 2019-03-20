@@ -51,7 +51,8 @@ distcont_extra = [
 distslow = ['kappa4', 'rdist', 'gausshyper',
             'recipinvgauss', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
-            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
+            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign',
+            'irwinhall']
 # distslow are sorted by speed (very slow to slow)
 
 
@@ -62,10 +63,11 @@ distslow = ['kappa4', 'rdist', 'gausshyper',
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
-                   'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
-                   'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'irwinhall', 'ksone', 'kstwobign', 'levy_l', 'loggamma',
+                   'logistic', 'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'norminvgauss', 'pearson3', 'rice', 't', 'skewnorm',
+                   'tukeylambda', 'vonmises', 'vonmises_line',
+                   'rv_histogram_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -173,7 +175,7 @@ def test_levy_stable_random_state_property():
 
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
-    fail_higher = set(['vonmises', 'ncf'])
+    fail_higher = set(['irwinhall','vonmises', 'ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
