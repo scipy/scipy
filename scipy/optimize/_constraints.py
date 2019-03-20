@@ -168,7 +168,6 @@ class Bounds(object):
         self.ub = ub
         self.keep_feasible = keep_feasible
 
-
     def __repr__(self):
         if np.any(self.keep_feasible):
             return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)

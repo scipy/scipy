@@ -132,7 +132,7 @@ def test_old_bounds_to_new():
     assert_array_equal(ub, ub_true)
 
 def test_bounds_repr():
-    from numpy import array, inf #so that eval works
+    from numpy import array, inf  # so that eval works
     for args in (
         (-1.0, 5.0),
         (-1.0, np.inf, True),
