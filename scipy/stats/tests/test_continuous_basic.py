@@ -175,7 +175,7 @@ def test_levy_stable_random_state_property():
 
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
-    fail_higher = set(['irwinhall','vonmises', 'ncf'])
+    fail_higher = set(['irwinhall', 'vonmises', 'ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':

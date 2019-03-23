@@ -7202,7 +7202,7 @@ class irwinhall_gen(rv_continuous):
     .. math::
 
         F(x) = \frac{1}{n!}\sum_{k=0}^{\lfloor x\rfloor}
-                    (-1)^k\binom{n}{k}(x-k)^n
+                    (-1)^k \binom{n}{k}(x-k)^n
 
     for :math:`x \in [0,n]`, where :math:`n > 0` is an integer.
     For more on the Irwin Hall distribution see [1]_.
@@ -7222,45 +7222,45 @@ class irwinhall_gen(rv_continuous):
     """
 
     def _argcheck(self, n):
+        self.b = n
+        self.a = 0
         return (n > 0) & (np.floor(n) == n)
 
-    def _pdf_helper(x,n):
-        if x <= 0.0 or x >= n:
-            pdf_x = 0.0
-        else:
-            fl_x = int(np.floor(x)) + 1
-            kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
-                    for k in range(0, fl_x)]
-            pdf_x = np.sum(kernel_list) / sc.factorial(n - 1)
+    def _fitstart(self, data, args=None):
+        # failing travis-CI, but not local, attempt to fix
+        return np.nanmax(data)
+
+    def _rvs_helper(n):
+        return np.sum(np.random.random_sample(n))
+
+    _vec_rvs_helper = np.vectorize(_rvs_helper, otypes=[np.float64])
+
+    def _rvs(self, n):
+        return self._vec_rvs_helper(n)
+
+    def _pdf_helper(x, n):
+        fl_x = int(np.floor(x)) + 1
+        kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
+                for k in range(0, fl_x)]
+        pdf_x = np.sum(kernel_list) / sc.factorial(n - 1)
         return pdf_x
 
     _vec_pdf_helper = np.vectorize(_pdf_helper)
 
     def _pdf(self, x, n):
-        return self._vec_pdf_helper(x,n)
+        return self._vec_pdf_helper(x, n)
 
     def _cdf_helper(x,n):
-        if x < 0:
-            cdf_x = 0.0
-        elif x >= n:
-            cdf_x = 1.0
-        else:
-            fl_x = int(np.floor(x)) + 1
-            kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
-                    for k in range(0, fl_x)]
-            cdf_x = np.sum(kernel_list) / sc.factorial(n)
+        fl_x = int(np.floor(x)) + 1
+        kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
+                for k in range(0, fl_x)]
+        cdf_x = np.sum(kernel_list) / sc.factorial(n)
         return cdf_x
 
     _vec_cdf_helper = np.vectorize(_cdf_helper)
 
     def _cdf(self, x, n):
         return self._vec_cdf_helper(x,n)
-
-    def _sf(self, x, n):
-        return 1. - self._cdf(x,n)
-
-    def _logsf(self, x, n):
-        return np.log(self._sf(x, n))
 
     def _logpdf(self, x, n):
         return np.log(self._pdf(x, n))
