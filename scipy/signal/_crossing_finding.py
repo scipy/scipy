@@ -116,7 +116,7 @@ def argcrossup(x, threshold=None, axis=0, mode='clip'):
 
     See Also
     --------
-    argcross, argdowncross
+    argcross, argcrossdown
 
     """
     results = _boolcross(x, threshold, 'up', axis=axis, mode=mode)
@@ -155,7 +155,7 @@ def argcrossdown(x, threshold=None, axis=0, mode='clip'):
 
     See Also
     --------
-    argcross, argupcross
+    argcross, argcrossup
 
     """
     results = _boolcross(x, threshold, 'down', axis=axis, mode=mode)
@@ -191,7 +191,7 @@ def argcross(data, threshold=None, axis=0, mode='clip'):
 
     See Also
     --------
-    argupcross, argdowncross
+    argcrossup, argcrossdown
 
     """
     results = _boolcross(data, threshold, 'up', axis=axis, mode=mode)
