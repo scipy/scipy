@@ -521,7 +521,8 @@ class BVPResult(OptimizeResult):
 TERMINATION_MESSAGES = {
     0: "The algorithm converged to the desired accuracy.",
     1: "The maximum number of mesh nodes is exceeded.",
-    2: "A singular Jacobian encountered when solving the collocation system."
+    2: "A singular Jacobian encountered when solving the collocation system.",
+    3: "The solver was unable to satisfy boundary conditions tolerance on iteration 10."
 }
 
 
@@ -1053,6 +1054,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     
     if bc_tol is None:
         bc_tol = tol
+
+    # Maximum number of iterations    
+    max_iteration = 10
     
     fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped = wrap_functions(
         fun, bc, fun_jac, bc_jac, k, a, S, D, dtype)
@@ -1117,27 +1121,37 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             x = modify_mesh(x, insert_1, insert_2)
             h = np.diff(x)
             y = sol(x)
-        elif max_bc_res <= bc_tol:
+        elif max_bc_res <= bc_tol: 
             status = 0
+            break
+        elif iteration >= max_iteration:
+            status = 3
             break
 
     if verbose > 0:
         if status == 0:
-            print("Solved in {} iterations, number of nodes {}, "
-                  "maximum relative residual {:.2e}, \n"
-                  "maximum boundary residual {:.2e}."
+            print("Solved in {} iterations, number of nodes {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
                   .format(iteration, x.shape[0], max_rms_res, max_bc_res))
         elif status == 1:
-            print("Number of nodes is exceeded after iteration {}, "
-                  "maximum relative residual {:.2e}, \n"
-                  "maximum boundary residual {:.2e}."
+            print("Number of nodes is exceeded after iteration {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
                   .format(iteration, max_rms_res, max_bc_res))
         elif status == 2:
             print("Singular Jacobian encountered when solving the collocation "
-                  "system on iteration {}, "
-                  "maximum relative residual {:.2e}, \n"
-                  "maximum boundary residual {:.2e}."
+                  "system on iteration {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
                   .format(iteration, max_rms_res, max_bc_res))
+        elif status == 3:
+            print("The solver was unable to satisfy boundary conditions "
+                  "tolerance on iteration {}. \n"
+                  "Maximum relative residual: {:.2e} \n"
+                  "Maximum boundary residual: {:.2e}"
+                  .format(iteration, max_rms_res, max_bc_res))
+
 
     if p.size == 0:
         p = None
