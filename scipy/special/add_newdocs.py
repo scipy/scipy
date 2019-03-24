@@ -1321,7 +1321,7 @@ add_newdoc("scipy.special", "ellipj",
 
             sn(u|m), cn(u|m), dn(u|m)
 
-        The value `ph` is such that if `u = ellipk(ph, m)`,
+        The value `ph` is such that if `u = ellipkinc(ph, m)`,
         then `sn(u|m) = sin(ph)` and `cn(u|m) = cos(ph)`.
 
     Notes
@@ -1331,7 +1331,7 @@ add_newdoc("scipy.special", "ellipj",
     These functions are periodic, with quarter-period on the real axis
     equal to the complete elliptic integral `ellipk(m)`.
 
-    Relation to incomplete elliptic integral: If `u = ellipk(phi,m)`, then
+    Relation to incomplete elliptic integral: If `u = ellipkinc(phi,m)`, then
     `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`.  The `phi` is called
     the amplitude of `u`.
 
@@ -1341,7 +1341,8 @@ add_newdoc("scipy.special", "ellipj",
 
     See also
     --------
-    ellipk : Complete elliptic integral of the first kind.
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
 
     References
     ----------
