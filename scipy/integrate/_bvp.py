@@ -820,8 +820,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             * 2 : display progress during iterations.
     bc_tol : float, optional
         Desired absolute tolerance for the boundary condition residuals: `bc` 
-        value should satisfy ``abs(bc) < bc_tol`` component-wise. Equals to
-        `tol` by default.
+        value should satisfy ``abs(bc) < bc_tol`` component-wise. 
+        Equals to `tol` by default. Up to 10 iterations are allowed to achieve this
+        tolerance.
 
     Returns
     -------
