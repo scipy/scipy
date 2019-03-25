@@ -3774,7 +3774,7 @@ class TestWeibull(object):
 class TestTruncWeibull(object):
 
     def test_logpdf(self):
-        y = stats.truncweibull_min.logpdf(2., 2, 1.)
+        y = stats.truncweibull_min.logpdf(2., 2., 1.)
         assert_equal(y, 0)
 
     def test_with_maxima_distrib(self):
