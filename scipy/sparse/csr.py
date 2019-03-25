@@ -238,7 +238,7 @@ class csr_matrix(_cs_matrix):
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
-            yield csr_matrix((data, indices, indptr), shape=shape, copy=True)
+            yield self.__class__((data, indices, indptr), shape=shape, copy=True)
             i0 = i1
 
     def getrow(self, i):
@@ -253,7 +253,7 @@ class csr_matrix(_cs_matrix):
             raise IndexError('index (%d) out of range' % i)
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, i, i + 1, 0, N)
-        return csr_matrix((data, indices, indptr), shape=(1, N),
+        return self.__class__((data, indices, indptr), shape=(1, N),
                           dtype=self.dtype, copy=False)
 
     def getcol(self, i):
@@ -268,7 +268,7 @@ class csr_matrix(_cs_matrix):
             raise IndexError('index (%d) out of range' % i)
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, 0, M, i, i + 1)
-        return csr_matrix((data, indices, indptr), shape=(M, 1),
+        return self.__class__((data, indices, indptr), shape=(M, 1),
                           dtype=self.dtype, copy=False)
 
     def _get_intXarray(self, row, col):
@@ -304,7 +304,7 @@ class csr_matrix(_cs_matrix):
             row_indices = abs(row_indices[::-1])
 
         shape = (1, int(np.ceil(float(stop - start) / stride)))
-        return csr_matrix((row_data, row_indices, row_indptr), shape=shape,
+        return self.__class__((row_data, row_indices, row_indptr), shape=shape,
                           dtype=self.dtype, copy=False)
 
     def _get_sliceXint(self, row, col):
