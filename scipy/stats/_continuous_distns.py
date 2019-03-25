@@ -2087,7 +2087,7 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = c x^{c-1} \exp(-x^c)
+        f(x, a) = c x^{c-1} \exp(-x^c + a^c)
 
     for :math:`x > a`, :math:`c > 0`.
 
