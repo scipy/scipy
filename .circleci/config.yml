@@ -154,8 +154,8 @@ jobs:
             export SCIPY_AVAILABLE_MEM=1G
             # Try to limit per-process GC memory usage
             export PYPY_GC_MAX=900MB
-            mkdir -p test-results/pytest
-            pypy3 runtests.py -- -rfEX -n 2 --durations=30 --timeout=45 --timeout-method=thread --junit-xml=test-results/pytest/junit-results.xml
+            mkdir -p ${CIRCLE_WORKING_DIRECTORY}/test-results/pytest
+            pypy3 runtests.py -- -rfEX -n 2 --durations=30 --timeout=45 --timeout-method=thread --junit-xml=${CIRCLE_WORKING_DIRECTORY}/test-results/pytest/junit-results.xml
 
       # Save the JUnit file
       - store_test_results:
