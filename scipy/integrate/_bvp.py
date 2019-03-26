@@ -1153,7 +1153,6 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
                   "Maximum boundary residual: {:.2e}"
                   .format(iteration, max_rms_res, max_bc_res))
 
-
     if p.size == 0:
         p = None
 
