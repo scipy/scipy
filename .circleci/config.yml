@@ -115,15 +115,16 @@ jobs:
             echo "export CCACHE_COMPRESS=1" >> $BASH_ENV
             echo "export PATH=/usr/lib/ccache:$PATH" >> $BASH_ENV
       - run:
-          name: install nightly
+          name: install PyPy3.6-v7.0
           command: |
-            wget http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb
-            sudo dpkg --install libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb
             wget https://bitbucket.org/pypy/pypy/downloads/pypy3.6-v7.0.0-linux64.tar.bz2 -O pypy.tar.bz2
-            mkdir -p pypy3.6-7.0
-            (cd pypy3.6-7.0; tar --strip-components=1 -xf ../pypy.tar.bz2)
-            export PATH=${PWD}/pypy3.6-7.0/bin:$PATH
+            mkdir -p pypy3.6
+            (cd pypy3.6; tar --strip-components=1 -xf ../pypy.tar.bz2)
+            export PATH=${PWD}/pypy3.6/bin:$PATH
             echo "export PATH=${PWD}/pypy3.6/latest/bin:$PATH" >> $BASH_ENV
+            # Rebuild the _ssl module to accomodate for different openssl library
+            (cd pypy3.6/lib_pypy; pypy3 -c \
+                'from _ssl_build import ffi; ffi.compile(verbose=False)' 2> /dev/null)
             pypy3 -mensurepip
       - run:
           name: setup pypy3
@@ -142,7 +143,7 @@ jobs:
             # Less aggressive optimization flags for faster compilation
             OPT="-O1" FOPT="-O1" pypy3 setup.py build
       - save_cache:
-          key: pypy3-nightly-ccache-{{ .Branch }}-{{ .BuildNum }}
+          key: pypy3-v7.0-ccache-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
             - ~/.cache/pip
@@ -153,7 +154,7 @@ jobs:
             export SCIPY_AVAILABLE_MEM=1G
             # Try to limit per-process GC memory usage
             export PYPY_GC_MAX=900MB
-            pypy3 runtests.py -- -rfEX -n 2 --durations=30 --timeout=45 --timeout-method=thread -v
+            pypy3 runtests.py -- -rfEX -n 2 --durations=30 --timeout=45 --timeout-method=thread
 
 
 workflows:
