@@ -10,6 +10,7 @@ from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state, MapWrapper
 from scipy._lib.six import xrange, string_types
+from scipy.optimize._constraints import (Bounds, new_bounds_to_old)
 
 
 __all__ = ['differential_evolution']
@@ -39,11 +40,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence
-        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-        defining the lower and upper bounds for the optimizing argument of
-        `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
+    bounds : sequence or `Bounds`, optional
+        Bounds for variables.  There are two ways to specify the bounds:
+        1. Instance of `Bounds` class.
+        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
+        lower and upper bounds for the optimizing argument of `func`. It is
+        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
+        to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -286,11 +289,13 @@ class DifferentialEvolutionSolver(object):
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence
-        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-        defining the lower and upper bounds for the optimizing argument of
-        `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
+    bounds : sequence or `Bounds`, optional
+        Bounds for variables.  There are two ways to specify the bounds:
+        1. Instance of `Bounds` class.
+        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
+        lower and upper bounds for the optimizing argument of `func`. It is
+        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
+        to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -487,7 +492,14 @@ class DifferentialEvolutionSolver(object):
         # convert tuple of lower and upper bounds to limits
         # [(low_0, high_0), ..., (low_n, high_n]
         #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
-        self.limits = np.array(bounds, dtype='float').T
+        if isinstance(bounds, Bounds):
+            self.limits = np.array(new_bounds_to_old(bounds.lb,
+                                                     bounds.ub,
+                                                     len(bounds.lb)),
+                                   dtype=float).T
+        else:
+            self.limits = np.array(bounds, dtype='float').T
+
         if (np.size(self.limits, 0) != 2 or not
                 np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '

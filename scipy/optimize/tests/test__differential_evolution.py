@@ -6,6 +6,7 @@ import multiprocessing
 from scipy.optimize import _differentialevolution
 from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
+from scipy.optimize._constraints import Bounds
 import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, assert_allclose,
@@ -266,11 +267,6 @@ class TestDifferentialEvolutionSolver(object):
     def test_bounds_checking(self):
         # test that the bounds checking works
         func = rosen
-        bounds = [(-3, None)]
-        assert_raises(ValueError,
-                          differential_evolution,
-                          func,
-                          bounds)
         bounds = [(-3)]
         assert_raises(ValueError,
                           differential_evolution,
@@ -281,6 +277,10 @@ class TestDifferentialEvolutionSolver(object):
                           differential_evolution,
                           func,
                           bounds)
+
+        # test that we can use a new-type Bounds object
+        result = differential_evolution(rosen, Bounds([0, 0], [2, 2]))
+        assert_almost_equal(result.x, (1., 1.))
 
     def test_select_samples(self):
         # select_samples should return 5 separate random numbers.
