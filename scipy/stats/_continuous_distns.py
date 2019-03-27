@@ -803,7 +803,7 @@ class burr_gen(rv_continuous):
         cond = (xx == 0)
         if np.any(cond):
             xz = xx[cond]
-            output[cond] = np.log(c) + np.log(d) + sc.xlogy(c*d - 1, xz) - (d+1) * sc.log1p(x**(c))
+            output[cond] = np.log(c) + np.log(d) + sc.xlogy(c*d - 1, xz) - (d+1) * sc.log1p(xz**(c))
         if np.any(~cond):
             xnz = xx[~cond]
             output[~cond] = np.log(c) + np.log(d) + sc.xlogy(-c - 1, xnz) + sc.xlog1py(-d-1, xnz**(-c))
