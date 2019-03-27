@@ -2821,11 +2821,11 @@ class TestBurr(object):
         assert_array_almost_equal(ans, correct)
 
     def test_burr_stats_9544(self):
-        # gh-9544
+        # gh-9544.  Test from gh-9978
         c, d = 5.0, 3
         mean, variance = stats.burr(c, d).stats()
         mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
-        assert_allclose(mean_hc, mean_hc)
+        assert_allclose(mean, mean_hc)
         assert_allclose(variance, variance_hc)
 
 
