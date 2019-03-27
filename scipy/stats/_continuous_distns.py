@@ -776,14 +776,46 @@ class burr_gen(rv_continuous):
     %(example)s
 
     """
-    _support_mask = rv_continuous._open_support_mask
+    # Do not set _support_mask to rv_continuous._open_support_mask
+    # Whether the left-hand endpoint is suitable for pdf evaluation is dependent
+    # on the values of c and d
 
     def _pdf(self, x, c, d):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
-        return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
+        xx = np.asarray(x)
+        dtyp = np.find_common_type([xx.dtype, np.float64], [])
+        output = np.zeros(np.shape(xx), dtyp)
+        cond = (xx == 0)
+        if np.any(cond):
+            xz = xx[cond]
+            output[cond] = c * d * (xz**(c*d-1)) / (1 + xz**c)
+        if np.any(~cond):
+            xnz = xx[~cond]
+            output[~cond] = c * d * (xnz ** (-c - 1.0)) * ((1 + xnz ** (-c)) ** (-d - 1.0))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def _logpdf(self, x, c, d):
+        xx = np.asarray(x)
+        dtyp = np.find_common_type([xx.dtype, np.float64], [])
+        output = np.zeros(np.shape(xx), dtyp)
+        cond = (xx == 0)
+        if np.any(cond):
+            xz = xx[cond]
+            output[cond] = np.log(c) + np.log(d) + sc.xlogy(c*d - 1, xz) - (d+1) * sc.log1p(x**(c))
+        if np.any(~cond):
+            xnz = xx[~cond]
+            output[~cond] = np.log(c) + np.log(d) + sc.xlogy(-c - 1, xnz) + sc.xlog1py(-d-1, xnz**(-c))
+        if output.ndim == 0:
+            return output[()]
+        return output
 
     def _cdf(self, x, c, d):
         return (1 + x**(-c))**(-d)
+
+    def _logcdf(self, x, c, d):
+        return sc.log1p(x**(-c)) * (-d)
 
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
@@ -837,7 +869,7 @@ class burr12_gen(rv_continuous):
     %(example)s
 
     """
-    _support_mask = rv_continuous._open_support_mask
+    # _support_mask = rv_continuous._open_support_mask
 
     def _pdf(self, x, c, d):
         # burr12.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
@@ -908,6 +940,13 @@ class fisk_gen(burr_gen):
 
     def _cdf(self, x, c):
         return burr_gen._cdf(self, x, c, 1.0)
+
+    def _logpdf(self, x, c):
+        # fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
+        return burr_gen._logpdf(self, x, c, 1.0)
+
+    def _logcdf(self, x, c):
+        return burr_gen._logcdf(self, x, c, 1.0)
 
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
@@ -1677,7 +1716,7 @@ class f_gen(rv_continuous):
     def _logpdf(self, x, dfn, dfd):
         n = 1.0 * dfn
         m = 1.0 * dfd
-        lPx = m/2 * np.log(m) + n/2 * np.log(n) + (n/2 - 1) * np.log(x)
+        lPx = m/2 * np.log(m) + n/2 * np.log(n) + sc.xlogy(n/2 - 1, x)
         lPx -= ((n+m)/2) * np.log(m + n*x) + sc.betaln(n/2, m/2)
         return lPx
 

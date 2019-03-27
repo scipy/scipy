@@ -142,7 +142,7 @@ def test_vonmises_numerical():
 
 
 @pytest.mark.parametrize('dist',
-                         ['alpha', 'betaprime', 'burr', 'burr12',
+                         ['alpha', 'betaprime',
                           'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
                           'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
                           'powerlognorm', 'rayleigh', 'wald'])
@@ -1144,6 +1144,17 @@ class TestInvGamma(object):
 
 
 class TestF(object):
+    def test_endpoints(self):
+        # Compute the pdf at the left endpoint dst.a.
+        data = [[stats.f, (2, 1), 1.0]]
+        for _f, _args, _correct in data:
+            ans = _f.pdf(_f.a, *_args)
+            print(_f, (_args), ans, _correct, ans == _correct)
+
+        ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [_correct_ for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
     def test_f_moments(self):
         # n-th moment of F distributions is only finite for n < dfd / 2
         m, v, s, k = stats.f.stats(11, 6.5, moments='mvsk')
@@ -2790,6 +2801,32 @@ class TestTriang(object):
             assert_equal(stats.triang.cdf(0., 1.), 0.)
             assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
             assert_equal(stats.triang.cdf(1., 1.), 1)
+
+
+class TestBurr(object):
+    def test_endpoints_7491(self):
+        # gh-7491
+        # Compute the pdf at the left endpoint dst.a.
+        data = [
+            [stats.fisk, (1,), 1],
+            [stats.burr, (0.5, 2), 1],
+            [stats.burr, (1, 1), 1],
+            [stats.burr, (2, 0.5), 1],
+            [stats.burr12, (1, 0.5), 0.5],
+            [stats.burr12, (1, 1), 1.0],
+            [stats.burr12, (1, 2), 2.0]]
+
+        ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [_correct_ for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
+    def test_burr_stats_9544(self):
+        # gh-9544
+        c, d = 5.0, 3
+        mean, variance = stats.burr(c, d).stats()
+        mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
+        assert_allclose(mean_hc, mean_hc)
+        assert_allclose(variance, variance_hc)
 
 
 def test_540_567():
