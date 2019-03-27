@@ -44,9 +44,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Bounds for variables.  There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-           lower and upper bounds for the optimizing argument of `func`. It is
-           required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-           to determine the number of parameters in ``x``.
+        lower and upper bounds for the optimizing argument of `func`. It is
+        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
+        to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -293,9 +293,9 @@ class DifferentialEvolutionSolver(object):
         Bounds for variables.  There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-           lower and upper bounds for the optimizing argument of `func`. It is
-           required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-           to determine the number of parameters in ``x``.
+        lower and upper bounds for the optimizing argument of `func`. It is
+        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
+        to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
