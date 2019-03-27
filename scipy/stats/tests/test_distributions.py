@@ -3459,8 +3459,9 @@ def test_burr_nan_mean_var():
 def test_burr_stats():
     c, d = 5.0, 3
     mean, variance = stats.burr(c, d).stats()
+    # the *_hc come from formula for mean and variance of c, d =5, 3
     mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
-    assert_allclose(mean_hc, mean_hc)
+    assert_allclose(mean, mean_hc)
     assert_allclose(variance, variance_hc)
 
 def test_crystalball_function():

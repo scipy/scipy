@@ -757,7 +757,7 @@ class burr_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{-c-1} (1+x^{-c})^{-d-1}
+        f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d - 1}
 
     for :math:`x > 0` and :math:`c, d > 0`.
 
@@ -785,28 +785,32 @@ class burr_gen(rv_continuous):
     _support_mask = rv_continuous._open_support_mask
 
     def _pdf(self, x, c, d):
-        # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
-        return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
+        # burr.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
+        return c * d * (x**(-c - 1.0)) / ((1 + x**(-c))**(d + 1.0))
 
     def _logpdf(self, x, c, d):
-        return (np.log(c) + np.log(d) + (-c - 1.0) * np.log(x) +
-                 (-d - 1.0) * np.log1p(x**(-c)))
+        return (np.log(c) + np.log(d) + sc.xlogy(-c - 1.0, x) +
+                sc.xlogy(-d - 1.0, x**(-c)))
 
     def _cdf(self, x, c, d):
-        return (1 + x**(-c))**(-d)
+        return -sc.expm1(self._logsf(x, c, d))
 
     def _logcdf(self, x, c, d):
         return -d * np.log1p(x**(-c))
 
     def _sf(self, x, c, d):
-        return 1 - (1 + x**(-c))**(-d)
+        return np.exp(self._logsf(x, c, d))
+
+    def _logsf(self, x, c, d):
+        return np.log1p(- (1 + x**(-c))**(-d))
 
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
-        e1, e2, e3, e4 = d * sc.beta(d + nc, 2. - nc)
+        #ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
+        e1, e2, e3, e4 = sc.beta(d + nc, 1. - nc) * d
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
