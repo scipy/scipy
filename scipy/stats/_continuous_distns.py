@@ -2110,32 +2110,31 @@ class truncweibull_min_gen(rv_continuous):
         return (a >= 0.) & (c > 0.)
 
     def _pdf(self, x, a, c):
-        return c*pow(x, c-1)*np.exp(-pow(x, c) + pow(a, c))
+        return c * x**(c-1) * np.exp(-x**c + a**c)
 
     def _logpdf(self, x, a, c):
-        logpdf = np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) + pow(a, c)
-        return logpdf
+        return np.log(c) + sc.xlogy(c - 1, x) - x**c + a**c
 
     def _cdf(self, x, a, c):
-        return -sc.expm1(-pow(x, c) + pow(a, c))
+        return -sc.expm1(-x**c + a**c)
 
     def _sf(self, x, a, c):
-        return np.exp(-pow(x, c) + pow(a, c))
+        return np.exp(-x**c + a**c)
 
     def _logsf(self, x, a, c):
-        return -pow(x, c) + pow(a, c)
+        return -x**c + a**c
 
     def _ppf(self, q, a, c):
-        return pow(pow(a, c) - sc.log1p(-q), 1.0/c)
+        return (a**c - sc.log1p(-q))**(1/c)
 
     def _a_est(self, x, c):
         x_r = x.min()
         f_r = (1. - 0.3)/(len(x) + 0.4)
 
-        if pow(-np.log(1 - f_r), 1./c) > x_r:
+        if -np.log(1 - f_r) > x_r**c:
             return 0
         else:
-            return (np.log(1. - f_r) + x_r**c)**(1./c)
+            return (np.log(1. - f_r) + x_r**c)**(1/c)
 
     @contextmanager
     def _mle_mod(self):
