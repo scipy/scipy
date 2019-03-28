@@ -20,17 +20,18 @@ cdef double scipy_zeros_functions_func(double x, void *params):
 cdef double {{ROOT_FINDER}}(
         callback_type f, double xa, double xb, void *args, double xtol,
         double rtol, int iter, zeros_parameters *full_output) nogil:
+    cdef c_zeros.scipy_zeros_info solver_stats
     cdef zeros_parameters myparams
     # create params struct
     myparams.args = args
     myparams.function = f
     myparams.root = c_zeros.{{ROOT_FINDER}}(
         scipy_zeros_functions_func, xa, xb, xtol, rtol, iter,
-        <c_zeros.default_parameters *> &myparams)
+        <void *> &myparams, &solver_stats)
     if full_output is not NULL:
-        full_output.funcalls = myparams.funcalls
-        full_output.iterations = myparams.iterations
-        full_output.error_num = myparams.error_num
+        full_output.funcalls = solver_stats.funcalls
+        full_output.iterations = solver_stats.iterations
+        full_output.error_num = solver_stats.error_num
     return myparams.root
 
 

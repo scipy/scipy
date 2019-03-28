@@ -20,7 +20,7 @@ typedef struct {
 #define EVALUEERR -3
 #define INPROGRESS 1
 
-typedef double (*callback_type)(double,void*);
+typedef double (*callback_type)(double, void*);
 typedef double (*solver_type)(callback_type, double, double, double, double,
                               int, void *, scipy_zeros_info*);
 
