@@ -394,13 +394,6 @@ class TestLeastSq(object):
 
 
 class TestCurveFit(object):
-    def test_empty_array_with_bounds(self):
-        # This test is regarding the issue #9864
-        # Test that Curve_fit checks for empty input data
-        # if called with bounds
-        # Calling this function will produce a meaningful error message.
-        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [], bounds=(1, 2))
-
     def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
@@ -541,6 +534,19 @@ class TestCurveFit(object):
 
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
+
+    def test_empty_inputs(self):
+        # Test both with and without bounds (regression test for gh-9864)
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [])
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [],
+                      bounds=(1, 2))
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [1], [])
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [2], [],
+                      bounds=(1, 2))
+
+    def test_function_zero_params(self):
+        # Fit args is zero, so "Unable to determine number of fit parameters."
+        assert_raises(ValueError, curve_fit, lambda x: x, [1, 2], [3, 4])
 
     def test_method_argument(self):
         def f(x, a, b):
@@ -713,6 +719,7 @@ class TestCurveFit(object):
 
                 assert_allclose(popt1, popt2, atol=1e-14)
                 assert_allclose(pcov1, pcov2, atol=1e-14)
+
 
 class TestFixedPoint(object):
 
