@@ -535,6 +535,19 @@ class TestCurveFit(object):
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
 
+    def test_empty_inputs(self):
+        # Test both with and without bounds (regression test for gh-9864)
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [])
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [],
+                      bounds=(1, 2))
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [1], [])
+        assert_raises(ValueError, curve_fit, lambda x, a: a*x, [2], [],
+                      bounds=(1, 2))
+
+    def test_function_zero_params(self):
+        # Fit args is zero, so "Unable to determine number of fit parameters."
+        assert_raises(ValueError, curve_fit, lambda x: x, [1, 2], [3, 4])
+
     def test_method_argument(self):
         def f(x, a, b):
             return a * np.exp(-b*x)
@@ -787,4 +800,3 @@ class TestFixedPoint(object):
 
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)
-
