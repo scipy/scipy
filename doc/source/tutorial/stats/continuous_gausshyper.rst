@@ -4,11 +4,11 @@
 Gauss Hypergeometric Distribution
 =================================
 
-:math:`x\in\left[0,1\right]` , :math:`\alpha>0,\,\beta>0`
+The two shape parameters are :math:`\alpha>0,\,\beta>0`.  The support is :math:`x\in\left[0,1\right]`.
 
 .. math::
 
-     C^{-1}=B\left(\alpha,\beta\right)\,_{2}F_{1}\left(\gamma,\alpha;\alpha+\beta;-z\right)
+     \text{Let }C=\frac{1}{B\left(\alpha,\beta\right)\,_{2}F_{1}\left(\gamma,\alpha;\alpha+\beta;-z\right)}
 
 .. math::
    :nowrap:
