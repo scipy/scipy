@@ -346,6 +346,8 @@ def cwt(data, wavelet, widths):
 
     Examples
     --------
+
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 200, endpoint=False)
