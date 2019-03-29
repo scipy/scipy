@@ -1,5 +1,4 @@
-cdef extern from "../Zeros/zeros.h":
-    ctypedef double (*callback_type)(double, void*)
+ctypedef double (*callback_type)(double, void*)
 
 ctypedef struct zeros_parameters:
     callback_type function

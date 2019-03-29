@@ -1,15 +1,16 @@
 """
 Cython Optimize Zeros API
 =========================
-The following four zeros functions can be accessed directly from Cython:
+The underlying C functions for the following root finders can be accessed
+directly using Cython:
 
 - `~scipy.optimize.bisect`
 - `~scipy.optimize.ridder`
 - `~scipy.optimize.brenth`
 - `~scipy.optimize.brentq`
 
-The Cython API is similar to Python except there is no ``disp`` argument.
-Import the zero functions into Cython directly from
+The Cython API for the zeros functions is similar except there is no ``disp``
+argument. Import the zeros functions using ``cimport`` from
 `scipy.optimize.cython_optimize`. ::
 
     from scipy.optimize.cython_optimize cimport bisect, ridder, brentq, brenth
@@ -17,9 +18,9 @@ Import the zero functions into Cython directly from
 
 Callback Signature
 ------------------
-The zeros functions in this module use a callback that takes a double with the
-scalar independent variable as the 1st argument and a user defined ``struct``
-with any extra parameters as the 2nd argument. ::
+The zeros functions in `~scipy.optimize.cython_optimize` expect a callback that
+takes a double for the scalar independent variable as the 1st argument and a
+user defined ``struct`` with any extra parameters as the 2nd argument. ::
 
     double (*callback_type)(double, void*)
 
@@ -32,10 +33,10 @@ that are compiled into C. For more information on compiling Cython see the
 
 These are the basic steps:
 
-1. Create a Cython ``.pyx`` file, for example: ``myexample.pyx``
-2. Import the desired root finder from `~scipy.optimize.cython_optimize`
+1. Create a Cython ``.pyx`` file, for example: ``myexample.pyx``.
+2. Import the desired root finder from `~scipy.optimize.cython_optimize`.
 3. Write the callback function, and call the selected zeros function passing
-   the callback, any extra arguments, and the other solver parameters ::
+   the callback, any extra arguments, and the other solver parameters. ::
 
        from scipy.optimize.cython_optimize cimport brentq
 
@@ -74,15 +75,15 @@ These are the basic steps:
            return brentq_wrapper_example(args, xa, xb, xtol, rtol, mitr)
 
 4. If you want to call your function from Python, create a Cython wrapper, and
-   a Python function that calls the wrapper, or use ``cpdef``, then in Python
-   you can import and run the example ::
+   a Python function that calls the wrapper, or use ``cpdef``. Then in Python
+   you can import and run the example. ::
 
        from myexample import brentq_example
 
        x = brentq_example()
        # 0.6999942848231314
 
-5. Create a Cython ``.pxd`` file if you need to export any Cython functions
+5. Create a Cython ``.pxd`` file if you need to export any Cython functions.
 
 
 Full Output
@@ -90,25 +91,19 @@ Full Output
 The  functions in `~scipy.optimize.cython_optimize` can also copy the full
 output from the solver to a C ``struct`` that is passed as its last argument.
 If you don't want the full output just pass ``NULL``. The full output
-``struct`` must be ``zeros_parameters`` and contains the following:
+``struct`` must be type ``zeros_full_output``, which is defined in
+`scipy.optimize.cython_optimize` with the following fields:
 
 - ``int funcalls``: number of function calls
 - ``int iterations``: number of iterations
 - ``int error_num``: error number
 - ``double root``: root of function
 
-An error number of -1 means a sign error, -2 means a convergence error, and 0
-means the solver converged. Continuing from the previous example::
+The root is copied by `~scipy.optimize.cython_optimize` to the full output
+``struct``. An error number of -1 means a sign error, -2 means a convergence
+error, and 0 means the solver converged. Continuing from the previous example::
 
-    from scipy.optimize.cython_optimize cimport zeros_parameters
-
-
-    # user defined full output structure with simplified fields
-    ctypedef struct brent_full_output:
-        int funcalls
-        int iterations
-        int error_num
-        double root
+    from scipy.optimize.cython_optimize cimport zeros_full_output
 
 
     # cython brentq solver with full output
@@ -116,16 +111,9 @@ means the solver converged. Continuing from the previous example::
             dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
         cdef test_params myargs = args
-        cdef brent_full_output my_full_output  # simplified output
-        cdef zeros_parameters full_output  # use instead of NULL
-        # put result into full_output
-        my_full_output.root = brentq(
-            f, xa, xb, &myargs, xtol, rtol, mitr, &full_output)
-        # copy full output to simpler struct with only primitives,
-        # so Cython will convert it to a dictionary
-        my_full_output.funcalls = full_output.funcalls
-        my_full_output.iterations = full_output.iterations
-        my_full_output.error_num = full_output.error_num
+        cdef zeros_full_output my_full_output
+        # use my_full_output instead of NULL
+        brentq(f, xa, xb, &myargs, xtol, rtol, mitr, &my_full_output)
         return my_full_output
 
 
