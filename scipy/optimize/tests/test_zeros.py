@@ -407,7 +407,6 @@ class TestBasic(object):
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc)
 
-
     def test_newton_does_not_modify_x0(self):
         # https://github.com/scipy/scipy/issues/9964
         x0 = np.array([0.1, 3])
