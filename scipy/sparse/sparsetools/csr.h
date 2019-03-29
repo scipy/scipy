@@ -933,13 +933,13 @@ void csr_addsub_csr_canonical(const I n_row, const I n_col,
 
     Cp[0] = 0;
     I nnz = 0;
-    
+
     for(I i = 0; i < n_row; i++){
         I A_pos = Ap[i];
         I B_pos = Bp[i];
         I A_end = Ap[i+1];
         I B_end = Bp[i+1];
-    
+
         //while not finished with either row.
         while(A_pos < A_end && B_pos < B_end){
             I A_j = Aj[A_pos];
