@@ -2136,16 +2136,6 @@ class truncweibull_min_gen(rv_continuous):
         else:
             return (np.log(1. - f_r) + x_r**c)**(1/c)
 
-    @contextmanager
-    def _mle_mod(self):
-        """Override penalized_nnlf method in a context manager."""
-        penalized_nnlf = self._penalized_nnlf
-        try:
-            self._penalized_nnlf = self._penalized_nnlf_mod
-            yield
-        finally:
-            self._penalized_nnlf = penalized_nnlf
-
     def _penalized_nnlf_mod(self, theta, x):
         """
         Ignore provided `a` and estimate it using an alternative method. This
@@ -2167,12 +2157,16 @@ class truncweibull_min_gen(rv_continuous):
         if f0 is not None or (floc is not None and fscale is not None):
             return super(truncweibull_min_gen, self).fit(data, *args, **kwds)
 
-        # MLE is non-existent - use a modified version. See notes
-        with self._mle_mod():
-            _, c, loc, scale = super(truncweibull_min_gen, self).fit(
-                data, *args, **kwds)
-            a = self._a_est((data - loc)/scale, c)
-        return a, c, loc, scale
+        else:  # MLE is non-existent - use a modified version. See notes
+            penalized_nnlf = self._penalized_nnlf
+            try:
+                self._penalized_nnlf = self._penalized_nnlf_mod
+                _, c, loc, scale = super(truncweibull_min_gen, self).fit(
+                    data, *args, **kwds)
+                a = self._a_est((data - loc)/scale, c)
+            finally:  # revert back to default penalized_nnlf
+                self._penalized_nnlf = penalized_nnlf
+            return a, c, loc, scale
 
 
 truncweibull_min = truncweibull_min_gen(a=0.0, name='truncweibull_min')
