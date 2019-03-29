@@ -5,7 +5,7 @@ from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from .optimize import OptimizeWarning
-from warnings import warn
+from warnings import warn, catch_warnings, filterwarnings
 from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
@@ -262,9 +262,43 @@ class PreparedConstraint(object):
         Returns
         -------
         feasible : bool
-            Whether the vector of independent variables satisfies the
-            constraint.
+            Whether the vector of independent variables satisfies the 'm'
+            constraints.
         """
+        with catch_warnings():
+            filterwarnings('ignore', category=UserWarning)
+            ev = self.fun.fun(np.asarray(x))
+        feasible_lb = np.all(ev >= self.bounds[0])
+        feasible_ub = np.all(ev <= self.bounds[1])
+
+        return feasible_lb and feasible_ub
+
+    def excess_violation(self, x):
+        """
+        How much the constraint is exceeded by.
+
+        Parameters
+        ----------
+        x : array-like
+            Vector of independent variables
+
+        Returns
+        -------
+        excess : array-like
+            How much the constraint is exceeded by, for each of the  'm'
+            constraints
+        """
+        with catch_warnings():
+            filterwarnings('ignore', category=UserWarning)
+            ev = self.fun.fun(np.asarray(x))
+
+        excess_lb = self.bounds[0] - ev
+        excess_lb[excess_lb < 0] = 0
+
+        excess_ub = ev - self.bounds[1]
+        excess_ub[excess_ub < 0] = 0
+
+        return excess_lb + excess_ub
 
 
 def new_bounds_to_old(lb, ub, n):
