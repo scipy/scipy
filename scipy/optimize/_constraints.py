@@ -5,7 +5,8 @@ from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from .optimize import OptimizeWarning
-from warnings import warn, catch_warnings, filterwarnings
+from warnings import warn
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
@@ -265,8 +266,8 @@ class PreparedConstraint(object):
             Whether the vector of independent variables satisfies the 'm'
             constraints.
         """
-        with catch_warnings():
-            filterwarnings('ignore', category=UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
             ev = self.fun.fun(np.asarray(x))
         feasible_lb = np.all(ev >= self.bounds[0])
         feasible_ub = np.all(ev <= self.bounds[1])
@@ -288,8 +289,8 @@ class PreparedConstraint(object):
             How much the constraint is exceeded by, for each of the  'm'
             constraints
         """
-        with catch_warnings():
-            filterwarnings('ignore', category=UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
             ev = self.fun.fun(np.asarray(x))
 
         excess_lb = self.bounds[0] - ev
