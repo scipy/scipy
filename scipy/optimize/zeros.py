@@ -359,11 +359,13 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     Do not use this method directly. This method is called from `newton`
     when ``np.size(x0) > 1`` is ``True``. For docstring, see `newton`.
     """
+    # Explicitly copy `x0` as `p` will be modified inplace, but, the
+    # user's array should not be altered.
     try:
-        p = np.asarray(x0, dtype=float)
+        p = np.array(x0, copy=True, dtype=float)
     except TypeError:
         # can't convert complex to float
-        p = np.asarray(x0)
+        p = np.array(x0, copy=True)
 
     failures = np.ones_like(p, dtype=bool)
     nz_der = np.ones_like(failures)
