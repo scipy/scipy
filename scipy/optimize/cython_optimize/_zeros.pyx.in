@@ -19,20 +19,22 @@ cdef double scipy_zeros_functions_func(double x, void *params):
 # cythonized way to call scalar {{ROOT_FINDER}}
 cdef double {{ROOT_FINDER}}(
         callback_type f, double xa, double xb, void *args, double xtol,
-        double rtol, int iter, zeros_parameters *full_output) nogil:
+        double rtol, int iter, zeros_full_output *full_output) nogil:
     cdef c_zeros.scipy_zeros_info solver_stats
     cdef zeros_parameters myparams
+    cdef double root
     # create params struct
     myparams.args = args
     myparams.function = f
-    myparams.root = c_zeros.{{ROOT_FINDER}}(
+    root = c_zeros.{{ROOT_FINDER}}(
         scipy_zeros_functions_func, xa, xb, xtol, rtol, iter,
         <void *> &myparams, &solver_stats)
     if full_output is not NULL:
         full_output.funcalls = solver_stats.funcalls
         full_output.iterations = solver_stats.iterations
         full_output.error_num = solver_stats.error_num
-    return myparams.root
+        full_output.root = root
+    return root
 
 
 #
@@ -44,14 +46,6 @@ cdef double {{ROOT_FINDER}}(
 # extra parameters
 ctypedef struct extra_params:
     double[4] a
-
-
-# full output structure
-ctypedef struct full_output_struct:
-    int funcalls
-    int iterations
-    int error_num
-    double root
 
 
 # callback function
@@ -124,18 +118,13 @@ def loop_example(method, a0, args, xa, xb, xtol, rtol, mitr):
 
 
 # brentq example with full ouptut
-cdef full_output_struct brentq_full_output_example(
+cdef zeros_full_output brentq_full_output_example(
         tuple args, float xa, float xb, float xtol, float rtol, int mitr):
-    cdef full_output_struct my_full_output
-    cdef zeros_parameters full_output
+    cdef zeros_full_output full_output
     cdef extra_params myargs
     myargs.a = args
-    my_full_output.root = brentq(
-        f_example, xa, xb, &myargs, xtol, rtol, mitr, &full_output)
-    my_full_output.funcalls = full_output.funcalls
-    my_full_output.iterations = full_output.iterations
-    my_full_output.error_num = full_output.error_num
-    return my_full_output
+    brentq(f_example, xa, xb, &myargs, xtol, rtol, mitr, &full_output)
+    return full_output
 
 
 # python function
