@@ -572,13 +572,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
                          I Cp[],         I Cj[],        T2 Cx[],
                    const bin_op& op)
 {
-    assert( R > 0 && C > 0);
-
-    if( R == 1 && C == 1 ){
-        //use CSR for 1x1 blocksize
-        csr_binop_csr(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
-    }
-    else if ( csr_has_canonical_format(n_brow, Ap, Aj) && csr_has_canonical_format(n_brow, Bp, Bj) ){
+    if ( csr_has_canonical_format(n_brow, Ap, Aj) && csr_has_canonical_format(n_brow, Bp, Bj) ){
         // prefer faster implementation
         bsr_binop_bsr_canonical(n_brow, n_bcol, R, C, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     }
@@ -595,7 +589,14 @@ void bsr_ne_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+    }
 }
 
 template <class I, class T, class T2>
@@ -604,7 +605,14 @@ void bsr_lt_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+    }
 }
 
 template <class I, class T, class T2>
@@ -613,7 +621,14 @@ void bsr_gt_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+    }
 }
 
 template <class I, class T, class T2>
@@ -622,7 +637,14 @@ void bsr_le_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+    }
 }
 
 template <class I, class T, class T2>
@@ -631,7 +653,14 @@ void bsr_ge_bsr(const I n_row, const I n_col, const I R, const I C,
                 const I Bp[], const I Bj[], const T Bx[],
                       I Cp[],       I Cj[],      T2 Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+    }
 }
 
 template <class I, class T>
@@ -640,7 +669,14 @@ void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_muldiv_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    }
 }
 
 template <class I, class T>
@@ -649,7 +685,14 @@ void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_muldiv_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    }
 }
 
 
@@ -659,7 +702,14 @@ void bsr_plus_bsr(const I n_row, const I n_col, const I R, const I C,
                   const I Bp[], const I Bj[], const T Bx[],
                         I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_addsub_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+    }
 }
 
 template <class I, class T>
@@ -668,7 +718,14 @@ void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+    assert( R > 0 && C > 0);
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_addsub_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+    }
 }
 
 
@@ -678,7 +735,13 @@ void bsr_maximum_bsr(const I n_row, const I n_col, const I R, const I C,
                      const I Bp[], const I Bj[], const T Bx[],
                            I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+    }
 }
 
 template <class I, class T>
@@ -687,7 +750,13 @@ void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C,
                      const I Bp[], const I Bj[], const T Bx[],
                            I Cp[],       I Cj[],       T Cx[])
 {
-    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+    if( R == 1 && C == 1 ){
+        //use CSR for 1x1 blocksize
+        csr_rel_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+    }
+    else{
+        bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+    }
 }
 
 
