@@ -21,7 +21,7 @@ jobs:
           name: install Debian dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex
+            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
 
       - run:
           name: setup Python venv
@@ -30,7 +30,7 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.8.5
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
 
       - run:
           name: build docs
