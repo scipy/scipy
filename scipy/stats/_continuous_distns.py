@@ -2107,7 +2107,7 @@ class truncweibull_min_gen(rv_continuous):
     """
     def _argcheck(self, a, c):
         self.a = a
-        return (a >= 0.) & (c > 0.)
+        return (a > 0.) & (c > 0.)
 
     def _pdf(self, x, a, c):
         return c * x**(c-1) * np.exp(-x**c + a**c)
@@ -2144,7 +2144,7 @@ class truncweibull_min_gen(rv_continuous):
         """
         loc, scale, (_, c) = self._unpack_loc_scale(theta)
         theta = (self._a_est((x - loc)/scale, c), c, loc, scale)
-        return super(truncweibull_min_gen, self)._penalized_nnlf(theta, x)
+        return super()._penalized_nnlf(theta, x)
 
     def fit(self, data, *args, **kwds):
 
@@ -2155,13 +2155,13 @@ class truncweibull_min_gen(rv_continuous):
 
         # MLE is well-behaved, use default fit method.
         if f0 is not None or (floc is not None and fscale is not None):
-            return super(truncweibull_min_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         else:  # MLE is non-existent - use a modified version. See notes
             penalized_nnlf = self._penalized_nnlf
             try:
                 self._penalized_nnlf = self._penalized_nnlf_mod
-                _, c, loc, scale = super(truncweibull_min_gen, self).fit(
+                _, c, loc, scale = super().fit(
                     data, *args, **kwds)
                 a = self._a_est((data - loc)/scale, c)
             finally:  # revert back to default penalized_nnlf
