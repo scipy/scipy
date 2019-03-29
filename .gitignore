@@ -74,6 +74,7 @@ setup.cfg
 .deps
 .libs
 .eggs
+pip-wheel-metadata
 
 # Paver generated files #
 #########################

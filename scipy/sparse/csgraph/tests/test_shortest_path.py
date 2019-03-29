@@ -252,3 +252,15 @@ def test_overwrite():
     foo = G.copy()
     shortest_path(foo, overwrite=False)
     assert_array_equal(foo, G)
+
+
+@pytest.mark.parametrize('method', methods)
+def test_buffer(method):
+    # Smoke test that sparse matrices with read-only buffers (e.g., those from
+    # joblib workers) do not cause::
+    #
+    #     ValueError: buffer source array is read-only
+    #
+    G = scipy.sparse.csr_matrix([[1.]])
+    G.data.flags['WRITEABLE'] = False
+    shortest_path(G, method=method)
