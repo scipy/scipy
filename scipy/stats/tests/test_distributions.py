@@ -2828,6 +2828,13 @@ class TestBurr(object):
         assert_allclose(mean, mean_hc)
         assert_allclose(variance, variance_hc)
 
+    def test_burr_nan_mean_var_9544(self):
+        # gh-9544.  Test from gh-9978
+        c, d = 0.5, 3
+        mean, variance = stats.burr(c, d).stats()
+        assert_(np.isnan(mean))
+        assert_(np.isnan(variance))
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
