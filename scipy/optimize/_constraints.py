@@ -249,6 +249,23 @@ class PreparedConstraint(object):
         self.bounds = (lb, ub)
         self.keep_feasible = keep_feasible
 
+    def is_feasible(self, x):
+        """
+        The truth of whether a given vector of independent variables
+        satisfies the constraint.
+
+        Parameters
+        ----------
+        x : array-like
+            Vector of independent variables.
+
+        Returns
+        -------
+        feasible : bool
+            Whether the vector of independent variables satisfies the
+            constraint.
+        """
+
 
 def new_bounds_to_old(lb, ub, n):
     """Convert the new bounds representation to the old one.
