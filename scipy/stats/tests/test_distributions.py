@@ -2824,6 +2824,8 @@ class TestBurr(object):
         # gh-9544.  Test from gh-9978
         c, d = 5.0, 3
         mean, variance = stats.burr(c, d).stats()
+        # mean = sc.beta(3 + 1/5, 1. - 1/5) * 3  = 1.4110263...
+        # var =  sc.beta(3 + 2 / 5, 1. - 2 / 5) * 3 - (sc.beta(3 + 1 / 5, 1. - 1 / 5) * 3) ** 2
         mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
         assert_allclose(mean, mean_hc)
         assert_allclose(variance, variance_hc)

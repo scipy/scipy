@@ -757,7 +757,7 @@ class burr_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{-c-1} (1+x^{-c})^{-d-1}
+        f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d + 1}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
@@ -791,7 +791,7 @@ class burr_gen(rv_continuous):
             output[cond] = c * d * (xz**(c*d-1)) / (1 + xz**c)
         if np.any(~cond):
             xnz = xx[~cond]
-            output[~cond] = c * d * (xnz ** (-c - 1.0)) * ((1 + xnz ** (-c)) ** (-d - 1.0))
+            output[~cond] = c * d * (xnz ** (-c - 1.0)) / ((1 + xnz ** (-c)) ** (d + 1.0))
         if output.ndim == 0:
             return output[()]
         return output
@@ -803,10 +803,12 @@ class burr_gen(rv_continuous):
         cond = (xx == 0)
         if np.any(cond):
             xz = xx[cond]
-            output[cond] = np.log(c) + np.log(d) + sc.xlogy(c*d - 1, xz) - (d+1) * sc.log1p(xz**(c))
+            output[cond] = (np.log(c) + np.log(d) + sc.xlogy(c*d - 1, xz)
+                            - (d+1) * sc.log1p(xz**(c)))
         if np.any(~cond):
             xnz = xx[~cond]
-            output[~cond] = np.log(c) + np.log(d) + sc.xlogy(-c - 1, xnz) + sc.xlog1py(-d-1, xnz**(-c))
+            output[~cond] = (np.log(c) + np.log(d) + sc.xlogy(-c - 1, xnz)
+                             - sc.xlog1py(d+1, xnz**(-c)))
         if output.ndim == 0:
             return output[()]
         return output
@@ -833,15 +835,17 @@ class burr_gen(rv_continuous):
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
-        g1 = _lazywhere(c > 3.0, (c, e1, e2, e3, mu2_if_c),
-             lambda c, e1, e2, e3, mu2_if_c:
-             (e3 - 3*e2*e1 + 2*e1**3) / np.sqrt((mu2_if_c)**3),
-             fillvalue=np.nan)
-        g2 = _lazywhere(c > 3.0, (c, e1, e2, e3, e4, mu2_if_c),
-             lambda c, e1, e2, e3, e4, mu2_if_c:
-             ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) /
-             mu2_if_c**2) - 3,
-             fillvalue=np.nan)
+        g1 = _lazywhere(
+            c > 3.0,
+            (c, e1, e2, e3, mu2_if_c),
+            lambda c, e1, e2, e3, mu2_if_c: (e3 - 3*e2*e1 + 2*e1**3) / np.sqrt((mu2_if_c)**3),
+            fillvalue=np.nan)
+        g2 = _lazywhere(
+            c > 3.0,
+            (c, e1, e2, e3, e4, mu2_if_c),
+            lambda c, e1, e2, e3, e4, mu2_if_c: (
+                ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) /  mu2_if_c**2) - 3),
+            fillvalue=np.nan)
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
@@ -868,7 +872,7 @@ class burr12_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{c-1} (1+x^c)^{-d-1}
+        f(x, c, d) = c d x^{c-1} / (1 + x^c)^{d + 1}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
@@ -889,6 +893,9 @@ class burr12_gen(rv_continuous):
        Mathematical Statistics, 13(2), pp 215-232 (1942).
 
     .. [2] https://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
+
+    .. [3] "Burr distribution",
+       https://en.wikipedia.org/wiki/Burr_distribution
 
     %(example)s
 
