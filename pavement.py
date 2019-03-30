@@ -129,7 +129,7 @@ PYVER="3.6"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
-        virtualenv=Bunch(packages_to_install=["sphinx==1.1.3", "numpydoc"],
+        virtualenv=Bunch(packages_to_install=["sphinx==1.8.5", "numpydoc"],
                          no_site_packages=False),
         sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         superpack=Bunch(builddir="build-superpack",

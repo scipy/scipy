@@ -5,7 +5,8 @@ from math import sqrt, exp, sin, cos
 
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
-                           assert_equal)
+                           assert_equal,
+                           assert_array_equal)
 import numpy as np
 from numpy import finfo, power, nan, isclose
 
@@ -405,6 +406,13 @@ class TestBasic(object):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc)
+
+    def test_newton_does_not_modify_x0(self):
+        # https://github.com/scipy/scipy/issues/9964
+        x0 = np.array([0.1, 3])
+        x0_copy = x0.copy()  # Copy to test for equality.
+        newton(np.sin, x0, np.cos)
+        assert_array_equal(x0, x0_copy)
 
 
 def test_gh_5555():
