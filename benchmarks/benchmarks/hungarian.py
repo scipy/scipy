@@ -1,6 +1,7 @@
-from numpy.random import rand
 
 try:
+    from numpy.random import rand
+    import numpy.random as nprand
     from scipy.optimize._hungarian import linear_sum_assignment
 except ImportError:
     pass
@@ -20,6 +21,7 @@ class Hungarian(Benchmark):
     param_names = ['matrix_size']
 
     def setup(self, matrix_size):
+        nprand.seed(161718)
         self.cost_matrix = rand(matrix_size, matrix_size)
 
     def time_solve(self, matrix_size):
