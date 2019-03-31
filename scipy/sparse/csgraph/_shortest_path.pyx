@@ -1364,7 +1364,7 @@ cdef int _johnson_undirected(
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, j_source, count
+        unsigned int j, k, ind_k, j_source, count
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
