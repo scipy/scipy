@@ -750,7 +750,8 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         required threshold.
     distance : number, optional
         Required minimal horizontal distance (>= 1) in samples between
-        neighbouring peaks. The removal order is explained in the notes section.
+        neighbouring peaks. Smaller peaks are removed first until the condition
+        is fulfilled for all remaining peaks.
     prominence : number or ndarray or sequence, optional
         Required prominence of peaks. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
@@ -854,9 +855,8 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       `height`, `threshold`, `distance`, `prominence`, `width`. In most cases
       this order is the fastest one because faster operations are applied first
       to reduce the number of peaks that need to be evaluated later.
-    * Satisfying the distance condition is accomplished by iterating over all
-      peaks in descending order based on their height and removing all lower
-      peaks that are too close.
+    * While indices in `peaks` are guaranteed to be at least `distance` samples
+      apart, edges of flat peaks may be closer than the allowed `distance`.
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
