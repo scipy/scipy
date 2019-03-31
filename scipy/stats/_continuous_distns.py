@@ -844,7 +844,7 @@ class burr_gen(rv_continuous):
             c > 3.0,
             (c, e1, e2, e3, e4, mu2_if_c),
             lambda c, e1, e2, e3, e4, mu2_if_c: (
-                ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) /  mu2_if_c**2) - 3),
+                ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
             fillvalue=np.nan)
         return mu, mu2, g1, g2
 
