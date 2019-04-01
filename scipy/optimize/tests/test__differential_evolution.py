@@ -4,13 +4,16 @@ Unit tests for the differential global minimization algorithm.
 import multiprocessing
 
 from scipy.optimize import _differentialevolution
-from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
-from scipy.optimize import differential_evolution
-from scipy.optimize._constraints import Bounds
-import numpy as np
+from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
+                                                   _ConstraintWrapper)
+from scipy.optimize import differential_evolution, minimize
+from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
+                                         LinearConstraint)
 from scipy.optimize import rosen
+
+import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
-                           assert_almost_equal,
+                           assert_almost_equal, assert_array_equal,
                            assert_string_equal, assert_)
 from pytest import raises as assert_raises, warns
 
@@ -554,3 +557,193 @@ class TestDifferentialEvolutionSolver(object):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
         solver.solve()
         assert_(solver.converged())
+
+    def test_constraint_violation_fn(self):
+        def constr_f(x):
+            return [x[0] + x[1]]
+
+        def constr_f2(x):
+            return [x[0]**2 + x[1], x[0] - x[1]]
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        cv = solver._constraint_violation_fn([1.0, 1.0])
+        assert_almost_equal(cv, 0.1)
+
+        nlc2 = NonlinearConstraint(constr_f2, -np.inf, 1.8)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc, nlc2))
+
+        # for multiple constraints the constraint violations should
+        # be concatenated.
+        cv = solver._constraint_violation_fn([1.2, 1.])
+        assert_almost_equal(cv, [0.3, 0.64, 0])
+
+        cv = solver._constraint_violation_fn([2., 2.])
+        assert_almost_equal(cv, [2.1, 4.2, 0])
+
+        # should accept valid values
+        cv = solver._constraint_violation_fn([0.5, 0.5])
+        assert_almost_equal(cv, [0., 0., 0.])
+
+    def test_constraint_population_feasibilities(self):
+        def constr_f(x):
+            return [x[0] + x[1]]
+
+        def constr_f2(x):
+            return [x[0]**2 + x[1], x[0] - x[1]]
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        # are population feasibilities correct
+        # [0.5, 0.5] corresponds to scaled values of [1., 1.]
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.5, 0.5], [1., 1.]]))
+        assert_equal(feas, [False, False])
+        assert_almost_equal(cv, np.array([[0.1], [2.1]]))
+        assert cv.shape == (2, 1)
+
+        nlc2 = NonlinearConstraint(constr_f2, -np.inf, 1.8)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc, nlc2))
+
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.5, 0.5], [0.6, 0.5]]))
+        assert_equal(feas, [False, False])
+        assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [0.3, 0.64, 0]]))
+
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.5, 0.5], [1., 1.]]))
+        assert_equal(feas, [False, False])
+        assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [2.1, 4.2, 0]]))
+        assert cv.shape == (2, 3)
+
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.25, 0.25], [1., 1.]]))
+        assert_equal(feas, [True, False])
+        assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
+        assert cv.shape == (2, 3)
+
+    def test_constraint_solve(self):
+        def constr_f(x):
+            return np.array([x[0] + x[1]])
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        # trust-constr warns if the constraint function is linear
+        with warns(UserWarning):
+            res = solver.solve()
+
+        assert constr_f(res.x) <= 1.9
+        assert res.success
+
+    def test_impossible_constraint(self):
+        def constr_f(x):
+            return np.array([x[0] + x[1]])
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, -1)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        # a UserWarning is issued because the 'trust-constr' polishing is
+        # attempted on the least infeasible solution found.
+        with warns(UserWarning):
+            res = solver.solve()
+
+        assert_almost_equal(res.x, [0, 0])
+        assert res.maxcv > 0
+        assert not res.success
+
+        # test _promote_lowest_energy works when none of the population is
+        # feasible. In this case the solution with the lowest constraint
+        # violation should be promoted.
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc), polish=False)
+        next(solver)
+        assert not solver.feasible.all()
+        assert not np.isfinite(solver.population_energies).all()
+
+        # now swap two of the entries in the population
+        l = 20
+        cv = solver.constraint_violation[0]
+
+        solver.population_energies[[0, l]] = solver.population_energies[[l, 0]]
+        solver.population[[0, l], :] = solver.population[[l, 0], :]
+        solver.constraint_violation[[0, l], :] = (
+            solver.constraint_violation[[l, 0], :])
+
+        solver._promote_lowest_energy()
+        assert_equal(solver.constraint_violation[0], cv)
+
+    def test_accept_trial(self):
+        # _accept_trial(self, energy_trial, feasible_trial, cv_trial,
+        #               energy_orig, feasible_orig, cv_orig)
+        def constr_f(x):
+            return [x[0] + x[1]]
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+        fn = solver._accept_trial
+        # both solutions are feasible, select lower energy
+        assert fn(0.1, True, np.array([0.]), 1.0, True, np.array([0.]))
+        assert (fn(1.0, True, np.array([0.]), 0.1, True, np.array([0.]))
+               == False)
+        assert fn(0.1, True, np.array([0.]), 0.1, True, np.array([0.]))
+
+        # trial is feasible, original is not
+        assert fn(9.9, True, np.array([0.]), 1.0, False, np.array([1.]))
+
+        # trial and original are infeasible
+        # cv_trial have to be <= cv_original to be better
+        assert (fn(0.1, False, np.array([0.5, 0.5]),
+                  1.0, False, np.array([1., 1.0])))
+        assert (fn(0.1, False, np.array([0.5, 0.5]),
+                  1.0, False, np.array([1., 0.50])))
+        assert (fn(1.0, False, np.array([0.5, 0.5]),
+                  1.0, False, np.array([1., 0.4])) == False)
+
+    def test_constraint_wrapper(self):
+        lb = np.array([0, 20, 30])
+        ub = np.array([0.5, np.inf, 70])
+        x0 = np.array([1, 2, 3])
+        pc = _ConstraintWrapper(Bounds(lb, ub), x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([0.25, 21, 31]) == 0).all()
+
+        x0 = np.array([1, 2, 3, 4])
+        A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
+        pc = _ConstraintWrapper(LinearConstraint(A, -np.inf, 0), x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+        def fun(x):
+            return A.dot(x)
+
+        nonlinear = NonlinearConstraint(fun, -np.inf, 0)
+        pc = _ConstraintWrapper(nonlinear, [-10, 2, -10, 4])
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+    def test_constraint_wrapper_violation(self):
+        def cons_f(x):
+            return np.array([x[0] ** 2 + x[1], x[0] ** 2 - x[1]])
+
+        nlc = NonlinearConstraint(cons_f, [-1, -0.8500], [2, 2])
+        pc = _ConstraintWrapper(nlc, [0.5, 1])
+        assert np.size(pc.bounds[0]) == 2
+
+        assert_array_equal(pc.violation([0.5, 1]), [0., 0.])
+        assert_almost_equal(pc.violation([0.5, 1.2]), [0., 0.1])
+        assert_almost_equal(pc.violation([1.2, 1.2]), [0.64, 0])
+        assert_almost_equal(pc.violation([0.1, -1.2]), [0.19, 0])
+        assert_almost_equal(pc.violation([0.1, 2]), [0.01, 1.14])
