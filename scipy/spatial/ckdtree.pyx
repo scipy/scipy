@@ -393,7 +393,8 @@ cdef extern from "ckdtree_methods.h":
 
     object query_ball_point(const ckdtree *self,
                             const np.float64_t *x,
-                            const np.float64_t r,
+                            const np.float64_t *r,
+                            const np.intp_t n_r,
                             const np.float64_t p,
                             const np.float64_t eps,
                             const np.intp_t n_queries,
@@ -425,7 +426,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     point. 
 
     The algorithm used is described in Maneewongvatana and Mount 1999. 
-    The general idea is that the kd-tree is a binary trie, each of whose
+    The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
     along that axis is greater than or less than a particular value. 
@@ -856,7 +857,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # query_ball_point
     # ----------------
 
-    def query_ball_point(cKDTree self, object x, np.float64_t r,
+    def query_ball_point(cKDTree self, object x, object r,
                          np.float64_t p=2., np.float64_t eps=0, n_jobs=1,
                          return_sorted=None):
         """
@@ -868,8 +869,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ----------
         x : array_like, shape tuple + (self.m,)
             The point or points to search for neighbors of.
-        r : positive float
-            The radius of points to return.
+        r : array_like, shape tuple or positive float
+            The radius of points to return. Can be a single scalar or an
+            array with shape matching x.shape[:-1].
         p : float, optional
             Which Minkowski p-norm to use.  Should be in the range [1, inf].
             A finite large p may cause a ValueError if overflow can occur.
@@ -916,6 +918,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         cdef:
             np.ndarray[np.float64_t, ndim=1, mode="c"] xx
             np.ndarray[np.float64_t, ndim=2, mode="c"] vxx
+            np.ndarray[np.float64_t, ndim=1, mode="c"] rr
             vector[np.intp_t] *vres
             vector[np.intp_t] **vvres
             np.uintp_t vvres_uintp
@@ -929,14 +932,20 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         try:
                
             x = np.asarray(x, dtype=np.float64)
+            r = np.asarray(r, dtype=np.float64)
+            rr_size = r.size
             if x.shape[-1] != self.m:
                 raise ValueError("Searching for a %d-dimensional point in a "
                                  "%d-dimensional KDTree" % 
                                      (int(x.shape[-1]), int(self.m)))
             if len(x.shape) == 1:
+                if rr_size != 1:
+                    raise ValueError("r must either be an array of shape "
+                                     "1 or a float.")
                 vres = new vector[np.intp_t]()
                 xx = np.ascontiguousarray(x, dtype=np.float64)
-                query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, 1, &vres)
+                rr = np.ascontiguousarray(r, dtype=np.float64)
+                query_ball_point(<ckdtree*> self, &xx[0], &rr[0], rr_size, p, eps, 1, &vres)
                 n = <np.intp_t> vres.size()
                 tmp = n * [None]
                 if NPY_LIKELY(n > 0):
@@ -950,6 +959,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 result = tmp
             
             else:
+                if r.shape != x.shape[:-1] and rr_size != 1:
+                    raise ValueError("r must either be an array of shape "
+                                     "x.shape[:-1] or 1.")
                 retshape = x.shape[:-1]
                 
                 # allocate an array of std::vector<npy_intp>
@@ -967,9 +979,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 result = np.empty(retshape, dtype=object)
                 
                 vxx = np.zeros((n,self.m), dtype=np.float64)
+                if rr_size == 1:
+                    rr = np.ascontiguousarray(r, dtype=np.float64)
+                else:
+                    rr = np.zeros(n, dtype=np.float64)
                 i = 0
                 for c in np.ndindex(retshape):
                     vxx[i,:] = x[c]
+                    if rr_size != 1:
+                        rr[i] = r[c]
                     i += 1
                     
                 # multithreading logic is similar to cKDTree.query
@@ -981,23 +999,27 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 
                     CHUNK = n//n_jobs if n//n_jobs else n
                              
-                    def _thread_func(self, _j, _vxx, r, p, eps, _vvres, CHUNK): 
+                    def _thread_func(self, _j, _vxx, _rr, p, eps, _vvres, CHUNK, _size): 
                         cdef: 
                             np.intp_t j = _j
                             np.ndarray[np.float64_t,ndim=2] vxx = _vxx
+                            np.ndarray[np.float64_t,ndim=1] rr = _rr 
                             vector[np.intp_t] **vvres                   
                             np.intp_t start = j*CHUNK
                             np.intp_t stop = start + CHUNK
+                            np.intp_t size = _size
+                            np.intp_t start_rr = _size
+                        start_rr = min(start, size-1)
                         stop = n if stop > n else stop
                         vvres = (<vector[np.intp_t] **> 
                                   (<void*> (<np.uintp_t> _vvres)))                                    
                         if start < n:
                             query_ball_point(<ckdtree*>self, &vxx[start,0], 
-                                r, p, eps, stop-start, vvres+start)
+                                &rr[start_rr], size, p, eps, stop-start, vvres+start)
                                 
                     vvres_uintp = <np.uintp_t> (<void*> vvres)
                     threads = [threading.Thread(target=_thread_func,
-                               args=(self, j, vxx, r, p, eps,vvres_uintp,CHUNK))
+                               args=(self, j, vxx, rr, p, eps,vvres_uintp,CHUNK, rr_size))
                                   for j in range(1+(n//CHUNK))]
                     for t in threads:
                         t.daemon = True
@@ -1007,7 +1029,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                                                                 
                 else:
                 
-                    query_ball_point(<ckdtree*>self, &vxx[0,0], r, p, eps, 
+                    query_ball_point(<ckdtree*>self, &vxx[0,0], &rr[0], rr_size, p, eps, 
                         n, vvres)
                 
                 i = 0
