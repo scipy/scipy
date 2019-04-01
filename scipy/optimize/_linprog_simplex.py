@@ -608,6 +608,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                                   maxiter=maxiter, tol=tol, bland=bland, _T_o=_T_o)
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
+    nit2 = nit1
     if abs(T[-1, -1]) < tol:
         # Remove the pseudo-objective row from the tableau
         T = T[:-1, :]
@@ -616,7 +617,6 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     else:
         # Failure to find a feasible starting point
         status = 2
-        nit2 = nit1
         messages[status] = (
             "Phase 1 of the simplex method failed to find a feasible "
             "solution. The pseudo-objective function evaluates to {0:.1e} "
