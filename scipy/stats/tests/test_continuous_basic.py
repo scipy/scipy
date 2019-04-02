@@ -112,6 +112,7 @@ def test_cont_basic(distname, arg):
         check_pdf_logpdf(distfn, arg, distname)
         check_cdf_logcdf(distfn, arg, distname)
         check_sf_logsf(distfn, arg, distname)
+        check_ppf_broadcast(distfn, arg, distname)
 
         alpha = 0.01
         if distname == 'rv_histogram_instance':
@@ -467,6 +468,19 @@ def check_cdf_logcdf(distfn, args, msg):
     logcdf = logcdf[np.isfinite(logcdf)]
     msg += " - logcdf-log(cdf) relationship"
     npt.assert_almost_equal(np.log(cdf), logcdf, decimal=7, err_msg=msg)
+
+
+def check_ppf_broadcast(distfn, arg, msg):
+    # compares ppf for multiple argsets.
+    num_repeats = 5
+    args = [] * num_repeats
+    if arg:
+        args = [np.array([_] * num_repeats) for _ in arg]
+
+    median = distfn.ppf(0.5, *arg)
+    medians = distfn.ppf(0.5, *args)
+    msg += " - ppf multiple"
+    npt.assert_almost_equal(medians, [median] * num_repeats, decimal=7, err_msg=msg)
 
 
 def check_distribution_rvs(dist, args, alpha, rvs):

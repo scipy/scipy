@@ -2238,11 +2238,15 @@ class genpareto_gen(rv_continuous):
 
     """
     def _argcheck(self, c):
+        return np.isfinite(c)
+
+    def _get_support(self, c):
         c = np.asarray(c)
-        self.b = _lazywhere(c < 0, (c,),
-                            lambda c: -1. / c,
-                            np.inf)
-        return True
+        b = _lazywhere(c < 0, (c,),
+                       lambda c: -1. / c,
+                       np.inf)
+        a = np.where(c >= 0, self.a, self.a)
+        return a, b
 
     def _pdf(self, x, c):
         # genpareto.pdf(x, c) = (1 + c * x)**(-1 - 1/c)
@@ -2803,8 +2807,10 @@ class genhalflogistic_gen(rv_continuous):
 
     """
     def _argcheck(self, c):
-        self.b = 1.0 / c
         return c > 0
+
+    def _get_support(self, c):
+        return self.a, 1.0/c
 
     def _pdf(self, x, c):
         # genhalflogistic.pdf(x, c) =
@@ -5918,9 +5924,6 @@ class reciprocal_gen(rv_continuous):
 
     """
     def _argcheck(self, a, b):
-        self.a = a
-        self.b = b
-        self.d = np.log(b*1.0 / a)
         return (a > 0) & (b > a)
 
     def _get_support(self, a, b):
@@ -5940,7 +5943,7 @@ class reciprocal_gen(rv_continuous):
         return a*pow(b*1.0/a, q)
 
     def _munp(self, n, a, b):
-        return 1.0/self.d / n * (pow(b*1.0, n) - pow(a*1.0, n))
+        return 1.0/np.log(b*1.0/a) / n * (pow(b*1.0, n) - pow(a*1.0, n))
 
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
