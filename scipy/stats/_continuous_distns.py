@@ -7197,14 +7197,16 @@ class irwinhall_gen(rv_continuous):
 
     Notes
     -----
-    The `irwinhall` cumulative distribution function is:
+    The `irwinhall` probability density function is:
 
     .. math::
 
-        F(x) = \frac{1}{n!}\sum_{k=0}^{\lfloor x\rfloor}
-                    (-1)^k \binom{n}{k}(x-k)^n
+        f(x) = \frac{1}{(n-1)!}\sum_{k=0}^{\lfloor x\rfloor}
+                    (-1)^k \binom{n}{k}(x-k)^(n - 1)
 
     for :math:`x \in [0,n]`, where :math:`n > 0` is an integer.
+    The `irwinhall` is a distribution of the sum of `n` independent uniform
+    random variables each uniform on `(0,1)`.
     For more on the Irwin Hall distribution see [1]_.
 
     For large :math:`n` values the calculations may be slow as most methods

@@ -250,6 +250,7 @@ Continuous Distributions in `scipy.stats`
    continuous_invgamma
    continuous_invgauss
    continuous_invweibull
+   continuous_irwinhall
    continuous_johnsonsb
    continuous_johnsonsu
    continuous_ksone
