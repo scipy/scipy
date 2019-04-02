@@ -7224,8 +7224,6 @@ class irwinhall_gen(rv_continuous):
     """
 
     def _argcheck(self, n):
-        self.b = n
-        self.a = 0
         return (n > 0) & (np.floor(n) == n)
 
     def _fitstart(self, data, args=None):
@@ -7244,43 +7242,29 @@ class irwinhall_gen(rv_continuous):
         # NOTE: start returns max_i x_i which is scale MLE
         return tuple(0.0, self.b, 0.0, start)
 
-    def _rvs_helper(n):
-        return np.sum(np.random.random_sample(n))
-
-    _vec_rvs_helper = np.vectorize(_rvs_helper, otypes=[np.float64])
-
+    #TODO: fix this to generate correctly
     def _rvs(self, n):
-        return self._vec_rvs_helper(n)
-
-    def _pdf_helper(x, n):
-        fl_x = int(np.floor(x)) + 1
-        kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
-                for k in range(0, fl_x)]
-        pdf_x = np.sum(kernel_list) / sc.factorial(n - 1)
-        return pdf_x
-
-    _vec_pdf_helper = np.vectorize(_pdf_helper)
+        return np.random.uniform(0., 1., size=n.shape)
 
     def _pdf(self, x, n):
-        return self._vec_pdf_helper(x, n)
+        # Quick exit
+        if not (0 < x < n):
+            return 0.
 
-    def _cdf_helper(x,n):
         fl_x = int(np.floor(x)) + 1
-        kernel_list = [(-1)**k * sc.binom(n,k) * (x-k)**n
-                for k in range(0, fl_x)]
-        cdf_x = np.sum(kernel_list) / sc.factorial(n)
-        return cdf_x
-
-    _vec_cdf_helper = np.vectorize(_cdf_helper)
+        kernel_list = (np.arange(fl_x) - x)**(n - 1) * sc.binom(n, np.arange(fl_x))
+        kernel_list[1::2] *= -1
+        return kernel_list.sum() / sc.factorial(n - 1)
 
     def _cdf(self, x, n):
-        return self._vec_cdf_helper(x,n)
+        # Quick exit
+        if not(0 < x < n):
+            return 0.
 
-    def _logpdf(self, x, n):
-        return np.log(self._pdf(x, n))
-
-    def _logcdf(self, x, n):
-        return np.log(self._cdf(x, n))
+        fl_x = int(np.floor(x)) + 1
+        kernel_list = (np.arange(fl_x) - x)**n * sc.binom(n, np.arange(fl_x))
+        kernel_list[1::2] *= -1
+        return kernel_list.sum() / sc.factorial(n)
 
     def _stats(self, n):
         return n/2, n/12, 0.0, -6/(5*n)
