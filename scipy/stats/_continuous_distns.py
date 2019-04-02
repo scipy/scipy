@@ -7229,8 +7229,20 @@ class irwinhall_gen(rv_continuous):
         return (n > 0) & (np.floor(n) == n)
 
     def _fitstart(self, data, args=None):
-        # failing travis-CI, but not local, attempt to fix
         return np.nanmax(data)
+
+    def fit(self, data, *args, **kwds):
+        """
+        fit() in _distn_infrastructure.py returns float
+        but `n` for `irwinhall` is a non-negative integer >0.
+        A hacky soln is to overwrite here.
+
+        TODO: Fix this in the _distn_infrastructure.py
+        """
+        # get distribution specific starting locations
+        start = np.ceil(self._fitstart(data))
+        # NOTE: start returns max_i x_i which is scale MLE
+        return tuple(0.0, self.b, 0.0, start)
 
     def _rvs_helper(n):
         return np.sum(np.random.random_sample(n))
