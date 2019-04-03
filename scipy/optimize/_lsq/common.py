@@ -319,7 +319,7 @@ def minimize_quadratic_1d(a, b, lb, ub, c=0):
         if lb < extremum < ub:
             t.append(extremum)
     t = np.asarray(t)
-    y = a * t**2 + b * t + c
+    y = t * (a * t + b) + c
     min_index = np.argmin(y)
     return t[min_index], y[min_index]
 
