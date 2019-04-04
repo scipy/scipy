@@ -1393,6 +1393,9 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
     Weighted least-squares bivariate spline approximation in spherical
     coordinates.
+    
+    Determines a smooth bicubic spline according to a given
+    set of knots in the `theta` and `phi` directions.
 
     .. versionadded:: 0.11.0
 
