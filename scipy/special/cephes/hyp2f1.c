@@ -604,7 +604,6 @@ static double hyp2f1ra(double a, double b, double c, double x,
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
 {
     double k;
-    double err;
     double collector = 1;
     double sum = 1;
     double collector_max = 1;
