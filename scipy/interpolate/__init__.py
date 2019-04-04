@@ -22,10 +22,11 @@ Univariate interpolation
    interp1d
    BarycentricInterpolator
    KroghInterpolator
-   PchipInterpolator
    barycentric_interpolate
    krogh_interpolate
    pchip_interpolate
+   CubicHermiteSpline
+   PchipInterpolator
    Akima1DInterpolator
    CubicSpline
    PPoly
