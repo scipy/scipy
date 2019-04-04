@@ -116,7 +116,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     val = 0.0
     ho = order >> 1
     for k in range(order):
-        if weights[k] != 0: # skip unnecessary func() calls
+        if weights[k] != 0:  # skip unnecessary func() calls
             val += weights[k]*func(x0+(k-ho)*dx,*args)
     return val / prod((dx,)*n,axis=0)
 
