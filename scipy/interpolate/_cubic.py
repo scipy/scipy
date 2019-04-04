@@ -351,7 +351,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
-class Akima1DInterpolator(PPoly):
+class Akima1DInterpolator(CubicHermiteSpline):
     """
     Akima interpolator
 
@@ -403,24 +403,9 @@ class Akima1DInterpolator(PPoly):
     def __init__(self, x, y, axis=0):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
-        x, y = map(np.asarray, (x, y))
-        axis = axis % y.ndim
-
-        if np.any(np.diff(x) < 0.):
-            raise ValueError("x must be strictly ascending")
-        if x.ndim != 1:
-            raise ValueError("x must be 1-dimensional")
-        if x.size < 2:
-            raise ValueError("at least 2 breakpoints are needed")
-        if x.size != y.shape[axis]:
-            raise ValueError("x.shape must equal y.shape[%s]" % axis)
-
-        # move interpolation axis to front
-        y = np.rollaxis(y, axis)
-
+        x, dx, y, _ = validate_input(x, y, axis)
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
-        dx = np.diff(x)
         dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
         m[2:-2] = np.diff(y, axis=0) / dx
 
@@ -445,17 +430,9 @@ class Akima1DInterpolator(PPoly):
         # Set the slope at breakpoint
         t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
                   f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
-        # calculate the higher order coefficients
-        c = (3. * m[2:-2] - 2. * t[:-1] - t[1:]) / dx
-        d = (t[:-1] + t[1:] - 2. * m[2:-2]) / dx ** 2
 
-        coeff = np.zeros((4, x.size - 1) + y.shape[1:])
-        coeff[3] = y[:-1]
-        coeff[2] = t[:-1]
-        coeff[1] = c
-        coeff[0] = d
-
-        super(Akima1DInterpolator, self).__init__(coeff, x, extrapolate=False)
+        super(Akima1DInterpolator, self).__init__(x, y, t, axis=0,
+                                                  extrapolate=False)
         self.axis = axis
 
     def extend(self, c, x, right=True):
