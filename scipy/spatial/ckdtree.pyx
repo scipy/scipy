@@ -1480,7 +1480,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             Sparse matrix representing the results in "dictionary of keys" 
             format. If a dict is returned the keys are (i,j) tuples of indices.
             If output_type is 'ndarray' a record array with fields 'i', 'j',
-            and 'k' is returned,
+            and 'v' is returned,
         """
         
         cdef coo_entries res
