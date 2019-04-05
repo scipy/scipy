@@ -76,10 +76,10 @@ def test_prepare_constraint_infeasible_x0():
     bounds = Bounds(lb, ub, enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, bounds, x0)
 
-    # check is_feasible method
+    # check is_satisifed method
     pc = PreparedConstraint(Bounds(lb, ub), [1, 2, 3])
-    assert(not pc.is_feasible([1, 2, 3]))
-    assert(pc.is_feasible([0.25, 21, 31]))
+    assert(not pc.is_satisifed([1, 2, 3]))
+    assert(pc.is_satisifed([0.25, 21, 31]))
 
     x0 = np.array([1, 2, 3, 4])
     A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
@@ -87,11 +87,11 @@ def test_prepare_constraint_infeasible_x0():
     linear = LinearConstraint(A, -np.inf, 0, enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, linear, x0)
 
-    # check is_feasible method
+    # check is_satisifed method
     pc = PreparedConstraint(LinearConstraint(A, -np.inf, 0),
                             [1, 2, 3, 4])
-    assert(not pc.is_feasible([1, 2, 3, 4]))
-    assert(pc.is_feasible([-10, 2, -10, 4]))
+    assert(not pc.is_satisifed([1, 2, 3, 4]))
+    assert(pc.is_satisifed([-10, 2, -10, 4]))
 
     def fun(x):
         return A.dot(x)
@@ -106,10 +106,10 @@ def test_prepare_constraint_infeasible_x0():
                                     enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, nonlinear, x0)
 
-    # check is_feasible method
+    # check is_satisifed method
     pc = PreparedConstraint(nonlinear, [-10, 2, -10, 4])
-    assert(not pc.is_feasible([1, 2, 3, 4]))
-    assert(pc.is_feasible([-10, 2, -10, 4]))
+    assert(not pc.is_satisifed([1, 2, 3, 4]))
+    assert(pc.is_satisifed([-10, 2, -10, 4]))
 
 
 def test_excess_violation():
@@ -119,19 +119,19 @@ def test_excess_violation():
     nlc = NonlinearConstraint(cons_f, [-1, -0.8500], [2, 2])
     pc = PreparedConstraint(nlc, [0.5, 1])
 
-    assert(pc.is_feasible([0.5, 1]))
+    assert(pc.is_satisifed([0.5, 1]))
     assert_array_equal(pc.excess_violation([0.5, 1]), [0., 0.])
 
-    assert(not pc.is_feasible([0.5, 1.2]))
+    assert(not pc.is_satisifed([0.5, 1.2]))
     np.testing.assert_almost_equal(pc.excess_violation([0.5, 1.2]), [0., 0.1])
 
-    assert(not pc.is_feasible([1.2, 1.2]))
+    assert(not pc.is_satisifed([1.2, 1.2]))
     np.testing.assert_almost_equal(pc.excess_violation([1.2, 1.2]), [0.64, 0])
 
-    assert(not pc.is_feasible([0.1, -1.2]))
+    assert(not pc.is_satisifed([0.1, -1.2]))
     np.testing.assert_almost_equal(pc.excess_violation([0.1, -1.2]), [0.19, 0])
 
-    assert(not pc.is_feasible([0.1, 2]))
+    assert(not pc.is_satisifed([0.1, 2]))
     np.testing.assert_almost_equal(pc.excess_violation([0.1, 2]), [0.01, 1.14])
 
 
