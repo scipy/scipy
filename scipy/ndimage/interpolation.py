@@ -30,7 +30,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import numpy
 import warnings
 
@@ -679,27 +678,26 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
         axes[1] += rank
     if axes[0] < 0 or axes[1] < 0 or axes[0] >= rank or axes[1] >= rank:
         raise ValueError('invalid rotation plane specified')
-    if axes[0] > axes[1]:
-        axes = axes[1], axes[0]
-    angle = numpy.pi / 180 * angle
-    m11 = math.cos(angle)
-    m12 = math.sin(angle)
-    m21 = -math.sin(angle)
-    m22 = math.cos(angle)
-    matrix = numpy.array([[m11, m12],
-                          [m21, m22]], dtype=numpy.float64)
+
+    axes.sort()
+
+    angle_rad = numpy.deg2rad(angle)
+    cos_angle = numpy.cos(angle_rad)
+    sin_angle = numpy.sin(angle_rad)
+
+    rot_matrix = numpy.array([[cos_angle, sin_angle],
+                              [-sin_angle, cos_angle]])
+
     iy = input.shape[axes[0]]
     ix = input.shape[axes[1]]
     if reshape:
-        mtrx = numpy.array([[m11, -m21],
-                            [-m12, m22]], dtype=numpy.float64)
         minc = [0, 0]
         maxc = [0, 0]
-        coor = numpy.dot(mtrx, [0, ix])
+        coor = numpy.dot(rot_matrix, [0, ix])
         minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(mtrx, [iy, 0])
+        coor = numpy.dot(rot_matrix, [iy, 0])
         minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(mtrx, [iy, ix])
+        coor = numpy.dot(rot_matrix, [iy, ix])
         minc, maxc = _minmax(coor, minc, maxc)
         oy = int(maxc[0] - minc[0] + 0.5)
         ox = int(maxc[1] - minc[1] + 0.5)
@@ -709,7 +707,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     offset = numpy.zeros((2,), dtype=numpy.float64)
     offset[0] = float(oy) / 2.0 - 0.5
     offset[1] = float(ox) / 2.0 - 0.5
-    offset = numpy.dot(matrix, offset)
+    offset = numpy.dot(rot_matrix, offset)
     tmp = numpy.zeros((2,), dtype=numpy.float64)
     tmp[0] = float(iy) / 2.0 - 0.5
     tmp[1] = float(ix) / 2.0 - 0.5
@@ -721,7 +719,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     output = _ni_support._get_output(output, input,
                                      shape=output_shape)
     if input.ndim <= 2:
-        affine_transform(input, matrix, offset, output_shape, output,
+        affine_transform(input, rot_matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
@@ -741,7 +739,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
         for ii in range(size):
             ia = input[tuple(coordinates)]
             oa = output[tuple(coordinates)]
-            affine_transform(ia, matrix, offset, os, oa, order, mode,
+            affine_transform(ia, rot_matrix, offset, os, oa, order, mode,
                              cval, prefilter)
             for jj in iter_axes:
                 if coordinates[jj] < input.shape[jj] - 1:
