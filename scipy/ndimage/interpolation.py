@@ -30,6 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import numpy
 import warnings
 
@@ -697,33 +698,19 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     output_shape = tuple(img_shape)
 
     output = _ni_support._get_output(output, input, shape=output_shape)
-    if input.ndim <= 2:
+
+    if rank <= 2:
         affine_transform(input, rot_matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
     else:
-        coordinates = []
-        size = numpy.prod(input.shape, axis=0)
-        size //= input.shape[axes[0]]
-        size //= input.shape[axes[1]]
-        for ii in range(input.ndim):
-            if ii not in axes:
-                coordinates.append(0)
-            else:
-                coordinates.append(slice(None, None, None))
-        iter_axes = list(range(input.ndim))
-        iter_axes.reverse()
-        iter_axes.remove(axes[0])
-        iter_axes.remove(axes[1])
-        os = (output_shape[axes[0]], output_shape[axes[1]])
-        for ii in range(size):
-            ia = input[tuple(coordinates)]
-            oa = output[tuple(coordinates)]
-            affine_transform(ia, rot_matrix, offset, os, oa, order, mode,
-                             cval, prefilter)
-            for jj in iter_axes:
-                if coordinates[jj] < input.shape[jj] - 1:
-                    coordinates[jj] += 1
-                    break
-                else:
-                    coordinates[jj] = 0
+        coordinates_list = itertools.product(
+            *[[slice(None)] if ax in axes else range(img_shape[ax])
+              for ax in range(rank)])
+
+        for coordinates in coordinates_list:
+            ia = input[coordinates]
+            oa = output[coordinates]
+            affine_transform(ia, rot_matrix, offset, out_shape, oa, order,
+                             mode, cval, prefilter)
+
     return output
