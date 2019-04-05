@@ -678,7 +678,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     if axes[1] < 0:
         axes[1] += rank
     if axes[0] < 0 or axes[1] < 0 or axes[0] >= rank or axes[1] >= rank:
-        raise RuntimeError('invalid rotation plane specified')
+        raise ValueError('invalid rotation plane specified')
     if axes[0] > axes[1]:
         axes = axes[1], axes[0]
     angle = numpy.pi / 180 * angle
