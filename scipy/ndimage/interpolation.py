@@ -623,18 +623,6 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     return output
 
 
-def _minmax(coor, minc, maxc):
-    if coor[0] < minc[0]:
-        minc[0] = coor[0]
-    if coor[0] > maxc[0]:
-        maxc[0] = coor[0]
-    if coor[1] < minc[1]:
-        minc[1] = coor[1]
-    if coor[1] > maxc[1]:
-        maxc[1] = coor[1]
-    return minc, maxc
-
-
 @docfiller
 def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
            mode='constant', cval=0.0, prefilter=True):
@@ -688,36 +676,27 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     rot_matrix = numpy.array([[cos_angle, sin_angle],
                               [-sin_angle, cos_angle]])
 
-    iy = input.shape[axes[0]]
-    ix = input.shape[axes[1]]
+    img_shape = numpy.asarray(input.shape)
     if reshape:
-        minc = [0, 0]
-        maxc = [0, 0]
-        coor = numpy.dot(rot_matrix, [0, ix])
-        minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(rot_matrix, [iy, 0])
-        minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(rot_matrix, [iy, ix])
-        minc, maxc = _minmax(coor, minc, maxc)
-        oy = int(maxc[0] - minc[0] + 0.5)
-        ox = int(maxc[1] - minc[1] + 0.5)
+        in_shape = img_shape[axes]
+        iy, ix = in_shape
+        out_bounds = rot_matrix.dot([[0, 0, iy, iy],
+                                     [0, ix, 0, ix]])
+        out_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
+
+        out_center = rot_matrix.dot((out_shape - 1.0) * 0.5)
+        in_center = (in_shape - 1.0) * 0.5
+
+        offset = in_center - out_center
+        out_shape = tuple(out_shape)
     else:
-        oy = input.shape[axes[0]]
-        ox = input.shape[axes[1]]
-    offset = numpy.zeros((2,), dtype=numpy.float64)
-    offset[0] = float(oy) / 2.0 - 0.5
-    offset[1] = float(ox) / 2.0 - 0.5
-    offset = numpy.dot(rot_matrix, offset)
-    tmp = numpy.zeros((2,), dtype=numpy.float64)
-    tmp[0] = float(iy) / 2.0 - 0.5
-    tmp[1] = float(ix) / 2.0 - 0.5
-    offset = tmp - offset
-    output_shape = list(input.shape)
-    output_shape[axes[0]] = oy
-    output_shape[axes[1]] = ox
-    output_shape = tuple(output_shape)
-    output = _ni_support._get_output(output, input,
-                                     shape=output_shape)
+        out_shape = tuple(img_shape[axes])
+        offset = 0.0
+
+    img_shape[axes] = out_shape
+    output_shape = tuple(img_shape)
+
+    output = _ni_support._get_output(output, input, shape=output_shape)
     if input.ndim <= 2:
         affine_transform(input, rot_matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
