@@ -250,10 +250,8 @@ class PreparedConstraint(object):
         self.bounds = (lb, ub)
         self.keep_feasible = keep_feasible
 
-    def is_feasible(self, x):
-        """
-        The truth of whether a given vector of independent variables
-        satisfies the constraint.
+    def is_satisifed(self, x):
+        """Whether a solution satisfies the constraint.
 
         Parameters
         ----------
@@ -262,9 +260,9 @@ class PreparedConstraint(object):
 
         Returns
         -------
-        feasible : bool
-            Whether the vector of independent variables satisfies the 'm'
-            constraints.
+        satisfied : bool
+            Whether the vector of independent variables satisfies the
+            constraint.
         """
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
@@ -275,8 +273,7 @@ class PreparedConstraint(object):
         return feasible_lb and feasible_ub
 
     def excess_violation(self, x):
-        """
-        How much the constraint is exceeded by.
+        """How much the constraint is exceeded by.
 
         Parameters
         ----------
@@ -286,18 +283,15 @@ class PreparedConstraint(object):
         Returns
         -------
         excess : array-like
-            How much the constraint is exceeded by, for each of the  'm'
-            constraints
+            How much the constraint is exceeded by, for each of the
+            constraints specified by `PreparedConstraint.fun`.
         """
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
             ev = self.fun.fun(np.asarray(x))
 
-        excess_lb = self.bounds[0] - ev
-        excess_lb[excess_lb < 0] = 0
-
-        excess_ub = ev - self.bounds[1]
-        excess_ub[excess_ub < 0] = 0
+        excess_lb = np.maximum(self.bounds[0] - ev, 0)
+        excess_ub = np.maximum(ev - self.bounds[1], 0)
 
         return excess_lb + excess_ub
 
