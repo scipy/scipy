@@ -455,7 +455,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         predecessors[i, j] gives the index of the previous node in the
         path from point i to point j.  If no path exists between point
         i and j, then predecessors[i, j] = -9999
-        
+
     sources : ndarray, shape (n_nodes,)
         Returned only if min_only=True and return_predecessors=True.
         Contains the index of the source which had the shortest path
@@ -612,7 +612,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 @cython.boundscheck(False)
 cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
                                 FibonacciNode* nodes,
-                                int[:] source_indices,
+                                const int[:] source_indices,
                                 int[:] sources,
                                 double[:] dist_matrix,
                                 int return_pred):
@@ -640,9 +640,9 @@ cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
 cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
                                FibonacciNode *v,
                                FibonacciNode* nodes,
-                               double[:] csr_weights,
-                               int[:] csr_indices,
-                               int[:] csr_indptr,
+                               const double[:] csr_weights,
+                               const int[:] csr_indices,
+                               const int[:] csr_indptr,
                                int[:] pred,
                                int[:] sources,
                                int return_pred,
@@ -679,9 +679,9 @@ cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
 cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                          FibonacciNode *v,
                          FibonacciNode* nodes,
-                         double[:] csr_weights,
-                         int[:] csr_indices,
-                         int[:] csr_indptr,
+                         const double[:] csr_weights,
+                         const int[:] csr_indices,
+                         const int[:] csr_indptr,
                          int[:, :] pred,
                          int return_pred,
                          DTYPE_t limit,
@@ -712,10 +712,10 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
 
 @cython.boundscheck(False)
 cdef _dijkstra_directed(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
             DTYPE_t limit):
@@ -756,10 +756,10 @@ cdef _dijkstra_directed(
 
 @cython.boundscheck(False)
 cdef _dijkstra_directed_multi(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
@@ -1043,10 +1043,10 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
 
 cdef int _bellman_ford_directed(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred):
     cdef:
@@ -1084,10 +1084,10 @@ cdef int _bellman_ford_directed(
 
 
 cdef int _bellman_ford_undirected(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred):
     cdef:
@@ -1322,9 +1322,9 @@ cdef void _johnson_add_weights(
 
 
 cdef int _johnson_directed(
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
@@ -1358,9 +1358,9 @@ cdef int _johnson_directed(
 
 
 cdef int _johnson_undirected(
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
             double[:] dist_array):
     cdef:
         unsigned int N = dist_array.shape[0]
