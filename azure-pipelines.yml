@@ -34,9 +34,11 @@ jobs:
            cd ../scipy && \
            F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
+    continueOnError: true
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/test-*.xml'
+      failTaskOnFailedTests: true
       testRunTitle: 'Publish test results for Python 3.6-32 bit full Linux'
 - job: Windows
   pool:
@@ -124,7 +126,9 @@ jobs:
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
       python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml
     displayName: 'Run SciPy Test Suite'
+    continueOnError: true
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/test-*.xml'
+      failTaskOnFailedTests: true
       testRunTitle: 'Publish test results for Python $(python.version)'
