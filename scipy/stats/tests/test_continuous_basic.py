@@ -446,6 +446,7 @@ def check_pdf_logpdf(distfn, args, msg):
         sup.filter(category=RuntimeWarning, message="divide by zero encountered in power")  # gengamma
         sup.filter(category=RuntimeWarning, message="invalid value encountered in add")  # genextreme
         sup.filter(category=RuntimeWarning, message="invalid value encountered in subtract")  # gengamma
+        sup.filter(category=RuntimeWarning, message="invalid value encountered in multiply")  # recipinvgauss
         pdf = distfn.pdf(vals, *args)
         logpdf = distfn.logpdf(vals, *args)
         pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
