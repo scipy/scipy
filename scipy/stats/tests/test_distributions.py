@@ -2820,6 +2820,10 @@ class TestBurr(object):
         correct = [_correct_ for _f, _args, _correct_ in data]
         assert_array_almost_equal(ans, correct)
 
+        ans = [_f.logpdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [np.log(_correct_) for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
     def test_burr_stats_9544(self):
         # gh-9544.  Test from gh-9978
         c, d = 5.0, 3
@@ -2835,6 +2839,10 @@ class TestBurr(object):
         c, d = 0.5, 3
         mean, variance = stats.burr(c, d).stats()
         assert_(np.isnan(mean))
+        assert_(np.isnan(variance))
+        c, d = 1.5, 3
+        mean, variance = stats.burr(c, d).stats()
+        assert_(np.isfinite(mean))
         assert_(np.isnan(variance))
 
 

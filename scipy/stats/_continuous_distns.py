@@ -784,37 +784,26 @@ class burr_gen(rv_continuous):
     """
     # Do not set _support_mask to rv_continuous._open_support_mask
     # Whether the left-hand endpoint is suitable for pdf evaluation is dependent
-    # on the values of c and d
+    # on the values of c and d: if c*d >= 1, the pdf is finite, otherwise infinite.
 
     def _pdf(self, x, c, d):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
-        xx = np.asarray(x)
-        dtyp = np.find_common_type([xx.dtype, np.float64], [])
-        output = np.zeros(np.shape(xx), dtyp)
-        cond = (xx == 0)
-        if np.any(cond):
-            xz = xx[cond]
-            output[cond] = c * d * (xz**(c*d-1)) / (1 + xz**c)
-        if np.any(~cond):
-            xnz = xx[~cond]
-            output[~cond] = c * d * (xnz ** (-c - 1.0)) / ((1 + xnz ** (-c)) ** (d + 1.0))
+        output = _lazywhere(x == 0, [x, c, d],
+                   lambda x_, c_, d_: c_ * d_ * (x_**(c_*d_-1)) / (1 + x_**c_),
+                   f2 = lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
+                                            ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
         if output.ndim == 0:
             return output[()]
         return output
 
     def _logpdf(self, x, c, d):
-        xx = np.asarray(x)
-        dtyp = np.find_common_type([xx.dtype, np.float64], [])
-        output = np.zeros(np.shape(xx), dtyp)
-        cond = (xx == 0)
-        if np.any(cond):
-            xz = xx[cond]
-            output[cond] = (np.log(c) + np.log(d) + sc.xlogy(c*d - 1, xz)
-                            - (d+1) * sc.log1p(xz**(c)))
-        if np.any(~cond):
-            xnz = xx[~cond]
-            output[~cond] = (np.log(c) + np.log(d) + sc.xlogy(-c - 1, xnz)
-                             - sc.xlog1py(d+1, xnz**(-c)))
+        output = _lazywhere(
+            x == 0, [x, c, d],
+            lambda x_, c_, d_: (np.log(c_) + np.log(d_) + sc.xlogy(c_*d_ - 1, x_)
+                                - (d_+1) * sc.log1p(x_**(c_))),
+            f2 = lambda x_, c_, d_: (np.log(c_) + np.log(d_)
+                                     + sc.xlogy(-c_ - 1, x_)
+                                     - sc.xlog1py(d_+1, x_**(-c_))))
         if output.ndim == 0:
             return output[()]
         return output
@@ -906,8 +895,6 @@ class burr12_gen(rv_continuous):
     %(example)s
 
     """
-    # _support_mask = rv_continuous._open_support_mask
-
     def _pdf(self, x, c, d):
         # burr12.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
         return np.exp(self._logpdf(x, c, d))

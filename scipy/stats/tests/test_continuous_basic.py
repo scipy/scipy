@@ -437,20 +437,28 @@ def check_pdf(distfn, arg, msg):
 
 def check_pdf_logpdf(distfn, args, msg):
     # compares pdf at several points with the log of the pdf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1])
     vals = distfn.ppf(points, *args)
-    pdf = distfn.pdf(vals, *args)
-    logpdf = distfn.logpdf(vals, *args)
-    pdf = pdf[pdf != 0]
-    logpdf = logpdf[np.isfinite(logpdf)]
-    msg += " - logpdf-log(pdf) relationship"
-    npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+    vals = vals[np.isfinite(vals)]
+    with suppress_warnings() as sup:
+        sup.filter(category=RuntimeWarning, message="divide by zero encountered in true_divide")
+        sup.filter(category=RuntimeWarning, message="divide by zero encountered in log")
+        sup.filter(category=RuntimeWarning, message="divide by zero encountered in power")  # gengamma
+        sup.filter(category=RuntimeWarning, message="invalid value encountered in add")  # genextreme
+        sup.filter(category=RuntimeWarning, message="invalid value encountered in subtract")  # gengamma
+        pdf = distfn.pdf(vals, *args)
+        logpdf = distfn.logpdf(vals, *args)
+        pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
+        logpdf = logpdf[np.isfinite(logpdf)]
+        msg += " - logpdf-log(pdf) relationship"
+        npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
 
 
 def check_sf_logsf(distfn, args, msg):
     # compares sf at several points with the log of the sf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     sf = distfn.sf(vals, *args)
     logsf = distfn.logsf(vals, *args)
     sf = sf[sf != 0]
@@ -461,8 +469,9 @@ def check_sf_logsf(distfn, args, msg):
 
 def check_cdf_logcdf(distfn, args, msg):
     # compares cdf at several points with the log of the cdf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     cdf = distfn.cdf(vals, *args)
     logcdf = distfn.logcdf(vals, *args)
     cdf = cdf[cdf != 0]
