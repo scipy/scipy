@@ -12,8 +12,9 @@ from pytest import raises as assert_raises
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
     BarycentricInterpolator, barycentric_interpolate,
-    approximate_taylor_polynomial, pchip, PchipInterpolator,
-    pchip_interpolate, Akima1DInterpolator, CubicSpline, make_interp_spline)
+    approximate_taylor_polynomial, CubicHermiteSpline, pchip,
+    PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
+    make_interp_spline)
 
 from scipy._lib.six import xrange
 
@@ -480,6 +481,7 @@ class TestPCHIP(object):
         r = p.roots()
         assert_allclose(r, 0.5)
 
+
 class TestCubicSpline(object):
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
@@ -662,3 +664,11 @@ class TestCubicSpline(object):
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
+
+def test_CubicHermiteSpline():
+    x = [0, 2, 7]
+    y = [-1, 2, 3]
+    dydx = [0, 3, 7]
+    s = CubicHermiteSpline(x, y, dydx)
+    assert_allclose(s(x), y)
+    assert_allclose(s(x, 1), dydx)
