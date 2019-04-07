@@ -145,7 +145,7 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
-class PchipInterpolator(BPoly):
+class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP 1-d monotonic cubic interpolation.
 
     ``x`` and ``y`` are arrays of values used to approximate some function f,
@@ -177,9 +177,10 @@ class PchipInterpolator(BPoly):
 
     See Also
     --------
+    CubicHermiteSpline
     Akima1DInterpolator
     CubicSpline
-    BPoly
+    PPoly
 
     Notes
     -----
@@ -218,27 +219,12 @@ class PchipInterpolator(BPoly):
 
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
-        x = _asarray_validated(x, check_finite=False, as_inexact=True)
-        y = _asarray_validated(y, check_finite=False, as_inexact=True)
-
-        axis = axis % y.ndim
-
+        x, _, y, axis, _ = validate_input(x, y, axis)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
-        yp = np.rollaxis(y, axis)
-
-        dk = self._find_derivatives(xp, yp)
-        data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
-
-        _b = BPoly.from_derivatives(x, data, orders=None)
-        super(PchipInterpolator, self).__init__(_b.c, _b.x,
+        dk = self._find_derivatives(xp, y)
+        super(PchipInterpolator, self).__init__(x, y, dk, axis=0,
                                                 extrapolate=extrapolate)
         self.axis = axis
-
-    def roots(self):
-        """
-        Return the roots of the interpolated function.
-        """
-        return (PPoly.from_bernstein_basis(self)).roots()
 
     @staticmethod
     def _edge_case(h0, h1, m0, m1):

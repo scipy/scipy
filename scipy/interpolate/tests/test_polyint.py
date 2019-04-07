@@ -370,7 +370,7 @@ class TestPCHIP(object):
                 y1, y2 = y2, y1
             xp = np.linspace(x1, x2, 10)
             yp = p(xp)
-            assert_(((y1 <= yp) & (yp <= y2)).all())
+            assert_(((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15)).all())
 
     def test_monotone(self):
         # PCHIP should preserve monotonicty
