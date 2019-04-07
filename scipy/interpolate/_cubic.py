@@ -65,7 +65,7 @@ def validate_input(x, y, axis, dydx=None):
 
 
 class CubicHermiteSpline(PPoly):
-    """Cubic interpolator which matches values and first derivatives.
+    """Piecewise-cubic interpolator matching values and first derivatives.
 
     The result is represented as a `PPoly` instance.
 
