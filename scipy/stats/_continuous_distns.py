@@ -1407,7 +1407,7 @@ class exponnorm_gen(rv_continuous):
         # Avoid overflows; setting np.exp(exparg) to the max float works
         #  all right here
         expval = _lazywhere(exparg < _LOGXMAX, (exparg,), np.exp, _XMAX)
-        return 0.5 * invK * expval * sc.erfc(-(x - invK) / np.sqrt(2))
+        return 0.5 * invK * (expval * sc.erfc(-(x - invK) / np.sqrt(2)))
 
     def _logpdf(self, x, K):
         invK = 1.0 / K
