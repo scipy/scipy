@@ -61,7 +61,7 @@ def validate_input(x, y, axis, dydx=None):
     if dydx is not None:
         dydx = np.rollaxis(dydx, axis)
 
-    return x, dx, y, dydx
+    return x, dx, y, axis, dydx
 
 
 class CubicHermiteSpline(PPoly):
@@ -129,7 +129,7 @@ class CubicHermiteSpline(PPoly):
         if extrapolate is None:
             extrapolate = True
 
-        x, dx, y, dydx = validate_input(x, y, axis, dydx)
+        x, dx, y, axis, dydx = validate_input(x, y, axis, dydx)
 
         dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
         slope = np.diff(y, axis=0) / dxr
@@ -403,7 +403,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     def __init__(self, x, y, axis=0):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
-        x, dx, y, _ = validate_input(x, y, axis)
+        x, dx, y, axis, _ = validate_input(x, y, axis)
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
         dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
@@ -617,7 +617,7 @@ class CubicSpline(CubicHermiteSpline):
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
-        x, dx, y, _ = validate_input(x, y, axis)
+        x, dx, y, axis, _ = validate_input(x, y, axis)
         n = len(x)
 
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
