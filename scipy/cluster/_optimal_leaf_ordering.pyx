@@ -236,6 +236,10 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         m_clusters = <int*>malloc(sizeof(int) * 2)
         w_clusters = <int*>malloc(sizeof(int) * 2)
         k_clusters = <int*>malloc(sizeof(int) * 2)
+        
+        # Raise a MemoryError if any malloc call returns NULL
+        if not u_clusters or not m_clusters or not w_clusters or not k_clusters:
+            raise MemoryError()
 
         if v_l < n_points:
             # V_l is a singleton, so U = M = V_L.
@@ -262,17 +266,25 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
             # V_r is a singleton, so W = K = V_R.
             w_clusters[0] = v_r
             k_clusters[0] = v_r
-            
+
         else:
             total_w_clusters = 2
 
             # First look for W from V_RR and L from V_RL
             w_clusters = <int*>malloc(sizeof(int) * 2)
+
+            if not w_clusters:
+                raise MemoryError()
+
             w_clusters[0] = sorted_Z[v_r - n_points, 1]
             w_clusters[1] = sorted_Z[v_r - n_points, 0]
 
             # Next look for W from V_RL and L from V_RR
             k_clusters = <int*>malloc(sizeof(int) * 2)
+
+            if not k_clusters:
+                raise MemoryError()
+
             k_clusters[0] = sorted_Z[v_r - n_points, 0]
             k_clusters[1] = sorted_Z[v_r - n_points, 1]
 
@@ -308,12 +320,20 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                     # Sort the values of M[{m}, u]
                     m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
                     m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
+
+                    if not m_vals or not m_idx:
+                        raise MemoryError()
+
                     _sort_M_slice(M, m_vals, m_idx, m_min, m_max, u)
 
                     for w in range(w_min, w_max):
                         # Sort the values of M[{k}, w]
                         k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
                         k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
+
+                        if not k_vals or not k_idx:
+                            raise MemoryError()
+
                         _sort_M_slice(M, k_vals, k_idx, k_min, k_max, w)
 
                         # Set initial value for cur_min_M.
