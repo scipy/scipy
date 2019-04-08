@@ -2265,6 +2265,13 @@ class TestNdimage:
             out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False)
             assert_array_almost_equal(out, expected)
 
+    def test_rotate09(self):
+        data = numpy.array([[0, 0, 0, 0, 0],
+                            [0, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0]] * 2, dtype=numpy.float64)
+        with assert_raises(ValueError):
+            ndimage.rotate(data, 90, axes=(0, data.ndim))
+
     def test_watershed_ift01(self):
         data = numpy.array([[0, 0, 0, 0, 0, 0, 0],
                             [0, 1, 1, 1, 1, 1, 0],
