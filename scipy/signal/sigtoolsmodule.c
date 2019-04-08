@@ -911,8 +911,6 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	copyswap = PyArray_DESCR(ret)->f->copyswap;
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
-	mode_dep = malloc(bytes_in_array);
-	
 	if ((mode_dep = malloc(bytes_in_array)) == NULL) {
 	    PyErr_SetString(PyExc_MemoryError, 
                             "memory allocation failure in OrderFilterND");
