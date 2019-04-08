@@ -160,8 +160,8 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         float[:, ::1] M = np.zeros((n_points, n_points), dtype=np.float32)
         # (n x n x 2) booleans
         int[:, :, :] swap_status = np.zeros((n_points, n_points, 2),
-                                            dtype=np.int32)
-        int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.int32)
+                                            dtype=np.intc)
+        int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.intc)
 
         int i, v_l, v_r, v_size, 
         int v_l_min, v_l_max, v_r_min, v_r_max
@@ -294,17 +294,23 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                         if sorted_D[m, k] < min_km_dist:
                             min_km_dist = sorted_D[m, k] 
 
+                m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
+                m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
+                k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
+                k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
+                if not m_vals or not m_idx or not k_vals or not k_idx:
+                    free(m_vals)
+                    free(m_idx)
+                    free(k_vals)
+                    free(k_idx)
+                    raise MemoryError("failed to allocate memory in identify_swaps().")
 
                 for u in range(u_min, u_max):
                     # Sort the values of M[{m}, u]
-                    m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
-                    m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
                     _sort_M_slice(M, m_vals, m_idx, m_min, m_max, u)
 
                     for w in range(w_min, w_max):
                         # Sort the values of M[{k}, w]
-                        k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
-                        k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
                         _sort_M_slice(M, k_vals, k_idx, k_min, k_max, w)
 
                         # Set initial value for cur_min_M.
@@ -345,13 +351,12 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                         swap_status[u, w, 1] = swap_R
                         swap_status[w, u, 1] = swap_R
 
-                        # We are getting a fresh `w` so need to resort M[{k}, w]
-                        free(k_vals)
-                        free(k_idx)
-
-                    # We are getting a fresh `u` so need to resort M[{m}, u]
-                    free(m_vals)
-                    free(m_idx)
+                # We are getting a fresh `w` and `u` so need to resort
+                # M[{k}, w] and M[{m}, u]
+                free(m_vals)
+                free(m_idx)
+                free(k_vals)
+                free(k_idx)
 
         # We are now ready to find the best minimal value for M[{u}, {w}]
         cur_min_M = 1073741824.0 #2^30
