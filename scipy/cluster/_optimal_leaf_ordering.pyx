@@ -166,10 +166,10 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         int i, v_l, v_r, v_size, 
         int v_l_min, v_l_max, v_r_min, v_r_max
 
-        int* u_clusters
-        int* m_clusters
-        int* w_clusters
-        int* k_clusters
+        int u_clusters[2]
+        int m_clusters[2]
+        int w_clusters[2]
+        int k_clusters[2]
         int total_u_clusters, total_w_clusters
 
         int u, w, m, k
@@ -230,13 +230,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         v_l_min = cluster_ranges[v_l, 0]; v_l_max = cluster_ranges[v_l, 1]
         v_r_min = cluster_ranges[v_r, 0]; v_r_max = cluster_ranges[v_r, 1]
 
-
-        # Store the index of the clusters used to search for u, m, w, k. 
-        u_clusters = <int*>malloc(sizeof(int) * 2)
-        m_clusters = <int*>malloc(sizeof(int) * 2)
-        w_clusters = <int*>malloc(sizeof(int) * 2)
-        k_clusters = <int*>malloc(sizeof(int) * 2)
-
         if v_l < n_points:
             # V_l is a singleton, so U = M = V_L.
             total_u_clusters = 1
@@ -267,12 +260,10 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
             total_w_clusters = 2
 
             # First look for W from V_RR and L from V_RL
-            w_clusters = <int*>malloc(sizeof(int) * 2)
             w_clusters[0] = sorted_Z[v_r - n_points, 1]
             w_clusters[1] = sorted_Z[v_r - n_points, 0]
 
             # Next look for W from V_RL and L from V_RR
-            k_clusters = <int*>malloc(sizeof(int) * 2)
             k_clusters[0] = sorted_Z[v_r - n_points, 0]
             k_clusters[1] = sorted_Z[v_r - n_points, 1]
 
@@ -361,12 +352,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                     # We are getting a fresh `u` so need to resort M[{m}, u]
                     free(m_vals)
                     free(m_idx)
-
-        # We are about to get fresh clusters.
-        free(u_clusters)
-        free(m_clusters)
-        free(w_clusters)
-        free(k_clusters)
 
         # We are now ready to find the best minimal value for M[{u}, {w}]
         cur_min_M = 1073741824.0 #2^30
