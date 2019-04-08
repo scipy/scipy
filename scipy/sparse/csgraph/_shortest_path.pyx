@@ -731,7 +731,6 @@ cdef _dijkstra_directed(
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
-        free(nodes)
         raise MemoryError
 
     for i in range(Nind):
@@ -782,7 +781,6 @@ cdef _dijkstra_directed_multi(
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
-        free(nodes)
         raise MemoryError
 
     # initialize the heap with each of the starting
@@ -829,7 +827,6 @@ cdef _dijkstra_undirected(
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
-        free(nodes)
         raise MemoryError
 
     for i in range(Nind):
@@ -885,7 +882,6 @@ cdef _dijkstra_undirected_multi(
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
-        free(nodes)
         raise MemoryError
 
     _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
