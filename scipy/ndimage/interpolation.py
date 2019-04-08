@@ -661,79 +661,92 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
-
-    >>> fig = plt.figure()
+    >>> fig = plt.figure(figsize=(10, 3))
     >>> ax1, ax2, ax3 = fig.subplots(1, 3)
     >>> img = misc.ascent()
     >>> img_45 = ndimage.rotate(img, 45, reshape=False)
     >>> full_img_45 = ndimage.rotate(img, 45, reshape=True)
     >>> ax1.imshow(img, cmap='gray')
+    >>> ax1.set_axis_off()
     >>> ax2.imshow(img_45, cmap='gray')
+    >>> ax2.set_axis_off()
     >>> ax3.imshow(full_img_45, cmap='gray')
+    >>> ax3.set_axis_off()
+    >>> fig.set_tight_layout(True)
     >>> plt.show()
-
     >>> print(img.shape)
     (512, 512)
-
     >>> print(img_45.shape)
     (512, 512)
-
     >>> print(full_img_45.shape)
     (724, 724)
 
     """
-    input = numpy.asarray(input)
+    input_arr = numpy.asarray(input)
+    ndim = input_arr.ndim
+
+    if ndim < 2:
+        raise ValueError('input array should be at least two-dimensional')
+
     axes = list(axes)
-    rank = input.ndim
+
+    if len(axes) != 2:
+        raise ValueError('axes should contain exactly two values')
+
+    if not all([float(ax).is_integer() for ax in axes]):
+        raise ValueError('axes should contain only integer values')
+
     if axes[0] < 0:
-        axes[0] += rank
+        axes[0] += ndim
     if axes[1] < 0:
-        axes[1] += rank
-    if axes[0] < 0 or axes[1] < 0 or axes[0] >= rank or axes[1] >= rank:
+        axes[1] += ndim
+    if axes[0] < 0 or axes[1] < 0 or axes[0] >= ndim or axes[1] >= ndim:
         raise ValueError('invalid rotation plane specified')
 
     axes.sort()
 
     angle_rad = numpy.deg2rad(angle)
-    cos_angle = numpy.cos(angle_rad)
-    sin_angle = numpy.sin(angle_rad)
+    c, s = numpy.cos(angle_rad), numpy.sin(angle_rad)
 
-    rot_matrix = numpy.array([[cos_angle, sin_angle],
-                              [-sin_angle, cos_angle]])
+    rot_matrix = numpy.array([[c, s],
+                              [-s, c]])
 
-    img_shape = numpy.asarray(input.shape)
+    img_shape = numpy.asarray(input_arr.shape)
     in_plane_shape = img_shape[axes]
     if reshape:
+        # Compute transformed input bounds
         iy, ix = in_plane_shape
-        out_bounds = rot_matrix.dot([[0, 0, iy, iy],
-                                     [0, ix, 0, ix]])
+        out_bounds = rot_matrix @ [[0, 0, iy, iy],
+                                   [0, ix, 0, ix]]
+        # Compute the shape of the transformed input plane
         out_plane_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
     else:
         out_plane_shape = img_shape[axes]
 
-    out_center = rot_matrix.dot((out_plane_shape - 1.0) * 0.5)
-    in_center = (in_plane_shape - 1.0) * 0.5
-
+    out_center = rot_matrix @ ((out_plane_shape - 1) / 2)
+    in_center = (in_plane_shape - 1) / 2
     offset = in_center - out_center
 
     output_shape = img_shape
     output_shape[axes] = out_plane_shape
     output_shape = tuple(output_shape)
 
-    output = _ni_support._get_output(output, input, shape=output_shape)
+    output = _ni_support._get_output(output, input_arr, shape=output_shape)
 
-    if rank <= 2:
-        affine_transform(input, rot_matrix, offset, output_shape, output,
+    if ndim <= 2:
+        affine_transform(input_arr, rot_matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
     else:
-        coordinates_list = itertools.product(
+        # If ndim > 2, the rotation is applied over all the planes
+        # parallel to axes
+        planes_coord = itertools.product(
             *[[slice(None)] if ax in axes else range(img_shape[ax])
-              for ax in range(rank)])
+              for ax in range(ndim)])
 
         out_plane_shape = tuple(out_plane_shape)
 
-        for coordinates in coordinates_list:
-            ia = input[coordinates]
+        for coordinates in planes_coord:
+            ia = input_arr[coordinates]
             oa = output[coordinates]
             affine_transform(ia, rot_matrix, offset, out_plane_shape,
                              oa, order, mode, cval, prefilter)
