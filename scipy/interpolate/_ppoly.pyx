@@ -465,6 +465,12 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 
     wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
     wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+
+    if not wr or not wi:
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+        raise MemoryError("Failed to allocate memory in real_roots")
+
     workspace = NULL
 
     last_root = nan
@@ -914,6 +920,10 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
         nworkspace = n*n + lwork
         workspace[0] = libc.stdlib.malloc(nworkspace * sizeof(double))
 
+        if workspace[0] == NULL:
+            libc.stdlib.free(workspace[0])
+            raise MemoryError("Failed to allocate memory in croots_poly1")
+
     a = <double*>workspace[0]
     work = a + n*n
 
@@ -984,6 +994,12 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
 
     wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
     wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    
+    if not wr or not wi:
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+        raise MemoryError("Failed to allocate memory in _croots_poly1")
+
     workspace = NULL
 
     try:
