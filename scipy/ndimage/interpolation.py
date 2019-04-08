@@ -657,6 +657,30 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     rotate : ndarray
         The rotated input.
 
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+
+    >>> fig = plt.figure()
+    >>> ax1, ax2, ax3 = fig.subplots(1, 3)
+    >>> img = misc.ascent()
+    >>> img_45 = ndimage.rotate(img, 45, reshape=False)
+    >>> full_img_45 = ndimage.rotate(img, 45, reshape=True)
+    >>> ax1.imshow(img, cmap='gray')
+    >>> ax2.imshow(img_45, cmap='gray')
+    >>> ax3.imshow(full_img_45, cmap='gray')
+    >>> plt.show()
+
+    >>> print(img.shape)
+    (512, 512)
+
+    >>> print(img_45.shape)
+    (512, 512)
+
+    >>> print(full_img_45.shape)
+    (724, 724)
+
     """
     input = numpy.asarray(input)
     axes = list(axes)
