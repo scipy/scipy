@@ -921,7 +921,6 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
         workspace[0] = libc.stdlib.malloc(nworkspace * sizeof(double))
 
         if workspace[0] == NULL:
-            libc.stdlib.free(workspace[0])
             raise MemoryError("Failed to allocate memory in croots_poly1")
 
     a = <double*>workspace[0]
