@@ -678,24 +678,23 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
                               [-sin_angle, cos_angle]])
 
     img_shape = numpy.asarray(input.shape)
+    in_plane_shape = img_shape[axes]
     if reshape:
-        in_shape = img_shape[axes]
-        iy, ix = in_shape
+        iy, ix = in_plane_shape
         out_bounds = rot_matrix.dot([[0, 0, iy, iy],
                                      [0, ix, 0, ix]])
-        out_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
-
-        out_center = rot_matrix.dot((out_shape - 1.0) * 0.5)
-        in_center = (in_shape - 1.0) * 0.5
-
-        offset = in_center - out_center
-        out_shape = tuple(out_shape)
+        out_plane_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
     else:
-        out_shape = tuple(img_shape[axes])
-        offset = 0.0
+        out_plane_shape = img_shape[axes]
 
-    img_shape[axes] = out_shape
-    output_shape = tuple(img_shape)
+    out_center = rot_matrix.dot((out_plane_shape - 1.0) * 0.5)
+    in_center = (in_plane_shape - 1.0) * 0.5
+
+    offset = in_center - out_center
+
+    output_shape = img_shape
+    output_shape[axes] = out_plane_shape
+    output_shape = tuple(output_shape)
 
     output = _ni_support._get_output(output, input, shape=output_shape)
 
@@ -707,10 +706,12 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
             *[[slice(None)] if ax in axes else range(img_shape[ax])
               for ax in range(rank)])
 
+        out_plane_shape = tuple(out_plane_shape)
+
         for coordinates in coordinates_list:
             ia = input[coordinates]
             oa = output[coordinates]
-            affine_transform(ia, rot_matrix, offset, out_shape, oa, order,
-                             mode, cval, prefilter)
+            affine_transform(ia, rot_matrix, offset, out_plane_shape,
+                             oa, order, mode, cval, prefilter)
 
     return output
