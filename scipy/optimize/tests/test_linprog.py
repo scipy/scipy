@@ -1468,6 +1468,7 @@ class TestLinprogIPSpecific(object):
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             sup.filter(OptimizeWarning, "Solving system with option...")
+            sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense

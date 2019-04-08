@@ -26,9 +26,20 @@ from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
 from ._linprog_util import _postsolve
+try:
+    from sksparse.cholmod import cholesky as cholmod
+    has_cholmod = True
+except:
+    has_cholmod = False
+has_umfpack = False
+try:
+    import scikits.umfpack as umfpack
+    has_umfpack = True
+except:
+    has_umfpack = False
 
-
-def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
+def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
+                cholesky=True, permc_spec = 'MMD_AT_PLUS_A'):
     """
     Given solver options, return a handle to the appropriate linear system
     solver.
@@ -58,28 +69,35 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
         Handle to the appropriate solver function
 
     """
-    if sparse:
-        if lstsq or not(sym_pos):
-            def solve(M, r, sym_pos=False):
-                return sps.linalg.lsqr(M, r)[0]
-        else:
-            # this is not currently used; it is replaced by splu solve
-            # TODO: expose use of this as an option
-            def solve(M, r):
-                return sps.linalg.spsolve(M, r, permc_spec="MMD_AT_PLUS_A")
+    try:
+        if sparse:
+            if lstsq or not(sym_pos):
+                def solve(r, sym_pos=False):
+                    return sps.linalg.lsqr(M, r)[0]
+            elif cholesky:
+                solve = cholmod(M)
+            else:
+                if has_umfpack:
+                    solve = sps.linalg.factorized(M)
+                else: # factorized doesn't pass permc_spec
+                    solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
 
-    else:
-        if lstsq:  # sometimes necessary as solution is approached
-            def solve(M, r):
-                return sp.linalg.lstsq(M, r)[0]
-        elif cholesky:
-            solve = sp.linalg.cho_solve
         else:
-            # this seems to cache the matrix factorization, so solving
-            # with multiple right hand sides is much faster
-            def solve(M, r, sym_pos=sym_pos):
-                return sp.linalg.solve(M, r, sym_pos=sym_pos)
+            if lstsq:  # sometimes necessary as solution is approached
+                def solve(r):
+                    return sp.linalg.lstsq(M, r)[0]
+            elif cholesky:
+                L = sp.linalg.cho_factor(M)
 
+                def solve(r):
+                    return sp.linalg.cho_solve(L, r)
+            else:
+                # this seems to cache the matrix factorization, so solving
+                # with multiple right hand sides is much faster
+                def solve(r, sym_pos=sym_pos):
+                    return sp.linalg.solve(M, r, sym_pos=sym_pos)
+    except:
+        return None
     return solve
 
 
@@ -166,12 +184,12 @@ def _get_delta(
            2000. 197-232.
 
     """
+    global has_umfpack
 
     if A.shape[0] == 0:
         # If there are no constraints, some solvers fail (understandably)
         # rather than returning empty solution. This gets the job done.
         sparse, lstsq, sym_pos, cholesky = False, False, True, False
-    solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     n_x = len(x)
 
     # [4] Equation 8.8
@@ -182,32 +200,12 @@ def _get_delta(
 
     #  Assemble M from [4] Equation 8.31
     Dinv = x / z
-    splu = False
-    if sparse and not lstsq:
-        # sparse requires Dinv to be diag matrix
-        M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
-        try:
-            # TODO: should use linalg.factorized instead, but I don't have
-            #       umfpack and therefore cannot test its performance
-            solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
-            splu = True
-        except Exception:
-            lstsq = True
-            solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
-    else:
-        # dense does not; use broadcasting
-        M = A.dot(Dinv.reshape(-1, 1) * A.T)
 
-    # For some small problems, calling sp.linalg.solve w/ sym_pos = True
-    # may be faster. I am pretty certain it caches the factorization for
-    # multiple uses and checks the incoming matrix to see if it's the same as
-    # the one it already factorized. (I can't explain the speed otherwise.)
-    if cholesky:
-        try:
-            L = sp.linalg.cho_factor(M)
-        except Exception:
-            cholesky = False
-            solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
+    if sparse:
+        M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
+    else:
+        M = A.dot(Dinv.reshape(-1, 1) * A.T)
+    solve = _get_solver(M, sparse, lstsq, sym_pos, cholesky, permc_spec)
 
     # pc: "predictor-corrector" [4] Section 4.1
     # In development this option could be turned off
@@ -256,53 +254,61 @@ def _get_delta(
         # 3. scipy.linalg.solve w/ sym_pos = False, and if all else fails
         # 4. scipy.linalg.lstsq
         # For sparse systems, the order is:
-        # 1. scipy.sparse.linalg.splu
-        # 2. scipy.sparse.linalg.lsqr
-        # TODO: if umfpack is installed, use factorized instead of splu.
-        #       Can't do that now because factorized doesn't pass permc_spec
-        #       to splu if umfpack isn't installed. Also, umfpack not tested.
+        # 1. sksparse.cholmod.cholesky (if available)
+        # 2. scipy.sparse.linalg.factorized (if umfpack available)
+        #    scipy.sparse.linalg.splu (otherwise)
+        # 3. scipy.sparse.linalg.lsqr
         solved = False
         while(not solved):
             try:
-                solve_this = L if cholesky else M
                 # [4] Equation 8.28
-                p, q = _sym_solve(Dinv, solve_this, A, c, b, solve, splu)
+                p, q = _sym_solve(Dinv, A, c, b, solve)
                 # [4] Equation 8.29
-                u, v = _sym_solve(Dinv, solve_this, A, rhatd -
-                                  (1 / x) * rhatxs, rhatp, solve, splu)
+                u, v = _sym_solve(Dinv, A, rhatd -
+                                  (1 / x) * rhatxs, rhatp, solve)
                 if np.any(np.isnan(p)) or np.any(np.isnan(q)):
                     raise LinAlgError
                 solved = True
-            except (LinAlgError, ValueError) as e:
+            except (LinAlgError, ValueError, TypeError) as e:
                 # Usually this doesn't happen. If it does, it happens when
                 # there are redundant constraints or when approaching the
                 # solution. If so, change solver.
-                cholesky = False
-                if not lstsq:
-                    if sym_pos:
-                        warn(
-                            "Solving system with option 'sym_pos':True "
-                            "failed. It is normal for this to happen "
-                            "occasionally, especially as the solution is "
-                            "approached. However, if you see this frequently, "
-                            "consider setting option 'sym_pos' to False.",
-                            OptimizeWarning)
-                        sym_pos = False
-                    else:
-                        warn(
-                            "Solving system with option 'sym_pos':False "
-                            "failed. This may happen occasionally, "
-                            "especially as the solution is "
-                            "approached. However, if you see this frequently, "
-                            "your problem may be numerically challenging. "
-                            "If you cannot improve the formulation, consider "
-                            "setting 'lstsq' to True. Consider also setting "
-                            "`presolve` to True, if it is not already.",
-                            OptimizeWarning)
-                        lstsq = True
+                if cholesky:
+                    cholesky = False
+                    warn(
+                    "Solving system with option 'cholesky':True "
+                    "failed. It is normal for this to happen "
+                    "occasionally, especially as the solution is "
+                    "approached. However, if you see this frequently, "
+                    "consider setting option 'cholesky' to False.",
+                    OptimizeWarning)
+                elif has_umfpack:
+                    has_umfpack = False
+                elif sym_pos:
+                    sym_pos = False
+                    warn(
+                    "Solving system with option 'sym_pos':True "
+                    "failed. It is normal for this to happen "
+                    "occasionally, especially as the solution is "
+                    "approached. However, if you see this frequently, "
+                    "consider setting option 'sym_pos' to False.",
+                    OptimizeWarning)
+                elif not lstsq:
+                    lstsq = True
+                    warn(
+                    "Solving system with option 'sym_pos':False "
+                    "failed. This may happen occasionally, "
+                    "especially as the solution is "
+                    "approached. However, if you see this frequently, "
+                    "your problem may be numerically challenging. "
+                    "If you cannot improve the formulation, consider "
+                    "setting 'lstsq' to True. Consider also setting "
+                    "`presolve` to True, if it is not already.",
+                    OptimizeWarning)
                 else:
                     raise e
-                solve = _get_solver(sparse, lstsq, sym_pos)
+                solve = _get_solver(M, sparse, lstsq, sym_pos,
+                                    cholesky, permc_spec)
         # [4] Results after 8.29
         d_tau = ((rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) /
                  (1 / tau * kappa + (-c.dot(p) + b.dot(q))))
@@ -325,7 +331,7 @@ def _get_delta(
     return d_x, d_y, d_z, d_tau, d_kappa
 
 
-def _sym_solve(Dinv, M, A, r1, r2, solve, splu=False):
+def _sym_solve(Dinv, A, r1, r2, solve):
     """
     An implementation of [4] equation 8.31 and 8.32
 
@@ -339,10 +345,7 @@ def _sym_solve(Dinv, M, A, r1, r2, solve, splu=False):
     """
     # [4] 8.31
     r = r2 + A.dot(Dinv * r1)
-    if splu:
-        v = solve(r)
-    else:
-        v = solve(M, r)
+    v = solve(r)
     # [4] 8.32
     u = Dinv * (A.T.dot(v) - r1)
     return u, v
@@ -1072,6 +1075,12 @@ def _linprog_ip(
     _check_unknown_options(unknown_options)
 
     # These should be warnings, not errors
+    if (cholesky or cholesky is None) and sparse and not has_cholmod:
+        warn("Sparse cholesky is only available with scikit-sparse. Setting "
+             "`cholesky = False`",
+             OptimizeWarning)
+        cholesky = False
+
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",
@@ -1081,13 +1090,6 @@ def _linprog_ip(
         warn("Invalid option combination 'sparse':True "
              "and 'sym_pos':False; the effect is the same as sparse least "
              "squares, which is not recommended.",
-             OptimizeWarning)
-
-    if sparse and cholesky:
-        # Cholesky decomposition is not available for sparse problems
-        warn("Invalid option combination 'sparse':True "
-             "and 'cholesky':True; sparse Colesky decomposition is not "
-             "available.",
              OptimizeWarning)
 
     if lstsq and cholesky:
@@ -1111,7 +1113,7 @@ def _linprog_ip(
             "and 'cholesky':True: Cholesky decomposition is only possible "
             "for symmetric positive definite matrices.")
 
-    cholesky = cholesky is None and sym_pos and not sparse and not lstsq
+    cholesky = cholesky or (cholesky is None and sym_pos and not lstsq)
 
     x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta,
                                             maxiter, disp, tol, sparse,
