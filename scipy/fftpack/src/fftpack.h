@@ -68,7 +68,7 @@ static int get_cache_id_##name CACHEARG { \
   }\
   /*fprintf(stderr,"New cache item n=%d\n",n);*/\
   caches_##name[id].n = n;\
-  if (MALLOC == NULL) goto exit; \
+  if ((MALLOC) == NULL) goto exit; \
  exit:\
   last_cache_id_##name = id;\
   return id;\
