@@ -903,7 +903,11 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	is1 = PyArray_ITEMSIZE(ap1);
 	
-	if (!(sort_buffer = malloc(n2_nonzero*is1))) goto fail;
+	if ((sort_buffer = malloc(n2_nonzero*is1)) == NULL) {
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
 
 	os = PyArray_ITEMSIZE(ret);
 	op = PyArray_DATA(ret);
@@ -1032,10 +1036,16 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	  op += os;
 
 	}
-	free(b_ind); free(a_ind); free(ret_ind);
-	free(offsets); free(offsets2); free(temp_ind);
-	free(check_ind); free(mode_dep);
-	free(sort_buffer);
+
+	if (b_ind)	 free(b_ind);
+	if (a_ind)	 free(a_ind);
+	if (ret_ind)	 free(ret_ind);
+	if (offsets)	 free(offsets);
+	if (offsets2)	 free(offsets2);
+	if (temp_ind)	 free(temp_ind);
+	if (check_ind)	 free(check_ind);
+	if (mode_dep)	 free(mode_dep);
+	if (sort_buffer) free(sort_buffer);
 	
 	PyDataMem_FREE(zptr);
 	Py_DECREF(ap1);
@@ -1045,6 +1055,15 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 fail:
 	if (zptr) PyDataMem_FREE(zptr);
+	if (b_ind)	 free(b_ind);
+	if (a_ind)	 free(a_ind);
+	if (ret_ind)	 free(ret_ind);
+	if (offsets)	 free(offsets);
+	if (offsets2)	 free(offsets2);
+	if (temp_ind)	 free(temp_ind);
+	if (check_ind)	 free(check_ind);
+	if (mode_dep)	 free(mode_dep);
+	if (sort_buffer) free(sort_buffer);
 	Py_XDECREF(ap1);
 	Py_XDECREF(ap2);
 	Py_XDECREF(ret);
@@ -1129,9 +1148,10 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 
     if ((aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp))) == NULL) {
 	PyErr_SetString(PyExc_MemoryError, 
-                        "memory allocation failure in OrderFilterND");
+                        "memory allocation failure in sigtools_convolve2d");
 	goto fail;
     }
+
     switch(mode & OUTSIZE_MASK) {
     case VALID:
 	for (i = 0; i < PyArray_NDIM(ain1); i++) { 
@@ -1181,7 +1201,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 
     switch (ret) {
     case 0:
-      free(aout_dimens);
+      if (aout_dimens) free(aout_dimens);
       Py_DECREF(ain1);
       Py_DECREF(ain2);
       Py_XDECREF(afill);
@@ -1206,7 +1226,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     }
 
 fail:
-    free(aout_dimens);
+    if (aout_dimens) free(aout_dimens);
     Py_XDECREF(ain1);
     Py_XDECREF(ain2);
     Py_XDECREF(aout);
