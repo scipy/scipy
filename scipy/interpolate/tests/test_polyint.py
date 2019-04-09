@@ -670,5 +670,5 @@ def test_CubicHermiteSpline():
     y = [-1, 2, 3]
     dydx = [0, 3, 7]
     s = CubicHermiteSpline(x, y, dydx)
-    assert_allclose(s(x), y)
-    assert_allclose(s(x, 1), dydx)
+    assert_allclose(s(x), y, rtol=1e-15)
+    assert_allclose(s(x, 1), dydx, rtol=1e-15)
