@@ -127,6 +127,11 @@ class CubicHermiteSpline(PPoly):
     CubicSpline
     PPoly
 
+    Notes
+    -----
+    If you want to create a higher-order spline matching higher-order
+    derivatives, use `BPoly.from_derivatives`.
+
     References
     ----------
     .. [1] `Cubic Hermite spline
