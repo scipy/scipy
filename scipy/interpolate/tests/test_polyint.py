@@ -33,7 +33,11 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
         return
 
     xi = np.zeros(x_shape)
-    yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
+    if interpolator_cls is CubicHermiteSpline:
+        dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
+        yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
+    else:
+        yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
 
     target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
@@ -41,7 +45,12 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
 
     # check it works also with lists
     if x_shape and y.size > 0:
-        interpolator_cls(list(x), list(y), axis=axis, **extra_args)(list(xi))
+        if interpolator_cls is CubicHermiteSpline:
+            interpolator_cls(list(x), list(y), list(dydx), axis=axis,
+                             **extra_args)(list(xi))
+        else:
+            interpolator_cls(list(x), list(y), axis=axis,
+                             **extra_args)(list(xi))
 
     # check also values
     if xi.size > 0 and deriv_shape is None:
@@ -61,8 +70,8 @@ def test_shapes():
     def spl_interp(x, y, axis):
         return make_interp_spline(x, y, axis=axis)
 
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
-               Akima1DInterpolator, CubicSpline, spl_interp]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, CubicHermiteSpline,
+               pchip, Akima1DInterpolator, CubicSpline, spl_interp]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
