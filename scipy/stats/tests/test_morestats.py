@@ -914,6 +914,24 @@ class TestWilcoxon(object):
         assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2],
                       alternative="dummy")
 
+    def test_zero_diff(self):
+        x = np.arange(20)
+        # pratt and wilcox do not work if x - y == 0
+        assert_raises(ValueError, stats.wilcoxon, x, x, "wilcox")
+        assert_raises(ValueError, stats.wilcoxon, x, x, "pratt")
+        # ranksum is n*(n+1)/2, split in half if method == "zsplit"
+        assert_equal(stats.wilcoxon(x, x, "zsplit"), (20*21/4, 1.0))
+
+    def test_pratt(self):
+        # regression test for gh-6805: p-value matches value from R package
+        # coin (wilcoxsign_test) reported in the issue
+        x = [1, 2, 3, 4]
+        y = [1, 2, 3, 5]
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message="Sample size too small")
+            res = stats.wilcoxon(x, y, zero_method="pratt")
+        assert_allclose(res, (0.0, 0.31731050786291415))
+
     def test_wilcoxon_arg_type(self):
         # Should be able to accept list as arguments.
         # Address issue 6070.
@@ -931,7 +949,7 @@ class TestWilcoxon(object):
 
         T, p = stats.wilcoxon(x, y, "pratt")
         assert_allclose(T, 423)
-        assert_allclose(p, 0.00197547303533107)
+        assert_allclose(p, 0.0031724568006762576)
 
         T, p = stats.wilcoxon(x, y, "zsplit")
         assert_allclose(T, 441)
