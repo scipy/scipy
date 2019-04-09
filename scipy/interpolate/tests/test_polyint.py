@@ -142,16 +142,18 @@ def test_deriv_shapes():
                     check_shape(ip, s1, s2, (), axis)
 
 
-def _check_complex(ip):
+def test_complex():
     x = [1, 2, 3, 4]
     y = [1, 2, 1j, 3]
-    p = ip(x, y)
-    assert_allclose(y, p(x))
 
-
-def test_complex():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
-        _check_complex(ip)
+        p = ip(x, y)
+        assert_allclose(y, p(x))
+
+    dydx = [0, -1j, 2, 3j]
+    p = CubicHermiteSpline(x, y, dydx)
+    assert_allclose(y, p(x))
+    assert_allclose(dydx, p(x, 1))
 
 
 class TestKrogh(object):
