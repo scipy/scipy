@@ -82,6 +82,14 @@ def configuration(parent_package='',top_path=None):
 
     config.add_subpackage('_trustregion_constr')
 
+    # cython optimize API for zeros functions
+    config.add_subpackage('cython_optimize')
+    config.add_data_files('cython_optimize.pxd')
+    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
+    config.add_extension(
+        'cython_optimize._zeros',
+        sources=[os.path.join('cython_optimize', '_zeros.c')])
+
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 

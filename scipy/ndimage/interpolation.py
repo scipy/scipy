@@ -30,7 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
+import itertools
 import numpy
 import warnings
 
@@ -624,18 +624,6 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     return output
 
 
-def _minmax(coor, minc, maxc):
-    if coor[0] < minc[0]:
-        minc[0] = coor[0]
-    if coor[0] > maxc[0]:
-        maxc[0] = coor[0]
-    if coor[1] < minc[1]:
-        minc[1] = coor[1]
-    if coor[1] > maxc[1]:
-        maxc[1] = coor[1]
-    return minc, maxc
-
-
 @docfiller
 def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
            mode='constant', cval=0.0, prefilter=True):
@@ -669,84 +657,98 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     rotate : ndarray
         The rotated input.
 
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure(figsize=(10, 3))
+    >>> ax1, ax2, ax3 = fig.subplots(1, 3)
+    >>> img = misc.ascent()
+    >>> img_45 = ndimage.rotate(img, 45, reshape=False)
+    >>> full_img_45 = ndimage.rotate(img, 45, reshape=True)
+    >>> ax1.imshow(img, cmap='gray')
+    >>> ax1.set_axis_off()
+    >>> ax2.imshow(img_45, cmap='gray')
+    >>> ax2.set_axis_off()
+    >>> ax3.imshow(full_img_45, cmap='gray')
+    >>> ax3.set_axis_off()
+    >>> fig.set_tight_layout(True)
+    >>> plt.show()
+    >>> print(img.shape)
+    (512, 512)
+    >>> print(img_45.shape)
+    (512, 512)
+    >>> print(full_img_45.shape)
+    (724, 724)
+
     """
-    input = numpy.asarray(input)
+    input_arr = numpy.asarray(input)
+    ndim = input_arr.ndim
+
+    if ndim < 2:
+        raise ValueError('input array should be at least two-dimensional')
+
     axes = list(axes)
-    rank = input.ndim
+
+    if len(axes) != 2:
+        raise ValueError('axes should contain exactly two values')
+
+    if not all([float(ax).is_integer() for ax in axes]):
+        raise ValueError('axes should contain only integer values')
+
     if axes[0] < 0:
-        axes[0] += rank
+        axes[0] += ndim
     if axes[1] < 0:
-        axes[1] += rank
-    if axes[0] < 0 or axes[1] < 0 or axes[0] > rank or axes[1] > rank:
-        raise RuntimeError('invalid rotation plane specified')
-    if axes[0] > axes[1]:
-        axes = axes[1], axes[0]
-    angle = numpy.pi / 180 * angle
-    m11 = math.cos(angle)
-    m12 = math.sin(angle)
-    m21 = -math.sin(angle)
-    m22 = math.cos(angle)
-    matrix = numpy.array([[m11, m12],
-                          [m21, m22]], dtype=numpy.float64)
-    iy = input.shape[axes[0]]
-    ix = input.shape[axes[1]]
+        axes[1] += ndim
+    if axes[0] < 0 or axes[1] < 0 or axes[0] >= ndim or axes[1] >= ndim:
+        raise ValueError('invalid rotation plane specified')
+
+    axes.sort()
+
+    angle_rad = numpy.deg2rad(angle)
+    c, s = numpy.cos(angle_rad), numpy.sin(angle_rad)
+
+    rot_matrix = numpy.array([[c, s],
+                              [-s, c]])
+
+    img_shape = numpy.asarray(input_arr.shape)
+    in_plane_shape = img_shape[axes]
     if reshape:
-        mtrx = numpy.array([[m11, -m21],
-                            [-m12, m22]], dtype=numpy.float64)
-        minc = [0, 0]
-        maxc = [0, 0]
-        coor = numpy.dot(mtrx, [0, ix])
-        minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(mtrx, [iy, 0])
-        minc, maxc = _minmax(coor, minc, maxc)
-        coor = numpy.dot(mtrx, [iy, ix])
-        minc, maxc = _minmax(coor, minc, maxc)
-        oy = int(maxc[0] - minc[0] + 0.5)
-        ox = int(maxc[1] - minc[1] + 0.5)
+        # Compute transformed input bounds
+        iy, ix = in_plane_shape
+        out_bounds = rot_matrix @ [[0, 0, iy, iy],
+                                   [0, ix, 0, ix]]
+        # Compute the shape of the transformed input plane
+        out_plane_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
     else:
-        oy = input.shape[axes[0]]
-        ox = input.shape[axes[1]]
-    offset = numpy.zeros((2,), dtype=numpy.float64)
-    offset[0] = float(oy) / 2.0 - 0.5
-    offset[1] = float(ox) / 2.0 - 0.5
-    offset = numpy.dot(matrix, offset)
-    tmp = numpy.zeros((2,), dtype=numpy.float64)
-    tmp[0] = float(iy) / 2.0 - 0.5
-    tmp[1] = float(ix) / 2.0 - 0.5
-    offset = tmp - offset
-    output_shape = list(input.shape)
-    output_shape[axes[0]] = oy
-    output_shape[axes[1]] = ox
+        out_plane_shape = img_shape[axes]
+
+    out_center = rot_matrix @ ((out_plane_shape - 1) / 2)
+    in_center = (in_plane_shape - 1) / 2
+    offset = in_center - out_center
+
+    output_shape = img_shape
+    output_shape[axes] = out_plane_shape
     output_shape = tuple(output_shape)
-    output = _ni_support._get_output(output, input,
-                                     shape=output_shape)
-    if input.ndim <= 2:
-        affine_transform(input, matrix, offset, output_shape, output,
+
+    output = _ni_support._get_output(output, input_arr, shape=output_shape)
+
+    if ndim <= 2:
+        affine_transform(input_arr, rot_matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
     else:
-        coordinates = []
-        size = numpy.prod(input.shape, axis=0)
-        size //= input.shape[axes[0]]
-        size //= input.shape[axes[1]]
-        for ii in range(input.ndim):
-            if ii not in axes:
-                coordinates.append(0)
-            else:
-                coordinates.append(slice(None, None, None))
-        iter_axes = list(range(input.ndim))
-        iter_axes.reverse()
-        iter_axes.remove(axes[0])
-        iter_axes.remove(axes[1])
-        os = (output_shape[axes[0]], output_shape[axes[1]])
-        for ii in range(size):
-            ia = input[tuple(coordinates)]
-            oa = output[tuple(coordinates)]
-            affine_transform(ia, matrix, offset, os, oa, order, mode,
-                             cval, prefilter)
-            for jj in iter_axes:
-                if coordinates[jj] < input.shape[jj] - 1:
-                    coordinates[jj] += 1
-                    break
-                else:
-                    coordinates[jj] = 0
+        # If ndim > 2, the rotation is applied over all the planes
+        # parallel to axes
+        planes_coord = itertools.product(
+            *[[slice(None)] if ax in axes else range(img_shape[ax])
+              for ax in range(ndim)])
+
+        out_plane_shape = tuple(out_plane_shape)
+
+        for coordinates in planes_coord:
+            ia = input_arr[coordinates]
+            oa = output[coordinates]
+            affine_transform(ia, rot_matrix, offset, out_plane_shape,
+                             oa, order, mode, cval, prefilter)
+
     return output
