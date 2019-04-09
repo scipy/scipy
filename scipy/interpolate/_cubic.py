@@ -59,7 +59,7 @@ def prepare_input(x, y, axis, dydx=None):
         raise ValueError("`y` must contain only finite values.")
 
     if dydx is not None and not np.all(np.isfinite(dydx)):
-            raise ValueError("`dydx` must contain only finite values.")
+        raise ValueError("`dydx` must contain only finite values.")
 
     dx = np.diff(x)
     if np.any(dx <= 0):
