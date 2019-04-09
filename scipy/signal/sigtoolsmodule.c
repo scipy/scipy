@@ -951,12 +951,12 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
                             "memory allocation failure in OrderFilterND");
 	    goto fail;
 	}
-	if ((offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp))) == NULL)	/* offsets */
+	if ((offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp))) == NULL) {	/* offsets */
 	    PyErr_SetString(PyExc_MemoryError, 
                             "memory allocation failure in OrderFilterND");
 	    goto fail;
 	}
-	if ((offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp))) == NULL)	/* offsets2 */
+	if ((offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp))) == NULL) {	/* offsets2 */
 	    PyErr_SetString(PyExc_MemoryError, 
                             "memory allocation failure in OrderFilterND");
 	    goto fail;
