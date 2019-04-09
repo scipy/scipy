@@ -123,3 +123,13 @@ class TestHausdorff(object):
         B = np.random.rand(4, 5)
         with pytest.raises(ValueError):
             directed_hausdorff(A, B)
+
+    def test_readonly_arrays(self):
+        # Cython code should be able to accept
+        # read-only buffers
+        self.path_1.flags.writeable = False
+        self.path_2.flags.writeable = False
+        actual = directed_hausdorff(self.path_1, self.path_2)[0]
+        expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
+                               axis=1))
+        assert_almost_equal(actual, expected, decimal=9)
