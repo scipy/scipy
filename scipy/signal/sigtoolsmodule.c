@@ -911,20 +911,54 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	copyswap = PyArray_DESCR(ret)->f->copyswap;
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
-	mode_dep = malloc(bytes_in_array);
+	if ((mode_dep = malloc(bytes_in_array)) == NULL) {
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	
 	for (k = 0; k < PyArray_NDIM(ap1); k++) { 
 	  mode_dep[k] = -((PyArray_DIMS(ap2)[k]-1) >> 1);
 	}	
 
-	b_ind = (npy_intp *)malloc(bytes_in_array);  /* loop variables */
-	memset(b_ind,0,bytes_in_array);
-	a_ind = (npy_intp *)malloc(bytes_in_array);
-	ret_ind = (npy_intp *)malloc(bytes_in_array);
-	memset(ret_ind,0,bytes_in_array);
-	temp_ind = (npy_intp *)malloc(bytes_in_array);
-	check_ind = (npy_intp*)malloc(bytes_in_array);
-	offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp));
-	offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp));
+	/* loop variables */
+	if ((b_ind = (npy_intp *)malloc(bytes_in_array)) == NULL) {		/* b_ind */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	if ((a_ind = (npy_intp *)malloc(bytes_in_array)) == NULL) {		/* a_ind */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	if ((ret_ind = (npy_intp *)malloc(bytes_in_array)) == NULL) {		/* ret_ind */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	if ((temp_ind = (npy_intp *)malloc(bytes_in_array)) == NULL) {		/* temp_ind */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	if ((check_ind = (npy_intp*)malloc(bytes_in_array)) == NULL) {		/* check_ind */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	if ((offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp))) == NULL)	/* offsets */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	if ((offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp))) == NULL)	/* offsets2 */
+	    PyErr_SetString(PyExc_MemoryError, 
+                            "memory allocation failure in OrderFilterND");
+	    goto fail;
+	}
+	memset(b_ind, 0, bytes_in_array);
+	memset(ret_ind, 0 ,bytes_in_array);
 	offset1 = compute_offsets(offsets, offsets2, PyArray_DIMS(ap1),
                                   PyArray_DIMS(ap2), PyArray_DIMS(ret),
                                   mode_dep, PyArray_NDIM(ap1));
@@ -1093,7 +1127,11 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
         if (afill == NULL) goto fail;
     }
 
-    aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
+    if ((aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp))) == NULL) {
+	PyErr_SetString(PyExc_MemoryError, 
+                        "memory allocation failure in OrderFilterND");
+	goto fail;
+    }
     switch(mode & OUTSIZE_MASK) {
     case VALID:
 	for (i = 0; i < PyArray_NDIM(ain1); i++) { 
