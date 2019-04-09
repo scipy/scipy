@@ -215,7 +215,11 @@ def generate_binary_structure(rank, connectivity):
 
 def _binary_erosion(input, structure, iterations, mask, output,
                     border_value, origin, invert, brute_force):
-    iterations = operator.index(iterations)
+    try:
+        iterations = operator.index(iterations)
+    except TypeError:
+        raise TypeError('iterations parameter should be an integer')
+
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
