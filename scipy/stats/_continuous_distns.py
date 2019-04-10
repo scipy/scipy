@@ -768,6 +768,7 @@ class burr_gen(rv_continuous):
     is also commonly referred to as the Dagum distribution [2]_. If the
     parameter :math:`c < 1` then the mean of the distribution does not
     exist and if :math:`c < 2` the variance does not exist [2]_.
+    The PDF is finite at the left endpoint :math:`x = 0` if :math:`c * d >= 1`.
 
     %(after_notes)s
 

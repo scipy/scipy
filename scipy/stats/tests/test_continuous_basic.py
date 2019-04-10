@@ -110,6 +110,7 @@ def test_cont_basic(distname, arg):
         check_sf_isf(distfn, arg, distname)
         check_pdf(distfn, arg, distname)
         check_pdf_logpdf(distfn, arg, distname)
+        check_pdf_logpdf_at_endpoints(distfn, arg, distname)
         check_cdf_logcdf(distfn, arg, distname)
         check_sf_logsf(distfn, arg, distname)
         check_ppf_broadcast(distfn, arg, distname)
@@ -437,16 +438,37 @@ def check_pdf(distfn, arg, msg):
 
 def check_pdf_logpdf(distfn, args, msg):
     # compares pdf at several points with the log of the pdf
-    points = np.array([0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1])
+    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
     vals = distfn.ppf(points, *args)
     vals = vals[np.isfinite(vals)]
+    pdf = distfn.pdf(vals, *args)
+    logpdf = distfn.logpdf(vals, *args)
+    pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
+    logpdf = logpdf[np.isfinite(logpdf)]
+    msg += " - logpdf-log(pdf) relationship"
+    npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+
+
+def check_pdf_logpdf_at_endpoints(distfn, args, msg):
+    # compares pdf with the log of the pdf at the (finite) end points
+    points = np.array([0, 1])
+    vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
+    vals = vals[distfn._support_mask(vals)]
     with suppress_warnings() as sup:
-        sup.filter(category=RuntimeWarning, message="divide by zero encountered in true_divide")
-        sup.filter(category=RuntimeWarning, message="divide by zero encountered in log")
-        sup.filter(category=RuntimeWarning, message="divide by zero encountered in power")  # gengamma
-        sup.filter(category=RuntimeWarning, message="invalid value encountered in add")  # genextreme
-        sup.filter(category=RuntimeWarning, message="invalid value encountered in subtract")  # gengamma
-        sup.filter(category=RuntimeWarning, message="invalid value encountered in multiply")  # recipinvgauss
+        # Several distributions incur divide by zero or encounter invalid values when computing
+        # the pdf or logpdf at the endpoints.
+        suppress_messsages = [
+            "divide by zero encountered in true_divide",  # multiple distributions
+            "divide by zero encountered in log",  # multiple distributions
+            "divide by zero encountered in power",  # gengamma
+            "invalid value encountered in add",  # genextreme
+            "invalid value encountered in subtract",  # gengamma
+            "invalid value encountered in multiply"  # recipinvgauss
+            ]
+        for msg in suppress_messsages:
+            sup.filter(category=RuntimeWarning, message=msg)
+
         pdf = distfn.pdf(vals, *args)
         logpdf = distfn.logpdf(vals, *args)
         pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
