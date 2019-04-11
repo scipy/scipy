@@ -11,7 +11,7 @@ cimport numpy as cnp
 cimport cython
 
 cdef extern from "src/__fitpack.h":
-    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result) nogil
+    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
