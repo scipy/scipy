@@ -140,7 +140,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
 
   PyArrayObject *sequence = NULL;
   PyObject *arglist = NULL;
-  PyObject *arg1 = NULL, *str1 = NULL;
+  PyObject *arg1 = NULL;
   PyObject *result = NULL;
   PyArrayObject *result_array = NULL;
 
