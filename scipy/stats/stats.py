@@ -3895,9 +3895,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         elif size == 2:
             pvalue = 1.0
         elif c == 0:
-            pvalue = 2.0/np.math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0/math.factorial(size) if size < 171 else 0.0
         elif c == 1:
-            pvalue = 2.0/np.math.factorial(size-1) if (size-1) < 171 else 0.0
+            pvalue = 2.0/math.factorial(size-1) if (size-1) < 171 else 0.0
         else:
             new = [0.0]*(c+1)
             new[0] = 1.0
@@ -3908,7 +3908,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
                     new[k] += new[k-1]
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
-            pvalue = 2.0*sum(new)/np.math.factorial(size) if size < 171 else 0.0
+            pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
