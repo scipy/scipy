@@ -2717,11 +2717,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        The first set of measurements.
+        The first set of measurements, must be one-dimensional.
     y : array_like, optional
-        The second set of measurements.  If `y` is not given, then the `x`
-        array is considered to be the differences between the two sets of
-        measurements.
+        The second set of measurements, , must be one-dimensional.
+        If `y` is not given, then the `x` array is considered to be the
+        differences between the two sets of measurements.
     zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
         "pratt":
             includes zero-differences in the ranking process,
@@ -2764,9 +2764,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the alternative that the it is negative (``alternative == 'less'``),
     or vice versa (``alternative == 'greater.'``).
 
-    The test uses a normal approximation to derive the p-value. A typical rule
-    is to require that n > 20. For smaller n, exact tables can be used to find
-    critical values.
+    The test uses a normal approximation to derive the p-value (if
+    ``zero_method == 'pratt'``, the approximation is adjusted as in [5]_).
+    A typical rule is to require that n > 20 ([2]_, p. 383). For smaller n,
+    exact tables can be used to find critical values.
 
     References
     ----------
@@ -2777,6 +2778,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
        Vol. 54, 1959, pp. 655-667. :doi:`10.1080/01621459.1959.10501526`
     .. [4] Wilcoxon, F., Individual Comparisons by Ranking Methods,
        Biometrics Bulletin, Vol. 1, 1945, pp. 80-83. :doi:`10.2307/3001968`
+    .. [5] Cureton, E.E., The Normal Approximation to the Signed-Rank
+       Sampling Distribution When Zero Differences are Present,
+       Journal of the American Statistical Association, Vol. 62, 1967,
+       pp. 1068-1069. :doi:`10.1080/01621459.1967.10500917`
 
     Examples
     --------
@@ -2823,11 +2828,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     if y is None:
         d = asarray(x)
+        if d.ndim > 1:
+            raise ValueError('Sample x must be one-dimensional.')
     else:
         x, y = map(asarray, (x, y))
+        if x.ndim > 1 or y.ndim > 1:
+            raise ValueError('Samples x and y must be one-dimensional.')
         if len(x) != len(y):
-            raise ValueError('Unequal N in wilcoxon. Aborting.')
+            raise ValueError('The samples x and y must have the same length.')
         d = x - y
+
+    if zero_method in ["wilcox", "pratt"]:
+        n_zero = np.sum(d == 0, axis=0)
+        if n_zero == len(d):
+            raise ValueError("zero_method 'wilcox' and 'pratt' do not work if "
+                             "the x - y is zero for all elements.")
 
     if zero_method == "wilcox":
         # Keep all non-zero differences
@@ -2862,6 +2877,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     if zero_method == "pratt":
         r = r[d != 0]
+        # normal approximation needs to be adjusted, see Cureton (1967)
+        mn -= n_zero * (n_zero + 1.) * 0.25
+        se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
 
     replist, repnum = find_repeats(r)
     if repnum.size != 0:
