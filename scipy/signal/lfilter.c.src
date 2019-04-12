@@ -191,7 +191,6 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     }
     if (basic_filter == NULL) {
         PyObject *msg, *str;
-        char *s;
 
         str = PyObject_Str((PyObject*)PyArray_DESCR(arX));
         if (str == NULL) {
@@ -201,9 +200,11 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
         msg = PyUnicode_FromFormat(
                         "input type '%U' not supported\n", str);
 #else
-        s = PyString_AsString(str);
-        msg = PyString_FromFormat(
+        {
+            char *s = PyString_AsString(str);
+            msg = PyString_FromFormat(
                         "input type '%s' not supported\n", s);
+        }
 #endif
         Py_DECREF(str);
         if (msg == NULL) {
@@ -292,7 +293,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             }
             /* Give our reference to arVi to arVi_view */
 #if NPY_API_VERSION >= 0x00000007
-            if (PyArray_SetBaseObject(arVi_view, arVi) == -1) {
+            if (PyArray_SetBaseObject(arVi_view, (PyObject *)arVi) == -1) {
                 Py_DECREF(arVi_view);
                 goto fail;
             }
