@@ -1278,13 +1278,18 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
 
     if status == 0 and not is_feasible:
         status = 4
-        message = ("The solution does not satisfy the constraints, yet "
+        message = ("The solution does not satisfy the constraints within the "
+                   "required tolerance of " + "{:.2E}".format(tol) + ", yet "
                    "no errors were raised and there is no certificate of "
                    "infeasibility or unboundedness. This is known to occur "
                    "if the `presolve` option is False and the problem is "
-                   "infeasible. If you encounter this under different "
-                   "circumstances, please submit a bug report. Otherwise, "
-                   "please enable presolve.")
+                   "infeasible. This can also occur due to the limited "
+                   "accuracy of the `interior-point` method. Check whether "
+                   "the slack and constraint residuals are acceptable; "
+                   "if not, consider enabling presolve, reducing option "
+                   "`tol`, and/or using method `revised simplex`. "
+                   "If you encounter this message under different "
+                   "circumstances, please submit a bug report.")
     elif status == 0 and contains_nans:
         status = 4
         message = ("Numerical difficulties were encountered but no errors "
