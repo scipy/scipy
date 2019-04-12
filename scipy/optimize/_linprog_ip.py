@@ -79,7 +79,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
             else:
                 if has_umfpack:
                     solve = sps.linalg.factorized(M)
-                else: # factorized doesn't pass permc_spec
+                else:  # factorized doesn't pass permc_spec
                     solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
 
         else:
@@ -96,7 +96,11 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 # with multiple right hand sides is much faster
                 def solve(r, sym_pos=sym_pos):
                     return sp.linalg.solve(M, r, sym_pos=sym_pos)
-    except:
+    # There are many things that can go wrong here, and it's hard to say
+    # what all of them are. It doesn't really matter: if the matrix can't be
+    # factorized, return None. get_solver will be called again with different
+    # inputs, and a new routine will try to factorize the matrix.
+    except Exception:
         return None
     return solve
 
@@ -276,35 +280,35 @@ def _get_delta(
                 if cholesky:
                     cholesky = False
                     warn(
-                    "Solving system with option 'cholesky':True "
-                    "failed. It is normal for this to happen "
-                    "occasionally, especially as the solution is "
-                    "approached. However, if you see this frequently, "
-                    "consider setting option 'cholesky' to False.",
-                    OptimizeWarning)
+                        "Solving system with option 'cholesky':True "
+                        "failed. It is normal for this to happen "
+                        "occasionally, especially as the solution is "
+                        "approached. However, if you see this frequently, "
+                        "consider setting option 'cholesky' to False.",
+                        OptimizeWarning)
                 elif has_umfpack:
                     has_umfpack = False
                 elif sym_pos:
                     sym_pos = False
                     warn(
-                    "Solving system with option 'sym_pos':True "
-                    "failed. It is normal for this to happen "
-                    "occasionally, especially as the solution is "
-                    "approached. However, if you see this frequently, "
-                    "consider setting option 'sym_pos' to False.",
-                    OptimizeWarning)
+                        "Solving system with option 'sym_pos':True "
+                        "failed. It is normal for this to happen "
+                        "occasionally, especially as the solution is "
+                        "approached. However, if you see this frequently, "
+                        "consider setting option 'sym_pos' to False.",
+                        OptimizeWarning)
                 elif not lstsq:
                     lstsq = True
                     warn(
-                    "Solving system with option 'sym_pos':False "
-                    "failed. This may happen occasionally, "
-                    "especially as the solution is "
-                    "approached. However, if you see this frequently, "
-                    "your problem may be numerically challenging. "
-                    "If you cannot improve the formulation, consider "
-                    "setting 'lstsq' to True. Consider also setting "
-                    "`presolve` to True, if it is not already.",
-                    OptimizeWarning)
+                        "Solving system with option 'sym_pos':False "
+                        "failed. This may happen occasionally, "
+                        "especially as the solution is "
+                        "approached. However, if you see this frequently, "
+                        "your problem may be numerically challenging. "
+                        "If you cannot improve the formulation, consider "
+                        "setting 'lstsq' to True. Consider also setting "
+                        "`presolve` to True, if it is not already.",
+                        OptimizeWarning)
                 else:
                     raise e
                 solve = _get_solver(M, sparse, lstsq, sym_pos,
@@ -972,7 +976,8 @@ def _linprog_ip(
     matrices involved are symmetric positive definite, so Cholesky
     decomposition can be used rather than the more expensive LU factorization.
 
-    With the default ``cholesky=True``, this is accomplished using
+    For dense problems,
+    and with the default ``cholesky=True``, this is accomplished using
     ``scipy.linalg.cho_factor`` followed by forward/backward substitutions
     via ``scipy.linalg.cho_solve``. With ``cholesky=False`` and
     ``sym_pos=True``, Cholesky decomposition is performed instead by
