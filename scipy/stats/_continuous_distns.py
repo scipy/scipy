@@ -1792,6 +1792,8 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
+    Weibull minimum, also called the Weibull Distribution is the limiting
+    distribution of the rescaled minimum of iid random variables.
 
     %(before_notes)s
 
@@ -1848,6 +1850,8 @@ weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 class weibull_max_gen(rv_continuous):
     r"""Weibull maximum continuous random variable.
+    Weibull maximum is the limiting distribution of rescaled
+    maximum of iid random variables.
 
     %(before_notes)s
 
