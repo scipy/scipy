@@ -116,7 +116,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (solver_stats.error_num != 0) {
+    if (solver_stats.error_num != CONVERGED) {
         if (solver_stats.error_num == SIGNERR) {
             PyErr_SetString(PyExc_ValueError,
                     "f(a) and f(b) must have different signs");
@@ -129,11 +129,12 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
                         "Failed to converge after %d iterations.",
                         solver_stats.iterations);
                 PyErr_SetString(PyExc_RuntimeError, msg);
-                flag = 1;
                 return NULL;
             }
+            flag = CONVERR;
         }
     }
+    flag = CONVERGED;
     if (fulloutput) {
         return Py_BuildValue("diii",
                 zero, solver_stats.funcalls, solver_stats.iterations, flag);
