@@ -14,7 +14,7 @@ from scipy.linalg import LinAlgWarning
 try:
     from scikits.umfpack.umfpack import UmfpackWarning
     has_umfpack = True
-except ModuleNotFoundError:
+except ImportError:
     has_umfpack = False
 
 import pytest

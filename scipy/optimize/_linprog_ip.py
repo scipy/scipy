@@ -29,17 +29,18 @@ from ._linprog_util import _postsolve
 try:
     from sksparse.cholmod import cholesky as cholmod
     has_cholmod = True
-except Exception:
+except ImportError:
     has_cholmod = False
 has_umfpack = False
 try:
-    import scikits.umfpack as umfpack
+    import scikits.umfpack as umfpack  # test whether to use factorized
     has_umfpack = True
-except Exception:
+except ImportError:
     has_umfpack = False
 
+
 def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
-                cholesky=True, permc_spec = 'MMD_AT_PLUS_A'):
+                cholesky=True, permc_spec='MMD_AT_PLUS_A'):
     """
     Given solver options, return a handle to the appropriate linear system
     solver.
@@ -1084,32 +1085,32 @@ def _linprog_ip(
         if cholesky:
             warn("Sparse cholesky is only available with scikit-sparse. "
                  "Setting `cholesky = False`",
-                 OptimizeWarning)
+                 OptimizeWarning, stacklevel=2)
         cholesky = False
 
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",
-             OptimizeWarning)
+             OptimizeWarning, stacklevel=2)
 
     if sparse and not sym_pos:
         warn("Invalid option combination 'sparse':True "
              "and 'sym_pos':False; the effect is the same as sparse least "
              "squares, which is not recommended.",
-             OptimizeWarning)
+             OptimizeWarning, stacklevel=2)
 
     if lstsq and cholesky:
         warn("Invalid option combination 'lstsq':True "
              "and 'cholesky':True; option 'cholesky' has no effect when "
              "'lstsq' is set True.",
-             OptimizeWarning)
+             OptimizeWarning, stacklevel=2)
 
     valid_permc_spec = ('NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', 'COLAMD')
     if permc_spec.upper() not in valid_permc_spec:
         warn("Invalid permc_spec option: '" + str(permc_spec) + "'. "
              "Acceptable values are 'NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', "
              "and 'COLAMD'. Reverting to default.",
-             OptimizeWarning)
+             OptimizeWarning, stacklevel=2)
         permc_spec = 'MMD_AT_PLUS_A'
 
     # This can be an error
