@@ -16,7 +16,7 @@ for :math:`k = 1,2,...` where
 
 .. math::
 
-    \frac{\Gamma\left(a\right)\Gamma\left(b\right)}{\Gamma\left(a+b\right)},
+    \B\left(a, b\right) = \frac{\Gamma\left(a\right)\Gamma\left(b\right)}{\Gamma\left(a+b\right)},
 
 is the Beta function. The Yule-Simon can be represented as a mixture of 
 exponential random variates. To see this write :math:`W` as an exponential 
