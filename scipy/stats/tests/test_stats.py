@@ -978,6 +978,20 @@ def test_weightedtau():
     assert_approx_equal(tau, -0.56694968153682723)
 
 
+def test_kendall_tau_large():
+    n = 172.
+    x = np.arange(n)
+    y = np.arange(n)
+    _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+    y[-1], y[-2] = y[-2], y[-1]
+    _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+    y[-3], y[-4] = y[-4], y[-3]
+    _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+
+
 def test_weightedtau_vs_quadratic():
     # Trivial quadratic implementation, all parameters mandatory
     def wkq(x, y, rank, weigher, add):
