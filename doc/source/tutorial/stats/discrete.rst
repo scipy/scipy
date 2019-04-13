@@ -267,3 +267,4 @@ Discrete Distributions in `scipy.stats`
    discrete_logser
    discrete_randint
    discrete_dlaplace
+   discrete_yulesimon
