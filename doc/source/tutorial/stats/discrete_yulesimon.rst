@@ -1,5 +1,5 @@
 
-.. _discrete-zipf:
+.. _discrete-yulesimon:
 
 Yule-Simon Distribution
 ========================
