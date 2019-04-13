@@ -903,7 +903,7 @@ def _linprog_ip(
     cholesky : bool (default = True)
         Set to ``True`` if the normal equations are to be solved by explicit
         Cholesky decomposition followed by explicit forward/backward
-        substitution. This is typically faster for moderate, dense problems
+        substitution. This is typically faster for problems
         that are numerically well-behaved.
     pc : bool (default = True)
         Leave ``True`` if the predictor-corrector method of Mehrota is to be
@@ -914,7 +914,8 @@ def _linprog_ip(
         depends on the problem.
     permc_spec : str (default = 'MMD_AT_PLUS_A')
         (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
-        True``.) A matrix is factorized in each iteration of the algorithm.
+        True``, and no SuiteSparse.)
+        A matrix is factorized in each iteration of the algorithm.
         This option specifies how to permute the columns of the matrix for
         sparsity preservation. Acceptable values are:
 
@@ -976,34 +977,33 @@ def _linprog_ip(
     matrices involved are symmetric positive definite, so Cholesky
     decomposition can be used rather than the more expensive LU factorization.
 
-    For dense problems,
-    and with the default ``cholesky=True``, this is accomplished using
-    ``scipy.linalg.cho_factor`` followed by forward/backward substitutions
-    via ``scipy.linalg.cho_solve``. With ``cholesky=False`` and
-    ``sym_pos=True``, Cholesky decomposition is performed instead by
-    ``scipy.linalg.solve``. Based on speed tests, this also appears to retain
-    the Cholesky decomposition of the matrix for later use, which is beneficial
-    as the same system is solved four times with different right hand sides
-    in each iteration of the algorithm.
+    With default options, the solver used to perform the factorization depends
+    on third-party software availability and the conditioning of the problem.
 
-    In problems with redundancy (e.g. if presolve is turned off with option
-    ``presolve=False``) or if the matrices become ill-conditioned (e.g. as the
-    solution is approached and some decision variables approach zero),
-    Cholesky decomposition can fail. Should this occur, successively more
-    robust solvers (``scipy.linalg.solve`` with ``sym_pos=False`` then
-    ``scipy.linalg.lstsq``) are tried, at the cost of computational efficiency.
-    These solvers can be used from the outset by setting the options
-    ``sym_pos=False`` and ``lstsq=True``, respectively.
+    For dense problems, solvers are tried in the following order.::
 
-    Note that with the option ``sparse=True``, the normal equations are solved
-    using ``scipy.sparse.linalg.spsolve``. Unfortunately, this uses the more
-    expensive LU decomposition from the outset, but for large, sparse problems,
-    the use of sparse linear algebra techniques improves the solve speed
-    despite the use of LU rather than Cholesky decomposition. A simple
-    improvement would be to use the sparse Cholesky decomposition of
-    ``CHOLMOD`` via ``scikit-sparse`` when available.
+        1: ``scipy.linalg.cho_factor`` (if scikit-sparse and SuiteSparse are installed)
+        2: ``scipy.linalg.solve`` with option ``sym_pos=True``
+        3: ``scipy.linalg.solve`` with option ``sym_pos=False``
+        4: ``scipy.linalg.lstsq``
 
-    Other potential improvements for combatting issues associated with dense
+    For sparse problems::
+
+        1: ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
+        2: ``scipy.sparse.linalg.factorized`` (if scikits.umfpack and SuiteSparse are installed)
+        3: ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
+        4: ``scipy.sparse.linalg.lsqr``
+
+    If the solver fails for any reason, successively more robust (but slower)
+    solvers are attempted in the order indicated. Attempting, failing, and
+    re-starting factorization can be time consuming, so if the problem is
+    numerically challenging, options can be set to  bypass solvers that are
+    failing. Setting ``cholesky=False`` bypasses solver 1 for both sparse and
+    dense problems. Setting ``sym_pos=False`` bypasses solver 2 for dense
+    problems and skips to solver 4 for sparse problems. ``lstsq=True`` skips
+    to solver 4 for both sparse and dense problems.
+
+    Potential improvements for combatting issues associated with dense
     columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
     [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free
