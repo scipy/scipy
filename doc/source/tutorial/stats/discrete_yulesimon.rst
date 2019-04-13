@@ -8,7 +8,6 @@ A random variable has the Yule-Simon distribution
 with parameter :math:`\alpha>0` if it's probability mass function is given by
 
 .. math::
-   :nowrap:
 
     p\left(k;\alpha\right) = \alpha \B\left(k, \alpha+1\right),
 
