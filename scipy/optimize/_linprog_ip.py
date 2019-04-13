@@ -29,13 +29,13 @@ from ._linprog_util import _postsolve
 try:
     from sksparse.cholmod import cholesky as cholmod
     has_cholmod = True
-except:
+except Exception:
     has_cholmod = False
 has_umfpack = False
 try:
     import scikits.umfpack as umfpack
     has_umfpack = True
-except:
+except Exception:
     has_umfpack = False
 
 def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
@@ -1081,9 +1081,10 @@ def _linprog_ip(
 
     # These should be warnings, not errors
     if (cholesky or cholesky is None) and sparse and not has_cholmod:
-        warn("Sparse cholesky is only available with scikit-sparse. Setting "
-             "`cholesky = False`",
-             OptimizeWarning)
+        if cholesky:
+            warn("Sparse cholesky is only available with scikit-sparse. "
+                 "Setting `cholesky = False`",
+                 OptimizeWarning)
         cholesky = False
 
     if sparse and lstsq:
