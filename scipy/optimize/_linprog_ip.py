@@ -286,7 +286,7 @@ def _get_delta(
                         "occasionally, especially as the solution is "
                         "approached. However, if you see this frequently, "
                         "consider setting option 'cholesky' to False.",
-                        OptimizeWarning)
+                        OptimizeWarning, stacklevel=2)
                 elif has_umfpack:
                     has_umfpack = False
                 elif sym_pos:
@@ -297,7 +297,7 @@ def _get_delta(
                         "occasionally, especially as the solution is "
                         "approached. However, if you see this frequently, "
                         "consider setting option 'sym_pos' to False.",
-                        OptimizeWarning)
+                        OptimizeWarning, stacklevel=2)
                 elif not lstsq:
                     lstsq = True
                     warn(
@@ -309,7 +309,7 @@ def _get_delta(
                         "If you cannot improve the formulation, consider "
                         "setting 'lstsq' to True. Consider also setting "
                         "`presolve` to True, if it is not already.",
-                        OptimizeWarning)
+                        OptimizeWarning, stacklevel=2)
                 else:
                     raise e
                 solve = _get_solver(M, sparse, lstsq, sym_pos,
