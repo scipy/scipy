@@ -250,7 +250,7 @@ class PreparedConstraint(object):
         self.bounds = (lb, ub)
         self.keep_feasible = keep_feasible
 
-    def is_satisifed(self, x):
+    def is_satisfied(self, x):
         """Whether a solution satisfies the constraint.
 
         Parameters
