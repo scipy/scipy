@@ -3388,10 +3388,13 @@ class special_ortho_group_gen(multi_rv_generic):
         D = np.empty((dim,))
         for n in range(dim-1):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt((x*x).sum())
+            x[0] += D[n]*np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = (np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
+            Hx = (np.eye(dim-n) - np.outer(x, x))
             mat = np.eye(dim)
             mat[n:, n:] = Hx
             H = np.dot(H, mat)
@@ -3527,11 +3530,14 @@ class ortho_group_gen(multi_rv_generic):
         H = np.eye(dim)
         for n in range(dim):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             # random sign, 50/50, but chosen carefully to avoid roundoff error
             D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D*np.sqrt((x*x).sum())
+            x[0] += D * np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = -D*(np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
+            Hx = -D*(np.eye(dim-n) - np.outer(x, x))
             mat = np.eye(dim)
             mat[n:, n:] = Hx
             H = np.dot(H, mat)
