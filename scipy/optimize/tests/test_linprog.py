@@ -829,7 +829,7 @@ class LinprogCommonTests(object):
 
         with suppress_warnings() as sup:
             if has_umfpack:
-                sup.filter(UmfpackWarning, "(almost) singular matrix...")
+                sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(OptimizeWarning, "Solving system with option...")
@@ -1176,7 +1176,7 @@ class LinprogCommonTests(object):
 
         with suppress_warnings() as sup:
             if has_umfpack:
-                sup.filter(UmfpackWarning, "(almost) singular matrix...")
+                sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
@@ -1213,7 +1213,7 @@ class LinprogCommonTests(object):
 
         with suppress_warnings() as sup:
             if has_umfpack:
-                sup.filter(UmfpackWarning, "(almost) singular matrix...")
+                sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(RuntimeWarning, "invalid value encountered")
             sup.filter(LinAlgWarning)
             res1 = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
@@ -1415,7 +1415,7 @@ class TestLinprogIPSparse(LinprogIPTests):
 
         with suppress_warnings() as sup:
             if has_umfpack:
-                sup.filter(UmfpackWarning, "(almost) singular matrix...")
+                sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(MatrixRankWarning, "Matrix is exactly singular")
             sup.filter(OptimizeWarning, "Solving system with option...")
 
