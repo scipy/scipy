@@ -134,7 +134,10 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
             flag = CONVERR;
         }
     }
-    flag = CONVERGED;
+    else
+    {
+        flag = CONVERGED;
+    }
     if (fulloutput) {
         return Py_BuildValue("diii",
                 zero, solver_stats.funcalls, solver_stats.iterations, flag);
