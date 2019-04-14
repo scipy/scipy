@@ -1218,6 +1218,7 @@ class LinprogCommonTests(object):
         bounds[2] = (None, None)
 
         with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(RuntimeWarning, "invalid value encountered")
             sup.filter(LinAlgWarning)
             res2 = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
