@@ -5308,7 +5308,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
-    We generally follow Hodges'[1] treatment of Drion/Gnedenko/Korolyuk.
+    We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk [1]_.
 
     References
     ----------
