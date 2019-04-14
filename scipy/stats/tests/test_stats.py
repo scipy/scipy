@@ -2806,7 +2806,6 @@ class TestKSTwoSamples(object):
     def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto'):
         result = stats.ks_2samp(x1, x2, alternative, mode=mode)
         expected = np.array([expected_statistic, expected_prob])
-        # print('%.16f' % result.statistic, '%.16e' % result.pvalue, result.statistic*500*600)
         assert_array_almost_equal(np.array(result), expected)
 
     def testSmall(self):
@@ -2888,15 +2887,15 @@ class TestKSTwoSamples(object):
         # 500, 600
         self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='auto')
         self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='asymp')
-        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.87721554018921566, mode='asymp')
-        self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='asymp')
+        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
+        self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
-            self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.87721554018921577, mode='exact')
-            self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='exact')
+            self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
+            self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.97218887049883673, mode='exact')
+            self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
     def testMediumBoth(self):
@@ -2906,16 +2905,16 @@ class TestKSTwoSamples(object):
         # 1000, 1100
         self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='asymp')
         self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='auto')
-        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.84125883587707861, mode='asymp')
-        self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.97888432252447422, mode='asymp')
+        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='asymp')
+        self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
 
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
-            self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.84125883587707861, mode='exact')
-            self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.97888432252447422, mode='exact')
+            self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
+            self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.97888432252447422, mode='exact')
+            self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
     def testLarge(self):

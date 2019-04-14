@@ -5110,7 +5110,7 @@ def _compute_prob_inside_method(m, n, g, h):
     lenA = min(2 * maxj + 2, n + 1)
     # This is an integer calculation, but the entries are essentially
     # binomial coefficients, hence grow quickly.
-    # In addition, scaling after each column avoids dividing by a
+    # Scaling after each column is computed avoids dividing by a
     # large binomial coefficent at the end. Instead it is incorporated
     # one factor at a time during the computation.
     dtype = np.float64
@@ -5132,9 +5132,9 @@ def _compute_prob_inside_method(m, n, g, h):
         if lastlen > curlen:
             # Set some carried-over elements to 0
             A[maxj - minj:maxj - minj + (lastlen - curlen)] = 0
-        # Peel off one factor from top and bottom of the binomial coefficient.
-        factor = i * 1.0 / (n + i)
-        A *= factor
+        # Peel off one term from each of top and bottom of the binomial coefficient.
+        scaling_factor = i * 1.0 / (n + i)
+        A *= scaling_factor
     return A[maxj - minj - 1]
 
 
@@ -5154,7 +5154,7 @@ def _compute_prob_outside_square(n, h):
         The proportion of paths that pass outside the lines x-y = +/-h.
 
     """
-    # Compute Pr(Dn,n >= h/n)
+    # Compute Pr(D_{n,n} >= h/n)
     # Prob = 2 * ( binom(2n, n-h) - binom(2n, n-2a) + binom(2n, n-3a) - ... )  / binom(2n, n)
     # This formulation exhibits subtractive cancellation.
     # Instead divide each term by binom(2n, n), then factor common terms
@@ -5198,6 +5198,8 @@ def _count_paths_outside_method(m, n, g, h):
     FloatingPointError: Raised if the intermediate computation goes outside
     the range of a float.
 
+    Notes
+    -----
     Count the integer lattice paths from (0, 0) to (m, n), which at some
     point (x, y) along the path, satisfy:
       m*y <= n*x - h*g
@@ -5306,6 +5308,14 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
+    We generally follow Hodges'[1] treatment of Drion/Gnedenko/Korolyuk.
+
+    References
+    ----------
+    .. [1] Hodges, J.L. Jr.,  "The Significance Probability of the Smirnov
+           Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
+
     Examples
     --------
     >>> from scipy import stats
@@ -5336,7 +5346,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     (0.07999999999999996, 0.41126949729859719)
 
     """
-    LARGE_N = 10000  # 'auto' will be exact if n1,n2 <= LARGE_N
+    LARGE_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= LARGE_N
     data1 = np.sort(data1)
     data2 = np.sort(data2)
     n1 = data1.shape[0]
@@ -5430,8 +5440,8 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         else:
             m, n = max(n1, n2), min(n1, n2)
             z = np.sqrt(m*n/(m+n)) * d
-            # Use Hodges' suggested approximation
-            expt = -2 * z**2 - 2 * z * (m + 2*n)/(m+n)/3.0
+            # Use Hodges' suggested approximation Eqn 5.3
+            expt = -2 * z**2 - 2 * z * (m + 2*n)/np.sqrt(m*n*(m+n))/3.0
             prob = np.exp(expt)
 
     prob = (0 if prob < 0 else (1 if prob > 1 else prob))
