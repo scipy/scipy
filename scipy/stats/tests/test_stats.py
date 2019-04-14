@@ -2879,66 +2879,80 @@ class TestKSTwoSamples(object):
         self._testOne(data2, data2+1, 'two-sided', 1.0/3, 1.0)
         self._testOne(data2, data2+1, 'greater', 1.0/3, 0.75)
         self._testOne(data2, data2+1, 'less', 0.0/3, 1.)
+        self._testOne(data2, data2+0.5, 'two-sided', 1.0/3, 1.0)
+        self._testOne(data2, data2+0.5, 'greater', 1.0/3, 0.75)
+        self._testOne(data2, data2+0.5, 'less', 0.0/3, 1.)
+        self._testOne(data2, data2-0.5, 'two-sided', 1.0/3, 1.0)
+        self._testOne(data2, data2-0.5, 'greater', 0.0/3, 1.0)
+        self._testOne(data2, data2-0.5, 'less', 1.0/3, 0.75)
 
     def testMiddlingBoth(self):
-        x500 = np.linspace(1, 200, 500)
-        x600 = np.linspace(2, 200, 600)
-        n1, n2 = len(x500), len(x600)
         # 500, 600
-        self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='auto')
-        self._testOne(x500, x600, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='asymp')
-        self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
-        self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
+        n1, n2 = 500, 600
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 200, n2)
+        self._testOne(x, y, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='auto')
+        self._testOne(x, y, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='asymp')
+        self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
+        self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
-            self._testOne(x500, x600, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
-            self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
+            self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
+            self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            self._testOne(x500, x600, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
+            self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
     def testMediumBoth(self):
-        x1000 = np.linspace(1, 200, 1000)
-        x1100 = np.linspace(2, 200, 1100)
-        n1, n2 = len(x1000), len(x1100)
         # 1000, 1100
-        self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='asymp')
-        self._testOne(x1000, x1100, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='auto')
-        self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='asymp')
-        self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
+        n1, n2 = 1000, 1100
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 200, n2)
+        self._testOne(x, y, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='asymp')
+        self._testOne(x, y, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='auto')
+        self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='asymp')
+        self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
 
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
-            self._testOne(x1000, x1100, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
-            self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
+            self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
+            self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            self._testOne(x1000, x1100, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
+            self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
             _check_warnings(w, RuntimeWarning, 1)
 
     def testLarge(self):
-        x10000 = np.linspace(1, 200, 10000)
-        x110 = np.linspace(2, 100, 110)
         # 10000, 110
-        self._testOne(x10000, x110, 'two-sided', 55275.0 / 10000 / 11, 4.2188474935755949e-15)
-        self._testOne(x10000, x110, 'greater', 561.0 / 10000 / 11, 0.99115454582047591)
-        self._testOne(x10000, x110, 'less', 55275.0 / 10000 / 11, 3.1317328311518713e-26)
+        n1, n2 = 10000, 110
+        lcm = n1*11.0
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 100, n2)
+        self._testOne(x, y, 'two-sided', 55275.0 / lcm, 4.2188474935755949e-15)
+        self._testOne(x, y, 'greater', 561.0 / lcm, 0.99115454582047591)
+        self._testOne(x, y, 'less', 55275.0 / lcm, 3.1317328311518713e-26)
 
     @pytest.mark.slow
     def testLargeBoth(self):
-        x10000 = np.linspace(1, 200, 10000)
-        x11000 = np.linspace(2, 200, 11000)
         # 10000, 11000
-        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561, mode='asymp')
-        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 1.0, mode='exact')
-        self._testOne(x10000, x11000, 'two-sided', 563.0 / 10000 / 11, 0.99915729949018561, mode='auto')
-        self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617)
-        self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157)
+        n1, n2 = 10000, 11000
+        lcm = n1*11.0
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 200, n2)
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='asymp')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 1.0, mode='exact')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='auto')
+        self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
+        self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
-            self._testOne(x10000, x11000, 'greater', 563.0 / 10000 / 11, 0.5278310390162617, mode='exact')
-            self._testOne(x10000, x11000, 'less', 10.0 / 10000 / 11, 0.9934598204248157, mode='exact')
+            self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
+            self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
 
     def testNamedAtributes(self):
         # test for namedtuple attribute results
