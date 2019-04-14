@@ -11,11 +11,6 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
-try:
-    from scikits.umfpack.umfpack import UmfpackWarning
-    has_umfpack = True
-except ImportError:
-    has_umfpack = False
 
 import pytest
 
@@ -828,8 +823,8 @@ class LinprogCommonTests(object):
         b_eq = [-4, 0, 0, 4]
 
         with suppress_warnings() as sup:
-            if has_umfpack:
-                sup.filter(RuntimeWarning, "(almost) singular matrix...")
+            # this is an UmfpackWarning but I had trouble importing it
+            sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(OptimizeWarning, "Solving system with option...")
@@ -1175,8 +1170,7 @@ class LinprogCommonTests(object):
         b_eq = np.array([[100], [0], [0], [0], [0]])
 
         with suppress_warnings() as sup:
-            if has_umfpack:
-                sup.filter(RuntimeWarning, "(almost) singular matrix...")
+            sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
@@ -1212,8 +1206,7 @@ class LinprogCommonTests(object):
         desired_fun = 36.0000000000
 
         with suppress_warnings() as sup:
-            if has_umfpack:
-                sup.filter(RuntimeWarning, "(almost) singular matrix...")
+            sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(RuntimeWarning, "invalid value encountered")
             sup.filter(LinAlgWarning)
             res1 = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
@@ -1414,8 +1407,7 @@ class TestLinprogIPSparse(LinprogIPTests):
         bounds = (0, 1)
 
         with suppress_warnings() as sup:
-            if has_umfpack:
-                sup.filter(RuntimeWarning, "(almost) singular matrix...")
+            sup.filter(RuntimeWarning, "(almost) singular matrix...")
             sup.filter(MatrixRankWarning, "Matrix is exactly singular")
             sup.filter(OptimizeWarning, "Solving system with option...")
 
