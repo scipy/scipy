@@ -286,7 +286,7 @@ def _get_delta(
                         "occasionally, especially as the solution is "
                         "approached. However, if you see this frequently, "
                         "consider setting option 'cholesky' to False.",
-                        OptimizeWarning, stacklevel=2)
+                        OptimizeWarning, stacklevel=5)
                 elif has_umfpack:
                     has_umfpack = False
                 elif sym_pos:
@@ -297,7 +297,7 @@ def _get_delta(
                         "occasionally, especially as the solution is "
                         "approached. However, if you see this frequently, "
                         "consider setting option 'sym_pos' to False.",
-                        OptimizeWarning, stacklevel=2)
+                        OptimizeWarning, stacklevel=5)
                 elif not lstsq:
                     lstsq = True
                     warn(
@@ -309,7 +309,7 @@ def _get_delta(
                         "If you cannot improve the formulation, consider "
                         "setting 'lstsq' to True. Consider also setting "
                         "`presolve` to True, if it is not already.",
-                        OptimizeWarning, stacklevel=2)
+                        OptimizeWarning, stacklevel=5)
                 else:
                     raise e
                 solve = _get_solver(M, sparse, lstsq, sym_pos,
@@ -1085,32 +1085,32 @@ def _linprog_ip(
         if cholesky:
             warn("Sparse cholesky is only available with scikit-sparse. "
                  "Setting `cholesky = False`",
-                 OptimizeWarning, stacklevel=2)
+                 OptimizeWarning, stacklevel=3)
         cholesky = False
 
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",
-             OptimizeWarning, stacklevel=2)
+             OptimizeWarning, stacklevel=3)
 
     if sparse and not sym_pos:
         warn("Invalid option combination 'sparse':True "
              "and 'sym_pos':False; the effect is the same as sparse least "
              "squares, which is not recommended.",
-             OptimizeWarning, stacklevel=2)
+             OptimizeWarning, stacklevel=3)
 
     if lstsq and cholesky:
         warn("Invalid option combination 'lstsq':True "
              "and 'cholesky':True; option 'cholesky' has no effect when "
              "'lstsq' is set True.",
-             OptimizeWarning, stacklevel=2)
+             OptimizeWarning, stacklevel=3)
 
     valid_permc_spec = ('NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', 'COLAMD')
     if permc_spec.upper() not in valid_permc_spec:
         warn("Invalid permc_spec option: '" + str(permc_spec) + "'. "
              "Acceptable values are 'NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', "
              "and 'COLAMD'. Reverting to default.",
-             OptimizeWarning, stacklevel=2)
+             OptimizeWarning, stacklevel=3)
         permc_spec = 'MMD_AT_PLUS_A'
 
     # This can be an error
