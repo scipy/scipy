@@ -9,15 +9,11 @@ with parameter :math:`\alpha>0` if it's probability mass function is given by
 
 .. math::
 
-    p \left( k; \alpha \right) = \alpha \B\left(k, \alpha + 1 \right)
+    p \left( k; \alpha \right) = \alpha \frac{\Gamma\left(k\right)\Gamma\left(\alpha + 1\right)}{\Gamma\left(k+\alpha+1\right)}
 
-for :math:`k = 1,2,...` where
+for :math:`k = 1,2,...`. 
 
-.. math::
-
-    \B \left(a, b \right) = \frac{\Gamma \left( a \right)\Gamma \left( b \right) }{ \Gamma \left( a + b \right) }
-
-is the Beta function. The Yule-Simon can be represented as a mixture of 
+The Yule-Simon can be represented as a mixture of 
 exponential random variates. To see this write :math:`W` as an exponential 
 random variate with rate :math:`\rho` and a Geometric random variate :math:`K` 
 with probability :math:`1-exp(-W)` then :math:`K` marginally has a Yule-Simon
