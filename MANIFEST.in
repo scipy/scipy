@@ -2,6 +2,7 @@ include MANIFEST.in
 include *.txt
 # Top-level build script
 include setup.py
+include pyproject.toml
 # All source files
 recursive-include scipy *
 recursive-include benchmarks *

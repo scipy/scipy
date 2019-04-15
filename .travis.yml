@@ -31,6 +31,10 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+        # Need a test with most recent Python version where we build from an
+        # sdist (uses pip build isolation), to check that the version we
+        # specify in pyproject.toml (will be older than --pre --upgrade) works
+        - USE_SDIST=1
     - python: 3.7
       dist: xenial # travis-ci/travis-ci/issues/9815
       sudo: true
@@ -188,12 +192,12 @@ script:
         python tools/suppress_output.py python setup.py sdist
         # Move out of source directory to avoid finding local scipy
         cd dist
-        # Use pip --build option to make ccache work better.
-        # However, this option is partially broken
-        # (see https://github.com/pypa/pip/issues/4242)
-        # and some shenanigans are needed to make it work.
         echo "pip install"
-        python ../tools/suppress_output.py pip install --no-cache-dir --no-build-isolation --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
+        # Note: uses build isolation, which is what pip does with sdists by default
+        # Note: don't use a fixed build dir (which would help for ccache), because
+        #       --build is partially broken and the workaround in commit b4617dd764
+        #       messes with build isolation.
+        pip install $PWD/scipy* -v
         cd ..
         USE_WHEEL_BUILD="--no-build"
     fi
