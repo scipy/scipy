@@ -1045,7 +1045,10 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
                     str(ww.message).startswith('Ill-conditioned matrix'):
                 raise LinAlgError(str(ww.message))
     except LinAlgError:  # in case Q is rank deficient
-        a = lstsq(Q, b, lapack_driver='gelsy')
+        # This is faster than pinvh, even though we don't explicitly use
+        # the symmetry here. gelsy was faster than gelsd and gelss in
+        # some non-exhaustive tests.
+        a = lstsq(Q, b, lapack_driver='gelsy')[0]
 
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))
