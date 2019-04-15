@@ -9,7 +9,8 @@ import warnings
 import numpy as np
 from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
-from scipy.linalg import toeplitz, hankel, solve, pinvh, LinAlgError
+from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
+                          lstsq)
 from scipy._lib.six import string_types
 
 from . import sigtools
@@ -1036,9 +1037,15 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
 
     # Now we can solve the equation
     try:  # try the fast way
-        a = solve(Q, b, sym_pos=True, check_finite=False)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            a = solve(Q, b, sym_pos=True, check_finite=False)
+        for ww in w:
+            if ww.category == LinAlgWarning and \
+                    str(ww.message).startswith('Ill-conditioned matrix'):
+                raise LinAlgError(str(ww.message))
     except LinAlgError:  # in case Q is rank deficient
-        a = np.dot(pinvh(Q, check_finite=False), b)
+        a = lstsq(Q, b, lapack_driver='gelsy')
 
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))

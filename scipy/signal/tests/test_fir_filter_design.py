@@ -542,12 +542,10 @@ class TestFirls(object):
 
     def test_rank_deficient(self):
         # solve() runs but warns (only sometimes, so here we don't use match)
-        with pytest.warns(None) as warnings_:
-            x = firls(21, [0, 0.1, 0.9, 1], [1, 1, 0, 0])
-        assert all('Ill-conditioned' in str(ww) for ww in warnings_)
+        x = firls(21, [0, 0.1, 0.9, 1], [1, 1, 0, 0])
         w, h = freqz(x, fs=2.)
-        assert_allclose(np.abs(h[:2]), 1.)
-        assert_allclose(np.abs(h[-2:]), 0., atol=1e-7)
+        assert_allclose(np.abs(h[:2]), 1., atol=1e-5)
+        assert_allclose(np.abs(h[-2:]), 0., atol=1e-6)
         # switch to pinvh (tolerances could be higher with longer
         # filters, but using shorter ones is faster computationally and
         # the idea is the same)
