@@ -1257,10 +1257,9 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
         Cutoff for 'small' singular values in the least-squares solver.
-        Singular values smaller than ``rcond * largest_singular_value``
-        are considered zero.
-        If None, it is set to ``np.finfo(a.dtype).eps``.
-        If `a` is an array of integers, it is set to ``np.finfo('float64').eps``.
+        Singular values smaller than ``max(M, N) * eps`` are considered zero
+        where ``eps`` is the corresponding machine precision value of the
+        datatype of ``a``.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
@@ -1293,7 +1292,9 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     a = _asarray_validated(a, check_finite=check_finite)
     b = np.identity(a.shape[0], dtype=a.dtype)
-    if rcond is not None:
+    if rcond is None:
+        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
+    else:
         cond = rcond
 
     x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
