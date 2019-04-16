@@ -93,13 +93,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
         A second guess.
     fprime : bool or callable, optional
         If `fprime` is a boolean and is True, `f` is assumed to return the
-        value of derivative along with the objective function.
+        value of the objective function and of the derivative.
         `fprime` can also be a callable returning the derivative of `f`. In
         this case, it must accept the same arguments as `f`.
     fprime2 : bool or callable, optional
         If `fprime2` is a boolean and is True, `f` is assumed to return the
-        value of 1st and 2nd derivatives along with the objective function.
-        `fprime2` can also be a callable returning the 2nd derivative of `f`.
+        value of the objective function and of the
+        first and second derivatives.
+        `fprime2` can also be a callable returning the second derivative of `f`.
         In this case, it must accept the same arguments as `f`.
     xtol : float, optional
         Tolerance (absolute) for termination.
