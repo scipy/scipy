@@ -72,13 +72,13 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
     """
     try:
         if sparse:
-            if lstsq or not(sym_pos):
+            if lstsq:
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
                 solve = cholmod(M)
             else:
-                if has_umfpack:
+                if has_umfpack and sym_pos:
                     solve = sps.linalg.factorized(M)
                 else:  # factorized doesn't pass permc_spec
                     solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
@@ -999,9 +999,8 @@ def _linprog_ip(
     solvers are attempted in the order indicated. Attempting, failing, and
     re-starting factorization can be time consuming, so if the problem is
     numerically challenging, options can be set to  bypass solvers that are
-    failing. Setting ``cholesky=False`` bypasses solver 1 for both sparse and
-    dense problems. Setting ``sym_pos=False`` bypasses solver 2 for dense
-    problems and skips to solver 4 for sparse problems. ``lstsq=True`` skips
+    failing. Setting ``cholesky=False`` skips to solver 2,
+    ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
     to solver 4 for both sparse and dense problems.
 
     Potential improvements for combatting issues associated with dense
@@ -1091,12 +1090,6 @@ def _linprog_ip(
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",
-             OptimizeWarning, stacklevel=3)
-
-    if sparse and not sym_pos:
-        warn("Invalid option combination 'sparse':True "
-             "and 'sym_pos':False; the effect is the same as sparse least "
-             "squares, which is not recommended.",
              OptimizeWarning, stacklevel=3)
 
     if lstsq and cholesky:
