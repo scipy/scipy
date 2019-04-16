@@ -141,7 +141,7 @@ class GroupSampling(Benchmark):
     param_names = ['dim']
     params = [[3, 10, 50, 200]]
 
-    def setup(self):
+    def setup(self, dim):
         np.random.seed(12345678)
 
     def time_unitary_group(self, dim):
