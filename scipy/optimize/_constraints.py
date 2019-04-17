@@ -250,29 +250,7 @@ class PreparedConstraint(object):
         self.bounds = (lb, ub)
         self.keep_feasible = keep_feasible
 
-    def is_satisfied(self, x):
-        """Whether a solution satisfies the constraint.
-
-        Parameters
-        ----------
-        x : array-like
-            Vector of independent variables.
-
-        Returns
-        -------
-        satisfied : bool
-            Whether the vector of independent variables satisfies the
-            constraint.
-        """
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
-            ev = self.fun.fun(np.asarray(x))
-        feasible_lb = np.all(ev >= self.bounds[0])
-        feasible_ub = np.all(ev <= self.bounds[1])
-
-        return feasible_lb and feasible_ub
-
-    def excess_violation(self, x):
+    def violation(self, x):
         """How much the constraint is exceeded by.
 
         Parameters
