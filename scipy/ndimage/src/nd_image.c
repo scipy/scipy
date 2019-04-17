@@ -212,7 +212,7 @@ exit:
 static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode;
     double cval;
 
@@ -297,7 +297,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyArrayObject *structure = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, minimum;
     double cval;
 
@@ -333,7 +333,7 @@ exit:
 static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, rank;
     double cval;
 
@@ -528,7 +528,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     double cval;
     ccallback_t callback;
     static ccallback_signature_t callback_signatures[] = {
@@ -1063,7 +1063,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     int border_value, invert, center_is_true;
     int changed = 0, return_coordinates;
     NI_CoordinateList *coordinate_list = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii",
                           NI_ObjectToInputArray, &input,
@@ -1113,7 +1113,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArrayObject *array = NULL, *strct = NULL, *mask = NULL;
     PyObject *cobj = NULL;
     int invert, niter;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
                           NI_ObjectToInputOutputArray, &array,

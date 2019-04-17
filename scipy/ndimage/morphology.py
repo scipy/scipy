@@ -246,7 +246,6 @@ def _binary_erosion(input, structure, iterations, mask, output,
         output = bool
     output = _ni_support._get_output(output, input)
 
-    iterations = operator.index(iterations)
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                  border_value, origin, invert, cit, 0)
