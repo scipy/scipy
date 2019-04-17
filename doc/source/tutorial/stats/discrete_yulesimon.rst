@@ -16,7 +16,7 @@ random variate generation.
 
     \begin{eqnarray*}
     p \left( k; \alpha \right) & = & \alpha \frac{\Gamma\left(k\right)\Gamma\left(\alpha + 1\right)}{\Gamma\left(k+\alpha+1\right)} \\
-    F \left( k; \alpha \right) & = &  1 - \frac{ k \Gamma\left(k\right)\Gamma\left(\alpha + 1\right)}{\Gamma\left(k+\alpha+1\right)} \\
+    F \left( k; \alpha \right) & = &  1 - \frac{ k \Gamma\left(k\right)\Gamma\left(\alpha + 1\right)}{\Gamma\left(k+\alpha+1\right)}
     \end{eqnarray*}
 
 for :math:`k = 1,2,...`.
@@ -28,8 +28,7 @@ Now
 
     \begin{eqnarray*} \mu & = & \frac{\alpha}{\alpha-1}\\
     \mu_{2} & = &  \frac{\alpha^2}{(\alpha-1)^2(\alpha-2)} \\
-    \gamma_{1} & = & \frac{ \sqrt(\alpha - 2)  (\alpha + 1)^2
-    }{(\alpha  (\alpha - 3)) }\\
+    \gamma_{1} & = & \frac{ \sqrt(\alpha - 2)  (\alpha + 1)^2 }{(\alpha  (\alpha - 3)) }\\
     \gamma_{2} & = & \frac{ (\alpha + 3) + (\alpha^3 - 49\alpha - 22)}{ (\alpha (\alpha - 4)(\alpha - 3)) }
     \end{eqnarray*}
 
