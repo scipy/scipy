@@ -32,7 +32,16 @@
 #ifndef NI_SUPPORT_H
 #define NI_SUPPORT_H
 
+/*
+ * The NO_ARRAY_IMPORT tells numpy that the compilation unit will reuse
+ * the numpy API initialized in another compilation unit. The compilation
+ * unit that initializes the shared numpy API by calling import_array()
+ * must bypass this by explicitly including nd_image.h before ni_support.h.
+ */
+#define NO_IMPORT_ARRAY
 #include "nd_image.h"
+#undef NO_IMPORT_ARRAY
+
 #include <stdlib.h>
 #include <float.h>
 #include <limits.h>
@@ -54,63 +63,23 @@ typedef enum {
 
 
 /******************************************************************/
-/* Misc */
-/******************************************************************/
-
-/* compile time branch prediction hints */
-#ifdef __GNUC__
-  /* Test for GCC > 2.95 */
-  #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95))
-    #define NI_LIKELY(x)   __builtin_expect(!!(x), 1)
-    #define NI_UNLIKELY(x) __builtin_expect(!!(x), 0)
-  #else /* __GNUC__ > 2 ... */
-    #define NI_LIKELY(x)   (x)
-    #define NI_UNLIKELY(x) (x)
-  #endif /* __GNUC__ > 2 ... */
-#else /* __GNUC__ */
-  #define NI_LIKELY(x)   (x)
-  #define NI_UNLIKELY(x) (x)
-#endif /* __GNUC__ */
-
-
-/******************************************************************/
-/* Data types */
-/******************************************************************/
-
-/*
- * Numpy basic types codes correspond to C basic types, but they remain
- * different even if the corresponding types have the same size.
- *
- * Most commonly: int and long, so normalize to long.
- */
-static NPY_INLINE
-int NI_NormalizeType(int type_num)
-{
-#if NPY_SIZEOF_INT == NPY_SIZEOF_LONG
-    if (type_num == NPY_INT)  type_num = NPY_LONG;
-    if (type_num == NPY_UINT) type_num = NPY_ULONG;
-#endif
-    return type_num;
-}
-
-/******************************************************************/
 /* Iterators */
 /******************************************************************/
 
 /* the iterator structure: */
 typedef struct {
     int rank_m1;
-    npy_intp dimensions[MAXDIM];
-    npy_intp coordinates[MAXDIM];
-    npy_intp strides[MAXDIM];
-    npy_intp backstrides[MAXDIM];
+    npy_intp dimensions[NPY_MAXDIMS];
+    npy_intp coordinates[NPY_MAXDIMS];
+    npy_intp strides[NPY_MAXDIMS];
+    npy_intp backstrides[NPY_MAXDIMS];
 } NI_Iterator;
 
 /* initialize iterations over single array elements: */
 int NI_InitPointIterator(PyArrayObject*, NI_Iterator*);
 
 /* initialize iterations over an arbritrary sub-space: */
-int NI_SubspaceIterator(NI_Iterator*, UInt32);
+int NI_SubspaceIterator(NI_Iterator*, npy_uint32);
 
 /* initialize iteration over array lines: */
 int NI_LineIterator(NI_Iterator*, int);
@@ -197,7 +166,7 @@ typedef struct {
     npy_intp size1, size2, array_lines, next_line;
     NI_Iterator iterator;
     char* array_data;
-    NumarrayType array_type;
+    enum NPY_TYPES array_type;
     NI_ExtendMode extend_mode;
     double extend_value;
 } NI_LineBuffer;
@@ -229,8 +198,8 @@ int NI_LineBufferToArray(NI_LineBuffer*);
 
 /* the filter iterator structure: */
 typedef struct {
-    npy_intp strides[MAXDIM], backstrides[MAXDIM];
-    npy_intp bound1[MAXDIM], bound2[MAXDIM];
+    npy_intp strides[NPY_MAXDIMS], backstrides[NPY_MAXDIMS];
+    npy_intp bound1[NPY_MAXDIMS], bound2[NPY_MAXDIMS];
 } NI_FilterIterator;
 
 /* Initialize a filter iterator: */
@@ -239,8 +208,8 @@ int NI_InitFilterIterator(int, npy_intp*, npy_intp, npy_intp*,
 
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
-int NI_InitFilterOffsets(PyArrayObject*, Bool*, npy_intp*,
-                         npy_intp*, NI_ExtendMode, npy_intp**, 
+int NI_InitFilterOffsets(PyArrayObject*, npy_bool*, npy_intp*,
+                         npy_intp*, NI_ExtendMode, npy_intp**,
                          npy_intp*, npy_intp**);
 
 /* Move to the next point in an array, possible changing the filter

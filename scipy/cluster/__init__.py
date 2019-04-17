@@ -15,8 +15,8 @@ supports vector quantization and the k-means algorithms.
 
 The `hierarchy` module provides functions for hierarchical and
 agglomerative clustering.  Its features include generating hierarchical
-clusters from distance matrices, computing distance matrices from
-observation vectors, calculating statistics on clusters, cutting linkages
+clusters from distance matrices,
+calculating statistics on clusters, cutting linkages
 to generate flat clusters, and visualizing clusters with dendrograms.
 
 """
@@ -26,5 +26,6 @@ __all__ = ['vq', 'hierarchy']
 
 from . import vq, hierarchy
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

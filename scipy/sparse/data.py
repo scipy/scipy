@@ -8,15 +8,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = []
-
 import numpy as np
 
-from scipy.lib.six import zip as izip
+from .base import spmatrix, _ufuncs_with_fixed_point_at_zero
+from .sputils import isscalarlike, validateaxis, matrix
 
-from .base import spmatrix
-from .sputils import isscalarlike
-from .lil import lil_matrix
+__all__ = []
 
 
 # TODO implement all relevant operations
@@ -28,12 +25,17 @@ class _data_matrix(spmatrix):
     def _get_dtype(self):
         return self.data.dtype
 
-    def _set_dtype(self,newtype):
+    def _set_dtype(self, newtype):
         self.data.dtype = newtype
-    dtype = property(fget=_get_dtype,fset=_set_dtype)
+    dtype = property(fget=_get_dtype, fset=_set_dtype)
+
+    def _deduped_data(self):
+        if hasattr(self, 'sum_duplicates'):
+            self.sum_duplicates()
+        return self.data
 
     def __abs__(self):
-        return self._with_data(abs(self.data))
+        return self._with_data(abs(self._deduped_data()))
 
     def _real(self):
         return self._with_data(self.data.real)
@@ -42,6 +44,9 @@ class _data_matrix(spmatrix):
         return self._with_data(self.data.imag)
 
     def __neg__(self):
+        if self.dtype.kind == 'b':
+            raise NotImplementedError('negating a sparse boolean '
+                                      'matrix is not supported')
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other
@@ -49,7 +54,7 @@ class _data_matrix(spmatrix):
             self.data *= other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -57,16 +62,58 @@ class _data_matrix(spmatrix):
             self.data *= recip
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
-    def astype(self, t):
-        return self._with_data(self.data.astype(t))
+    def astype(self, dtype, casting='unsafe', copy=True):
+        dtype = np.dtype(dtype)
+        if self.dtype != dtype:
+            return self._with_data(
+                self._deduped_data().astype(dtype, casting=casting, copy=copy),
+                copy=copy)
+        elif copy:
+            return self.copy()
+        else:
+            return self
 
-    def conj(self):
-        return self._with_data(self.data.conj())
+    astype.__doc__ = spmatrix.astype.__doc__
+
+    def conj(self, copy=True):
+        if np.issubdtype(self.dtype, np.complexfloating):
+            return self._with_data(self.data.conj(), copy=copy)
+        elif copy:
+            return self.copy()
+        else:
+            return self
+
+    conj.__doc__ = spmatrix.conj.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
+
+    copy.__doc__ = spmatrix.copy.__doc__
+
+    def count_nonzero(self):
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+
+    def power(self, n, dtype=None):
+        """
+        This function performs element-wise power.
+
+        Parameters
+        ----------
+        n : n is a scalar
+
+        dtype : If dtype is not specified, the current dtype will be preserved.
+        """
+        if not isscalarlike(n):
+            raise NotImplementedError("input is not scalar")
+
+        data = self._deduped_data()
+        if dtype is not None:
+            data = data.astype(dtype)
+        return self._with_data(data ** n)
 
     ###########################
     # Multiplication handlers #
@@ -77,16 +124,13 @@ class _data_matrix(spmatrix):
 
 
 # Add the numpy unary ufuncs for which func(0) = 0 to _data_matrix.
-for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
-               np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
-               np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt]:
+for npfunc in _ufuncs_with_fixed_point_at_zero:
     name = npfunc.__name__
 
     def _create_method(op):
         def method(self):
-            result = op(self.data)
-            x = self._with_data(result, copy=True)
-            return x
+            result = op(self._deduped_data())
+            return self._with_data(result, copy=True)
 
         method.__doc__ = ("Element-wise %s.\n\n"
                           "See numpy.%s for more information." % (name, name))
@@ -95,6 +139,18 @@ for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
         return method
 
     setattr(_data_matrix, name, _create_method(npfunc))
+
+
+def _find_missing_index(ind, n):
+    for k, a in enumerate(ind):
+        if k != a:
+            return k
+
+    k += 1
+    if k < n:
+        return k
+    else:
+        return -1
 
 
 class _minmax_mixin(object):
@@ -128,7 +184,13 @@ class _minmax_mixin(object):
             return coo_matrix((value, (major_index, np.zeros(len(value)))),
                               dtype=self.dtype, shape=(M, 1))
 
-    def _min_or_max(self, axis, min_or_max):
+    def _min_or_max(self, axis, out, min_or_max):
+        if out is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'out' parameter."))
+
+        validateaxis(axis)
+
         if axis is None:
             if 0 in self.shape:
                 raise ValueError("zero-size array to reduction operation")
@@ -136,38 +198,199 @@ class _minmax_mixin(object):
             zero = self.dtype.type(0)
             if self.nnz == 0:
                 return zero
-            m = min_or_max.reduce(self.data.ravel())
-            if self.nnz != np.product(self.shape):
+            m = min_or_max.reduce(self._deduped_data().ravel())
+            if self.nnz != np.prod(self.shape):
                 m = min_or_max(zero, m)
             return m
 
         if axis < 0:
             axis += 2
+
         if (axis == 0) or (axis == 1):
             return self._min_or_max_axis(axis, min_or_max)
         else:
-            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
+            raise ValueError("axis out of range")
 
-    def max(self, axis=None):
-        """Maximum of the elements of this matrix.
+    def _arg_min_or_max_axis(self, axis, op, compare):
+        if self.shape[axis] == 0:
+            raise ValueError("Can't apply the operation along a zero-sized "
+                             "dimension.")
 
+        if axis < 0:
+            axis += 2
+
+        zero = self.dtype.type(0)
+
+        mat = self.tocsc() if axis == 0 else self.tocsr()
+        mat.sum_duplicates()
+
+        ret_size, line_size = mat._swap(mat.shape)
+        ret = np.zeros(ret_size, dtype=int)
+
+        nz_lines, = np.nonzero(np.diff(mat.indptr))
+        for i in nz_lines:
+            p, q = mat.indptr[i:i + 2]
+            data = mat.data[p:q]
+            indices = mat.indices[p:q]
+            am = op(data)
+            m = data[am]
+            if compare(m, zero) or q - p == line_size:
+                ret[i] = indices[am]
+            else:
+                zero_ind = _find_missing_index(indices, line_size)
+                if m == zero:
+                    ret[i] = min(am, zero_ind)
+                else:
+                    ret[i] = zero_ind
+
+        if axis == 1:
+            ret = ret.reshape(-1, 1)
+
+        return matrix(ret)
+
+    def _arg_min_or_max(self, axis, out, op, compare):
+        if out is not None:
+            raise ValueError("Sparse matrices do not support "
+                             "an 'out' parameter.")
+
+        validateaxis(axis)
+
+        if axis is None:
+            if 0 in self.shape:
+                raise ValueError("Can't apply the operation to "
+                                 "an empty matrix.")
+
+            if self.nnz == 0:
+                return 0
+            else:
+                zero = self.dtype.type(0)
+                mat = self.tocoo()
+                mat.sum_duplicates()
+                am = op(mat.data)
+                m = mat.data[am]
+
+                if compare(m, zero):
+                    return mat.row[am] * mat.shape[1] + mat.col[am]
+                else:
+                    size = np.prod(mat.shape)
+                    if size == mat.nnz:
+                        return am
+                    else:
+                        ind = mat.row * mat.shape[1] + mat.col
+                        zero_ind = _find_missing_index(ind, size)
+                        if m == zero:
+                            return min(zero_ind, am)
+                        else:
+                            return zero_ind
+
+        return self._arg_min_or_max_axis(axis, op, compare)
+
+    def max(self, axis=None, out=None):
+        """
+        Return the maximum of the matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the sum is computed. The default is to
+            compute the maximum over all the matrix elements, returning
+            a scalar (i.e. `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except
+            for the default value, as this argument is not used.
 
         Returns
         -------
-        amax : self.dtype
-            Maximum element.
+        amax : coo_matrix or scalar
+            Maximum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        min : The minimum value of a sparse matrix along a given axis.
+        numpy.matrix.max : NumPy's implementation of 'max' for matrices
+
         """
-        return self._min_or_max(axis, np.maximum)
+        return self._min_or_max(axis, out, np.maximum)
 
-    def min(self, axis=None):
-        """Minimum of the elements of this matrix.
-
+    def min(self, axis=None, out=None):
+        """
+        Return the minimum of the matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the sum is computed. The default is to
+            compute the minimum over all the matrix elements, returning
+            a scalar (i.e. `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
 
         Returns
         -------
-        amin : self.dtype
-            Minimum element.
+        amin : coo_matrix or scalar
+            Minimum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        max : The maximum value of a sparse matrix along a given axis.
+        numpy.matrix.min : NumPy's implementation of 'min' for matrices
+
         """
-        return self._min_or_max(axis, np.minimum)
+        return self._min_or_max(axis, out, np.minimum)
+
+    def argmax(self, axis=None, out=None):
+        """Return indices of maximum elements along an axis.
+
+        Implicit zero elements are also taken into account. If there are
+        several maximum values, the index of the first occurrence is returned.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None}, optional
+            Axis along which the argmax is computed. If None (default), index
+            of the maximum element in the flatten data is returned.
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+        ind : numpy.matrix or int
+            Indices of maximum elements. If matrix, its size along `axis` is 1.
+        """
+        return self._arg_min_or_max(axis, out, np.argmax, np.greater)
+
+    def argmin(self, axis=None, out=None):
+        """Return indices of minimum elements along an axis.
+
+        Implicit zero elements are also taken into account. If there are
+        several minimum values, the index of the first occurrence is returned.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None}, optional
+            Axis along which the argmin is computed. If None (default), index
+            of the minimum element in the flatten data is returned.
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+         ind : numpy.matrix or int
+            Indices of minimum elements. If matrix, its size along `axis` is 1.
+        """
+        return self._arg_min_or_max(axis, out, np.argmin, np.less)

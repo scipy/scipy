@@ -9,7 +9,7 @@
 #  Date: 2004-08-09
 #
 #  Modified: 2005-02-10 by Robert Kern.
-#              Contributed to Scipy
+#              Contributed to SciPy
 #            2005-10-07 by Robert Kern.
 #              Some fixes to match the new scipy_core
 #
@@ -22,14 +22,16 @@ from __future__ import division, print_function, absolute_import
 # Standard library imports.
 import warnings
 
-# Scipy imports.
-from scipy.lib.six import callable, string_types
+# SciPy imports.
+from scipy._lib.six import callable, string_types
 from scipy import linalg, special
+from scipy.special import logsumexp
+from scipy._lib._numpy_compat import cov
 
-from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
-     ravel, power, atleast_1d, squeeze, sum, transpose
+from numpy import (atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt,
+                   ravel, power, atleast_1d, squeeze, sum, transpose, ones)
 import numpy as np
-from numpy.random import randint, multivariate_normal
+from numpy.random import choice, multivariate_normal
 
 # Local imports.
 from . import mvn
@@ -59,6 +61,9 @@ class gaussian_kde(object):
         this will be used directly as `kde.factor`.  If a callable, it should
         take a `gaussian_kde` instance as only parameter and return a scalar.
         If None (default), 'scott' is used.  See Notes for more details.
+    weights : array_like, optional
+        weights of datapoints. This must be the same shape as dataset.
+        If None (default), the samples are assumed to be equally weighted
 
     Attributes
     ----------
@@ -68,6 +73,10 @@ class gaussian_kde(object):
         Number of dimensions.
     n : int
         Number of datapoints.
+    neff : int
+        Effective number of datapoints.
+
+        .. versionadded:: 1.2.0
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`, with which
         the covariance matrix is multiplied.
@@ -79,33 +88,17 @@ class gaussian_kde(object):
 
     Methods
     -------
-    kde.evaluate(points) : ndarray
-        Evaluate the estimated pdf on a provided set of points.
-    kde(points) : ndarray
-        Same as kde.evaluate(points)
-    kde.integrate_gaussian(mean, cov) : float
-        Multiply pdf with a specified Gaussian and integrate over the whole
-        domain.
-    kde.integrate_box_1d(low, high) : float
-        Integrate pdf (1D only) between two bounds.
-    kde.integrate_box(low_bounds, high_bounds) : float
-        Integrate pdf over a rectangular space between low_bounds and
-        high_bounds.
-    kde.integrate_kde(other_kde) : float
-        Integrate two kernel density estimates multiplied together.
-    kde.resample(size=None) : ndarray
-        Randomly sample a dataset from the estimated pdf.
-    kde.set_bandwidth(bw_method='scott') : None
-        Computes the bandwidth, i.e. the coefficient that multiplies the data
-        covariance matrix to obtain the kernel covariance matrix.
-        .. versionadded:: 0.11.0
-    kde.covariance_factor : float
-        Computes the coefficient (`kde.factor`) that multiplies the data
-        covariance matrix to obtain the kernel covariance matrix.
-        The default is `scotts_factor`.  A subclass can overwrite this method
-        to provide a different method, or set it through a call to
-        `kde.set_bandwidth`.
-
+    evaluate
+    __call__
+    integrate_gaussian
+    integrate_box_1d
+    integrate_box
+    integrate_kde
+    pdf
+    logpdf
+    resample
+    set_bandwidth
+    covariance_factor
 
     Notes
     -----
@@ -120,13 +113,29 @@ class gaussian_kde(object):
         n**(-1./(d+4)),
 
     with ``n`` the number of data points and ``d`` the number of dimensions.
+    In the case of unequally weighted points, `scotts_factor` becomes::
+
+        neff**(-1./(d+4)),
+
+    with ``neff`` the effective number of datapoints.
     Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
-        n * (d + 2) / 4.)**(-1. / (d + 4)).
+        (n * (d + 2) / 4.)**(-1. / (d + 4)).
+
+    or in the case of unequally weighted points::
+
+        (neff * (d + 2) / 4.)**(-1. / (d + 4)).
 
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
     found in [1]_.
+
+    With a set of weighted samples, the effective number of datapoints ``neff``
+    is defined by::
+
+        neff = sum(weights)^2 / sum(weights^2)
+
+    as detailed in [5]_.
 
     References
     ----------
@@ -140,6 +149,8 @@ class gaussian_kde(object):
     .. [4] D.M. Bashtannyk and R.J. Hyndman, "Bandwidth selection for kernel
            conditional density estimation", Computational Statistics & Data
            Analysis, Vol. 36, pp. 279-298, 2001.
+    .. [5] Gray P. G., 1969, Journal of the Royal Statistical Society.
+           Series A (General), 132, 272
 
     Examples
     --------
@@ -147,10 +158,10 @@ class gaussian_kde(object):
 
     >>> from scipy import stats
     >>> def measure(n):
-    >>>     "Measurement model, return two coupled measurements."
-    >>>     m1 = np.random.normal(size=n)
-    >>>     m2 = np.random.normal(scale=0.5, size=n)
-    >>>     return m1+m2, m1-m2
+    ...     "Measurement model, return two coupled measurements."
+    ...     m1 = np.random.normal(size=n)
+    ...     m2 = np.random.normal(scale=0.5, size=n)
+    ...     return m1+m2, m1-m2
 
     >>> m1, m2 = measure(2000)
     >>> xmin = m1.min()
@@ -169,8 +180,7 @@ class gaussian_kde(object):
     Plot the results:
 
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+    >>> fig, ax = plt.subplots()
     >>> ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
     ...           extent=[xmin, xmax, ymin, ymax])
     >>> ax.plot(m1, m2, 'k.', markersize=2)
@@ -179,12 +189,22 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
-    def __init__(self, dataset, bw_method=None):
+    def __init__(self, dataset, bw_method=None, weights=None):
         self.dataset = atleast_2d(dataset)
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
 
         self.d, self.n = self.dataset.shape
+
+        if weights is not None:
+            self._weights = atleast_1d(weights).astype(float)
+            self._weights /= sum(self._weights)
+            if self.weights.ndim != 1:
+                raise ValueError("`weights` input should be one-dimensional.")
+            if len(self._weights) != self.n:
+                raise ValueError("`weights` input should be of length n")
+            self._neff = 1/sum(self._weights**2)
+
         self.set_bandwidth(bw_method=bw_method)
 
     def evaluate(self, points):
@@ -220,22 +240,24 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=np.float)
+        result = zeros((m,), dtype=float)
+
+        whitening = linalg.cholesky(self.inv_cov)
+        scaled_dataset = dot(whitening, self.dataset)
+        scaled_points = dot(whitening, points)
 
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
-                diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0) / 2.0
-                result = result + exp(-energy)
+                diff = scaled_dataset[:, i, newaxis] - scaled_points
+                energy = sum(diff * diff, axis=0) / 2.0
+                result += self.weights[i]*exp(-energy)
         else:
             # loop over points
             for i in range(m):
-                diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = sum(exp(-energy), axis=0)
+                diff = scaled_dataset - scaled_points[:, i, newaxis]
+                energy = sum(diff * diff, axis=0) / 2.0
+                result[i] = sum(exp(-energy)*self.weights, axis=0)
 
         result = result / self._norm_factor
 
@@ -262,7 +284,7 @@ class gaussian_kde(object):
 
         Raises
         ------
-        ValueError :
+        ValueError
             If the mean or covariance of the input Gaussian differs from
             the KDE's dimensionality.
 
@@ -280,12 +302,19 @@ class gaussian_kde(object):
 
         sum_cov = self.covariance + cov
 
+        # This will raise LinAlgError if the new cov matrix is not s.p.d
+        # cho_factor returns (ndarray, bool) where bool is a flag for whether
+        # or not ndarray is upper or lower triangular
+        sum_cov_chol = linalg.cho_factor(sum_cov)
+
         diff = self.dataset - mean
-        tdiff = dot(linalg.inv(sum_cov), diff)
+        tdiff = linalg.cho_solve(sum_cov_chol, diff)
+
+        sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi *
-                                                        sum_cov)) / self.n
+        result = sum(exp(-energies)*self.weights, axis=0) / norm_const
 
         return result
 
@@ -319,8 +348,9 @@ class gaussian_kde(object):
         normalized_low = ravel((low - self.dataset) / stdev)
         normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.mean(special.ndtr(normalized_high) -
-                        special.ndtr(normalized_low))
+        value = np.sum(self.weights*(
+                        special.ndtr(normalized_high) -
+                        special.ndtr(normalized_low)))
         return value
 
     def integrate_box(self, low_bounds, high_bounds, maxpts=None):
@@ -346,8 +376,9 @@ class gaussian_kde(object):
         else:
             extra_kwds = {}
 
-        value, inform = mvn.mvnun(low_bounds, high_bounds, self.dataset,
-                                  self.covariance, **extra_kwds)
+        value, inform = mvn.mvnun_weighted(low_bounds, high_bounds,
+                                           self.dataset, self.weights,
+                                           self.covariance, **extra_kwds)
         if inform:
             msg = ('An integral in mvn.mvnun requires more points than %s' %
                    (self.d * 1000))
@@ -388,16 +419,20 @@ class gaussian_kde(object):
             large = other
 
         sum_cov = small.covariance + large.covariance
+        sum_cov_chol = linalg.cho_factor(sum_cov)
         result = 0.0
         for i in range(small.n):
             mean = small.dataset[:, i, newaxis]
             diff = large.dataset - mean
-            tdiff = dot(linalg.inv(sum_cov), diff)
+            tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
             energies = sum(diff * tdiff, axis=0) / 2.0
-            result += sum(exp(-energies), axis=0)
+            result += sum(exp(-energies)*large.weights, axis=0)*small.weights[i]
 
-        result /= sqrt(linalg.det(2 * pi * sum_cov)) * large.n * small.n
+        sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
+
+        result /= norm_const
 
         return result
 
@@ -409,7 +444,8 @@ class gaussian_kde(object):
         ----------
         size : int, optional
             The number of samples to draw.  If not provided, then the size is
-            the same as the underlying dataset.
+            the same as the effective number of samples in the underlying
+            dataset.
 
         Returns
         -------
@@ -418,23 +454,42 @@ class gaussian_kde(object):
 
         """
         if size is None:
-            size = self.n
+            size = int(self.neff)
 
         norm = transpose(multivariate_normal(zeros((self.d,), float),
-                         self.covariance, size=size))
-        indices = randint(0, self.n, size=size)
+                                             self.covariance, size=size))
+        indices = choice(self.n, size=size, p=self.weights)
         means = self.dataset[:, indices]
 
         return means + norm
 
     def scotts_factor(self):
-        return power(self.n, -1./(self.d+4))
+        """Compute Scott's factor.
+
+        Returns
+        -------
+        s : float
+            Scott's factor.
+        """
+        return power(self.neff, -1./(self.d+4))
 
     def silverman_factor(self):
-        return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
+        """Compute the Silverman factor.
+
+        Returns
+        -------
+        s : float
+            The silverman factor.
+        """
+        return power(self.neff*(self.d+2.0)/4.0, -1./(self.d+4))
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
+    covariance_factor.__doc__ = """Computes the coefficient (`kde.factor`) that
+        multiplies the data covariance matrix to obtain the kernel covariance
+        matrix. The default is `scotts_factor`.  A subclass can overwrite this
+        method to provide a different method, or set it through a call to
+        `kde.set_bandwidth`."""
 
     def set_bandwidth(self, bw_method=None):
         """Compute the estimator bandwidth with given method.
@@ -458,6 +513,7 @@ class gaussian_kde(object):
 
         Examples
         --------
+        >>> import scipy.stats as stats
         >>> x1 = np.array([-7, -5, 1, 4, 5.])
         >>> kde = stats.gaussian_kde(x1)
         >>> xs = np.linspace(-10, 10, num=50)
@@ -467,8 +523,8 @@ class gaussian_kde(object):
         >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
         >>> y3 = kde(xs)
 
-        >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111)
+        >>> import matplotlib.pyplot as plt
+        >>> fig, ax = plt.subplots()
         >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
         ...         label='Data points (rescaled)')
         >>> ax.plot(xs, y1, label='Scott (default)')
@@ -504,10 +560,78 @@ class gaussian_kde(object):
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
-            self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
-                                               bias=False))
+            self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
+                                               bias=False,
+                                               aweights=self.weights))
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
-        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance))
+
+    def pdf(self, x):
+        """
+        Evaluate the estimated pdf on a provided set of points.
+
+        Notes
+        -----
+        This is an alias for `gaussian_kde.evaluate`.  See the ``evaluate``
+        docstring for more details.
+
+        """
+        return self.evaluate(x)
+
+    def logpdf(self, x):
+        """
+        Evaluate the log of the estimated pdf on a provided set of points.
+        """
+
+        points = atleast_2d(x)
+
+        d, m = points.shape
+        if d != self.d:
+            if d == 1 and m == self.d:
+                # points was passed in as a row vector
+                points = reshape(points, (self.d, 1))
+                m = 1
+            else:
+                msg = "points have dimension %s, dataset has dimension %s" % (d,
+                    self.d)
+                raise ValueError(msg)
+
+        if m >= self.n:
+            # there are more points than data, so loop over data
+            energy = zeros((self.n, m), dtype=float)
+            for i in range(self.n):
+                diff = self.dataset[:, i, newaxis] - points
+                tdiff = dot(self.inv_cov, diff)
+                energy[i] = sum(diff*tdiff, axis=0) / 2.0
+            result = logsumexp(-energy.T,
+                               b=self.weights / self._norm_factor, axis=1)
+        else:
+            # loop over points
+            result = zeros((m,), dtype=float)
+            for i in range(m):
+                diff = self.dataset - points[:, i, newaxis]
+                tdiff = dot(self.inv_cov, diff)
+                energy = sum(diff * tdiff, axis=0) / 2.0
+                result[i] = logsumexp(-energy, b=self.weights / 
+                                      self._norm_factor)
+
+        return result
+
+    @property
+    def weights(self):
+        try:
+            return self._weights
+        except AttributeError:
+            self._weights = ones(self.n)/self.n
+            return self._weights
+
+    @property
+    def neff(self):
+        try:
+            return self._neff
+        except AttributeError:
+            self._neff = 1/sum(self.weights**2)
+            return self._neff

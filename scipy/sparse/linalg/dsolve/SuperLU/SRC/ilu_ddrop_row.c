@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ilu_ddrop_row.c
  * \brief Drop small rows from L
@@ -64,7 +74,7 @@ int ilu_ddrop_row(
     int m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register double *temp;
-    register double *lusup = Glu->lusup;
+    register double *lusup = (double *) Glu->lusup;
     register int *lsub = Glu->lsub;
     register int *xlsub = Glu->xlsub;
     register int *xlusup = Glu->xlusup;

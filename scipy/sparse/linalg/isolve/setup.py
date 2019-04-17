@@ -1,25 +1,16 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
-import os
-import sys
-import re
-from distutils.dep_util import newer_group, newer
-from glob import glob
 from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
-    from numpy.distutils.system_info import get_info, NotFoundError
+    from scipy._build_utils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils import get_g77_abi_wrappers
 
     config = Configuration('isolve',parent_package,top_path)
 
     lapack_opt = get_info('lapack_opt')
-
-    if not lapack_opt:
-        raise NotFoundError('no lapack/blas resources found')
 
     # iterative methods
     methods = ['BiCGREVCOM.f.src',
@@ -33,7 +24,7 @@ def configuration(parent_package='',top_path=None):
 #               'SORREVCOM.f.src'
                ]
 
-    Util = ['STOPTEST2.f.src','getbreak.f.src']
+    Util = ['getbreak.f.src']
     sources = Util + methods + ['_iterative.pyf.src']
     sources = [join('iterative', x) for x in sources]
     sources += get_g77_abi_wrappers(lapack_opt)

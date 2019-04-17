@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ssnode_bmod.c
  * \brief Performs numeric block updates within the relaxed snode.
@@ -58,7 +68,7 @@ ssnode_bmod (
 
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (float *) Glu->lusup;
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
@@ -95,10 +105,10 @@ ssnode_bmod (
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
 #if SCIPY_FIX
-	if (nsupr < nsupc) {
-	    /* Invalid input to LAPACK: fail more gracefully */
-	    ABORT("superlu failure (singular matrix?)");
-	}
+       if (nsupr < nsupc) {
+           /* Fail early rather than passing in invalid parameters to TRSV. */
+           ABORT("failed to factorize matrix");
+       }
 #endif
 	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );

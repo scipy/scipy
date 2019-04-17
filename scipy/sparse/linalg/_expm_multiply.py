@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import aslinearoperator
 
 __all__ = ['expm_multiply']
 
@@ -105,6 +105,27 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
            19. 159-208. ISSN 0962-4929
            http://eprints.ma.man.ac.uk/1451/
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm, expm_multiply
+    >>> A = csc_matrix([[1, 0], [0, 1]])
+    >>> A.todense()
+    matrix([[1, 0],
+            [0, 1]], dtype=int64)
+    >>> B = np.array([np.exp(-1.), np.exp(-2.)])
+    >>> B
+    array([ 0.36787944,  0.13533528])
+    >>> expm_multiply(A, B, start=1, stop=2, num=3, endpoint=True)
+    array([[ 1.        ,  0.36787944],
+           [ 1.64872127,  0.60653066],
+           [ 2.71828183,  1.        ]])
+    >>> expm(A).dot(B)                  # Verify 1st timestep
+    array([ 1.        ,  0.36787944])
+    >>> expm(1.5*A).dot(B)              # Verify 2nd timestep
+    array([ 1.64872127,  0.60653066])
+    >>> expm(2*A).dot(B)                # Verify 3rd timestep
+    array([ 2.71828183,  1.        ])
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
         X = _expm_multiply_simple(A, B)
@@ -191,6 +212,7 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
         B = F
     return F
 
+
 # This table helps to compute bounds.
 # They seem to have been difficult to calculate, involving symbolic
 # manipulation of equations, followed by numerical root finding.
@@ -238,38 +260,6 @@ _theta = {
         }
 
 
-class MatrixPowerOperator(LinearOperator):
-
-    def __init__(self, A, p):
-        if A.ndim != 2 or A.shape[0] != A.shape[1]:
-            raise ValueError('expected A to be like a square matrix')
-        if p < 0:
-            raise ValueError('expected p to be a non-negative integer')
-        self._A = A
-        self._p = p
-        self.ndim = A.ndim
-        self.shape = A.shape
-
-    def matvec(self, x):
-        for i in range(self._p):
-            x = self._A.dot(x)
-        return x
-
-    def rmatvec(self, x):
-        for i in range(self._p):
-            x = x.dot(self._A)
-        return x
-
-    def matmat(self, X):
-        for i in range(self._p):
-            X = self._A.dot(X)
-        return X
-
-    @property
-    def T(self):
-        return MatrixPowerOperator(self._A.T, self._p)
-
-
 def _onenormest_matrix_power(A, p,
         t=2, itmax=5, compute_v=False, compute_w=False):
     """
@@ -310,8 +300,7 @@ def _onenormest_matrix_power(A, p,
     #XXX Eventually turn this into an API function in the  _onenormest module,
     #XXX and remove its underscore,
     #XXX but wait until expm_multiply goes into scipy.
-    return scipy.sparse.linalg.onenormest(MatrixPowerOperator(A, p))
-
+    return scipy.sparse.linalg.onenormest(aslinearoperator(A) ** p)
 
 class LazyOperatorNormInfo:
     """
@@ -324,7 +313,7 @@ class LazyOperatorNormInfo:
     outside of this module.
 
     """
-    def __init__(self, A, A_1_norm=None, ell=2):
+    def __init__(self, A, A_1_norm=None, ell=2, scale=1):
         """
         Provide the operator and some norm-related information.
 
@@ -336,12 +325,21 @@ class LazyOperatorNormInfo:
             The exact 1-norm of A.
         ell : int, optional
             A technical parameter controlling norm estimation quality.
+        scale : int, optional
+            If specified, return the norms of scale*A instead of A.
 
         """
         self._A = A
         self._A_1_norm = A_1_norm
         self._ell = ell
         self._d = {}
+        self._scale = scale
+
+    def set_scale(self,scale):
+        """
+        Set the scale parameter.
+        """
+        self._scale = scale
 
     def onenorm(self):
         """
@@ -349,7 +347,7 @@ class LazyOperatorNormInfo:
         """
         if self._A_1_norm is None:
             self._A_1_norm = _exact_1_norm(self._A)
-        return self._A_1_norm
+        return self._scale*self._A_1_norm
 
     def d(self, p):
         """
@@ -358,14 +356,13 @@ class LazyOperatorNormInfo:
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)
             self._d[p] = est ** (1.0 / p)
-        return self._d[p]
+        return self._scale*self._d[p]
 
     def alpha(self, p):
         """
         Lazily compute max(d(p), d(p+1)).
         """
         return max(self.d(p), self.d(p+1))
-
 
 def _compute_cost_div_m(m, p, norm_info):
     """
@@ -585,15 +582,15 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
     X_shape = (nsamples,) + B.shape
-    X = np.empty(X_shape, dtype=float)
+    X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
+    ell = 2
+    norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
-        ell = 2
-        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
@@ -605,14 +602,14 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
             return 0
         else:
             return _expm_multiply_interval_core_0(A, X,
-                    h, mu, m_star, s, q)
-    elif q > s and not (q % s):
+                    h, mu, q, norm_info, tol, ell,n0)
+    elif not (q % s):
         if status_only:
             return 1
         else:
             return _expm_multiply_interval_core_1(A, X,
                     h, mu, m_star, s, q, tol)
-    elif q > s and (q % s):
+    elif (q % s):
         if status_only:
             return 2
         else:
@@ -622,10 +619,20 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         raise Exception('internal error')
 
 
-def _expm_multiply_interval_core_0(A, X, h, mu, m_star, s, q):
+def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
     """
     A helper function, for the case q <= s.
     """
+
+    # Compute the new values of m_star and s which should be applied
+    # over intervals of size t/q
+    if norm_info.onenorm() == 0:
+        m_star, s = 0, 1
+    else:
+        norm_info.set_scale(1./q)
+        m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+        norm_info.set_scale(1)
+
     for k in range(q):
         X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s)
     return X, 0
@@ -638,7 +645,7 @@ def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
     d = q // s
     input_shape = X.shape[1:]
     K_shape = (m_star + 1, ) + input_shape
-    K = np.empty(K_shape, dtype=float)
+    K = np.empty(K_shape, dtype=X.dtype)
     for i in range(s):
         Z = X[i*d]
         K[0] = Z
@@ -669,7 +676,7 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
     r = q - d * j
     input_shape = X.shape[1:]
     K_shape = (m_star + 1, ) + input_shape
-    K = np.empty(K_shape, dtype=float)
+    K = np.empty(K_shape, dtype=X.dtype)
     for i in range(j + 1):
         Z = X[i*d]
         K[0] = Z

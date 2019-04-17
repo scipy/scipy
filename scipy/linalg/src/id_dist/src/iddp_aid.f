@@ -272,15 +272,32 @@ c       for the present routine. (Please see routine idd_estrank
 c       for further documentation.)
 c
         implicit none
-        integer m,n,n2,krank,ifrescal,k,nulls
+        integer m,n,n2,krank,ifrescal,k,nulls,j
         real*8 a(m,n),ra(n2,n),scal(n2+1),eps,residual,
-     1         w(17*m+70),rat(n,n2+1)
+     1         w(17*m+70),rat(n,n2+1),ss,ssmax
 c
 c
 c       Apply the random matrix to every column of a, obtaining ra.
 c
         do k = 1,n
           call idd_frm(m,n2,w,a(1,k),ra(1,k))
+        enddo ! k
+c
+c
+c       Compute the sum of squares of the entries in each column of ra
+c       and the maximum of all such sums.
+c
+        ssmax = 0
+c
+        do k = 1,n
+c
+          ss = 0
+          do j = 1,m
+            ss = ss+a(j,k)**2
+          enddo ! j
+c
+          if(ss .gt. ssmax) ssmax = ss
+c
         enddo ! k
 c
 c
@@ -322,7 +339,7 @@ c
 c
 c
           krank = krank+1
-          if(residual .le. eps) nulls = nulls+1
+          if(residual .le. eps*sqrt(ssmax)) nulls = nulls+1
 c
 c
         if(nulls .lt. 7 .and. krank+nulls .lt. n2

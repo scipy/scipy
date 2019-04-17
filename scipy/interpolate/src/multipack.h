@@ -15,7 +15,7 @@ common FORTRAN code in the packages MINPACK, ODEPACK, and QUADPACK plus
 some differential algebraic equation solvers.
 
 The wrappers are meant to be nearly direct translations between the
-FORTAN code and Python.  Some parameters like sizes do not need to be 
+FORTRAN code and Python.  Some parameters like sizes do not need to be 
 passed since they are available from the objects.  
 
 It is anticipated that a pure Python module be written to call these lower
@@ -120,31 +120,10 @@ static PyObject *multipack_extra_arguments=NULL;
 static int multipack_jac_transpose=1;
 */
 
-static PyArrayObject * my_make_numpy_array(PyObject *y0, int type, int mindim, int maxdim)
-     /* This is just like PyArray_ContiguousFromObject except it handles
-      * single numeric datatypes as 1-element, rank-1 arrays instead of as
-      * scalars.
-      */
-{
-  PyArrayObject *new_array;
-  PyObject *tmpobj;
 
-  Py_INCREF(y0);
-
-  if (PyInt_Check(y0) || PyFloat_Check(y0)) {
-    tmpobj = PyList_New(1);
-    PyList_SET_ITEM(tmpobj, 0, y0);   /* reference now belongs to tmpobj */
-  }
-  else
-    tmpobj = y0;
-  
-  new_array = (PyArrayObject *)PyArray_ContiguousFromObject(tmpobj, type, mindim, maxdim);
-  
-  Py_DECREF(tmpobj);
-  return new_array;
-}
-
-static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyObject *args, int dim, PyObject *error_obj)
+static PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
+                                      PyObject *args, int dim,
+                                      PyObject *error_obj)
 {
   /*
     This is a generic function to call a python function that takes a 1-D
@@ -161,7 +140,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
 
   PyArrayObject *sequence = NULL;
   PyObject *arglist = NULL;
-  PyObject *arg1 = NULL, *str1 = NULL;
+  PyObject *arg1 = NULL;
   PyObject *result = NULL;
   PyArrayObject *result_array = NULL;
 
@@ -202,16 +181,4 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   Py_XDECREF(arg1);
   return NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 

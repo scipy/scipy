@@ -18,8 +18,25 @@ Package Content
    Output        -- Result from the fit.
    odr           -- Low-level function for ODR.
 
-   odr_error     -- Error exception.
-   odr_stop      -- Stop exception.
+   OdrWarning    -- Warning about potential problems when running ODR
+   OdrError      -- Error exception.
+   OdrStop       -- Stop exception.
+
+Prebuilt models:
+
+.. autosummary::
+
+   polynomial
+
+.. data:: exponential
+
+.. data:: multilinear
+
+.. data:: unilinear
+
+.. data:: quadratic
+
+.. data:: polynomial
 
 Usage information
 =================
@@ -54,7 +71,7 @@ ODRPACK, in addition to the low-level `odr` function.
 
 Additional background information about ODRPACK can be found in the
 `ODRPACK User's Guide
-<http://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
+<https://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
 which is recommended.
 
 Basic usage
@@ -115,7 +132,9 @@ from .odrpack import *
 from .models import *
 from . import add_newdocs
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir()
+           if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

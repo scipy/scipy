@@ -2,8 +2,6 @@
 SciPy 0.14.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.14.0 is not released yet!
-
 .. contents::
 
 SciPy 0.14.0 is the culmination of 8 months of hard work. It contains
@@ -97,6 +95,9 @@ Chebyshev, elliptical and Bessel IIR filters now all use pole-zero ("zpk")
 format internally instead of using transformations to numerator/denominator
 format.  The accuracy of the produced filters, especially high-order ones, is
 improved significantly as a result.
+
+The Savitzky-Golay filter was added with the new functions
+`scipy.signal.savgol_filter` and `scipy.signal.savgol_coeffs`.
 
 The new function `scipy.signal.vectorstrength` computes the vector strength,
 a measure of phase synchrony, of a set of events.
@@ -201,7 +202,7 @@ Authors
 =======
 
 * Marc Abramowitz +
-* andbo +
+* Anders Bech Borchersen +
 * Vincent Arel-Bundock +
 * Petr Baudis +
 * Max Bolingbroke
@@ -215,7 +216,7 @@ Authors
 * Phillip Cloud +
 * Stefano Costa +
 * David Cournapeau
-* Dapid +
+* David Menendez Hurtado +
 * Matthieu Dartiailh +
 * Christoph Deil +
 * Jörg Dietrich +
@@ -233,7 +234,7 @@ Authors
 * Andreas Hilboll
 * Kat Huang
 * Gert-Ludwig Ingold
-* jamestwebber +
+* James T. Webber +
 * Dorota Jarecka +
 * Todd Jennings +
 * Thouis (Ray) Jones
@@ -263,10 +264,10 @@ Authors
 * peb +
 * Josef Perktold
 * pjwerneck
-* Andrew Sczesnak +
 * poolio
 * Jérôme Roy +
 * Carl Sandrock +
+* Andrew Sczesnak +
 * Shauna +
 * Fabrice Silva
 * Daniel B. Smith
@@ -276,11 +277,12 @@ Authors
 * Julian Taylor
 * Tomas Tomecek
 * Richard Tsai
+* Jacob Vanderplas
 * Joris Vankerschaver +
 * Pauli Virtanen
 * Warren Weckesser
 
-A total of 78 people contributed to this release.
+A total of 80 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -306,6 +308,7 @@ Issues closed
 - `#2152 <https://github.com/scipy/scipy/issues/2152>`__: Fix mmio/fromfile on gzip on Python 3 (Trac #1627)
 - `#2164 <https://github.com/scipy/scipy/issues/2164>`__: stats.rice.pdf(x, 0) returns nan (Trac #1639)
 - `#2169 <https://github.com/scipy/scipy/issues/2169>`__: scipy.optimize.fmin_bfgs not handling functions with boundaries...
+- `#2177 <https://github.com/scipy/scipy/issues/2177>`__: scipy.cluster.hierarchy.ClusterNode.pre_order returns IndexError...
 - `#2179 <https://github.com/scipy/scipy/issues/2179>`__: coo.todense() segfaults (Trac #1654)
 - `#2185 <https://github.com/scipy/scipy/issues/2185>`__: Precision of scipy.ndimage.gaussian_filter*() limited (Trac #1660)
 - `#2186 <https://github.com/scipy/scipy/issues/2186>`__: scipy.stats.mstats.kurtosistest crashes on 1d input (Trac #1661)
@@ -330,6 +333,7 @@ Issues closed
 - `#2919 <https://github.com/scipy/scipy/issues/2919>`__: test failure with the current master
 - `#2922 <https://github.com/scipy/scipy/issues/2922>`__: ndimage.percentile_filter ignores origin argument for multidimensional...
 - `#2938 <https://github.com/scipy/scipy/issues/2938>`__: Sparse/dense matrix inplace operations fail due to __numpy_ufunc__
+- `#2944 <https://github.com/scipy/scipy/issues/2944>`__: MacPorts builds yield 40Mb worth of build warnings
 - `#2945 <https://github.com/scipy/scipy/issues/2945>`__: FAIL: test_random_complex (test_basic.TestDet)
 - `#2947 <https://github.com/scipy/scipy/issues/2947>`__: FAIL: Test some trivial edge cases for savgol_filter()
 - `#2953 <https://github.com/scipy/scipy/issues/2953>`__: Scipy Delaunay triangulation is not oriented
@@ -366,6 +370,8 @@ Issues closed
 - `#3395 <https://github.com/scipy/scipy/issues/3395>`__: specfun.f doesn't compile with MinGW
 - `#3399 <https://github.com/scipy/scipy/issues/3399>`__: Error message bug in scipy.cluster.hierarchy.linkage
 - `#3404 <https://github.com/scipy/scipy/issues/3404>`__: interpolate._ppoly doesn't build with MinGW
+- `#3412 <https://github.com/scipy/scipy/issues/3412>`__: Test failures in signal
+- `#3466 <https://github.com/scipy/scipy/issues/3466>`__: ```scipy.sparse.csgraph.shortest_path``` does not work on ```scipy.sparse.csr_matrix``` or ```lil_matrix```
 
 
 Pull requests
@@ -477,9 +483,15 @@ Pull requests
 - `#3391 <https://github.com/scipy/scipy/pull/3391>`__: TST: fix sparse test errors due to axis=-1,-2 usage in np.matrix.sum().
 - `#3392 <https://github.com/scipy/scipy/pull/3392>`__: BUG: sparse/lil: fix up Cython bugs in fused type lookup
 - `#3393 <https://github.com/scipy/scipy/pull/3393>`__: BUG: sparse/compressed: work around bug in np.unique in earlier...
+- `#3394 <https://github.com/scipy/scipy/pull/3394>`__: BUG: allow ClusterNode.pre_order() for non-root nodes
 - `#3400 <https://github.com/scipy/scipy/pull/3400>`__: BUG: cluster.linkage ValueError typo bug
 - `#3402 <https://github.com/scipy/scipy/pull/3402>`__: BUG: special: In specfun.f, replace the use of CMPLX with DCMPLX,...
 - `#3408 <https://github.com/scipy/scipy/pull/3408>`__: MAINT: sparse: Numpy 1.5 compatibility fixes
 - `#3410 <https://github.com/scipy/scipy/pull/3410>`__: MAINT: interpolate: fix blas defs in _ppoly
 - `#3411 <https://github.com/scipy/scipy/pull/3411>`__: MAINT: Numpy 1.5 fixes in interpolate
 - `#3413 <https://github.com/scipy/scipy/pull/3413>`__: Fix more test issues with older numpy versions
+- `#3414 <https://github.com/scipy/scipy/pull/3414>`__: TST: signal: loosen some error tolerances in the filter tests....
+- `#3415 <https://github.com/scipy/scipy/pull/3415>`__: MAINT: tools: automated close issue + pr listings for release...
+- `#3440 <https://github.com/scipy/scipy/pull/3440>`__: MAINT: wrap sparsetools manually instead via SWIG
+- `#3460 <https://github.com/scipy/scipy/pull/3460>`__: TST: open image file in binary mode
+- `#3467 <https://github.com/scipy/scipy/pull/3467>`__: BUG: fix validation in csgraph.shortest_path

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Created by Pearu Peterson, August 2002
 from __future__ import division, print_function, absolute_import
 
@@ -12,7 +11,6 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('fftpack',parent_package, top_path)
 
     config.add_data_dir('tests')
-    config.add_data_dir('benchmarks')
 
     dfftpack_src = [join('src/dfftpack','*.f')]
     config.add_library('dfftpack', sources=dfftpack_src)
@@ -36,13 +34,7 @@ def configuration(parent_package='',top_path=None):
     )
     return config
 
+
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    from fftpack_version import fftpack_version
-    setup(version=fftpack_version,
-          description='fftpack - Discrete Fourier Transform package',
-          author='Pearu Peterson',
-          author_email='pearu@cens.ioc.ee',
-          maintainer_email='scipy-dev@scipy.org',
-          license='SciPy License (BSD Style)',
-          **configuration(top_path='').todict())
+    setup(**configuration(top_path='').todict())

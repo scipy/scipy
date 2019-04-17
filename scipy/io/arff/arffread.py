@@ -1,14 +1,14 @@
-#! /usr/bin/env python
 # Last Change: Mon Aug 20 08:00 PM 2007 J
 from __future__ import division, print_function, absolute_import
 
 import re
 import itertools
+import datetime
 from functools import partial
 
 import numpy as np
 
-from scipy.lib.six import next
+from scipy._lib.six import next
 
 """A module to read arff files."""
 
@@ -22,14 +22,15 @@ __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 # the keyword (attribute of relation, for now).
 
 # TODO:
-#   - both integer and reals are treated as numeric -> the integer info is lost !
+#   - both integer and reals are treated as numeric -> the integer info
+#    is lost!
 #   - Replace ValueError by ParseError or something
 
 # We know can handle the following:
 #   - numeric and nominal attributes
 #   - missing values for numeric attributes
 
-r_meta = re.compile('^\s*@')
+r_meta = re.compile(r'^\s*@')
 # Match a comment
 r_comment = re.compile(r'^%')
 # Match an empty line
@@ -42,8 +43,6 @@ r_attribute = re.compile(r'^@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
 # To get attributes name enclosed with ''
 r_comattrval = re.compile(r"'(..+)'\s+(..+$)")
-# To get attributes name enclosed with '', possibly spread across multilines
-r_mcomattrval = re.compile(r"'([..\n]+)'\s+(..+$)")
 # To get normal attributes
 r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
@@ -83,6 +82,8 @@ def parse_type(attrtype):
         return 'string'
     elif uattribute[:len('relational')] == 'relational':
         return 'relational'
+    elif uattribute[:len('date')] == 'date':
+        return 'date'
     else:
         raise ParseArffError("unknown attribute %s" % uattribute)
 
@@ -167,6 +168,46 @@ def get_nom_val(atrv):
         return tuple(i.strip() for i in m.group(1).split(','))
     else:
         raise ValueError("This does not look like a nominal string")
+
+
+def get_date_format(atrv):
+    r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
+    m = r_date.match(atrv)
+    if m:
+        pattern = m.group(1).strip()
+        # convert time pattern from Java's SimpleDateFormat to C's format
+        datetime_unit = None
+        if "yyyy" in pattern:
+            pattern = pattern.replace("yyyy", "%Y")
+            datetime_unit = "Y"
+        elif "yy":
+            pattern = pattern.replace("yy", "%y")
+            datetime_unit = "Y"
+        if "MM" in pattern:
+            pattern = pattern.replace("MM", "%m")
+            datetime_unit = "M"
+        if "dd" in pattern:
+            pattern = pattern.replace("dd", "%d")
+            datetime_unit = "D"
+        if "HH" in pattern:
+            pattern = pattern.replace("HH", "%H")
+            datetime_unit = "h"
+        if "mm" in pattern:
+            pattern = pattern.replace("mm", "%M")
+            datetime_unit = "m"
+        if "ss" in pattern:
+            pattern = pattern.replace("ss", "%S")
+            datetime_unit = "s"
+        if "z" in pattern or "Z" in pattern:
+            raise ValueError("Date type attributes with time zone not "
+                             "supported, yet")
+
+        if datetime_unit is None:
+            raise ValueError("Invalid or unsupported date format")
+
+        return pattern, datetime_unit
+    else:
+        raise ValueError("Invalid or no date format")
 
 
 def go_data(ofile):
@@ -334,7 +375,7 @@ def safe_float(x):
     if '?' in x:
         return np.nan
     else:
-        return np.float(x)
+        return float(x)
 
 
 def safe_nominal(value, pvalue):
@@ -347,54 +388,37 @@ def safe_nominal(value, pvalue):
         raise ValueError("%s value not in %s" % (str(svalue), str(pvalue)))
 
 
-def get_delim(line):
-    """Given a string representing a line of data, check whether the
-    delimiter is ',' or space.
-
-    Parameters
-    ----------
-    line : str
-       line of data
-
-    Returns
-    -------
-    delim : {',', ' '}
-
-    Examples
-    --------
-    >>> get_delim(',')
-    ','
-    >>> get_delim(' ')
-    ' '
-    >>> get_delim(', ')
-    ','
-    >>> get_delim('x')
-    Traceback (most recent call last):
-       ...
-    ValueError: delimiter not understood: x
-    """
-    if ',' in line:
-        return ','
-    if ' ' in line:
-        return ' '
-    raise ValueError("delimiter not understood: " + line)
+def safe_date(value, date_format, datetime_unit):
+    date_str = value.strip().strip("'").strip('"')
+    if date_str == '?':
+        return np.datetime64('NaT', datetime_unit)
+    else:
+        dt = datetime.datetime.strptime(date_str, date_format)
+        return np.datetime64(dt).astype("datetime64[%s]" % datetime_unit)
 
 
 class MetaData(object):
-    """Small container to keep useful informations on a ARFF dataset.
+    """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
 
     Examples
     --------
-    data, meta = loadarff('iris.arff')
-    # This will print the attributes names of the iris.arff dataset
-    for i in meta:
-        print i
-    # This works too
-    meta.names()
-    # Getting attribute type
-    types = meta.types()
+    ::
+
+        data, meta = loadarff('iris.arff')
+        # This will print the attributes names of the iris.arff dataset
+        for i in meta:
+            print(i)
+        # This works too
+        meta.names()
+        # Getting attribute type
+        types = meta.types()
+
+    Methods
+    -------
+    names
+    types
 
     Notes
     -----
@@ -413,6 +437,8 @@ class MetaData(object):
             self._attrnames.append(name)
             if tp == 'nominal':
                 self._attributes[name] = (tp, get_nom_val(value))
+            elif tp == 'date':
+                self._attributes[name] = (tp, get_date_format(value)[0])
             else:
                 self._attributes[name] = (tp, None)
 
@@ -433,11 +459,23 @@ class MetaData(object):
         return self._attributes[key]
 
     def names(self):
-        """Return the list of attribute names."""
+        """Return the list of attribute names.
+
+        Returns
+        -------
+        attrnames : list of str
+            The attribute names.
+        """
         return self._attrnames
 
     def types(self):
-        """Return the list of attribute types."""
+        """Return the list of attribute types.
+
+        Returns
+        -------
+        attr_types : list of str
+            The attribute types.
+        """
         attr_types = [self._attributes[name][0] for name in self._attrnames]
         return attr_types
 
@@ -467,7 +505,7 @@ def loadarff(f):
 
     Raises
     ------
-    `ParseArffError`
+    ParseArffError
         This is raised if the given file is not ARFF-formatted.
     NotImplementedError
         The ARFF file has an attribute which is not supported yet.
@@ -485,6 +523,31 @@ def loadarff(f):
     files with sparse data ({} in the file).  However, this function can
     read files with missing data (? in the file), representing the data
     points as NaNs.
+
+    Examples
+    --------
+    >>> from scipy.io import arff
+    >>> from io import StringIO
+    >>> content = \"\"\"
+    ... @relation foo
+    ... @attribute width  numeric
+    ... @attribute height numeric
+    ... @attribute color  {red,green,blue,yellow,black}
+    ... @data
+    ... 5.0,3.25,blue
+    ... 4.5,3.75,green
+    ... 3.0,4.00,red
+    ... \"\"\"
+    >>> f = StringIO(content)
+    >>> data, meta = arff.loadarff(f)
+    >>> data
+    array([(5.0, 3.25, 'blue'), (4.5, 3.75, 'green'), (3.0, 4.0, 'red')],
+          dtype=[('width', '<f8'), ('height', '<f8'), ('color', '|S6')])
+    >>> meta
+    Dataset: foo
+    \twidth's type is numeric
+    \theight's type is numeric
+    \tcolor's type is nominal, range is ('red', 'green', 'blue', 'yellow', 'black')
 
     """
     if hasattr(f, 'read'):
@@ -522,15 +585,20 @@ def _loadarff(ofile):
 
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
-    acls2dtype = {'real': np.float, 'integer': np.float, 'numeric': np.float}
-    acls2conv = {'real': safe_float, 'integer': safe_float, 'numeric': safe_float}
+    acls2dtype = {'real': float, 'integer': float, 'numeric': float}
+    acls2conv = {'real': safe_float,
+                 'integer': safe_float,
+                 'numeric': safe_float}
     descr = []
     convertors = []
     if not hasstr:
         for name, value in attr:
             type = parse_type(value)
             if type == 'date':
-                raise ValueError("date type not supported yet, sorry")
+                date_format, datetime_unit = get_date_format(value)
+                descr.append((name, "datetime64[%s]" % datetime_unit))
+                convertors.append(partial(safe_date, date_format=date_format,
+                                          datetime_unit=datetime_unit))
             elif type == 'nominal':
                 n = maxnomlen(value)
                 descr.append((name, 'S%d' % n))
@@ -548,28 +616,6 @@ def _loadarff(ofile):
 
     ni = len(convertors)
 
-    # Get the delimiter from the first line of data:
-    def next_data_line(row_iter):
-        """Assumes we are already in the data part (eg after @data)."""
-        raw = next(row_iter)
-        while r_empty.match(raw):
-            raw = next(row_iter)
-        while r_comment.match(raw):
-            raw = next(row_iter)
-        return raw
-
-    try:
-        try:
-            dtline = next_data_line(ofile)
-            delim = get_delim(dtline)
-        except ValueError as e:
-            raise ParseArffError("Error while parsing delimiter: " + str(e))
-    finally:
-        ofile.seek(0, 0)
-        ofile = go_data(ofile)
-        # skip the @data line
-        next(ofile)
-
     def generator(row_iter, delim=','):
         # TODO: this is where we are spending times (~80%). I think things
         # could be made more efficiently:
@@ -582,30 +628,20 @@ def _loadarff(ofile):
         #   by % should be enough and faster, and for empty lines, same thing
         #   --> this does not seem to change anything.
 
-        # We do not abstract skipping comments and empty lines for performances
-        # reason.
-        raw = next(row_iter)
-        while r_empty.match(raw):
-            raw = next(row_iter)
-        while r_comment.match(raw):
-            raw = next(row_iter)
-
         # 'compiling' the range since it does not change
         # Note, I have already tried zipping the converters and
         # row elements and got slightly worse performance.
         elems = list(range(ni))
 
-        row = raw.split(delim)
-        yield tuple([convertors[i](row[i]) for i in elems])
         for raw in row_iter:
-            while r_comment.match(raw):
-                raw = next(row_iter)
-            while r_empty.match(raw):
-                raw = next(row_iter)
+            # We do not abstract skipping comments and empty lines for
+            # performance reasons.
+            if r_comment.match(raw) or r_empty.match(raw):
+                continue
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
 
-    a = generator(ofile, delim=delim)
+    a = generator(ofile)
     # No error should happen here: it is a bug otherwise
     data = np.fromiter(a, descr)
     return data, meta
@@ -638,44 +674,14 @@ def test_weka(filename):
     print(len(data.dtype))
     print(data.size)
     for i in meta:
-        print_attribute(i,meta[i],data[i])
+        print_attribute(i, meta[i], data[i])
+
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False
 
 
 if __name__ == '__main__':
-    #import glob
-    #for i in glob.glob('arff.bak/data/*'):
-    #    relation, attributes = read_header(open(i))
-    #    print "Parsing header of %s: relation %s, %d attributes" % (i,
-    #            relation, len(attributes))
-
     import sys
     filename = sys.argv[1]
-    #filename = 'arff.bak/data/pharynx.arff'
-    #floupi(filename)
     test_weka(filename)
-
-    #gf = []
-    #wf = []
-    #for i in glob.glob('arff.bak/data/*'):
-    #    try:
-    #        print "=============== reading %s ======================" % i
-    #        floupi(i)
-    #        gf.append(i)
-    #    except ValueError, e:
-    #        print "!!!! Error parsing the file !!!!!"
-    #        print e
-    #        wf.append(i)
-    #    except IndexError, e:
-    #        print "!!!! Error parsing the file !!!!!"
-    #        print e
-    #        wf.append(i)
-    #    except ArffError, e:
-    #        print "!!!! Error parsing the file !!!!!"
-    #        print e
-    #        wf.append(i)
-
-    #print "%d good files" % len(gf)
-    #print "%d bad files" % len(wf)

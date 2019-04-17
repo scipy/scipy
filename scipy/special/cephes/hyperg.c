@@ -40,11 +40,6 @@
  * ranging from 0 to 30.
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC       0,30         2000       1.2e-15     1.3e-16
-  qtst1:
-  21800   max =  1.4200E-14   rms =  1.0841E-15  ave = -5.3640E-17 
-  ltstd:
-  25500   max = 1.2759e-14   rms = 3.7155e-16  ave = 1.5384e-18 
  *    IEEE      0,30        30000       1.8e-14     1.1e-15
  *
  * Larger errors can be observed when b is near a negative
@@ -65,8 +60,9 @@
  */
 
 #include "mconf.h"
+#include <float.h>
 
-extern double MACHEP, MAXNUM;
+extern double MACHEP;
 
 static double hy1f1p(double a, double b, double x, double *acanc);
 static double hy1f1a(double a, double b, double x, double *acanc);
@@ -154,7 +150,7 @@ double *err;
 
 	/* check for blowup */
 	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (MAXNUM / temp))) {
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp))) {
 	    *err = 1.0;		/* blowup: estimate 100% error */
 	    return sum;
 	}
@@ -311,7 +307,7 @@ double *err;
 
 	/* check for blowup */
 	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (MAXNUM / temp)))
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp)))
 	    goto error;
 
 	a0 *= u;

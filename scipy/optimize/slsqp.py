@@ -15,11 +15,12 @@ Functions
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['approx_jacobian','fmin_slsqp']
+__all__ = ['approx_jacobian', 'fmin_slsqp']
 
+import numpy as np
 from scipy.optimize._slsqp import slsqp
-from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
-                  sqrt, vstack, exp, inf, where, isfinite, atleast_1d
+from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
+                   sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import wrap_function, OptimizeResult, _check_unknown_options
 
 __docformat__ = "restructuredtext en"
@@ -27,7 +28,7 @@ __docformat__ = "restructuredtext en"
 _epsilon = sqrt(finfo(float).eps)
 
 
-def approx_jacobian(x,func,epsilon,*args):
+def approx_jacobian(x, func, epsilon, *args):
     """
     Approximate the Jacobian matrix of a callable function.
 
@@ -55,7 +56,7 @@ def approx_jacobian(x,func,epsilon,*args):
     """
     x0 = asfarray(x)
     f0 = atleast_1d(func(*((x0,)+args)))
-    jac = zeros([len(x0),len(f0)])
+    jac = zeros([len(x0), len(f0)])
     dx = zeros(len(x0))
     for i in range(len(x0)):
         dx[i] = epsilon
@@ -79,60 +80,60 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     Parameters
     ----------
     func : callable f(x,*args)
-        Objective function.
+        Objective function.  Must return a scalar.
     x0 : 1-D ndarray of float
         Initial guess for the independent variable(s).
-    eqcons : list
+    eqcons : list, optional
         A list of functions of length n such that
         eqcons[j](x,*args) == 0.0 in a successfully optimized
         problem.
-    f_eqcons : callable f(x,*args)
+    f_eqcons : callable f(x,*args), optional
         Returns a 1-D array in which each element must equal 0.0 in a
         successfully optimized problem.  If f_eqcons is specified,
         eqcons is ignored.
-    ieqcons : list
+    ieqcons : list, optional
         A list of functions of length n such that
         ieqcons[j](x,*args) >= 0.0 in a successfully optimized
         problem.
-    f_ieqcons : callable f(x,*args)
+    f_ieqcons : callable f(x,*args), optional
         Returns a 1-D ndarray in which each element must be greater or
         equal to 0.0 in a successfully optimized problem.  If
         f_ieqcons is specified, ieqcons is ignored.
-    bounds : list
+    bounds : list, optional
         A list of tuples specifying the lower and upper bound
         for each independent variable [(xl0, xu0),(xl1, xu1),...]
         Infinite values will be interpreted as large floating values.
-    fprime : callable `f(x,*args)`
+    fprime : callable `f(x,*args)`, optional
         A function that evaluates the partial derivatives of func.
-    fprime_eqcons : callable `f(x,*args)`
+    fprime_eqcons : callable `f(x,*args)`, optional
         A function of the form `f(x, *args)` that returns the m by n
         array of equality constraint normals.  If not provided,
         the normals will be approximated. The array returned by
         fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
-    fprime_ieqcons : callable `f(x,*args)`
+    fprime_ieqcons : callable `f(x,*args)`, optional
         A function of the form `f(x, *args)` that returns the m by n
         array of inequality constraint normals.  If not provided,
         the normals will be approximated. The array returned by
         fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
-    args : sequence
+    args : sequence, optional
         Additional arguments passed to func and fprime.
-    iter : int
+    iter : int, optional
         The maximum number of iterations.
-    acc : float
+    acc : float, optional
         Requested accuracy.
-    iprint : int
+    iprint : int, optional
         The verbosity of fmin_slsqp :
 
         * iprint <= 0 : Silent operation
         * iprint == 1 : Print summary upon completion (default)
         * iprint >= 2 : Print status of each iterate and summary
-    disp : int
+    disp : int, optional
         Over-rides the iprint interface (preferred).
-    full_output : bool
+    full_output : bool, optional
         If False, return only the minimizer of func (default).
         Otherwise, output final objective function and summary
         information.
-    epsilon : float
+    epsilon : float, optional
         The step size for finite-difference derivative estimates.
     callback : callable, optional
         Called after each iteration, as ``callback(x)``, where ``x`` is the
@@ -179,6 +180,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     """
     if disp is not None:
         iprint = disp
+
     opts = {'maxiter': iter,
             'ftol': acc,
             'iprint': iprint,
@@ -188,11 +190,11 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
 
     # Build the constraints as a tuple of dictionaries
     cons = ()
-    # 1. constraints of the 1st kind (eqcons, ieqcons); no jacobian; take
+    # 1. constraints of the 1st kind (eqcons, ieqcons); no Jacobian; take
     #    the same extra arguments as the objective function.
     cons += tuple({'type': 'eq', 'fun': c, 'args': args} for c in eqcons)
     cons += tuple({'type': 'ineq', 'fun': c, 'args': args} for c in ieqcons)
-    # 2. constraints of the 2nd kind (f_eqcons, f_ieqcons) and their jacobian
+    # 2. constraints of the 2nd kind (f_eqcons, f_ieqcons) and their Jacobian
     #    (fprime_eqcons, fprime_ieqcons); also take the same extra arguments
     #    as the objective function.
     if f_eqcons:
@@ -219,19 +221,18 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
 
-    Options for the SLSQP algorithm are:
-        ftol : float
-            Precision goal for the value of f in the stopping criterion.
-        eps : float
-            Step size used for numerical approximation of the jacobian.
-        disp : bool
-            Set to True to print convergence messages. If False,
-            `verbosity` is ignored and set to 0.
-        maxiter : int
-            Maximum number of iterations.
+    Options
+    -------
+    ftol : float
+        Precision goal for the value of f in the stopping criterion.
+    eps : float
+        Step size used for numerical approximation of the Jacobian.
+    disp : bool
+        Set to True to print convergence messages. If False,
+        `verbosity` is ignored and set to 0.
+    maxiter : int
+        Maximum number of iterations.
 
-    This function is called by the `minimize` function with
-    `method=SLSQP`. It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
     fprime = jac
@@ -242,7 +243,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if not disp:
         iprint = 0
 
-    # Constraints are triaged per type into a dictionnary of tuples
+    # Constraints are triaged per type into a dictionary of tuples
     if isinstance(constraints, dict):
         constraints = (constraints, )
 
@@ -266,12 +267,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if 'fun' not in con:
             raise ValueError('Constraint %d has no function defined.' % ic)
 
-        # check jacobian
+        # check Jacobian
         cjac = con.get('jac')
         if cjac is None:
-            # approximate jacobian function
-            def cjac(x, *args):
-                return approx_jacobian(x, con['fun'], epsilon, *args)
+            # approximate Jacobian function.  The factory function is needed
+            # to keep a reference to `fun`, see gh-4240.
+            def cjac_factory(fun):
+                def cjac(x, *args):
+                    return approx_jacobian(x, fun, epsilon, *args)
+                return cjac
+            cjac = cjac_factory(con['fun'])
 
         # update constraints' dictionary
         cons[ctype] += ({'fun': con['fun'],
@@ -279,16 +284,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                          'args': con.get('args', ())}, )
 
     exit_modes = {-1: "Gradient evaluation required (g & a)",
-                    0: "Optimization terminated successfully.",
-                    1: "Function evaluation required (f & c)",
-                    2: "More equality constraints than independent variables",
-                    3: "More than 3*n iterations in LSQ subproblem",
-                    4: "Inequality constraints incompatible",
-                    5: "Singular matrix E in LSQ subproblem",
-                    6: "Singular matrix C in LSQ subproblem",
-                    7: "Rank-deficient equality constraint subproblem HFTI",
-                    8: "Positive directional derivative for linesearch",
-                    9: "Iteration limit exceeded"}
+                   0: "Optimization terminated successfully.",
+                   1: "Function evaluation required (f & c)",
+                   2: "More equality constraints than independent variables",
+                   3: "More than 3*n iterations in LSQ subproblem",
+                   4: "Inequality constraints incompatible",
+                   5: "Singular matrix E in LSQ subproblem",
+                   6: "Singular matrix C in LSQ subproblem",
+                   7: "Rank-deficient equality constraint subproblem HFTI",
+                   8: "Positive directional derivative for linesearch",
+                   9: "Iteration limit exceeded"}
 
     # Wrap func
     feval, func = wrap_function(func, args)
@@ -304,8 +309,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['eq']]))
-    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['ineq']]))
+    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
+              for c in cons['eq']]))
+    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
+               for c in cons['ineq']]))
     # m = The total number of constraints
     m = meq + mieq
     # la = The number of constraints, or 1 if there are no constraints
@@ -324,44 +331,80 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
-        xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
+        xl = np.empty(n, dtype=float)
+        xu = np.empty(n, dtype=float)
+        xl.fill(np.nan)
+        xu.fill(np.nan)
     else:
         bnds = array(bounds, float)
         if bnds.shape[0] != n:
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
 
-        bnderr = where(bnds[:, 0] > bnds[:, 1])[0]
+        with np.errstate(invalid='ignore'):
+            bnderr = bnds[:, 0] > bnds[:, 1]
+
         if bnderr.any():
             raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))
         xl, xu = bnds[:, 0], bnds[:, 1]
 
-        # filter -inf, inf and NaN values
+        # Mark infinite bounds with nans; the Fortran code understands this
         infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = -1.0E12
-        xu[infbnd[:, 1]] = 1.0E12
+        xl[infbnd[:, 0]] = np.nan
+        xu[infbnd[:, 1]] = np.nan
+
+    # Clip initial guess to bounds (SLSQP may fail with bounds-infeasible
+    # initial point)
+    have_bound = np.isfinite(xl)
+    x[have_bound] = np.clip(x[have_bound], xl[have_bound], np.inf)
+    have_bound = np.isfinite(xu)
+    x[have_bound] = np.clip(x[have_bound], -np.inf, xu[have_bound])
 
     # Initialize the iteration counter and the mode value
-    mode = array(0,int)
-    acc = array(acc,float)
-    majiter = array(iter,int)
+    mode = array(0, int)
+    acc = array(acc, float)
+    majiter = array(iter, int)
     majiter_prev = 0
+
+    # Initialize internal SLSQP state variables
+    alpha = array(0, float)
+    f0 = array(0, float)
+    gs = array(0, float)
+    h1 = array(0, float)
+    h2 = array(0, float)
+    h3 = array(0, float)
+    h4 = array(0, float)
+    t = array(0, float)
+    t0 = array(0, float)
+    tol = array(0, float)
+    iexact = array(0, int)
+    incons = array(0, int)
+    ireset = array(0, int)
+    itermx = array(0, int)
+    line = array(0, int)
+    n1 = array(0, int)
+    n2 = array(0, int)
+    n3 = array(0, int)
 
     # Print the header if iprint >= 2
     if iprint >= 2:
-        print("%5s %5s %16s %16s" % ("NIT","FC","OBJFUN","GNORM"))
+        print("%5s %5s %16s %16s" % ("NIT", "FC", "OBJFUN", "GNORM"))
 
     while 1:
 
-        if mode == 0 or mode == 1:  # objective and constraint evaluation requird
+        if mode == 0 or mode == 1:  # objective and constraint evaluation required
 
             # Compute objective function
             fx = func(x)
+            try:
+                fx = float(np.asarray(fx))
+            except (TypeError, ValueError):
+                raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:
                 c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                                     for con in cons['eq']])
+                                    for con in cons['eq']])
             else:
                 c_eq = zeros(0)
             if cons['ineq']:
@@ -377,7 +420,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Compute the derivatives of the objective function
             # For some reason SLSQP wants g dimensioned to n+1
-            g = append(fprime(x),0.0)
+            g = append(fprime(x), 0.0)
 
             # Compute the normals of the constraints
             if cons['eq']:
@@ -397,20 +440,23 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                 a = zeros((la, n))
             else:
                 a = vstack((a_eq, a_ieq))
-            a = concatenate((a,zeros([la,1])),1)
+            a = concatenate((a, zeros([la, 1])), 1)
 
         # Call SLSQP
-        slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw)
+        slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
+              alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+              iexact, incons, ireset, itermx, line, 
+              n1, n2, n3)
 
         # call callback if major iteration has incremented
         if callback is not None and majiter > majiter_prev:
-            callback(x)
+            callback(np.copy(x))
 
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented
         if iprint >= 2 and majiter > majiter_prev:
-            print("%5i %5i % 16.6E % 16.6E" % (majiter,feval[0],
-                                               fx,linalg.norm(g)))
+            print("%5i %5i % 16.6E % 16.6E" % (majiter, feval[0],
+                                               fx, linalg.norm(g)))
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(mode) != 1:
@@ -426,8 +472,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
-    return OptimizeResult(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
-                          njev=geval[0], status=int(mode),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+                          nfev=feval[0], njev=geval[0], status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 
 
@@ -463,7 +509,7 @@ if __name__ == '__main__':
 
     # constraints dictionaries
     cons = ({'type': 'eq', 'fun': feqcon, 'jac': jeqcon, 'args': (1, )},
-          {'type': 'ineq', 'fun': fieqcon, 'jac': jieqcon, 'args': (10,)})
+            {'type': 'ineq', 'fun': fieqcon, 'jac': jieqcon, 'args': (10,)})
 
     # Bounds constraint problem
     print(' Bounds constraints '.center(72, '-'))

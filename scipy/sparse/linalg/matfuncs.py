@@ -14,12 +14,10 @@ __all__ = ['expm', 'inv']
 
 import math
 
-from numpy import asarray, dot, eye, ceil, log2
 import numpy as np
 
-import scipy.misc
-from scipy.linalg.misc import norm
-from scipy.linalg.basic import solve, solve_triangular, inv
+import scipy.special
+from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
@@ -37,8 +35,6 @@ def inv(A):
     """
     Compute the inverse of a sparse matrix
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     A : (M,M) ndarray or sparse matrix
@@ -55,7 +51,29 @@ def inv(A):
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import inv
+    >>> A = csc_matrix([[1., 0.], [1., 2.]])
+    >>> Ainv = inv(A)
+    >>> Ainv
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv)
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
+        with 2 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv).todense()
+    matrix([[ 1.,  0.],
+            [ 0.,  1.]])
+
+    .. versionadded:: 0.12.0
+
     """
+    #check input
+    if not scipy.sparse.isspmatrix(A):
+        raise TypeError('Input must be a sparse matrix')
+
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
     Ainv = spsolve(A, I)
     return Ainv
@@ -91,7 +109,7 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
+    return np.max(v)
 
 
 def _onenorm(A):
@@ -113,28 +131,15 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def _count_nonzero(A):
-    # A compatibility function which should eventually disappear.
-    #XXX There should be a better way to do this when A is sparse
-    #    in the traditional sense.
-    if isspmatrix(A):
-        return np.sum(A.toarray() != 0)
-    else:
-        return np.sum(A != 0)
-
-
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
     if isspmatrix(A):
         lower_part = scipy.sparse.tril(A, -1)
-        if lower_part.nnz == 0:
-            # structural upper triangularity
-            return True
-        else:
-            # coincidental upper triangularity
-            return _count_nonzero(lower_part) == 0
+        # Check structural upper triangularity,
+        # then coincidental upper triangularity if needed.
+        return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
     else:
-        return _count_nonzero(np.tril(A, -1)) == 0
+        return not np.tril(A, -1).any()
 
 
 def _smart_matrix_product(A, B, alpha=None, structure=None):
@@ -189,20 +194,23 @@ class MatrixPowerOperator(LinearOperator):
         self._A = A
         self._p = p
         self._structure = structure
+        self.dtype = A.dtype
         self.ndim = A.ndim
         self.shape = A.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for i in range(self._p):
             x = self._A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
+        A_T = self._A.T
+        x = x.ravel()
         for i in range(self._p):
-            x = x.dot(self._A)
+            x = A_T.dot(x)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for i in range(self._p):
             X = _smart_matrix_product(self._A, X, structure=self._structure)
         return X
@@ -234,19 +242,21 @@ class ProductOperator(LinearOperator):
                                 'must all have the same shape.')
             self.shape = (n, n)
             self.ndim = len(self.shape)
+        self.dtype = np.find_common_type([x.dtype for x in args], [])
         self._operator_sequence = args
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for A in reversed(self._operator_sequence):
             x = A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
+        x = x.ravel()
         for A in self._operator_sequence:
-            x = x.dot(A)
+            x = A.T.dot(x)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for A in reversed(self._operator_sequence):
             X = _smart_matrix_product(A, X, structure=self._structure)
         return X
@@ -552,8 +562,6 @@ def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     A : (M,M) array_like or sparse matrix
@@ -568,6 +576,8 @@ def expm(A):
     -----
     This is algorithm (6.1) which is a simplification of algorithm (5.1).
 
+    .. versionadded:: 0.12.0
+
     References
     ----------
     .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
@@ -575,18 +585,59 @@ def expm(A):
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm
+    >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> A.todense()
+    matrix([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]], dtype=int64)
+    >>> Aexp = expm(A)
+    >>> Aexp
+    <3x3 sparse matrix of type '<class 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> Aexp.todense()
+    matrix([[  2.71828183,   0.        ,   0.        ],
+            [  0.        ,   7.3890561 ,   0.        ],
+            [  0.        ,   0.        ,  20.08553692]])
     """
+    return _expm(A, use_exact_onenorm='auto')
+
+
+def _expm(A, use_exact_onenorm):
+    # Core of expm, separated to allow testing exact and approximate
+    # algorithms.
+
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
     if isinstance(A, (list, tuple)):
         A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
 
+    # Trivial case
+    if A.shape == (1, 1):
+        out = [[np.exp(A[0, 0])]]
+
+        # Avoid indiscriminate casting to ndarray to
+        # allow for sparse or other strange arrays
+        if isspmatrix(A):
+            return A.__class__(out)
+
+        return np.array(out)
+
+    # Ensure input is of float type, to avoid integer overflows etc.
+    if ((isinstance(A, np.ndarray) or isspmatrix(A))
+            and not np.issubdtype(A.dtype, np.inexact)):
+        A = A.astype(float)
+
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
-    # Hardcode a matrix order threshold for exact vs. estimated one-norms.
-    use_exact_onenorm = A.shape[0] < 200
+    if use_exact_onenorm == "auto":
+        # Hardcode a matrix order threshold for exact vs. estimated one-norms.
+        use_exact_onenorm = A.shape[0] < 200
 
     # Track functions of A to help compute the matrix exponential.
     h = _ExpmPadeHelper(
@@ -617,7 +668,13 @@ def expm(A):
     eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
-    s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
+
+    # Choose smallest s>=0 such that 2**(-s) eta_5 <= theta_13
+    if eta_5 == 0:
+        # Nilpotent special case
+        s = 0
+    else:
+        s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
     s = s + _ell(2**-s * h.A, 13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)
@@ -735,7 +792,7 @@ def _fragment_2_1(X, T, s):
     # Form X = r_m(2^-s T)
     # Replace diag(X) by exp(2^-s diag(T)).
     n = X.shape[0]
-    diag_T = T.diagonal().copy()
+    diag_T = np.ravel(T.diagonal().copy())
 
     # Replace diag(X) by exp(2^-s diag(T)).
     scale = 2 ** -s
@@ -791,7 +848,8 @@ def _ell(A, m):
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    abs_c_recip = scipy.misc.comb(2*p, p, exact=True) * math.factorial(2*p + 1)
+    choose_2p_p = scipy.special.comb(2*p, p, exact=True)
+    abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.

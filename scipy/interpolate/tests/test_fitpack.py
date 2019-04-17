@@ -4,11 +4,14 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    TestCase, assert_raises, run_module_suite, assert_almost_equal)
+                           assert_almost_equal, assert_array_almost_equal)
+from pytest import raises as assert_raises
+
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
+from scipy.interpolate.dfitpack import regrid_smth
 
 
 def data_file(basename):
@@ -63,7 +66,7 @@ def put(*a):
         sys.stderr.write("".join(map(str, a)) + "\n")
 
 
-class TestSmokeTests(TestCase):
+class TestSmokeTests(object):
     """
     Smoke tests (with a few asserts) for fitpack routines -- mostly
     check that they are runnable
@@ -256,7 +259,7 @@ class TestSmokeTests(TestCase):
         self.check_5()
 
 
-class TestSplev(TestCase):
+class TestSplev(object):
     def test_1d_shape(self):
         x = [1,2,3,4,5]
         y = [4,5,6,7,8]
@@ -266,9 +269,36 @@ class TestSplev(TestCase):
         z = splev(1, tck)
         assert_equal(z.shape, ())
 
+    def test_2d_shape(self):
+        x = [1, 2, 3, 4, 5]
+        y = [4, 5, 6, 7, 8]
+        tck = splrep(x, y)
+        t = np.array([[1.0, 1.5, 2.0, 2.5],
+                      [3.0, 3.5, 4.0, 4.5]])
+        z = splev(t, tck)
+        z0 = splev(t[0], tck)
+        z1 = splev(t[1], tck)
+        assert_equal(z, np.row_stack((z0, z1)))
+
+    def test_extrapolation_modes(self):
+        # test extrapolation modes
+        #    * if ext=0, return the extrapolated value.
+        #    * if ext=1, return 0
+        #    * if ext=2, raise a ValueError
+        #    * if ext=3, return the boundary value.
+        x = [1,2,3]
+        y = [0,2,4]
+        tck = splrep(x, y, k=1)
+
+        rstl = [[-2, 6], [0, 0], None, [0, 4]]
+        for ext in (0, 1, 3):
+            assert_array_almost_equal(splev([0, 4], tck, ext=ext), rstl[ext])
+
+        assert_raises(ValueError, splev, [0, 4], tck, ext=2)
+
 
 class TestSplder(object):
-    def __init__(self):
+    def setup_method(self):
         # non-uniform grid, just to make it sure
         x = np.linspace(0, 1, 100)**3
         y = np.sin(20 * x)
@@ -336,6 +366,20 @@ class TestSplder(object):
         spl2 = insert(0.5, self.spl, m=4)
         assert_raises(ValueError, splder, spl2, 1)
 
+    def test_multidim(self):
+        # c can have trailing dims
+        for n in range(3):
+            t, c, k = self.spl
+            c2 = np.c_[c, c, c]
+            c2 = np.dstack((c2, c2))
+
+            spl2 = splantider((t, c2, k), n)
+            spl3 = splder(spl2, n)
+
+            assert_allclose(t, spl3[0])
+            assert_allclose(c2, spl3[1])
+            assert_equal(k, spl3[2])
+
 
 class TestBisplrep(object):
     def test_overflow(self):
@@ -373,5 +417,47 @@ def test_dblint():
     assert_almost_equal(dblint(-100, 100, -100, 100, tck), 1)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_splev_der_k():
+    # regression test for gh-2188: splev(x, tck, der=k) gives garbage or crashes
+    # for x outside of knot range
+
+    # test case from gh-2188
+    tck = (np.array([0., 0., 2.5, 2.5]),
+           np.array([-1.56679978, 2.43995873, 0., 0.]),
+           1)
+    t, c, k = tck
+    x = np.array([-3, 0, 2.5, 3])
+
+    # an explicit form of the linear spline
+    assert_allclose(splev(x, tck), c[0] + (c[1] - c[0]) * x/t[2])
+    assert_allclose(splev(x, tck, 1), (c[1]-c[0]) / t[2])
+
+    # now check a random spline vs splder
+    np.random.seed(1234)
+    x = np.sort(np.random.random(30))
+    y = np.random.random(30)
+    t, c, k = splrep(x, y)
+
+    x = [t[0] - 1., t[-1] + 1.]
+    tck2 = splder((t, c, k), k)
+    assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
+
+
+def test_bisplev_integer_overflow():
+    np.random.seed(1)
+
+    x = np.linspace(0, 1, 11)
+    y = x
+    z = np.random.randn(11, 11).ravel()
+    kx = 1
+    ky = 1
+
+    nx, tx, ny, ty, c, fp, ier = regrid_smth(
+        x, y, z, None, None, None, None, kx=kx, ky=ky, s=0.0)
+    tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)], kx, ky)
+
+    xp = np.zeros([2621440])
+    yp = np.zeros([2621440])
+
+    assert_raises((RuntimeError, MemoryError), bisplev, xp, yp, tck)
+

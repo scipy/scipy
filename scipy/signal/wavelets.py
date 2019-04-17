@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.dual import eig
-from scipy.misc import comb
+from scipy.special import comb
 from scipy import linspace, pi, exp
 from scipy.signal import convolve
 
@@ -75,7 +75,7 @@ def daub(p):
         return q.c[::-1]
     else:
         raise ValueError("Polynomial factorization does not work "
-              "well for p too large.")
+                         "well for p too large.")
 
 
 def qmf(hk):
@@ -89,13 +89,8 @@ def qmf(hk):
 
     """
     N = len(hk) - 1
-    asgn = [{0: 1, 1:-1}[k % 2] for k in range(N + 1)]
+    asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
     return hk[::-1] * np.array(asgn)
-
-
-def wavedec(amn, hk):
-    gk = qmf(hk)
-    return NotImplemented
 
 
 def cascade(hk, J=7):
@@ -155,7 +150,7 @@ def cascade(hk, J=7):
     m *= s2
 
     # construct the grid of points
-    x = np.arange(0, N * (1 << J), dtype=np.float) / (1 << J)
+    x = np.arange(0, N * (1 << J), dtype=float) / (1 << J)
     phi = 0 * x
 
     psi = 0 * x
@@ -172,8 +167,7 @@ def cascade(hk, J=7):
     if sm < 0:  # need scaling function to integrate to 1
         v = -v
         sm = -sm
-    bitdic = {}
-    bitdic['0'] = v / sm
+    bitdic = {'0': v / sm}
     bitdic['1'] = np.dot(m[0, 1], bitdic['0'])
     step = 1 << J
     phi[::step] = bitdic['0']
@@ -213,11 +207,11 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     ----------
     M : int
         Length of the wavelet.
-    w : float
+    w : float, optional
         Omega0. Default is 5
-    s : float
+    s : float, optional
         Scaling factor, windowed from ``-s*2*pi`` to ``+s*2*pi``. Default is 1.
-    complete : bool
+    complete : bool, optional
         Whether to use the complete or the standard version.
 
     Returns
@@ -236,21 +230,24 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     This commonly used wavelet is often referred to simply as the
     Morlet wavelet.  Note that this simplified version can cause
-    admissibility problems at low values of w.
+    admissibility problems at low values of `w`.
 
     The complete version::
 
         pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w**2))) * exp(-0.5*(x**2))
 
-    The complete version of the Morlet wavelet, with a correction
-    term to improve admissibility. For w greater than 5, the
+    This version has a correction
+    term to improve admissibility. For `w` greater than 5, the
     correction term is negligible.
 
     Note that the energy of the return wavelet is not normalised
-    according to s.
+    according to `s`.
 
     The fundamental frequency of this wavelet in Hz is given
-    by ``f = 2*s*w*r / M`` where r is the sampling rate.
+    by ``f = 2*s*w*r / M`` where `r` is the sampling rate.
+    
+    Note: This function was created before `cwt` and is not compatible
+    with it.
 
     """
     x = linspace(-s * 2 * pi, s * 2 * pi, M)
@@ -327,7 +324,7 @@ def cwt(data, wavelet, widths):
     wavelet : function
         Wavelet function, which should take 2 arguments.
         The first argument is the number of points that the returned vector
-        will have (len(wavelet(width,length)) == length).
+        will have (len(wavelet(length,width)) == length).
         The second is a width parameter, defining the size of the wavelet
         (e.g. standard deviation of a gaussian). See `ricker`, which
         satisfies these requirements.
@@ -337,26 +334,32 @@ def cwt(data, wavelet, widths):
     Returns
     -------
     cwt: (M, N) ndarray
-        Will have shape of (len(data), len(widths)).
+        Will have shape of (len(widths), len(data)).
 
     Notes
     -----
-    >>> length = min(10 * width[ii], len(data))
-    >>> cwt[ii,:] = scipy.signal.convolve(data, wavelet(length,
-    ...                                       width[ii]), mode='same')
+    ::
+
+        length = min(10 * width[ii], len(data))
+        cwt[ii,:] = signal.convolve(data, wavelet(length,
+                                    width[ii]), mode='same')
 
     Examples
     --------
     >>> from scipy import signal
-    >>> sig = np.random.rand(20) - 0.5
-    >>> wavelet = signal.ricker
-    >>> widths = np.arange(1, 11)
-    >>> cwtmatr = signal.cwt(sig, wavelet, widths)
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(-1, 1, 200, endpoint=False)
+    >>> sig  = np.cos(2 * np.pi * 7 * t) + signal.gausspulse(t - 0.4, fc=2)
+    >>> widths = np.arange(1, 31)
+    >>> cwtmatr = signal.cwt(sig, signal.ricker, widths)
+    >>> plt.imshow(cwtmatr, extent=[-1, 1, 31, 1], cmap='PRGn', aspect='auto',
+    ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
+    >>> plt.show()
 
     """
     output = np.zeros([len(widths), len(data)])
     for ind, width in enumerate(widths):
         wavelet_data = wavelet(min(10 * width, len(data)), width)
         output[ind, :] = convolve(data, wavelet_data,
-                                              mode='same')
+                                  mode='same')
     return output

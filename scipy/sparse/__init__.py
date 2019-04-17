@@ -23,6 +23,7 @@ Sparse matrix classes
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
    lil_matrix - Row-based linked list sparse matrix
+   spmatrix - Sparse matrix base class
 
 Functions
 ---------
@@ -45,6 +46,22 @@ Building sparse matrices:
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
+   random - Random values in a given shape
+
+Save and load sparse matrices:
+
+.. autosummary::
+   :toctree: generated/
+
+   save_npz - Save a sparse matrix to a file using ``.npz`` format.
+   load_npz - Load a sparse matrix from a file using ``.npz`` format.
+
+Sparse matrix tools:
+
+.. autosummary::
+   :toctree: generated/
+
+   find
 
 Identifying sparse matrices:
 
@@ -65,7 +82,6 @@ Submodules
 ----------
 
 .. autosummary::
-   :toctree: generated/
 
    csgraph - Compressed sparse graph routines
    linalg - sparse linear algebra routines
@@ -94,9 +110,16 @@ There are seven available sparse matrix types:
     7. dia_matrix: DIAgonal format
 
 To construct a matrix efficiently, use either dok_matrix or lil_matrix.
-The lil_matrix class supports basic slicing and fancy
-indexing with a similar syntax to NumPy arrays.  As illustrated below,
-the COO format may also be used to efficiently construct matrices.
+The lil_matrix class supports basic slicing and fancy indexing with a
+similar syntax to NumPy arrays. As illustrated below, the COO format
+may also be used to efficiently construct matrices. Despite their
+similarity to NumPy arrays, it is **strongly discouraged** to use NumPy
+functions directly on these matrices because NumPy may not properly convert
+them for computations, leading to unexpected (and incorrect) results. If you
+do want to apply a NumPy function to these matrices, first check if SciPy has
+its own implementation for the given sparse matrix class, or **convert the
+sparse matrix to a NumPy array** (e.g. using the `toarray()` method of the
+class) first before applying the method.
 
 To perform manipulations such as multiplication or inversion, first
 convert the matrix to either CSC or CSR format. The lil_matrix format is
@@ -120,13 +143,12 @@ array([ 1, -3, -1], dtype=int64)
 
 .. warning:: As of NumPy 1.7, `np.dot` is not aware of sparse matrices,
   therefore using it will result on unexpected results or errors.
-  The corresponding dense matrix should be obtained first instead:
+  The corresponding dense array should be obtained first instead:
 
-  >>> np.dot(A.todense(), v)
-  matrix([[ 1, -3, -1]], dtype=int64)
+  >>> np.dot(A.toarray(), v)
+  array([ 1, -3, -1], dtype=int64)
 
   but then all the performance advantages would be lost.
-  Notice that it returned a matrix, because `todense` returns a matrix.
 
 The CSR format is specially suitable for fast matrix vector products.
 
@@ -153,7 +175,7 @@ Now convert it to CSR format and solve A x = b for x:
 Convert it to a dense matrix and solve, and check that the result
 is the same:
 
->>> x_ = solve(A.todense(), b)
+>>> x_ = solve(A.toarray(), b)
 
 Now we can compute norm of the error with:
 
@@ -202,6 +224,8 @@ from __future__ import division, print_function, absolute_import
 # Modified and extended by Ed Schofield, Robert Cimrman,
 # Nathan Bell, and Jake Vanderplas.
 
+import warnings as _warnings
+
 from .base import *
 from .csr import *
 from .csc import *
@@ -212,13 +236,16 @@ from .dia import *
 from .bsr import *
 from .construct import *
 from .extract import *
+from ._matrix_io import *
 
-# for backward compatibility with v0.10.  This function is marked as deprecated
-from .csgraph import cs_graph_components
-
-#from spfuncs import *
+# For backward compatibility with v0.19.
+from . import csgraph
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+
+# Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
+_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

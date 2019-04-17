@@ -2,45 +2,66 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import cos, sin, pi
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_almost_equal, assert_allclose, assert_
+from scipy._lib._numpy_compat import suppress_warnings
 
-from scipy.integrate import quadrature, romberg, romb, newton_cotes, cumtrapz
+from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
+                             cumtrapz, quad, simps, fixed_quad)
+from scipy.integrate.quadrature import AccuracyWarning
 
 
-class TestQuadrature(TestCase):
+class TestFixedQuad(object):
+    def test_scalar(self):
+        n = 4
+        func = lambda x: x**(2*n - 1)
+        expected = 1/(2*n)
+        got, _ = fixed_quad(func, 0, 1, n=n)
+        # quadrature exact for this input
+        assert_allclose(got, expected, rtol=1e-12)
+
+    def test_vector(self):
+        n = 4
+        p = np.arange(1, 2*n)
+        func = lambda x: x**p[:,None]
+        expected = 1/(p + 1)
+        got, _ = fixed_quad(func, 0, 1, n=n)
+        assert_allclose(got, expected, rtol=1e-12)
+
+
+class TestQuadrature(object):
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
     def test_quadrature(self):
         # Typical function with two extra arguments:
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc,0,pi,(2,1.8))
+        val, err = quadrature(myfunc, 0, pi, (2, 1.8))
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
 
     def test_quadrature_rtol(self):
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return 1e90 * cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc,0,pi,(2,1.8),rtol=1e-10)
+        val, err = quadrature(myfunc, 0, pi, (2, 1.8), rtol=1e-10)
         table_val = 1e90 * 0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
     def test_quadrature_miniter(self):
         # Typical function with two extra arguments:
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
         table_val = 0.30614353532540296487
         for miniter in [5, 52]:
-            val, err = quadrature(myfunc,0,pi,(2,1.8),miniter=miniter)
+            val, err = quadrature(myfunc, 0, pi, (2, 1.8), miniter=miniter)
             assert_almost_equal(val, table_val, decimal=7)
             assert_(err < 1.0)
 
     def test_quadrature_single_args(self):
-        def myfunc(x,n):
+        def myfunc(x, n):
             return 1e90 * cos(n*x-1.8*sin(x))/pi
-        val, err = quadrature(myfunc,0,pi,args=2,rtol=1e-10)
+        val, err = quadrature(myfunc, 0, pi, args=2, rtol=1e-10)
         table_val = 1e90 * 0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
@@ -48,7 +69,7 @@ class TestQuadrature(TestCase):
         # Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc,0,pi, args=(2, 1.8))
+        val = romberg(myfunc, 0, pi, args=(2, 1.8))
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
 
@@ -56,12 +77,26 @@ class TestQuadrature(TestCase):
         # Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
             return 1e19*cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc,0,pi, args=(2, 1.8), rtol=1e-10)
+        val = romberg(myfunc, 0, pi, args=(2, 1.8), rtol=1e-10)
         table_val = 1e19*0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
     def test_romb(self):
-        assert_equal(romb(np.arange(17)),128)
+        assert_equal(romb(np.arange(17)), 128)
+
+    def test_romb_gh_3731(self):
+        # Check that romb makes maximal use of data points
+        x = np.arange(2**4+1)
+        y = np.cos(0.2*x)
+        val = romb(y)
+        val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
+        assert_allclose(val, val2, rtol=1e-8, atol=0)
+
+        # should be equal to romb with 2**k+1 samples
+        with suppress_warnings() as sup:
+            sup.filter(AccuracyWarning, "divmax .4. exceeded")
+            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(), divmax=4)
+        assert_allclose(val, val3, rtol=1e-12, atol=0)
 
     def test_non_dtype(self):
         # Check that we work fine with functions returning float
@@ -109,8 +144,20 @@ class TestQuadrature(TestCase):
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
+    def test_simps(self):
+        y = np.arange(17)
+        assert_equal(simps(y), 128)
+        assert_equal(simps(y, dx=0.5), 64)
+        assert_equal(simps(y, x=np.linspace(0, 4, 17)), 32)
 
-class TestCumtrapz(TestCase):
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(simps(y, x=x, even='avg'), 13.875)
+        assert_equal(simps(y, x=x, even='first'), 13.75)
+        assert_equal(simps(y, x=x, even='last'), 14)
+
+
+class TestCumtrapz(object):
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x
@@ -184,6 +231,3 @@ class TestCumtrapz(TestCase):
         y_expected = [1.23, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,0 +1,483 @@
+%%
+%% This is file `supertabular.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% supertabular.dtx  (with options: `package')
+%% Copyright (C) 1989-2004 Johannes Braams. All rights reserved.
+%% 
+%% This file was generated from file(s) of the supertabular package.
+%% -----------------------------------------------------------------
+%% 
+%% It may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2003/12/01 or later.
+%% 
+%% This work has the LPPL maintenance status "maintained".
+%% 
+%% The Current Maintainer of this work is Johannes Braams.
+%% 
+%% This file may only be distributed together with a copy of the
+%% supertabular package. You may however distribute the supertabular package
+%% without such generated files.
+%% 
+%% The list of all files belonging to the supertabular package is
+%% given in the file `manifest.txt.
+%% 
+%% The list of derived (unpacked) files belonging to the distribution
+%% and covered by LPPL is defined by the unpacking scripts (with
+%% extension .ins) which are part of the distribution.
+%% Sourcefile `supertabular.dtx'.
+%%
+%% Copyright (C) 1988 by Theo Jurriens
+%% Copyright (C) 1990-2004 by Johannes Braams texniek at braams.cistron.nl
+%%                            Kersengaarde 33
+%%                            2723 BP Zoetermeer NL
+%%                       all rights reserved.
+%%
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{supertabular}
+              [2004/02/20 v4.1e the supertabular environment]
+\newcount\c@tracingst
+\DeclareOption{errorshow}{\c@tracingst\z@}
+\DeclareOption{pageshow}{\c@tracingst\tw@}
+\DeclareOption{debugshow}{\c@tracingst5\relax}
+\ProcessOptions
+\newif\if@topcaption \@topcaptiontrue
+\def\topcaption{\@topcaptiontrue\tablecaption}
+\def\bottomcaption{\@topcaptionfalse\tablecaption}
+\long\def\tablecaption{%
+  \refstepcounter{table}\@dblarg{\@xtablecaption}}
+\long\def\@xtablecaption[#1]#2{%
+  \long\gdef\@process@tablecaption{\ST@caption{table}[#1]{#2}}}
+\global\let\@process@tablecaption\relax
+\newif\ifST@star
+\newif\ifST@mp
+\newdimen\ST@wd
+\newskip\ST@rightskip
+\newskip\ST@leftskip
+\newskip\ST@parfillskip
+\long\def\ST@caption#1[#2]#3{\par%
+  \addcontentsline{\csname ext@#1\endcsname}{#1}%
+                  {\protect\numberline{%
+                      \csname the#1\endcsname}{\ignorespaces #2}}
+  \begingroup
+    \@parboxrestore
+    \normalsize
+    \if@topcaption \vskip -10\p@ \fi
+    \@makecaption{\csname fnum@#1\endcsname}{\ignorespaces #3}\par
+    \if@topcaption \vskip 10\p@ \fi
+  \endgroup}
+\newcommand\tablehead[1]{%
+  \gdef\@tablehead{%
+  \noalign{%
+      \global\let\@savcr=\\
+      \global\let\\=\org@tabularcr}%
+    #1%
+    \noalign{\global\let\\=\@savcr}}}
+\tablehead{}
+\newcommand\tablefirsthead[1]{\gdef\@table@first@head{#1}}
+\newcommand\tabletail[1]{%
+  \gdef\@tabletail{%
+    \noalign{%
+      \global\let\@savcr=\\
+      \global\let\\=\org@tabularcr}%
+    #1%
+    \noalign{\global\let\\=\@savcr}}}
+\tabletail{}
+\newcommand\tablelasttail[1]{\gdef\@table@last@tail{#1}}
+\newcommand\sttraceon{\c@tracingst5\relax}
+\newcommand\sttraceoff{\c@tracingst\z@}
+\newcommand\ST@trace[2]{%
+  \ifnum\c@tracingst>#1\relax
+    \GenericWarning
+      {(supertabular)\@spaces\@spaces}
+      {Package supertabular: #2}%
+  \fi
+  }
+\newdimen\ST@pageleft
+\newcommand*\shrinkheight[1]{%
+  \noalign{\global\advance\ST@pageleft-#1\relax}}
+\newcommand*\setSTheight[1]{%
+  \noalign{\global\ST@pageleft=#1\relax}}
+\newdimen\ST@headht
+\newdimen\ST@tailht
+\newdimen\ST@pagesofar
+\newdimen\ST@pboxht
+\newdimen\ST@lineht
+\newdimen\ST@stretchht
+\newdimen\ST@prevht
+\newdimen\ST@toadd
+\newdimen\ST@dimen
+\newbox\ST@pbox
+\def\ST@tabularcr{%
+  {\ifnum0=`}\fi
+  \@ifstar{\ST@xtabularcr}{\ST@xtabularcr}}
+\def\ST@xtabularcr{%
+  \@ifnextchar[%]
+    {\ST@argtabularcr}%
+    {\ifnum0=`{\fi}\cr\ST@cr}}
+\def\ST@argtabularcr[#1]{%
+  \ifnum0=`{\fi}%
+  \ifdim #1>\z@
+    \unskip\ST@xargarraycr{#1}
+  \else
+    \ST@yargarraycr{#1}%
+  \fi}
+\def\ST@xargarraycr#1{%
+  \@tempdima #1\advance\@tempdima \dp \@arstrutbox
+  \vrule \@height\z@ \@depth\@tempdima \@width\z@ \cr
+  \noalign{\global\ST@toadd=#1}\ST@cr}
+\def\ST@yargarraycr#1{%
+  \cr\noalign{\vskip #1\global\ST@toadd=#1}\ST@cr}
+\def\ST@startpbox#1{%
+  \setbox\ST@pbox\vtop\bgroup\hsize#1\@arrayparboxrestore}
+\def\ST@astartpbox#1{%
+  \bgroup\hsize#1%
+  \setbox\ST@pbox\vtop\bgroup\hsize#1\@arrayparboxrestore}
+\def\ST@endpbox{%
+  \@finalstrut\@arstrutbox\par\egroup
+  \ST@dimen=\ht\ST@pbox
+  \advance\ST@dimen by \dp\ST@pbox
+  \ifnum\ST@pboxht<\ST@dimen
+    \global\ST@pboxht=\ST@dimen
+  \fi
+  \ST@dimen=\z@
+  \box\ST@pbox\hfil}
+\def\ST@aendpbox{%
+  \@finalstrut\@arstrutbox\par\egroup
+  \ST@dimen=\ht\ST@pbox
+  \advance\ST@dimen by \dp\ST@pbox
+  \ifnum\ST@pboxht<\ST@dimen
+    \global\ST@pboxht=\ST@dimen
+  \fi
+  \ST@dimen=\z@
+  \unvbox\ST@pbox\egroup\hfil}
+\def\estimate@lineht{%
+  \ST@lineht=\arraystretch \baslineskp
+  \global\advance\ST@lineht by 1\p@
+  \ST@stretchht\ST@lineht\advance\ST@stretchht-\baslineskp
+  \ifdim\ST@stretchht<\z@\ST@stretchht\z@\fi
+  \ST@trace\tw@{Average line height: \the\ST@lineht}%
+  \ST@trace\tw@{Stretched line height: \the\ST@stretchht}%
+  }
+\def\@calfirstpageht{%
+  \ST@trace\tw@{Calculating height of tabular on first page}%
+  \global\ST@pagesofar\pagetotal
+  \global\ST@pageleft\@colroom
+  \ST@trace\tw@{Height of text = \the\pagetotal; \MessageBreak
+                Height of page = \the\ST@pageleft}%
+  \if@twocolumn
+    \ST@trace\tw@{two column mode}%
+    \if@firstcolumn
+     \ST@trace\tw@{First column}%
+      \ifnum\ST@pagesofar > \ST@pageleft
+        \global\ST@pageleft=2\ST@pageleft
+        \ifnum\ST@pagesofar > \ST@pageleft
+          \newpage\@calnextpageht
+          \ST@trace\tw@{starting new page}%
+        \else
+          \ST@trace\tw@{Second column}%
+          \global\advance\ST@pageleft -\ST@pagesofar
+          \global\advance\ST@pageleft -\@colroom
+        \fi
+      \else
+        \global\advance\ST@pageleft by -\ST@pagesofar
+        \global\ST@pagesofar\z@
+      \fi
+    \else
+      \ST@trace\tw@{Second column}
+      \ifnum\ST@pagesofar > \ST@pageleft
+        \ST@trace\tw@{starting new page}%
+        \newpage\@calnextpageht
+      \else
+        \global\advance\ST@pageleft by -\ST@pagesofar
+        \global\ST@pagesofar\z@
+      \fi
+    \fi
+  \else
+    \ST@trace\tw@{one column mode}%
+    \ifnum\ST@pagesofar > \ST@pageleft
+      \ST@trace\tw@{starting new page}%
+      \newpage\@calnextpageht
+    \else
+      \global\advance\ST@pageleft by -\ST@pagesofar
+      \global\ST@pagesofar\z@
+    \fi
+  \fi
+  \ST@trace\tw@{Available height: \the\ST@pageleft}%
+  \ifx\@@tablehead\@empty
+    \ST@headht=\z@
+  \else
+    \setbox\@tempboxa=\vbox{\@arrayparboxrestore
+      \ST@restore
+      \expandafter\tabular\expandafter{\ST@tableformat}%
+      \@@tablehead\endtabular}%
+    \ST@headht=\ht\@tempboxa\advance\ST@headht\dp\@tempboxa
+  \fi
+  \ST@trace\tw@{Height of head: \the\ST@headht}%
+  \ifx\@tabletail\@empty
+    \ST@tailht=\z@
+  \else
+    \setbox\@tempboxa=\vbox{\@arrayparboxrestore
+      \ST@restore
+      \expandafter\tabular\expandafter{\ST@tableformat}
+        \@tabletail\endtabular}
+    \ST@tailht=\ht\@tempboxa\advance\ST@tailht\dp\@tempboxa
+  \fi
+  \advance\ST@tailht by \ST@lineht
+  \ST@trace\tw@{Height of tail: \the\ST@tailht}%
+  \ST@trace\tw@{Maximum height of tabular: \the\ST@pageleft}%
+  \@tempdima\ST@headht
+  \advance\@tempdima\ST@lineht
+  \advance\@tempdima\ST@tailht
+  \ST@trace\tw@{Minimum height of tabular: \the\@tempdima}%
+  \ifnum\@tempdima>\ST@pageleft
+    \ST@trace\tw@{starting new page}%
+    \newpage\@calnextpageht
+  \fi
+}
+\def\@calnextpageht{%
+  \ST@trace\tw@{Calculating height of tabular on next page}%
+  \global\ST@pageleft\@colroom
+  \global\ST@pagesofar=\z@
+  \ST@trace\tw@{Maximum height of tabular: \the\ST@pageleft}%
+  }
+\def\x@supertabular{%
+  \let\org@tabular\tabular
+  \let\tabular\inner@tabular
+  \expandafter\let
+    \csname org@tabular*\expandafter\endcsname
+    \csname tabular*\endcsname
+  \expandafter\let\csname tabular*\expandafter\endcsname
+    \csname inner@tabular*\endcsname
+  \if@topcaption \@process@tablecaption \fi
+  \global\let\@oldcr=\\
+  \def\baslineskp{\baselineskip}%
+  \ifx\undefined\@classix
+    \let\org@tabularcr\@tabularcr
+    \let\@tabularcr\ST@tabularcr
+    \let\org@startpbox=\@startpbox
+    \let\org@endpbox=\@endpbox
+    \let\@@startpbox=\ST@startpbox
+    \let\@@endpbox=\ST@endpbox
+  \else
+    \let\org@tabularcr\@arraycr
+    \let\@arraycr\ST@tabularcr
+    \let\org@startpbox=\@startpbox
+    \let\org@endpbox=\@endpbox
+    \let\@startpbox=\ST@astartpbox
+    \let\@endpbox=\ST@aendpbox
+  \fi
+  \ifx\@table@first@head\undefined
+    \let\@@tablehead=\@tablehead
+  \else
+    \let\@@tablehead=\@table@first@head
+  \fi
+  \let\ST@skippage\ST@skipfirstpart
+  \estimate@lineht
+  \@calfirstpageht
+  \noindent
+  }
+\def\supertabular{%
+  \@ifnextchar[{\@supertabular}%]
+               {\@supertabular[]}}
+\def\@supertabular[#1]#2{%
+  \def\ST@tableformat{#2}%
+  \ST@trace\tw@{Starting a new supertabular}%
+  \global\ST@starfalse
+  \global\ST@mpfalse
+  \x@supertabular
+  \expandafter\org@tabular\expandafter{\ST@tableformat}%
+  \@@tablehead}
+\@namedef{supertabular*}#1{%
+  \@ifnextchar[{\@nameuse{@supertabular*}{#1}}%
+               {\@nameuse{@supertabular*}{#1}[]}%]
+  }
+\@namedef{@supertabular*}#1[#2]#3{%
+  \ST@trace\tw@{Starting a new supertabular*}%
+  \def\ST@tableformat{#3}%
+  \ST@wd=#1\relax
+  \global\ST@startrue
+  \global\ST@mpfalse
+  \x@supertabular
+  \expandafter\csname org@tabular*\expandafter\endcsname
+  \expandafter{\expandafter\ST@wd\expandafter}%
+  \expandafter{\ST@tableformat}%
+  \@@tablehead}%
+\def\mpsupertabular{%
+  \@ifnextchar[{\@mpsupertabular}%]
+               {\@mpsupertabular[]}}
+\def\@mpsupertabular[#1]#2{%
+  \def\ST@tableformat{#2}%
+  \ST@trace\tw@{Starting a new mpsupertabular}%
+  \global\ST@starfalse
+  \global\ST@mptrue
+  \ST@rightskip \rightskip
+  \ST@leftskip \leftskip
+  \ST@parfillskip \parfillskip
+  \x@supertabular
+  \minipage{\columnwidth}%
+  \parfillskip\ST@parfillskip
+  \rightskip \ST@rightskip
+  \leftskip \ST@leftskip
+  \noindent\expandafter\org@tabular\expandafter{\ST@tableformat}%
+  \@@tablehead}
+\@namedef{mpsupertabular*}#1{%
+  \@ifnextchar[{\@nameuse{@mpsupertabular*}{#1}}%
+               {\@nameuse{@mpsupertabular*}{#1}[]}%]
+  }
+\@namedef{@mpsupertabular*}#1[#2]#3{%
+  \ST@trace\tw@{Starting a new mpsupertabular*}%
+  \def\ST@tableformat{#3}%
+  \ST@wd=#1\relax
+  \global\ST@startrue
+  \global\ST@mptrue
+  \ST@rightskip \rightskip
+  \ST@leftskip \leftskip
+  \ST@parfillskip \parfillskip
+  \x@supertabular
+  \minipage{\columnwidth}%
+  \parfillskip\ST@parfillskip
+  \rightskip \ST@rightskip
+  \leftskip \ST@leftskip
+  \noindent\expandafter\csname org@tabular*\expandafter\endcsname
+  \expandafter{\expandafter\ST@wd\expandafter}%
+  \expandafter{\ST@tableformat}%
+  \@@tablehead}%
+\def\endsupertabular{%
+  \ifx\@table@last@tail\undefined
+    \@tabletail
+  \else
+    \@table@last@tail
+  \fi
+  \csname endtabular\ifST@star*\fi\endcsname
+  \ST@restore
+  \if@topcaption
+  \else
+    \@process@tablecaption
+    \@topcaptiontrue
+  \fi
+  \global\let\\\@oldcr
+  \global\let\@process@tablecaption\relax
+  \ST@trace\tw@{Ended a supertabular\ifST@star*\fi}%
+  }
+\expandafter\let\csname endsupertabular*\endcsname\endsupertabular
+\def\endmpsupertabular{%
+  \ifx\@table@last@tail\undefined
+    \@tabletail
+  \else
+    \@table@last@tail
+  \fi
+  \csname endtabular\ifST@star*\fi\endcsname
+  \endminipage
+  \ST@restore
+  \if@topcaption
+  \else
+    \@process@tablecaption
+    \@topcaptiontrue
+  \fi
+  \global\let\\\@oldcr
+  \global\let\@process@tablecaption\relax
+  \ST@trace\tw@{Ended a mpsupertabular\ifST@star*\fi}%
+  }
+\expandafter\let\csname endmpsupertabular*\endcsname\endmpsupertabular
+\def\ST@restore{%
+  \ifx\undefined\@classix
+    \let\@tabularcr\org@tabularcr
+  \else
+    \let\@arraycr\org@tabularcr
+  \fi
+  \let\@startpbox\org@startpbox
+  \let\@endpbox\org@endpbox
+  }
+\def\inner@tabular{%
+  \ST@restore
+  \let\\\@oldcr
+  \noindent
+  \org@tabular}
+\@namedef{inner@tabular*}{%
+  \ST@restore
+  \let\\\@oldcr
+  \noindent
+  \csname org@tabular*\endcsname}
+\def\ST@cr{%
+  \noalign{%
+    \ifnum\ST@pboxht<\ST@lineht
+      \global\advance\ST@pageleft -\ST@lineht
+      \global\ST@prevht\ST@lineht
+    \else
+     \ST@trace\thr@@{Added par box with height \the\ST@pboxht}%
+      \global\advance\ST@pageleft -\ST@pboxht
+      \global\advance\ST@pageleft -0.1\ST@pboxht
+      \global\advance\ST@pageleft -\ST@stretchht
+      \global\ST@prevht\ST@pboxht
+      \global\ST@pboxht\z@
+    \fi
+    \global\advance\ST@pageleft -\ST@toadd
+    \global\ST@toadd=\z@
+    \ST@trace\thr@@{Space left for tabular: \the\ST@pageleft}%
+  }
+  \noalign{\global\let\ST@next\@empty}%
+  \ifnum\ST@pageleft<\z@
+    \ST@skippage
+  \else
+    \noalign{\global\@tempdima\ST@tailht
+      \global\advance\@tempdima\ST@prevht
+    \ifST@mp
+      \ifvoid\@mpfootins\else
+        \global\advance\@tempdima\ht\@mpfootins
+        \global\advance\@tempdima 3pt
+      \fi
+    \fi}
+    \ifnum\ST@pageleft<\@tempdima
+      \ST@newpage
+    \fi
+  \fi
+  \ST@next}
+\def\ST@skipfirstpart{%
+  \noalign{%
+    \ST@trace\tw@{Tabular too high, moving to next page}%
+    \global\advance\ST@pageleft\pagetotal
+    \global\ST@pagesofar\z@
+    \newpage
+    \global\let\ST@skippage\ST@newpage
+    }}
+\def\ST@newpage{%
+  \noalign{\ST@trace\tw@{Starting new page, writing tail}}%
+  \@tabletail
+  \ifST@star
+    \csname endtabular*\endcsname
+  \else
+    \endtabular
+  \fi
+  \ifST@mp
+    \endminipage
+  \fi
+  \global\let\ST@skippage\ST@newpage
+  \newpage\@calnextpageht
+  \let\ST@next\@tablehead
+  \ST@trace\tw@{writing head}%
+  \ifST@mp
+    \noindent\minipage{\columnwidth}%
+    \parfillskip\ST@parfillskip
+    \rightskip \ST@rightskip
+    \leftskip \ST@leftskip
+  \fi
+  \noindent
+  \ifST@star
+    \expandafter\csname org@tabular*\expandafter\endcsname
+    \expandafter{\expandafter\ST@wd\expandafter}%
+    \expandafter{\ST@tableformat}%
+  \else
+    \expandafter\org@tabular\expandafter{\ST@tableformat}%
+  \fi}
+\endinput
+%%
+%% End of file `supertabular.sty'.

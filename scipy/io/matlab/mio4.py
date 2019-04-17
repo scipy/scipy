@@ -10,7 +10,7 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)
@@ -253,7 +253,8 @@ class VarReader4(object):
         '''
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
-        dims = res[-1,0:2]
+        # All numbers are float64 in Matlab, but SciPy sparse expects int shape
+        dims = (int(res[-1,0]), int(res[-1,1]))
         I = np.ascontiguousarray(tmp[:,0],dtype='intc')  # fixes byte order also
         J = np.ascontiguousarray(tmp[:,1],dtype='intc')
         I -= 1  # for 1-based indexing
@@ -393,12 +394,12 @@ class MatFile4Reader(MatFileReader):
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = asstr(hdr.name)
-            if variable_names and name not in variable_names:
+            if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             mdict[name] = self.read_var_array(hdr)
             self.mat_stream.seek(next_position)
-            if variable_names:
+            if variable_names is not None:
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
@@ -429,7 +430,7 @@ def arr_to_2d(arr, oned_as='row'):
     Parameters
     ----------
     arr : array
-    oned_as : {'row', 'column'}
+    oned_as : {'row', 'column'}, optional
        Whether to reshape 1D vectors as row vectors or column vectors.
        See documentation for ``matdims`` for more detail
 
@@ -493,7 +494,7 @@ class VarWriter4(object):
 
         Parameters
         ----------
-        arr : array-like
+        arr : array_like
            array to write
         name : str
            name in matlab workspace
@@ -550,7 +551,7 @@ class VarWriter4(object):
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
             # Recode unicode to latin1
-            n_chars = np.product(dims)
+            n_chars = np.prod(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)

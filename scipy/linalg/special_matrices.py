@@ -2,18 +2,19 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy.lib.six import xrange
-from scipy.lib.six import string_types
-
+from scipy._lib.six import xrange
+from scipy._lib.six import string_types
+from numpy.lib.stride_tricks import as_strided
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert', 'pascal', 'dft']
+           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+           'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
+           'fiedler', 'fiedler_companion']
 
 
-#-----------------------------------------------------------------------------
-# matrix construction functions
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+#  matrix construction functions
+# -----------------------------------------------------------------------------
 
 #
 # *Note*: tri{,u,l} is implemented in numpy, but an important bug was fixed in
@@ -28,16 +29,16 @@ def tri(N, M=None, k=0, dtype=None):
 
     Parameters
     ----------
-    N : integer
+    N : int
         The size of the first dimension of the matrix.
-    M : integer or None
+    M : int or None, optional
         The size of the second dimension of the matrix. If `M` is None,
         `M = N` is assumed.
-    k : integer
+    k : int, optional
         Number of subdiagonal below which matrix is filled with ones.
         `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
         superdiagonal.
-    dtype : dtype
+    dtype : dtype, optional
         Data type of the matrix.
 
     Returns
@@ -61,11 +62,11 @@ def tri(N, M=None, k=0, dtype=None):
     if M is None:
         M = N
     if isinstance(M, string_types):
-        #pearu: any objections to remove this feature?
+        # pearu: any objections to remove this feature?
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M
         M = N
-    m = np.greater_equal(np.subtract.outer(np.arange(N), np.arange(M)), -k)
+    m = np.greater_equal.outer(np.arange(k, N+k), np.arange(M))
     if dtype is None:
         return m
     else:
@@ -80,7 +81,7 @@ def tril(m, k=0):
     ----------
     m : array_like
         Matrix whose elements to return
-    k : integer
+    k : int, optional
         Diagonal above which to zero elements.
         `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
         `k` > 0 superdiagonal.
@@ -152,7 +153,7 @@ def toeplitz(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like
+    r : array_like, optional
         First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
         in this case, if c[0] is real, the result is a Hermitian matrix.
         r[0] is ignored; the first row of the returned matrix is
@@ -164,10 +165,11 @@ def toeplitz(c, r=None):
     A : (len(c), len(r)) ndarray
         The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     circulant : circulant matrix
     hankel : Hankel matrix
+    solve_toeplitz : Solve a Toeplitz system.
 
     Notes
     -----
@@ -193,14 +195,12 @@ def toeplitz(c, r=None):
         r = c.conjugate()
     else:
         r = np.asarray(r).ravel()
-    # Form a 1D array of values to be used in the matrix, containing a reversed
-    # copy of r[1:], followed by c.
-    vals = np.concatenate((r[-1:0:-1], c))
-    a, b = np.ogrid[0:len(c), len(r) - 1:-1:-1]
-    indx = a + b
-    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so
-    # that `vals[indx]` is the Toeplitz matrix.
-    return vals[indx]
+    # Form a 1D array containing a reversed c followed by r[1:] that could be
+    # strided to give us toeplitz matrix.
+    vals = np.concatenate((c[::-1], r[1:]))
+    out_shp = len(c), len(r)
+    n = vals.strides[0]
+    return as_strided(vals[len(c)-1:], shape=out_shp, strides=(-n, n)).copy()
 
 
 def circulant(c):
@@ -217,10 +217,11 @@ def circulant(c):
     A : (N, N) ndarray
         A circulant matrix whose first column is `c`.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     hankel : Hankel matrix
+    solve_circulant : Solve a circulant system.
 
     Notes
     -----
@@ -236,11 +237,11 @@ def circulant(c):
 
     """
     c = np.asarray(c).ravel()
-    a, b = np.ogrid[0:len(c), 0:-len(c):-1]
-    indx = a + b
-    # `indx` is a 2D array of indices into `c`, arranged so that `c[indx]` is
-    # the circulant matrix.
-    return c[indx]
+    # Form an extended array that could be strided to give circulant version
+    c_ext = np.concatenate((c[::-1], c[:0:-1]))
+    L = len(c)
+    n = c_ext.strides[0]
+    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
 
 
 def hankel(c, r=None):
@@ -256,7 +257,7 @@ def hankel(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like
+    r : array_like, optional
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
         ``[c[-1], r[1:]]``.  Whatever the actual shape of `r`, it will be
@@ -267,7 +268,7 @@ def hankel(c, r=None):
     A : (len(c), len(r)) ndarray
         The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     circulant : circulant matrix
@@ -294,11 +295,10 @@ def hankel(c, r=None):
     # Form a 1D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
     vals = np.concatenate((c, r[1:]))
-    a, b = np.ogrid[0:len(c), 0:len(r)]
-    indx = a + b
-    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so
-    # that `vals[indx]` is the Hankel matrix.
-    return vals[indx]
+    # Stride on concatenated array to get hankel matrix
+    out_shp = len(c), len(r)
+    n = vals.strides[0]
+    return as_strided(vals, shape=out_shp, strides=(n, n)).copy()
 
 
 def hadamard(n, dtype=int):
@@ -312,7 +312,7 @@ def hadamard(n, dtype=int):
     ----------
     n : int
         The order of the matrix.  `n` must be a power of 2.
-    dtype : numpy dtype
+    dtype : dtype, optional
         The data type of the array to be constructed.
 
     Returns
@@ -363,7 +363,8 @@ def leslie(f, s):
     Create a Leslie matrix.
 
     Given the length n array of fecundity coefficients `f` and the length
-    n-1 array of survival coefficents `s`, return the associated Leslie matrix.
+    n-1 array of survival coefficients `s`, return the associated Leslie
+    matrix.
 
     Parameters
     ----------
@@ -429,11 +430,6 @@ def leslie(f, s):
     return a
 
 
-@np.deprecate
-def all_mat(*args):
-    return list(map(np.matrix, args))
-
-
 def kron(a, b):
     """
     Kronecker product.
@@ -489,7 +485,7 @@ def block_diag(*arrs):
     Parameters
     ----------
     A, B, C, ... : array_like, up to 2-D
-        Input arrays.  A 1-D array or array_like sequence of length `n`is
+        Input arrays.  A 1-D array or array_like sequence of length `n` is
         treated as a 2-D array with shape ``(1,n)``.
 
     Returns
@@ -503,6 +499,9 @@ def block_diag(*arrs):
     If all the input arrays are square, the output is known as a
     block diagonal matrix.
 
+    Empty sequences (i.e., array-likes of zero size) will not be ignored.
+    Noteworthy, both [] and [[]] are treated as matrices with shape ``(1,0)``.
+
     Examples
     --------
     >>> from scipy.linalg import block_diag
@@ -511,12 +510,21 @@ def block_diag(*arrs):
     >>> B = [[3, 4, 5],
     ...      [6, 7, 8]]
     >>> C = [[7]]
+    >>> P = np.zeros((2, 0), dtype='int32')
     >>> block_diag(A, B, C)
-    [[1 0 0 0 0 0]
-     [0 1 0 0 0 0]
-     [0 0 3 4 5 0]
-     [0 0 6 7 8 0]
-     [0 0 0 0 0 7]]
+    array([[1, 0, 0, 0, 0, 0],
+           [0, 1, 0, 0, 0, 0],
+           [0, 0, 3, 4, 5, 0],
+           [0, 0, 6, 7, 8, 0],
+           [0, 0, 0, 0, 0, 7]])
+    >>> block_diag(A, P, B, C)
+    array([[1, 0, 0, 0, 0, 0],
+           [0, 1, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 3, 4, 5, 0],
+           [0, 0, 6, 7, 8, 0],
+           [0, 0, 0, 0, 0, 7]])
     >>> block_diag(1.0, [2, 3], [[4, 5], [6, 7]])
     array([[ 1.,  0.,  0.,  0.,  0.],
            [ 0.,  2.,  3.,  0.,  0.],
@@ -531,10 +539,11 @@ def block_diag(*arrs):
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
         raise ValueError("arguments in the following positions have dimension "
-                            "greater than 2: %s" % bad_args)
+                         "greater than 2: %s" % bad_args)
 
     shapes = np.array([a.shape for a in arrs])
-    out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
+    out_dtype = np.find_common_type([arr.dtype for arr in arrs], [])
+    out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(shapes):
@@ -608,6 +617,51 @@ def companion(a):
     return c
 
 
+def helmert(n, full=False):
+    """
+    Create a Helmert matrix of order `n`.
+
+    This has applications in statistics, compositional or simplicial analysis,
+    and in Aitchison geometry.
+
+    Parameters
+    ----------
+    n : int
+        The size of the array to create.
+    full : bool, optional
+        If True the (n, n) ndarray will be returned.
+        Otherwise the submatrix that does not include the first
+        row will be returned.
+        Default: False.
+
+    Returns
+    -------
+    M : ndarray
+        The Helmert matrix.
+        The shape is (n, n) or (n-1, n) depending on the `full` argument.
+
+    Examples
+    --------
+    >>> from scipy.linalg import helmert
+    >>> helmert(5, full=True)
+    array([[ 0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ],
+           [ 0.70710678, -0.70710678,  0.        ,  0.        ,  0.        ],
+           [ 0.40824829,  0.40824829, -0.81649658,  0.        ,  0.        ],
+           [ 0.28867513,  0.28867513,  0.28867513, -0.8660254 ,  0.        ],
+           [ 0.2236068 ,  0.2236068 ,  0.2236068 ,  0.2236068 , -0.89442719]])
+
+    """
+    H = np.tril(np.ones((n, n)), -1) - np.diag(np.arange(n))
+    d = np.arange(n) * np.arange(1, n+1)
+    H[0] = 1
+    d[0] = n
+    H_full = H / np.sqrt(d)[:, np.newaxis]
+    if full:
+        return H_full
+    else:
+        return H_full[1:]
+
+
 def hilbert(n):
     """
     Create a Hilbert matrix of order `n`.
@@ -659,7 +713,7 @@ def invhilbert(n, exact=False):
     ----------
     n : int
         The order of the Hilbert matrix.
-    exact : bool
+    exact : bool, optional
         If False, the data type of the array that is returned is np.float64,
         and the array is an approximation of the inverse.
         If True, the array is the exact integer inverse array.  To represent
@@ -730,8 +784,6 @@ def pascal(n, kind='symmetric', exact=True):
     The Pascal matrix is a matrix containing the binomial coefficients as
     its elements.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     n : int
@@ -742,7 +794,7 @@ def pascal(n, kind='symmetric', exact=True):
         Default is 'symmetric'.
     exact : bool, optional
         If `exact` is True, the result is either an array of type
-        numpy.uint64 (if n <= 35) or an object array of Python long integers.
+        numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
         `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and the values in the array will not be the exact
@@ -753,10 +805,16 @@ def pascal(n, kind='symmetric', exact=True):
     p : (n, n) ndarray
         The Pascal matrix.
 
+    See Also
+    --------
+    invpascal
+
     Notes
     -----
-    See http://en.wikipedia.org/wiki/Pascal_matrix for more information
+    See https://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -784,7 +842,7 @@ def pascal(n, kind='symmetric', exact=True):
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 
     if exact:
-        if n > 35:
+        if n >= 35:
             L_n = np.empty((n, n), dtype=object)
             L_n.fill(0)
         else:
@@ -795,14 +853,124 @@ def pascal(n, kind='symmetric', exact=True):
     else:
         L_n = comb(*np.ogrid[:n, :n])
 
-    if kind is 'lower':
+    if kind == 'lower':
         p = L_n
-    elif kind is 'upper':
+    elif kind == 'upper':
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)
 
     return p
+
+
+def invpascal(n, kind='symmetric', exact=True):
+    """
+    Returns the inverse of the n x n Pascal matrix.
+
+    The Pascal matrix is a matrix containing the binomial coefficients as
+    its elements.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrix to create; that is, the result is an n x n
+        matrix.
+    kind : str, optional
+        Must be one of 'symmetric', 'lower', or 'upper'.
+        Default is 'symmetric'.
+    exact : bool, optional
+        If `exact` is True, the result is either an array of type
+        ``numpy.int64`` (if `n` <= 35) or an object array of Python integers.
+        If `exact` is False, the coefficients in the matrix are computed using
+        `scipy.special.comb` with `exact=False`.  The result will be a floating
+        point array, and for large `n`, the values in the array will not be the
+        exact coefficients.
+
+    Returns
+    -------
+    invp : (n, n) ndarray
+        The inverse of the Pascal matrix.
+
+    See Also
+    --------
+    pascal
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] "Pascal matrix", https://en.wikipedia.org/wiki/Pascal_matrix
+    .. [2] Cohen, A. M., "The inverse of a Pascal matrix", Mathematical
+           Gazette, 59(408), pp. 111-112, 1975.
+
+    Examples
+    --------
+    >>> from scipy.linalg import invpascal, pascal
+    >>> invp = invpascal(5)
+    >>> invp
+    array([[  5, -10,  10,  -5,   1],
+           [-10,  30, -35,  19,  -4],
+           [ 10, -35,  46, -27,   6],
+           [ -5,  19, -27,  17,  -4],
+           [  1,  -4,   6,  -4,   1]])
+
+    >>> p = pascal(5)
+    >>> p.dot(invp)
+    array([[ 1.,  0.,  0.,  0.,  0.],
+           [ 0.,  1.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  1.,  0.],
+           [ 0.,  0.,  0.,  0.,  1.]])
+
+    An example of the use of `kind` and `exact`:
+
+    >>> invpascal(5, kind='lower', exact=False)
+    array([[ 1., -0.,  0., -0.,  0.],
+           [-1.,  1., -0.,  0., -0.],
+           [ 1., -2.,  1., -0.,  0.],
+           [-1.,  3., -3.,  1., -0.],
+           [ 1., -4.,  6., -4.,  1.]])
+
+    """
+    from scipy.special import comb
+
+    if kind not in ['symmetric', 'lower', 'upper']:
+        raise ValueError("'kind' must be 'symmetric', 'lower' or 'upper'.")
+
+    if kind == 'symmetric':
+        if exact:
+            if n > 34:
+                dt = object
+            else:
+                dt = np.int64
+        else:
+            dt = np.float64
+        invp = np.empty((n, n), dtype=dt)
+        for i in range(n):
+            for j in range(0, i + 1):
+                v = 0
+                for k in range(n - i):
+                    v += comb(i + k, k, exact=exact) * comb(i + k, i + k - j,
+                                                            exact=exact)
+                invp[i, j] = (-1)**(i - j) * v
+                if i != j:
+                    invp[j, i] = invp[i, j]
+    else:
+        # For the 'lower' and 'upper' cases, we computer the inverse by
+        # changing the sign of every other diagonal of the pascal matrix.
+        invp = pascal(n, kind=kind, exact=exact)
+        if invp.dtype == np.uint64:
+            # This cast from np.uint64 to int64 OK, because if `kind` is not
+            # "symmetric", the values in invp are all much less than 2**63.
+            invp = invp.view(np.int64)
+
+        # The toeplitz matrix has alternating bands of 1 and -1.
+        invp *= toeplitz((-1)**np.arange(n)).astype(invp.dtype)
+
+    return invp
 
 
 def dft(n, scale=None):
@@ -839,14 +1007,15 @@ def dft(n, scale=None):
 
     References
     ----------
-    .. [1] "DFT matrix", http://en.wikipedia.org/wiki/DFT_matrix
+    .. [1] "DFT matrix", https://en.wikipedia.org/wiki/DFT_matrix
 
     Examples
     --------
+    >>> from scipy.linalg import dft
     >>> np.set_printoptions(precision=5, suppress=True)
     >>> x = np.array([1, 2, 3, 0, 3, 2, 1, 0])
     >>> m = dft(8)
-    >>> m.dot(x)   # Comute the DFT of x
+    >>> m.dot(x)   # Compute the DFT of x
     array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
             -0.+4.j,  -2.+2.j])
 
@@ -868,3 +1037,156 @@ def dft(n, scale=None):
     elif scale == 'n':
         m /= n
     return m
+
+
+def fiedler(a):
+    """Returns a symmetric Fiedler matrix
+
+    Given an sequence of numbers `a`, Fiedler matrices have the structure
+    ``F[i, j] = np.abs(a[i] - a[j])``, and hence zero diagonals and nonnegative
+    entries. A Fiedler matrix has a dominant positive eigenvalue and other
+    eigenvalues are negative. Although not valid generally, for certain inputs,
+    the inverse and the determinant can be derived explicitly as given in [1]_.
+
+    Parameters
+    ----------
+    a : (n,) array_like
+        coefficient array
+
+    Returns
+    -------
+    F : (n, n) ndarray
+
+    See Also
+    --------
+    circulant, toeplitz
+
+    Notes
+    -----
+
+    .. versionadded:: 1.3.0
+
+    References
+    ----------
+    .. [1] J. Todd, "Basic Numerical Mathematics: Vol.2 : Numerical Algebra",
+        1977, Birkhauser, :doi:`10.1007/978-3-0348-7286-7`
+
+    Examples
+    --------
+    >>> from scipy.linalg import det, inv, fiedler
+    >>> a = [1, 4, 12, 45, 77]
+    >>> n = len(a)
+    >>> A = fiedler(a)
+    >>> A
+    array([[ 0,  3, 11, 44, 76],
+           [ 3,  0,  8, 41, 73],
+           [11,  8,  0, 33, 65],
+           [44, 41, 33,  0, 32],
+           [76, 73, 65, 32,  0]])
+
+    The explicit formulas for determinant and inverse seem to hold only for
+    monotonically increasing/decreasing arrays. Note the tridiagonal structure
+    and the corners.
+
+    >>> Ai = inv(A)
+    >>> Ai[np.abs(Ai) < 1e-12] = 0.  # cleanup the numerical noise for display
+    >>> Ai
+    array([[-0.16008772,  0.16666667,  0.        ,  0.        ,  0.00657895],
+           [ 0.16666667, -0.22916667,  0.0625    ,  0.        ,  0.        ],
+           [ 0.        ,  0.0625    , -0.07765152,  0.01515152,  0.        ],
+           [ 0.        ,  0.        ,  0.01515152, -0.03077652,  0.015625  ],
+           [ 0.00657895,  0.        ,  0.        ,  0.015625  , -0.00904605]])
+    >>> det(A)
+    15409151.999999998
+    >>> (-1)**(n-1) * 2**(n-2) * np.diff(a).prod() * (a[-1] - a[0])
+    15409152
+
+    """
+    a = np.atleast_1d(a)
+
+    if a.ndim != 1:
+        raise ValueError("Input 'a' must be a 1D array.")
+
+    if a.size == 0:
+        return np.array([], dtype=float)
+    elif a.size == 1:
+        return np.array([[0.]])
+    else:
+        return np.abs(a[:, None] - a)
+
+
+def fiedler_companion(a):
+    """ Returns a Fiedler companion matrix
+
+    Given a polynomial coefficient array ``a``, this function forms a
+    pentadiagonal matrix with a special structure whose eigenvalues coincides
+    with the roots of ``a``.
+
+    Parameters
+    ----------
+    a : (N,) array_like
+        1-D array of polynomial coefficients in descending order with a nonzero
+        leading coefficient. For ``N < 2``, an empty array is returned.
+
+    Returns
+    -------
+    c : (N-1, N-1) ndarray
+        Resulting companion matrix
+
+    Notes
+    -----
+    Similar to `companion` the leading coefficient should be nonzero. In case
+    the leading coefficient is not 1., other coefficients are rescaled before
+    the array generation. To avoid numerical issues, it is best to provide a
+    monic polynomial.
+
+    .. versionadded:: 1.3.0
+
+    See Also
+    --------
+    companion
+
+    References
+    ----------
+    .. [1] M. Fiedler, " A note on companion matrices", Linear Algebra and its
+        Applications, 2003, :doi:`10.1016/S0024-3795(03)00548-2`
+
+    Examples
+    --------
+    >>> from scipy.linalg import fiedler_companion, eigvals
+    >>> p = np.poly(np.arange(1, 9, 2))  # [1., -16., 86., -176., 105.]
+    >>> fc = fiedler_companion(p)
+    >>> fc
+    array([[  16.,  -86.,    1.,    0.],
+           [   1.,    0.,    0.,    0.],
+           [   0.,  176.,    0., -105.],
+           [   0.,    1.,    0.,    0.]])
+    >>> eigvals(fc)
+    array([7.+0.j, 5.+0.j, 3.+0.j, 1.+0.j])
+
+    """
+    a = np.atleast_1d(a)
+
+    if a.ndim != 1:
+        raise ValueError("Input 'a' must be a 1D array.")
+
+    if a.size <= 2:
+        if a.size == 2:
+            return np.array([[-(a/a[0])[-1]]])
+        return np.array([], dtype=a.dtype)
+
+    if a[0] == 0.:
+        raise ValueError('Leading coefficient is zero.')
+
+    a = a/a[0]
+    n = a.size - 1
+    c = np.zeros((n, n), dtype=a.dtype)
+    # subdiagonals
+    c[range(3, n, 2), range(1, n-2, 2)] = 1.
+    c[range(2, n, 2), range(1, n-1, 2)] = -a[3::2]
+    # superdiagonals
+    c[range(0, n-2, 2), range(2, n, 2)] = 1.
+    c[range(0, n-1, 2), range(1, n, 2)] = -a[2::2]
+    c[[0, 1], 0] = [-a[1], 1]
+
+    return c

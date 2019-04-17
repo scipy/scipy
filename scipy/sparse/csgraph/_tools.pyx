@@ -5,6 +5,8 @@ Tools and utilities for working with compressed sparse graphs
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2012
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 
@@ -29,7 +31,29 @@ def csgraph_from_masked(graph):
     Returns
     -------
     csgraph : csr_matrix
-        Compressed sparse representation of graph, 
+        Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.csgraph import csgraph_from_masked
+
+    >>> graph_masked = np.ma.masked_array(data =[
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ...  ],
+    ... mask=[[ True, False, False , True],
+    ... [ True,  True , True, False],
+    ... [ True , True,  True ,False],
+    ... [ True ,True , True , True]],
+    ... fill_value = 0)
+
+    >>> csgraph_from_masked(graph_masked)
+    <4x4 sparse matrix of type '<class 'numpy.float64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
     """
     # check that graph is a square matrix
     graph = np.ma.asarray(graph)
@@ -41,12 +65,8 @@ def csgraph_from_masked(graph):
         raise ValueError("graph should be a square array")
 
     # construct the csr matrix using graph and mask
-    if np.ma.is_masked(graph):
-        data = graph.compressed()
-        mask = ~graph.mask
-    else:
-        data = graph.data
-        mask = np.ones(graph.shape, dtype='bool')
+    data = graph.compressed()
+    mask = ~graph.mask
 
     data = np.asarray(data, dtype=DTYPE, order='c')
 
@@ -89,6 +109,30 @@ def csgraph_masked_from_dense(graph,
     -------
     csgraph : MaskedArray
         masked array representation of graph
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_masked_from_dense
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+
+    >>> csgraph_masked_from_dense(graph)
+    masked_array(
+      data=[[--, 1, 2, --],
+            [--, --, --, 1],
+            [--, --, --, 3],
+            [--, --, --, --]],
+      mask=[[ True, False, False,  True],
+            [ True,  True,  True, False],
+            [ True,  True,  True, False],
+            [ True,  True,  True,  True]],
+      fill_value=0)
+
     """
     graph = np.array(graph, copy=copy)
 
@@ -101,14 +145,14 @@ def csgraph_masked_from_dense(graph,
 
     # check whether null_value is infinity or NaN
     if null_value is not None:
-        null_value = DTYPE(null_value)        
+        null_value = DTYPE(null_value)
         if np.isnan(null_value):
             nan_null = True
             null_value = None
         elif np.isinf(null_value):
             infinity_null = True
             null_value = None
-    
+
     # flag all the null edges
     if null_value is None:
         mask = np.zeros(graph.shape, dtype='bool')
@@ -151,7 +195,23 @@ def csgraph_from_dense(graph,
     Returns
     -------
     csgraph : csr_matrix
-        Compressed sparse representation of graph, 
+        Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_from_dense
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+
+    >>> csgraph_from_dense(graph)
+    <4x4 sparse matrix of type '<class 'numpy.float64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
                                                          null_value,
@@ -192,7 +252,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     graph with multiple edges from node 0 to node 1, of weights 2 and 3.
     This illustrates the difference in behavior:
 
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_matrix, csgraph
     >>> data = np.array([2, 3])
     >>> indices = np.array([1, 1])
     >>> indptr = np.array([0, 2, 2])
@@ -200,9 +260,9 @@ def csgraph_to_dense(csgraph, null_value=0):
     >>> M.toarray()
     array([[0, 5],
            [0, 0]])
-    >>> csgraph_to_dense(M)
-    array([[0, 2],
-           [0, 0]])
+    >>> csgraph.csgraph_to_dense(M)
+    array([[0., 2.],
+           [0., 0.]])
 
     The reason for this difference is to allow a compressed sparse graph to
     represent multiple edges between any two nodes.  As most sparse graph
@@ -214,21 +274,43 @@ def csgraph_to_dense(csgraph, null_value=0):
     zero-weight edges.  Let's look at the example of a two-node directed
     graph, connected by an edge of weight zero:
 
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_matrix, csgraph
     >>> data = np.array([0.0])
     >>> indices = np.array([1])
-    >>> indptr = np.array([0, 2, 2])
+    >>> indptr = np.array([0, 1, 1])
     >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
     >>> M.toarray()
     array([[0, 0],
            [0, 0]])
-    >>> csgraph_to_dense(M, np.inf)
-    array([[ Inf,   0.],
-           [ Inf,  Inf]])
+    >>> csgraph.csgraph_to_dense(M, np.inf)
+    array([[ inf,   0.],
+           [ inf,  inf]])
 
     In the first case, the zero-weight edge gets lost in the dense
     representation.  In the second case, we can choose a different null value
     and see the true form of the graph.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_dense
+
+    >>> graph = csr_matrix( [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_dense(graph)
+    array([[ 0.,  1.,  2.,  0.],
+           [ 0.,  0.,  0.,  1.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
+
     """
     # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
@@ -270,6 +352,34 @@ def csgraph_to_masked(csgraph):
     -------
     graph : MaskedArray
         The masked dense representation of the sparse graph.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_masked
+
+    >>> graph = csr_matrix( [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_masked(graph)
+    masked_array(
+      data=[[--, 1.0, 2.0, --],
+            [--, --, --, 1.0],
+            [--, --, --, 3.0],
+            [--, --, --, --]],
+      mask=[[ True, False, False,  True],
+            [ True,  True,  True, False],
+            [ True,  True,  True, False],
+            [ True,  True,  True,  True]],
+      fill_value=1e+20)
+
     """
     return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
 
@@ -287,8 +397,8 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
     cdef np.npy_bool* null_ptr = <np.npy_bool*> null_flag.data
     cdef unsigned int row, col, i
 
-    for row from 0 <= row < N:
-        for i from indptr[row] <= i < indptr[row + 1]:
+    for row in range(N):
+        for i in range(indptr[row], indptr[row + 1]):
             col = indices[i]
             null_ptr[col] = 0
             # in case of multiple edges, we'll choose the smallest
@@ -326,8 +436,36 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     cstree : csr matrix
         The N x N directed compressed-sparse representation of the tree drawn
         from csgraph which is encoded by the predecessor list.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reconstruct_path
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> pred = np.array([-9999, 0, 0, 1], dtype=np.int32)
+
+    >>> cstree = reconstruct_path(csgraph=graph, predecessors=pred, directed=False)
+    >>> cstree.todense()
+    matrix([[ 0.,  1.,  2.,  0.],
+            [ 0.,  0.,  0.,  1.],
+            [ 0.,  0.,  0.,  0.],
+            [ 0.,  0.,  0.,  0.]])
+
     """
-    from _validation import validate_graph
+    from ._validation import validate_graph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -338,16 +476,23 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     pind = predecessors[indices]
     indptr = pind.searchsorted(np.arange(N + 1)).astype(ITYPE)
 
-    if directed == True:
-        data = csgraph[pind, indices]
-    else:
-        data1 = csgraph[pind, indices]
-        data2 = csgraph[indices, pind]
-        data1[data1 == 0] = np.inf
-        data2[data2 == 0] = np.inf
-        data = np.minimum(data1, data2)
+    data = csgraph[pind, indices]
 
-    data = np.asarray(data).ravel()
+    # Fix issue #4018:
+    # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
+    # (it is a numpy.matrix otherwise); handle this case separately.
+    if isspmatrix(data):
+        data = data.todense()
+    data = data.getA1()
+
+    if not directed:
+        data2 = csgraph[indices, pind]
+        if isspmatrix(data2):
+            data2 = data2.todense()
+        data2 = data2.getA1()
+        data[data == 0] = np.inf
+        data2[data2 == 0] = np.inf
+        data = np.minimum(data, data2)
 
     return csr_matrix((data, indices, indptr), shape=(N, N))
 
@@ -388,13 +533,43 @@ def construct_dist_matrix(graph,
     Notes
     -----
     The predecessor matrix is of the form returned by
-    :func:`graph_shortest_path`.  Row i of the predecessor matrix contains
+    `shortest_path`.  Row i of the predecessor matrix contains
     information on the shortest paths from point i: each entry
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import construct_dist_matrix
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> pred = np.array([[-9999, 0, 0, 2],
+    ... [1, -9999, 0, 1],
+    ... [2, 0, -9999, 2],
+    ... [1, 3, 3, -9999]], dtype=np.int32)
+
+    >>> construct_dist_matrix(graph=graph, predecessors=pred, directed=False)
+    array([[ 0.,  1.,  2.,  5.],
+           [ 1.,  0.,  3.,  1.],
+           [ 2.,  3.,  0.,  3.],
+           [ 2.,  1.,  3.,  0.]])
+
     """
-    from _validation import validate_graph
+    from ._validation import validate_graph
     graph = validate_graph(graph, directed, dtype=DTYPE,
                            csr_output=False,
                            copy_if_dense=not directed)
@@ -406,7 +581,7 @@ def construct_dist_matrix(graph,
     dist_matrix = np.zeros(graph.shape, dtype=DTYPE)
     _construct_dist_matrix(graph, predecessors, dist_matrix,
                            directed, null_value)
-    
+
     return dist_matrix
 
 
@@ -427,16 +602,16 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
     # symmetrize matrix if necessary
     if not directed:
         graph[graph == 0] = np.inf
-        for i from 0 <= i < N:
-            for j from i + 1 <= j < N:
+        for i in range(N):
+            for j in range(i + 1, N):
                 if graph[j, i] <= graph[i, j]:
                     graph[i, j] = graph[j, i]
                 else:
                     graph[j, i] = graph[i, j]
     #------------------------------------------
 
-    for i from 0 <= i < N:
-        for j from 0 <= j < N:
+    for i in range(N):
+        for j in range(N):
             null_path = True
             k2 = j
             while k2 != i:

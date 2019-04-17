@@ -1,24 +1,58 @@
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['fixed_quad','quadrature','romberg','trapz','simps','romb',
-           'cumtrapz','newton_cotes']
-
-from scipy.special.orthogonal import p_roots
-from scipy.special import gammaln
-from numpy import sum, ones, add, diff, isinf, isscalar, \
-     asarray, real, trapz, arange, empty
+import functools
 import numpy as np
 import math
+import sys
+import types
 import warnings
 
-from scipy.lib.six import xrange
+# trapz is a public function for scipy.integrate,
+# even though it's actually a numpy function.
+from numpy import trapz
+from scipy.special import roots_legendre
+from scipy.special import gammaln
+from scipy._lib.six import xrange
+
+__all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
+           'cumtrapz', 'newton_cotes']
+
+
+# Make See Also linking for our local copy work properly
+def _copy_func(f):
+    """Based on http://stackoverflow.com/a/6528148/190597 (Glenn Maynard)"""
+    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
+                           argdefs=f.__defaults__, closure=f.__closure__)
+    g = functools.update_wrapper(g, f)
+    g.__kwdefaults__ = f.__kwdefaults__
+    return g
+
+
+trapz = _copy_func(trapz)
+if sys.flags.optimize <= 1:
+    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
 
 
 class AccuracyWarning(Warning):
     pass
 
 
-def fixed_quad(func,a,b,args=(),n=5):
+def _cached_roots_legendre(n):
+    """
+    Cache roots_legendre results to speed up calls of the fixed_quad
+    function.
+    """
+    if n in _cached_roots_legendre.cache:
+        return _cached_roots_legendre.cache[n]
+
+    _cached_roots_legendre.cache[n] = roots_legendre(n)
+    return _cached_roots_legendre.cache[n]
+
+
+_cached_roots_legendre.cache = dict()
+
+
+def fixed_quad(func, a, b, args=(), n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
 
@@ -29,6 +63,8 @@ def fixed_quad(func,a,b,args=(),n=5):
     ----------
     func : callable
         A Python function or method to integrate (must accept vector inputs).
+        If integrating a vector-valued function, the returned array must have
+        shape ``(..., len(x))``.
     a : float
         Lower limit of integration.
     b : float
@@ -42,6 +78,9 @@ def fixed_quad(func,a,b,args=(),n=5):
     -------
     val : float
         Gaussian quadrature approximation to the integral
+    none : None
+        Statically returned value of None
+
 
     See Also
     --------
@@ -56,15 +95,32 @@ def fixed_quad(func,a,b,args=(),n=5):
     ode : ODE integrator
     odeint : ODE integrator
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
+    (0.1110884353741496, None)
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=5)
+    (0.11111111111111102, None)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=4)
+    (0.9999999771971152, None)
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=5)
+    (1.000000000039565, None)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
+
     """
-    [x,w] = p_roots(n)
-    x = real(x)
-    ainf, binf = map(isinf,(a,b))
-    if ainf or binf:
+    x, w = _cached_roots_legendre(n)
+    x = np.real(x)
+    if np.isinf(a) or np.isinf(b):
         raise ValueError("Gaussian quadrature is only available for "
-                "finite limits.")
+                         "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0*sum(w*func(y,*args),0), None
+    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1), None
 
 
 def vectorize1(func, args=(), vec_func=False):
@@ -80,9 +136,9 @@ def vectorize1(func, args=(), vec_func=False):
     ----------
     func : callable
         User defined function.
-    args : tuple
+    args : tuple, optional
         Extra arguments for the function.
-    vec_func : bool
+    vec_func : bool, optional
         True if the function func takes vector arguments.
 
     Returns
@@ -97,16 +153,14 @@ def vectorize1(func, args=(), vec_func=False):
             return func(x, *args)
     else:
         def vfunc(x):
-            if isscalar(x):
+            if np.isscalar(x):
                 return func(x, *args)
-            x = asarray(x)
+            x = np.asarray(x)
             # call with first point to get output type
             y0 = func(x[0], *args)
             n = len(x)
-            if hasattr(y0, 'dtype'):
-                output = empty((n,), dtype=y0.dtype)
-            else:
-                output = empty((n,), dtype=type(y0))
+            dtype = getattr(y0, 'dtype', type(y0))
+            output = np.empty((n,), dtype=dtype)
             output[0] = y0
             for i in xrange(1, n):
                 output[i] = func(x[i], *args)
@@ -132,7 +186,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
         Upper limit of integration.
     args : tuple, optional
         Extra arguments to pass to function.
-    tol, rol : float, optional
+    tol, rtol : float, optional
         Iteration stops when error between last two iterates is less than
         `tol` OR the relative change is less than `rtol`.
     maxiter : int, optional
@@ -162,6 +216,20 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.quadrature(f, 0.0, 1.0)
+    (0.11111111111111106, 4.163336342344337e-17)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.quadrature(np.cos, 0.0, np.pi/2)
+    (0.9999999999999536, 3.9611425250996035e-11)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
 
     """
     if not isinstance(args, tuple):
@@ -201,12 +269,12 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     x : array_like, optional
         The coordinate to integrate along.  If None (default), use spacing `dx`
         between consecutive elements in `y`.
-    dx : int, optional
+    dx : float, optional
         Spacing between elements of `y`.  Only used if `x` is None.
     axis : int, optional
         Specifies the axis to cumulate.  Default is -1 (last axis).
     initial : scalar, optional
-        If given, uses this value as the first value in the returned result.
+        If given, insert this value at the beginning of the returned result.
         Typically this value should be 0.  Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration.
@@ -244,22 +312,22 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-    y = asarray(y)
+    y = np.asarray(y)
     if x is None:
         d = dx
     else:
-        x = asarray(x)
+        x = np.asarray(x)
         if x.ndim == 1:
-            d = diff(x)
+            d = np.diff(x)
             # reshape to correct shape
             shape = [1] * y.ndim
             shape[axis] = -1
             d = d.reshape(shape)
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-d or the "
-                    "same as y.")
+                             "same as y.")
         else:
-            d = diff(x, axis=axis)
+            d = np.diff(x, axis=axis)
 
         if d.shape[axis] != y.shape[axis] - 1:
             raise ValueError("If given, length of x along axis must be the "
@@ -268,7 +336,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
-    res = add.accumulate(d * (y[slice1] + y[slice2]) / 2.0, axis)
+    res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
         if not np.isscalar(initial):
@@ -276,39 +344,40 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.ones(shape, dtype=res.dtype) * initial, res],
+        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
                              axis=axis)
 
     return res
 
 
-def _basic_simps(y,start,stop,x,dx,axis):
+def _basic_simps(y, start, stop, x, dx, axis):
     nd = len(y.shape)
     if start is None:
         start = 0
     step = 2
-    all = (slice(None),)*nd
-    slice0 = tupleset(all, axis, slice(start, stop, step))
-    slice1 = tupleset(all, axis, slice(start+1, stop+1, step))
-    slice2 = tupleset(all, axis, slice(start+2, stop+2, step))
+    slice_all = (slice(None),)*nd
+    slice0 = tupleset(slice_all, axis, slice(start, stop, step))
+    slice1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
+    slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even spaced Simpson's rule.
-        result = add.reduce(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
-                                    axis)
+        result = np.sum(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
+                        axis=axis)
     else:
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
-        h = diff(x,axis=axis)
-        sl0 = tupleset(all, axis, slice(start, stop, step))
-        sl1 = tupleset(all, axis, slice(start+1, stop+1, step))
+        h = np.diff(x, axis=axis)
+        sl0 = tupleset(slice_all, axis, slice(start, stop, step))
+        sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
         h0 = h[sl0]
         h1 = h[sl1]
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = h0 / h1
-        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) +
-                                              y[slice1]*hsum*hsum/hprod +
-                                              y[slice2]*(2-h0divh1)),axis)
+        tmp = hsum/6.0 * (y[slice0]*(2-1.0/h0divh1) +
+                          y[slice1]*hsum*hsum/hprod +
+                          y[slice2]*(2-h0divh1))
+        result = np.sum(tmp, axis=axis)
     return result
 
 
@@ -332,7 +401,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : {'avg', 'first', 'str'}, optional
+    even : str {'avg', 'first', 'last'}, optional
         'avg' : Average two results:1) use the first N-2 intervals with
                   a trapezoidal rule on the last interval and 2) use the last
                   N-2 intervals with a trapezoidal rule on the first interval.
@@ -363,56 +432,75 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(0, 10)
+    >>> y = np.arange(0, 10)
+
+    >>> integrate.simps(y, x)
+    40.5
+
+    >>> y = np.power(x, 3)
+    >>> integrate.simps(y, x)
+    1642.5
+    >>> integrate.quad(lambda x: x**3, 0, 9)[0]
+    1640.25
+
+    >>> integrate.simps(y, x, even='first')
+    1644.5
+
     """
-    y = asarray(y)
+    y = np.asarray(y)
     nd = len(y.shape)
     N = y.shape[axis]
     last_dx = dx
     first_dx = dx
     returnshape = 0
-    if not x is None:
-        x = asarray(x)
+    if x is not None:
+        x = np.asarray(x)
         if len(x.shape) == 1:
-            shapex = ones(nd)
+            shapex = [1] * nd
             shapex[axis] = x.shape[0]
             saveshape = x.shape
             returnshape = 1
             x = x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-d or the "
-                    "same as y.")
+                             "same as y.")
         if x.shape[axis] != N:
             raise ValueError("If given, length of x along axis must be the "
-                    "same as y.")
+                             "same as y.")
     if N % 2 == 0:
         val = 0.0
         result = 0.0
         slice1 = (slice(None),)*nd
         slice2 = (slice(None),)*nd
-        if not even in ['avg', 'last', 'first']:
-            raise ValueError("Parameter 'even' must be 'avg', 'last', or 'first'.")
+        if even not in ['avg', 'last', 'first']:
+            raise ValueError("Parameter 'even' must be "
+                             "'avg', 'last', or 'first'.")
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
             slice1 = tupleset(slice1, axis, -1)
             slice2 = tupleset(slice2, axis, -2)
-            if not x is None:
+            if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
-            result = _basic_simps(y,0,N-3,x,dx,axis)
+            result = _basic_simps(y, 0, N-3, x, dx, axis)
         # Compute using Simpson's rule on last set of intervals
         if even in ['avg', 'last']:
             slice1 = tupleset(slice1, axis, 0)
             slice2 = tupleset(slice2, axis, 1)
-            if not x is None:
+            if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
-            result += _basic_simps(y,1,N-2,x,dx,axis)
+            result += _basic_simps(y, 1, N-2, x, dx, axis)
         if even == 'avg':
             val /= 2.0
             result /= 2.0
         result = result + val
     else:
-        result = _basic_simps(y,0,N-2,x,dx,axis)
+        result = _basic_simps(y, 0, N-2, x, dx, axis)
     if returnshape:
         x = x.reshape(saveshape)
     return result
@@ -426,7 +514,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ----------
     y : array_like
         A vector of ``2**k + 1`` equally-spaced samples of a function.
-    dx : array_like, optional
+    dx : float, optional
         The sample spacing. Default is 1.
     axis : int, optional
         The axis along which to integrate. Default is -1 (last axis).
@@ -453,8 +541,31 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ode : ODE integrators
     odeint : ODE integrators
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(10, 14.25, 0.25)
+    >>> y = np.arange(3, 12)
+
+    >>> integrate.romb(y)
+    56.0
+
+    >>> y = np.sin(np.power(x, 2.5))
+    >>> integrate.romb(y)
+    -0.742561336672229
+
+    >>> integrate.romb(y, show=True)
+    Richardson Extrapolation Table for Romberg Integration
+    ====================================================================
+    -0.81576
+    4.63862  6.45674
+    -1.10581 -3.02062 -3.65245
+    -2.57379 -3.06311 -3.06595 -3.05664
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
+    ====================================================================
+    -0.742561336672229
     """
-    y = asarray(y)
+    y = np.asarray(y)
     nd = len(y.shape)
     Nsamps = y.shape[axis]
     Ninterv = Nsamps-1
@@ -465,28 +576,28 @@ def romb(y, dx=1.0, axis=-1, show=False):
         k += 1
     if n != Ninterv:
         raise ValueError("Number of samples must be one plus a "
-                "non-negative power of 2.")
+                         "non-negative power of 2.")
 
     R = {}
-    all = (slice(None),) * nd
-    slice0 = tupleset(all, axis, 0)
-    slicem1 = tupleset(all, axis, -1)
-    h = Ninterv*asarray(dx)*1.0
-    R[(1,1)] = (y[slice0] + y[slicem1])/2.0*h
-    slice_R = all
+    slice_all = (slice(None),) * nd
+    slice0 = tupleset(slice_all, axis, 0)
+    slicem1 = tupleset(slice_all, axis, -1)
+    h = Ninterv * np.asarray(dx, dtype=float)
+    R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
+    slice_R = slice_all
     start = stop = step = Ninterv
-    for i in range(2,k+1):
+    for i in xrange(1, k+1):
         start >>= 1
-        slice_R = tupleset(slice_R, axis, slice(start,stop,step))
+        slice_R = tupleset(slice_R, axis, slice(start, stop, step))
         step >>= 1
-        R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
-        for j in range(2,i+1):
-            R[(i,j)] = R[(i,j-1)] + \
-                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*(j-1)))-1)
-        h = h / 2.0
+        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*y[slice_R].sum(axis=axis))
+        for j in xrange(1, i+1):
+            prev = R[(i, j-1)]
+            R[(i, j)] = prev + (prev-R[(i-1, j-1)]) / ((1 << (2*j))-1)
+        h /= 2.0
 
     if show:
-        if not isscalar(R[(1,1)]):
+        if not np.isscalar(R[(0, 0)]):
             print("*** Printing table only supported for integrals" +
                   " of a single data set.")
         else:
@@ -498,17 +609,18 @@ def romb(y, dx=1.0, axis=-1, show=False):
                 width = show[1]
             except (TypeError, IndexError):
                 width = 8
-            formstr = "%" + str(width) + '.' + str(precis)+'f'
+            formstr = "%%%d.%df" % (width, precis)
 
-            print("\n       Richardson Extrapolation Table for Romberg Integration       ")
-            print("====================================================================")
-            for i in range(1,k+1):
-                for j in range(1,i+1):
-                    print(formstr % R[(i,j)], end=' ')
+            title = "Richardson Extrapolation Table for Romberg Integration"
+            print("", title.center(68), "=" * 68, sep="\n", end="\n")
+            for i in xrange(k+1):
+                for j in xrange(i+1):
+                    print(formstr % R[(i, j)], end=" ")
                 print()
-            print("====================================================================\n")
+            print("=" * 68)
+            print()
 
-    return R[(k,k)]
+    return R[(k, k)]
 
 # Romberg quadratures for numeric integration.
 #
@@ -543,8 +655,8 @@ def _difftrap(function, interval, numtraps):
         numtosum = numtraps/2
         h = float(interval[1]-interval[0])/numtosum
         lox = interval[0] + 0.5 * h
-        points = lox + h * arange(0, numtosum)
-        s = sum(function(points),0)
+        points = lox + h * np.arange(numtosum)
+        s = np.sum(function(points), axis=0)
         return s
 
 
@@ -564,9 +676,9 @@ def _printresmat(function, interval, resmat):
     print('from', interval)
     print('')
     print('%6s %9s %9s' % ('Steps', 'StepSize', 'Results'))
-    for i in range(len(resmat)):
+    for i in xrange(len(resmat)):
         print('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
-        for j in range(i+1):
+        for j in xrange(i+1):
             print('%9f' % (resmat[i][j]), end=' ')
         print('')
     print('')
@@ -630,7 +742,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     References
     ----------
-    .. [1] 'Romberg's method' http://en.wikipedia.org/wiki/Romberg%27s_method
+    .. [1] 'Romberg's method' https://en.wikipedia.org/wiki/Romberg%27s_method
 
     Examples
     --------
@@ -658,29 +770,32 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     0.842701 0.842701
 
     """
-    if isinf(a) or isinf(b):
-        raise ValueError("Romberg integration only available for finite limits.")
+    if np.isinf(a) or np.isinf(b):
+        raise ValueError("Romberg integration only available "
+                         "for finite limits.")
     vfunc = vectorize1(function, args, vec_func=vec_func)
     n = 1
-    interval = [a,b]
-    intrange = b-a
+    interval = [a, b]
+    intrange = b - a
     ordsum = _difftrap(vfunc, interval, n)
     result = intrange * ordsum
     resmat = [[result]]
     err = np.inf
+    last_row = resmat[0]
     for i in xrange(1, divmax+1):
-        n = n * 2
-        ordsum = ordsum + _difftrap(vfunc, interval, n)
-        resmat.append([])
-        resmat[i].append(intrange * ordsum / n)
-        for k in range(i):
-            resmat[i].append(_romberg_diff(resmat[i-1][k], resmat[i][k], k+1))
-        result = resmat[i][i]
-        lastresult = resmat[i-1][i-1]
-
+        n *= 2
+        ordsum += _difftrap(vfunc, interval, n)
+        row = [intrange * ordsum / n]
+        for k in xrange(i):
+            row.append(_romberg_diff(last_row[k], row[k], k+1))
+        result = row[i]
+        lastresult = last_row[i-1]
+        if show:
+            resmat.append(row)
         err = abs(result - lastresult)
-        if err < tol or err < rtol*abs(result):
+        if err < tol or err < rtol * abs(result):
             break
+        last_row = row
     else:
         warnings.warn(
             "divmax (%d) exceeded. Latest difference = %e" % (divmax, err),
@@ -691,7 +806,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     return result
 
 
-# Coefficients for Netwon-Cotes quadrature
+# Coefficients for Newton-Cotes quadrature
 #
 # These are the points being used
 #  to construct the local interpolating polynomial
@@ -718,56 +833,56 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 #    where k = N // 2
 #
 _builtincoeffs = {
-    1:(1,2,[1,1],-1,12),
-    2:(1,3,[1,4,1],-1,90),
-    3:(3,8,[1,3,3,1],-3,80),
-    4:(2,45,[7,32,12,32,7],-8,945),
-    5:(5,288,[19,75,50,50,75,19],-275,12096),
-    6:(1,140,[41,216,27,272,27,216,41],-9,1400),
-    7:(7,17280,[751,3577,1323,2989,2989,1323,3577,751],-8183,518400),
-    8:(4,14175,[989,5888,-928,10496,-4540,10496,-928,5888,989],
-       -2368,467775),
-    9:(9,89600,[2857,15741,1080,19344,5778,5778,19344,1080,
-                15741,2857], -4671, 394240),
-    10:(5,299376,[16067,106300,-48525,272400,-260550,427368,
-                  -260550,272400,-48525,106300,16067],
-        -673175, 163459296),
-    11:(11,87091200,[2171465,13486539,-3237113, 25226685,-9595542,
-                     15493566,15493566,-9595542,25226685,-3237113,
-                     13486539,2171465], -2224234463, 237758976000),
-    12:(1, 5255250, [1364651,9903168,-7587864,35725120,-51491295,
-                     87516288,-87797136,87516288,-51491295,35725120,
-                     -7587864,9903168,1364651], -3012, 875875),
-    13:(13, 402361344000,[8181904909, 56280729661, -31268252574,
-                          156074417954,-151659573325,206683437987,
-                          -43111992612,-43111992612,206683437987,
-                          -151659573325,156074417954,-31268252574,
-                          56280729661,8181904909], -2639651053,
-        344881152000),
-    14:(7, 2501928000, [90241897,710986864,-770720657,3501442784,
-                        -6625093363,12630121616,-16802270373,19534438464,
-                        -16802270373,12630121616,-6625093363,3501442784,
-                        -770720657,710986864,90241897], -3740727473,
-        1275983280000)
+    1: (1,2,[1,1],-1,12),
+    2: (1,3,[1,4,1],-1,90),
+    3: (3,8,[1,3,3,1],-3,80),
+    4: (2,45,[7,32,12,32,7],-8,945),
+    5: (5,288,[19,75,50,50,75,19],-275,12096),
+    6: (1,140,[41,216,27,272,27,216,41],-9,1400),
+    7: (7,17280,[751,3577,1323,2989,2989,1323,3577,751],-8183,518400),
+    8: (4,14175,[989,5888,-928,10496,-4540,10496,-928,5888,989],
+        -2368,467775),
+    9: (9,89600,[2857,15741,1080,19344,5778,5778,19344,1080,
+                 15741,2857], -4671, 394240),
+    10: (5,299376,[16067,106300,-48525,272400,-260550,427368,
+                   -260550,272400,-48525,106300,16067],
+         -673175, 163459296),
+    11: (11,87091200,[2171465,13486539,-3237113, 25226685,-9595542,
+                      15493566,15493566,-9595542,25226685,-3237113,
+                      13486539,2171465], -2224234463, 237758976000),
+    12: (1, 5255250, [1364651,9903168,-7587864,35725120,-51491295,
+                      87516288,-87797136,87516288,-51491295,35725120,
+                      -7587864,9903168,1364651], -3012, 875875),
+    13: (13, 402361344000,[8181904909, 56280729661, -31268252574,
+                           156074417954,-151659573325,206683437987,
+                           -43111992612,-43111992612,206683437987,
+                           -151659573325,156074417954,-31268252574,
+                           56280729661,8181904909], -2639651053,
+         344881152000),
+    14: (7, 2501928000, [90241897,710986864,-770720657,3501442784,
+                         -6625093363,12630121616,-16802270373,19534438464,
+                         -16802270373,12630121616,-6625093363,3501442784,
+                         -770720657,710986864,90241897], -3740727473,
+         1275983280000)
     }
 
 
 def newton_cotes(rn, equal=0):
-    """
+    r"""
     Return weights and error coefficient for Newton-Cotes integration.
 
     Suppose we have (N+1) samples of f at the positions
     x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
     integral between x_0 and x_N is:
 
-    :math:`\\int_{x_0}^{x_N} f(x)dx = \\Delta x \\sum_{i=0}^{N} a_i f(x_i)
-    + B_N (\\Delta x)^{N+2} f^{N+1} (\\xi)`
+    :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
+    + B_N (\Delta x)^{N+2} f^{N+1} (\xi)`
 
-    where :math:`\\xi \\in [x_0,x_N]` and :math:`\\Delta x = \\frac{x_N-x_0}{N}`
-    is the averages samples spacing.
+    where :math:`\xi \in [x_0,x_N]`
+    and :math:`\Delta x = \frac{x_N-x_0}{N}` is the average samples spacing.
 
     If the samples are equally-spaced and N is even, then the error
-    term is :math:`B_N (\\Delta x)^{N+3} f^{N+2}(\\xi)`.
+    term is :math:`B_N (\Delta x)^{N+3} f^{N+2}(\xi)`.
 
     Parameters
     ----------
@@ -786,6 +901,30 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Examples
+    --------
+    Compute the integral of sin(x) in [0, :math:`\pi`]:
+
+    >>> from scipy.integrate import newton_cotes
+    >>> def f(x):
+    ...     return np.sin(x)
+    >>> a = 0
+    >>> b = np.pi
+    >>> exact = 2
+    >>> for N in [2, 4, 6, 8, 10]:
+    ...     x = np.linspace(a, b, N + 1)
+    ...     an, B = newton_cotes(N, 1)
+    ...     dx = (b - a) / N
+    ...     quad = dx * np.sum(an * f(x))
+    ...     error = abs(quad - exact)
+    ...     print('{:2d}  {:10.9f}  {:.5e}'.format(N, quad, error))
+    ...
+     2   2.094395102   9.43951e-02
+     4   1.998570732   1.42927e-03
+     6   2.000017814   1.78136e-05
+     8   1.999999835   1.64725e-07
+    10   2.000000001   1.14677e-09
+
     Notes
     -----
     Normally, the Newton-Cotes rules are used on smaller integration
@@ -798,28 +937,29 @@ def newton_cotes(rn, equal=0):
             rn = np.arange(N+1)
         elif np.all(np.diff(rn) == 1):
             equal = 1
-    except:
+    except Exception:
         N = rn
         rn = np.arange(N+1)
         equal = 1
 
     if equal and N in _builtincoeffs:
         na, da, vi, nb, db = _builtincoeffs[N]
-        return na*np.array(vi,float)/da, float(nb)/db
+        an = na * np.array(vi, dtype=float) / da
+        return an, float(nb)/db
 
     if (rn[0] != 0) or (rn[-1] != N):
         raise ValueError("The sample positions must start at 0"
-                " and end at N")
+                         " and end at N")
     yi = rn / float(N)
-    ti = 2.0*yi - 1
-    nvec = np.arange(0,N+1)
-    C = ti**nvec[:,np.newaxis]
+    ti = 2 * yi - 1
+    nvec = np.arange(N+1)
+    C = ti ** nvec[:, np.newaxis]
     Cinv = np.linalg.inv(C)
     # improve precision of result
     for i in range(2):
         Cinv = 2*Cinv - Cinv.dot(C).dot(Cinv)
     vec = 2.0 / (nvec[::2]+1)
-    ai = np.dot(Cinv[:,::2],vec) * N/2
+    ai = Cinv[:, ::2].dot(vec) * (N / 2.)
 
     if (N % 2 == 0) and equal:
         BN = N/(N+3.)

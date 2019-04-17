@@ -29,7 +29,6 @@
  *
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC        -10,10     200000      1.8e-17     6.2e-18
  *    IEEE       0,1e308     30000      1.5e-16     5.0e-17
  *
  */
@@ -54,7 +53,7 @@ double cbrt(double x)
     int e, rem, sign;
     double z;
 
-    if (!npy_isfinite(x))
+    if (!cephes_isfinite(x))
 	return x;
     if (x == 0)
 	return (x);
@@ -110,11 +109,7 @@ double cbrt(double x)
 
     /* Newton iteration */
     x -= (x - (z / (x * x))) * 0.33333333333333333333;
-#ifdef DEC
-    x -= (x - (z / (x * x))) / 3.0;
-#else
     x -= (x - (z / (x * x))) * 0.33333333333333333333;
-#endif
 
     if (sign < 0)
 	x = -x;

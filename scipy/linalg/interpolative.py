@@ -115,30 +115,28 @@ for Python users. Note that this module does not add any functionality
 beyond that of organizing a simpler and more consistent interface.
 
 We advise the user to consult also the `documentation for the ID package
-<https://cims.nyu.edu/~tygert/id_doc.pdf>`_.
+<http://tygert.com/id_doc.4.pdf>`_.
 
 .. [1] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. "ID: a
     software package for low-rank approximation of matrices via interpolative
-    decompositions, version 0.2." http://cims.nyu.edu/~tygert/id_doc.pdf.
+    decompositions, version 0.2." http://tygert.com/id_doc.4.pdf.
 
 .. [2] H. Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. "On the
     compression of low rank matrices." *SIAM J. Sci. Comput.* 26 (4): 1389--1404,
-    2005. `doi:10.1137/030602678 <http://dx.doi.org/10.1137/030602678>`_.
+    2005. :doi:`10.1137/030602678`.
 
 .. [3] E. Liberty, F. Woolfe, P.G. Martinsson, V. Rokhlin, M.
     Tygert. "Randomized algorithms for the low-rank approximation of matrices."
     *Proc. Natl. Acad. Sci. U.S.A.* 104 (51): 20167--20172, 2007.
-    `doi:10.1073/pnas.0709640104 <http://dx.doi.org/10.1073/pnas.0709640104>`_.
+    :doi:`10.1073/pnas.0709640104`.
 
 .. [4] P.G. Martinsson, V. Rokhlin, M. Tygert. "A randomized
     algorithm for the decomposition of matrices." *Appl. Comput. Harmon. Anal.* 30
-    (1): 47--68,  2011. `doi:10.1016/j.acha.2010.02.003
-    <http://dx.doi.org/10.1016/j.acha.2010.02.003>`_.
+    (1): 47--68,  2011. :doi:`10.1016/j.acha.2010.02.003`.
 
 .. [5] F. Woolfe, E. Liberty, V. Rokhlin, M. Tygert. "A fast
     randomized algorithm for the approximation of matrices." *Appl. Comput.
-    Harmon. Anal.* 25 (3): 335--366, 2008. `doi:10.1016/j.acha.2007.12.002
-    <http://dx.doi.org/10.1016/j.acha.2007.12.002>`_.
+    Harmon. Anal.* 25 (3): 335--366, 2008. :doi:`10.1016/j.acha.2007.12.002`.
 
 
 Tutorial
@@ -366,7 +364,7 @@ To specify the seed values, use:
 >>> sli.seed(s)
 
 where ``s`` must be an integer or array of 55 floats. If an integer, the array
-of floats is obtained by using `np.random.rand` with the given integer seed.
+of floats is obtained by using `numpy.random.rand` with the given integer seed.
 
 To simply generate some random numbers, type:
 
@@ -421,7 +419,7 @@ def seed(seed=None):
         from `numpy.random.RandomState` (MT19937) with the integer
         used as the initial seed.
 
-        If `seed` is omitted (None), `numpy.random` is used to
+        If `seed` is omitted (None), `numpy.random.rand` is used to
         initialize the generator.
 
     """
@@ -758,7 +756,7 @@ def estimate_spectral_norm(A, its=20):
     A : :class:`scipy.sparse.linalg.LinearOperator`
         Matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with the
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns
@@ -794,7 +792,7 @@ def estimate_spectral_norm_diff(A, B, its=20):
     B : :class:`scipy.sparse.linalg.LinearOperator`
         Second matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns
@@ -884,6 +882,9 @@ def svd(A, eps_or_k, rand=True):
                     U, V, S = backend.idzp_svd(eps, A)
         else:
             k = int(eps_or_k)
+            if k > min(A.shape):
+                raise ValueError("Approximation rank %s exceeds min(A.shape) = "
+                                 " %s " % (k, min(A.shape)))
             if rand:
                 if real:
                     U, V, S = backend.iddr_asvd(A, k)

@@ -17,15 +17,8 @@
  * (which see).
  *
  * The file also includes a conditional assembly definition
- * for the type of computer arithmetic (IEEE, DEC, Motorola
+ * for the type of computer arithmetic (IEEE, Motorola
  * IEEE, or UNKnown).
- * 
- * For Digital Equipment PDP-11 and VAX computers, certain
- * IBM systems, and others that use numbers with a 56-bit
- * significand, the symbol DEC should be defined.  In this
- * mode, most floating point constants are given as arrays
- * of octal integers to eliminate decimal to binary conversion
- * errors that might be introduced by the compiler.
  *
  * For little-endian computers, such as IBM PC, that follow the
  * IEEE Standard for Binary Floating Point Arithmetic (ANSI/IEEE
@@ -69,7 +62,8 @@
 #include <numpy/npy_math.h>
 
 #include "cephes_names.h"
-#include "protos.h"
+#include "cephes.h"
+#include "polevl.h"
 
 /* Constant definitions for math error conditions
  */
@@ -86,15 +80,6 @@
 #define EDOM		33
 #define ERANGE		34
 
-/* Long double complex numeral.  */
-/*
- * typedef struct
- * {
- * long double r;
- * long double i;
- * } cmplxl;
- */
-
 /* Type of computer arithmetic */
 
 /* UNKnown arithmetic, invokes coefficients given in
@@ -110,40 +95,28 @@
  */
 #define UNK 1
 
-/* Define this `volatile' if your compiler thinks
- * that floating point arithmetic obeys the associative
- * and distributive laws.  It will defeat some optimizations
- * (but probably not enough of them).
- *
- * #define VOLATILE volatile
- */
-#define VOLATILE
-
-/* For 12-byte long doubles on an i386, pad a 16-bit short 0
- * to the end of real constants initialized by integer arrays.
- *
- * #define XPD 0,
- *
- * Otherwise, the type is 10 bytes long and XPD should be
- * defined blank (e.g., Microsoft C).
- *
- * #define XPD
- */
-#define XPD 0,
-
 /* Define to support tiny denormal numbers, else undefine. */
 #define DENORMAL 1
 
-/* Define to distinguish between -0.0 and +0.0.  */
-#define MINUSZERO 1
-
-/* Define 1 for ANSI C atan2() function
- * See atan.c and clog.c. */
-#define ANSIC 1
-
-/* Variable for error reporting.  See mtherr.c.  */
-extern int merror;
-
 #define gamma Gamma
+
+extern void mtherr(const char *name, int code);
+
+/*
+ * Enable loop unrolling on GCC and use faster isnan et al.
+ */
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+#pragma GCC optimize("unroll-loops")
+#define cephes_isnan(x) __builtin_isnan(x)
+#define cephes_isinf(x) __builtin_isinf(x)
+#define cephes_isfinite(x) __builtin_isfinite(x)
+#endif
+#endif
+#ifndef cephes_isnan
+#define cephes_isnan(x) npy_isnan(x)
+#define cephes_isinf(x) npy_isinf(x)
+#define cephes_isfinite(x) npy_isfinite(x)
+#endif
 
 #endif				/* CEPHES_MCONF_H */

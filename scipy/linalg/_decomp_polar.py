@@ -22,7 +22,7 @@ def polar(a, side="right"):
     ----------
     a : (m, n) array_like
         The array to be factored.
-    side : string, optional
+    side : {'left', 'right'}, optional
         Determines whether a right or left polar decomposition is computed.
         If `side` is "right", then ``a = up``.  If `side` is "left",  then
         ``a = pu``.  The default is "right".
@@ -40,13 +40,14 @@ def polar(a, side="right"):
 
     References
     ----------
-    .. [1] R. A. Horn and C. R. Johnson, "Matrix Analysis", Cambridge University
-           Press, 1985.
+    .. [1] R. A. Horn and C. R. Johnson, "Matrix Analysis", Cambridge
+           University Press, 1985.
     .. [2] N. J. Higham, "Functions of Matrices: Theory and Computation",
            SIAM, 2008.
 
     Examples
     --------
+    >>> from scipy.linalg import polar
     >>> a = np.array([[1, -1], [2, 4]])
     >>> u, p = polar(a)
     >>> u

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Detect which x86 CPU extension instructions the given scipy install uses.
 This file can be used in the release process to check that the nosse installer
@@ -11,6 +11,7 @@ See also tools/win32build/misc/x86analysis.py in numpy for a similar script
 that checks a single file.
 
 """
+from __future__ import print_function
 import subprocess
 import sys
 import os
@@ -26,7 +27,7 @@ NUMPY_PY25 = os.environ['HOME'] + '/.wine/drive_c/Python25/Lib/site-packages/num
 NUMPY_PY26 = os.environ['HOME'] + '/.wine/drive_c/Python26/Lib/site-packages/numpy/'
 NUMPY_PY27 = os.environ['HOME'] + '/.wine/drive_c/Python27/Lib/site-packages/numpy/'
 NUMPY_PY31 = os.environ['HOME'] + '/.wine/drive_c/Python31/Lib/site-packages/numpy/'
-SSE3_LIBS = os.environ['HOME'] +  '/.wine/drive_c/local/lib/yop/sse3'
+SSE3_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/sse3'
 SSE2_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/sse2'
 NOSSE_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/nosse'
 
@@ -49,7 +50,7 @@ def main():
 
 
 def single_file_checkext(fname, striproot=True):
-    if striproot == True:
+    if striproot:
         sys.stdout.write('%s: ' % fname.replace(basepath, ''))
     else:
         sys.stdout.write('%s: ' % fname)
@@ -68,14 +69,12 @@ def path_as_windows(fpath):
 
 def write_summary(allcodes):
     """Write a summary of all found codes to stdout."""
-    print """\n
-----------------------------------------------------------------------------
-Checked all binary files for CPU extension codes. Found the following codes:"""
+    print("", "-" * 80,
+          "Checked all binary files for CPU extension codes. "
+          "Found the following codes:", sep="\n")
     for code in allcodes:
-        print code
-    print """
-----------------------------------------------------------------------------
-"""
+        print(code)
+    print("----------------------------------------------------------------------------")
 
 
 def process(fn):
@@ -88,7 +87,7 @@ def process(fn):
         instr = r[2].split()[0].lower()
         if instr in INSTRS:
             codes[INSTRS[instr]] = True
-            print instr
+            print(instr)
     codes = codes.keys()
     codes.sort()
     return codes
@@ -96,6 +95,7 @@ def process(fn):
 #------------------------------------------------------------------------------
 # Instruction lists
 #------------------------------------------------------------------------------
+
 
 # x86
 EXTS_x86 = dict(

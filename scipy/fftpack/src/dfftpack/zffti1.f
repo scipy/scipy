@@ -1,6 +1,8 @@
       SUBROUTINE ZFFTI1 (N,WA,IFAC)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       WA(*)      ,IFAC(*)    ,NTRYH(4)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, I1, IB, IDO, IDOT, II, IP, IPM, J, K1
+      INTEGER :: L1, L2, LD, NF, NL, NQ, NR, NTRY, NTRYH(4)
+      DOUBLE PRECISION :: WA(*), ARG, ARGH, ARGLD, FI, TPI
       DATA NTRYH(1),NTRYH(2),NTRYH(3),NTRYH(4)/3,4,2,5/
       NL = N
       NF = 0
@@ -10,7 +12,7 @@
       GO TO 103
   102 NTRY = NTRYH(J)
       GO TO 104
-  103 NTRY = NTRY+2
+  103 NTRY = NTRYH(4)+2*(J-4)
   104 NQ = NL/NTRY
       NR = NL-NTRY*NQ
       IF (NR.eq.0) GO TO 105

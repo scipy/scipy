@@ -5,14 +5,23 @@ C
 C       Copyrighted but permission granted to use code in programs.
 C       Buy their book "Computation of Special Functions", 1996, John Wiley & Sons, Inc.
 C
+C       Scipy changes:
+C       - Compiled into a single source file and changed REAL To DBLE throughout.
+C       - Changed according to ERRATA.
+C       - Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
+C       - Made functions return sf_error codes in ISFER variables instead
+C         of printing warnings. The codes are
+C         - SF_ERROR_OK        = 0: no error
+C         - SF_ERROR_SINGULAR  = 1: singularity encountered
+C         - SF_ERROR_UNDERFLOW = 2: floating point underflow
+C         - SF_ERROR_OVERFLOW  = 3: floating point overflow
+C         - SF_ERROR_SLOW      = 4: too many iterations required
+C         - SF_ERROR_LOSS      = 5: loss of precision
+C         - SF_ERROR_NO_RESULT = 6: no result obtained
+C         - SF_ERROR_DOMAIN    = 7: out of domain
+C         - SF_ERROR_ARG       = 8: invalid input parameter
+C         - SF_ERROR_OTHER     = 9: unclassified error
 C
-C      Compiled into a single source file and changed REAL To DBLE throughout.
-C
-C      Changed according to ERRATA also.
-C
-C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
-C
-
         FUNCTION DNAN()
         DOUBLE PRECISION DNAN
         DNAN = 0.0D0
@@ -174,7 +183,7 @@ C
            QM(0,0)=Q0
            QM(0,1)=X*Q0-1.0D0
            QM(1,0)=-1.0D0/XQ
-           QM(1,1)=-XQ*(Q0+X/(1.0D0-X*X))
+           QM(1,1)=-LS*XQ*(Q0+X/(1.0D0-X*X))
            DO 15 I=0,1
            DO 15 J=2,N
               QM(I,J)=((2.0D0*J-1.0D0)*X*QM(I,J-1)
@@ -550,147 +559,6 @@ C
         END
 
 
-
-C       **********************************
-
-        SUBROUTINE CJY01(Z,CBJ0,CDJ0,CBJ1,CDJ1,CBY0,CDY0,CBY1,CDY1)
-C
-C       =======================================================
-C       Purpose: Compute Bessel functions J0(z), J1(z), Y0(z),
-C                Y1(z), and their derivatives for a complex
-C                argument
-C       Input :  z --- Complex argument
-C       Output:  CBJ0 --- J0(z)
-C                CDJ0 --- J0'(z)
-C                CBJ1 --- J1(z)
-C                CDJ1 --- J1'(z)
-C                CBY0 --- Y0(z)
-C                CDY0 --- Y0'(z)
-C                CBY1 --- Y1(z)
-C                CDY1 --- Y1'(z)
-C       =======================================================
-C
-        IMPLICIT DOUBLE PRECISION (A,B,E,P,R,W)
-        IMPLICIT COMPLEX*16 (C,Z)
-        DIMENSION A(12),B(12),A1(12),B1(12)
-        PI=3.141592653589793D0
-        EL=0.5772156649015329D0
-        RP2=2.0D0/PI
-        CI=(0.0D0,1.0D0)
-        A0=CDABS(Z)
-        Z2=Z*Z
-        Z1=Z
-        IF (A0.EQ.0.0D0) THEN
-           CBJ0=(1.0D0,0.0D0)
-           CBJ1=(0.0D0,0.0D0)
-           CDJ0=(0.0D0,0.0D0)
-           CDJ1=(0.5D0,0.0D0)
-           CBY0=-(1.0D300,0.0D0)
-           CBY1=-(1.0D300,0.0D0)
-           CDY0=(1.0D300,0.0D0)
-           CDY1=(1.0D300,0.0D0)
-           RETURN
-        ENDIF
-        IF (DBLE(Z).LT.0.0) Z1=-Z
-        IF (A0.LE.12.0) THEN
-           CBJ0=(1.0D0,0.0D0)
-           CR=(1.0D0,0.0D0)
-           DO 10 K=1,40
-              CR=-0.25D0*CR*Z2/(K*K)
-              CBJ0=CBJ0+CR
-              IF (CDABS(CR).LT.CDABS(CBJ0)*1.0D-15) GO TO 15
-10         CONTINUE
-15         CBJ1=(1.0D0,0.0D0)
-           CR=(1.0D0,0.0D0)
-           DO 20 K=1,40
-              CR=-0.25D0*CR*Z2/(K*(K+1.0D0))
-              CBJ1=CBJ1+CR
-              IF (CDABS(CR).LT.CDABS(CBJ1)*1.0D-15) GO TO 25
-20         CONTINUE
-25         CBJ1=0.5D0*Z1*CBJ1
-           W0=0.0D0
-           CR=(1.0D0,0.0D0)
-           CS=(0.0D0,0.0D0)
-           DO 30 K=1,40
-              W0=W0+1.0D0/K
-              CR=-0.25D0*CR/(K*K)*Z2
-              CP=CR*W0
-              CS=CS+CP
-              IF (CDABS(CP).LT.CDABS(CS)*1.0D-15) GO TO 35
-30         CONTINUE
-35         CBY0=RP2*(CDLOG(Z1/2.0D0)+EL)*CBJ0-RP2*CS
-           W1=0.0D0
-           CR=(1.0D0,0.0D0)
-           CS=(1.0D0,0.0D0)
-           DO 40 K=1,40
-              W1=W1+1.0D0/K
-              CR=-0.25D0*CR/(K*(K+1))*Z2
-              CP=CR*(2.0D0*W1+1.0D0/(K+1.0D0))
-              CS=CS+CP
-              IF (CDABS(CP).LT.CDABS(CS)*1.0D-15) GO TO 45
-40         CONTINUE
-45         CBY1=RP2*((CDLOG(Z1/2.0D0)+EL)*CBJ1-1.0D0/Z1-.25D0*Z1*CS)
-        ELSE
-           DATA A/-.703125D-01,.112152099609375D+00,
-     &            -.5725014209747314D+00,.6074042001273483D+01,
-     &            -.1100171402692467D+03,.3038090510922384D+04,
-     &            -.1188384262567832D+06,.6252951493434797D+07,
-     &            -.4259392165047669D+09,.3646840080706556D+11,
-     &            -.3833534661393944D+13,.4854014686852901D+15/
-           DATA B/ .732421875D-01,-.2271080017089844D+00,
-     &             .1727727502584457D+01,-.2438052969955606D+02,
-     &             .5513358961220206D+03,-.1825775547429318D+05,
-     &             .8328593040162893D+06,-.5006958953198893D+08,
-     &             .3836255180230433D+10,-.3649010818849833D+12,
-     &             .4218971570284096D+14,-.5827244631566907D+16/
-           DATA A1/.1171875D+00,-.144195556640625D+00,
-     &             .6765925884246826D+00,-.6883914268109947D+01,
-     &             .1215978918765359D+03,-.3302272294480852D+04,
-     &             .1276412726461746D+06,-.6656367718817688D+07,
-     &             .4502786003050393D+09,-.3833857520742790D+11,
-     &             .4011838599133198D+13,-.5060568503314727D+15/
-           DATA B1/-.1025390625D+00,.2775764465332031D+00,
-     &             -.1993531733751297D+01,.2724882731126854D+02,
-     &             -.6038440767050702D+03,.1971837591223663D+05,
-     &             -.8902978767070678D+06,.5310411010968522D+08,
-     &             -.4043620325107754D+10,.3827011346598605D+12,
-     &             -.4406481417852278D+14,.6065091351222699D+16/
-           K0=12
-           IF (A0.GE.35.0) K0=10
-           IF (A0.GE.50.0) K0=8
-           CT1=Z1-.25D0*PI
-           CP0=(1.0D0,0.0D0)
-           DO 50 K=1,K0
-50            CP0=CP0+A(K)*Z1**(-2*K)
-           CQ0=-0.125D0/Z1
-           DO 55 K=1,K0
-55            CQ0=CQ0+B(K)*Z1**(-2*K-1)
-           CU=CDSQRT(RP2/Z1)
-           CBJ0=CU*(CP0*CDCOS(CT1)-CQ0*CDSIN(CT1))
-           CBY0=CU*(CP0*CDSIN(CT1)+CQ0*CDCOS(CT1))
-           CT2=Z1-.75D0*PI
-           CP1=(1.0D0,0.0D0)
-           DO 60 K=1,K0
-60            CP1=CP1+A1(K)*Z1**(-2*K)
-           CQ1=0.375D0/Z1
-           DO 65 K=1,K0
-65            CQ1=CQ1+B1(K)*Z1**(-2*K-1)
-           CBJ1=CU*(CP1*CDCOS(CT2)-CQ1*CDSIN(CT2))
-           CBY1=CU*(CP1*CDSIN(CT2)+CQ1*CDCOS(CT2))
-        ENDIF
-        IF (DBLE(Z).LT.0.0) THEN
-           IF (DIMAG(Z).LT.0.0) CBY0=CBY0-2.0D0*CI*CBJ0
-           IF (DIMAG(Z).GT.0.0) CBY0=CBY0+2.0D0*CI*CBJ0
-           IF (DIMAG(Z).LT.0.0) CBY1=-(CBY1-2.0D0*CI*CBJ1)
-           IF (DIMAG(Z).GT.0.0) CBY1=-(CBY1+2.0D0*CI*CBJ1)
-           CBJ1=-CBJ1
-        ENDIF
-        CDJ0=-CBJ1
-        CDJ1=CBJ0-1.0D0/Z*CBJ1
-        CDY0=-CBY1
-        CDY1=CBY0-1.0D0/Z*CBY1
-        RETURN
-        END
 
 C       **********************************
 
@@ -1113,88 +981,6 @@ C
         RETURN
         END
 
-
-
-C       **********************************
-
-        SUBROUTINE CSPHJY(N,Z,NM,CSJ,CDJ,CSY,CDY)
-C
-C       ==========================================================
-C       Purpose: Compute spherical Bessel functions jn(z) & yn(z)
-C                and their derivatives for a complex argument
-C       Input :  z --- Complex argument
-C                n --- Order of jn(z) & yn(z) ( n = 0,1,2,... )
-C       Output:  CSJ(n) --- jn(z)
-C                CDJ(n) --- jn'(z)
-C                CSY(n) --- yn(z)
-C                CDY(n) --- yn'(z)
-C                NM --- Highest order computed
-C       Routines called:
-C                MSTA1 and MSTA2 for computing the starting
-C                point for backward recurrence
-C       ==========================================================
-C
-        IMPLICIT COMPLEX*16 (C,Z)
-        DOUBLE PRECISION A0
-        DIMENSION CSJ(0:N),CDJ(0:N),CSY(0:N),CDY(0:N)
-        A0=CDABS(Z)
-        NM=N
-        IF (A0.LT.1.0D-60) THEN
-           DO 10 K=0,N
-              CSJ(K)=0.0D0
-              CDJ(K)=0.0D0
-              CSY(K)=-1.0D+300
-10            CDY(K)=1.0D+300
-           CSJ(0)=(1.0D0,0.0D0)
-           IF (N.GT.0) THEN
-              CDJ(1)=(.333333333333333D0,0.0D0)
-           ENDIF
-           RETURN
-        ENDIF
-        CSJ(0)=CDSIN(Z)/Z
-        CDJ(0)=(CDCOS(Z)-CDSIN(Z)/Z)/Z
-        CSY(0)=-CDCOS(Z)/Z
-        CDY(0)=(CDSIN(Z)+CDCOS(Z)/Z)/Z
-        IF (N.LT.1) THEN
-           RETURN
-        ENDIF
-        CSJ(1)=(CSJ(0)-CDCOS(Z))/Z
-        IF (N.GE.2) THEN
-           CSA=CSJ(0)
-           CSB=CSJ(1)
-           M=MSTA1(A0,200)
-           IF (M.LT.N) THEN
-              NM=M
-           ELSE
-              M=MSTA2(A0,N,15)
-           ENDIF
-           CF0=0.0D0
-           CF1=1.0D0-100
-           DO 15 K=M,0,-1
-              CF=(2.0D0*K+3.0D0)*CF1/Z-CF0
-              IF (K.LE.NM) CSJ(K)=CF
-              CF0=CF1
-15            CF1=CF
-           IF (CDABS(CSA).GT.CDABS(CSB)) CS=CSA/CF1
-           IF (CDABS(CSA).LE.CDABS(CSB)) CS=CSB/CF0
-           DO 20 K=0,NM
-20            CSJ(K)=CS*CSJ(K)
-        ENDIF
-        DO 25 K=1,NM
-25         CDJ(K)=CSJ(K-1)-(K+1.0D0)*CSJ(K)/Z
-        CSY(1)=(CSY(0)-CDSIN(Z))/Z
-        CDY(1)=(2.0D0*CDY(0)-CDCOS(Z))/Z
-        DO 30 K=2,NM
-           IF (CDABS(CSJ(K-1)).GT.CDABS(CSJ(K-2))) THEN
-              CSY(K)=(CSJ(K)*CSY(K-1)-1.0D0/(Z*Z))/CSJ(K-1)
-           ELSE
-              CSY(K)=(CSJ(K)*CSY(K-2)-(2.0D0*K-1.0D0)/Z**3)/CSJ(K-2)
-           ENDIF
-30      CONTINUE
-        DO 35 K=2,NM
-35         CDY(K)=CSY(K-1)-(K+1.0D0)*CSY(K)/Z
-        RETURN
-        END
 
 
         INTEGER FUNCTION MSTA1(X,MP)
@@ -2183,50 +1969,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE STVL1(X,SL1)
-C
-C       ================================================
-C       Purpose: Compute modified Struve function L1(x)
-C       Input :  x   --- Argument of L1(x) ( x ≥ 0 )
-C       Output:  SL1 --- L1(x)
-C       ================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           S=0.0D0
-           DO 10 K=1,60
-              R=R*X*X/(4.0D0*K*K-1.0D0)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         SL1=2.0D0/PI*S
-        ELSE
-           S=1.0D0
-           KM=INT(.50*X)
-           IF (X.GT.50) KM=25
-           DO 20 K=1,KM
-              R=R*(2.0D0*K+3.0D0)*(2.0D0*K+1.0D0)/(X*X)
-              S=S+R
-              IF (DABS(R/S).LT.1.0D-12) GO TO 25
-20            CONTINUE
-25         SL1=2.0D0/PI*(-1.0D0+1.0D0/(X*X)+3.0D0*S/X**4)
-           A1=DEXP(X)/DSQRT(2.0D0*PI*X)
-           R=1.0D0
-           BI1=1.0D0
-           DO 30 K=1,16
-              R=-0.125D0*R*(4.0D0-(2.0D0*K-1.0D0)**2)/(K*X)
-              BI1=BI1+R
-              IF (DABS(R/BI1).LT.1.0D-12) GO TO 35
-30         CONTINUE
-35         SL1=SL1+A1*BI1
-        ENDIF
-        RETURN
-        END
-
-C       **********************************
-
         SUBROUTINE CLQN(N,X,Y,CQN,CQD)
 C
 C       ==================================================
@@ -2288,50 +2030,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE STVL0(X,SL0)
-C
-C       ================================================
-C       Purpose: Compute modified Struve function L0(x)
-C       Input :  x   --- Argument of L0(x) ( x ≥ 0 )
-C       Output:  SL0 --- L0(x)
-C       ================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        S=1.0D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           A0=2.0D0*X/PI
-           DO 10 K=1,60
-              R=R*(X/(2.0D0*K+1.0D0))**2
-              S=S+R
-              IF (DABS(R/S).LT.1.0D-12) GO TO 15
-10         CONTINUE
-15         SL0=A0*S
-        ELSE
-           KM=INT(.5*(X+1.0))
-           IF (X.GE.50.0) KM=25
-           DO 20 K=1,KM
-              R=R*((2.0D0*K-1.0D0)/X)**2
-              S=S+R
-              IF (DABS(R/S).LT.1.0D-12) GO TO 25
-20         CONTINUE
-25         A1=DEXP(X)/DSQRT(2.0D0*PI*X)
-           R=1.0D0
-           BI0=1.0D0
-           DO 30 K=1,16
-              R=0.125D0*R*(2.0D0*K-1.0D0)**2/(K*X)
-              BI0=BI0+R
-              IF (DABS(R/BI0).LT.1.0D-12) GO TO 35
-30         CONTINUE
-35         BI0=A1*BI0
-           SL0=-2.0D0/(PI*X)*S+BI0
-        ENDIF
-        RETURN
-        END
-
-C       **********************************
-
         SUBROUTINE AIRYZO(NT,KF,XA,XB,XC,XD)
 C
 C       ========================================================
@@ -2359,66 +2057,81 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION XA(NT),XB(NT),XC(NT),XD(NT)
         PI=3.141592653589793D0
-        RT0=0.0D0
         RT=0.0D0
         DO 15 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
-              U=3.0*PI*(4.0*I-1)/8.0D0
+              U=3.0D0*PI*(4.0D0*I-1)/8.0D0
               U1=1/(U*U)
-              RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &            -.138889)*U1+.10416667D0)*U1+1.0D0)
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.17371
+                 RT0=-1.17371D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
-                 U1=1.0D0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &               -.138889)*U1+.10416667)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
+           ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.18
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(5D0/48D0
+     &            + U1*(-5D0/36D0
+     &            + U1*(77125D0/82944D0
+     &            + U1*(-108056875D0/6967296D0)))))
            ENDIF
 10         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AI/AD
            IF (KF.EQ.2) RT=RT0-BI/BD
-           IF (DABS((RT-RT0)/RT).GT.1.D-9) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.D-12) THEN
               RT0=RT
               GOTO 10
            ELSE
               XA(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XD(I)=AD
               IF (KF.EQ.2) XD(I)=BD
            ENDIF
 15      CONTINUE
         DO 25 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.01879
+                 RT0=-1.01879D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
                  U1=1/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &            *U1+.121528)*U1-.145833D0)*U1+1.0D0)
               ENDIF
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-2.29444
+                 RT0=-2.29444D0
               ELSE
-                 U=3.0*PI*(4.0*I-1.0)/8.0
-                 U1=1.0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &               *U1+.121528)*U1-.145833)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-1.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
            ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.19
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(-7D0/48D0
+     &            + U1*(+35D0/288D0
+     &            + U1*(-181223D0/207360D0
+     &            + U1*(18683371D0/1244160D0)))))
+           END IF
 20         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AD/(AI*X)
            IF (KF.EQ.2) RT=RT0-BD/(BI*X)
-           IF (DABS((RT-RT0)/RT).GT.1.0D-9) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.0D-12) THEN
               RT0=RT
               GOTO 20
            ELSE
               XB(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XC(I)=AI
               IF (KF.EQ.2) XC(I)=BI
            ENDIF
@@ -3881,7 +3594,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE INCOG(A,X,GIN,GIM,GIP)
+        SUBROUTINE INCOG(A,X,GIN,GIM,GIP,ISFER)
 C
 C       ===================================================
 C       Purpose: Compute the incomplete gamma function
@@ -3891,14 +3604,16 @@ C                x   --- Argument
 C       Output:  GIN --- r(a,x)
 C                GIM --- Г(a,x)
 C                GIP --- P(a,x)
+C                ISFER --- Error flag
 C       Routine called: GAMMA2 for computing Г(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        ISFER=0
         XAM=-X+A*DLOG(X)
         IF (XAM.GT.700.0.OR.A.GT.170.0) THEN
-           WRITE(*,*)'a and/or x too large'
-           STOP
+           ISFER=6
+           RETURN
         ENDIF
         IF (X.EQ.0.0) THEN
            GIN=0.0
@@ -4414,51 +4129,6 @@ C       Forward recurrence for Yn
         RETURN
         END
 
-
-C       **********************************
-
-        SUBROUTINE STVH1(X,SH1)
-C
-C       =============================================
-C       Purpose: Compute Struve function H1(x)
-C       Input :  x   --- Argument of H1(x) ( x ≥ 0 )
-C       Output:  SH1 --- H1(x)
-C       =============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           S=0.0D0
-           A0=-2.0D0/PI
-           DO 10 K=1,60
-              R=-R*X*X/(4.0D0*K*K-1.0D0)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         SH1=A0*S
-        ELSE
-           S=1.0D0
-           KM=INT(.5*X)
-           IF (X.GT.50.D0) KM=25
-           DO 20 K=1,KM
-              R=-R*(4.0D0*K*K-1.0D0)/(X*X)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 25
-20         CONTINUE
-25         T=4.0D0/X
-           T2=T*T
-           P1=((((.42414D-5*T2-.20092D-4)*T2+.580759D-4)*T2
-     &        -.223203D-3)*T2+.29218256D-2)*T2+.3989422819D0
-           Q1=T*(((((-.36594D-5*T2+.1622D-4)*T2-.398708D-4)*
-     &        T2+.1064741D-3)*T2-.63904D-3)*T2+.0374008364D0)
-           TA1=X-.75D0*PI
-           BY1=2.0D0/DSQRT(X)*(P1*DSIN(TA1)+Q1*DCOS(TA1))
-           SH1=2.0/PI*(1.0D0+S/(X*X))+BY1
-        ENDIF
-        RETURN
-        END
-
 C       **********************************
 
         SUBROUTINE LEGZO(N,X,W)
@@ -4953,7 +4623,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CHGU(A,B,X,HU,MD)
+        SUBROUTINE CHGU(A,B,X,HU,MD,ISFER)
 C
 C       =======================================================
 C       Purpose: Compute the confluent hypergeometric function
@@ -4963,6 +4633,7 @@ C                b  --- Parameter
 C                x  --- Argument  ( x > 0 )
 C       Output:  HU --- U(a,b,x)
 C                MD --- Method code
+C                ISFER --- Error flag
 C       Routines called:
 C            (1) CHGUS for small x ( MD=1 )
 C            (2) CHGUL for large x ( MD=2 )
@@ -4973,6 +4644,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         LOGICAL IL1,IL2,IL3,BL1,BL2,BL3,BN
         AA=A-B+1.0D0
+        ISFER=0
         IL1=A.EQ.INT(A).AND.A.LE.0.0
         IL2=AA.EQ.INT(AA).AND.AA.LE.0.0
         IL3=ABS(A*(A-B+1.0))/X.LE.2.0
@@ -5022,7 +4694,7 @@ C
               MD=3
            ENDIF
         ENDIF
-        IF (ID.LT.6) WRITE(*,*)'No accurate result obtained'
+        IF (ID.LT.6) ISFER=6
         RETURN
         END
 
@@ -5698,6 +5370,7 @@ C
 10            HG=HG+R
         ENDIF
         IF (HG.NE.0.0D0) RETURN
+C       DLMF 13.2.39
         IF (X.LT.0.0D0) THEN
            A=B-A
            A0=A
@@ -5706,6 +5379,7 @@ C
         NL=0
         LA=0
         IF (A.GE.2.0D0) THEN
+C       preparing terms for DLMF 13.3.1
            NL=1
            LA=INT(A)
            A=A-LA-1.0D0
@@ -5720,9 +5394,14 @@ C
               DO 15 J=1,500
                  RG=RG*(A+J-1.0D0)/(J*(B+J-1.0D0))*X
                  HG=HG+RG
-                 IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
+                 IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) THEN
+C       DLMF 13.2.39 (cf. above)
+                    IF (X0.LT.0.0D0) HG=HG*DEXP(X0)
+                    GO TO 25
+                 ENDIF
 15            CONTINUE
            ELSE
+C       DLMF 13.7.2 & 13.2.4, SUM2 corresponds to first sum
               Y=0.0D0
               CALL CGAMA(A,Y,0,TAR,TAI)
               CTA = DCMPLX(TAR, TAI)
@@ -5742,74 +5421,35 @@ C
                  R2=-R2*(B-A+I-1.0D0)*(A-I)/(X*I)
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
-              HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
-              HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
+              IF (X0.GE.0.0D0) THEN
+                 HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+                 HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
+              ELSE
+C       DLMF 13.2.39 (cf. above)
+                 HG1=DBLE(CDEXP(CTB-CTBA+X0))*X**(-A)*DCOS(PI*A)*SUM1
+                 HG2=DBLE(CDEXP(CTB-CTA))*X**(A-B)*SUM2
+              ENDIF
               HG=HG1+HG2
            ENDIF
 25         IF (N.EQ.0) Y0=HG
            IF (N.EQ.1) Y1=HG
 30      CONTINUE
         IF (A0.GE.2.0D0) THEN
+C       DLMF 13.3.1
            DO 35 I=1,LA-1
               HG=((2.0D0*A-B+X)*Y1+(B-A)*Y0)/A
               Y0=Y1
               Y1=HG
 35            A=A+1.0D0
         ENDIF
-        IF (X0.LT.0.0D0) HG=HG*DEXP(X0)
         A=A1
         X=X0
         RETURN
         END
 
-
-
 C       **********************************
 
-        SUBROUTINE STVH0(X,SH0)
-C
-C       =============================================
-C       Purpose: Compute Struve function H0(x)
-C       Input :  x   --- Argument of H0(x) ( x ≥ 0 )
-C       Output:  SH0 --- H0(x)
-C       =============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        S=1.0D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           A0=2.0*X/PI
-           DO 10 K=1,60
-              R=-R*X/(2.0D0*K+1.0D0)*X/(2.0D0*K+1.0D0)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         SH0=A0*S
-        ELSE
-           KM=INT(.5*(X+1.0))
-           IF (X.GE.50.0) KM=25
-           DO 20 K=1,KM
-              R=-R*((2.0D0*K-1.0D0)/X)**2
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 25
-20         CONTINUE
-25         T=4.0D0/X
-           T2=T*T
-           P0=((((-.37043D-5*T2+.173565D-4)*T2-.487613D-4)
-     &        *T2+.17343D-3)*T2-.1753062D-2)*T2+.3989422793D0
-           Q0=T*(((((.32312D-5*T2-.142078D-4)*T2+.342468D-4)*
-     &        T2-.869791D-4)*T2+.4564324D-3)*T2-.0124669441D0)
-           TA0=X-.25D0*PI
-           BY0=2.0D0/DSQRT(X)*(P0*DSIN(TA0)+Q0*DCOS(TA0))
-           SH0=2.0D0/(PI*X)*S+BY0
-        ENDIF
-        RETURN
-        END
-
-C       **********************************
-
-        SUBROUTINE HYGFX(A,B,C,X,HF)
+        SUBROUTINE HYGFX(A,B,C,X,HF,ISFER)
 C
 C       ====================================================
 C       Purpose: Compute hypergeometric function F(a,b,c,x)
@@ -5818,6 +5458,7 @@ C                b --- Parameter
 C                c --- Parameter, c <> 0,-1,-2,...
 C                x --- Argument   ( x < 1 )
 C       Output:  HF --- F(a,b,c,x)
+C                ISFER --- Error flag
 C       Routines called:
 C            (1) GAMMA2 for computing gamma function
 C            (2) PSI_SPEC for computing psi function
@@ -5827,6 +5468,7 @@ C
         LOGICAL L0,L1,L2,L3,L4,L5
         PI=3.141592653589793D0
         EL=.5772156649015329D0
+        ISFER=0
         L0=C.EQ.INT(C).AND.C.LT.0.0
         L1=1.0D0-X.LT.1.0D-15.AND.C-A-B.LE.0.0
         L2=A.EQ.INT(A).AND.A.LT.0.0
@@ -5834,7 +5476,7 @@ C
         L4=C-A.EQ.INT(C-A).AND.C-A.LE.0.0
         L5=C-B.EQ.INT(C-B).AND.C-B.LE.0.0
         IF (L0.OR.L1) THEN
-           WRITE(*,*)'The hypergeometric series is divergent'
+           ISFER=3
            RETURN
         ENDIF
         EPS=1.0D-15
@@ -5999,8 +5641,7 @@ C
         ENDIF
         A=AA
         B=BB
-        IF (K.GT.120) WRITE(*,115)
-115     FORMAT(1X,'Warning! You should check the accuracy')
+        IF (K.GT.120) ISFER=5
         RETURN
         END
 
@@ -6131,7 +5772,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE HYGFZ(A,B,C,Z,ZHF)
+        SUBROUTINE HYGFZ(A,B,C,Z,ZHF,ISFER)
 C
 C       ======================================================
 C       Purpose: Compute the hypergeometric function for a
@@ -6141,6 +5782,7 @@ C                b --- Parameter
 C                c --- Parameter,  c <> 0,-1,-2,...
 C                z --- Complex argument
 C       Output:  ZHF --- F(a,b,c,z)
+C                ISFER --- Error flag
 C       Routines called:
 C            (1) GAMMA2 for computing gamma function
 C            (2) PSI_SPEC for computing psi function
@@ -6152,6 +5794,7 @@ C
         X=DBLE(Z)
         Y=DIMAG(Z)
         EPS=1.0D-15
+        ISFER=0
         L0=C.EQ.INT(C).AND.C.LT.0.0D0
         L1=DABS(1.0D0-X).LT.EPS.AND.Y.EQ.0.0D0.AND.C-A-B.LE.0.0D0
         L2=CDABS(Z+1.0D0).LT.EPS.AND.DABS(C-A+B-1.0D0).LT.EPS
@@ -6166,8 +5809,7 @@ C
         PI=3.141592653589793D0
         EL=.5772156649015329D0
         IF (L0.OR.L1) THEN
-C           WRITE(*,*)'The hypergeometric series is divergent'
-           ZHF = 1.0D300
+           ISFER=3
            RETURN
         ENDIF
         NM=0
@@ -6413,8 +6055,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
         ENDIF
         A=AA
         B=BB
-        IF (K.GT.150) WRITE(*,160)
-160     FORMAT(1X,'Warning! You should check the accuracy')
+        IF (K.GT.150) ISFER=5
         RETURN
         END
 
@@ -6604,153 +6245,6 @@ C
         DO 40 K=2,NM
            DI(K)=BI(K-1)-K/X*BI(K)
 40         DK(K)=-BK(K-1)-K/X*BK(K)
-        RETURN
-        END
-
-
-
-C       **********************************
-
-        SUBROUTINE CJYNA(N,Z,NM,CBJ,CDJ,CBY,CDY)
-C
-C       =======================================================
-C       Purpose: Compute Bessel functions Jn(z), Yn(z) and
-C                their derivatives for a complex argument
-C       Input :  z --- Complex argument of Jn(z) and Yn(z)
-C                n --- Order of Jn(z) and Yn(z)
-C       Output:  CBJ(n) --- Jn(z)
-C                CDJ(n) --- Jn'(z)
-C                CBY(n) --- Yn(z)
-C                CDY(n) --- Yn'(z)
-C                NM --- Highest order computed
-C       Rouitines called:
-C            (1) CJY01 to calculate J0(z), J1(z), Y0(z), Y1(z)
-C            (2) MSTA1 and MSTA2 to calculate the starting
-C                point for backward recurrence
-C       =======================================================
-C
-        IMPLICIT DOUBLE PRECISION (A,B,E,P,R,W,Y)
-        IMPLICIT COMPLEX*16 (C,Z)
-        DIMENSION CBJ(0:N),CDJ(0:N),CBY(0:N),CDY(0:N)
-        PI=3.141592653589793D0
-        A0=CDABS(Z)
-        NM=N
-        IF (A0.LT.1.0D-100) THEN
-           DO 5 K=0,N
-              CBJ(K)=(0.0D0,0.0D0)
-              CDJ(K)=(0.0D0,0.0D0)
-              CBY(K)=-(1.0D+300,0.0D0)
-5             CDY(K)=(1.0D+300,0.0D0)
-           CBJ(0)=(1.0D0,0.0D0)
-           CDJ(1)=(0.5D0,0.0D0)
-           RETURN
-        ENDIF
-        CALL CJY01(Z,CBJ0,CDJ0,CBJ1,CDJ1,CBY0,CDY0,CBY1,CDY1)
-        CBJ(0)=CBJ0
-        CBJ(1)=CBJ1
-        CBY(0)=CBY0
-        CBY(1)=CBY1
-        CDJ(0)=CDJ0
-        CDJ(1)=CDJ1
-        CDY(0)=CDY0
-        CDY(1)=CDY1
-        IF (N.LE.1) RETURN
-        IF (N.LT.INT(0.25*A0)) THEN
-           CJ0=CBJ0
-           CJ1=CBJ1
-           DO 70 K=2,N
-              CJK=2.0D0*(K-1.0D0)/Z*CJ1-CJ0
-              CBJ(K)=CJK
-              CJ0=CJ1
-70            CJ1=CJK
-        ELSE
-           M=MSTA1(A0,200)
-           IF (M.LT.N) THEN
-              NM=M
-           ELSE
-              M=MSTA2(A0,N,15)
-           ENDIF
-           CF2=(0.0D0,0.0D0)
-           CF1=(1.0D-100,0.0D0)
-           DO 75 K=M,0,-1
-              CF=2.0D0*(K+1.0D0)/Z*CF1-CF2
-              IF (K.LE.NM) CBJ(K)=CF
-              CF2=CF1
-75            CF1=CF
-           IF (CDABS(CBJ0).GT.CDABS(CBJ1)) THEN
-              CS=CBJ0/CF
-           ELSE
-              CS=CBJ1/CF2
-           ENDIF
-           DO 80 K=0,NM
-80            CBJ(K)=CS*CBJ(K)
-        ENDIF
-        DO 85 K=2,NM
-85         CDJ(K)=CBJ(K-1)-K/Z*CBJ(K)
-        YA0=CDABS(CBY0)
-        LB=0
-        LB0=0
-        CG0=CBY0
-        CG1=CBY1
-        DO 90 K=2,NM
-           CYK=2.0D0*(K-1.0D0)/Z*CG1-CG0
-           IF (CDABS(CYK).GT.1.0D+290) GO TO 90
-           YAK=CDABS(CYK)
-           YA1=CDABS(CG0)
-           IF (YAK.LT.YA0.AND.YAK.LT.YA1) LB=K
-           CBY(K)=CYK
-           CG0=CG1
-           CG1=CYK
-90      CONTINUE
-        IF (LB.LE.4.OR.DIMAG(Z).EQ.0.0D0) GO TO 125
-95      IF (LB.EQ.LB0) GO TO 125
-        CH2=(1.0D0,0.0D0)
-        CH1=(0.0D0,0.0D0)
-        LB0=LB
-        DO 100 K=LB,1,-1
-           CH0=2.0D0*K/Z*CH1-CH2
-           CH2=CH1
-100        CH1=CH0
-        CP12=CH0
-        CP22=CH2
-        CH2=(0.0D0,0.0D0)
-        CH1=(1.0D0,0.0D0)
-        DO 105 K=LB,1,-1
-           CH0=2.0D0*K/Z*CH1-CH2
-           CH2=CH1
-105        CH1=CH0
-        CP11=CH0
-        CP21=CH2
-        IF (LB.EQ.NM) CBJ(LB+1)=2.0D0*LB/Z*CBJ(LB)-CBJ(LB-1)
-        IF (CDABS(CBJ(0)).GT.CDABS(CBJ(1))) THEN
-           CBY(LB+1)=(CBJ(LB+1)*CBY0-2.0D0*CP11/(PI*Z))/CBJ(0)
-           CBY(LB)=(CBJ(LB)*CBY0+2.0D0*CP12/(PI*Z))/CBJ(0)
-        ELSE
-           CBY(LB+1)=(CBJ(LB+1)*CBY1-2.0D0*CP21/(PI*Z))/CBJ(1)
-           CBY(LB)=(CBJ(LB)*CBY1+2.0D0*CP22/(PI*Z))/CBJ(1)
-        ENDIF
-        CYL2=CBY(LB+1)
-        CYL1=CBY(LB)
-        DO 110 K=LB-1,0,-1
-           CYLK=2.0D0*(K+1.0D0)/Z*CYL1-CYL2
-           CBY(K)=CYLK
-           CYL2=CYL1
-110        CYL1=CYLK
-        CYL1=CBY(LB)
-        CYL2=CBY(LB+1)
-        DO 115 K=LB+1,NM-1
-           CYLK=2.0D0*K/Z*CYL2-CYL1
-           CBY(K+1)=CYLK
-           CYL1=CYL2
-115        CYL2=CYLK
-        DO 120 K=2,NM
-           WA=CDABS(CBY(K))
-           IF (WA.LT.CDABS(CBY(K-1))) LB=K
-120     CONTINUE
-        GO TO 95
-125     CONTINUE
-        DO 130 K=2,NM
-130        CDY(K)=CBY(K-1)-K/Z*CBY(K)
         RETURN
         END
 
@@ -7460,7 +6954,7 @@ C                BD --- Bi'(x)
 C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION CK(41),DK(41)
+        DIMENSION CK(51),DK(51)
         EPS=1.0D-15
         PI=3.141592653589793D0
         C1=0.355028053887817D0
@@ -7511,20 +7005,34 @@ C
 45         AD=C1*DF-C2*DG
            BD=SR3*(C1*DF+C2*DG)
         ELSE
+           KM=INT(24.5-XA)
+           IF (XA.LT.6.0) KM=14
+           IF (XA.GT.15.0) KM=10
+           IF (X.GT.0.0D0) THEN
+              KMAX=KM
+           ELSE
+C             Choose cutoffs so that the remainder term in asymptotic
+C             expansion is epsilon size. The X<0 branch needs to be fast
+C             in order to make AIRYZO efficient
+              IF (XA.GT.70.0) KM=3
+              IF (XA.GT.500.0) KM=2
+              IF (XA.GT.1000.0) KM=1
+              KM2=KM
+              IF (XA.GT.150.0) KM2=1
+              IF (XA.GT.3000.0) KM2=0
+              KMAX=2*KM+1
+           ENDIF
            XE=XA*XQ/1.5D0
            XR1=1.0D0/XE
            XAR=1.0D0/XQ
            XF=DSQRT(XAR)
            RP=0.5641895835477563D0
            R=1.0D0
-           DO 50 K=1,40
+           DO 50 K=1,KMAX
               R=R*(6.0D0*K-1.0D0)/216.0D0*(6.0D0*K-3.0D0)
      &          /K*(6.0D0*K-5.0D0)/(2.0D0*K-1.0D0)
               CK(K)=R
 50            DK(K)=-(6.0D0*K+1.0D0)/(6.0D0*K-1.0D0)*CK(K)
-           KM=INT(24.5-XA)
-           IF (XA.LT.6.0) KM=14
-           IF (XA.GT.15.0) KM=10
            IF (X.GT.0.0D0) THEN
               SAI=1.0D0
               SAD=1.0D0
@@ -7559,7 +7067,7 @@ C
               SSB=CK(1)*XR1
               SDB=DK(1)*XR1
               R=XR1
-              DO 70 K=1,KM
+              DO 70 K=1,KM2
                  R=-R*XR2
                  SSB=SSB+CK(2*K+1)*R
 70               SDB=SDB+DK(2*K+1)*R
@@ -7872,6 +7380,7 @@ C
            C0=R0*RG
         ENDIF
         IF (V0.EQ.0.0D0) THEN
+C          DLMF 14.3.4, 14.7.17, 15.2.4
            PMV=1.0D0
            R=1.0D0
            DO 20 K=1,NV-M
@@ -7881,6 +7390,7 @@ C
            PMV=(-1)**NV*C0*PMV
         ELSE
            IF (X.GE.-0.35D0) THEN
+C             DLMF 14.3.4, 15.2.1
               PMV=1.0D0
               R=1.0D0
               DO 25 K=1,100
@@ -7890,6 +7400,7 @@ C
 25            CONTINUE
 30            PMV=(-1)**M*C0*PMV
            ELSE
+C             DLMF 14.3.5, 15.8.10
               VS=DSIN(V*PI)/PI
               PV0=0.0D0
               IF (M.NE.0) THEN
@@ -7954,6 +7465,7 @@ C
         ENDIF
         VX=V
         MX=M
+C       DLMF 14.9.5
         IF (V.LT.0) THEN
            VX=-VX-1
         ENDIF
@@ -7971,7 +7483,7 @@ C             We don't handle cases where DLMF 14.9.3 doesn't help
         NV=INT(VX)
         V0=VX-NV
         IF (NV.GT.2.AND.NV.GT.MX) THEN
-C          Up-recursion on degree, AMS 8.5.3
+C          Up-recursion on degree, AMS 8.5.3 / DLMF 14.10.3
            CALL LPMV0(V0+MX, MX, X, P0)
            CALL LPMV0(V0+MX+1, MX, X, P1)
            PMV = P1
@@ -8979,7 +8491,7 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
         IMPLICIT COMPLEX *16 (C,Z)
-        DIMENSION H(100),D(100)
+        DIMENSION H(100),D(80)
         EPS=1.0D-15
         P0=0.59460355750136D0
         IF (A.EQ.0.0D0) THEN
@@ -9011,15 +8523,15 @@ C
            R=0.5D0*R*X*X/(K*(2.0D0*K-1.0D0))
            R1=H(K)*R
            Y1F=Y1F+R1
-           IF (DABS(R1/Y1F).LE.EPS.AND.K.GT.30) GO TO 20
+           IF (DABS(R1).LE.EPS*DABS(Y1F).AND.K.GT.30) GO TO 20
 15      CONTINUE
 20      Y1D=A
         R=1.0D0
-        DO 25 K=1,100
+        DO 25 K=1,99
            R=0.5D0*R*X*X/(K*(2.0D0*K+1.0D0))
            R1=H(K+1)*R
            Y1D=Y1D+R1
-           IF (DABS(R1/Y1D).LE.EPS.AND.K.GT.30) GO TO 30
+           IF (DABS(R1).LE.EPS*DABS(Y1D).AND.K.GT.30) GO TO 30
 25      CONTINUE
 30      Y1D=X*Y1D
         D1=1.0D0
@@ -9034,20 +8546,20 @@ C
 40         D2=DL
         Y2F=1.0D0
         R=1.0D0
-        DO 45 K=1,100
+        DO 45 K=1,79
            R=0.5D0*R*X*X/(K*(2.0D0*K+1.0D0))
            R1=D(K+1)*R
            Y2F=Y2F+R1
-           IF (DABS(R1/Y2F).LE.EPS.AND.K.GT.30) GO TO 50
+           IF (DABS(R1).LE.EPS*DABS(Y2F).AND.K.GT.30) GO TO 50
 45      CONTINUE
 50      Y2F=X*Y2F
         Y2D=1.0D0
         R=1.0D0
-        DO 55 K=1,100
+        DO 55 K=1,79
            R=0.5D0*R*X*X/(K*(2.0D0*K-1.0D0))
            R1=D(K+1)*R
            Y2D=Y2D+R1
-           IF (DABS(R1/Y2D).LE.EPS.AND.K.GT.30) GO TO 60
+           IF (DABS(R1).LE.EPS*DABS(Y2F).AND.K.GT.30) GO TO 60
 55      CONTINUE
 60      W1F=P0*(F1*Y1F-F2*Y2F)
         W2F=P0*(F1*Y1F+F2*Y2F)
@@ -9253,7 +8765,7 @@ C             Careful on the branch cut -- avoid signed zeros
               CE1=-EL-CDLOG(Z)+Z*CE1
            ENDIF
         ELSE
-C          Continued fraction http://dlmf.nist.gov/6.9
+C          Continued fraction https://dlmf.nist.gov/6.9
 C
 C                           1     1     1     2     2     3     3
 C          E1 = exp(-z) * ----- ----- ----- ----- ----- ----- ----- ...
@@ -9494,93 +9006,6 @@ C
         ENDIF
         RETURN
         END
-
-C       **********************************
-
-        SUBROUTINE STVLV(V,X,SLV)
-C
-C       ======================================================
-C       Purpose:  Compute modified Struve function Lv(x) with
-C                 an arbitrary order v
-C       Input :   v   --- Order of Lv(x)  ( |v| ≤ 20 )
-C                 x   --- Argument of Lv(x) ( x ≥ 0 )
-C       Output:   SLV --- Lv(x)
-C       Routine called: GAMMA2 to compute the gamma function
-C       ======================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        IF (X.EQ.0.0D0) THEN
-           IF (V.GT.-1.0.OR.INT(V)-V.EQ.0.5D0) THEN
-              SLV=0.0D0
-           ELSE IF (V.LT.-1.0D0) THEN
-              SLV=(-1)**(INT(0.5D0-V)-1)*1.0D+300
-           ELSE IF (V.EQ.-1.0D0) THEN
-              SLV=2.0D0/PI
-           ENDIF
-           RETURN
-        ENDIF
-        IF (X.LE.40.0D0) THEN
-           V0=V+1.5D0
-           CALL GAMMA2(V0,GA)
-           S=2.0D0/(DSQRT(PI)*GA)
-           R1=1.0D0
-           DO 10 K=1,100
-              VA=K+1.5D0
-              CALL GAMMA2(VA,GA)
-              VB=V+K+1.5D0
-              CALL GAMMA2(VB,GB)
-              R1=R1*(0.5D0*X)**2
-              R2=R1/(GA*GB)
-              S=S+R2
-              IF (DABS(R2/S).LT.1.0D-12) GO TO 15
-10         CONTINUE
-15         SLV=(0.5D0*X)**(V+1.0D0)*S
-        ELSE
-           SA=-1.0D0/PI*(0.5D0*X)**(V-1.0)
-           V0=V+0.5D0
-           CALL GAMMA2(V0,GA)
-           S=-DSQRT(PI)/GA
-           R1=-1.0D0
-           DO 20 K=1,12
-              VA=K+0.5D0
-              CALL GAMMA2(VA,GA)
-              VB=-K+V+0.5D0
-              CALL GAMMA2(VB,GB)
-              R1=-R1/(0.5D0*X)**2
-              S=S+R1*GA/GB
-20         CONTINUE
-           S0=SA*S
-           U=DABS(V)
-           N=INT(U)
-           U0=U-N
-           BIV0=0.0D0
-           DO 35 L=0,1
-              VT=U0+L
-              R=1.0D0
-              BIV=1.0D0
-              DO 25 K=1,16
-                 R=-0.125*R*(4.0*VT*VT-(2.0*K-1.0D0)**2)/(K*X)
-                 BIV=BIV+R
-                 IF (DABS(R/BIV).LT.1.0D-12) GO TO 30
-25            CONTINUE
-30            IF (L.EQ.0) BIV0=BIV
-35         CONTINUE
-           BF=0.0D0
-           BF0=BIV0
-           BF1=BIV
-           DO 40 K=2,N
-              BF=-2.0D0*(K-1.0+U0)/X*BF1+BF0
-              BF0=BF1
-40            BF1=BF
-           IF (N.EQ.0) BIV=BIV0
-           IF (N.GT.1) BIV=BF
-           SLV=DEXP(X)/DSQRT(2.0D0*PI*X)*BIV+S0
-        ENDIF
-        RETURN
-        END
-
-
 
 C       **********************************
 
@@ -10205,87 +9630,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE CSPHIK(N,Z,NM,CSI,CDI,CSK,CDK)
-C
-C       =======================================================
-C       Purpose: Compute modified spherical Bessel functions
-C                and their derivatives for a complex argument
-C       Input :  z --- Complex argument
-C                n --- Order of in(z) & kn(z) ( n = 0,1,2,... )
-C       Output:  CSI(n) --- in(z)
-C                CDI(n) --- in'(z)
-C                CSK(n) --- kn(z)
-C                CDK(n) --- kn'(z)
-C                NM --- Highest order computed
-C       Routines called:
-C                MSTA1 and MSTA2 for computing the starting
-C                point for backward recurrence
-C       =======================================================
-C
-        IMPLICIT COMPLEX*16 (C,Z)
-        DOUBLE PRECISION A0,PI
-        DIMENSION CSI(0:N),CDI(0:N),CSK(0:N),CDK(0:N)
-        PI=3.141592653589793D0
-        A0=CDABS(Z)
-        NM=N
-        IF (A0.LT.1.0D-60) THEN
-           DO 10 K=0,N
-              CSI(K)=0.0D0
-              CDI(K)=0.0D0
-              CSK(K)=1.0D+300
-10            CDK(K)=-1.0D+300
-           CSI(0)=1.0D0
-           CDI(1)=0.3333333333333333D0
-           RETURN
-        ENDIF
-        CI = DCMPLX(0.0D0, 1.0D0)
-        CSINH=CDSIN(CI*Z)/CI
-        CCOSH=CDCOS(CI*Z)
-        CSI0=CSINH/Z
-        CSI1=(-CSINH/Z+CCOSH)/Z
-        CSI(0)=CSI0
-        CSI(1)=CSI1
-        IF (N.GE.2) THEN
-           M=MSTA1(A0,200)
-           IF (M.LT.N) THEN
-              NM=M
-           ELSE
-              M=MSTA2(A0,N,15)
-           ENDIF
-           CF0=0.0D0
-           CF1=1.0D0-100
-           DO 15 K=M,0,-1
-              CF=(2.0D0*K+3.0D0)*CF1/Z+CF0
-              IF (K.LE.NM) CSI(K)=CF
-              CF0=CF1
-15            CF1=CF
-           IF (CDABS(CSI0).GT.CDABS(CSI1)) CS=CSI0/CF
-           IF (CDABS(CSI0).LE.CDABS(CSI1)) CS=CSI1/CF0
-           DO 20 K=0,NM
-20            CSI(K)=CS*CSI(K)
-        ENDIF
-        CDI(0)=CSI(1)
-        DO 25 K=1,NM
-25         CDI(K)=CSI(K-1)-(K+1.0D0)*CSI(K)/Z
-        CSK(0)=0.5D0*PI/Z*CDEXP(-Z)
-        CSK(1)=CSK(0)*(1.0D0+1.0D0/Z)
-        DO 30 K=2,NM
-           IF (CDABS(CSI(K-1)).GT.CDABS(CSI(K-2))) THEN
-              CSK(K)=(0.5D0*PI/(Z*Z)-CSI(K)*CSK(K-1))/CSI(K-1)
-           ELSE
-              CSK(K)=(CSI(K)*CSK(K-2)+(K-0.5D0)*PI/Z**3)/CSI(K-2)
-           ENDIF
-30      CONTINUE
-        CDK(0)=-CSK(1)
-        DO 35 K=1,NM
-35         CDK(K)=-CSK(K-1)-(K+1.0D0)*CSK(K)/Z
-        RETURN
-        END
-
-
-
-C       **********************************
-
         SUBROUTINE BJNDD(N,X,BJ,DJ,FJ)
 C
 C       =====================================================
@@ -10329,7 +9673,7 @@ C       **********************************
 
 
         SUBROUTINE SPHJ(N,X,NM,SJ,DJ)
-C       MODIFIED to ALLOW N=0 CASE (ALSO IN CSPHJY, SPHY)
+C       MODIFIED to ALLOW N=0 CASE (ALSO IN SPHY)
 C
 C       =======================================================
 C       Purpose: Compute spherical Bessel functions jn(x) and
@@ -10673,10 +10017,12 @@ C       2) iterate
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 10
 C       3) initial guess for j_{N,L+1}
-        IF (L.GE.1 .AND. X.LE.RJ0(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 10
+        IF (L.GE.1)THEN
+           IF (X.LE.RJ0(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 10
+           ENDIF
         END IF
         L=L+1
         RJ0(L)=X
@@ -10698,10 +10044,12 @@ C       -- Newton method for j_{N,L}'
         IF (X-X0.LT.-1) X=X0-1
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 15
-        IF (L.GE.1 .AND. X.LE.RJ1(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 15
+        IF (L.GE.1)THEN
+           IF (X.LE.RJ1(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 15
+           ENDIF
         END IF
         L=L+1
         RJ1(L)=X
@@ -10722,10 +10070,12 @@ C       -- Newton method for y_{N,L}
         IF (X-X0.LT.-1) X=X0-1
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 20
-        IF (L.GE.1 .AND. X.LE.RY0(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 20
+        IF (L.GE.1)THEN
+           IF (X.LE.RY0(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 20
+           END IF
         END IF
         L=L+1
         RY0(L)=X
@@ -10744,10 +10094,12 @@ C       -- Newton method for y_{N,L}'
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
         IF (DABS(X-X0).GT.1.0D-11) GO TO 25
-        IF (L.GE.1 .AND. X.LE.RY1(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 25
+        IF (L.GE.1) THEN
+           IF (X.LE.RY1(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 25
+           END IF
         END IF
         L=L+1
         RY1(L)=X
@@ -12316,7 +11668,9 @@ C
                     GO TO 35
                  ENDIF
 30            CONTINUE
-35            IF (K.NE.1.AND.H(K).LT.H(K-1)) H(K)=H(K-1)
+35            IF (K.NE.1) THEN
+                 IF(H(K).LT.H(K-1)) H(K)=H(K-1)
+              ENDIF
 40            X1=(B(K)+H(K))/2.0D0
               CV0(K)=X1
               IF (DABS((B(K)-H(K))/X1).LT.1.0D-14) GO TO 50
@@ -12899,8 +12253,6 @@ C
         RETURN
         END
 
-
-
 C       **********************************
 
         SUBROUTINE JELP(U,HK,ESN,ECN,EDN,EPH)
@@ -12908,7 +12260,7 @@ C
 C       ========================================================
 C       Purpose: Compute Jacobian elliptic functions sn u, cn u
 C                and dn u
-C       Input  : u   --- Argument of Jacobian elliptic fuctions
+C       Input  : u   --- Argument of Jacobian elliptic functions
 C                Hk  --- Modulus k ( 0 ≤ k ≤ 1 )
 C       Output : ESN --- sn u
 C                ECN --- cn u
@@ -12942,149 +12294,3 @@ C
         EDN=DSQRT(1.0D0-HK*HK*ESN*ESN)
         RETURN
         END
-
-C       **********************************
-
-        SUBROUTINE STVHV(V,X,HV)
-C
-C       =====================================================
-C       Purpose: Compute Struve function Hv(x) with an
-C                arbitrary order v
-C       Input :  v  --- Order of Hv(x)  ( -8.0 ≤ v ≤ 12.5 )
-C                x  --- Argument of Hv(x) ( x ≥ 0 )
-C       Output:  HV --- Hv(x)
-C       Note: numerically unstable away from the above range for `v`
-C       Routine called: GAMMA2 to compute the gamma function
-C       =====================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        IF (X.EQ.0.0D0) THEN
-           IF (V.GT.-1.0.OR.INT(V)-V.EQ.0.5D0) THEN
-              HV=0.0D0
-           ELSE IF (V.LT.-1.0D0) THEN
-              HV=(-1)**(INT(0.5D0-V)-1)*1.0D+300
-           ELSE IF (V.EQ.-1.0D0) THEN
-              HV=2.0D0/PI
-           ENDIF
-           RETURN
-        ENDIF
-        BYV=0.0D0
-        BF=0.0D0
-        QU0=0.0D0
-        PU0=0.0D0
-        IF (X.LE.20.0D0) THEN
-C          Power series for Hv (Abramowitz & Stegun 12.1.3)
-           V0=V+1.5D0
-           CALL GAMMA2(V0,GA)
-           S=2.0D0/(DSQRT(PI)*GA)
-           R1=1.0D0
-           DO 10 K=1,100
-              VA=K+1.5D0
-              CALL GAMMA2(VA,GA)
-              VB=V+K+1.5D0
-              CALL GAMMA2(VB,GB)
-              R1=-R1*(0.5D0*X)**2
-              R2=R1/(GA*GB)
-              S=S+R2
-              IF (DABS(R2).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         HV=(0.5D0*X)**(V+1.0D0)*S
-        ELSE
-C          Asymptotic large |z| expansion for Hv - Yv  (Abm & Stg 12.1.29)
-           SA=(0.5D0*X)**(V-1.0)/PI
-           V0=V+0.5D0
-           CALL GAMMA2(V0,GA)
-           S=DSQRT(PI)/GA
-           R1=1.0D0
-           DO 20 K=1,12
-              VA=K+0.5D0
-              CALL GAMMA2(VA,GA)
-              VB=-K+V+0.5D0
-              CALL GAMMA2(VB,GB)
-              R1=R1/(0.5D0*X)**2
-              S=S+R1*GA/GB
-20         CONTINUE
-           S0=SA*S
-
-C          Compute Y_(|v|-N)   (Abm & Stg 9.2.6)
-           U=DABS(V)
-           N=INT(U)
-           U0=U-N
-           DO 35 L=0,1
-              VT=4.0D0*(U0+L)**2
-              R1=1.0D0
-              PU1=1.0D0
-              DO 25 K=1,12
-                 R1=-0.0078125D0*R1*(VT-(4.0*K-3.0D0)**2)*
-     &             (VT-(4.0D0*K-1.0)**2)/((2.0D0*K-1.0)*K*X*X)
-                 PU1=PU1+R1
-25            CONTINUE
-              QU1=1.0D0
-              R2=1.0D0
-              DO 30 K=1,12
-                 R2=-0.0078125D0*R2*(VT-(4.0D0*K-1.0)**2)*
-     &             (VT-(4.0D0*K+1.0)**2)/((2.0D0*K+1.0)*K*X*X)
-                 QU1=QU1+R2
-30            CONTINUE
-              QU1=0.125D0*(VT-1.0D0)/X*QU1
-              IF (L.EQ.0) THEN
-                 PU0=PU1
-                 QU0=QU1
-              ENDIF
-35         CONTINUE
-           T0=X-(0.5*U0+0.25D0)*PI
-           T1=X-(0.5*U0+0.75D0)*PI
-           SR=DSQRT(2.0D0/(PI*X))
-           BY0=SR*(PU0*DSIN(T0)+QU0*DCOS(T0))
-           BY1=SR*(PU1*DSIN(T1)+QU1*DCOS(T1))
-
-C          Compute Y_|v|   (Abm & Stg 9.1.27)
-           BF0=BY0
-           BF1=BY1
-           DO 40 K=2,N
-              BF=2.0D0*(K-1.0+U0)/X*BF1-BF0
-              BF0=BF1
-40            BF1=BF
-           IF (N.EQ.0) BYV=BY0
-           IF (N.EQ.1) BYV=BY1
-           IF (N.GT.1) BYV=BF
-
-C          Compute Y_v  (handle the case v < 0 appropriately)
-           IF (V .LT. 0) THEN
-              IF (U0 .EQ. 0) THEN
-C                Use symmetry (Abm & Stg 9.1.5)
-                 BYV=(-1)**N*BYV
-              ELSE
-C                Use relation between Yv & Jv (Abm & Stg 9.1.6)
-
-C                Compute J_(|v|-N) (Abm & Stg 9.2.5)
-                 BJ0=SR*(PU0*DCOS(T0)-QU0*DSIN(T0))
-                 BJ1=SR*(PU1*DCOS(T1)-QU1*DSIN(T1))
-C                Forward recurrence for J_|v| (Abm & Stg 9.1.27)
-C                It's OK for the limited range -8.0 ≤ v ≤ 12.5,
-C                since x >= 20 here; but would be unstable for v <~ -20
-                 BF0=BJ0
-                 BF1=BJ1
-                 DO 50 K=2,N
-                    BF=2.0D0*(K-1.0+U0)/X*BF1-BF0
-                    BF0=BF1
-50                  BF1=BF
-                 IF (N.EQ.0) BJV=BJ0
-                 IF (N.EQ.1) BJV=BJ1
-                 IF (N.GT.1) BJV=BF
-
-C                Compute Y_v    (Abm & Stg 9.1.6)
-                 BYV = DCOS(V*PI)*BYV + DSIN(-V*PI)*BJV
-              END IF
-           END IF
-
-C          Compute H_v
-           HV=BYV+S0
-        ENDIF
-        RETURN
-        END
-
-
-
-C       **********************************

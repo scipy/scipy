@@ -46,19 +46,49 @@ its use, for linear and cubic spline interpolation:
 
    >>> from scipy.interpolate import interp1d
 
-   >>> x = np.linspace(0, 10, 10)
-   >>> y = np.cos(-x**2/8.0)
+   >>> x = np.linspace(0, 10, num=11, endpoint=True)
+   >>> y = np.cos(-x**2/9.0)
    >>> f = interp1d(x, y)
    >>> f2 = interp1d(x, y, kind='cubic')
 
-   >>> xnew = np.linspace(0, 10, 40)
+   >>> xnew = np.linspace(0, 10, num=41, endpoint=True)
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x,y,'o',xnew,f(xnew),'-', xnew, f2(xnew),'--')
+   >>> plt.plot(x, y, 'o', xnew, f(xnew), '-', xnew, f2(xnew), '--')
    >>> plt.legend(['data', 'linear', 'cubic'], loc='best')
    >>> plt.show()
 
 ..   :caption: One-dimensional interpolation using the
-..             class :obj:`interpolate.interp1d`
+..             class :obj:`interpolate.interp1d` with
+..             kind equals `linear` and `cubic`.
+
+
+Another set of interpolations in `interp1d` is `nearest`, `previous`, and
+`next`, where they return the nearest, previous, or next point along the
+x-axis. Nearest and next can be thought of as a special case of a causal
+interpolating filter. The following example demonstrates their use, using the
+same data as in the previous example:
+
+.. plot::
+
+   >>> from scipy.interpolate import interp1d
+
+   >>> x = np.linspace(0, 10, num=11, endpoint=True)
+   >>> y = np.cos(-x**2/9.0)
+   >>> f1 = interp1d(x, y, kind='nearest')
+   >>> f2 = interp1d(x, y, kind='previous')
+   >>> f3 = interp1d(x, y, kind='next')
+
+   >>> xnew = np.linspace(0, 10, num=1001, endpoint=True)
+   >>> import matplotlib.pyplot as plt
+   >>> plt.plot(x, y, 'o')
+   >>> plt.plot(xnew, f1(xnew), '-', xnew, f2(xnew), '--', xnew, f3(xnew), ':')
+   >>> plt.legend(['data', 'nearest', 'previous', 'next'], loc='best')
+   >>> plt.show()
+
+..   :caption: One-dimensional interpolation using the
+..             class :obj:`interpolate.interp1d` with
+..             kind equals `nearest`, `previous`, and
+..             `next`.
 
 
 Multivariate data interpolation (:func:`griddata`)
@@ -73,7 +103,7 @@ that do not form a regular grid.
     Suppose we want to interpolate the 2-D function
 
     >>> def func(x, y):
-    >>>     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+    ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 
     on a grid in [0, 1]x[0, 1]
 
@@ -141,7 +171,7 @@ required. This input is a list of :math:`N` -arrays representing the
 curve in :math:`N` -dimensional space. The length of each array is the
 number of curve points, and each array provides one component of the
 :math:`N` -dimensional data point. The parameter variable is given
-with the keword argument, *u,* which defaults to an equally-spaced
+with the keyword argument, *u,* which defaults to an equally-spaced
 monotonic sequence between :math:`0` and :math:`1` . The default
 output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
 , containing the spline representation and the parameter variable
@@ -174,7 +204,7 @@ example that follows.
    >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
    >>> tck = interpolate.splrep(x, y, s=0)
-   >>> xnew = np.arange(0,2*np.pi,np.pi/50)
+   >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
    >>> ynew = interpolate.splev(xnew, tck, der=0)
 
    >>> plt.figure()
@@ -188,7 +218,7 @@ example that follows.
 
    >>> yder = interpolate.splev(xnew, tck, der=1)
    >>> plt.figure()
-   >>> plt.plot(xnew,yder,xnew,np.cos(xnew),'--')
+   >>> plt.plot(xnew, yder, xnew, np.cos(xnew),'--')
    >>> plt.legend(['Cubic Spline', 'True'])
    >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Derivative estimation from spline')
@@ -197,13 +227,13 @@ example that follows.
    Integral of spline
 
    >>> def integ(x, tck, constant=-1):
-   >>>     x = np.atleast_1d(x)
-   >>>     out = np.zeros(x.shape, dtype=x.dtype)
-   >>>     for n in xrange(len(out)):
-   >>>         out[n] = interpolate.splint(0, x[n], tck)
-   >>>     out += constant
-   >>>     return out
-   >>>
+   ...     x = np.atleast_1d(x)
+   ...     out = np.zeros(x.shape, dtype=x.dtype)
+   ...     for n in range(len(out)):
+   ...         out[n] = interpolate.splint(0, x[n], tck)
+   ...     out += constant
+   ...     return out
+
    >>> yint = integ(xnew, tck)
    >>> plt.figure()
    >>> plt.plot(xnew, yint, xnew, -np.cos(xnew), '--')
@@ -214,15 +244,25 @@ example that follows.
 
    Roots of spline
 
-   >>> print(interpolate.sproot(tck))
-   [ 0.      3.1416]
+   >>> interpolate.sproot(tck)
+   array([3.1416])
+
+   Notice that `sproot` failed to find an obvious solution at the edge of the
+   approximation interval, :math:`x = 0`. If we define the spline on a slightly
+   larger interval, we recover both roots :math:`x = 0` and :math:`x = 2\pi`:
+
+   >>> x = np.linspace(-np.pi/4, 2.*np.pi + np.pi/4, 21)
+   >>> y = np.sin(x)
+   >>> tck = interpolate.splrep(x, y, s=0)
+   >>> interpolate.sproot(tck)
+   array([0., 3.1416])
 
    Parametric spline
 
    >>> t = np.arange(0, 1.1, .1)
    >>> x = np.sin(2*np.pi*t)
    >>> y = np.cos(2*np.pi*t)
-   >>> tck,u = interpolate.splprep([x,y], s=0)
+   >>> tck, u = interpolate.splprep([x, y], s=0)
    >>> unew = np.arange(0, 1.01, 0.01)
    >>> out = interpolate.splev(unew, tck)
    >>> plt.figure()
@@ -459,7 +499,6 @@ This example shows how to interpolate scattered 2d data.
     >>> ZI = rbf(XI, YI)
 
     >>> # plot the result
-    >>> n = plt.normalize(-2., 2.)
     >>> plt.subplot(1, 1, 1)
     >>> plt.pcolor(XI, YI, ZI, cmap=cm.jet)
     >>> plt.scatter(x, y, 100, z, cmap=cm.jet)

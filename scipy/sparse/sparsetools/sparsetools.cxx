@@ -37,9 +37,8 @@
 
 #define MAX_ARGS 16
 
-#if PY_VERSION_HEX >= 0x03000000
-#define PyInt_AsSsize_t PyLong_AsSsize_t
-#define PyInt_FromSsize_t PyLong_FromSsize_t
+#if NPY_API_VERSION >= 0x0000000c
+    #define HAVE_WRITEBACKIFCOPY
 #endif
 
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
@@ -82,7 +81,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *     'W': std::vector<data>
  *     'B': npy_bool array
  *     '*': indicates that the next argument is an output argument
- * thunk : Py_ssize_t thunk(int I_typenum, int T_typenum, void **)
+ * thunk : PY_LONG_LONG thunk(int I_typenum, int T_typenum, void **)
  *     Thunk function to call. It is passed a void** array of pointers to
  *     arguments, constructed according to `spec`. The types of data pointed
  *     to by each element agree with I_typenum and T_typenum, or are bools.
@@ -110,7 +109,9 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int next_is_output = 0;
     int j, k, arg_j;
     const char *p;
-    Py_ssize_t ret;
+    PY_LONG_LONG ret;
+    Py_ssize_t max_array_size = 0;
+    NPY_BEGIN_THREADS_DEF;
 
     if (!PyTuple_Check(args)) {
         PyErr_SetString(PyExc_ValueError, "args is not a tuple");
@@ -152,6 +153,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --arg_j;
             continue;
         case 'i':
+        case 'l':
             /* Integer scalars */
             arg = PyTuple_GetItem(args, arg_j);
             if (arg == NULL) {
@@ -214,13 +216,17 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         /* Find a compatible supported data type */
         dtype = PyArray_DESCR(arg_arrays[j]);
         for (k = 0; k < n_supported_typenums; ++k) {
-            if (PyArray_CanCastSafely(dtype->type_num, supported_typenums[k]))
+            if (PyArray_CanCastSafely(dtype->type_num, supported_typenums[k]) &&
+                (cur_typenum == -1 || PyArray_CanCastSafely(cur_typenum, supported_typenums[k])))
             {
-                if (cur_typenum == -1 || !PyArray_CanCastSafely(supported_typenums[k], cur_typenum)) {
-                    cur_typenum = supported_typenums[k];
-                }
+                cur_typenum = supported_typenums[k];
                 break;
             }
+        }
+        if (k == n_supported_typenums) {
+            PyErr_SetString(PyExc_ValueError,
+                            "unsupported data types in input");
+            goto fail;
         }
 
         if (*p == 'I') {
@@ -233,13 +239,13 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
     if (arg_j != PyTuple_Size(args)) {
         PyErr_SetString(PyExc_ValueError, "too many arguments");
-        return NULL;
+        goto fail;
     }
 
     if ((I_in_arglist && I_typenum == -1) ||
         (T_in_arglist && T_typenum == -1)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "internal error: failed to resolve data types");
+        PyErr_SetString(PyExc_ValueError,
+                        "unsupported data types in input");
         goto fail;
     }
 
@@ -256,21 +262,31 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --j;
             continue;
         }
-        else if (*p == 'i') {
+        else if (*p == 'i' || *p == 'l') {
             /* Integer scalars */
-            Py_ssize_t value;
+            PY_LONG_LONG value;
 
-            value = PyInt_AsSsize_t(arg_arrays[j]);
+#if PY_VERSION_HEX >= 0x03000000
+            value = PyLong_AsLongLong(arg_arrays[j]);
+#else
+            if (PyInt_Check(arg_arrays[j])) {
+                value = PyInt_AsLong(arg_arrays[j]);
+            }
+            else {
+                value = PyLong_AsLongLong(arg_arrays[j]);
+            }
+#endif
             if (PyErr_Occurred()) {
                 goto fail;
             }
 
-            if (PyArray_EquivTypenums(I_typenum, NPY_INT64)
+            if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
                     && value == (npy_int64)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int64));
                 *(npy_int64*)arg_list[j] = (npy_int64)value;
             }
-            else if (value == (npy_int32)value) {
+            else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
+                     && value == (npy_int32)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int32));
                 *(npy_int32*)arg_list[j] = (npy_int32)value;
             }
@@ -286,10 +302,16 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
         else if (*p == 'V') {
             arg_list[j] = allocate_std_vector_typenum(I_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
             continue;
         }
         else if (*p == 'W') {
             arg_list[j] = allocate_std_vector_typenum(T_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
             continue;
         }
         else {
@@ -297,31 +319,51 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
             /* Cast if necessary */
             arg = arg_arrays[j];
-            if (!PyArray_EquivTypenums(PyArray_DESCR(arg)->type_num,
-                                       cur_typenum))
-            {
+            if (PyArray_EquivTypenums(PyArray_DESCR(arg)->type_num, cur_typenum)) {
+                /* No cast needed. */
+            }
+            else if (!is_output[j] || PyArray_CanCastSafely(cur_typenum, PyArray_DESCR(arg)->type_num)) {
+                /* Cast needed. Output arrays require safe cast back. */
                 arg_arrays[j] = c_array_from_object(arg, cur_typenum, is_output[j]);
                 Py_DECREF(arg);
                 if (arg_arrays[j] == NULL) {
                     goto fail;
                 }
             }
+            else {
+                /* Cast back into output array was not safe. */
+                PyErr_SetString(PyExc_ValueError,
+                                "Output dtype not compatible with inputs.");
+                goto fail;
+            }
         }
 
         /* Grab value */
         arg_list[j] = PyArray_DATA(arg_arrays[j]);
+
+        /* Find maximum array size */
+        if (PyArray_SIZE(arg_arrays[j]) > max_array_size) {
+            max_array_size = PyArray_SIZE(arg_arrays[j]);
+        }
     }
 
 
     /*
      * Call thunk
      */
+    if (max_array_size > 100) {
+        /* Threshold GIL release: it's not a free operation */
+        NPY_BEGIN_THREADS;
+    }
     try {
         ret = thunk(I_typenum, T_typenum, arg_list);
+        NPY_END_THREADS;
     } catch (const std::bad_alloc &e) {
+        NPY_END_THREADS;
         PyErr_SetString(PyExc_MemoryError, e.what());
         goto fail;
     } catch (const std::exception &e) {
+        NPY_END_THREADS;
         PyErr_SetString(PyExc_RuntimeError, e.what());
         goto fail;
     }
@@ -332,7 +374,8 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
     switch (ret_spec) {
     case 'i':
-        return_value = PyInt_FromSsize_t(ret);
+    case 'l':
+        return_value = PyLong_FromLongLong(ret);
         break;
     case 'v':
         Py_INCREF(Py_None);
@@ -397,15 +440,24 @@ fail:
     /*
      * Cleanup
      */
-    for (j = 0; j < MAX_ARGS; ++j) {
+    for (j = 0, p = spec; *p != '\0'; ++p, ++j) {
+        if (*p == '*') {
+            --j;
+            continue;
+        }
+        #ifdef HAVE_WRITEBACKIFCOPY
+            if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
+                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]); 
+            }
+        #endif
         Py_XDECREF(arg_arrays[j]);
-        if (spec[j] == 'i' && arg_list[j] != NULL) {
+        if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
             std::free(arg_list[j]);
         }
-        else if (spec[j] == 'V' && arg_list[j] != NULL) {
+        else if (*p == 'V' && arg_list[j] != NULL) {
             free_std_vector_typenum(I_typenum, arg_list[j]);
         }
-        else if (spec[j] == 'W' && arg_list[j] != NULL) {
+        else if (*p == 'W' && arg_list[j] != NULL) {
             free_std_vector_typenum(T_typenum, arg_list[j]);
         }
     }
@@ -424,20 +476,27 @@ static void *allocate_std_vector_typenum(int typenum)
         return (void*)(new std::vector<ctype>());               \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_uint);
-    PROCESS(NPY_LONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    try {
+        PROCESS(NPY_BOOL, npy_bool_wrapper);
+        PROCESS(NPY_BYTE, npy_byte);
+        PROCESS(NPY_UBYTE, npy_ubyte);
+        PROCESS(NPY_SHORT, npy_short);
+        PROCESS(NPY_USHORT, npy_ushort);
+        PROCESS(NPY_INT, npy_int);
+        PROCESS(NPY_UINT, npy_uint);
+        PROCESS(NPY_LONG, npy_long);
+        PROCESS(NPY_ULONG, npy_ulong);
+        PROCESS(NPY_LONGLONG, npy_longlong);
+        PROCESS(NPY_ULONGLONG, npy_ulonglong);
+        PROCESS(NPY_FLOAT, npy_float);
+        PROCESS(NPY_DOUBLE, npy_double);
+        PROCESS(NPY_LONGDOUBLE, npy_longdouble);
+        PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
+        PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
+        PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    } catch (std::exception &e) {
+        /* failed */
+    }
 
 #undef PROCESS
 
@@ -458,9 +517,12 @@ static void free_std_vector_typenum(int typenum, void *p)
     PROCESS(NPY_UBYTE, npy_ubyte);
     PROCESS(NPY_SHORT, npy_short);
     PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_uint);
-    PROCESS(NPY_LONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_ulonglong);
+    PROCESS(NPY_INT, npy_int);
+    PROCESS(NPY_UINT, npy_uint);
+    PROCESS(NPY_LONG, npy_long);
+    PROCESS(NPY_ULONG, npy_ulong);
+    PROCESS(NPY_LONGLONG, npy_longlong);
+    PROCESS(NPY_ULONGLONG, npy_ulonglong);
     PROCESS(NPY_FLOAT, npy_float);
     PROCESS(NPY_DOUBLE, npy_double);
     PROCESS(NPY_LONGDOUBLE, npy_longdouble);
@@ -491,9 +553,12 @@ static PyObject *array_from_std_vector_and_free(int typenum, void *p)
     PROCESS(NPY_UBYTE, npy_ubyte);
     PROCESS(NPY_SHORT, npy_short);
     PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_uint);
-    PROCESS(NPY_LONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_ulonglong);
+    PROCESS(NPY_INT, npy_int);
+    PROCESS(NPY_UINT, npy_uint);
+    PROCESS(NPY_LONG, npy_long);
+    PROCESS(NPY_ULONG, npy_ulong);
+    PROCESS(NPY_LONGLONG, npy_longlong);
+    PROCESS(NPY_ULONGLONG, npy_ulonglong);
     PROCESS(NPY_FLOAT, npy_float);
     PROCESS(NPY_DOUBLE, npy_double);
     PROCESS(NPY_LONGDOUBLE, npy_longdouble);
@@ -512,18 +577,23 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 {
     if (!is_output) {
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS);
+            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_NOTSWAPPED);
         }
         else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS);
+            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_NOTSWAPPED);
         }
     }
     else {
+        #ifdef HAVE_WRITEBACKIFCOPY
+            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_NOTSWAPPED;
+        #else
+            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED;
+        #endif
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY);
+            return PyArray_FROM_OF(obj, flags);
         }
         else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY);
+            return PyArray_FROM_OTF(obj, typenum, flags);
         }
     }
 }

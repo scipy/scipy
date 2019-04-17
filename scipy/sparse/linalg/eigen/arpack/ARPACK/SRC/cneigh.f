@@ -76,7 +76,7 @@ c     ctrevc  LAPACK routine to compute the eigenvectors of a matrix
 c             in upper triangular form
 c     ccopy   Level 1 BLAS that copies one vector to another. 
 c     csscal  Level 1 BLAS that scales a complex vector by a real number.
-c     wscnrm2  Level 1 BLAS that computes the norm of a vector.
+c     scnrm2  Level 1 BLAS that computes the norm of a vector.
 c     
 c
 c\Author
@@ -159,8 +159,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real 
-     &           wscnrm2
-      external   wscnrm2
+     &           scnrm2
+      external   scnrm2
 c
 c     %-----------------------%
 c     | Executable Statements |
@@ -220,7 +220,7 @@ c     | number (x,y) is taken to be |x| + |y|.         |
 c     %------------------------------------------------%
 c
       do 10 j=1, n
-            temp = wscnrm2( n, q(1,j), 1 )
+            temp = scnrm2( n, q(1,j), 1 )
             call csscal ( n, rone / temp, q(1,j), 1 )
    10 continue
 c

@@ -28,18 +28,18 @@ def find(A):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_matrix, find
     >>> A = csr_matrix([[7.0, 8.0, 0],[0, 0, 9.0]])
     >>> find(A)
     (array([0, 0, 1], dtype=int32), array([0, 1, 2], dtype=int32), array([ 7.,  8.,  9.]))
 
     """
 
-    A = coo_matrix(A).tocsr()  # sums duplicates
-    A.eliminate_zeros()        # removes explicit zeros
-    A = A.tocoo(copy=False)    # (cheaply) convert to COO
-
-    return A.row,A.col,A.data
+    A = coo_matrix(A, copy=True)
+    A.sum_duplicates()
+    # remove explicit zeros
+    nz_mask = A.data != 0
+    return A.row[nz_mask], A.col[nz_mask], A.data[nz_mask]
 
 
 def tril(A, k=0, format=None):
@@ -70,42 +70,37 @@ def tril(A, k=0, format=None):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
-    >>> A = csr_matrix( [[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]], dtype='int32' )
-    >>> A.todense()
-    matrix([[1, 2, 0, 0, 3],
-            [4, 5, 0, 6, 7],
-            [0, 0, 8, 9, 0]])
-    >>> tril(A).todense()
-    matrix([[1, 0, 0, 0, 0],
-            [4, 5, 0, 0, 0],
-            [0, 0, 8, 0, 0]])
+    >>> from scipy.sparse import csr_matrix, tril
+    >>> A = csr_matrix([[1, 2, 0, 0, 3], [4, 5, 0, 6, 7], [0, 0, 8, 9, 0]],
+    ...                dtype='int32')
+    >>> A.toarray()
+    array([[1, 2, 0, 0, 3],
+           [4, 5, 0, 6, 7],
+           [0, 0, 8, 9, 0]])
+    >>> tril(A).toarray()
+    array([[1, 0, 0, 0, 0],
+           [4, 5, 0, 0, 0],
+           [0, 0, 8, 0, 0]])
     >>> tril(A).nnz
     4
-    >>> tril(A, k=1).todense()
-    matrix([[1, 2, 0, 0, 0],
-            [4, 5, 0, 0, 0],
-            [0, 0, 8, 9, 0]])
-    >>> tril(A, k=-1).todense()
-    matrix([[0, 0, 0, 0, 0],
-            [4, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0]])
+    >>> tril(A, k=1).toarray()
+    array([[1, 2, 0, 0, 0],
+           [4, 5, 0, 0, 0],
+           [0, 0, 8, 9, 0]])
+    >>> tril(A, k=-1).toarray()
+    array([[0, 0, 0, 0, 0],
+           [4, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0]])
     >>> tril(A, format='csc')
-    <3x5 sparse matrix of type '<type 'numpy.int32'>'
+    <3x5 sparse matrix of type '<class 'numpy.int32'>'
             with 4 stored elements in Compressed Sparse Column format>
 
     """
 
     # convert to COOrdinate format where things are easy
     A = coo_matrix(A, copy=False)
-
     mask = A.row + k >= A.col
-
-    row = A.row[mask]
-    col = A.col[mask]
-    data = A.data[mask]
-
-    return coo_matrix((data,(row,col)), shape=A.shape).asformat(format)
+    return _masked_coo(A, mask).asformat(format)
 
 
 def triu(A, k=0, format=None):
@@ -136,39 +131,41 @@ def triu(A, k=0, format=None):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
-    >>> A = csr_matrix( [[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]], dtype='int32' )
-    >>> A.todense()
-    matrix([[1, 2, 0, 0, 3],
-            [4, 5, 0, 6, 7],
-            [0, 0, 8, 9, 0]])
-    >>> triu(A).todense()
-    matrix([[1, 2, 0, 0, 3],
-            [0, 5, 0, 6, 7],
-            [0, 0, 8, 9, 0]])
+    >>> from scipy.sparse import csr_matrix, triu
+    >>> A = csr_matrix([[1, 2, 0, 0, 3], [4, 5, 0, 6, 7], [0, 0, 8, 9, 0]],
+    ...                dtype='int32')
+    >>> A.toarray()
+    array([[1, 2, 0, 0, 3],
+           [4, 5, 0, 6, 7],
+           [0, 0, 8, 9, 0]])
+    >>> triu(A).toarray()
+    array([[1, 2, 0, 0, 3],
+           [0, 5, 0, 6, 7],
+           [0, 0, 8, 9, 0]])
     >>> triu(A).nnz
     8
-    >>> triu(A, k=1).todense()
-    matrix([[0, 2, 0, 0, 3],
-            [0, 0, 0, 6, 7],
-            [0, 0, 0, 9, 0]])
-    >>> triu(A, k=-1).todense()
-    matrix([[1, 2, 0, 0, 3],
-            [4, 5, 0, 6, 7],
-            [0, 0, 8, 9, 0]])
+    >>> triu(A, k=1).toarray()
+    array([[0, 2, 0, 0, 3],
+           [0, 0, 0, 6, 7],
+           [0, 0, 0, 9, 0]])
+    >>> triu(A, k=-1).toarray()
+    array([[1, 2, 0, 0, 3],
+           [4, 5, 0, 6, 7],
+           [0, 0, 8, 9, 0]])
     >>> triu(A, format='csc')
-    <3x5 sparse matrix of type '<type 'numpy.int32'>'
+    <3x5 sparse matrix of type '<class 'numpy.int32'>'
             with 8 stored elements in Compressed Sparse Column format>
 
     """
 
     # convert to COOrdinate format where things are easy
     A = coo_matrix(A, copy=False)
-
     mask = A.row + k <= A.col
+    return _masked_coo(A, mask).asformat(format)
 
+
+def _masked_coo(A, mask):
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-
-    return coo_matrix((data,(row,col)), shape=A.shape).asformat(format)
+    return coo_matrix((data, (row, col)), shape=A.shape, dtype=A.dtype)

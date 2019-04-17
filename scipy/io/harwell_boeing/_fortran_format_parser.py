@@ -9,7 +9,6 @@ strings (e.g. '(3I4)', '(10I3)', etc...)
 from __future__ import division, print_function, absolute_import
 
 import re
-import warnings
 
 import numpy as np
 
@@ -203,9 +202,8 @@ class Tokenizer(object):
                 else:
                     self.curpos = m.end()
                     return Token(self.tokens[i], m.group(), self.curpos)
-            else:
-                raise SyntaxError("Unknown character at position %d (%s)"
-                                  % (self.curpos, self.data[curpos]))
+            raise SyntaxError("Unknown character at position %d (%s)"
+                              % (self.curpos, self.data[curpos]))
 
 
 # Grammar for fortran format:

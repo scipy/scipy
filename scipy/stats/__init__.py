@@ -3,55 +3,20 @@
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
 
-.. module:: scipy.stats
+.. currentmodule:: scipy.stats
 
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of the class rv_continous:
-For each given name the following methods are available:
+Each univariate distribution is an instance of a subclass of `rv_continuous`
+(`rv_discrete` for discrete distributions):
 
 .. autosummary::
    :toctree: generated/
 
    rv_continuous
-   rv_continuous.pdf
-   rv_continuous.logpdf
-   rv_continuous.cdf
-   rv_continuous.logcdf
-   rv_continuous.sf
-   rv_continuous.logsf
-   rv_continuous.ppf
-   rv_continuous.isf
-   rv_continuous.moment
-   rv_continuous.stats
-   rv_continuous.entropy
-   rv_continuous.fit
-   rv_continuous.expect
-
-Calling the instance as a function returns a frozen pdf whose shape,
-location, and scale parameters are fixed.
-
-Similarly, each discrete distribution is an instance of the class
-rv_discrete:
-
-.. autosummary::
-   :toctree: generated/
-
    rv_discrete
-   rv_discrete.rvs
-   rv_discrete.pmf
-   rv_discrete.logpmf
-   rv_discrete.cdf
-   rv_discrete.logcdf
-   rv_discrete.sf
-   rv_discrete.logsf
-   rv_discrete.ppf
-   rv_discrete.isf
-   rv_discrete.stats
-   rv_discrete.moment
-   rv_discrete.entropy
-   rv_discrete.expect
+   rv_histogram
 
 Continuous distributions
 ========================
@@ -62,28 +27,33 @@ Continuous distributions
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
+   argus             -- Argus
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
-   burr              -- Burr
+   burr              -- Burr (Type III)
+   burr12            -- Burr (Type XII)
    cauchy            -- Cauchy
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
    expon             -- Exponential
+   exponnorm         -- Exponentially Modified Normal
    exponweib         -- Exponentiated Weibull
    exponpow          -- Exponential Power
    f                 -- F (Snecdor F)
-   fatiguelife       -- Fatigue Life (Birnbaum-Sanders)
+   fatiguelife       -- Fatigue Life (Birnbaum-Saunders)
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
-   frechet_l         -- Frechet Left Sided, Weibull_max
+   frechet_r         -- Deprecated. Alias for weibull_min
+   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
+   gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
    genexpon          -- Generalized Exponential
    genextreme        -- Generalized Extreme Value
@@ -98,15 +68,21 @@ Continuous distributions
    halfcauchy        -- Half Cauchy
    halflogistic      -- Half Logistic
    halfnorm          -- Half Normal
+   halfgennorm       -- Generalized Half Normal
    hypsecant         -- Hyperbolic Secant
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
+   kappa4            -- Kappa 4 parameter
+   kappa3            -- Kappa 3 parameter
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
+   levy              -- Levy
+   levy_l
+   levy_stable
    logistic          -- Logistic
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
@@ -114,11 +90,13 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    norm              -- Normal (Gaussian)
+   norminvgauss      -- Normal Inverse Gaussian
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function
@@ -130,13 +108,16 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewnorm          -- Skew normal
    t                 -- Student's T
+   trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
+   vonmises_line     -- Von-Mises (Line)
    wald              -- Wald
    weibull_min       -- Minimum Weibull (see Frechet)
    weibull_max       -- Maximum Weibull (see Frechet)
@@ -149,6 +130,15 @@ Multivariate distributions
    :toctree: generated/
 
    multivariate_normal   -- Multivariate normal distribution
+   matrix_normal         -- Matrix normal distribution
+   dirichlet             -- Dirichlet
+   wishart               -- Wishart
+   invwishart            -- Inverse Wishart
+   multinomial           -- Multinomial distribution
+   special_ortho_group   -- SO(N) group
+   ortho_group           -- O(N) group
+   unitary_group         -- U(N) group
+   random_correlation    -- random correlation matrices
 
 Discrete distributions
 ======================
@@ -169,12 +159,14 @@ Discrete distributions
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
+   yulesimon         -- Yule-Simon
 
-Statistical functions
-=====================
+An overview of statistical functions is given below.
+Several of these functions have a similar version in
+`scipy.stats.mstats` which work for masked arrays.
 
-Several of these functions have a similar version in scipy.stats.mstats
-which work for masked arrays.
+Summary statistics
+==================
 
 .. autosummary::
    :toctree: generated/
@@ -183,33 +175,39 @@ which work for masked arrays.
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
    kurtosis          -- Fisher or Pearson kurtosis
-   kurtosistest      --
    mode              -- Modal value
    moment            -- Central moment
-   normaltest        --
    skew              -- Skewness
-   skewtest          --
+   kstat             --
+   kstatvar          --
    tmean             -- Truncated arithmetic mean
    tvar              -- Truncated variance
    tmin              --
    tmax              --
    tstd              --
    tsem              --
-   nanmean           -- Mean, ignoring NaN values
-   nanstd            -- Standard deviation, ignoring NaN values
-   nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
+   find_repeats
+   trim_mean
+   gstd              -- Geometric Standard Deviation
+   iqr
+   sem
+   bayes_mvs
+   mvsdist
+   entropy
+   median_absolute_deviation
+
+Frequency statistics
+====================
 
 .. autosummary::
    :toctree: generated/
 
-   cumfreq           _
-   histogram2        _
-   histogram         _
-   itemfreq          _
-   percentileofscore _
-   scoreatpercentile _
-   relfreq           _
+   cumfreq
+   itemfreq
+   percentileofscore
+   scoreatpercentile
+   relfreq
 
 .. autosummary::
    :toctree: generated/
@@ -218,23 +216,8 @@ which work for masked arrays.
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
-.. autosummary::
-   :toctree: generated/
-
-   obrientransform
-   signaltonoise
-   bayes_mvs
-   sem
-   zmap
-   zscore
-
-.. autosummary::
-   :toctree: generated/
-
-   sigmaclip
-   threshold
-   trimboth
-   trim1
+Correlation functions
+=====================
 
 .. autosummary::
    :toctree: generated/
@@ -244,18 +227,26 @@ which work for masked arrays.
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
+   siegelslopes
+   theilslopes
+
+Statistical tests
+=================
 
 .. autosummary::
    :toctree: generated/
 
    ttest_1samp
    ttest_ind
+   ttest_ind_from_stats
    ttest_rel
    kstest
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    tiecorrect
    rankdata
@@ -263,6 +254,9 @@ which work for masked arrays.
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
+   combine_pvalues
+   jarque_bera
 
 .. autosummary::
    :toctree: generated/
@@ -275,7 +269,14 @@ which work for masked arrays.
    anderson_ksamp
    binom_test
    fligner
+   median_test
    mood
+   skewtest
+   kurtosistest
+   normaltest
+
+Transformations
+===============
 
 .. autosummary::
    :toctree: generated/
@@ -283,8 +284,42 @@ which work for masked arrays.
    boxcox
    boxcox_normmax
    boxcox_llf
+   yeojohnson
+   yeojohnson_normmax
+   yeojohnson_llf
+   obrientransform
+   sigmaclip
+   trimboth
+   trim1
+   zmap
+   zscore
 
-   entropy
+Statistical distances
+=====================
+
+.. autosummary::
+   :toctree: generated/
+
+   wasserstein_distance
+   energy_distance
+
+Random variate generation
+=========================
+
+.. autosummary::
+   :toctree: generated/
+
+   rvs_ratio_uniforms
+
+Circular statistical functions
+==============================
+
+.. autosummary::
+   :toctree: generated/
+
+   circmean
+   circvar
+   circstd
 
 Contingency table functions
 ===========================
@@ -307,6 +342,7 @@ Plot-tests
    ppcc_plot
    probplot
    boxcox_normplot
+   yeojohnson_normplot
 
 
 Masked statistics functions
@@ -317,8 +353,8 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/
@@ -333,7 +369,6 @@ from __future__ import division, print_function, absolute_import
 
 from .stats import *
 from .distributions import *
-from .rv import *
 from .morestats import *
 from ._binned_statistic import *
 from .kde import gaussian_kde
@@ -341,8 +376,8 @@ from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
 
-#remove vonmises_cython from __all__, I don't know why it is included
-__all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]
+__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ilu_ccopy_to_ucol.c
  * \brief Copy a computed column of U to the compressed data structure
@@ -17,9 +27,6 @@ int num_drop_U;
 #endif
 
 extern void ccopy_(int *, complex [], int *, complex [], int *);
-#if SCIPY_FIX
-extern double dlamch_(char *);
-#endif
 
 #if 0
 static complex *A;  /* used in _compare_ only */
@@ -66,7 +73,7 @@ ilu_ccopy_to_ucol(
     int       *usub, *xusub;
     int       nzumax;
     int       m; /* number of entries in the nonzero U-segments */
-    register float d_max = 0.0, d_min = 1.0 / dlamch_("Safe minimum");
+    register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
     register double tmp;
     complex zero = {0.0, 0.0};
     int i_1 = 1;
@@ -75,7 +82,7 @@ ilu_ccopy_to_ucol(
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    ucol    = Glu->ucol;
+    ucol    = (complex *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;

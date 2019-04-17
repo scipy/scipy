@@ -5,5 +5,7 @@ Library:
         Sources: _traversal.c
     Extension: _min_spanning_tree
         Sources: _min_spanning_tree.c
+    Extension: _reordering
+        Sources: _reordering.c
     Extension: _tools
         Sources: _tools.c

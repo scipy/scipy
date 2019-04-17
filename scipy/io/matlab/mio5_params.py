@@ -50,7 +50,10 @@ mxUINT64_CLASS = 15
 mxFUNCTION_CLASS = 16
 # Not doing anything with these at the moment.
 mxOPAQUE_CLASS = 17  # This appears to be a function workspace
-# https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html
+# Thread 'saveing/loading symbol table of annymous functions', octave-maintainers, April-May 2007
+# https://lists.gnu.org/archive/html/octave-maintainers/2007-04/msg00031.html
+# https://lists.gnu.org/archive/html/octave-maintainers/2007-05/msg00032.html
+# (Was/Deprecated: https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html)
 mxOBJECT_CLASS_FROM_MATRIX_H = 18
 
 mdtypes_template = {
@@ -130,6 +133,7 @@ NP_TO_MTYPES = {
     'u1': miUINT8,
     'S1': miUINT8,
     'U1': miUTF16,
+    'b1': miUINT8,  # not standard but seems MATLAB uses this (gh-4022)
     }
 
 
@@ -149,6 +153,7 @@ NP_TO_MXTYPES = {
     'u2': mxUINT16_CLASS,
     'u1': mxUINT8_CLASS,
     'S1': mxUINT8_CLASS,
+    'b1': mxUINT8_CLASS,  # not standard but seems MATLAB uses this
     }
 
 ''' Before release v7.1 (release 14) matlab (TM) used the system
@@ -198,19 +203,18 @@ def _convert_codecs(template, byte_order):
 
 MDTYPES = {}
 for _bytecode in '<>':
-    _def = {}
-    _def['dtypes'] = convert_dtypes(mdtypes_template, _bytecode)
-    _def['classes'] = convert_dtypes(mclass_dtypes_template, _bytecode)
-    _def['codecs'] = _convert_codecs(codecs_template, _bytecode)
+    _def = {'dtypes': convert_dtypes(mdtypes_template, _bytecode),
+            'classes': convert_dtypes(mclass_dtypes_template, _bytecode),
+            'codecs': _convert_codecs(codecs_template, _bytecode)}
     MDTYPES[_bytecode] = _def
 
 
 class mat_struct(object):
     ''' Placeholder for holding read data from structs
 
-    We deprecate this method of holding struct information, and will
-    soon remove it, in favor of the recarray method (see loadmat
-    docstring)
+    We use instances of this class when the user passes False as a value to the
+    ``struct_as_record`` parameter of the :func:`scipy.io.matlab.loadmat`
+    function.
     '''
     pass
 

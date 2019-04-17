@@ -86,7 +86,7 @@ c              -2  take the next step with a new value of h,
 c                    but with other inputs unchanged.
 c          on return, jstart is set to 1 to facilitate continuation.
 c kflag  = a completion code with the following meanings..
-c               0  the step was succesful.
+c               0  the step was successful.
 c              -1  the requested error could not be achieved.
 c              -2  corrector convergence could not be achieved.
 c              -3  fatal error in pjac or slvs.
@@ -253,6 +253,8 @@ c-----------------------------------------------------------------------
  230    y(i) = yh(i,1)
       call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       nfe = nfe + 1
       if (ipup .le. 0) go to 250
@@ -262,6 +264,8 @@ c preprocessed before starting the corrector iteration.  ipup is set
 c to 0 as an indicator that this has been done.
 c-----------------------------------------------------------------------
       call pjac (neq, y, yh, nyh, ewt, acor, savf, wm, iwm, f, jac)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       ipup = 0
       rc = 1.0d0
       nslp = nst
@@ -328,6 +332,8 @@ c-----------------------------------------------------------------------
       delp = del
       call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       nfe = nfe + 1
       go to 270
@@ -589,7 +595,7 @@ c-----------------------------------------------------------------------
       iret = 2
       go to 150
 c-----------------------------------------------------------------------
-c control reaches this section if 3 or more failures have occured.
+c control reaches this section if 3 or more failures have occurred.
 c if 10 failures have occurred, exit with kflag = -1.
 c it is assumed that the derivatives that have accumulated in the
 c yh array have errors of the wrong order.  hence the first
@@ -605,6 +611,8 @@ c-----------------------------------------------------------------------
  645    y(i) = yh(i,1)
       call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       nfe = nfe + 1
       do 650 i = 1,n

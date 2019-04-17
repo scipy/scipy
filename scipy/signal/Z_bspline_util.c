@@ -25,12 +25,9 @@ int Z_separable_2Dconvolve_mirror(__complex__ double*,__complex__ double*,int,in
 /* with a given starting value loaded into the array */
 
 void 
-Z_IIR_order1 (a1, a2, x, y, N, stridex, stridey) 
-     __complex__ double a1; 
-     __complex__ double a2; 
-     __complex__ double *x; 
-     __complex__ double *y; 
-     int N, stridex, stridey; 
+Z_IIR_order1(__complex__ double a1, __complex__ double a2,
+             __complex__ double *x, __complex__ double *y,
+             int N, int stridex, int stridey)
 { 
     __complex__ double *yvec = y+stridey; 
     __complex__ double *xvec = x+stridex; 
@@ -49,14 +46,10 @@ Z_IIR_order1 (a1, a2, x, y, N, stridex, stridey)
 /* with two starting values loaded into the array */
 
 void 
-Z_IIR_order2 (a1, a2, a3, x, y, N, stridex, stridey) 
-     __complex__ double a1; 
-     __complex__ double a2; 
-     __complex__ double a3; 
-     __complex__ double *x; 
-     __complex__ double *y; 
-     int N, stridex, stridey; 
-{ 
+Z_IIR_order2(__complex__ double a1, __complex__ double a2, __complex__ double a3,
+             __complex__ double *x, __complex__ double *y,
+             int N, int stridex, int stridey)
+{
     __complex__ double *yvec = y+2*stridey; 
     __complex__ double *xvec = x+2*stridex; 
     int n; 
@@ -84,15 +77,12 @@ Z_IIR_order2 (a1, a2, a3, x, y, N, stridex, stridey)
 */
 
 void 
-Z_IIR_order2_cascade (cs, z1, z2, y1_0, x, yp, N, stridex, stridey) 
-     __complex__ double cs; 
-     __complex__ double z1; 
-     __complex__ double z2; 
-     __complex__ double y1_0; 
-     __complex__ double *x; 
-     __complex__ double *yp; 
-     int N, stridex, stridey; 
-{ 
+Z_IIR_order2_cascade(__complex__ double cs,
+                     __complex__ double z1, __complex__ double z2,
+                     __complex__ double y1_0, __complex__ double *x,
+                     __complex__ double *yp,
+                    int N, int stridex, int stridey)
+{
     __complex__ double *yvec = yp+stridey; 
     __complex__ double *xvec = x+stridex; 
     int n; 
@@ -135,13 +125,9 @@ Z_IIR_order2_cascade (cs, z1, z2, y1_0, x, yp, N, stridex, stridey)
 */
 
 int 
-Z_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
-     __complex__ double c0; 
-     __complex__ double z1; 
-     __complex__ double *x; 
-     __complex__ double *y; 
-     int N, stridex, stridey; 
-     double precision; 
+Z_IIR_forback1(__complex__ double c0, __complex__ double z1,
+               __complex__ double *x, __complex__ double *y,
+               int N, int stridex, int stridey, double precision)
 { 
     __complex__ double *yp = NULL; 
     __complex__ double *xptr = x;
@@ -188,13 +174,10 @@ Z_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
 /* strides in units of sizeof(__complex__ double) bytes */
 
 void 
-Z_FIR_mirror_symmetric (in, out, N, h, Nh, instride, outstride)
-     __complex__ double *in;
-     __complex__ double *out;
-     int N, Nh;
-     __complex__ double *h;
-     int instride, outstride;
-{    
+Z_FIR_mirror_symmetric(__complex__ double *in, __complex__ double *out,
+                       int N, __complex__ double *h, int Nh,
+                       int instride, int outstride)
+{
     int n, k;
     int Nhdiv2 = Nh >> 1;
     __complex__ double *outptr;
@@ -253,14 +236,11 @@ Z_FIR_mirror_symmetric (in, out, N, h, Nh, instride, outstride)
 }
 
 int
-Z_separable_2Dconvolve_mirror(in, out, M, N, hr, hc, Nhr, 
-				   Nhc, instrides, outstrides)
-     __complex__ double *in;
-     __complex__ double *out;
-     int M, N;
-     __complex__ double *hr, *hc;
-     int Nhr, Nhc;
-     npy_intp *instrides, *outstrides;
+Z_separable_2Dconvolve_mirror(__complex__ double *in, __complex__ double *out,
+                              int M, int N,
+                              __complex__ double *hr, __complex__ double *hc,
+                              int Nhr, int Nhc,
+                              npy_intp *instrides, npy_intp *outstrides)
 {
     int m, n;
     __complex__ double *tmpmem;

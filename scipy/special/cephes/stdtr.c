@@ -85,8 +85,9 @@
  */
 
 #include "mconf.h"
+#include <float.h>
 
-extern double MAXNUM, MACHEP;
+extern double MACHEP;
 
 double stdtr(k, t)
 int k;
@@ -199,7 +200,7 @@ double p;
     }
     z = incbi(0.5 * rk, 0.5, 2.0 * p);
 
-    if (MAXNUM * z < rk)
+    if (DBL_MAX * z < rk)
 	return (rflg * NPY_INFINITY);
     t = sqrt(rk / z - rk);
     return (rflg * t);

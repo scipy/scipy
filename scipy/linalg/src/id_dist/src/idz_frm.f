@@ -283,8 +283,8 @@ c
         lw = 3+m+n+2*n+15 + 3*nsteps*m+2*m+m/4+50
 c
         if(16*m+70 .lt. lw) then
-          !call prinf('lw = *',lw,1)
-          !call prinf('16m+70 = *',16*m+70,1)
+          call prinf('lw = *',lw,1)
+          call prinf('16m+70 = *',16*m+70,1)
           stop
         endif
 c
@@ -376,8 +376,8 @@ c
         lw = 4+m+l+2*l+15+3*n + 3*nsteps*m+2*m+m/4+50
 c
         if(19*m+70 .lt. lw) then
-          !call prinf('lw = *',lw,1)
-          !call prinf('19m+70 = *',19*m+70,1)
+          call prinf('lw = *',lw,1)
+          call prinf('19m+70 = *',19*m+70,1)
           stop
         endif
 c

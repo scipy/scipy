@@ -46,7 +46,7 @@
  * References
  * ----------
  * [1] NIST Digital Library of Mathematical Functions
- *     http://dlmf.nist.gov/11
+ *     https://dlmf.nist.gov/11
  */
 
 /*
@@ -87,7 +87,7 @@
 #include "amos_wrappers.h"
 #include "misc.h"
 
-#include "double2.h"
+#include "cephes/dd_real.h"
 
 #define MAXITER 10000
 #define SUM_EPS 1e-16   /* be sure we are in the tail of the sum */
@@ -209,7 +209,7 @@ static double struve_hl(double v, double z, int is_h)
 
 /*
  * Power series for Struve H and L
- * http://dlmf.nist.gov/11.2.1
+ * https://dlmf.nist.gov/11.2.1
  *
  * Starts to converge roughly at |n| > |z|
  */
@@ -217,7 +217,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
 {
     int n, sgn;
     double term, sum, maxterm, scaleexp, tmp;
-    double2_t cterm, csum, cdiv, z2, c2v, ctmp, ctmp2;
+    double2 cterm, csum, cdiv, z2, c2v, ctmp;
 
     if (is_h) {
         sgn = -1;
@@ -240,26 +240,26 @@ double struve_power_series(double v, double z, int is_h, double *err)
     sum = term;
     maxterm = 0;
 
-    double2_init(&cterm, term);
-    double2_init(&csum, sum);
-    double2_init(&z2, sgn*z*z);
-    double2_init(&c2v, 2*v);
+    cterm = dd_create_d(term);
+    csum = dd_create_d(sum);
+    z2 = dd_create_d(sgn*z*z);
+    c2v = dd_create_d(2*v);
 
     for (n = 0; n < MAXITER; ++n) {
         /* cdiv = (3 + 2*n) * (3 + 2*n + 2*v)) */
-        double2_init(&cdiv, 3 + 2*n);
-        double2_init(&ctmp, 3 + 2*n);
-        double2_add(&ctmp, &c2v, &ctmp);
-        double2_mul(&cdiv, &ctmp, &cdiv);
+        cdiv = dd_create_d(3 + 2*n);
+        ctmp = dd_create_d(3 + 2*n);
+        ctmp = dd_add(ctmp, c2v);
+        cdiv = dd_mul(cdiv, ctmp);
 
         /* cterm *= z2 / cdiv */
-        double2_mul(&cterm, &z2, &cterm);
-        double2_div(&cterm, &cdiv, &cterm);
+        cterm = dd_mul(cterm, z2);
+        cterm = dd_div(cterm, cdiv);
 
-        double2_add(&csum, &cterm, &csum);
+        csum = dd_add(csum, cterm);
 
-        term = double2_double(&cterm);
-        sum = double2_double(&csum);
+        term = dd_to_double(cterm);
+        sum = dd_to_double(csum);
 
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
@@ -288,11 +288,11 @@ double struve_power_series(double v, double z, int is_h, double *err)
 
 /*
  * Bessel series
- * http://dlmf.nist.gov/11.4.19
+ * https://dlmf.nist.gov/11.4.19
  */
 double struve_bessel_series(double v, double z, int is_h, double *err)
 {
-    int n, sgn;
+    int n;
     double term, cterm, sum, maxterm;
 
     if (is_h && v < 0) {
@@ -335,7 +335,7 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
 
 /*
  * Large-z expansion for Struve H and L
- * http://dlmf.nist.gov/11.6.1
+ * https://dlmf.nist.gov/11.6.1
  */
 double struve_asymp_large_z(double v, double z, int is_h, double *err)
 {

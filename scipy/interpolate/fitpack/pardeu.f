@@ -32,7 +32,7 @@ c   kwrk  : integer, specifying the dimension of iwrk. kwrk >= mx+my.
 c
 c  output parameters:
 c   z     : real array of dimension (m).
-c           on succesful exit z(i) contains the value of the
+c           on successful exit z(i) contains the value of the
 c           specified partial derivative of s(x,y) at the point
 c           (x(i),y(i)),i=1,...,m.
 c   ier   : integer error flag
@@ -67,7 +67,7 @@ c  ..array arguments..
      * wrk(lwrk)
 c  ..local scalars..
       integer i,iwx,iwy,j,kkx,kky,kx1,ky1,lx,ly,lwest,l1,l2,mm,m0,m1,
-     * nc,nkx1,nky1,nxx,nyy,iw
+     * nc,nkx1,nky1,nxx,nyy
       real*8 ak,fac
 c  ..
 c  before starting computations a data check is made. if the input data
@@ -84,7 +84,7 @@ c  are invalid control is immediately repassed to the calling program.
       if(lwrk.lt.lwest) go to 400
       if(kwrk.lt.(m+m)) go to 400
       if (m.lt.1) go to 400
-  60  ier = 0
+      ier = 0
       nxx = nkx1
       nyy = nky1
       kkx = kx

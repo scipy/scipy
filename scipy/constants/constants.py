@@ -73,11 +73,13 @@ sigma = Stefan_Boltzmann = _cd('Stefan-Boltzmann constant')
 Wien = _cd('Wien wavelength displacement law constant')
 Rydberg = _cd('Rydberg constant')
 
-# weight in kg
+# mass in kg
 gram = 1e-3
 metric_ton = 1e3
 grain = 64.79891e-6
 lb = pound = 7000 * grain  # avoirdupois
+blob = slinch = pound * g / 0.0254  # lbf*s**2/in (added in 1.0.0)
+slug = blob / 12  # lbf*s**2/foot (added in 1.0.0)
 oz = ounce = pound / 16
 stone = 14 * pound
 long_ton = 2240 * pound
@@ -118,7 +120,7 @@ nautical_mile = 1852.0
 fermi = 1e-15
 angstrom = 1e-10
 micron = 1e-6
-au = astronomical_unit = 149597870691.0
+au = astronomical_unit = 149597870700.0
 light_year = Julian_year * c
 parsec = au / arcsec
 
@@ -139,7 +141,7 @@ gallon = gallon_US = 231 * inch**3  # US
 fluid_ounce = fluid_ounce_US = gallon_US / 128
 bbl = barrel = 42 * gallon_US  # for oil
 
-gallon_imp = 4.54609e-3  # uk
+gallon_imp = 4.54609e-3  # UK
 fluid_ounce_imp = gallon_imp / 160
 
 # speed in meter per second
@@ -173,178 +175,76 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
-def C2K(C):
+def convert_temperature(val, old_scale, new_scale):
     """
-    Convert Celsius to Kelvin
+    Convert from a temperature scale to another one among Celsius, Kelvin,
+    Fahrenheit and Rankine scales.
 
     Parameters
     ----------
-    C : array_like
-        Celsius temperature(s) to be converted.
+    val : array_like
+        Value(s) of the temperature(s) to be converted expressed in the
+        original scale.
+
+    old_scale: str
+        Specifies as a string the original scale from which the temperature
+        value(s) will be converted. Supported scales are Celsius ('Celsius',
+        'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
+        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f') and Rankine
+        ('Rankine', 'rankine', 'R', 'r').
+
+    new_scale: str
+        Specifies as a string the new scale to which the temperature
+        value(s) will be converted. Supported scales are Celsius ('Celsius',
+        'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
+        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f') and Rankine
+        ('Rankine', 'rankine', 'R', 'r').
 
     Returns
     -------
-    K : float or array of floats
-        Equivalent Kelvin temperature(s).
+    res : float or array of floats
+        Value(s) of the converted temperature(s) expressed in the new scale.
 
     Notes
     -----
-    Computes ``K = C + zero_Celsius`` where `zero_Celsius` = 273.15, i.e.,
-    (the absolute value of) temperature "absolute zero" as measured in Celsius.
+    .. versionadded:: 0.18.0
 
     Examples
     --------
-    >>> from scipy.constants.constants import C2K
-    >>> C2K(_np.array([-40, 40.0]))
+    >>> from scipy.constants import convert_temperature
+    >>> convert_temperature(np.array([-40, 40.0]), 'Celsius', 'Kelvin')
     array([ 233.15,  313.15])
 
     """
-    return _np.asanyarray(C) + zero_Celsius
+    # Convert from `old_scale` to Kelvin
+    if old_scale.lower() in ['celsius', 'c']:
+        tempo = _np.asanyarray(val) + zero_Celsius
+    elif old_scale.lower() in ['kelvin', 'k']:
+        tempo = _np.asanyarray(val)
+    elif old_scale.lower() in ['fahrenheit', 'f']:
+        tempo = (_np.asanyarray(val) - 32.) * 5. / 9. + zero_Celsius
+    elif old_scale.lower() in ['rankine', 'r']:
+        tempo = _np.asanyarray(val) * 5. / 9.
+    else:
+        raise NotImplementedError("%s scale is unsupported: supported scales "
+                                  "are Celsius, Kelvin, Fahrenheit and "
+                                  "Rankine" % old_scale)
+    # and from Kelvin to `new_scale`.
+    if new_scale.lower() in ['celsius', 'c']:
+        res = tempo - zero_Celsius
+    elif new_scale.lower() in ['kelvin', 'k']:
+        res = tempo
+    elif new_scale.lower() in ['fahrenheit', 'f']:
+        res = (tempo - zero_Celsius) * 9. / 5. + 32.
+    elif new_scale.lower() in ['rankine', 'r']:
+        res = tempo * 9. / 5.
+    else:
+        raise NotImplementedError("'%s' scale is unsupported: supported "
+                                  "scales are 'Celsius', 'Kelvin', "
+                                  "'Fahrenheit' and 'Rankine'" % new_scale)
 
+    return res
 
-def K2C(K):
-    """
-    Convert Kelvin to Celsius
-
-    Parameters
-    ----------
-    K : array_like
-        Kelvin temperature(s) to be converted.
-
-    Returns
-    -------
-    C : float or array of floats
-        Equivalent Celsius temperature(s).
-
-    Notes
-    -----
-    Computes ``C = K - zero_Celsius`` where `zero_Celsius` = 273.15, i.e.,
-    (the absolute value of) temperature "absolute zero" as measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants.constants import K2C
-    >>> K2C(_np.array([233.15, 313.15]))
-    array([-40.,  40.])
-
-    """
-    return _np.asanyarray(K) - zero_Celsius
-
-
-def F2C(F):
-    """
-    Convert Fahrenheit to Celsius
-
-    Parameters
-    ----------
-    F : array_like
-        Fahrenheit temperature(s) to be converted.
-
-    Returns
-    -------
-    C : float or array of floats
-        Equivalent Celsius temperature(s).
-
-    Notes
-    -----
-    Computes ``C = (F - 32) / 1.8``.
-
-    Examples
-    --------
-    >>> from scipy.constants.constants import F2C
-    >>> F2C(_np.array([-40, 40.0]))
-    array([-40.        ,   4.44444444])
-
-    """
-    return (_np.asanyarray(F) - 32) / 1.8
-
-
-def C2F(C):
-    """
-    Convert Celsius to Fahrenheit
-
-    Parameters
-    ----------
-    C : array_like
-        Celsius temperature(s) to be converted.
-
-    Returns
-    -------
-    F : float or array of floats
-        Equivalent Fahrenheit temperature(s).
-
-    Notes
-    -----
-    Computes ``F = 1.8 * C + 32``.
-
-    Examples
-    --------
-    >>> from scipy.constants.constants import C2F
-    >>> C2F(_np.array([-40, 40.0]))
-    array([ -40.,  104.])
-
-    """
-    return 1.8 * _np.asanyarray(C) + 32
-
-
-def F2K(F):
-    """
-    Convert Fahrenheit to Kelvin
-
-    Parameters
-    ----------
-    F : array_like
-        Fahrenheit temperature(s) to be converted.
-
-    Returns
-    -------
-    K : float or array of floats
-        Equivalent Kelvin temperature(s).
-
-    Notes
-    -----
-    Computes ``K = (F - 32)/1.8 + zero_Celsius`` where `zero_Celsius` =
-    273.15, i.e., (the absolute value of) temperature "absolute zero" as
-    measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants.constants import F2K
-    >>> F2K(_np.array([-40, 104]))
-    array([ 233.15,  313.15])
-
-    """
-    return C2K(F2C(_np.asanyarray(F)))
-
-
-def K2F(K):
-    """
-    Convert Kelvin to Fahrenheit
-
-    Parameters
-    ----------
-    K : array_like
-        Kelvin temperature(s) to be converted.
-
-    Returns
-    -------
-    F : float or array of floats
-        Equivalent Fahrenheit temperature(s).
-
-    Notes
-    -----
-    Computes ``F = 1.8 * (K - zero_Celsius) + 32`` where `zero_Celsius` =
-    273.15, i.e., (the absolute value of) temperature "absolute zero" as
-    measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants.constants import K2F
-    >>> K2F(_np.array([233.15,  313.15]))
-    array([ -40.,  104.])
-
-    """
-    return C2F(K2C(_np.asanyarray(K)))
 
 # optics
 
@@ -355,7 +255,7 @@ def lambda2nu(lambda_):
 
     Parameters
     ----------
-    lambda : array_like
+    lambda_ : array_like
         Wavelength(s) to be converted.
 
     Returns
@@ -370,8 +270,8 @@ def lambda2nu(lambda_):
 
     Examples
     --------
-    >>> from scipy.constants.constants import lambda2nu
-    >>> lambda2nu(_np.array((1, speed_of_light)))
+    >>> from scipy.constants import lambda2nu, speed_of_light
+    >>> lambda2nu(np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
@@ -399,8 +299,8 @@ def nu2lambda(nu):
 
     Examples
     --------
-    >>> from scipy.constants.constants import nu2lambda
-    >>> nu2lambda(_np.array((1, speed_of_light)))
+    >>> from scipy.constants import nu2lambda, speed_of_light
+    >>> nu2lambda(np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """

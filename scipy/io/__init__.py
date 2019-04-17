@@ -1,5 +1,5 @@
-# -*- encoding:utf-8 -*-
-"""
+# -*- coding: utf-8 -*-
+u"""
 ==================================
 Input and output (:mod:`scipy.io`)
 ==================================
@@ -9,7 +9,7 @@ Input and output (:mod:`scipy.io`)
 SciPy has many modules, classes, and functions available to read data
 from and write data to a variety of file formats.
 
-.. seealso:: :ref:`numpy-reference.routines.io` (in Numpy)
+.. seealso:: `NumPy IO routines <https://www.numpy.org/devdocs/reference/routines.io.html>`__
 
 MATLAB® files
 =============
@@ -47,6 +47,24 @@ Unformatted Fortran files
 
    FortranFile - A file object for unformatted sequential Fortran files
 
+Netcdf
+======
+
+.. autosummary::
+   :toctree: generated/
+
+   netcdf_file - A file object for NetCDF data
+   netcdf_variable - A data object for the netcdf module
+
+Harwell-Boeing files
+====================
+
+.. autosummary::
+   :toctree: generated/
+
+   hb_read   -- read H-B file
+   hb_write  -- write H-B file
+
 Wav sound files (:mod:`scipy.io.wavfile`)
 =========================================
 
@@ -57,6 +75,7 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 
    read
    write
+   WavFileWarning
 
 Arff files (:mod:`scipy.io.arff`)
 =================================
@@ -67,17 +86,10 @@ Arff files (:mod:`scipy.io.arff`)
    :toctree: generated/
 
    loadarff
+   MetaData
+   ArffError
+   ParseArffError
 
-Netcdf (:mod:`scipy.io.netcdf`)
-===============================
-
-.. module:: scipy.io.netcdf
-
-.. autosummary::
-   :toctree: generated/
-
-   netcdf_file - A file object for NetCDF data
-   netcdf_variable - A data object for the netcdf module
 """
 from __future__ import division, print_function, absolute_import
 
@@ -95,5 +107,7 @@ from .idl import readsav
 from .harwell_boeing import hb_read, hb_write
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

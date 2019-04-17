@@ -3,6 +3,8 @@
 # Requires Cython version 0.17 or greater due to type templating.
 ######################################################################
 
+from __future__ import absolute_import
+
 cimport cython
 from cython cimport sizeof
 import numpy as np
@@ -429,7 +431,7 @@ cpdef _label(np.ndarray input,
                     line_buffer[i] = mergetable[line_buffer[i]]
                 write_line(PyArray_ITER_DATA(ito), so, line_buffer, L)
                 PyArray_ITER_NEXT(ito)
-    except:
+    except:  # noqa: E722
         # clean up and re-raise
         PyDataMem_FREE(<void *> mergetable)
         raise

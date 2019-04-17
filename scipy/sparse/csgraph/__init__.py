@@ -1,5 +1,4 @@
 r"""
-==============================================================
 Compressed Sparse Graph Routines (:mod:`scipy.sparse.csgraph`)
 ==============================================================
 
@@ -8,7 +7,7 @@ Compressed Sparse Graph Routines (:mod:`scipy.sparse.csgraph`)
 Fast graph algorithms based on sparse matrix representations.
 
 Contents
-========
+--------
 
 .. autosummary::
    :toctree: generated/
@@ -25,9 +24,24 @@ Contents
    breadth_first_tree -- construct the breadth-first tree from a given node
    depth_first_tree -- construct a depth-first tree from a given node
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
+   reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
+   maximum_bipartite_matching -- compute permutation to make diagonal zero free
+   structural_rank -- compute the structural rank of a graph
+   NegativeCycleError
+
+.. autosummary::
+   :toctree: generated/
+
+   construct_dist_matrix
+   csgraph_from_dense
+   csgraph_from_masked
+   csgraph_masked_from_dense
+   csgraph_to_dense
+   csgraph_to_masked
+   reconstruct_path
 
 Graph Representations
-=====================
+---------------------
 This module uses graphs which are stored in a matrix format.  A
 graph with N nodes can be represented by an (N x N) adjacency matrix G.
 If there is a connection from node i to node j, then G[i, j] = w, where
@@ -101,14 +115,31 @@ understood by the algorithms in submodule.  By viewing the data array, we
 can see that the zero values are explicitly encoded in the graph.
 
 Directed vs. Undirected
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 Matrices may represent either directed or undirected graphs.  This is
 specified throughout the csgraph module by a boolean keyword.  Graphs are
 assumed to be directed by default. In a directed graph, traversal from node
 i to node j can be accomplished over the edge G[i, j], but not the edge
-G[j, i].  In a non-directed graph, traversal from node i to node j can be
+G[j, i].  Consider the following dense graph::
+
+    >>> G_dense = np.array([[0, 1, 0],
+    ...                     [2, 0, 3],
+    ...                     [0, 4, 0]])
+
+When ``directed=True`` we get the graph::
+
+      ---1--> ---3-->
+    (0)     (1)     (2)
+      <--2--- <--4---
+
+In a non-directed graph, traversal from node i to node j can be
 accomplished over either G[i, j] or G[j, i].  If both edges are not null,
 and the two have unequal weights, then the smaller of the two is used.
+
+So for the same graph, when ``directed=False`` we get the graph::
+
+    (0)--1--(1)--2--(2)
+
 Note that a symmetric matrix will represent an undirected graph, regardless
 of whether the 'directed' keyword is set to True or False.  In this case,
 using ``directed=True`` generally leads to more efficient computation.
@@ -122,8 +153,7 @@ from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['cs_graph_components',
-           'connected_components',
+__all__ = ['connected_components',
            'laplacian',
            'shortest_path',
            'floyd_warshall',
@@ -135,33 +165,30 @@ __all__ = ['cs_graph_components',
            'breadth_first_tree',
            'depth_first_tree',
            'minimum_spanning_tree',
+           'reverse_cuthill_mckee',
+           'maximum_bipartite_matching',
+           'structural_rank',
            'construct_dist_matrix',
            'reconstruct_path',
-           'csgraph_from_dense',
            'csgraph_masked_from_dense',
+           'csgraph_from_dense',
+           'csgraph_from_masked',
            'csgraph_to_dense',
            'csgraph_to_masked',
            'NegativeCycleError']
 
-from ._components import cs_graph_components
 from ._laplacian import laplacian
 from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
     bellman_ford, johnson, NegativeCycleError
 from ._traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree, connected_components
 from ._min_spanning_tree import minimum_spanning_tree
+from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching, \
+    structural_rank
 from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
-    csgraph_from_masked
+    csgraph_from_masked, csgraph_to_masked
 
-from numpy import deprecate as _deprecate
-cs_graph_components = _deprecate(cs_graph_components,
-                                 message=("In the future, use "
-                                          "csgraph.connected_components. Note "
-                                          "that this new function has a "
-                                          "slightly different interface: see "
-                                          "the docstring for more "
-                                          "information."))
-
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

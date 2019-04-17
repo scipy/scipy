@@ -17,22 +17,23 @@ Simple N-D interpolation
 #       Run ``generate_qhull.py`` to regenerate the ``qhull.c`` file
 #
 
+from __future__ import absolute_import
+
+cimport cython
+
+from libc.float cimport DBL_EPSILON
+from libc.math cimport fabs, sqrt
+
 import numpy as np
 
 import scipy.spatial.qhull as qhull
 cimport scipy.spatial.qhull as qhull
-
-cimport cython
 
 import warnings
 
 #------------------------------------------------------------------------------
 # Numpy etc.
 #------------------------------------------------------------------------------
-
-cdef extern from "math.h":
-    double sqrt(double x) nogil
-    double fabs(double a) nogil
 
 cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
@@ -41,6 +42,7 @@ cdef extern from "numpy/ndarrayobject.h":
 ctypedef fused double_or_complex:
     double
     double complex
+
 
 #------------------------------------------------------------------------------
 # Interpolator base class
@@ -68,14 +70,14 @@ class NDInterpolatorBase(object):
                 raise ValueError("Rescaling is not supported when passing "
                                  "a Delaunay triangulation as ``points``.")
             self.tri = points
-            points = self.tri.points
+            points = points.points
         else:
             self.tri = None
 
         points = _ndim_coords_from_arrays(points)
         values = np.asarray(values)
 
-        self._check_init_shape(points, values, ndim=ndim)
+        _check_init_shape(points, values, ndim=ndim)
 
         if need_contiguous:
             points = np.ascontiguousarray(points, dtype=np.double)
@@ -112,21 +114,6 @@ class NDInterpolatorBase(object):
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
 
-    def _check_init_shape(self, points, values, ndim=None):
-        """
-        Check shape of points and values arrays
-
-        """
-        if values.shape[0] != points.shape[0]:
-            raise ValueError("different number of values and points")
-        if points.ndim != 2:
-            raise ValueError("invalid shape for input data points")
-        if points.shape[1] < 2:
-            raise ValueError("input data must be at least 2-D")
-        if ndim is not None and points.shape[1] != ndim:
-            raise ValueError("this mode of interpolation available only for "
-                             "%d-D data" % ndim)
-
     def _check_call_shape(self, xi):
         xi = np.asanyarray(xi)
         if xi.shape[-1] != self.points.shape[1]:
@@ -157,24 +144,29 @@ class NDInterpolatorBase(object):
         xi = xi.reshape(-1, shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.double)
 
+        xi = self._scale_x(xi)
         if self.is_complex:
-            r = self._evaluate_complex(self._scale_x(xi))
+            r = self._evaluate_complex(xi)
         else:
-            r = self._evaluate_double(self._scale_x(xi))
+            r = self._evaluate_double(xi)
 
         return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 
-def _ndim_coords_from_arrays(points, ndim=None):
+
+cpdef _ndim_coords_from_arrays(points, ndim=None):
     """
     Convert a tuple of coordinate arrays to a (..., ndim)-shaped array.
 
     """
+    cdef ssize_t j, n
+
     if isinstance(points, tuple) and len(points) == 1:
         # handle argument tuple
         points = points[0]
     if isinstance(points, tuple):
         p = np.broadcast_arrays(*points)
-        for j in xrange(1, len(p)):
+        n = len(p)
+        for j in range(1, n):
             if p[j].shape != p[0].shape:
                 raise ValueError("coordinate arrays do not have the same shape")
         points = np.empty(p[0].shape + (len(points),), dtype=float)
@@ -188,6 +180,23 @@ def _ndim_coords_from_arrays(points, ndim=None):
             else:
                 points = points.reshape(-1, ndim)
     return points
+
+
+cdef _check_init_shape(points, values, ndim=None):
+    """
+    Check shape of points and values arrays
+
+    """
+    if values.shape[0] != points.shape[0]:
+        raise ValueError("different number of values and points")
+    if points.ndim != 2:
+        raise ValueError("invalid shape for input data points")
+    if points.shape[1] < 2:
+        raise ValueError("input data must be at least 2-D")
+    if ndim is not None and points.shape[1] != ndim:
+        raise ValueError("this mode of interpolation available only for "
+                         "%d-D data" % ndim)
+
 
 #------------------------------------------------------------------------------
 # Linear interpolation in N-D
@@ -215,7 +224,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
         the default is ``nan``.
-    rescale : boolean, optional
+    rescale : bool, optional
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
@@ -267,8 +276,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
-        eps = np.finfo(np.double).eps * 100
-        eps_broad = sqrt(np.finfo(np.double).eps)
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
             for i in xrange(xi.shape[0]):
@@ -429,9 +438,9 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
                 s[k] = 0
 
             # walk over neighbours of given point
-            for jpoint2 in xrange(d.vertex_neighbors_indices[ipoint],
-                                  d.vertex_neighbors_indices[ipoint+1]):
-                ipoint2 = d.vertex_neighbors_indptr[jpoint2]
+            for jpoint2 in xrange(d.vertex_neighbors_indptr[ipoint],
+                                  d.vertex_neighbors_indptr[ipoint+1]):
+                ipoint2 = d.vertex_neighbors_indices[jpoint2]
 
                 # edge
                 ex = d.points[2*ipoint2 + 0] - d.points[2*ipoint + 0]
@@ -480,7 +489,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
+cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     cdef double[:,::1] data
     cdef double[:,:,::1] grad
     cdef qhull.DelaunayInfo_t info
@@ -581,8 +590,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
          c1101, c1011, c0111
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
-    cdef double \
-         g1, g2, g3
+    cdef double g[3]
     cdef double \
          e12x, e12y, e23x, e23y, e31x, e31y, \
          e14x, e14y, e24x, e24y, e34x, e34y
@@ -656,13 +664,13 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # In [CT]_, it is suggested to pick `w` as the normal of the edge.
     # This choice is given by the formulas
     #
-    #    w_12 = E_24 + g1 * E_23
-    #    w_23 = E_34 + g2 * E_31
-    #    w_31 = E_14 + g3 * E_12
+    #    w_12 = E_24 + g[0] * E_23
+    #    w_23 = E_34 + g[1] * E_31
+    #    w_31 = E_14 + g[2] * E_12
     #
-    #    g1 = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
-    #    g2 = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
-    #    g3 = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
+    #    g[0] = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
+    #    g[1] = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
+    #    g[2] = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
     #
     # However, this choice gives an interpolant that is *not*
     # invariant under affine transforms. This has some bad
@@ -676,7 +684,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # one observes that as eps -> 0, the absolute maximum value of the
     # interpolant approaches infinity.
     #
-    # So below, we aim to pick affine invariant `g1`, `g2`, `g3`.
+    # So below, we aim to pick affine invariant `g[k]`.
     # We choose
     #
     #     w = V_4' - V_4
@@ -698,12 +706,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
         if itri == -1:
             # No neighbour.
             # Compute derivative to the centroid direction (e_12 + e_13)/2.
-            if k == 0:
-                g1 = -2./3
-            elif k == 1:
-                g2 = -2./3
-            elif k == 2:
-                g3 = -2./3
+            g[k] = -1./2
             continue
 
         # Centroid of the neighbour, in our local barycentric coordinates
@@ -726,17 +729,17 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
         # conclude that the choice below is affine-invariant.
 
         if k == 0:
-            g1 = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
+            g[k] = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
         elif k == 1:
-            g2 = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
+            g[k] = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
         elif k == 2:
-            g3 = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
+            g[k] = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
 
-    c0111 = (g1*(-c0300 + 3*c0210 - 3*c0120 + c0030)
+    c0111 = (g[0]*(-c0300 + 3*c0210 - 3*c0120 + c0030)
              + (-c0300 + 2*c0210 - c0120 + c0021 + c0201))/2
-    c1011 = (g2*(-c0030 + 3*c1020 - 3*c2010 + c3000)
+    c1011 = (g[1]*(-c0030 + 3*c1020 - 3*c2010 + c3000)
              + (-c0030 + 2*c1020 - c2010 + c2001 + c0021))/2
-    c1101 = (g3*(-c3000 + 3*c2100 - 3*c1200 + c0300)
+    c1101 = (g[2]*(-c3000 + 3*c2100 - 3*c1200 + c0300)
              + (-c3000 + 2*c2100 - c1200 + c2001 + c0201))/2
 
     c1002 = (c1101 + c1011 + c2001)/3
@@ -794,7 +797,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Absolute/relative tolerance for gradient estimation.
     maxiter : int, optional
         Maximum number of iterations in gradient estimation.
-    rescale : boolean, optional
+    rescale : bool, optional
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
@@ -877,7 +880,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
-        eps = np.finfo(np.double).eps * 100
+        eps = 100 * DBL_EPSILON
         eps_broad = sqrt(eps)
 
         with nogil:

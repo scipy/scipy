@@ -54,7 +54,9 @@ def label(input, structure=None, output=None):
         counted as features and zero values are considered the background.
     structure : array_like, optional
         A structuring element that defines feature connections.
-        `structure` must be symmetric.  If no structuring element is provided,
+        `structure` must be centrosymmetric
+        (see Notes).
+        If no structuring element is provided,
         one is automatically generated with a squared connectivity equal to
         one.  That is, for a 2-D `input` array, the default structuring element
         is::
@@ -65,7 +67,7 @@ def label(input, structure=None, output=None):
 
     output : (None, data-type, array_like), optional
         If `output` is a data type, it specifies the type of the resulting
-        labeled feature array
+        labeled feature array.
         If `output` is an array-like object, then `output` will be updated
         with the labeled features from this function.  This function can
         operate in-place, by passing output=input.
@@ -93,11 +95,35 @@ def label(input, structure=None, output=None):
                    objects); useful for finding features' position or
                    dimensions
 
+    Notes
+    -----
+    A centrosymmetric matrix is a matrix that is symmetric about the center.
+    See [1]_ for more information.
+
+    The `structure` matrix must be centrosymmetric to ensure
+    two-way connections.
+    For instance, if the `structure` matrix is not centrosymmetric
+    and is defined as::
+
+        [[0,1,0],
+         [1,1,0],
+         [0,0,0]]
+
+    and the `input` is::
+
+        [[1,2],
+         [0,3]]
+
+    then the structure matrix would indicate the
+    entry 2 in the input is connected to 1,
+    but 1 is not connected to 2.
+
     Examples
     --------
     Create an image with some features, then label it using the default
     (cross-shaped) structuring element:
 
+    >>> from scipy.ndimage import label, generate_binary_structure
     >>> a = np.array([[0,0,1,1,0,0],
     ...               [0,0,0,1,0,0],
     ...               [1,1,0,0,1,0],
@@ -106,9 +132,9 @@ def label(input, structure=None, output=None):
 
     Each of the 4 features are labeled with a different integer:
 
-    >>> print(num_features)
+    >>> num_features
     4
-    >>> print(labeled_array)
+    >>> labeled_array
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 3, 0],
@@ -122,8 +148,8 @@ def label(input, structure=None, output=None):
     or,
 
     >>> s = [[1,1,1],
-             [1,1,1],
-             [1,1,1]]
+    ...      [1,1,1],
+    ...      [1,1,1]]
 
     Label the image using the new structuring element:
 
@@ -132,13 +158,21 @@ def label(input, structure=None, output=None):
     Show the 2 labeled features (note that features 1, 3, and 4 from above are
     now considered a single feature):
 
-    >>> print(num_features)
+    >>> num_features
     2
-    >>> print(labeled_array)
+    >>> labeled_array
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
            [0, 0, 0, 1, 0, 0]])
+
+    References
+    ----------
+
+    .. [1] James R. Weaver, "Centrosymmetric (cross-symmetric)
+       matrices, their basic properties, eigenvalues, and
+       eigenvectors." The American Mathematical Monthly 92.10
+       (1985): 711-717.
 
     """
     input = numpy.asarray(input)
@@ -209,7 +243,8 @@ def find_objects(input, max_label=0):
     Parameters
     ----------
     input : ndarray of ints
-        Array containing objects defined by different labels.
+        Array containing objects defined by different labels. Labels with
+        value 0 are ignored.
     max_label : int, optional
         Maximum label to be searched for in `input`. If max_label is not
         given, the positions of all objects are returned.
@@ -233,7 +268,8 @@ def find_objects(input, max_label=0):
 
     Examples
     --------
-    >>> a = np.zeros((6,6), dtype=np.int)
+    >>> from scipy import ndimage
+    >>> a = np.zeros((6,6), dtype=int)
     >>> a[2:4, 2:4] = 1
     >>> a[4, 4] = 1
     >>> a[:2, :3] = 2
@@ -254,8 +290,8 @@ def find_objects(input, max_label=0):
 
     >>> loc = ndimage.find_objects(a)[0]
     >>> a[loc]
-    array([[1, 1, 0]
-           [1, 1, 0]
+    array([[1, 1, 0],
+           [1, 1, 0],
            [0, 0, 1]])
 
     """
@@ -309,9 +345,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> lbl, nlbl = ndimage.label(a)
     >>> lbls = np.arange(1, nlbl+1)
@@ -332,9 +368,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     ...
     >>> ndimage.labeled_comprehension(a, lbl, lbls, fn, float, 0, True)
     fn says: [1 2 5 3] : [0 1 4 5]
-    fn says: [4 7] : [7 11]
+    fn says: [4 7] : [ 7 11]
     fn says: [9 3] : [12 13]
-    array([ 11.,  11., -12.])
+    array([ 11.,  11., -12.,   0.])
 
     """
 
@@ -425,7 +461,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 def _safely_castable_to_int(dt):
     """Test whether the numpy data type `dt` can be safely cast to an int."""
     int_size = np.dtype(int).itemsize
-    safe = ((np.issubdtype(dt, int) and dt.itemsize <= int_size) or
+    safe = ((np.issubdtype(dt, np.signedinteger) and dt.itemsize <= int_size) or
             (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
     return safe
 
@@ -566,13 +602,14 @@ def sum(input, labels=None, index=None):
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> input =  [0,1,2,3]
     >>> labels = [1,1,2,2]
-    >>> sum(input, labels, index=[1,2])
+    >>> ndimage.sum(input, labels, index=[1,2])
     [1.0, 5.0]
-    >>> sum(input, labels, index=1)
+    >>> ndimage.sum(input, labels, index=1)
     1
-    >>> sum(input, labels)
+    >>> ndimage.sum(input, labels)
     6
 
 
@@ -607,12 +644,11 @@ def mean(input, labels=None, index=None):
 
     See also
     --------
-    ndimage.variance, ndimage.standard_deviation, ndimage.minimum,
-    ndimage.maximum, ndimage.sum
-    ndimage.label
+    variance, standard_deviation, minimum, maximum, sum, label
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.arange(25).reshape((5,5))
     >>> labels = np.zeros_like(a)
     >>> labels[3:5,3:5] = 1
@@ -663,9 +699,9 @@ def variance(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> ndimage.variance(a)
     7.609375
@@ -715,9 +751,9 @@ def standard_deviation(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> ndimage.standard_deviation(a)
     2.7585095613392387
@@ -817,7 +853,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         mins[labels[::-1]] = input[::-1]
         result += [mins[idxs]]
     if find_min_positions:
-        minpos = numpy.zeros(labels.max() + 2)
+        minpos = numpy.zeros(labels.max() + 2, int)
         minpos[labels[::-1]] = positions[::-1]
         result += [minpos[idxs]]
     if find_max:
@@ -825,7 +861,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         maxs[labels] = input
         result += [maxs[idxs]]
     if find_max_positions:
-        maxpos = numpy.zeros(labels.max() + 2)
+        maxpos = numpy.zeros(labels.max() + 2, int)
         maxpos[labels] = positions
         result += [maxpos[idxs]]
     if find_median:
@@ -883,11 +919,12 @@ def minimum(input, labels=None, index=None):
 
     Notes
     -----
-    The function returns a Python list and not a Numpy array, use
+    The function returns a Python list and not a NumPy array, use
     `np.array` to convert the list to an array.
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -944,7 +981,7 @@ def maximum(input, labels=None, index=None):
 
     Notes
     -----
-    The function returns a Python list and not a Numpy array, use
+    The function returns a Python list and not a NumPy array, use
     `np.array` to convert the list to an array.
 
     Examples
@@ -972,9 +1009,9 @@ def maximum(input, labels=None, index=None):
     14.0
 
     >>> b = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> labels, labels_nb = ndimage.label(b)
     >>> labels
     array([[1, 1, 0, 0],
@@ -1022,11 +1059,12 @@ def median(input, labels=None, index=None):
 
     Notes
     -----
-    The function returns a Python list and not a Numpy array, use
+    The function returns a Python list and not a NumPy array, use
     `np.array` to convert the list to an array.
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.array([[1, 2, 0, 1],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1073,18 +1111,45 @@ def minimum_position(input, labels=None, index=None):
 
     Returns
     -------
-    output : list of tuples of floats
-        Tuple of floats or list of tuples of floats that specify the location
+    output : list of tuples of ints
+        Tuple of ints or list of tuples of ints that specify the location
         of minima of `input` over the regions determined by `labels` and
         whose index is in `index`.
 
-        If `index` or `labels` are not specified, a tuple of floats is
+        If `index` or `labels` are not specified, a tuple of ints is
         returned specifying the location of the first minimal value of `input`.
 
     See also
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
+
+    Examples
+    --------
+    >>> a = np.array([[10, 20, 30],
+    ...               [40, 80, 100],
+    ...               [1, 100, 200]])
+    >>> b = np.array([[1, 2, 0, 1],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+
+    >>> from scipy import ndimage
+
+    >>> ndimage.minimum_position(a)
+    (2, 0)
+    >>> ndimage.minimum_position(b)
+    (0, 2)
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> label, pos = ndimage.label(a)
+    >>> ndimage.minimum_position(a, label, index=np.arange(1, pos+1))
+    [(2, 0)]
+
+    >>> label, pos = ndimage.label(b)
+    >>> ndimage.minimum_position(b, label, index=np.arange(1, pos+1))
+    [(0, 0), (0, 3), (3, 1)]
 
     """
     dims = numpy.array(numpy.asarray(input).shape)
@@ -1127,12 +1192,12 @@ def maximum_position(input, labels=None, index=None):
 
     Returns
     -------
-    output : list of tuples of floats
-        List of tuples of floats that specify the location of maxima of
+    output : list of tuples of ints
+        List of tuples of ints that specify the location of maxima of
         `input` over the regions determined by `labels` and whose index
         is in `index`.
 
-        If `index` or `labels` are not specified, a tuple of floats is
+        If `index` or `labels` are not specified, a tuple of ints is
         returned specifying the location of the ``first`` maximal value
         of `input`.
 
@@ -1185,9 +1250,9 @@ def extrema(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> ndimage.extrema(a)
     (0, 9, (0, 2), (3, 0))
@@ -1198,8 +1263,8 @@ def extrema(input, labels=None, index=None):
     >>> ndimage.extrema(a, lbl, index=np.arange(1, nlbl+1))
     (array([1, 4, 3]),
      array([5, 7, 9]),
-     [(0.0, 0.0), (1.0, 3.0), (3.0, 1.0)],
-     [(1.0, 0.0), (2.0, 3.0), (3.0, 0.0)])
+     [(0, 0), (1, 3), (3, 1)],
+     [(1, 0), (2, 3), (3, 0)])
 
     If no index is given, non-zero `labels` are processed:
 
@@ -1235,7 +1300,8 @@ def center_of_mass(input, labels=None, index=None):
     Parameters
     ----------
     input : ndarray
-        Data from which to calculate center-of-mass.
+        Data from which to calculate center-of-mass. The masses can either
+        be positive or negative.
     labels : ndarray, optional
         Labels for objects in `input`, as generated by `ndimage.label`.
         Only used with `index`.  Dimensions must be the same as `input`.
@@ -1251,9 +1317,9 @@ def center_of_mass(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array(([0,0,0,0],
-                      [0,1,1,0],
-                      [0,1,1,0],
-                      [0,1,1,0]))
+    ...               [0,1,1,0],
+    ...               [0,1,1,0],
+    ...               [0,1,1,0]))
     >>> from scipy import ndimage
     >>> ndimage.measurements.center_of_mass(a)
     (2.0, 1.5)
@@ -1261,14 +1327,30 @@ def center_of_mass(input, labels=None, index=None):
     Calculation of multiple objects in an image
 
     >>> b = np.array(([0,1,1,0],
-                      [0,1,0,0],
-                      [0,0,0,0],
-                      [0,0,1,1],
-                      [0,0,1,1]))
+    ...               [0,1,0,0],
+    ...               [0,0,0,0],
+    ...               [0,0,1,1],
+    ...               [0,0,1,1]))
     >>> lbl = ndimage.label(b)[0]
     >>> ndimage.measurements.center_of_mass(b, lbl, [1,2])
     [(0.33333333333333331, 1.3333333333333333), (3.5, 2.5)]
 
+    Negative masses are also accepted, which can occur for example when
+    bias is removed from measured data due to random noise.
+
+    >>> c = np.array(([-1,0,0,0],
+    ...               [0,-1,-1,0],
+    ...               [0,1,-1,0],
+    ...               [0,1,1,0]))
+    >>> ndimage.measurements.center_of_mass(c)
+    (-4.0, 1.0)
+
+    If there are division by zero issues, the function does not raise an
+    error but rather issues a RuntimeWarning before returning inf and/or NaN.
+
+    >>> d = np.array([-1, 1])
+    >>> ndimage.measurements.center_of_mass(d)
+    (inf,)
     """
     normalizer = sum(input, labels, index)
     grids = numpy.ogrid[[slice(0, i) for i in input.shape]]
@@ -1314,10 +1396,10 @@ def histogram(input, min, max, bins, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[ 0.    ,  0.2146,  0.5962,  0.    ],
-                      [ 0.    ,  0.7778,  0.    ,  0.    ],
-                      [ 0.    ,  0.    ,  0.    ,  0.    ],
-                      [ 0.    ,  0.    ,  0.7181,  0.2787],
-                      [ 0.    ,  0.    ,  0.6573,  0.3094]])
+    ...               [ 0.    ,  0.7778,  0.    ,  0.    ],
+    ...               [ 0.    ,  0.    ,  0.    ,  0.    ],
+    ...               [ 0.    ,  0.    ,  0.7181,  0.2787],
+    ...               [ 0.    ,  0.    ,  0.6573,  0.3094]])
     >>> from scipy import ndimage
     >>> ndimage.measurements.histogram(a, 0, 1, 10)
     array([13,  0,  2,  1,  0,  1,  1,  2,  0,  0])
@@ -1345,7 +1427,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
 def watershed_ift(input, markers, structure=None, output=None):
     """
-    Apply watershed from markers using an iterative forest transform algorithm.
+    Apply watershed from markers using image foresting transform algorithm.
 
     Parameters
     ----------
@@ -1359,13 +1441,19 @@ def watershed_ift(input, markers, structure=None, output=None):
         A structuring element defining the connectivity of the object can be
         provided. If None, an element is generated with a squared
         connectivity equal to one.
-    out : ndarray
+    output : ndarray, optional
         An output array can optionally be provided.  The same shape as input.
 
     Returns
     -------
     watershed_ift : ndarray
         Output.  Same shape as `input`.
+
+    References
+    ----------
+    .. [1] A.X. Falcao, J. Stolfi and R. de Alencar Lotufo, "The image
+           foresting transform: theory, algorithms, and applications",
+           Pattern Analysis and Machine Intelligence, vol. 26, pp. 19-29, 2004.
 
     """
     input = numpy.asarray(input)
@@ -1405,6 +1493,6 @@ def watershed_ift(input, markers, structure=None, output=None):
     else:
         output = markers.dtype
 
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
-    return return_value
+    return output

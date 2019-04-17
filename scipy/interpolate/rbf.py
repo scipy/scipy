@@ -45,12 +45,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import division, print_function, absolute_import
 
 import sys
+import numpy as np
 
-from numpy import (sqrt, log, asarray, newaxis, all, dot, exp, eye,
-                   float_)
 from scipy import linalg
-from scipy.lib.six import callable, get_method_function, \
-     get_function_code
+from scipy._lib.six import callable, get_method_function, get_function_code
+from scipy.special import xlogy
+from scipy.spatial.distance import cdist, pdist, squareform
 
 __all__ = ['Rbf']
 
@@ -91,36 +91,55 @@ class Rbf(object):
         Values greater than zero increase the smoothness of the
         approximation.  0 is for interpolation (default), the function will
         always go through the nodal points in this case.
-    norm : callable, optional
+    norm : str, callable, optional
         A function that returns the 'distance' between two points, with
         inputs as arrays of positions (x, y, z, ...), and an output as an
-        array of distance.  E.g, the default::
+        array of distance. E.g., the default: 'euclidean', such that the result
+        is a matrix of the distances from each point in ``x1`` to each point in
+        ``x2``. For more options, see documentation of
+        `scipy.spatial.distances.cdist`.
 
-            def euclidean_norm(x1, x2):
-                return sqrt( ((x1 - x2)**2).sum(axis=0) )
-
-        which is called with x1=x1[ndims,newaxis,:] and
-        x2=x2[ndims,:,newaxis] such that the result is a matrix of the
-        distances from each point in x1 to each point in x2.
+    Attributes
+    ----------
+    N : int
+        The number of data points (as determined by the input arrays).
+    di : ndarray
+        The 1-D array of data values at each of the data coordinates `xi`.
+    xi : ndarray
+        The 2-D array of data coordinates.
+    function : str or callable
+        The radial basis function.  See description under Parameters.
+    epsilon : float
+        Parameter used by gaussian or multiquadrics functions.  See Parameters.
+    smooth : float
+        Smoothing parameter.  See description under Parameters.
+    norm : str or callable
+        The distance function.  See description under Parameters.
+    nodes : ndarray
+        A 1-D array of node values for the interpolation.
+    A : internal property, do not use
 
     Examples
     --------
+    >>> from scipy.interpolate import Rbf
+    >>> x, y, z, d = np.random.rand(4, 50)
     >>> rbfi = Rbf(x, y, z, d)  # radial basis function interpolator instance
+    >>> xi = yi = zi = np.linspace(0, 1, 20)
     >>> di = rbfi(xi, yi, zi)   # interpolated values
+    >>> di.shape
+    (20,)
 
     """
-
-    def _euclidean_norm(self, x1, x2):
-        return sqrt(((x1 - x2)**2).sum(axis=0))
-
+    # Available radial basis functions that can be selected as strings;
+    # they all start with _h_ (self._init_function relies on that)
     def _h_multiquadric(self, r):
-        return sqrt((1.0/self.epsilon*r)**2 + 1)
+        return np.sqrt((1.0/self.epsilon*r)**2 + 1)
 
     def _h_inverse_multiquadric(self, r):
-        return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
+        return 1.0/np.sqrt((1.0/self.epsilon*r)**2 + 1)
 
     def _h_gaussian(self, r):
-        return exp(-(1.0/self.epsilon*r)**2)
+        return np.exp(-(1.0/self.epsilon*r)**2)
 
     def _h_linear(self, r):
         return r
@@ -132,9 +151,7 @@ class Rbf(object):
         return r**5
 
     def _h_thin_plate(self, r):
-        result = r**2 * log(r)
-        result[r == 0] = 0  # the spline is zero at zero
-        return result
+        return xlogy(r**2, r)
 
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):
@@ -150,14 +167,15 @@ class Rbf(object):
             if hasattr(self, func_name):
                 self._function = getattr(self, func_name)
             else:
-                functionlist = [x[3:] for x in dir(self) if x.startswith('_h_')]
+                functionlist = [x[3:] for x in dir(self)
+                                if x.startswith('_h_')]
                 raise ValueError("function must be a callable or one of " +
-                                     ", ".join(functionlist))
+                                 ", ".join(functionlist))
             self._function = getattr(self, "_h_"+self.function)
         elif callable(self.function):
             allow_one = False
             if hasattr(self.function, 'func_code') or \
-                   hasattr(self.function, '__code__'):
+               hasattr(self.function, '__code__'):
                 val = self.function
                 allow_one = True
             elif hasattr(self.function, "im_func"):
@@ -165,7 +183,8 @@ class Rbf(object):
             elif hasattr(self.function, "__call__"):
                 val = get_method_function(self.function.__call__)
             else:
-                raise ValueError("Cannot determine number of arguments to function")
+                raise ValueError("Cannot determine number of arguments to "
+                                 "function")
 
             argcount = get_function_code(val).co_argcount
             if allow_one and argcount == 1:
@@ -178,54 +197,65 @@ class Rbf(object):
                     self._function = new.instancemethod(self.function, self,
                                                         Rbf)
             else:
-                raise ValueError("Function argument must take 1 or 2 arguments.")
+                raise ValueError("Function argument must take 1 or 2 "
+                                 "arguments.")
 
         a0 = self._function(r)
         if a0.shape != r.shape:
-            raise ValueError("Callable must take array and return array of the same shape")
+            raise ValueError("Callable must take array and return array of "
+                             "the same shape")
         return a0
 
     def __init__(self, *args, **kwargs):
-        self.xi = asarray([asarray(a, dtype=float_).flatten()
-                           for a in args[:-1]])
+        # `args` can be a variable number of arrays; we flatten them and store
+        # them as a single 2-D array `xi` of shape (n_args-1, array_size),
+        # plus a 1-D array `di` for the values.
+        # All arrays must have the same number of elements
+        self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
+                              for a in args[:-1]])
         self.N = self.xi.shape[-1]
-        self.di = asarray(args[-1]).flatten()
+        self.di = np.asarray(args[-1]).flatten()
 
         if not all([x.size == self.di.size for x in self.xi]):
             raise ValueError("All arrays must be equal length.")
 
-        self.norm = kwargs.pop('norm', self._euclidean_norm)
-        r = self._call_norm(self.xi, self.xi)
+        self.norm = kwargs.pop('norm', 'euclidean')
         self.epsilon = kwargs.pop('epsilon', None)
         if self.epsilon is None:
-            self.epsilon = r.mean()
-        self.smooth = kwargs.pop('smooth', 0.0)
+            # default epsilon is the "the average distance between nodes" based
+            # on a bounding hypercube
+            ximax = np.amax(self.xi, axis=1)
+            ximin = np.amin(self.xi, axis=1)
+            edges = ximax - ximin
+            edges = edges[np.nonzero(edges)]
+            self.epsilon = np.power(np.prod(edges)/self.N, 1.0/edges.size)
 
+        self.smooth = kwargs.pop('smooth', 0.0)
         self.function = kwargs.pop('function', 'multiquadric')
 
-        # attach anything left in kwargs to self
-        #  for use by any user-callable function or
-        #  to save on the object returned.
+        # attach anything left in kwargs to self for use by any user-callable
+        # function or to save on the object returned.
         for item, value in kwargs.items():
             setattr(self, item, value)
 
-        self.A = self._init_function(r) - eye(self.N)*self.smooth
         self.nodes = linalg.solve(self.A, self.di)
 
+    @property
+    def A(self):
+        # this only exists for backwards compatibility: self.A was available
+        # and, at least technically, public.
+        r = squareform(pdist(self.xi.T, self.norm))  # Pairwise norm
+        return self._init_function(r) - np.eye(self.N)*self.smooth
+
     def _call_norm(self, x1, x2):
-        if len(x1.shape) == 1:
-            x1 = x1[newaxis, :]
-        if len(x2.shape) == 1:
-            x2 = x2[newaxis, :]
-        x1 = x1[..., :, newaxis]
-        x2 = x2[..., newaxis, :]
-        return self.norm(x1, x2)
+        return cdist(x1.T, x2.T, self.norm)
 
     def __call__(self, *args):
-        args = [asarray(x) for x in args]
+        args = [np.asarray(x) for x in args]
         if not all([x.shape == y.shape for x in args for y in args]):
             raise ValueError("Array lengths must be equal")
+
         shp = args[0].shape
-        self.xa = asarray([a.flatten() for a in args], dtype=float_)
-        r = self._call_norm(self.xa, self.xi)
-        return dot(self._function(r), self.nodes).reshape(shp)
+        xa = np.asarray([a.flatten() for a in args], dtype=np.float_)
+        r = self._call_norm(xa, self.xi)
+        return np.dot(self._function(r), self.nodes).reshape(shp)

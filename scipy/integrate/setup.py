@@ -1,74 +1,79 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import os
 from os.path import join
+
+from scipy._build_utils import numpy_nodepr_api
 
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
     config = Configuration('integrate', parent_package, top_path)
 
-    blas_opt = get_info('blas_opt',notfound_action=2)
+    # Get a local copy of lapack_opt_info
+    lapack_opt = dict(get_info('lapack_opt',notfound_action=2))
+    # Pop off the libraries list so it can be combined with
+    # additional required libraries
+    lapack_libs = lapack_opt.pop('libraries', [])
 
-    linpack_lite_src = [join('linpack_lite','*.f')]
     mach_src = [join('mach','*.f')]
-    quadpack_src = [join('quadpack','*.f')]
-    odepack_src = [join('odepack','*.f')]
+    quadpack_src = [join('quadpack', '*.f')]
+    lsoda_src = [join('odepack', fn) for fn in [
+        'blkdta000.f', 'bnorm.f', 'cfode.f',
+        'ewset.f', 'fnorm.f', 'intdy.f',
+        'lsoda.f', 'prja.f', 'solsy.f', 'srcma.f',
+        'stoda.f', 'vmnorm.f', 'xerrwv.f', 'xsetf.f',
+        'xsetun.f']]
+    vode_src = [join('odepack', 'vode.f'), join('odepack', 'zvode.f')]
     dop_src = [join('dop','*.f')]
+    quadpack_test_src = [join('tests','_test_multivariate.c')]
+    odeint_banded_test_src = [join('tests', 'banded5x5.f')]
 
-    config.add_library('linpack_lite', sources=linpack_lite_src)
     config.add_library('mach', sources=mach_src,
                        config_fc={'noopt':(__file__,1)})
     config.add_library('quadpack', sources=quadpack_src)
-    config.add_library('odepack', sources=odepack_src)
+    config.add_library('lsoda', sources=lsoda_src)
+    config.add_library('vode', sources=vode_src)
     config.add_library('dop', sources=dop_src)
-    # should we try to weed through files and replace with calls to
-    # LAPACK routines?
-    # Yes, someday...
 
     # Extensions
     # quadpack:
+    include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
+    if 'include_dirs' in lapack_opt:
+        lapack_opt = dict(lapack_opt)
+        include_dirs.extend(lapack_opt.pop('include_dirs'))
 
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
-                         libraries=['quadpack', 'linpack_lite', 'mach'],
-                         depends=(['quadpack.h','__quadpack.h']
-                                  + quadpack_src + linpack_lite_src + mach_src))
-    # odepack
-    libs = ['odepack','linpack_lite','mach']
+                         libraries=['quadpack', 'mach'] + lapack_libs,
+                         depends=(['__quadpack.h']
+                                  + quadpack_src + mach_src),
+                         include_dirs=include_dirs,
+                         **lapack_opt)
 
-    # Remove libraries key from blas_opt
-    if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
-        libs.extend(blas_opt['libraries'])
-    newblas = {}
-    for key in blas_opt:
-        if key == 'libraries':
-            continue
-        newblas[key] = blas_opt[key]
+    # odepack/lsoda-odeint
+    odepack_opts = lapack_opt.copy()
+    odepack_opts.update(numpy_nodepr_api)
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
-                         libraries=libs,
-                         depends=(['__odepack.h','multipack.h']
-                                  + odepack_src + linpack_lite_src
-                                  + mach_src),
-                         **newblas)
+                         libraries=['lsoda', 'mach'] + lapack_libs,
+                         depends=(lsoda_src + mach_src),
+                         **odepack_opts)
 
     # vode
     config.add_extension('vode',
                          sources=['vode.pyf'],
-                         libraries=libs,
-                         depends=(odepack_src + linpack_lite_src
-                                  + mach_src),
-                         **newblas)
+                         libraries=['vode'] + lapack_libs,
+                         depends=vode_src,
+                         **lapack_opt)
 
     # lsoda
     config.add_extension('lsoda',
                          sources=['lsoda.pyf'],
-                         libraries=libs,
-                         depends=(odepack_src + linpack_lite_src
-                                  + mach_src),
-                         **newblas)
+                         libraries=['lsoda', 'mach'] + lapack_libs,
+                         depends=(lsoda_src + mach_src),
+                         **lapack_opt)
 
     # dop
     config.add_extension('_dop',
@@ -76,8 +81,21 @@ def configuration(parent_package='',top_path=None):
                          libraries=['dop'],
                          depends=dop_src)
 
+    config.add_extension('_test_multivariate',
+                         sources=quadpack_test_src)
+
+    # Fortran+f2py extension module for testing odeint.
+    config.add_extension('_test_odeint_banded',
+                         sources=odeint_banded_test_src,
+                         libraries=['lsoda', 'mach'] + lapack_libs,
+                         depends=(lsoda_src + mach_src),
+                         **lapack_opt)
+
+    config.add_subpackage('_ivp')
+
     config.add_data_dir('tests')
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

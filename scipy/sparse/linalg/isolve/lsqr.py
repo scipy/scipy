@@ -57,6 +57,8 @@ import numpy as np
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
 
+eps = np.finfo(np.float64).eps
+
 
 def _sym_ortho(a, b):
     """
@@ -94,7 +96,7 @@ def _sym_ortho(a, b):
 
 
 def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
-         iter_lim=None, show=False, calc_var=False):
+         iter_lim=None, show=False, calc_var=False, x0=None):
     """Find the least-squares solution to a large, sparse, linear system
     of equations.
 
@@ -117,19 +119,21 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperatorLinear}
-        Representation of an m-by-n matrix.  It is required that
-        the linear operator can produce ``Ax`` and ``A^T x``.
-    b : (m,) ndarray
+    A : {sparse matrix, ndarray, LinearOperator}
+        Representation of an m-by-n matrix.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` and ``A^T x`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
+    b : array_like, shape (m,)
         Right-hand side vector ``b``.
     damp : float
         Damping coefficient.
-    atol, btol : float
+    atol, btol : float, optional
         Stopping tolerances. If both are 1.0e-9 (say), the final
         residual norm should be accurate to about 9 digits.  (The
         final x will usually have fewer correct digits, depending on
         cond(A) and the size of damp.)
-    conlim : float
+    conlim : float, optional
         Another stopping tolerance.  lsqr terminates if an estimate of
         ``cond(A)`` exceeds `conlim`.  For compatible systems ``Ax =
         b``, `conlim` could be as large as 1.0e+12 (say).  For
@@ -137,12 +141,16 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         Maximum precision can be obtained by setting ``atol = btol =
         conlim = zero``, but the number of iterations may then be
         excessive.
-    iter_lim : int
+    iter_lim : int, optional
         Explicit limitation on number of iterations (for safety).
-    show : bool
+    show : bool, optional
         Display an iteration log.
-    calc_var : bool
+    calc_var : bool, optional
         Whether to estimate diagonals of ``(A'A + damp^2*I)^{-1}``.
+    x0 : array_like, shape (n,), optional
+        Initial guess of x, if None zeros are used.
+
+        .. versionadded:: 1.0.0
 
     Returns
     -------
@@ -246,9 +254,63 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     .. [3] M. A. Saunders (1995).  "Solution of sparse rectangular
            systems using LSQR and CRAIG", BIT 35, 588-604.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import lsqr
+    >>> A = csc_matrix([[1., 0.], [1., 1.], [0., 1.]], dtype=float)
+
+    The first example has the trivial solution `[0, 0]`
+
+    >>> b = np.array([0., 0., 0.], dtype=float)
+    >>> x, istop, itn, normr = lsqr(A, b)[:4]
+    The exact solution is  x = 0
+    >>> istop
+    0
+    >>> x
+    array([ 0.,  0.])
+
+    The stopping code `istop=0` returned indicates that a vector of zeros was
+    found as a solution. The returned solution `x` indeed contains `[0., 0.]`.
+    The next example has a non-trivial solution:
+
+    >>> b = np.array([1., 0., -1.], dtype=float)
+    >>> x, istop, itn, r1norm = lsqr(A, b)[:4]
+    >>> istop
+    1
+    >>> x
+    array([ 1., -1.])
+    >>> itn
+    1
+    >>> r1norm
+    4.440892098500627e-16
+
+    As indicated by `istop=1`, `lsqr` found a solution obeying the tolerance
+    limits. The given solution `[1., -1.]` obviously solves the equation. The
+    remaining return values include information about the number of iterations
+    (`itn=1`) and the remaining difference of left and right side of the solved
+    equation.
+    The final example demonstrates the behavior in the case where there is no
+    solution for the equation:
+
+    >>> b = np.array([1., 0.01, -1.], dtype=float)
+    >>> x, istop, itn, r1norm = lsqr(A, b)[:4]
+    >>> istop
+    2
+    >>> x
+    array([ 1.00333333, -0.99666667])
+    >>> A.dot(x)-b
+    array([ 0.00333333, -0.00333333,  0.00333333])
+    >>> r1norm
+    0.005773502691896255
+
+    `istop` indicates that the system is inconsistent and thus `x` is rather an
+    approximate solution to the corresponding least-squares problem. `r1norm`
+    contains the norm of the minimal residual that was found.
     """
     A = aslinearoperator(A)
-    if len(b.shape) > 1:
+    b = np.atleast_1d(b)
+    if b.ndim > 1:
         b = b.squeeze()
 
     m, n = A.shape
@@ -279,7 +341,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     itn = 0
     istop = 0
-    nstop = 0
     ctol = 0
     if conlim > 0:
         ctol = 1/conlim
@@ -296,29 +357,32 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     """
     Set up the first vectors u and v for the bidiagonalization.
-    These satisfy  beta*u = b,  alfa*v = A'u.
+    These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
     """
-    __xm = np.zeros(m)  # a matrix for temporary holding
-    __xn = np.zeros(n)  # a matrix for temporary holding
-    v = np.zeros(n)
     u = b
-    x = np.zeros(n)
-    alfa = 0
-    beta = np.linalg.norm(u)
-    w = np.zeros(n)
+    bnorm = np.linalg.norm(b)
+    if x0 is None:
+        x = np.zeros(n)
+        beta = bnorm.copy()
+    else:
+        x = np.asarray(x0)
+        u = u - A.matvec(x)
+        beta = np.linalg.norm(u)
 
     if beta > 0:
         u = (1/beta) * u
         v = A.rmatvec(u)
         alfa = np.linalg.norm(v)
+    else:
+        v = x.copy()
+        alfa = 0
 
     if alfa > 0:
         v = (1/alfa) * v
-        w = v.copy()
+    w = v.copy()
 
     rhobar = alfa
     phibar = beta
-    bnorm = beta
     rnorm = beta
     r1norm = rnorm
     r2norm = rnorm
@@ -432,8 +496,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         # Now use these norms to estimate certain other quantities,
         # some of which will be small near a solution.
         test1 = rnorm / bnorm
-        test2 = arnorm / (anorm * rnorm)
-        test3 = 1 / acond
+        test2 = arnorm / (anorm * rnorm + eps)
+        test3 = 1 / (acond + eps)
         t1 = test1 / (1 + anorm * xnorm / bnorm)
         rtol = btol + atol * anorm * xnorm / bnorm
 

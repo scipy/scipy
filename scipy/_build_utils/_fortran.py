@@ -1,5 +1,4 @@
 import re
-import sys
 import os
 import glob
 from distutils.dep_util import newer
@@ -9,24 +8,8 @@ __all__ = ['needs_g77_abi_wrapper', 'split_fortran_files',
            'get_g77_abi_wrappers']
 
 
-def _uses_veclib(info):
-    r_accelerate = re.compile("Accelerate|vecLib")
-
-    extra_link_args = info.get('extra_link_args', '')
-    for arg in extra_link_args:
-        if r_accelerate.search(arg):
-            return True
-
-    return False
-
-
-def uses_accelerate(info):
-    return _uses_veclib(info)
-
-
 def uses_mkl(info):
-    r_mkl = re.compile("mkl_core")
-
+    r_mkl = re.compile("mkl")
     libraries = info.get('libraries', '')
     for library in libraries:
         if r_mkl.search(library):
@@ -36,14 +19,8 @@ def uses_mkl(info):
 
 
 def needs_g77_abi_wrapper(info):
-    """Returns true if g77 ABI wrapper must be used."""
-    if uses_accelerate(info):
-        return True
-    # XXX: is this really true only on Mac OS X ?
-    elif uses_mkl(info) and sys.platform == "darwin":
-        return True
-    else:
-        return False
+    """Returns True if g77 ABI wrapper must be used."""
+    return uses_mkl(info)
 
 
 def get_g77_abi_wrappers(info):
@@ -59,21 +36,9 @@ def get_g77_abi_wrappers(info):
             os.path.join(path, 'src', 'wrap_g77_abi_f.f'),
             os.path.join(path, 'src', 'wrap_g77_abi_c.c'),
         ]
-        if uses_accelerate(info):
-            wrapper_sources += [
-                    os.path.join(path, 'src', 'wrap_accelerate_c.c'),
-                    os.path.join(path, 'src', 'wrap_accelerate_f.f'),
-            ]
-        elif uses_mkl(info):
-            wrapper_sources += [
-                    os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
-            ]
-        else:
-            raise NotImplementedError("Do not know how to handle LAPACK %s on mac os x" % (info,))
     else:
         wrapper_sources += [
             os.path.join(path, 'src', 'wrap_dummy_g77_abi.f'),
-            os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
         ]
     return wrapper_sources
 
@@ -115,7 +80,7 @@ def split_fortran_files(source_dir, subroutines=None):
 
             # find lines with SUBROUTINE statements
             for ix, line in enumerate(lines):
-                m = re.match(b'^\\s+subroutine\\s+([a-z0-9_]+)\s*\\(', line, re.I)
+                m = re.match(b'^\\s+subroutine\\s+([a-z0-9_]+)\\s*\\(', line, re.I)
                 if m and line[0] not in b'Cc!*':
                     if subroutines is not None:
                         subr_name = m.group(1).decode('ascii').lower()
@@ -147,7 +112,7 @@ def split_fortran_files(source_dir, subroutines=None):
         return new_fnames
 
     exclude_pattern = re.compile('_subr_[0-9]')
-    source_fnames = [f for f in glob.glob(os.path.join(source_dir, '*.f'))
+    source_fnames = [f for f in sorted(glob.glob(os.path.join(source_dir, '*.f')))
                              if not exclude_pattern.search(os.path.basename(f))]
     fnames = []
     for source_fname in source_fnames:

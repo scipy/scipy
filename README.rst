@@ -1,26 +1,34 @@
-.. image:: https://travis-ci.org/scipy/scipy.png?branch=master
-   :target: https://travis-ci.org/scipy/scipy/
-
-.. image:: https://coveralls.io/repos/scipy/scipy/badge.png?branch=master
-   :target: https://coveralls.io/r/scipy/scipy?branch=master 
-
-=====
 SciPy
 =====
 
-.. contents::
+.. image:: https://img.shields.io/travis/scipy/scipy/master.svg?label=Travis%20CI
+   :target: https://travis-ci.org/scipy/scipy/
 
-What is SciPy?
---------------
+.. image:: https://img.shields.io/appveyor/ci/scipy/scipy/master.svg?label=AppVeyor
+   :target: https://ci.appveyor.com/project/scipy/scipy
+
+.. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
+  :target: https://circleci.com/gh/scipy/scipy
+
+.. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/scipy/scipy
+
+.. image:: https://dev.azure.com/scipy-org/SciPy/_apis/build/status/scipy.scipy?branchName=master
+  :target: https://dev.azure.com/scipy-org/SciPy/_build/latest?definitionId=1?branchName=master
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering.  It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
-ODE solvers, and more.  It is also the name of a very popular conference on
-scientific programming with Python.
+ODE solvers, and more.
 
-The SciPy library depends on NumPy, which provides convenient and fast
-N-dimensional array manipulation. The SciPy library is built to work with
+- **Website (including documentation):** https://www.scipy.org/
+- **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
+- **Source:** https://github.com/scipy/scipy
+- **Bug reports:** https://github.com/scipy/scipy/issues
+- **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
+
+SciPy depends on NumPy, which provides convenient and fast
+N-dimensional array manipulation. SciPy is built to work with
 NumPy arrays, and provides many user-friendly and efficient numerical routines
 such as routines for numerical integration and optimization. Together, they
 run on all popular operating systems, are quick to install, and are free of
@@ -29,68 +37,21 @@ upon by some of the world's leading scientists and engineers. If you need to
 manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
-
-Installation
-------------
-
-For installation instructions, see ``INSTALL.txt``.
-
-
-Documentation
--------------
-
-Scipy documentation is available on the web:
-
-    http://docs.scipy.org
-
-How to generate the HTML documentation, see ``doc/README.txt``.
-
-
-Web sites
----------
-
-The user's site is:
-
-    http://www.scipy.org/
-
-
-Mailing Lists
--------------
-
-Please see the developer's list here:
-
-    http://projects.scipy.org/mailman/listinfo/scipy-dev
-
-
-Latest source code
-------------------
-
-The latest development version of Scipy's sources are always available at:
-
-    https://github.com/scipy/scipy
-
-They can be downloaded as a zip file or using the Git client.
-
-
-Bug reports
------------
-
-To search for bugs or report them, please use the Scipy Bug Tracker at:
-
-    https://github.com/scipy/scipy/issues
-
+For installation instructions, see INSTALL.rst.txt_.
 
 Developer information
 ---------------------
 
 If you would like to take part in SciPy development, take a look
-at ``HACKING.rst.txt``.
-
+at the file CONTRIBUTING.rst_.
 
 License information
 -------------------
 
-See the file ``LICENSE.txt`` for information on the history of this
+See the file LICENSE.txt_ for information on the history of this
 software, terms & conditions for usage, and a DISCLAIMER OF ALL
 WARRANTIES.
 
+.. _LICENSE.txt:       https://github.com/scipy/scipy/blob/master/LICENSE.txt
+.. _CONTRIBUTING.rst:  https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
+.. _INSTALL.rst.txt:   https://github.com/scipy/scipy/blob/master/INSTALL.rst.txt

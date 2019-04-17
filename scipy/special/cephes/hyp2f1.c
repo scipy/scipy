@@ -67,28 +67,12 @@
  * Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
  */
 
-#include <stdlib.h>
 #include "mconf.h"
+#include <stdlib.h>
+#include "_c99compat.h"
 
-#ifdef DEC
-#define EPS 1.0e-14
-#define EPS2 1.0e-11
-#endif
-
-#ifdef IBMPC
 #define EPS 1.0e-13
 #define EPS2 1.0e-10
-#endif
-
-#ifdef MIEEE
-#define EPS 1.0e-13
-#define EPS2 1.0e-10
-#endif
-
-#ifdef UNK
-#define EPS 1.0e-13
-#define EPS2 1.0e-10
-#endif
 
 #define ETHRESH 1.0e-12
 
@@ -96,12 +80,11 @@
 
 extern double MACHEP;
 
-extern int sgngam;
-
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x);
 
 double hyp2f1(a, b, c, x)
 double a, b, c, x;
@@ -149,7 +132,11 @@ double a, b, c, x;
     if (ax < 1.0 || x == -1.0) {
 	/* 2F1(a,b;b;x) = (1-x)**(-a) */
 	if (fabs(b - c) < EPS) {	/* b = c */
-	    y = pow(s, -a);	/* s to the -a power */
+	    if (neg_int_b) {
+		y = hyp2f1_neg_c_equal_bc(a, b, x);
+	    } else {
+	    	y = pow(s, -a);	/* s to the -a power */
+	    }
 	    goto hypdon;
 	}
 	if (fabs(a - c) < EPS) {	/* a = c */
@@ -333,6 +320,8 @@ double *loss;
 
     if (x > 0.9 && !(neg_int_a || neg_int_b)) {
 	if (fabs(d - id) > EPS) {
+	    int sgngam;
+
 	    /* test for integer c-a-b */
 	    /* Try the power series first */
 	    y = hys2f1(a, b, c, x, &err);
@@ -341,20 +330,20 @@ double *loss;
 	    /* If power series fails, then apply AMS55 #15.3.6 */
 	    q = hys2f1(a, b, 1.0 - d, s, &err);
             sign = 1;
-            w = lgam(d);
+            w = lgam_sgn(d, &sgngam);
             sign *= sgngam;
-            w -= lgam(c-a);
+            w -= lgam_sgn(c-a, &sgngam);
             sign *= sgngam;
-            w -= lgam(c-b);
+            w -= lgam_sgn(c-b, &sgngam);
             sign *= sgngam;
 	    q *= sign * exp(w);
 	    r = pow(s, d) * hys2f1(c - a, c - b, d + 1.0, s, &err1);
             sign = 1;
-            w = lgam(-d);
+            w = lgam_sgn(-d, &sgngam);
             sign *= sgngam;
-            w -= lgam(a);
-            sign *= sgngam;   
-            w -= lgam(b);
+            w -= lgam_sgn(a, &sgngam);
+            sign *= sgngam;
+            w -= lgam_sgn(b, &sgngam);
             sign *= sgngam;
 	    r *= sign * exp(w);
 	    y = q + r;
@@ -471,9 +460,9 @@ static double hys2f1(a, b, c, x, loss)
 double a, b, c, x;
 double *loss;			/* estimates loss of significance */
 {
-    double f, g, h, k, m, s, u, umax, t;
+    double f, g, h, k, m, s, u, umax;
     int i;
-    int ia, ib, intflag = 0;
+    int ib, intflag = 0;
 
     if (fabs(b) > fabs(a)) {
 	/* Ensure that |a| > |b| ... */
@@ -482,7 +471,6 @@ double *loss;			/* estimates loss of significance */
 	a = f;
     }
 
-    ia = round(a);
     ib = round(b);
 
     if (fabs(b - ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
@@ -549,8 +537,8 @@ static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss)
 {
     double f2, f1, f0;
-    int n, m, da;
-    double t, err;
+    int n;
+    double t, err, da;
 
     /* Don't cross c or zero */
     if ((c < 0 && a <= c) || (c >= 0 && a >= c)) {
@@ -607,4 +595,32 @@ static double hyp2f1ra(double a, double b, double c, double x,
     }
 
     return f0;
+}
+
+
+/*
+    15.4.2 Abramowitz & Stegun.
+*/
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
+{
+    double k;
+    double collector = 1;
+    double sum = 1;
+    double collector_max = 1;
+
+    if (!(fabs(b) < 1e5)) {
+        return NPY_NAN;
+    }
+
+    for (k = 1; k <= -b; k++) {
+        collector *= (a + k - 1)*x/k;
+        collector_max = fmax(fabs(collector), collector_max);
+        sum += collector;
+    }
+
+    if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
+        return NPY_NAN;
+    }
+
+    return sum;
 }

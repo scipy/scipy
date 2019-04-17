@@ -1,14 +1,37 @@
 from __future__ import division, print_function, absolute_import
 
-# Scipy imports.
+# SciPy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import assert_array_almost_equal, TestCase, \
-     run_module_suite, assert_equal
-from scipy.odr import Data, Model, ODR, RealData, odr_stop
+from numpy.testing import (assert_array_almost_equal,
+                           assert_equal, assert_warns)
+from pytest import raises as assert_raises
+from scipy.odr import Data, Model, ODR, RealData, OdrStop, OdrWarning
 
 
-class TestODR(TestCase):
+class TestODR(object):
+
+    # Bad Data for 'x'
+
+    def test_bad_data(self):
+        assert_raises(ValueError, Data, 2, 1)
+        assert_raises(ValueError, RealData, 2, 1)
+
+    # Empty Data for 'x'
+    def empty_data_func(self, B, x):
+        return B[0]*x + B[1]
+
+    def test_empty_data(self):
+        beta0 = [0.02, 0.0]
+        linear = Model(self.empty_data_func)
+
+        empty_dat = Data([], [])
+        assert_warns(OdrWarning, ODR,
+                     empty_dat, linear, beta0=beta0)
+
+        empty_dat = RealData([], [])
+        assert_warns(OdrWarning, ODR,
+                     empty_dat, linear, beta0=beta0)
 
     # Explicit Example
 
@@ -122,7 +145,7 @@ class TestODR(TestCase):
 
     def multi_fcn(self, B, x):
         if (x < 0.0).any():
-            raise odr_stop
+            raise OdrStop
         theta = pi*B[3]/2.
         ctheta = np.cos(theta)
         stheta = np.sin(theta)
@@ -321,7 +344,17 @@ class TestODR(TestCase):
         result = job.run()
         assert_equal(result.info, 2)
 
+    # Verify fix for gh-9140
 
-if __name__ == "__main__":
-    run_module_suite()
-#### EOF #######################################################################
+    def test_ifixx(self):
+        x1 = [-2.01, -0.99, -0.001, 1.02, 1.98]
+        x2 = [3.98, 1.01, 0.001, 0.998, 4.01]
+        fix = np.vstack((np.zeros_like(x1, dtype=int), np.ones_like(x2, dtype=int)))
+        data = Data(np.vstack((x1, x2)), y=1, fix=fix)
+        model = Model(lambda beta, x: x[1, :] - beta[0] * x[0, :]**2., implicit=True)
+
+        odr1 = ODR(data, model, beta0=np.array([1.]))
+        sol1 = odr1.run()
+        odr2 = ODR(data, model, beta0=np.array([1.]), ifixx=fix)
+        sol2 = odr2.run()
+        assert_equal(sol1.beta, sol2.beta)

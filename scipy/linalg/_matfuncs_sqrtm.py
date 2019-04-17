@@ -10,6 +10,8 @@ __all__ = ['sqrtm']
 
 import numpy as np
 
+from scipy._lib._util import _asarray_validated
+
 
 # Local imports
 from .misc import norm
@@ -31,7 +33,7 @@ def _sqrtm_triu(T, blocksize=64):
     ----------
     T : (N, N) array_like upper triangular
         Matrix whose square root to evaluate
-    blocksize : integer, optional
+    blocksize : int, optional
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
 
@@ -81,9 +83,13 @@ def _sqrtm_triu(T, blocksize=64):
                 if j - i > 1:
                     s = R[i, i+1:j].dot(R[i+1:j, j])
                 denom = R[i, i] + R[j, j]
-                if not denom:
+                num = T[i, j] - s
+                if denom != 0:
+                    R[i, j] = (T[i, j] - s) / denom
+                elif denom == 0 and num == 0:
+                    R[i, j] = 0
+                else:
                     raise SqrtmError('failed to find the matrix square root')
-                R[i,j] = (T[i,j] - s) / denom
 
     # Between-block interactions.
     for j in range(nblocks):
@@ -92,8 +98,8 @@ def _sqrtm_triu(T, blocksize=64):
             istart, istop = start_stop_pairs[i]
             S = T[istart:istop, jstart:jstop]
             if j - i > 1:
-                S = S - R[istart:istop, istop:jstart].dot(
-                        R[istop:jstart, jstart:jstop])
+                S = S - R[istart:istop, istop:jstart].dot(R[istop:jstart,
+                                                            jstart:jstop])
 
             # Invoke LAPACK.
             # For more details, see the solve_sylvester implemention
@@ -143,6 +149,7 @@ def sqrtm(A, disp=True, blocksize=64):
 
     Examples
     --------
+    >>> from scipy.linalg import sqrtm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> r = sqrtm(a)
     >>> r
@@ -153,7 +160,7 @@ def sqrtm(A, disp=True, blocksize=64):
            [ 1.,  4.]])
 
     """
-    A = np.asarray(A)
+    A = _asarray_validated(A, check_finite=True, as_inexact=True)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
@@ -162,7 +169,7 @@ def sqrtm(A, disp=True, blocksize=64):
     if keep_it_real:
         T, Z = schur(A)
         if not np.array_equal(T, np.triu(T)):
-            T, Z = rsf2csf(T,Z)
+            T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')
     failflag = False
@@ -170,21 +177,18 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
-    except SqrtmError as e:
+    except SqrtmError:
         failflag = True
         X = np.empty_like(A)
         X.fill(np.nan)
 
     if disp:
-        nzeig = np.any(np.diag(T) == 0)
-        if nzeig:
-            print("Matrix is singular and may not have a square root.")
-        elif failflag:
+        if failflag:
             print("Failed to find a square root.")
         return X
     else:
         try:
-            arg2 = norm(X.dot(X) - A,'fro')**2 / norm(A,'fro')
+            arg2 = norm(X.dot(X) - A, 'fro')**2 / norm(A, 'fro')
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf

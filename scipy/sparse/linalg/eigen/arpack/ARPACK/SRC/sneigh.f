@@ -49,7 +49,7 @@ c          the front end.  This is needed to keep the full Schur form
 c          of H and also in the calculation of the eigenvectors of H.
 c
 c  IERR    Integer.  (OUTPUT)
-c          Error exit flag from slaqrb or strevc.
+c          Error exit flag from slahqr or strevc.
 c
 c\EndDoc
 c
@@ -61,18 +61,18 @@ c\Local variables:
 c     xxxxxx  real
 c
 c\Routines called:
-c     slaqrb  ARPACK routine to compute the real Schur form of an
+c     slahqr  ARPACK routine to compute the real Schur form of an
 c             upper Hessenberg matrix and last row of the Schur vectors.
 c     arscnd  ARPACK utility routine for timing.
 c     smout   ARPACK utility routine that prints matrices
 c     svout   ARPACK utility routine that prints vectors.
 c     slacpy  LAPACK matrix copy routine.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     strevc  LAPACK routine to compute the eigenvectors of a matrix
 c             in upper quasi-triangular form
 c     sgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
+c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c     
 c
@@ -144,15 +144,15 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   scopy, slacpy, slaqrb, strevc, svout, arscnd
+      external   scopy, slacpy, slahqr, strevc, svout, arscnd
 c
 c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wslapy2, wsnrm2
-      external   wslapy2, wsnrm2
+     &           slapy2, snrm2
+      external   slapy2, snrm2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -182,13 +182,17 @@ c     %-----------------------------------------------------------%
 c     | 1. Compute the eigenvalues, the last components of the    |
 c     |    corresponding Schur vectors and the full Schur form T  |
 c     |    of the current upper Hessenberg matrix H.              |
-c     | slaqrb returns the full Schur form of H in WORKL(1:N**2)  |
+c     | slahqr returns the full Schur form of H in WORKL(1:N**2)  |
 c     | and the last components of the Schur vectors in BOUNDS.   |
 c     %-----------------------------------------------------------%
 c
       call slacpy ('All', n, n, h, ldh, workl, n)
-      call slaqrb (.true., n, 1, n, workl, n, ritzr, ritzi, bounds,
-     &             ierr)
+      do 5 j = 1, n-1
+          bounds(j) = zero
+   5  continue
+      bounds(n) = one
+      call slahqr(.true., .true., n, 1, n, workl, n, ritzr, ritzi, 1, 1,
+     &            bounds, 1, ierr)
       if (ierr .ne. 0) go to 9000
 c
       if (msglvl .gt. 1) then
@@ -228,7 +232,7 @@ c           %----------------------%
 c           | Real eigenvalue case |
 c           %----------------------%
 c    
-            temp = wsnrm2( n, q(1,i), 1 )
+            temp = snrm2( n, q(1,i), 1 )
             call sscal ( n, one / temp, q(1,i), 1 )
          else
 c
@@ -241,8 +245,8 @@ c           | square root of two.                       |
 c           %-------------------------------------------%
 c
             if (iconj .eq. 0) then
-               temp = wslapy2( wsnrm2( n, q(1,i), 1 ), 
-     &                        wsnrm2( n, q(1,i+1), 1 ) )
+               temp = slapy2( snrm2( n, q(1,i), 1 ), 
+     &                        snrm2( n, q(1,i+1), 1 ) )
                call sscal ( n, one / temp, q(1,i), 1 )
                call sscal ( n, one / temp, q(1,i+1), 1 )
                iconj = 1
@@ -283,7 +287,7 @@ c           | of the last components of the two vectors |
 c           %-------------------------------------------%
 c
             if (iconj .eq. 0) then
-               bounds(i) = rnorm * wslapy2( workl(i), workl(i+1) )
+               bounds(i) = rnorm * slapy2( workl(i), workl(i+1) )
                bounds(i+1) = bounds(i)
                iconj = 1
             else

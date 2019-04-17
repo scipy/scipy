@@ -42,10 +42,7 @@
     } while (0)
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
-npy_cdouble cgamma_wrap( npy_cdouble z);
 npy_cdouble clngamma_wrap( npy_cdouble z);
-npy_cdouble cpsi_wrap( npy_cdouble z);
-npy_cdouble crgamma_wrap( npy_cdouble z);
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z);
 double hyp1f1_wrap( double a, double b, double x);

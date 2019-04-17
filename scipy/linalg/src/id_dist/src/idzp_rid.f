@@ -229,7 +229,7 @@ c       for further documentation.)
 c
         implicit none
         integer m,n,krank,ifrescal,k,lra,ier,m2
-        real*8 eps
+        real*8 eps,enorm
         complex*16 x(m),ra(n,2,*),p1,p2,p3,p4,scal(n+1),y(n),residual
         external matveca
 c
@@ -240,7 +240,7 @@ c
         krank = 0
 c
 c
-c       Loop until the residual is greater than eps,
+c       Loop until the relative residual is greater than eps,
 c       or krank = m or krank = n.
 c
  1000   continue
@@ -261,6 +261,21 @@ c
           do k = 1,n
             y(k) = ra(k,1,krank+1)
           enddo ! k
+c
+c
+          if(krank .eq. 0) then
+c
+c           Compute the Euclidean norm of y.
+c
+            enorm = 0
+c
+            do k = 1,n
+              enorm = enorm + y(k)*conjg(y(k))
+            enddo ! k
+c
+            enorm = sqrt(enorm)
+c
+          endif ! krank .eq. 0
 c
 c
           if(krank .gt. 0) then
@@ -286,7 +301,7 @@ c
           krank = krank+1
 c
 c
-        if(abs(residual) .gt. eps
+        if(abs(residual) .gt. eps*enorm
      1   .and. krank .lt. m .and. krank .lt. n)
      2   goto 1000
 c

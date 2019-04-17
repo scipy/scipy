@@ -26,7 +26,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+
 from __future__ import division, print_function, absolute_import
+
+__all__ = ['readsav']
 
 import struct
 import numpy as np
@@ -36,38 +39,37 @@ import zlib
 import warnings
 
 # Define the different data types that can be found in an IDL save file
-DTYPE_DICT = {}
-DTYPE_DICT[1] = '>u1'
-DTYPE_DICT[2] = '>i2'
-DTYPE_DICT[3] = '>i4'
-DTYPE_DICT[4] = '>f4'
-DTYPE_DICT[5] = '>f8'
-DTYPE_DICT[6] = '>c8'
-DTYPE_DICT[7] = '|O'
-DTYPE_DICT[8] = '|O'
-DTYPE_DICT[9] = '>c16'
-DTYPE_DICT[10] = '|O'
-DTYPE_DICT[11] = '|O'
-DTYPE_DICT[12] = '>u2'
-DTYPE_DICT[13] = '>u4'
-DTYPE_DICT[14] = '>i8'
-DTYPE_DICT[15] = '>u8'
+DTYPE_DICT = {1: '>u1',
+              2: '>i2',
+              3: '>i4',
+              4: '>f4',
+              5: '>f8',
+              6: '>c8',
+              7: '|O',
+              8: '|O',
+              9: '>c16',
+              10: '|O',
+              11: '|O',
+              12: '>u2',
+              13: '>u4',
+              14: '>i8',
+              15: '>u8'}
 
 # Define the different record types that can be found in an IDL save file
-RECTYPE_DICT = {}
-RECTYPE_DICT[0] = "START_MARKER"
-RECTYPE_DICT[1] = "COMMON_VARIABLE"
-RECTYPE_DICT[2] = "VARIABLE"
-RECTYPE_DICT[3] = "SYSTEM_VARIABLE"
-RECTYPE_DICT[6] = "END_MARKER"
-RECTYPE_DICT[10] = "TIMESTAMP"
-RECTYPE_DICT[12] = "COMPILED"
-RECTYPE_DICT[13] = "IDENTIFICATION"
-RECTYPE_DICT[14] = "VERSION"
-RECTYPE_DICT[15] = "HEAP_HEADER"
-RECTYPE_DICT[16] = "HEAP_DATA"
-RECTYPE_DICT[17] = "PROMOTE64"
-RECTYPE_DICT[19] = "NOTICE"
+RECTYPE_DICT = {0: "START_MARKER",
+                1: "COMMON_VARIABLE",
+                2: "VARIABLE",
+                3: "SYSTEM_VARIABLE",
+                6: "END_MARKER",
+                10: "TIMESTAMP",
+                12: "COMPILED",
+                13: "IDENTIFICATION",
+                14: "VERSION",
+                15: "HEAP_HEADER",
+                16: "HEAP_DATA",
+                17: "PROMOTE64",
+                19: "NOTICE",
+                20: "DESCRIPTION"}
 
 # Define a dictionary to contain structure definitions
 STRUCT_DICT = {}
@@ -164,7 +166,6 @@ def _read_string(f):
         _align_32(f)
         chars = asstr(chars)
     else:
-        warnings.warn("warning: empty strings are now set to '' instead of None")
         chars = ''
     return chars
 
@@ -177,7 +178,6 @@ def _read_string_data(f):
         string_data = _read_bytes(f, length)
         _align_32(f)
     else:
-        warnings.warn("warning: empty strings are now set to '' instead of None")
         string_data = ''
     return string_data
 
@@ -231,7 +231,6 @@ def _read_structure(f, array_desc, struct_desc):
     '''
 
     nrows = array_desc['nelements']
-    ncols = struct_desc['ntags']
     columns = struct_desc['tagtable']
 
     dtype = []
@@ -263,7 +262,6 @@ def _read_structure(f, array_desc, struct_desc):
 
     # Reshape structure if needed
     if array_desc['ndims'] > 1:
-        warnings.warn("warning: multi-dimensional structures are now correctly reshaped")
         dims = array_desc['dims'][:int(array_desc['ndims'])]
         dims.reverse()
         structure = structure.reshape(dims)
@@ -282,18 +280,18 @@ def _read_array(f, typecode, array_desc):
         if typecode == 1:
             nbytes = _read_int32(f)
             if nbytes != array_desc['nbytes']:
-                raise Exception("Error occurred while reading byte array")
+                warnings.warn("Not able to verify number of bytes from header")
 
         # Read bytes as numpy array
-        array = np.fromstring(f.read(array_desc['nbytes']),
-                                dtype=DTYPE_DICT[typecode])
+        array = np.frombuffer(f.read(array_desc['nbytes']),
+                              dtype=DTYPE_DICT[typecode])
 
     elif typecode in [2, 12]:
 
         # These are 2 byte types, need to skip every two as they are not packed
 
-        array = np.fromstring(f.read(array_desc['nbytes']*2),
-                                dtype=DTYPE_DICT[typecode])[1::2]
+        array = np.frombuffer(f.read(array_desc['nbytes']*2),
+                              dtype=DTYPE_DICT[typecode])[1::2]
 
     else:
 
@@ -321,10 +319,7 @@ def _read_array(f, typecode, array_desc):
 def _read_record(f):
     '''Function to read in a full record'''
 
-    record = {}
-
-    recpos = f.tell()
-    record['rectype'] = _read_long(f)
+    record = {'rectype': _read_long(f)}
 
     nextrec = _read_uint32(f)
     nextrec += _read_uint32(f) * 2**32
@@ -346,19 +341,28 @@ def _read_record(f):
 
         rectypedesc = _read_typedesc(f)
 
-        varstart = _read_long(f)
-        if varstart != 7:
-            raise Exception("VARSTART is not 7")
+        if rectypedesc['typecode'] == 0:
 
-        if rectypedesc['structure']:
-            record['data'] = _read_structure(f, rectypedesc['array_desc'],
-                                          rectypedesc['struct_desc'])
-        elif rectypedesc['array']:
-            record['data'] = _read_array(f, rectypedesc['typecode'],
-                                      rectypedesc['array_desc'])
+            if nextrec == f.tell():
+                record['data'] = None  # Indicates NULL value
+            else:
+                raise ValueError("Unexpected type code: 0")
+
         else:
-            dtype = rectypedesc['typecode']
-            record['data'] = _read_data(f, dtype)
+
+            varstart = _read_long(f)
+            if varstart != 7:
+                raise Exception("VARSTART is not 7")
+
+            if rectypedesc['structure']:
+                record['data'] = _read_structure(f, rectypedesc['array_desc'],
+                                                    rectypedesc['struct_desc'])
+            elif rectypedesc['array']:
+                record['data'] = _read_array(f, rectypedesc['typecode'],
+                                                rectypedesc['array_desc'])
+            else:
+                dtype = rectypedesc['typecode']
+                record['data'] = _read_data(f, dtype)
 
     elif record['rectype'] == "TIMESTAMP":
 
@@ -384,20 +388,20 @@ def _read_record(f):
 
         record['notice'] = _read_string(f)
 
+    elif record['rectype'] == "DESCRIPTION":
+
+        record['description'] = _read_string_data(f)
+
     elif record['rectype'] == "HEAP_HEADER":
 
         record['nvalues'] = _read_long(f)
-        record['indices'] = []
-        for i in range(record['nvalues']):
-            record['indices'].append(_read_long(f))
+        record['indices'] = [_read_long(f) for _ in range(record['nvalues'])]
 
     elif record['rectype'] == "COMMONBLOCK":
 
         record['nvars'] = _read_long(f)
         record['name'] = _read_string(f)
-        record['varnames'] = []
-        for i in range(record['nvars']):
-            record['varnames'].append(_read_string(f))
+        record['varnames'] = [_read_string(f) for _ in range(record['nvars'])]
 
     elif record['rectype'] == "END_MARKER":
 
@@ -424,10 +428,7 @@ def _read_record(f):
 def _read_typedesc(f):
     '''Function to read in a type descriptor'''
 
-    typedesc = {}
-
-    typedesc['typecode'] = _read_long(f)
-    typedesc['varflags'] = _read_long(f)
+    typedesc = {'typecode': _read_long(f), 'varflags': _read_long(f)}
 
     if typedesc['varflags'] & 2 == 2:
         raise Exception("System variables not implemented")
@@ -447,9 +448,7 @@ def _read_typedesc(f):
 def _read_arraydesc(f):
     '''Function to read in an array descriptor'''
 
-    arraydesc = {}
-
-    arraydesc['arrstart'] = _read_long(f)
+    arraydesc = {'arrstart': _read_long(f)}
 
     if arraydesc['arrstart'] == 8:
 
@@ -463,9 +462,7 @@ def _read_arraydesc(f):
 
         arraydesc['nmax'] = _read_long(f)
 
-        arraydesc['dims'] = []
-        for d in range(arraydesc['nmax']):
-            arraydesc['dims'].append(_read_long(f))
+        arraydesc['dims'] = [_read_long(f) for _ in range(arraydesc['nmax'])]
 
     elif arraydesc['arrstart'] == 18:
 
@@ -515,32 +512,27 @@ def _read_structdesc(f):
 
     if not structdesc['predef']:
 
-        structdesc['tagtable'] = []
-        for t in range(structdesc['ntags']):
-            structdesc['tagtable'].append(_read_tagdesc(f))
+        structdesc['tagtable'] = [_read_tagdesc(f)
+                                  for _ in range(structdesc['ntags'])]
 
         for tag in structdesc['tagtable']:
             tag['name'] = _read_string(f)
 
-        structdesc['arrtable'] = {}
-        for tag in structdesc['tagtable']:
-            if tag['array']:
-                structdesc['arrtable'][tag['name']] = _read_arraydesc(f)
+        structdesc['arrtable'] = {tag['name']: _read_arraydesc(f)
+                                  for tag in structdesc['tagtable']
+                                  if tag['array']}
 
-        structdesc['structtable'] = {}
-        for tag in structdesc['tagtable']:
-            if tag['structure']:
-                structdesc['structtable'][tag['name']] = _read_structdesc(f)
+        structdesc['structtable'] = {tag['name']: _read_structdesc(f)
+                                     for tag in structdesc['tagtable']
+                                     if tag['structure']}
 
         if structdesc['inherits'] or structdesc['is_super']:
             structdesc['classname'] = _read_string(f)
             structdesc['nsupclasses'] = _read_long(f)
-            structdesc['supclassnames'] = []
-            for s in range(structdesc['nsupclasses']):
-                structdesc['supclassnames'].append(_read_string(f))
-            structdesc['supclasstable'] = []
-            for s in range(structdesc['nsupclasses']):
-                structdesc['supclasstable'].append(_read_structdesc(f))
+            structdesc['supclassnames'] = [
+                _read_string(f) for _ in range(structdesc['nsupclasses'])]
+            structdesc['supclasstable'] = [
+                _read_structdesc(f) for _ in range(structdesc['nsupclasses'])]
 
         STRUCT_DICT[structdesc['name']] = structdesc
 
@@ -557,9 +549,7 @@ def _read_structdesc(f):
 def _read_tagdesc(f):
     '''Function to read in a tag descriptor'''
 
-    tagdesc = {}
-
-    tagdesc['offset'] = _read_long(f)
+    tagdesc = {'offset': _read_long(f)}
 
     if tagdesc['offset'] == -1:
         tagdesc['offset'] = _read_uint64(f)
@@ -584,7 +574,12 @@ def _replace_heap(variable, heap):
             if variable.index == 0:
                 variable = None
             else:
-                variable = heap[variable.index]
+                if variable.index in heap:
+                    variable = heap[variable.index]
+                else:
+                    warnings.warn("Variable referenced by pointer not found "
+                                  "in heap: variable will be set to None")
+                    variable = None
 
         replace, new = _replace_heap(variable, heap)
 
@@ -670,14 +665,14 @@ class AttrDict(dict):
 def readsav(file_name, idict=None, python_dict=False,
             uncompressed_file_name=None, verbose=False):
     """
-    Read an IDL .sav file
+    Read an IDL .sav file.
 
     Parameters
     ----------
     file_name : str
         Name of the IDL save file.
     idict : dict, optional
-        Dictionary in which to insert .sav file variables
+        Dictionary in which to insert .sav file variables.
     python_dict : bool, optional
         By default, the object return is not a Python dictionary, but a
         case-insensitive dictionary with item, attribute, and call access
@@ -843,6 +838,13 @@ def readsav(file_name, idict=None, python_dict=False,
                 print("Author: %s" % record['author'])
                 print("Title: %s" % record['title'])
                 print("ID Code: %s" % record['idcode'])
+                break
+
+        # Print out descriptions saved with the file
+        for record in records:
+            if record['rectype'] == "DESCRIPTION":
+                print("-"*50)
+                print("Description: %s" % record['description'])
                 break
 
         print("-"*50)

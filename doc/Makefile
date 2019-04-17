@@ -1,19 +1,25 @@
 # Makefile for Sphinx documentation
 #
 
-PYVER = 2.7
+# PYVER needs to be major.minor, just "3" doesn't work - it will result in
+# issues with the amendments to PYTHONPATH and install paths (see DIST_VARS).
+
+# Use explicit "version_info" indexing since make cannot handle colon characters, and
+# evaluate it now to allow easier debugging when printing the varaible
+
+PYVER:=$(shell python3 -c 'from sys import version_info as v; print("{0}.{1}".format(v[0], v[1]))')
 PYTHON = python$(PYVER)
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = LANG=C sphinx-build
+SPHINXBUILD   = LANG=C $(PYTHON) $(shell which sphinx-build)
 PAPER         =
 
 FILES=
 
 # Internal variables.
-PAPEROPT_a4     = -D latex_paper_size=a4
-PAPEROPT_letter = -D latex_paper_size=letter
+PAPEROPT_a4     = -D "latex_elements.papersize=a4paper"
+PAPEROPT_letter = -D "latex_elements.papersize=letterpaper"
 ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck \
@@ -30,8 +36,10 @@ help:
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  clean     to clean all build files/directories"
 	@echo "  dist PYVER=... to make a distribution-ready tree"
-	@echo "  upload USER=...  to upload results to docs.scipy.org"
+	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
+	@echo "  show      to show the html-scipyorg output"
 
 clean:
 	-rm -rf build/* source/generated
@@ -43,7 +51,7 @@ clean:
 
 # Build the current scipy version, and extract docs from it.
 # We have to be careful of some issues:
-# 
+#
 # - Everything must be done using the same Python version
 # - We must use eggs (otherwise they might override PYTHONPATH on import).
 # - Different versions of easy_install install to different directories (!)
@@ -51,33 +59,47 @@ clean:
 
 INSTALL_DIR = $(CURDIR)/build/inst-dist/
 INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
+UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
-DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER) `which sphinx-build`"
+DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(PYTHON)" SPHINXBUILD="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(SPHINXBUILD)"
 
 dist:
 	make $(DIST_VARS) real-dist
 
 real-dist: dist-build html html-scipyorg
 	test -d build/latex || make latex
-	make -C build/latex all-pdf
+	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
 	cp -r build/html-scipyorg build/dist/reference
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
-	cp build/latex/scipy*.pdf build/dist
-	-zip build/dist/scipy-chm.zip build/htmlhelp/scipy.chm
+	cp build/latex/scipy-ref.pdf build/dist
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *
 
 dist-build:
 	rm -f ../dist/*.egg
-	cd .. && $(PYTHON) setupegg.py bdist_egg
+	cd .. && $(PYTHON) setup.py bdist_egg
 	install -d $(subst :, ,$(INSTALL_PPH))
 	$(PYTHON) `which easy_install` --prefix=$(INSTALL_DIR) ../dist/*.egg
 
+upload:
+	# SSH must be correctly configured for this to work.
+	# Assumes that ``make dist`` was already run
+	# Example usage: ``make upload USERNAME=rgommers RELEASE=0.17.0``
+	ssh $(USERNAME)@new.scipy.org mkdir $(UPLOAD_DIR)
+	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
+	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
+	    -zf $(UPLOAD_DIR)/dist.tar.gz
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-ref.pdf \
+	    $(UPLOAD_DIR)/scipy-ref-$(RELEASE).pdf
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-html.zip \
+	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
+	ssh $(USERNAME)@new.scipy.org rm $(UPLOAD_DIR)/dist.tar.gz
+	ssh $(USERNAME)@new.scipy.org ln -snf scipy-$(RELEASE) /srv/docs_scipy_org/doc/scipy
 
 #------------------------------------------------------------------------------
 # Basic Sphinx generation rules for different formats
@@ -91,9 +113,9 @@ html:
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
-	@echo "Build finished. The HTML pages are in build/html."
+	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
 pickle:
 	mkdir -p build/pickle build/doctrees
@@ -120,7 +142,6 @@ latex:
 	mkdir -p build/latex build/doctrees
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex $(FILES)
 	$(PYTHON) postprocess.py tex build/latex/*.tex
-	perl -pi -e 's/\t(latex.*|pdflatex) (.*)/\t-$$1 -interaction batchmode $$2/' build/latex/Makefile
 	@echo
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
@@ -143,3 +164,7 @@ linkcheck:
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/linkcheck/output.txt."
+
+show:
+	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
+

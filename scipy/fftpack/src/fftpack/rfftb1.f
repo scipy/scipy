@@ -1,5 +1,8 @@
       SUBROUTINE RFFTB1 (N,C,CH,WA,IFAC)
-      DIMENSION       CH(*)      ,C(*)       ,WA(*)      ,IFAC(*)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, IDL1, IDO, IP, IW, IX2, IX3, IX4, K1
+      INTEGER :: L1, L2, NA, NF
+      REAL :: C(*), CH(*), WA(*)
       NF = IFAC(2)
       NA = 0
       L1 = 1
@@ -58,8 +61,9 @@
       RETURN
       END
       SUBROUTINE RADB2 (IDO,L1,CC,CH,WA1)
-      DIMENSION       CC(IDO,2,L1)           ,CH(IDO,L1,2)           ,
-     1                WA1(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, IC, IDP2, K
+      REAL :: CC(IDO,2,L1), CH(IDO,L1,2), WA1(*), TI2, TR2
       DO 101 K=1,L1
          CH(1,K,1) = CC(1,1,K)+CC(IDO,2,K)
          CH(1,K,2) = CC(1,1,K)-CC(IDO,2,K)
@@ -87,8 +91,10 @@
   107 RETURN
       END
       SUBROUTINE RADB3 (IDO,L1,CC,CH,WA1,WA2)
-      DIMENSION       CC(IDO,3,L1)           ,CH(IDO,L1,3)           ,
-     1                WA1(*)     ,WA2(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, IC, IDP2, K
+      REAL :: CC(IDO,3,L1), CH(IDO,L1,3), WA1(*), WA2(*), CI2, CI3, CR2
+      REAL :: CR3, DI2, DI3, DR2, DR3, TAUI, TAUR, TI2, TR2
       DATA TAUR,TAUI /-.5,.866025403784439/
       DO 101 K=1,L1
          TR2 = CC(IDO,2,K)+CC(IDO,2,K)
@@ -124,8 +130,11 @@
       RETURN
       END
       SUBROUTINE RADB4 (IDO,L1,CC,CH,WA1,WA2,WA3)
-      DIMENSION       CC(IDO,4,L1)           ,CH(IDO,L1,4)           ,
-     1                WA1(*)     ,WA2(*)     ,WA3(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, IC, IDP2, K
+      REAL :: CC(IDO,4,L1), CH(IDO,L1,4), WA1(*), WA2(*), WA3(*), CI2
+      REAL :: CI3, CI4, CR2, CR3, CR4, SQRT2, TI1, TI2, TI3, TI4, TR1
+      REAL :: TR2, TR3, TR4
       DATA SQRT2 /1.414213562373095/
       DO 101 K=1,L1
          TR1 = CC(1,1,K)-CC(IDO,4,K)
@@ -183,8 +192,12 @@
   107 RETURN
       END
       SUBROUTINE RADB5 (IDO,L1,CC,CH,WA1,WA2,WA3,WA4)
-      DIMENSION       CC(IDO,5,L1)           ,CH(IDO,L1,5)           ,
-     1                WA1(*)     ,WA2(*)     ,WA3(*)     ,WA4(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, IC, IDP2, K
+      REAL :: CC(IDO,5,L1), CH(IDO,L1,5), WA1(*), WA2(*), WA3(*)
+      REAL :: WA4(*), CI2, CI3, CI4, CI5, CR2, CR3, CR4, CR5, DI2, DI3
+      REAL :: DI4, DI5, DR2, DR3, DR4, DR5, TI11, TI12, TI2, TI3, TI4
+      REAL :: TI5, TR11, TR12, TR2, TR3, TR4, TR5
       DATA TR11,TI11,TR12,TI12 /.309016994374947,.951056516295154,
      1-.809016994374947,.587785252292473/
       DO 101 K=1,L1
@@ -246,9 +259,12 @@
       RETURN
       END
       SUBROUTINE RADBG (IDO,IP,L1,IDL1,CC,C1,C2,CH,CH2,WA)
-      DIMENSION       CH(IDO,L1,IP)          ,CC(IDO,IP,L1)          ,
-     1                C1(IDO,L1,IP)          ,C2(IDL1,IP),
-     2                CH2(IDL1,IP)           ,WA(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, IP, L1, IDL1, I, IC, IDIJ, IDP2, IK, IPP2, IPPH
+      INTEGER :: IS, J, J2, JC, K, L, LC, NBD
+      REAL :: CC(IDO,IP,L1), C1(IDO,L1,IP), C2(IDL1,IP), CH(IDO,L1,IP)
+      REAL :: CH2(IDL1,IP), WA(*), AI1, AI2, AR1, AR1H, AR2, AR2H, ARG
+      REAL :: DC2, DCP, DS2, DSP, TPI
       DATA TPI/6.28318530717959/
       ARG = TPI/FLOAT(IP)
       DCP = COS(ARG)
