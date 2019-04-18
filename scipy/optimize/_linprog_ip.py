@@ -261,8 +261,8 @@ def _get_delta(
         # For sparse systems, the order is:
         # 1. sksparse.cholmod.cholesky (if available)
         # 2. scipy.sparse.linalg.factorized (if umfpack available)
-        #    scipy.sparse.linalg.splu (otherwise)
-        # 3. scipy.sparse.linalg.lsqr
+        # 3. scipy.sparse.linalg.splu
+        # 4. scipy.sparse.linalg.lsqr
         solved = False
         while(not solved):
             try:
@@ -982,15 +982,21 @@ def _linprog_ip(
     For dense problems, solvers are tried in the following order:
 
     1. ``scipy.linalg.cho_factor`` (if scikit-sparse and SuiteSparse are installed)
+    
     2. ``scipy.linalg.solve`` with option ``sym_pos=True``
+    
     3. ``scipy.linalg.solve`` with option ``sym_pos=False``
+    
     4. ``scipy.linalg.lstsq``
 
-    For sparse problems::
+    For sparse problems:
 
     1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
+    
     2. ``scipy.sparse.linalg.factorized`` (if scikits.umfpack and SuiteSparse are installed)
+    
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
+    
     4. ``scipy.sparse.linalg.lsqr``
 
     If the solver fails for any reason, successively more robust (but slower)
