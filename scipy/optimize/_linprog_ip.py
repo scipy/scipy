@@ -101,6 +101,8 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
     # what all of them are. It doesn't really matter: if the matrix can't be
     # factorized, return None. get_solver will be called again with different
     # inputs, and a new routine will try to factorize the matrix.
+    except KeyboardInterrupt:
+        raise
     except Exception:
         return None
     return solve
