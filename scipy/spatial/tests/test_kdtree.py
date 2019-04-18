@@ -1360,6 +1360,35 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
 
+def test_query_ball_point_vector_r():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = np.random.uniform(0, 0.3, size=len(query))
+
+    rvector = tree.query_ball_point(query, d)
+    rscalar = [tree.query_ball_point(qi, di) for qi, di in zip(query, d)]
+    for a, b in zip(rvector, rscalar):
+        assert_array_equal(sorted(a), sorted(b))
+
+def test_query_ball_point_length():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = 0.3
+
+    length = tree.query_ball_point(query, d, return_length=True)
+    length2 = [len(ind) for ind in tree.query_ball_point(query, d, return_length=False)]
+    length3 = [len(tree.query_ball_point(qi, d)) for qi in query]
+    length4 = [tree.query_ball_point(qi, d, return_length=True) for qi in query]
+    assert_array_equal(length, length2)
+    assert_array_equal(length, length3)
+    assert_array_equal(length, length4)
+
 class Test_sorted_query_ball_point(object):
 
     def setup_method(self):
@@ -1370,6 +1399,10 @@ class Test_sorted_query_ball_point(object):
     def test_return_sorted_True(self):
         idxs_list = self.ckdt.query_ball_point(self.x, 1., return_sorted=True)
         for idxs in idxs_list:
+            assert_array_equal(idxs, sorted(idxs))
+
+        for xi in self.x:
+            idxs = self.ckdt.query_ball_point(xi, 1., return_sorted=True)
             assert_array_equal(idxs, sorted(idxs))
 
     def test_return_sorted_None(self):

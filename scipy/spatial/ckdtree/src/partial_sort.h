@@ -2,30 +2,27 @@
 #ifndef CKDTREE_PARTIAL_SORT
 #define CKDTREE_PARTIAL_SORT
 
-#include <Python.h>
-#include "numpy/arrayobject.h"
-
 /* Splitting routines for a balanced kd-tree
  * Code originally written by Jake Vanderplas for scikit-learn
  *
  */
 
 inline void
-index_swap(npy_intp *arr, npy_intp i1, npy_intp i2)
+index_swap(ckdtree_intp_t *arr, intptr_t i1, intptr_t i2)
 {
     /* swap the values at index i1 and i2 of arr */
-    npy_intp tmp = arr[i1];
+    ckdtree_intp_t tmp = arr[i1];
     arr[i1] = arr[i2];
     arr[i2] = tmp;
 }
 
 static void
-partition_node_indices(const npy_float64 *data,
-                       npy_intp *node_indices,
-                       npy_intp split_dim,
-                       npy_intp split_index,
-                       npy_intp n_features,
-                       npy_intp n_points)
+partition_node_indices(const double *data,
+                       ckdtree_intp_t *node_indices,
+                       ckdtree_intp_t split_dim,
+                       ckdtree_intp_t split_index,
+                       ckdtree_intp_t n_features,
+                       ckdtree_intp_t n_points)
 {
     /* Partition points in the node into two equal-sized groups
      * Upon return, the values in node_indices will be rearranged such that
@@ -64,8 +61,8 @@ partition_node_indices(const npy_float64 *data,
      *    modified as noted above.
      */
 
-    npy_intp left, right, midindex, i;
-    npy_float64 d1, d2;
+    ckdtree_intp_t left, right, midindex, i;
+    double d1, d2;
     left = 0;
     right = n_points - 1;
     for(;;) {
