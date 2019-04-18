@@ -26,15 +26,14 @@ from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
 from ._linprog_util import _postsolve
+has_umfpack = True
+has_cholmod = True
 try:
     from sksparse.cholmod import cholesky as cholmod
-    has_cholmod = True
 except ImportError:
     has_cholmod = False
-has_umfpack = False
 try:
-    import scikits.umfpack as umfpack  # test whether to use factorized
-    has_umfpack = True
+    import scikits.umfpack  # test whether to use factorized
 except ImportError:
     has_umfpack = False
 
@@ -191,8 +190,6 @@ def _get_delta(
            2000. 197-232.
 
     """
-    global has_umfpack
-
     if A.shape[0] == 0:
         # If there are no constraints, some solvers fail (understandably)
         # rather than returning empty solution. This gets the job done.
@@ -1094,8 +1091,8 @@ def _linprog_ip(
         cholesky = False
 
     if sparse and lstsq:
-        warn("Invalid option combination 'sparse':True "
-             "and 'lstsq':True; Sparse least squares is not recommended.",
+        warn("Option combination 'sparse':True and 'lstsq':True "
+             "is not recommended.",
              OptimizeWarning, stacklevel=3)
 
     if lstsq and cholesky:
