@@ -16,7 +16,7 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_allclose)
+                           assert_allclose, assert_warns)
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
@@ -255,19 +255,23 @@ class TestCorrPearsonr(object):
         r = y[0]
         assert_approx_equal(r,1.0)
 
-    def test_r_exactly_pos1(self):
+    def test_r_almost_exactly_pos1(self):
         a = arange(3.0)
-        b = a
-        r, prob = stats.pearsonr(a,b)
-        assert_equal(r, 1.0)
-        assert_equal(prob, 0.0)
+        r, prob = stats.pearsonr(a, a)
 
-    def test_r_exactly_neg1(self):
+        assert_allclose(r, 1.0, atol=1e-15)
+        # With n = len(a) = 3, the error in prob grows like the
+        # square root of the error in r.
+        assert_allclose(prob, 0.0, atol=np.sqrt(2*np.spacing(1.0)))
+
+    def test_r_almost_exactly_neg1(self):
         a = arange(3.0)
-        b = -a
-        r, prob = stats.pearsonr(a,b)
-        assert_equal(r, -1.0)
-        assert_equal(prob, 0.0)
+        r, prob = stats.pearsonr(a, -a)
+
+        assert_allclose(r, -1.0, atol=1e-15)
+        # With n = len(a) = 3, the error in prob grows like the
+        # square root of the error in r.
+        assert_allclose(prob, 0.0, atol=np.sqrt(2*np.spacing(1.0)))
 
     def test_basic(self):
         # A basic test, with a correlation coefficient
@@ -276,7 +280,106 @@ class TestCorrPearsonr(object):
         b = array([0, 0, 3])
         r, prob = stats.pearsonr(a, b)
         assert_approx_equal(r, np.sqrt(3)/2)
-        assert_approx_equal(prob, 1.0/3)
+        assert_approx_equal(prob, 1/3)
+
+    def test_constant_input(self):
+        # Zero variance input
+        # See https://github.com/scipy/scipy/issues/3728
+        with assert_warns(stats.PearsonRConstantInputWarning):
+            r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_near_constant_input(self):
+        # Near constant input (but not constant):
+        x = [2, 2, 2 + np.spacing(2)]
+        y = [3, 3, 3 + 6*np.spacing(3)]
+        with assert_warns(stats.PearsonRNearConstantInputWarning):
+            # r and p are garbage, so don't bother checking them in this case.
+            # (The exact value of r would be 1.)
+            r, p = stats.pearsonr(x, y)
+
+    def test_very_small_input_values(self):
+        # Very small values in an input.  A naive implementation will
+        # suffer from underflow.
+        # See https://github.com/scipy/scipy/issues/9353
+        x = [0.004434375, 0.004756007, 0.003911996, 0.0038005, 0.003409971]
+        y = [2.48e-188, 7.41e-181, 4.09e-208, 2.08e-223, 2.66e-245]
+        r, p = stats.pearsonr(x,y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.7272930540750450)
+        assert_allclose(p, 0.1637805429533202)
+
+    def test_very_large_input_values(self):
+        # Very large values in an input.  A naive implementation will
+        # suffer from overflow.
+        # See https://github.com/scipy/scipy/issues/8980
+        x = 1e90*np.array([0, 0, 0, 1, 1, 1, 1])
+        y = 1e90*np.arange(7)
+
+        r, p = stats.pearsonr(x, y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.8660254037844386)
+        assert_allclose(p, 0.011724811003954638)
+
+    def test_extremely_large_input_values(self):
+        # Extremely large values in x and y.  These values would cause the
+        # product sigma_x * sigma_y to overflow if the two factors were
+        # computed independently.
+        x = np.array([2.3e200, 4.5e200, 6.7e200, 8e200])
+        y = np.array([1.2e199, 5.5e200, 3.3e201, 1.0e200])
+        r, p = stats.pearsonr(x, y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.351312332103289)
+        assert_allclose(p, 0.648687667896711)
+
+    def test_length_two_pos1(self):
+        # Inputs with length 2.
+        # See https://github.com/scipy/scipy/issues/7730
+        r, p = stats.pearsonr([1, 2], [3, 5])
+        assert_equal(r, 1)
+        assert_equal(p, 1)
+
+    def test_length_two_neg2(self):
+        # Inputs with length 2.
+        # See https://github.com/scipy/scipy/issues/7730
+        r, p = stats.pearsonr([2, 1], [3, 5])
+        assert_equal(r, -1)
+        assert_equal(p, 1)
+
+    def test_more_basic_examples(self):
+        x = [1, 2, 3, 4]
+        y = [0, 1, 0.5, 1]
+        r, p = stats.pearsonr(x, y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.674199862463242)
+        assert_allclose(p, 0.325800137536758)
+
+        x = [1, 2, 3]
+        y = [5, -4, -13]
+        r, p = stats.pearsonr(x, y)
+
+        # The expected r and p are exact.
+        assert_allclose(r, -1.0)
+        assert_allclose(p, 0.0)
+
+    def test_unequal_lengths(self):
+        x = [1, 2, 3]
+        y = [4, 5]
+        assert_raises(ValueError, stats.pearsonr, x, y)
+
+    def test_len1(self):
+        x = [1]
+        y = [2]
+        assert_raises(ValueError, stats.pearsonr, x, y)
 
 
 class TestFisherExact(object):
