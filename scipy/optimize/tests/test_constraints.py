@@ -76,11 +76,20 @@ def test_prepare_constraint_infeasible_x0():
     bounds = Bounds(lb, ub, enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, bounds, x0)
 
+    pc = PreparedConstraint(Bounds(lb, ub), [1, 2, 3])
+    assert (pc.violation([1, 2, 3]) > 0).any()
+    assert (pc.violation([0.25, 21, 31]) == 0).all()
+
     x0 = np.array([1, 2, 3, 4])
     A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
     enforce_feasibility = np.array([True, True, True], dtype=bool)
     linear = LinearConstraint(A, -np.inf, 0, enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, linear, x0)
+
+    pc = PreparedConstraint(LinearConstraint(A, -np.inf, 0),
+                            [1, 2, 3, 4])
+    assert (pc.violation([1, 2, 3, 4]) > 0).any()
+    assert (pc.violation([-10, 2, -10, 4]) == 0).all()
 
     def fun(x):
         return A.dot(x)
@@ -94,6 +103,28 @@ def test_prepare_constraint_infeasible_x0():
     nonlinear = NonlinearConstraint(fun, -np.inf, 0, jac, hess,
                                     enforce_feasibility)
     pytest.raises(ValueError, PreparedConstraint, nonlinear, x0)
+
+    pc = PreparedConstraint(nonlinear, [-10, 2, -10, 4])
+    assert (pc.violation([1, 2, 3, 4]) > 0).any()
+    assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+
+def test_violation():
+    def cons_f(x):
+        return np.array([x[0] ** 2 + x[1], x[0] ** 2 - x[1]])
+
+    nlc = NonlinearConstraint(cons_f, [-1, -0.8500], [2, 2])
+    pc = PreparedConstraint(nlc, [0.5, 1])
+
+    assert_array_equal(pc.violation([0.5, 1]), [0., 0.])
+
+    np.testing.assert_almost_equal(pc.violation([0.5, 1.2]), [0., 0.1])
+
+    np.testing.assert_almost_equal(pc.violation([1.2, 1.2]), [0.64, 0])
+
+    np.testing.assert_almost_equal(pc.violation([0.1, -1.2]), [0.19, 0])
+
+    np.testing.assert_almost_equal(pc.violation([0.1, 2]), [0.01, 1.14])
 
 
 def test_new_bounds_to_old():
