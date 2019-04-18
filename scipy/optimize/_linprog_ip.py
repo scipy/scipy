@@ -287,8 +287,6 @@ def _get_delta(
                         "approached. However, if you see this frequently, "
                         "consider setting option 'cholesky' to False.",
                         OptimizeWarning, stacklevel=5)
-                elif has_umfpack:
-                    has_umfpack = False
                 elif sym_pos:
                     sym_pos = False
                     warn(
@@ -951,7 +949,7 @@ def _linprog_ip(
     Notes
     -----
     This method implements the algorithm outlined in [4]_ with ideas from [8]_
-    and a structure inspired by the simpler methods of [6]_ and [4]_.
+    and a structure inspired by the simpler methods of [6]_.
 
     The primal-dual path following method begins with initial 'guesses' of
     the primal and dual variables of the standard form problem and iteratively
@@ -981,19 +979,19 @@ def _linprog_ip(
     With default options, the solver used to perform the factorization depends
     on third-party software availability and the conditioning of the problem.
 
-    For dense problems, solvers are tried in the following order.::
+    For dense problems, solvers are tried in the following order:
 
-        1: ``scipy.linalg.cho_factor`` (if scikit-sparse and SuiteSparse are installed)
-        2: ``scipy.linalg.solve`` with option ``sym_pos=True``
-        3: ``scipy.linalg.solve`` with option ``sym_pos=False``
-        4: ``scipy.linalg.lstsq``
+    1. ``scipy.linalg.cho_factor`` (if scikit-sparse and SuiteSparse are installed)
+    2. ``scipy.linalg.solve`` with option ``sym_pos=True``
+    3. ``scipy.linalg.solve`` with option ``sym_pos=False``
+    4. ``scipy.linalg.lstsq``
 
     For sparse problems::
 
-        1: ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
-        2: ``scipy.sparse.linalg.factorized`` (if scikits.umfpack and SuiteSparse are installed)
-        3: ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
-        4: ``scipy.sparse.linalg.lsqr``
+    1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
+    2. ``scipy.sparse.linalg.factorized`` (if scikits.umfpack and SuiteSparse are installed)
+    3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
+    4. ``scipy.sparse.linalg.lsqr``
 
     If the solver fails for any reason, successively more robust (but slower)
     solvers are attempted in the order indicated. Attempting, failing, and
