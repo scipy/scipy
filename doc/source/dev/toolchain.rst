@@ -14,9 +14,9 @@ The tooling used to build CPython has some implications for the tooling used in 
 Python Versions
 ---------------
 
-SciPy is compatible with several versions of Python.
-[*NOTE: The level of support and dates is currently under discussion.
-This table shows what it could look like.*]
+SciPy is compatible with several versions of Python, and some
+specific decisions are still under consideration, especially
+with regard to future changes.
 
 ================  =================================================
  Date             Pythons supported
@@ -45,8 +45,9 @@ CPython               MS Visual C++    C Standard
 
 C Language Standards
 --------------------
-[*NOTE: I'm unaware of any official SciPy decisions on the support of C standards.
-This table shows what it could look like.*]
+C and C++ language standards for SciPy are generally guidelines
+rather than official decisions. This is particularly true of
+attempting to predict adoption timelines for newer standards.
 
 ================  =========================================
  Date              C Standard
@@ -72,20 +73,24 @@ access to a few functions.  Use in conjunction with ``<numpy/npy_math.h>``.
  mid-block variable declarations   Declare variables at the top of block
 ================================  ========================================================
 
+For C++, we currently suggest that anything beyond C++11 is going to be impossible
+for a very long time because of ecosystem support restrictions.
+
 Fortran Compilers
 -----------------
 
-[*What is the requirement on a Fortran compiler*]
+Generally, any well-maintained compiler is likely suitable. gfortran >= 4.8.0,
+ifort, or flang can be used to build SciPy.
 
 Cython Compiler
 ---------------
 
-SciPy always requires a recent Cython compiler. As of v1.12.0, the minumum version is 0.28.5? 0.29?
+SciPy always requires a recent Cython compiler. As of v1.2.0, the minumum version is 0.29.0
 
-Numpy
+NumPy
 -----
 SciPy depends on NumPy but releases of SciPy are not tied to releases of NumPy.
-SciPy attempts to be compatible with the 4 previous releases of NumPy.
+SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
 In particular, SciPy can not rely on features of just the latest NumPy, but needs to be
 written using what is common in all of those 4 releases.
 
@@ -112,7 +117,7 @@ Building the Documentation
 
 - Sphinx: whatever recent versions work. >= 1.6.6.
 - numpydoc: whatever recent versions work. >=  0.8.0.
-- matplotlib: ?
+- matplotlib: generally suggest >= 2.0
 
 Testing and Benchmarking
 ------------------------
