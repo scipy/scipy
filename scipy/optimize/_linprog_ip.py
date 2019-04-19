@@ -46,22 +46,33 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
 
     Parameters
     ----------
-    sparse : bool
+    M : 2D array
+        As defined in [4] Equation 8.31
+    sparse : bool (default = False)
         True if the system to be solved is sparse. This is typically set
         True when the original ``A_ub`` and ``A_eq`` arrays are sparse.
-    lstsq : bool
+    lstsq : bool (default = False)
         True if the system is ill-conditioned and/or (nearly) singular and
         thus a more robust least-squares solver is desired. This is sometimes
         needed as the solution is approached.
-    sym_pos : bool
+    sym_pos : bool (default = True)
         True if the system matrix is symmetric positive definite
         Sometimes this needs to be set false as the solution is approached,
         even when the system should be symmetric positive definite, due to
         numerical difficulties.
-    cholesky : bool
+    cholesky : bool (default = True)
         True if the system is to be solved by Cholesky, rather than LU,
         decomposition. This is typically faster unless the problem is very
         small or prone to numerical difficulties.
+    permc_spec : str (default = 'MMD_AT_PLUS_A')
+        Sparsity preservation strategy used by SuperLU. Acceptable values are:
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering.
+
+        See SuperLU documentation.
 
     Returns
     -------
@@ -981,21 +992,21 @@ def _linprog_ip(
     For dense problems, solvers are tried in the following order:
 
     1. ``scipy.linalg.cho_factor`` (if scikit-sparse and SuiteSparse are installed)
-    
+
     2. ``scipy.linalg.solve`` with option ``sym_pos=True``
-    
+
     3. ``scipy.linalg.solve`` with option ``sym_pos=False``
-    
+
     4. ``scipy.linalg.lstsq``
 
     For sparse problems:
 
     1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
-    
+
     2. ``scipy.sparse.linalg.factorized`` (if scikits.umfpack and SuiteSparse are installed)
-    
+
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
-    
+
     4. ``scipy.sparse.linalg.lsqr``
 
     If the solver fails for any reason, successively more robust (but slower)
