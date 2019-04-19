@@ -896,11 +896,18 @@ def boxcox_llf(lmb, data):
     if N == 0:
         return np.nan
 
-    y = boxcox(data, lmb)
-    y_mean = np.mean(y, axis=0)
-    llf = (lmb - 1) * np.sum(np.log(data), axis=0)
-    llf -= N / 2.0 * np.log(np.sum((y - y_mean)**2. / N, axis=0))
-    return llf
+    logdata = np.log(data)
+
+    # Compute the variance of the transformed data.
+    if lmb == 0:
+        variance = np.var(logdata, axis=0)
+    else:
+        # Transform without the constant offset 1/lmb.  The offset does
+        # not effect the variance, and the subtraction of the offset can
+        # lead to loss of precision.
+        variance = np.var(data**lmb / lmb, axis=0)
+
+    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * np.log(variance)
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
