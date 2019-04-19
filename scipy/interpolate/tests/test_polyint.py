@@ -676,10 +676,20 @@ class TestCubicSpline(object):
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
-def test_CubicHermiteSpline():
+def test_CubicHermiteSpline_correctness():
     x = [0, 2, 7]
     y = [-1, 2, 3]
     dydx = [0, 3, 7]
     s = CubicHermiteSpline(x, y, dydx)
     assert_allclose(s(x), y, rtol=1e-15)
     assert_allclose(s(x, 1), dydx, rtol=1e-15)
+
+
+def test_CubicHermiteSpline_error_handling():
+    x = [1, 2, 3]
+    y = [0, 3, 5]
+    dydx = [1, -1, 2, 3]
+    assert_raises(ValueError, CubicHermiteSpline, x, y, dydx)
+
+    dydx_with_nan = [1, 0, np.nan]
+    assert_raises(ValueError, CubicHermiteSpline, x, y, dydx_with_nan)
