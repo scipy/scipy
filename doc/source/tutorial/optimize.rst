@@ -19,7 +19,8 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
+2. Global optimization routines  (e.g. :func:`basinhopping`,
+   :func:`differential_evolution`, :func:`shgo`, :func:`dual_annealing`).
 
 3. Least-squares minimization (:func:`least_squares`) and curve fitting
    (:func:`curve_fit`) algorithms
@@ -701,6 +702,121 @@ And the optimization problem is solved with:
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
+
+Global optimization
+-------------------
+
+Global optimization aims to find the global minimum of a function within given
+bounds, in the presence of potentially many local minima. Typically global
+minimizers efficiently search the parameter space, while using a local
+minimizer (e.g. :func:`minimize`) under the hood.  SciPy contains a
+number of good global optimizers.  Here we'll use those on the same objective
+function, namely the (aptly named) ``eggholder`` function::
+
+   >>> def eggholder(x):
+   ...     return (-(x[1] + 47) * np.sin(np.sqrt(abs(x[0]/2 + (x[1]  + 47))))
+   ...             -x[0] * np.sin(np.sqrt(abs(x[0] - (x[1]  + 47)))))
+
+   >>> bounds = [(-512, 512), (-512, 512)]
+
+This function looks like an egg carton::
+
+   >>> import matplotlib.pyplot as plt
+   >>> from mpl_toolkits.mplot3d import Axes3D
+
+   >>> x = np.arange(-512, 513)
+   >>> y = np.arange(-512, 513)
+   >>> xgrid, ygrid = np.meshgrid(x, y)
+   >>> xy = np.stack([xgrid, ygrid])
+
+   >>> fig = plt.figure()
+   >>> ax = fig.add_subplot(111, projection='3d')
+   >>> ax.view_init(45, -45)
+   >>> ax.plot_surface(xgrid, ygrid, eggholder(xy), cmap='terrain')
+   >>> ax.set_xlabel('x')
+   >>> ax.set_ylabel('y')
+   >>> ax.set_zlabel('eggholder(x, y)')
+   >>> plt.show()
+
+.. plot:: tutorial/examples/optimize_global_2.py
+   :align: center
+   :include-source: 0
+
+We now use the global optimizers to obtain the minimum and the function value
+at the minimum. We'll store the results in a dictionary so we can compare
+different optimization results later.
+
+   >>> from scipy import optimize
+   >>> results = dict()
+   >>> results['shgo'] = optimize.shgo(eggholder, bounds)
+   >>> results['shgo']
+        fun: -935.3379515604197  # may vary
+       funl: array([-935.33795156])
+    message: 'Optimization terminated successfully.'
+       nfev: 42
+        nit: 2
+      nlfev: 37
+      nlhev: 0
+      nljev: 9
+    success: True
+          x: array([439.48096952, 453.97740589])
+         xl: array([[439.48096952, 453.97740589]])
+
+   >>> results['DA'] = optimize.dual_annealing(eggholder, bounds)
+   >>> results['DA']
+        fun: -956.9182316237413  # may vary
+    message: ['Maximum number of iteration reached']
+       nfev: 4091
+       nhev: 0
+        nit: 1000
+       njev: 0
+          x: array([482.35324114, 432.87892901])
+
+All optimizers return an ``OptimizeResult``, which in addition to the solution
+contains information on the number of function evaluations, whether the
+optimization was successful, and more.  For brevity we won't show the full
+output of the other optimizers::
+
+   >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
+   >>> results['BH'] = optimize.basinhopping(eggholder, bounds)
+
+:func:`shgo` has a second method, which returns all local minima rather than
+only what it thinks is the global minimum::
+
+   >>> results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=200, iters=5,
+   ...                                       sampling_method='sobol')
+
+We'll now plot all found minima on a heatmap of the function::
+
+   >>> fig = plt.figure()
+   >>> ax = fig.add_subplot(111)
+   >>> im = ax.imshow(eggholder(xy), interpolation='bilinear', origin='lower',
+   ...                cmap='gray')
+   >>> ax.set_xlabel('x')
+   >>> ax.set_ylabel('y')
+   >>>
+   >>> def plot_point(res, marker='o', color=None):
+   ...     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
+
+   >>> plot_point(results['BH'], color='y')  # basinhopping           - yellow
+   >>> plot_point(results['DE'], color='c')  # differential_evolution - cyan
+   >>> plot_point(results['DA'], color='w')  # dual_annealing.        - white
+
+   >>> # SHGO produces multiple minima, plot them all (with a smaller marker size)
+   >>> plot_point(results['shgo'], color='r', marker='+')
+   >>> plot_point(results['shgo_sobol'], color='r', marker='x')
+   >>> for i in range(results['shgo_sobol'].xl.shape[0]):
+   ...     ax.plot(512 + results['shgo_sobol'].xl[i, 0],
+   ...             512 + results['shgo_sobol'].xl[i, 1],
+   ...             'ro', ms=2)
+
+   >>> ax.set_xlim([-4, 514*2])
+   >>> ax.set_ylim([-4, 514*2])
+   >>> plt.show()
+
+.. plot:: tutorial/examples/optimize_global_1.py
+   :align: center
+   :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
