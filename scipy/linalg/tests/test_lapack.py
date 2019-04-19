@@ -19,10 +19,10 @@ import numpy as np
 from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
                    triu_indices)
 
-from numpy.random import rand, seed
+from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack
-from scipy.linalg import inv, svd, cholesky, solve
+from scipy.linalg import inv, svd, cholesky, solve, ldl
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -1243,3 +1243,36 @@ def test_sfrk_hfrk():
         A_out, _ = tfttr(n, Afp_out)
         assert_array_almost_equal(A_out, triu(-C.dot(C.conj().T) + 2*A),
                                   decimal=4 if ind % 2 == 0 else 6)
+
+
+def test_syconv():
+    """
+    Test for going back and forth between the returned format of he/sytrf to
+    L and D factors/permutations.
+    """
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 10
+
+        if ind > 1:
+            A = (randint(-30, 30, (n, n)) +
+                 randint(-30, 30, (n, n))*1j).astype(dtype)
+
+            A = A + A.conj().T
+        else:
+            A = randint(-30, 30, (n, n)).astype(dtype)
+            A = A + A.T + n*eye(n)
+
+        tol = 100*np.spacing(dtype(1.0).real)
+        syconv, trf = get_lapack_funcs(('syconv', 'sytrf'), dtype=dtype)
+
+        L, D, perm = ldl(A, lower=1, hermitian=False)
+        ldu, ipiv, info = trf(A, lower=1)
+        a, e, info = syconv(ldu, ipiv, lower=1)
+        assert_allclose(tril(a, -1,), tril(L[perm, :], -1), atol=tol, rtol=0.)
+
+        # Test also upper
+        U, D, perm = ldl(A, lower=0, hermitian=False)
+        ldu, ipiv, info = trf(A, lower=0)
+        a, e, info = syconv(ldu, ipiv, lower=0)
+        assert_allclose(triu(a, 1), triu(U[perm, :], 1), atol=tol, rtol=0.)
