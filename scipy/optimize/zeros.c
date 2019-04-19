@@ -134,8 +134,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
             flag = CONVERR;
         }
     }
-    else
-    {
+    else {
         flag = CONVERGED;
     }
     if (fulloutput) {
