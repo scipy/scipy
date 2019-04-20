@@ -712,6 +712,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         else:
             xdata = np.asarray(xdata)
 
+    # optimization may produce garbage for float32 inputs, cast them to float64
+    xdata = xdata.astype(float)
+    ydata = ydata.astype(float)
+
     # Determine type of sigma
     if sigma is not None:
         sigma = np.asarray(sigma)
