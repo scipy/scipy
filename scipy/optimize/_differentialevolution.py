@@ -10,7 +10,6 @@ from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state, MapWrapper
 from scipy._lib.six import xrange, string_types
-from scipy.optimize._constraints import (Bounds, new_bounds_to_old)
 
 
 __all__ = ['differential_evolution']
@@ -23,7 +22,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1):
+                           workers=1, vectorize=False):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -40,13 +39,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence or `Bounds`, optional
-        Bounds for variables.  There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`. It is
-        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-        to determine the number of parameters in ``x``.
+    bounds : sequence
+        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+        defining the lower and upper bounds for the optimizing argument of
+        `func`. It is required to have ``len(bounds) == len(x)``.
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -77,9 +74,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+        (default is 0.01)
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
         differential weight, being denoted by F.
@@ -135,9 +133,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+        (default is 0)
     updating : {'immediate', 'deferred'}, optional
         If ``'immediate'``, the best solution vector is continuously updated
         within a single generation [4]_. This can lead to faster convergence as
@@ -151,8 +150,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel
-        (uses `multiprocessing.Pool <multiprocessing>`).
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
         Supply -1 to use all available CPU cores.
         Alternatively supply a map-like callable, such as
         `multiprocessing.Pool.map` for evaluating the population in parallel.
@@ -272,7 +270,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      callback=callback,
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
-                                     workers=workers) as solver:
+                                     workers=workers,
+                                     vectorize=vectorize) as solver:
         ret = solver.solve()
 
     return ret
@@ -289,13 +288,11 @@ class DifferentialEvolutionSolver(object):
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence or `Bounds`, optional
-        Bounds for variables.  There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`. It is
-        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-        to determine the number of parameters in ``x``.
+    bounds : sequence
+        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+        defining the lower and upper bounds for the optimizing argument of
+        `func`. It is required to have ``len(bounds) == len(x)``.
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -327,9 +324,10 @@ class DifferentialEvolutionSolver(object):
         supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+        (default is 0.01)
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
         differential weight, being denoted by F.
@@ -389,9 +387,10 @@ class DifferentialEvolutionSolver(object):
         convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+        (default is 0)
     updating : {'immediate', 'deferred'}, optional
         If `immediate` the best solution vector is continuously updated within
         a single generation. This can lead to faster convergence as trial
@@ -402,8 +401,7 @@ class DifferentialEvolutionSolver(object):
         `workers` keyword can over-ride this option.
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel
-        (uses `multiprocessing.Pool <multiprocessing>`).
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
         Supply `-1` to use all cores available to the Process.
         Alternatively supply a map-like callable, such as
         `multiprocessing.Pool.map` for evaluating the population in parallel.
@@ -437,7 +435,7 @@ class DifferentialEvolutionSolver(object):
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1):
+                 workers=1, vectorize=False):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -460,6 +458,8 @@ class DifferentialEvolutionSolver(object):
                           " overridden updating='immediate' to"
                           " updating='deferred'", UserWarning)
             self._updating = 'deferred'
+
+        self.vectorize = vectorize
 
         # an object with a map method.
         self._mapwrapper = MapWrapper(workers)
@@ -492,14 +492,7 @@ class DifferentialEvolutionSolver(object):
         # convert tuple of lower and upper bounds to limits
         # [(low_0, high_0), ..., (low_n, high_n]
         #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
-        if isinstance(bounds, Bounds):
-            self.limits = np.array(new_bounds_to_old(bounds.lb,
-                                                     bounds.ub,
-                                                     len(bounds.lb)),
-                                   dtype=float).T
-        else:
-            self.limits = np.array(bounds, dtype='float').T
-
+        self.limits = np.array(bounds, dtype='float').T
         if (np.size(self.limits, 0) != 2 or not
                 np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '
@@ -703,9 +696,11 @@ class DifferentialEvolutionSolver(object):
                 break
 
             if self.disp:
-                print("differential_evolution step %d: f(x)= %g"
+                print("differential_evolution step %d: min(f(x))= %g , std(f(x)) = %g"
                       % (nit,
-                         self.population_energies[0]))
+                         self.population_energies[0],
+                         np.std(self.population_energies)
+                         ))
 
             # should the solver terminate?
             convergence = self.convergence
@@ -784,16 +779,23 @@ class DifferentialEvolutionSolver(object):
         energies = np.full(num_members, np.inf)
 
         parameters_pop = self._scale_parameters(population)
-        try:
-            calc_energies = list(self._mapwrapper(self.func,
-                                                  parameters_pop[0:nfevs]))
+
+        if self.vectorize:
+            calc_energies = list(self.func(parameters_pop[0:nfevs]))
             energies[0:nfevs] = calc_energies
-        except (TypeError, ValueError):
-            # wrong number of arguments for _mapwrapper
-            # or wrong length returned from the mapper
-            raise RuntimeError("The map-like callable must be of the"
-                               " form f(func, iterable), returning a sequence"
-                               " of numbers the same length as 'iterable'")
+
+        else:
+            try:
+                calc_energies = list(self._mapwrapper(self.func,
+                                                  parameters_pop[0:nfevs]))
+                energies[0:nfevs] = calc_energies
+
+            except (TypeError, ValueError):
+                # wrong number of arguments for _mapwrapper
+                # or wrong length returned from the mapper
+                raise RuntimeError("The map-like callable must be of the"
+                                   " form f(func, iterable), returning a sequence"
+                                   " of numbers the same length as 'iterable'")
 
         self._nfev += nfevs
 
@@ -816,12 +818,10 @@ class DifferentialEvolutionSolver(object):
     def __exit__(self, *args):
         # to make sure resources are closed down
         self._mapwrapper.close()
-        self._mapwrapper.terminate()
 
     def __del__(self):
         # to make sure resources are closed down
         self._mapwrapper.close()
-        self._mapwrapper.terminate()
 
     def __next__(self):
         """
@@ -847,6 +847,9 @@ class DifferentialEvolutionSolver(object):
 
         if self._updating == 'immediate':
             # update best solution immediately
+            parameters = []
+            energy = []
+
             for candidate in range(self.num_population_members):
                 if self._nfev > self.maxfun:
                     raise StopIteration
@@ -858,21 +861,29 @@ class DifferentialEvolutionSolver(object):
                 self._ensure_constraint(trial)
 
                 # scale from [0, 1) to the actual parameter value
-                parameters = self._scale_parameters(trial)
+                parameters.append(self._scale_parameters(trial))
 
-                # determine the energy of the objective function
+
+            if not self.vectorize:
+                for candidate in range(self.num_population_members):
+                    # determine the energy of the objective function
+                    energy[candidate] = self.func(parameters[candidate])
+                    self._nfev += 1
+
+            else:
                 energy = self.func(parameters)
-                self._nfev += 1
+                self._nfev += self.num_population_members
 
+            for candidate in range(self.num_population_members):
                 # if the energy of the trial candidate is lower than the
                 # original population member then replace it
-                if energy < self.population_energies[candidate]:
+                if energy[candidate] < self.population_energies[candidate]:
                     self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
+                    self.population_energies[candidate] = energy[candidate]
 
                     # if the trial candidate also has a lower energy than the
                     # best solution then promote it to the best solution.
-                    if energy < self.population_energies[0]:
+                    if energy[candidate] < self.population_energies[0]:
                         self._promote_lowest_energy()
 
         elif self._updating == 'deferred':
