@@ -35,8 +35,11 @@ Building SciPy
 Python Versions
 ^^^^^^^^^^^^^^^
 
-SciPy is compatible with several versions of Python.  Python 2.7 support was dropped for SciPy
-releases numbered 1.3 and above but is still available in Release 1.2.x.
+SciPy is compatible with several versions of Python, and some
+specific decisions are still under consideration, especially
+with regard to future changes.
+Python 2.7 support was dropped for SciPy
+releases numbered 1.3 and above but is still available in Release 1.2.x,
 which is a long-term support release. [1]_, [2]_.
 
 ================  =======================================================================
@@ -130,7 +133,7 @@ In particular, SciPy can not rely on features of just the latest NumPy, but need
 written using what is common in all of those 4 releases. [1]_, [6]_.
 
 ========  ========================    ===========================
- Python    Minimum Numpy version       Maximum Numpy version
+ Python    Minimum NumPy version       Maximum NumPy version
 ========  ========================    ===========================
 3.7         1.13.1                     >= 1.16.x
 3.6         1.12.1                     >= 1.16.x
