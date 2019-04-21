@@ -210,3 +210,14 @@ class Upfirdn2D(Benchmark):
     def time_upfirdn2d(self, up, down, axis):
         for h, x in self.pairs:
             signal.upfirdn(h, x, up=up, down=down, axis=axis)
+
+
+class FIRLS(Benchmark):
+    param_names = ['n', 'edges']
+    params = [
+        [21, 101, 1001, 2001],
+        [(0.1, 0.9), (0.01, 0.99)],
+        ]
+
+    def time_firls(self, n, edges):
+        signal.firls(n, (0,) + edges + (1,), [1, 1, 0, 0])
