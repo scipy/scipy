@@ -562,8 +562,8 @@ class TestGetWindow(object):
         sig = np.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2)
-        assert_raises(ValueError, resample,
-                      sig, len(sig) * osfactor, window=win)
+        with assert_raises(ValueError, match='must have the same length'):
+            resample(sig, len(sig) * osfactor, window=win)
 
 
 def test_windowfunc_basics():

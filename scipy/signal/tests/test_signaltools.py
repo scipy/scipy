@@ -884,62 +884,35 @@ class TestResample(object):
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
-        sig2 = np.tile(np.arange(160), (2,1))
+        sig2 = np.tile(np.arange(160), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert_(win.shape == (160,))
 
-    def test_rfft(self):
-        # Make sure the speed up using rfft gives the same result as the normal 
+    @pytest.mark.parametrize('window', (None, 'hamming'))
+    @pytest.mark.parametrize('N', (20, 19))
+    @pytest.mark.parametrize('num', (100, 101, 10, 11))
+    def test_rfft(self, N, num, window):
+        # Make sure the speed up using rfft gives the same result as the normal
         # way using fft
-
-        x = np.linspace(0, 10, 20, endpoint=False)
+        x = np.linspace(0, 10, N, endpoint=False)
         y = np.cos(-x**2/6.0)
-        y_complex = y.copy()+0j
-        # Upsample
-        assert_allclose(signal.resample(y, 100), signal.resample(y_complex, 100).real)
-        assert_allclose(signal.resample(y, 101), signal.resample(y_complex, 101).real)
-        # Downsample
-        assert_allclose(signal.resample(y, 11), signal.resample(y_complex, 11).real)
-        assert_allclose(signal.resample(y, 10), signal.resample(y_complex, 10).real)
+        assert_allclose(signal.resample(y, num, window=window),
+                        signal.resample(y + 0j, num, window=window).real)
 
-    def test_rfft_window(self):
-        # Make sure the speed up using rfft gives the same result as the normal 
-        # way using fft
+        y = np.array([np.cos(-x**2/6.0), np.sin(-x**2/6.0)])
+        y_complex = y + 0j
+        assert_allclose(
+            signal.resample(y, num, axis=1, window=window),
+            signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
 
-        x = np.linspace(0, 10, 20, endpoint=False)
-        y = np.cos(-x**2/6.0)
-        y_complex = y.copy()+0j
-        # Upsample
-        assert_allclose(signal.resample(y, 100, window='hamming'), signal.resample(y_complex, 100, window='hamming').real)
-        assert_allclose(signal.resample(y, 101, window='hamming'), signal.resample(y_complex, 101, window='hamming').real)
-        # Downsample
-        assert_allclose(signal.resample(y, 11, window='hamming'), signal.resample(y_complex, 11, window='hamming').real)
-        assert_allclose(signal.resample(y, 10, window='hamming'), signal.resample(y_complex, 10, window='hamming').real)
-
-    def test_axis(self):
-        # Make sure the speed up using rfft gives the same result as the normal 
-        # way using fft
-        
-        x = np.linspace(0, 10, 20, endpoint=False)
-        y1 = np.cos(-x**2/6.0)
-        y2 = np.sin(-x**2/6.0)
-        y = np.vstack((y1,y2))
-        y_complex = y.copy()+0j
-        # Upsample
-        assert_allclose(signal.resample(y, 100,axis=1), signal.resample(y_complex, 100, axis=1).real, atol=1e-9)
-        assert_allclose(signal.resample(y, 101,axis=1), signal.resample(y_complex, 101, axis=1).real, atol=1e-9)
-
-    def test_fft(self):
-        # Test FFT-based resampling
-        self._test_data(method='fft')
-
-    def test_polyphase(self):
-        # Test polyphase resampling
-        self._test_data(method='polyphase')
-
-    def test_polyphase_extfilter(self):
-        # Test external specification of downsampling filter
-        self._test_data(method='polyphase', ext=True)
+    @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('dtype', ('float', 'complex'))
+    def test_dc(self, nx, ny, dtype):
+        x = np.array([1] * nx, dtype)
+        y = signal.resample(x, ny)
+        assert_allclose(y, [1] * ny)
 
     def test_mutable_window(self):
         # Test that a mutable window is not modified
@@ -952,11 +925,16 @@ class TestResample(object):
     def test_output_float32(self):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
-        h = np.array([1,1,1], dtype=np.float32)
+        h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h)
         assert_(y.dtype == np.float32)
 
-    def _test_data(self, method, ext=False):
+    @pytest.mark.parametrize('method, ext', [
+        ('fft', False),
+        ('polyphase', False),
+        ('polyphase', True),
+    ])
+    def test_resample_methods(self, method, ext):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
