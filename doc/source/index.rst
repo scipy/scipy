@@ -48,6 +48,7 @@ the roadmap:
 
    roadmap
    roadmap-detailed
+   toolchain
 
 .. module:: scipy
 

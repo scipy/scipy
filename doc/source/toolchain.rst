@@ -1,5 +1,5 @@
-Toolchain and Roadmap
-=====================
+Toolchain Roadmap
+=================
 
 The use of the SciPy library requires (or optionally depends upon) several
 other libraries in order to operate, the main dependency being Python and NumPy.
