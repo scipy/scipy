@@ -3,6 +3,8 @@ Unit tests for optimization routines from minpack.py.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
@@ -719,6 +721,55 @@ class TestCurveFit(object):
 
                 assert_allclose(popt1, popt2, atol=1e-14)
                 assert_allclose(pcov1, pcov2, atol=1e-14)
+
+    def test_dtypes(self):
+        # regression test for gh-9581: curve_fit fails if x and y dtypes differ
+        x = np.arange(-3, 5)
+        y = 1.5*x + 3.0 + 0.5*np.sin(x)
+
+        def func(x, a, b):
+            return a*x + b
+
+        for method in ['lm', 'trf', 'dogbox']:
+            for dtx in [np.float32, np.float64]:
+                for dty in [np.float32, np.float64]:
+                    x = x.astype(dtx)
+                    y = y.astype(dty)
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error", OptimizeWarning)
+                    p, cov = curve_fit(func, x, y, method=method)
+
+                    assert np.isfinite(cov).all()
+                    assert not np.allclose(p, 1)   # curve_fit's initial value
+
+    def test_dtypes2(self):
+        # regression test for gh-7117: curve_fit fails if
+        # both inputs are float32
+        def hyperbola(x, s_1, s_2, o_x, o_y, c):
+            b_2 = (s_1 + s_2) / 2
+            b_1 = (s_2 - s_1) / 2
+            return o_y + b_1*(x-o_x) + b_2*np.sqrt((x-o_x)**2 + c**2/4)
+
+        min_fit = np.array([-3.0, 0.0, -2.0, -10.0, 0.0])
+        max_fit = np.array([0.0, 3.0, 3.0, 0.0, 10.0])
+        guess = np.array([-2.5/3.0, 4/3.0, 1.0, -4.0, 0.5])
+
+        params = [-2, .4, -1, -5, 9.5]
+        xdata = np.array([-32, -16, -8, 4, 4, 8, 16, 32])
+        ydata = hyperbola(xdata, *params)
+
+        # run optimization twice, with xdata being float32 and float64
+        popt_64, _ = curve_fit(f=hyperbola, xdata=xdata, ydata=ydata, p0=guess,
+                               bounds=(min_fit, max_fit))
+
+        xdata = xdata.astype(np.float32)
+        ydata = hyperbola(xdata, *params)
+
+        popt_32, _ = curve_fit(f=hyperbola, xdata=xdata, ydata=ydata, p0=guess,
+                               bounds=(min_fit, max_fit))
+
+        assert_allclose(popt_32, popt_64, atol=2e-5)
 
 
 class TestFixedPoint(object):
