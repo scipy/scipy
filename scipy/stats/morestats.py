@@ -2717,11 +2717,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        The first set of measurements, must be one-dimensional.
+        Either the first set of measurements (in which case `y` is the second
+        set of measurements), or the differences between two sets of
+        measurements (in which case `y` is not to be specified.)  Must be
+        one-dimensional.
     y : array_like, optional
-        The second set of measurements, , must be one-dimensional.
-        If `y` is not given, then the `x` array is considered to be the
-        differences between the two sets of measurements.
+        Either the second set of measurements (if `x` is the first set of
+        measurements), or not specified (if `x` is the differences between
+        two sets of measurements.)  Must be one-dimensional.
     zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
         "pratt":
             includes zero-differences in the ranking process,
