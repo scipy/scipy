@@ -5,9 +5,10 @@ from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
                            assert_equal, assert_,
                            assert_allclose, assert_warns)
 from pytest import raises as assert_raises
+import pytest
 
+from scipy.linalg import LinAlgWarning
 from scipy.special import sinc
-
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
         firwin, firwin2, freqz, remez, firls, minimum_phase
 
@@ -535,6 +536,27 @@ class TestFirls(object):
 
         taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
         assert_allclose(taps, known_taps)
+
+        with pytest.raises(ValueError, match='between 0 and 1'):
+            firls(7, [0, 1], [0, 1], nyq=0.5)
+
+    def test_rank_deficient(self):
+        # solve() runs but warns (only sometimes, so here we don't use match)
+        x = firls(21, [0, 0.1, 0.9, 1], [1, 1, 0, 0])
+        w, h = freqz(x, fs=2.)
+        assert_allclose(np.abs(h[:2]), 1., atol=1e-5)
+        assert_allclose(np.abs(h[-2:]), 0., atol=1e-6)
+        # switch to pinvh (tolerances could be higher with longer
+        # filters, but using shorter ones is faster computationally and
+        # the idea is the same)
+        x = firls(101, [0, 0.01, 0.99, 1], [1, 1, 0, 0])
+        w, h = freqz(x, fs=2.)
+        mask = w < 0.01
+        assert mask.sum() > 3
+        assert_allclose(np.abs(h[mask]), 1., atol=1e-4)
+        mask = w > 0.99
+        assert mask.sum() > 3
+        assert_allclose(np.abs(h[mask]), 0., atol=1e-4)
 
 
 class TestMinimumPhase(object):
