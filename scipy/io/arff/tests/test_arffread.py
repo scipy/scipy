@@ -4,6 +4,7 @@ import datetime
 import os
 import sys
 from os.path import join as pjoin
+from scipy._lib.six import xrange
 
 if sys.version_info[0] >= 3:
     from io import StringIO
@@ -18,7 +19,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.io.arff.arffread import loadarff
-from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
+from scipy.io.arff.arffread import read_header, ParseArffError
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
@@ -32,6 +33,9 @@ test5 = pjoin(data_path, 'test5.arff')
 test6 = pjoin(data_path, 'test6.arff')
 test7 = pjoin(data_path, 'test7.arff')
 test8 = pjoin(data_path, 'test8.arff')
+test9 = pjoin(data_path, 'test9.arff')
+test10 = pjoin(data_path, 'test10.arff')
+test11 = pjoin(data_path, 'test11.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
                 (-0.1, -0.2, -0.3, -0.4, 'class2'),
                 (1, 2, 3, 4, 'class3')]
@@ -89,6 +93,7 @@ class TestData(object):
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
+
 class TestMissingData(object):
     def test_missing(self):
         data, meta = loadarff(missing)
@@ -122,16 +127,16 @@ class TestHeader(object):
                     'numeric', 'string', 'string', 'nominal', 'nominal']
 
         for i in range(len(attrs)):
-            assert_(parse_type(attrs[i][1]) == expected[i])
+            assert_(attrs[i].type_name == expected[i])
 
     def test_badtype_parsing(self):
         # Test parsing wrong type of attribute from their value.
-        ofile = open(test3)
-        rel, attrs = read_header(ofile)
-        ofile.close()
+        def badtype_read():
+            ofile = open(test3)
+            rel, attrs = read_header(ofile)
+            ofile.close()
 
-        for name, value in attrs:
-            assert_raises(ParseArffError, parse_type, value)
+        assert_raises(ParseArffError, badtype_read)
 
     def test_fullheader1(self):
         # Parsing trivial header with nothing.
@@ -145,12 +150,12 @@ class TestHeader(object):
         # Test numerical attributes
         assert_(len(attrs) == 5)
         for i in range(4):
-            assert_(attrs[i][0] == 'attr%d' % i)
-            assert_(attrs[i][1] == 'REAL')
+            assert_(attrs[i].name == 'attr%d' % i)
+            assert_(attrs[i].type_name == 'numeric')
 
         # Test nominal attribute
-        assert_(attrs[4][0] == 'class')
-        assert_(attrs[4][1] == '{class0, class1, class2, class3}')
+        assert_(attrs[4].name == 'class')
+        assert_(attrs[4].values == ('class0', 'class1', 'class2', 'class3'))
 
     def test_dateheader(self):
         ofile = open(test7)
@@ -161,34 +166,28 @@ class TestHeader(object):
 
         assert_(len(attrs) == 5)
 
-        assert_(attrs[0][0] == 'attr_year')
-        assert_(attrs[0][1] == 'DATE yyyy')
+        assert_(attrs[0].name == 'attr_year')
+        assert_(attrs[0].date_format == '%Y')
 
-        assert_(attrs[1][0] == 'attr_month')
-        assert_(attrs[1][1] == 'DATE yyyy-MM')
+        assert_(attrs[1].name == 'attr_month')
+        assert_(attrs[1].date_format == '%Y-%m')
 
-        assert_(attrs[2][0] == 'attr_date')
-        assert_(attrs[2][1] == 'DATE yyyy-MM-dd')
+        assert_(attrs[2].name == 'attr_date')
+        assert_(attrs[2].date_format == '%Y-%m-%d')
 
-        assert_(attrs[3][0] == 'attr_datetime_local')
-        assert_(attrs[3][1] == 'DATE "yyyy-MM-dd HH:mm"')
+        assert_(attrs[3].name == 'attr_datetime_local')
+        assert_(attrs[3].date_format == '%Y-%m-%d %H:%M')
 
-        assert_(attrs[4][0] == 'attr_datetime_missing')
-        assert_(attrs[4][1] == 'DATE "yyyy-MM-dd HH:mm"')
+        assert_(attrs[4].name == 'attr_datetime_missing')
+        assert_(attrs[4].date_format == '%Y-%m-%d %H:%M')
 
     def test_dateheader_unsupported(self):
-        ofile = open(test8)
-        rel, attrs = read_header(ofile)
-        ofile.close()
+        def read_dateheader_unsupported():
+            ofile = open(test8)
+            rel, attrs = read_header(ofile)
+            ofile.close()
 
-        assert_(rel == 'test8')
-
-        assert_(len(attrs) == 2)
-        assert_(attrs[0][0] == 'attr_datetime_utc')
-        assert_(attrs[0][1] == 'DATE "yyyy-MM-dd HH:mm Z"')
-
-        assert_(attrs[1][0] == 'attr_datetime_full')
-        assert_(attrs[1][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
+        assert_raises(ValueError, read_dateheader_unsupported)
 
 
 class TestDateAttribute(object):
@@ -256,4 +255,76 @@ class TestDateAttribute(object):
         assert_array_equal(self.data["attr_datetime_missing"], expected)
 
     def test_datetime_timezone(self):
-        assert_raises(ValueError, loadarff, test8)
+        assert_raises(ParseArffError, loadarff, test8)
+
+
+class TestRelationalAttribute(object):
+    def setup_method(self):
+        self.data, self.meta = loadarff(test9)
+
+    def test_attributes(self):
+        assert_equal(len(self.meta._attributes), 1)
+
+        relational = list(self.meta._attributes.values())[0]
+
+        assert_equal(relational.name, 'attr_date_number')
+        assert_equal(relational.type_name, 'relational')
+        assert_equal(len(relational.attributes), 2)
+        assert_equal(relational.attributes[0].name,
+                     'attr_date')
+        assert_equal(relational.attributes[0].type_name,
+                     'date')
+        assert_equal(relational.attributes[1].name,
+                     'attr_number')
+        assert_equal(relational.attributes[1].type_name,
+                     'numeric')
+
+    def test_data(self):
+        dtype_instance = [('attr_date', 'datetime64[D]'),
+                          ('attr_number', np.float_)]
+
+        expected = [
+            np.array([('1999-01-31', 1), ('1935-11-27', 10)],
+                     dtype=dtype_instance),
+            np.array([('2004-12-01', 2), ('1942-08-13', 20)],
+                     dtype=dtype_instance),
+            np.array([('1817-04-28', 3)],
+                     dtype=dtype_instance),
+            np.array([('2100-09-10', 4), ('1957-04-17', 40),
+                      ('1721-01-14', 400)],
+                     dtype=dtype_instance),
+            np.array([('2013-11-30', 5)],
+                     dtype=dtype_instance),
+            np.array([('1631-10-15', 6)],
+                     dtype=dtype_instance)
+        ]
+
+        for i in range(len(self.data["attr_date_number"])):
+            assert_array_equal(self.data["attr_date_number"][i],
+                               expected[i])
+
+
+class TestRelationalAttributeLong(object):
+    def setup_method(self):
+        self.data, self.meta = loadarff(test10)
+
+    def test_attributes(self):
+        assert_equal(len(self.meta._attributes), 1)
+
+        relational = list(self.meta._attributes.values())[0]
+
+        assert_equal(relational.name, 'attr_relational')
+        assert_equal(relational.type_name, 'relational')
+        assert_equal(len(relational.attributes), 1)
+        assert_equal(relational.attributes[0].name,
+                     'attr_number')
+        assert_equal(relational.attributes[0].type_name, 'numeric')
+
+    def test_data(self):
+        dtype_instance = [('attr_number', np.float_)]
+
+        expected = np.array([(n,) for n in xrange(30000)],
+                            dtype=dtype_instance)
+
+        assert_array_equal(self.data["attr_relational"][0],
+                           expected)
