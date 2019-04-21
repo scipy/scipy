@@ -1451,10 +1451,10 @@ class rv_continuous(rv_generic):
     For most of the scipy.stats distributions, the support interval doesn't
     depend on the shape parameters. ``x`` being in the support interval is
     equivalent to ``self.a <= x <= self.b``.  If either of the endpoints of
-    the support do depend on the shape parameters, then:
-      i) the distribution must implement the ``_get_support`` method; and
-     ii) those dependent endpoints must be omitted from the distribution's
-         call to the ``rv_continuous`` initializer.
+    the support do depend on the shape parameters, then
+    i) the distribution must implement the ``_get_support`` method; and
+    ii) those dependent endpoints must be omitted from the distribution's
+    call to the ``rv_continuous`` initializer.
 
     Correct, but potentially slow defaults exist for the remaining
     methods but for speed and/or accuracy you can over-ride::
