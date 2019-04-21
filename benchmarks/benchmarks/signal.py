@@ -11,6 +11,7 @@ except ImportError:
 
 from .common import Benchmark
 
+
 class Resample(Benchmark):
 
     def setup(self):
@@ -18,10 +19,12 @@ class Resample(Benchmark):
         self.y = np.cos(-x**2/6.0)
 
     def time_complex(self):
-        signal.resample(self.y+complex(0,0), 1e7)
+        signal.resample(self.y + 0j, int(1e7))
 
     def time_real(self):
-        signal.resample(self.y, 1e7)
+        signal.resample(self.y, int(1e7))
+
+
 class CalculateWindowedFFT(Benchmark):
 
     def setup(self):

@@ -4,14 +4,12 @@
 from __future__ import division, print_function, absolute_import
 
 import operator
-import threading
 import sys
 import timeit
 
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
-from scipy._lib._version import NumpyVersion
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes_sorted
 from numpy import (allclose, angle, arange, argsort, array, asarray,
@@ -402,13 +400,12 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
     fslice = tuple([slice(sz) for sz in shape])
     if not complex_result:
-        sp1 = sp_fft.rfftn(in1, fshape, axes=axes)
-        sp2 = sp_fft.rfftn(in2, fshape, axes=axes)
-        ret = sp_fft.irfftn(sp1 * sp2, fshape, axes=axes)[fslice].copy()
+        fft, ifft = sp_fft.rfftn, sp_fft.irfftn
     else:
-        sp1 = sp_fft.fftn(in1, fshape, axes=axes)
-        sp2 = sp_fft.fftn(in2, fshape, axes=axes)
-        ret = sp_fft.ifftn(sp1 * sp2, axes=axes)[fslice].copy()
+        fft, ifft = sp_fft.fftn, sp_fft.ifftn
+    sp1 = fft(in1, fshape, axes=axes)
+    sp2 = fft(in2, fshape, axes=axes)
+    ret = ifft(sp1 * sp2, fshape, axes=axes)[fslice].copy()
 
     if mode == "full":
         return ret
@@ -1565,9 +1562,9 @@ def hilbert(x, N=None, axis=-1):
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
     The amplitude envelope is given by magnitude of the analytic signal. The
-(??)    instantaneous frequency can be obtained by differentiating the instantaneous 
-(??)    phase in respect to time. The instantaneous phase corresponds to the phase 
-(??)    angle of the analytic signal.
+    instantaneous frequency can be obtained by differentiating the
+    instantaneous phase in respect to time. The instantaneous phase corresponds
+    to the phase angle of the analytic signal.
 
     >>> analytic_signal = hilbert(signal)
     >>> amplitude_envelope = np.abs(analytic_signal)
@@ -1591,8 +1588,9 @@ def hilbert(x, N=None, axis=-1):
     .. [1] Wikipedia, "Analytic signal".
            https://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-(??)    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing, 
-(??)           Third Edition, 2009. Chapter 12. ISBN 13: 978-1292-02572-8
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+           Processing, Third Edition, 2009. Chapter 12.
+           ISBN 13: 978-1292-02572-8
 
     """
     x = asarray(x)
@@ -2211,6 +2209,7 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the next cycle:
 
     >>> from scipy import signal
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f = signal.resample(y, 100)
@@ -2224,7 +2223,6 @@ def resample(x, num, t=None, axis=0, window=None):
     x = asarray(x)
     X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
-
     if window is not None:
         if callable(window):
             W = window(sp_fft.fftfreq(Nx))
@@ -2234,72 +2232,75 @@ def resample(x, num, t=None, axis=0, window=None):
             W = window
         else:
             W = sp_fft.ifftshift(get_window(window, Nx))
-
         newshape_W = [1] * x.ndim
         newshape_W[axis] = len(W)
-
-        W.shape = (Nx,)
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
-    N = int(np.minimum(num, Nx))
-    Y = zeros(newshape, 'D')
-    sl[axis] = slice(0, (N + 1) // 2)
-    Y[tuple(sl)] = X[tuple(sl)]
-    sl[axis] = slice(-(N - 1) // 2, None)
-    Y[tuple(sl)] = X[tuple(sl)]
+(??)(??)    N = int(np.minimum(num, Nx))
+(??)(??)    Y = zeros(newshape, 'D')
+(??)(??)    sl[axis] = slice(0, (N + 1) // 2)
+(??)(??)    Y[sl] = X[sl]
+(??)(??)    sl[axis] = slice(-(N - 1) // 2, None)
+(??)(??)    Y[sl] = X[sl]
+(??)(??)    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
-    # Can we use faster real FFT?
-    if not np.issubdtype(x.dtype, complex):
-        X = sp_fft.rfft(x, axis=axis)
-        if window is not None:
-            # Reorder the window to fit the order rfft produces its output
-            W_real = W.copy()
-            for i in range(1, Nx//2):
-                W_real[2*i] = W[i]
-                W_real[2*i-1] = W[i]
-            # Deal with the different length for odd/even Nx
-            W_real[Nx-1:] = W[Nx//2]
-            X *= W_real.reshape(newshape_W)
-        Y = zeros(newshape)
+(??)    # Can we use faster real FFT?
+(??)    if not np.issubdtype(x.dtype, complex) and (_rfft_mt_safe or _rfft_lock.acquire(False)):
+(??)        try:
+(??)            X = fftpack.rfft(x, axis=axis)
+(??)            if window is not None:
+(??)                # Reorder the window to fit the order rfft produces its output
+(??)                W_real = W.copy()
+(??)                for i in range(1, Nx//2):
+(??)                    W_real[2*i] = W[i]
+(??)                    W_real[2*i-1] = W[i]
+(??)                # Deal with the different length for odd/even Nx
+(??)                W_real[Nx-1:] = W[Nx//2]
+(??)                X *= W_real.reshape(newshape_W)
+(??)            Y = zeros(newshape)
 
-        if num > Nx:
-            if Nx % 2:
-                sl[axis] = slice(0, Nx)
-                Y[sl] = X[sl]
-            else:
-                # X[-1] is only the real part
-                sl[axis] = slice(0, Nx-1)
-                Y[sl] = X[sl]
-                sl = [slice(None)] * len(x.shape)
-                sl[axis] = slice(Nx-1, Nx)
-                Y[sl] = 0.5*X[sl]
-        else:
-            sl[axis] = slice(0, num)
-            Y[sl] = X[sl]     
+(??)            if num > Nx:
+(??)                if Nx % 2:
+(??)                    sl[axis] = slice(0, Nx)
+(??)                    Y[sl] = X[sl]
+(??)                else:
+(??)                    # X[-1] is only the real part
+(??)                    sl[axis] = slice(0, Nx-1)
+(??)                    Y[sl] = X[sl]
+(??)                    sl = [slice(None)] * len(x.shape)
+(??)                    sl[axis] = slice(Nx-1, Nx)
+(??)                    Y[sl] = 0.5*X[sl]
+(??)            else:
+(??)                sl[axis] = slice(0, num)
+(??)                Y[sl] = X[sl]     
 
-        y = sp_fft.irfft(Y, axis=axis, overwrite_x=True) 
-        y *= (float(num) / float(Nx))
-
+(??)            y = fftpack.irfft(Y, axis=axis, overwrite_x=True) 
+(??)            y *= (float(num) / float(Nx))
+(??)
+(??)        finally:
+(??)            if not _rfft_mt_safe:
+(??)                _rfft_lock.release()
+(??)
     # Full complex FFT
     else:
         X = sp_fft.fft(x, axis=axis)
         if window is not None:
             X *= W.reshape(newshape_W)
-
-        N = int(np.minimum(num, Nx))
         Y = zeros(newshape, 'D')
         sl[axis] = slice(0, (N + 1) // 2)
         Y[tuple(sl)] = X[tuple(sl)]
-        sl[axis] = slice(-(N - 1) // 2, None)
-        Y[tuple(sl)] = X[tuple(sl)]
+        if N > 1:
+            sl[axis] = slice(-(N - 1) // 2, None)
+            Y[tuple(sl)] = X[tuple(sl)]
 
-        y = np_fft.ifft(Y, axis=axis, overwrite_x=True) 
-        y *= (float(num) / float(Nx))
+(??)        y = fftpack.ifft(Y, axis=axis, overwrite_x=True) 
+(??)        y *= (float(num) / float(Nx))
 
-        if not np.issubdtype(x.dtype, complex):
-            y = y.real
-              
+        y = fftpack.ifft(Y, axis=axis, overwrite_x=True)
+
+    y *= (float(num) / float(Nx))
+
     if t is None:
         return y
     else:
