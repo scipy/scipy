@@ -122,7 +122,7 @@ With the dropping of Python2.7 for SciPy 1.3.x, the C90 restriction is no
 longer imposed by compilers.
 Even though C99 has been a standard for 20 years, experience has shown that
 not all features are supported equally well across all platforms.
-The expectation is that C90 code will be become acceptable in 2020.
+The expectation is that C99 code will be become acceptable in 2020.
 
 C18 is a bug fix for C11, so C11 may be skipped entirely.
 
