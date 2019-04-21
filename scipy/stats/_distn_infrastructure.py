@@ -875,7 +875,9 @@ class rv_generic(object):
         """Return the support of the (unscaled, unshifted) distribution.
 
         *Must* be overridden by distributions which have support dependent
-        upon the shape parameters of the distribution.
+        upon the shape parameters of the distribution.  Any such override
+        *must not* set or change any of the class members, as these members
+        are shared amongst all instances of the distribution.
 
         Parameters
         ----------
