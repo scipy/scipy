@@ -62,7 +62,6 @@ compiler rather than a Python package that pip_ is allowed to upgrade.
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 There are some serious issues with how Python packaging tools handle
 dependencies reported by projects.  Because SciPy gets regular bug reports
 about this, we go in a bit of detail here.

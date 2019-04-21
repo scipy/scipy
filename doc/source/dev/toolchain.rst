@@ -50,6 +50,22 @@ which is a long-term support release. [1]_, [2]_.
  2020              Py3.5+ (removal of Py2.7-specific code permitted)
 ================  =======================================================================
 
+NumPy
+^^^^^
+
+SciPy depends on NumPy but releases of SciPy are not tied to releases of NumPy.
+SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
+In particular, SciPy can not rely on features of just the latest NumPy, but needs to be
+written using what is common in all of those 4 releases. [1]_, [6]_.
+
+========  ========================    ===========================
+ Python    Minimum NumPy version       Maximum NumPy version
+========  ========================    ===========================
+3.7         1.13.1                     >= 1.16.x
+3.6         1.12.1                     >= 1.16.x
+3.5         1.9.3                      >= 1.16.x
+2.7         1.8.2                      1.16.x
+========  ========================    ===========================
 
 
 C Compilers
@@ -100,14 +116,14 @@ for a very long time because of ecosystem support restrictions. See [4]_.
     IEEE 754 [5]_.  SciPy has a small include file ``scipy/_lib/_c99compat.h`` which provides
     access to a few functions.  Use in conjunction with ``<numpy/npy_math.h>``.
 
-    ===================================   ========================================================
-     Feature                               Workaround
-    ===================================   ========================================================
-     `isnan()`, `isinf()`, `isfinite()`   Use `sc_isnan()`, `sc_isinf()`, `sc_isfinite()`
-     `NAN`                                Use `NPY_NAN` (*almost* equivalent)
-     inline functions                     Make static functions and place in an include .h file
-     mid-block variable declarations      Declare variables at the top of the block
-    ===================================   ========================================================
+    =========================================  ========================================================
+     Feature                                   Workaround
+    =========================================  ========================================================
+    ``isnan()``, ``isinf()``, ``isfinite()``   Use ``sc_isnan()``, ``sc_isinf()``, ``sc_isfinite()``
+    ``NAN``                                    Use ``NPY_NAN`` (*almost* equivalent)
+    inline functions                           Make static functions and place in an include .h file
+    mid-block variable declarations            Declare variables at the top of the block
+    =========================================  ========================================================
 
 
 Fortran Compilers
@@ -115,57 +131,64 @@ Fortran Compilers
 
 Generally, any well-maintained compiler is likely suitable and can be used to build SciPy.
 
-- gfortran >= 4.8.0
-- ifort
-- flang
+========  ==================
+ Tool      Version
+========  ==================
+gfortran    >= 4.8.0
+ifort      A recent version
+flang      A recent version
+========  ==================
+
 
 Cython Compiler
 ^^^^^^^^^^^^^^^
 
-SciPy always requires a recent Cython compiler. As of v1.2.0, the minumum version is 0.29.0.
+SciPy always requires a recent Cython compiler.
 
-NumPy
-^^^^^
+========  ============  ===============
+ Tool     Tool Version   SciPy version                                                z
+========  ============  ===============
+Cython      >= 0.29.1    1.12.1
+========  ============  ===============
 
-SciPy depends on NumPy but releases of SciPy are not tied to releases of NumPy.
-SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
-In particular, SciPy can not rely on features of just the latest NumPy, but needs to be
-written using what is common in all of those 4 releases. [1]_, [6]_.
-
-========  ========================    ===========================
- Python    Minimum NumPy version       Maximum NumPy version
-========  ========================    ===========================
-3.7         1.13.1                     >= 1.16.x
-3.6         1.12.1                     >= 1.16.x
-3.5         1.9.3                      >= 1.16.x
-2.7         1.8.2                      1.16.x
-========  ========================    ===========================
 
 
 Other Libraries
 ^^^^^^^^^^^^^^^
 
-- LAPACK: >= 3.4.1
-- OpenBLAS: A recent version
+========  ===================
+ Tool      Minimum version
+========  ===================
+LAPACK      3.4.1.
+OpenBLAS    A recent version
+========  ===================
 
 
 Testing and Benchmarking
 --------------------------
 
-A Recent version of:
+Testing and benchmarking require recent versions of:
 
-- pytest https://docs.pytest.org/en/latest/
-- asv (airspeed velocity)  https://asv.readthedocs.io/
-- mpmath http://mpmath.org
+=========================  ========  ====================================
+ Tool                      Version    URL
+=========================  ========  ====================================
+pytest                     Recent     https://docs.pytest.org/en/latest/
+asv (airspeed velocity)    Recent     https://asv.readthedocs.io/
+mpmath                     Recent     http://mpmath.org
+=========================  ========  ====================================
 
 
 Building the Documentation
 --------------------------
 
-- Sphinx: whatever recent versions work. >= 2.0.
-- numpydoc: whatever recent versions work. >=  0.8.0.
-- matplotlib: generally suggest >= 2.0
-- LaTeX: A recent distibution.
+==========   ========================================
+ Tool        Version
+==========   ========================================
+Sphinx       whatever recent versions work. >= 2.0.
+numpydoc     whatever recent versions work. >= 0.8.0
+matplotlib   generally suggest >= 2.0
+LaTeX        A recent distibution.
+==========   ========================================
 
 
 .. note::
@@ -181,9 +204,13 @@ Packaging
 
 A Recent version of:
 
-- setuptools
-- wheel  https://pythonwheels.com
-- multibuild  https://github.com/matthew-brett/multibuild
+=============  ========  =============================================
+ Tool          Version    URL
+=============  ========  =============================================
+setuptools     Recent
+wheel          Recent     https://pythonwheels.com
+multibuild     Recent     https://github.com/matthew-brett/multibuild
+=============  ========  =============================================
 
 :ref:`making-a-release` and :ref:`distributing-a-release` contain information on
 making and distributing a SciPy release.
