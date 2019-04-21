@@ -1041,8 +1041,8 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
             warnings.simplefilter('always')
             a = solve(Q, b, sym_pos=True, check_finite=False)
         for ww in w:
-            if ww.category == LinAlgWarning and \
-                    str(ww.message).startswith('Ill-conditioned matrix'):
+            if (ww.category == LinAlgWarning and
+                    str(ww.message).startswith('Ill-conditioned matrix')):
                 raise LinAlgError(str(ww.message))
     except LinAlgError:  # in case Q is rank deficient
         # This is faster than pinvh, even though we don't explicitly use
