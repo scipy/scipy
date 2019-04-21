@@ -157,7 +157,7 @@ before_install:
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack
+        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
