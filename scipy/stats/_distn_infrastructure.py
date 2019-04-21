@@ -875,7 +875,7 @@ class rv_generic(object):
         """Return the support of the (unscaled, unshifted) distribution.
 
         *Must* be overridden by distributions which have support dependent
-        upon the parametrization.
+        upon the shape parameters of the distribution.
 
         Parameters
         ----------
@@ -885,7 +885,8 @@ class rv_generic(object):
         Returns
         -------
         a, b : numeric (float, or int or +/-np.inf)
-            end-points of the distribution's support.
+            end-points of the distribution's support for the specified
+            shape parameters.
         """
         return self.a, self.b
 
@@ -1432,7 +1433,7 @@ class rv_continuous(rv_generic):
     Public methods of an instance of a distribution class (e.g., ``pdf``,
     ``cdf``) check their arguments and pass valid arguments to private,
     computational methods (``_pdf``, ``_cdf``). For ``pdf(x)``, ``x`` is valid
-    if it is within the support of a distribution, ``self.a <= x <= self.b``.
+    if it is within the support of the distribution.
     Whether a shape parameter is valid is decided by an ``_argcheck`` method
     (which defaults to checking that its arguments are strictly positive.)
 
@@ -1445,8 +1446,13 @@ class rv_continuous(rv_generic):
     If positive argument checking is not correct for your RV
     then you will also need to re-define the ``_argcheck`` method.
 
-    ``_get_support`` must be overridden if the distribution's support depends
-    on the parametrization.
+    For most of the scipy.stats distributions, the support interval doesn't
+    depend on the shape parameters. ``x`` being in the support interval is
+    equivalent to ``self.a <= x <= self.b``.  If either of the endpoints of
+    the support do depend on the shape parameters, then:
+      i) the distribution must implement the ``_get_support`` method; and
+     ii) those dependent endpoints must be omitted from the distribution's
+         call to the ``rv_continuous`` initializer.
 
     Correct, but potentially slow defaults exist for the remaining
     methods but for speed and/or accuracy you can over-ride::
