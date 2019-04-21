@@ -1,3 +1,5 @@
+.. _distributing-a-release:
+
 Distributing
 ============
 
