@@ -116,7 +116,7 @@ def _format_b_constraints(b):
 
     """
     if b is None:
-        return  np.array([], dtype=float)
+        return np.array([], dtype=float)
     b = np.array(b, dtype=float, copy=True).squeeze()
     return b if b.size != 1 else b.reshape((-1))
 
@@ -184,26 +184,25 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         raise TypeError
 
     try:
-        # TODO: Should we squeeze here?
         c = np.array(c, dtype=np.float, copy=True).squeeze()
     except ValueError:
         raise TypeError(
             "Invalid input for linprog: c must be a 1D array of numerical "
             "coefficients")
+    else:
+        # If c is a single value, convert it to a 1D array.
+        if c.size == 1:
+            c = c.reshape((-1))
 
-    # If c is a single value, convert it to a 1D array.
-    if c.size == 1:
-        c = c.reshape((-1))
-
-    n_x = len(c)
-    if n_x == 0 or len(c.shape) != 1:
-        raise ValueError(
-            "Invalid input for linprog: c should be a 1D array; it must "
-            "not have more than one non-singleton dimension")
-    if not(np.isfinite(c).all()):
-        raise ValueError(
-            "Invalid input for linprog: c must not contain values "
-            "inf, nan, or None")
+        n_x = len(c)
+        if n_x == 0 or len(c.shape) != 1:
+            raise ValueError(
+                "Invalid input for linprog: c should be a 1D array; it must "
+                "not have more than one non-singleton dimension")
+        if not(np.isfinite(c).all()):
+            raise ValueError(
+                "Invalid input for linprog: c must not contain values "
+                "inf, nan, or None")
 
     sparse_lhs = sps.issparse(A_eq) or sps.issparse(A_ub)
     try:
@@ -212,19 +211,18 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         raise TypeError(
             'Invalid value for linprog: A_ub must be a 2D array_like '
             'object of numerical values.')
-
-    n_ub = A_ub.shape[0]
-
-    if len(A_ub.shape) != 2 or A_ub.shape[1] != len(c):
-        raise ValueError(
-            "Invalid input for linprog: A_ub must have exactly two "
-            "dimensions, and the number of columns in A_ub must be "
-            "equal to the size of c ")
-    if (sps.issparse(A_ub) and not np.isfinite(A_ub.data).all()
-            or not sps.issparse(A_ub) and not np.isfinite(A_ub).all()):
-        raise ValueError(
-            "Invalid input for linprog: A_ub must not contain values "
-            "inf, nan, or None")
+    else:
+        n_ub = A_ub.shape[0]
+        if len(A_ub.shape) != 2 or A_ub.shape[1] != len(c):
+            raise ValueError(
+                "Invalid input for linprog: A_ub must have exactly two "
+                "dimensions, and the number of columns in A_ub must be "
+                "equal to the size of c.")
+        if (sps.issparse(A_ub) and not np.isfinite(A_ub.data).all()
+                or not sps.issparse(A_ub) and not np.isfinite(A_ub).all()):
+            raise ValueError(
+                "Invalid input for linprog: A_ub must not contain values "
+                "inf, nan, or None")
 
     try:
         b_ub = _format_b_constraints(b_ub)
@@ -233,18 +231,19 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "Invalid input for linprog: b_ub must be a 1D array of "
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
-    if len(b_ub.shape) != 1:
-        raise ValueError(
-            "Invalid input for linprog: b_ub should be a 1D array; it "
-            "must not have more than one non-singleton dimension")
-    if len(b_ub) != n_ub:
-        raise ValueError(
-            "Invalid input for linprog: The number of rows in A_ub must "
-            "be equal to the number of values in b_ub")
-    if not(np.isfinite(b_ub).all()):
-        raise ValueError(
-            "Invalid input for linprog: b_ub must not contain values "
-            "inf, nan, or None")
+    else:
+        if len(b_ub.shape) != 1:
+            raise ValueError(
+                "Invalid input for linprog: b_ub should be a 1D array; it "
+                "must not have more than one non-singleton dimension")
+        if len(b_ub) != n_ub:
+            raise ValueError(
+                "Invalid input for linprog: The number of rows in A_ub must "
+                "be equal to the number of values in b_ub")
+        if not(np.isfinite(b_ub).all()):
+            raise ValueError(
+                "Invalid input for linprog: b_ub must not contain values "
+                "inf, nan, or None")
 
     try:
         A_eq = _format_A_constraints(A_eq, n_x, sparse_lhs=sparse_lhs)
@@ -252,20 +251,19 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         raise TypeError(
             'Invalid value for linprog: A_eq must be a 2D array_like '
             'object of numerical values.')
+    else:
+        n_eq = A_eq.shape[0]
+        if len(A_eq.shape) != 2 or A_eq.shape[1] != len(c):
+            raise ValueError(
+                "Invalid input for linprog: A_eq must have exactly two "
+                "dimensions, and the number of columns in A_eq must be "
+                "equal to the size of c ")
 
-    n_eq = A_eq.shape[0]
-    if len(A_eq.shape) != 2 or A_eq.shape[1] != len(c):
-        raise ValueError(
-            "Invalid input for linprog: A_eq must have exactly two "
-            "dimensions, and the number of columns in A_eq must be "
-            "equal to the size of c ")
-
-    # TODO: Move to _check_sparse_inputs
-    if (sps.issparse(A_eq) and not np.isfinite(A_eq.data).all()
-            or not sps.issparse(A_eq) and not np.isfinite(A_eq).all()):
-        raise ValueError(
-            "Invalid input for linprog: A_eq must not contain values "
-            "inf, nan, or None")
+        if (sps.issparse(A_eq) and not np.isfinite(A_eq.data).all()
+                or not sps.issparse(A_eq) and not np.isfinite(A_eq).all()):
+            raise ValueError(
+                "Invalid input for linprog: A_eq must not contain values "
+                "inf, nan, or None")
 
     try:
         b_eq = _format_b_constraints(b_eq)
@@ -274,18 +272,19 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "Invalid input for linprog: b_eq must be a 1D array of "
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
-    if len(b_eq.shape) != 1:
-        raise ValueError(
-            "Invalid input for linprog: b_eq should be a 1D array; it "
-            "must not have more than one non-singleton dimension")
-    if len(b_eq) != n_eq:
-        raise ValueError(
-            "Invalid input for linprog: The number of rows in A_ub must "
-            "be equal to the number of values in b_ub")
-    if not(np.isfinite(b_eq).all()):
-        raise ValueError(
-            "Invalid input for linprog: b_eq must not contain values "
-            "inf, nan, or None")
+    else:
+        if len(b_eq.shape) != 1:
+            raise ValueError(
+                "Invalid input for linprog: b_eq should be a 1D array; it "
+                "must not have more than one non-singleton dimension")
+        if len(b_eq) != n_eq:
+            raise ValueError(
+                "Invalid input for linprog: The number of rows in A_ub must "
+                "be equal to the number of values in b_ub")
+        if not(np.isfinite(b_eq).all()):
+            raise ValueError(
+                "Invalid input for linprog: b_eq must not contain values "
+                "inf, nan, or None")
 
     # x0 gives a (optional) starting solution to the solver. As this is
     # not required if x0 is None no initial solution is used and does not
