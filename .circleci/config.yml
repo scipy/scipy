@@ -117,7 +117,7 @@ jobs:
       - run:
           name: install PyPy3.6-v7.0
           command: |
-            wget https://bitbucket.org/pypy/pypy/downloads/pypy3.6-v7.0.0-linux64.tar.bz2 -O pypy.tar.bz2
+            wget http://buildbot.pypy.org/nightly/py3.6/pypy-c-jit-latest-linux64.tar.bz2 -O pypy.tar.bz2
             mkdir -p pypy3.6
             (cd pypy3.6; tar --strip-components=1 -xf ../pypy.tar.bz2)
             export PATH=${PWD}/pypy3.6/bin:$PATH
@@ -132,7 +132,7 @@ jobs:
             export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
             pypy3 -mpip install --upgrade pip setuptools wheel
             pypy3 -mpip install Cython>=0.28.5
-            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist pytest-timeout Tempita mpmath numpy>=1.15.0
+            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist pytest-timeout Tempita mpmath numpy
       - run:
           name: build SciPy
           command: |
