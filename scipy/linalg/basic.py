@@ -1260,6 +1260,11 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Singular values smaller than ``max(M, N) * eps`` are considered zero
         where ``eps`` is the corresponding machine precision value of the
         datatype of ``a``.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just `eps` without the
+            factor ``max(M, N)``.
+
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
@@ -1321,6 +1326,11 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Cutoff for 'small' singular values. If omitted, singular values smaller
         than ``max(M,N)*largest_singular_value*eps`` are considered zero where
         ``eps`` is the machine precision.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
+
     return_rank : bool, optional
         If True, return the effective rank of the matrix.
     check_finite : bool, optional
@@ -1389,6 +1399,11 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         Cutoff for 'small' singular values. If omitted, singular values smaller
         than ``max(M,N)*largest_singular_value*eps`` are considered zero where
         ``eps`` is the machine precision.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
+
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
         triangle of `a`. (Default: lower)

@@ -1279,6 +1279,19 @@ class TestPinvSymmetric(object):
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
 
+def test_pinv_pinv2_comparison():  # As reported in gh-8861
+    I_6 = np.eye(6)
+    Ts = np.diag([-1] * 4 + [-2], k=-1) + np.diag([-2] + [-1] * 4, k=1)
+    T = I_6 + Ts
+    A = 25 * (np.kron(I_6, T) + np.kron(Ts, I_6))
+
+    Ap, Ap2 = pinv(A), pinv2(A)
+
+    tol = np.spacing(1000.)
+    assert_allclose(A @ Ap @ A - A, A @ Ap2 @ A - A, rtol=0., atol=tol)
+    assert_allclose(Ap @ A @ Ap - Ap, Ap2 @ A @ Ap2 - Ap2, rtol=0., atol=tol)
+
+
 class TestVectorNorms(object):
 
     def test_types(self):
