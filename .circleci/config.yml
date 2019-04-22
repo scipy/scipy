@@ -91,79 +91,6 @@ jobs:
             git commit -m "Docs build of $CIRCLE_SHA1";
             git push --set-upstream origin gh-pages --force
 
-
-  # Run test suite on pypy3
-  pypy3:
-    docker:
-      # circle CI doesn't provide a pypy image. There is pypy:3.6-7.0 from
-      # https://github.com/docker-library/pypy, but it seems to be based on jessie
-      # so prefer one based on the same image as cpython
-      # image: pypy:3.6-7.0
-      - image: circleci/python:3.7.0
-    steps:
-      - restore_cache:
-          keys:
-            - pypy3.6v7.0-ccache-{{ .Branch }}
-            - pypy3.6v7.0-ccache
-      - checkout
-      - run:
-          name: install libs and set global env vars
-          command: |
-            sudo apt-get -yq update
-            sudo apt-get -yq install libatlas-dev libatlas-base-dev liblapack-dev gfortran ccache
-            ccache -M 512M
-            echo "export CCACHE_COMPRESS=1" >> $BASH_ENV
-            echo "export PATH=/usr/lib/ccache:$PATH" >> $BASH_ENV
-      - run:
-          name: install PyPy3.6-v7.0
-          command: |
-            wget https://bitbucket.org/pypy/pypy/downloads/pypy3.6-v7.0.0-linux64.tar.bz2 -O pypy.tar.bz2
-            mkdir -p pypy3.6
-            (cd pypy3.6; tar --strip-components=1 -xf ../pypy.tar.bz2)
-            export PATH=${PWD}/pypy3.6/bin:$PATH
-            echo "export PATH=${PWD}/pypy3.6/latest/bin:$PATH" >> $BASH_ENV
-            # Rebuild the _ssl module to accomodate for different openssl library
-            (cd pypy3.6/lib_pypy; pypy3 -c \
-                'from _ssl_build import ffi; ffi.compile(verbose=False)' 2> /dev/null)
-            pypy3 -mensurepip
-      - run:
-          name: setup pypy3
-          command: |
-            export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
-            pypy3 -mpip install --upgrade pip setuptools wheel
-            pypy3 -mpip install Cython>=0.28.5
-            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist pytest-timeout Tempita mpmath numpy>=1.15.0
-      - run:
-          name: build SciPy
-          command: |
-            # Limit parallelism for Cythonization to 4 processes, to
-            # avoid exceeding CircleCI memory limits
-            export SCIPY_NUM_CYTHONIZE_JOBS=4
-            export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
-            # Less aggressive optimization flags for faster compilation
-            OPT="-O1" FOPT="-O1" pypy3 setup.py build
-      - save_cache:
-          key: pypy3-v7.0-ccache-{{ .Branch }}-{{ .BuildNum }}
-          paths:
-            - ~/.ccache
-            - ~/.cache/pip
-      - run:
-          name: test
-          command: |
-            # CircleCI has 4G memory limit, play it safe
-            export SCIPY_AVAILABLE_MEM=1G
-            # Try to limit per-process GC memory usage
-            export PYPY_GC_MAX=900MB
-            mkdir -p ${CIRCLE_WORKING_DIRECTORY}/test-results/pytest
-            pypy3 runtests.py -- -rfEX -n 2 --durations=30 --timeout=45 --timeout-method=thread --junit-xml=${CIRCLE_WORKING_DIRECTORY}/test-results/pytest/junit-results.xml
-
-      # Save the JUnit file
-      - store_test_results:
-          path: test-results/
-      - store_artifacts:
-          path: test-results/
-          destination: test-results
-
 workflows:
   version: 2
   default:
@@ -176,4 +103,3 @@ workflows:
           filters:
             branches:
               only: master
-      - pypy3
