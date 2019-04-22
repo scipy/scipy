@@ -1287,7 +1287,7 @@ def test_pinv_pinv2_comparison():  # As reported in gh-8861
 
     Ap, Ap2 = pinv(A), pinv2(A)
 
-    tol = np.spacing(1000.)
+    tol = 1e-11
     assert_allclose(A @ Ap @ A - A, A @ Ap2 @ A - A, rtol=0., atol=tol)
     assert_allclose(Ap @ A @ Ap - Ap, Ap2 @ A @ Ap2 - Ap2, rtol=0., atol=tol)
 
