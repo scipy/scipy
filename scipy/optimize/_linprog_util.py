@@ -69,6 +69,58 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     return options, A_ub, A_eq
 
 
+def _format_A_constraints(A, n_x, sparse_lhs=False):
+    """Convert the LHS of the (in)equality constranints
+
+    Parameters
+    ----------
+    A : 2D array_like
+        2D array such that ``A @ x`` gives the values of the upper-bound
+        (in)equality constraints at ``x``.
+    n_x : int
+        The number of variables in the linear programming problem.
+    sparse_lhs : bool
+        Whether either of `A_ub` or `A_eq` are sparse. If true return a
+        coo_matrix instead of a numpy array.
+
+    Returns
+    -------
+    np.ndarray or sparse.coo_matrix
+        2D array such that ``A @ x`` gives the values of the upper-bound
+        (in)equality constraints at ``x``.
+
+    """
+    _to_lhs_constraint = sps.coo_matrix if sparse_lhs else np.array
+    if A is not None:
+        return _to_lhs_constraint(A, dtype=float, copy=True)
+    elif sparse_lhs:
+        return _to_lhs_constraint((0, n_x), dtype=float)
+    else:
+        return np.zeros((0, n_x), dtype=float)
+
+
+def _format_b_constraints(b):
+    """Format the upper bounds  constraints `b
+
+    Parameters
+    ----------
+    b : 1D array_like
+        1D array of values representing the upper-bound of each (in)equality
+        constraint (row) in ``A``.
+
+    Returns
+    -------
+    1D np.array
+        1D array of values representing the upper-bound of each (in)equality
+        constraint (row) in ``A``.
+
+    """
+    if b is None:
+        return  np.array([], dtype=float)
+    b = np.array(b, dtype=float, copy=True).squeeze()
+    return b if b.size != 1 else b.reshape((-1))
+
+
 def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
                   x0=None):
     """
@@ -153,17 +205,9 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "Invalid input for linprog: c must not contain values "
             "inf, nan, or None")
 
-    #TODO: Move sparse array checks to _check_sparse_inputs function
-    #      as very similar checks already occur.
+    sparse_lhs = sps.issparse(A_eq) or sps.issparse(A_ub)
     try:
-        if sps.issparse(A_eq) or sps.issparse(A_ub):
-            A_ub = sps.coo_matrix(
-                (0, n_x), dtype=float) if A_ub is None else sps.coo_matrix(
-                A_ub, dtype=float).copy()
-        else:
-            A_ub = np.zeros(
-                (0, n_x), dtype=float) if A_ub is None else np.asarray(
-                A_ub, dtype=float).copy()
+        A_ub = _format_A_constraints(A_ub, n_x, sparse_lhs=sparse_lhs)
     except ValueError:
         raise TypeError(
             'Invalid value for linprog: A_ub must be a 2D array_like '
@@ -183,17 +227,12 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "inf, nan, or None")
 
     try:
-        if b_ub is None:
-            b_ub = np.array([], dtype=float)
-        else:
-            b_ub = np.array(b_ub, dtype=float, copy=True).squeeze()
+        b_ub = _format_b_constraints(b_ub)
     except ValueError:
         raise TypeError(
             "Invalid input for linprog: b_ub must be a 1D array of "
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
-    if b_ub.size == 1:
-        b_ub = b_ub.reshape((-1))
     if len(b_ub.shape) != 1:
         raise ValueError(
             "Invalid input for linprog: b_ub should be a 1D array; it "
@@ -208,18 +247,11 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "inf, nan, or None")
 
     try:
-        if sps.issparse(A_eq) or sps.issparse(A_ub):
-            A_eq = sps.coo_matrix(
-                (0, n_x), dtype=float) if A_eq is None else sps.coo_matrix(
-                A_eq, dtype=float).copy()
-        else:
-            A_eq = np.zeros(
-                (0, n_x), dtype=float) if A_eq is None else np.asarray(
-                A_eq, dtype=float).copy()
+        A_eq = _format_A_constraints(A_eq, n_x, sparse_lhs=sparse_lhs)
     except ValueError:
         raise TypeError(
-            "Invalid input for linprog: A_eq must be a 2D array with each "
-            "row representing an equality constraint")
+            'Invalid value for linprog: A_eq must be a 2D array_like '
+            'object of numerical values.')
 
     n_eq = A_eq.shape[0]
     if len(A_eq.shape) != 2 or A_eq.shape[1] != len(c):
@@ -236,17 +268,12 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "inf, nan, or None")
 
     try:
-        if b_eq is None:
-            b_eq = np.array([], dtype=float)
-        else:
-            b_eq = np.array(b_eq, dtype=float, copy=True).squeeze()
+        b_eq = _format_b_constraints(b_eq)
     except ValueError:
         raise TypeError(
             "Invalid input for linprog: b_eq must be a 1D array of "
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
-    if b_eq.size == 1:
-        b_eq = b_eq.reshape((-1))
     if len(b_eq.shape) != 1:
         raise ValueError(
             "Invalid input for linprog: b_eq should be a 1D array; it "
