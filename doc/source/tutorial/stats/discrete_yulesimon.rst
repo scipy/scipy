@@ -13,6 +13,7 @@ distribution. The latent variable representation described above is used for
 random variate generation.
 
 .. math::
+   :nowrap:
 
     \begin{eqnarray*}
     p \left( k; \alpha \right) & = & \alpha \frac{\Gamma\left(k\right)\Gamma\left(\alpha + 1\right)}{\Gamma\left(k+\alpha+1\right)} \\
@@ -28,8 +29,8 @@ Now
 
     \begin{eqnarray*} \mu & = & \frac{\alpha}{\alpha-1}\\
     \mu_{2} & = &  \frac{\alpha^2}{(\alpha-1)^2(\alpha-2)} \\
-    \gamma_{1} & = & \frac{ \sqrt(\alpha - 2)  (\alpha + 1)^2 }{(\alpha  (\alpha - 3)) }\\
-    \gamma_{2} & = & \frac{ (\alpha + 3) + (\alpha^3 - 49\alpha - 22)}{ (\alpha (\alpha - 4)(\alpha - 3)) }
+    \gamma_{1} & = & \frac{ \sqrt{\left( \alpha - 2 \right)} \left( \alpha + 1 \left)^2}{\left( \alpha  \left( \alpha - 3\right)\right) }\\
+    \gamma_{2} & = & \frac{ \left(\alpha + 3\right) + \left(\alpha^3 - 49\alpha - 22\right)}{ \left(\alpha \left(\alpha - 4\right)\left(\alpha - 3\right)\right) }
     \end{eqnarray*}
 
 for :math:`\alpha>1` otherwise the mean is infinite and the variance does not exist.
