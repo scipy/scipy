@@ -3974,7 +3974,7 @@ class levy_stable_gen(rv_continuous):
                         intg_kwargs["points"] = [intg_max.x]
                     intg = integrate.quad(f, -xi, np.pi / 2, **intg_kwargs)[0]
                     return alpha * intg / np.pi / np.abs(alpha - 1
-                                                        ) / (x0 - zeta)
+                                                         ) / (x0 - zeta)
             elif x0 == zeta:
                 return sc.gamma(1 + 1 / alpha) * np.cos(xi) / np.pi / (
                     (1 + zeta**2)**(1 / alpha / 2)
@@ -3991,7 +3991,7 @@ class levy_stable_gen(rv_continuous):
                 def V(theta):
                     expr_1 = np.pi / 2 + beta * theta
                     return 2. * expr_1 * np.exp(expr_1 * np.tan(theta) / beta
-                                               ) / np.cos(theta) / np.pi
+                                                ) / np.cos(theta) / np.pi
 
                 def g(theta):
                     return np.exp(-np.pi * x / 2. / beta) * V(theta)
@@ -4082,7 +4082,7 @@ class levy_stable_gen(rv_continuous):
                 def V(theta):
                     expr_1 = np.pi / 2 + beta * theta
                     return 2. * expr_1 * np.exp(expr_1 * np.tan(theta) / beta
-                                               ) / np.cos(theta) / np.pi
+                                                ) / np.cos(theta) / np.pi
 
                 with np.errstate(all="ignore"):
                     expr_1 = np.exp(-np.pi * x / beta / 2.)
@@ -4160,7 +4160,7 @@ class levy_stable_gen(rv_continuous):
                     3 - fft_n_points_two_power
                 ) * max_abs_x if fft_grid_spacing is None else fft_grid_spacing
                 q = np.ceil(np.log(2 * max_abs_x / h) / np.log(2)
-                           ) + 2 if fft_n_points_two_power is None else int(
+                            ) + 2 if fft_n_points_two_power is None else int(
                                fft_n_points_two_power
                            )
 
@@ -4218,7 +4218,7 @@ class levy_stable_gen(rv_continuous):
             else:
                 warnings.warn(
                  'Cumulative density calculations experimental for FFT method.'
-                    + ' Use piecewise method instead.', RuntimeWarning
+                 + ' Use piecewise method instead.', RuntimeWarning
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0, )]
@@ -4234,7 +4234,7 @@ class levy_stable_gen(rv_continuous):
                     3 - fft_n_points_two_power
                 ) * max_abs_x if fft_grid_spacing is None else fft_grid_spacing
                 q = np.ceil(np.log(2 * max_abs_x / h) / np.log(2)
-                           ) + 2 if fft_n_points_two_power is None else int(
+                            ) + 2 if fft_n_points_two_power is None else int(
                                fft_n_points_two_power
                            )
 

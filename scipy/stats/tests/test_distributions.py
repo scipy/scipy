@@ -1597,7 +1597,7 @@ class TestLevyStable(object):
                  filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
-                          ] if filter_func is not None else data
+                           ] if filter_func is not None else data
             subdata = subdata[
                 subdata['p'] <= 1
             ]  # we remove some spurious results from Nolan's stablec
@@ -1666,12 +1666,12 @@ class TestLevyStable(object):
                  filter_func) in enumerate(tests):
             stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
-                          ] if filter_func is not None else data
+                           ] if filter_func is not None else data
             with suppress_warnings() as sup:
                 sup.record(
                  RuntimeWarning,
                  'Cumulative density calculations experimental for FFT method.'
-                    + ' Use piecewise method instead.*'
+                 + ' Use piecewise method instead.*'
                 )
                 p = stats.levy_stable.cdf(
                     subdata['x'],
@@ -1683,7 +1683,7 @@ class TestLevyStable(object):
                 subdata2 = rec_append_fields(subdata, 'calc', p)
                 failures = subdata2[
                   (np.abs(p - subdata['p']) >= 1.5 * 10.**(-decimal_places)) |
-                    np.isnan(p)
+                  np.isnan(p)
                 ]
                 assert_almost_equal(
                     p,
