@@ -70,7 +70,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
 
 
 def _format_A_constraints(A, n_x, sparse_lhs=False):
-    """Convert the LHS of the (in)equality constranints
+    """Format the left hand side of the constranints to a 2D array
 
     Parameters
     ----------
@@ -100,7 +100,7 @@ def _format_A_constraints(A, n_x, sparse_lhs=False):
 
 
 def _format_b_constraints(b):
-    """Format the upper bounds  constraints `b
+    """Format the upper bounds of the constraints to a 1D array
 
     Parameters
     ----------
@@ -213,7 +213,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             'object of numerical values.')
     else:
         n_ub = A_ub.shape[0]
-        if len(A_ub.shape) != 2 or A_ub.shape[1] != len(c):
+        if len(A_ub.shape) != 2 or A_ub.shape[1] != n_x:
             raise ValueError(
                 "Invalid input for linprog: A_ub must have exactly two "
                 "dimensions, and the number of columns in A_ub must be "
@@ -232,14 +232,12 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
     else:
-        if len(b_ub.shape) != 1:
+        if b_ub.shape != (n_ub,):
             raise ValueError(
                 "Invalid input for linprog: b_ub should be a 1D array; it "
-                "must not have more than one non-singleton dimension")
-        if len(b_ub) != n_ub:
-            raise ValueError(
-                "Invalid input for linprog: The number of rows in A_ub must "
-                "be equal to the number of values in b_ub")
+                "must not have more than one non-singleton dimension where "
+                "the number of rows in A_ub equal to the number of values "
+                "in b_ub")
         if not(np.isfinite(b_ub).all()):
             raise ValueError(
                 "Invalid input for linprog: b_ub must not contain values "
@@ -253,7 +251,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             'object of numerical values.')
     else:
         n_eq = A_eq.shape[0]
-        if len(A_eq.shape) != 2 or A_eq.shape[1] != len(c):
+        if len(A_eq.shape) != 2 or A_eq.shape[1] != n_x:
             raise ValueError(
                 "Invalid input for linprog: A_eq must have exactly two "
                 "dimensions, and the number of columns in A_eq must be "
@@ -273,14 +271,12 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
     else:
-        if len(b_eq.shape) != 1:
+        if b_eq.shape != (n_eq,):
             raise ValueError(
                 "Invalid input for linprog: b_eq should be a 1D array; it "
-                "must not have more than one non-singleton dimension")
-        if len(b_eq) != n_eq:
-            raise ValueError(
-                "Invalid input for linprog: The number of rows in A_ub must "
-                "be equal to the number of values in b_ub")
+                "must not have more than one non-singleton dimension and "
+                "the number of rows in A_eq equal to the number of values "
+                "in b_eq")
         if not(np.isfinite(b_eq).all()):
             raise ValueError(
                 "Invalid input for linprog: b_eq must not contain values "
