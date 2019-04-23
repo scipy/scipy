@@ -11,12 +11,19 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+
+has_umfpack = True
 try:
     from scikits.umfpack import UmfpackWarning
-    has_umfpack = True
 except ImportError:
     has_umfpack = False
 
+has_cholmod = True
+try:
+    import sksparse
+except ImportError:
+    has_cholmod = False
+    
 import pytest
 
 
@@ -1402,9 +1409,16 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 class TestLinprogIPDense(LinprogIPTests):
     options = {"sparse": False}
 
+if has_cholmod:
+    class TestLinprogIPSparseCholmod(LinprogIPTests):
+        options = {"sparse": True, "cholesky":True}
+        
+if has_umfpack:
+    class TestLinprogIPSparseUmfpack(LinprogIPTests):
+        options = {"sparse": True, "cholesky":False}
 
 class TestLinprogIPSparse(LinprogIPTests):
-    options = {"sparse": True}
+    options = {"sparse": True, "cholesky":False, "sym_pos":False}
 
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
