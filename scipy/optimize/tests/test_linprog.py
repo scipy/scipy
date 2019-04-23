@@ -1478,6 +1478,21 @@ class TestLinprogIPSpecific(object):
     # the following tests don't need to be performed separately for
     # sparse presolve, sparse after presolve, and dense
 
+    def test_solver_select(self):
+        # check that default solver is selected as expected
+        if has_cholmod:
+            options = {'sparse':True, 'cholesky':True}
+        elif has_umfpack:
+            options = {'sparse':True, 'cholesky':False}
+        else:
+            options = {'sparse':True, 'cholesky':False, 'sym_pos':False}
+        A, b, c = lpgen_2d(20, 20)
+        res1 = linprog(c, A_ub=A, b_ub=b, method=self.method, options=options)
+        res2 = linprog(c, A_ub=A, b_ub=b, method=self.method) # default solver
+        assert_allclose(res1.fun, res2.fun,
+                        err_msg="linprog default solver unexpected result",
+                        rtol=1e-15, atol=1e-15)
+
     def test_unbounded_below_no_presolve_original(self):
         # formerly caused segfault in TravisCI w/ "cholesky":True
         c = [-1]
