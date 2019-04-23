@@ -26,9 +26,9 @@ def prepare_input(x, y, axis, dydx=None):
     """
 
     x, y = map(np.asarray, (x, y))
-
     if np.issubdtype(x.dtype, np.complexfloating):
         raise ValueError("`x` must contain real values.")
+    x = x.astype(float)
 
     if np.issubdtype(y.dtype, np.complexfloating):
         dtype = complex
