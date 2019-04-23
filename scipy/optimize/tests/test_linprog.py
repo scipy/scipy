@@ -11,6 +11,7 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+import pytest
 
 has_umfpack = True
 try:
@@ -23,8 +24,6 @@ try:
     import sksparse
 except ImportError:
     has_cholmod = False
-    
-import pytest
 
 
 def _assert_iteration_limit_reached(res, maxiter):
@@ -1066,6 +1065,8 @@ class LinprogCommonTests(object):
             ])
 
         with suppress_warnings() as sup:
+            if has_umfpack:
+                sup.filter(UmfpackWarning)
             sup.filter(OptimizeWarning,
                        "Solving system with option 'cholesky'")
             sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
@@ -1409,16 +1410,19 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 class TestLinprogIPDense(LinprogIPTests):
     options = {"sparse": False}
 
+
 if has_cholmod:
     class TestLinprogIPSparseCholmod(LinprogIPTests):
-        options = {"sparse": True, "cholesky":True}
-        
+        options = {"sparse": True, "cholesky": True}
+
+
 if has_umfpack:
     class TestLinprogIPSparseUmfpack(LinprogIPTests):
-        options = {"sparse": True, "cholesky":False}
+        options = {"sparse": True, "cholesky": False}
+
 
 class TestLinprogIPSparse(LinprogIPTests):
-    options = {"sparse": True, "cholesky":False, "sym_pos":False}
+    options = {"sparse": True, "cholesky": False, "sym_pos": False}
 
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
@@ -1481,14 +1485,14 @@ class TestLinprogIPSpecific(object):
     def test_solver_select(self):
         # check that default solver is selected as expected
         if has_cholmod:
-            options = {'sparse':True, 'cholesky':True}
+            options = {'sparse': True, 'cholesky': True}
         elif has_umfpack:
-            options = {'sparse':True, 'cholesky':False}
+            options = {'sparse': True, 'cholesky': False}
         else:
-            options = {'sparse':True, 'cholesky':False, 'sym_pos':False}
+            options = {'sparse': True, 'cholesky': False, 'sym_pos': False}
         A, b, c = lpgen_2d(20, 20)
         res1 = linprog(c, A_ub=A, b_ub=b, method=self.method, options=options)
-        res2 = linprog(c, A_ub=A, b_ub=b, method=self.method) # default solver
+        res2 = linprog(c, A_ub=A, b_ub=b, method=self.method)  # default solver
         assert_allclose(res1.fun, res2.fun,
                         err_msg="linprog default solver unexpected result",
                         rtol=1e-15, atol=1e-15)
