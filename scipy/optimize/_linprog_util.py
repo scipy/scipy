@@ -70,11 +70,11 @@ def _check_sparse_inputs(options, A_ub, A_eq):
 
 
 def _format_A_constraints(A, n_x, sparse_lhs=False):
-    """Format the left hand side of the constranints to a 2D array
+    """Format the left hand side of the constraints to a 2D array
 
     Parameters
     ----------
-    A : 2D array_like
+    A : 2D array
         2D array such that ``A @ x`` gives the values of the upper-bound
         (in)equality constraints at ``x``.
     n_x : int
@@ -90,13 +90,14 @@ def _format_A_constraints(A, n_x, sparse_lhs=False):
         (in)equality constraints at ``x``.
 
     """
-    _to_lhs_constraint = sps.coo_matrix if sparse_lhs else np.array
-    if A is not None:
-        return _to_lhs_constraint(A, dtype=float, copy=True)
-    elif sparse_lhs:
-        return _to_lhs_constraint((0, n_x), dtype=float)
-    else:
+    if sparse_lhs:
+        return sps.coo_matrix(
+            (0, n_x) if A is None else A, dtype=float, copy=True
+        )
+    elif A is None:
         return np.zeros((0, n_x), dtype=float)
+    else:
+        return np.array(A, dtype=float, copy=True)
 
 
 def _format_b_constraints(b):
@@ -104,7 +105,7 @@ def _format_b_constraints(b):
 
     Parameters
     ----------
-    b : 1D array_like
+    b : 1D array
         1D array of values representing the upper-bound of each (in)equality
         constraint (row) in ``A``.
 
@@ -197,7 +198,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         n_x = len(c)
         if n_x == 0 or len(c.shape) != 1:
             raise ValueError(
-                "Invalid input for linprog: c should be a 1D array; it must "
+                "Invalid input for linprog: c must be a 1D array and must "
                 "not have more than one non-singleton dimension")
         if not(np.isfinite(c).all()):
             raise ValueError(
@@ -209,15 +210,15 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         A_ub = _format_A_constraints(A_ub, n_x, sparse_lhs=sparse_lhs)
     except ValueError:
         raise TypeError(
-            'Invalid value for linprog: A_ub must be a 2D array_like '
-            'object of numerical values.')
+            "Invalid input for linprog: A_ub must be a 2D array "
+            "of numerical values")
     else:
         n_ub = A_ub.shape[0]
         if len(A_ub.shape) != 2 or A_ub.shape[1] != n_x:
             raise ValueError(
                 "Invalid input for linprog: A_ub must have exactly two "
                 "dimensions, and the number of columns in A_ub must be "
-                "equal to the size of c.")
+                "equal to the size of c")
         if (sps.issparse(A_ub) and not np.isfinite(A_ub.data).all()
                 or not sps.issparse(A_ub) and not np.isfinite(A_ub).all()):
             raise ValueError(
@@ -234,9 +235,9 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     else:
         if b_ub.shape != (n_ub,):
             raise ValueError(
-                "Invalid input for linprog: b_ub should be a 1D array; it "
-                "must not have more than one non-singleton dimension where "
-                "the number of rows in A_ub equal to the number of values "
+                "Invalid input for linprog: b_ub must be a 1D array; b_ub "
+                "must not have more than one non-singleton dimension and "
+                "the number of rows in A_ub must equal the number of values "
                 "in b_ub")
         if not(np.isfinite(b_ub).all()):
             raise ValueError(
@@ -247,15 +248,15 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         A_eq = _format_A_constraints(A_eq, n_x, sparse_lhs=sparse_lhs)
     except ValueError:
         raise TypeError(
-            'Invalid value for linprog: A_eq must be a 2D array_like '
-            'object of numerical values.')
+            "Invalid input for linprog: A_eq must be a 2D array "
+            "of numerical values")
     else:
         n_eq = A_eq.shape[0]
         if len(A_eq.shape) != 2 or A_eq.shape[1] != n_x:
             raise ValueError(
                 "Invalid input for linprog: A_eq must have exactly two "
                 "dimensions, and the number of columns in A_eq must be "
-                "equal to the size of c ")
+                "equal to the size of c")
 
         if (sps.issparse(A_eq) and not np.isfinite(A_eq.data).all()
                 or not sps.issparse(A_eq) and not np.isfinite(A_eq).all()):
@@ -269,29 +270,28 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         raise TypeError(
             "Invalid input for linprog: b_eq must be a 1D array of "
             "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_ub")
+            "inequality constraint (row) in A_eq")
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
-                "Invalid input for linprog: b_eq should be a 1D array; it "
+                "Invalid input for linprog: b_eq must be a 1D array; b_eq "
                 "must not have more than one non-singleton dimension and "
-                "the number of rows in A_eq equal to the number of values "
+                "the number of rows in A_eq must equal the number of values "
                 "in b_eq")
         if not(np.isfinite(b_eq).all()):
             raise ValueError(
                 "Invalid input for linprog: b_eq must not contain values "
                 "inf, nan, or None")
 
-    # x0 gives a (optional) starting solution to the solver. As this is
-    # not required if x0 is None no initial solution is used and does not
-    # require checks.
+    # x0 gives a (optional) starting solution to the solver. If x0 is None,
+    # skip the checks. Initial solution will be generated automatically.
     if x0 is not None:
         try:
             x0 = np.array(x0, dtype=float, copy=True).squeeze()
         except ValueError:
             raise TypeError(
                 "Invalid input for linprog: x0 must be a 1D array of "
-                "numerical oefficients")
+                "numerical coefficients")
         if x0.ndim == 0:
             x0 = x0.reshape((-1))
         if len(x0) == 0 or x0.ndim != 1:
