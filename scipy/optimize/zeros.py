@@ -286,7 +286,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
-                msg = "derivative was zero."
+                msg = "Derivative was zero."
+                if disp:
+                    msg += (
+                        " Failed to converge after %d iterations, value is %s."
+                        % (itr + 1, p0))
+                    raise RuntimeError(msg)
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(
                     full_output, (p0, funcalls, itr + 1, _ECONVERR))
@@ -327,7 +332,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    msg = "Tolerance of %s reached" % (p1 - p0)
+                    msg = "Tolerance of %s reached." % (p1 - p0)
+                    if disp:
+                        msg += (
+                            " Failed to converge after %d iterations, value is %s."
+                            % (itr + 1, p1))
+                        raise RuntimeError(msg)
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
                 return _results_select(
@@ -346,7 +356,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
 
     if disp:
-        msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
+        msg = ("Failed to converge after %d iterations, value is %s."
+               % (itr + 1, p))
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
