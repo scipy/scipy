@@ -991,7 +991,7 @@ def _linprog_ip(
 
     For dense problems, solvers are tried in the following order:
 
-    1. ``scipy.linalg.cho_factor`` (if scikit-sparse and SuiteSparse are installed)
+    1. ``scipy.linalg.cho_factor``
 
     2. ``scipy.linalg.solve`` with option ``sym_pos=True``
 
@@ -1003,7 +1003,7 @@ def _linprog_ip(
 
     1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
 
-    2. ``scipy.sparse.linalg.factorized`` (if scikits.umfpack and SuiteSparse are installed)
+    2. ``scipy.sparse.linalg.factorized`` (if scikit-umfpack and SuiteSparse are installed)
 
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
 
