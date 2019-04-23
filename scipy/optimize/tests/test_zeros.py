@@ -406,9 +406,7 @@ class TestBasic(object):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
-        with pytest.raises(
-            RuntimeError,
-            match=r'Derivative was zero. Failed to converge after \d+ iterations, value is .*'):
+        with pytest.raises(RuntimeError, match='Derivative was zero'):
             result = zeros.newton(func, 0.0, dfunc)
 
     def test_newton_does_not_modify_x0(self):
@@ -690,3 +688,21 @@ def test_gh9254_flag_if_maxiter_exceeded(maximum_iterations, flag_expected):
     elif flag_expected == zeros.CONVERGED:
         # converged before maximum iterations
         assert result[1].iterations < maximum_iterations
+
+
+def test_gh9551_raise_error_if_disp_true():
+    """Test that if disp is true then zero derivative raises RuntimeError"""
+
+    def f(x):
+        return x*x + 1
+
+    def f_p(x):
+        return 2*x
+
+    assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
+    with pytest.raises(
+        RuntimeError,
+        match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+        result = zeros.newton(f, 1.0, f_p)
+    root = zeros.newton(f, complex(10.0, 10.0), f_p)
+    assert_allclose(root, complex(0.0, 1.0))
