@@ -112,6 +112,7 @@ def test_cont_basic(distname, arg):
         check_pdf_logpdf(distfn, arg, distname)
         check_cdf_logcdf(distfn, arg, distname)
         check_sf_logsf(distfn, arg, distname)
+        check_ppf_broadcast(distfn, arg, distname)
 
         alpha = 0.01
         if distname == 'rv_histogram_instance':
@@ -286,6 +287,83 @@ def test_rvs_gh2069_regression():
     assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
                      [[1], [2]], (4,))
 
+def test_nomodify_gh9900_regression():
+    # Regression test for gh-9990
+    # Prior to gh-9990, calls to stats.truncnorm._cdf() use what ever was
+    # set inside the stats.truncnorm instance during stats.truncnorm.cdf().
+    # This could cause issues wth multi-threaded code.
+    # Since then, the calls to cdf() are not permitted to modify the global
+    # stats.truncnorm instance.
+    tn = stats.truncnorm
+    # Use the right-half truncated normal
+    # Check that the cdf and _cdf return the same result.
+    npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)
+
+    # Now use the left-half truncated normal
+    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)
+    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)
+
+    # Check that the right-half truncated normal _cdf hasn't changed
+    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)  # NOT 1.6826894921370859
+    npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
+
+    # Check that the left-half truncated normal _cdf hasn't changed
+    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
+    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+
+
+def test_broadcast_gh9990_regression():
+    # Regression test for gh-9990
+    # The x-value 7 only lies within the support of 4 of the supplied
+    # distributions.  Prior to 9990, one array passed to
+    # stats.reciprocal._cdf would have 4 elements, but an array
+    # previously stored by stats.reciprocal_argcheck() would have 6, leading
+    # to a broadcast error.
+    a = np.array([1, 2, 3, 4, 5, 6])
+    b = np.array([8, 16, 1, 32, 1, 48])
+    ans = [stats.reciprocal.cdf(7, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(7, a, b), ans)
+
+    ans = [stats.reciprocal.cdf(1, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(1, a, b), ans)
+
+    ans = [stats.reciprocal.cdf(_a, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(a, a, b), ans)
+
+    ans = [stats.reciprocal.cdf(_b, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(b, a, b), ans)
+
+def test_broadcast_gh7933_regression():
+    # Check broadcast works
+    stats.truncnorm.logpdf(
+        np.array([3.0, 2.0, 1.0]),
+        a=(1.5 - np.array([6.0, 5.0, 4.0])) / 3.0,
+        b=np.inf,
+        loc=np.array([6.0, 5.0, 4.0]),
+        scale=3.0
+    )
+
+def test_gh2002_regression():
+    # Add a check that broadcast works in situations where only some
+    # x-values are compatible with some of the shape arguments.
+    x = np.r_[-2:2:101j]
+    a = np.r_[-np.ones(50), np.ones(51)]
+    expected = [stats.truncnorm.pdf(_x, _a, np.inf) for _x, _a in zip(x, a)]
+    ans = stats.truncnorm.pdf(x, a, np.inf)
+    npt.assert_array_almost_equal(ans, expected)
+
+def test_gh1320_regression():
+    # Check that the first example from gh-1320 now works.
+    c = 2.62
+    stats.genextreme.ppf(0.5, np.array([[c], [c + 0.5]]))
+    # The other examples in gh-1320 appear to have stopped working
+    # some time ago.
+    # ans = stats.genextreme.moment(2, np.array([c, c + 0.5]))
+    # expected = np.array([25.50105963, 115.11191437])
+    # stats.genextreme.moment(5, np.array([[c], [c + 0.5]]))
+    # stats.genextreme.moment(5, np.array([c, c + 0.5]))
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
@@ -390,6 +468,19 @@ def check_cdf_logcdf(distfn, args, msg):
     logcdf = logcdf[np.isfinite(logcdf)]
     msg += " - logcdf-log(cdf) relationship"
     npt.assert_almost_equal(np.log(cdf), logcdf, decimal=7, err_msg=msg)
+
+
+def check_ppf_broadcast(distfn, arg, msg):
+    # compares ppf for multiple argsets.
+    num_repeats = 5
+    args = [] * num_repeats
+    if arg:
+        args = [np.array([_] * num_repeats) for _ in arg]
+
+    median = distfn.ppf(0.5, *arg)
+    medians = distfn.ppf(0.5, *args)
+    msg += " - ppf multiple"
+    npt.assert_almost_equal(medians, [median] * num_repeats, decimal=7, err_msg=msg)
 
 
 def check_distribution_rvs(dist, args, alpha, rvs):
