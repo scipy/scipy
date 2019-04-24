@@ -1256,10 +1256,10 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
-        Cutoff for 'small' singular values in the least-squares solver.
-        Singular values smaller than ``max(M, N) * eps`` are considered zero
-        where ``eps`` is the corresponding machine precision value of the
-        datatype of ``a``.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered zero. If both are omitted, the default
+        ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the
+        corresponding machine precision value of the datatype of ``a``.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just `eps` without the
@@ -1325,9 +1325,10 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float or None
-        Cutoff for 'small' singular values. If omitted, singular values smaller
-        than ``max(M,N)*largest_singular_value*eps`` are considered zero where
-        ``eps`` is the machine precision.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered as zero. If both are omitted, the default
+        ``max(M,N)*largest_singular_value*eps`` is used where ``eps`` is the
+        machine precision value of the datatype of ``a``.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just ``eps*f`` where ``f``
@@ -1398,9 +1399,10 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
     cond, rcond : float or None
-        Cutoff for 'small' singular values. If omitted, singular values smaller
-        than ``max(M,N)*largest_singular_value*eps`` are considered zero where
-        ``eps`` is the machine precision.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered as zero. If both are omitted, the default
+        ``max(M,N)*largest_eigenvalue*eps`` is used where ``eps`` is the
+        machine precision value of the datatype of ``a``.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just ``eps*f`` where ``f``
