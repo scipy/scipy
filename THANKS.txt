@@ -199,6 +199,8 @@ Kai Striega for improvements to the scipy.optimize.linprog simplex method.
 Josua Sassen for improvements to scipy.interpolate.Rbf
 Stiaan Gerber for a bug fix in scipy.optimize.
 Nicolas Hug for the Yeo-Johnson transformation.
+Idan David for improvements to the log survival function and log cumulative
+     distribution function of the hypergeometric distribution.
 Petar Mlinarić for a bug fix in scipy.io.mmio.
 Franz Forstmayr for documentation in scipy.signal
 Vega Theil Carstensen for a bug fix in scipy.optimize.linesearch.

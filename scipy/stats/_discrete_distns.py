@@ -395,7 +395,6 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        """More precise calculation, 1 - cdf doesn't cut it."""
         # This for loop is needed because `k` can be an array. If that's the
         # case, the sf() method makes M, n and N arrays of the same shape. We
         # therefore unpack all inputs args, so we can do the manual
@@ -409,14 +408,27 @@ class hypergeom_gen(rv_discrete):
         return np.asarray(res)
 
     def _logsf(self, k, M, n, N):
-        """
-        More precise calculation than log(sf)
-        """
         res = []
         for quant, tot, good, draw in zip(k, M, n, N):
-            # Integration over probability mass function using logsumexp
-            k2 = np.arange(quant + 1, draw + 1)
-            res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+            if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-cdf)
+                res.append(log1p(-exp(self.logcdf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(quant + 1, draw + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+        return np.asarray(res)
+
+    def _logcdf(self, k, M, n, N):
+        res = []
+        for quant, tot, good, draw in zip(k, M, n, N):
+            if (quant + 0.5) * (tot + 0.5) > (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-sf)
+                res.append(log1p(-exp(self.logsf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(0, quant + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
         return np.asarray(res)
 
 
@@ -763,7 +775,7 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the 
+    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the
     Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
