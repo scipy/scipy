@@ -1297,10 +1297,12 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     a = _asarray_validated(a, check_finite=check_finite)
     b = np.identity(a.shape[0], dtype=a.dtype)
-    if rcond is None:
-        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
-    else:
+
+    if rcond is not None:
         cond = rcond
+
+    if cond is None:
+        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
 
     x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
 

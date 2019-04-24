@@ -1292,6 +1292,15 @@ def test_pinv_pinv2_comparison():  # As reported in gh-8861
     assert_allclose(Ap @ A @ Ap - Ap, Ap2 @ A @ Ap2 - Ap2, rtol=0., atol=tol)
 
 
+@pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
+@pytest.mark.parametrize('pinv_', (pinv, pinvh, pinv2))
+def test_auto_rcond(scale, pinv_):
+    x = np.array([[1, 0], [0, 1e-10]]) * scale
+    expected = np.diag(1. / np.diag(x))
+    x_inv = pinv_(x)
+    assert_allclose(x_inv, expected)
+
+
 class TestVectorNorms(object):
 
     def test_types(self):
