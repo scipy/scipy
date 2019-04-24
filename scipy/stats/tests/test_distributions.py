@@ -599,7 +599,7 @@ class TestHypergeom(object):
 
         result = stats.hypergeom.logsf(k, M, n, N)
         expected = -2.566567e-68   # From R
-        assert_almost_equal(result, expected, decimal=3)
+        assert_almost_equal(result, expected, decimal=15)
 
     def test_logcdf(self):
         # Test logcdf for very large numbers. See issue #8692
@@ -624,7 +624,7 @@ class TestHypergeom(object):
 
         result = stats.hypergeom.logcdf(k, M, n, N)
         expected = -7.565148879229e-23    # From R
-        assert_almost_equal(result, expected, decimal=3)
+        assert_almost_equal(result, expected, decimal=15)
 
         k = 125
         M = 1600
@@ -633,7 +633,19 @@ class TestHypergeom(object):
 
         result = stats.hypergeom.logcdf(k, M, n, N)
         expected = -4.242688e-12    # From R
-        assert_almost_equal(result, expected, decimal=3)
+        assert_almost_equal(result, expected, decimal=15)
+
+        # test broadcasting robustness based on reviewer
+        # concerns in PR 9603; using an array version of
+        # the example from issue #8692
+        k = np.array([40, 40, 40])
+        M = 1600
+        n = 50
+        N = 300
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = np.full(3, -7.565148879229e-23)  # filled from R result
+        assert_almost_equal(result, expected, decimal=15)
 
 
 class TestLoggamma(object):
