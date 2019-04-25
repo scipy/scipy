@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 import numpy as np
 from numpy.testing import assert_allclose
+from pytest import raises
 from scipy.spatial.transform import Rotation, RotationSpline
 from scipy.spatial.transform._rotation_spline import (
     _angular_rate_to_rotvec_dot_matrix,
@@ -137,3 +138,25 @@ def test_spline_properties():
     ap = spline(times + h, 2)
     assert_allclose(a0, am, rtol=1e-7)
     assert_allclose(a0, ap, rtol=1e-7)
+
+
+def test_error_handling():
+    raises(ValueError, RotationSpline, [1.0], Rotation.random())
+
+    r = Rotation.random(10)
+    t = np.arange(10).reshape(5, 2)
+    raises(ValueError, RotationSpline, t, r)
+
+    t = np.arange(9)
+    raises(ValueError, RotationSpline, t, r)
+
+    t = np.arange(10)
+    t[5] = 0
+    raises(ValueError, RotationSpline, t, r)
+
+    t = np.arange(10)
+
+    s = RotationSpline(t, r)
+    raises(ValueError, s, 10, -1)
+
+    raises(ValueError, s, np.arange(10).reshape(5, 2))
