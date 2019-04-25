@@ -889,13 +889,13 @@ For the example where both samples are drawn from the same distribution,
 we cannot reject the null hypothesis since the pvalue is high
 
     >>> stats.ks_2samp(rvs1, rvs2)
-    Ks_2sampResult(statistic=0.025999999999999995, pvalue=0.9954119517306488)
+    Ks_2sampResult(statistic=0.026, pvalue=0.9959527565364388)
 
 In the second example, with different location, i.e. means, we can
 reject the null hypothesis since the pvalue is below 1%
 
     >>> stats.ks_2samp(rvs1, rvs3)
-    Ks_2sampResult(statistic=0.11399999999999999, pvalue=0.002713210366128314)
+    Ks_2sampResult(statistic=0.114, pvalue=0.00299005061044668)
 
 Kernel Density Estimation
 -------------------------
