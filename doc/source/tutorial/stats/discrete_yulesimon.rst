@@ -29,7 +29,7 @@ Now
 
     \begin{eqnarray*} \mu & = & \frac{\alpha}{\alpha-1}\\
     \mu_{2} & = &  \frac{\alpha^2}{\left(\alpha-1\right)^2\left( \alpha - 2 \right)}\\
-    \gamma_{1} & = & \frac{ \sqrt{\left( \alpha - 2 \right)} \left( \alpha + 1 \left)^2}{ \alpha  \left( \alpha - 3 \right)}\\
+    \gamma_{1} & = & \frac{ \sqrt{\left( \alpha - 2 \right)} \left( \alpha + 1 \right)^2}{ \alpha  \left( \alpha - 3 \right)}\\
     \gamma_{2} & = & \frac{ \left(\alpha + 3\right) + \left(\alpha^3 - 49\alpha - 22\right)}{\alpha \left(\alpha - 4\right)\left(\alpha - 3 \right) }
     \end{eqnarray*}
 
