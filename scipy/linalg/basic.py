@@ -1256,8 +1256,9 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
-        Cutoff for 'small' singular values; singular values smaller than this
-        value are considered zero. If both are omitted, the default
+        Cutoff factor for 'small' singular values. In `lstsq`, 
+        singular values less than ``cond*largest_singular_value`` will be
+        considered as zero. If both are omitted, the default value
         ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the
         corresponding machine precision value of the datatype of ``a``.
 
@@ -1326,7 +1327,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Matrix to be pseudo-inverted.
     cond, rcond : float or None
         Cutoff for 'small' singular values; singular values smaller than this
-        value are considered as zero. If both are omitted, the default
+        value are considered as zero. If both are omitted, the default value
         ``max(M,N)*largest_singular_value*eps`` is used where ``eps`` is the
         machine precision value of the datatype of ``a``.
 
