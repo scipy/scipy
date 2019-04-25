@@ -2812,6 +2812,9 @@ class TestKSTwoSamples(object):
         self._testOne([0], [1], 'two-sided', 1.0/1, 1.0)
         self._testOne([0], [1], 'greater', 1.0/1, 0.5)
         self._testOne([0], [1], 'less', 0.0/1, 1.0)
+        self._testOne([1], [0], 'two-sided', 1.0/1, 1.0)
+        self._testOne([1], [0], 'greater', 0.0/1, 1.0)
+        self._testOne([1], [0], 'less', 1.0/1, 0.5)
 
     def testTwoVsThree(self):
         data1 = np.array([1.0, 2.0])
@@ -2959,6 +2962,22 @@ class TestKSTwoSamples(object):
         attributes = ('statistic', 'pvalue')
         res = stats.ks_2samp([1, 2], [3])
         check_named_results(res, attributes)
+
+    def test_some_code_paths(self):
+        # Check that some code paths are executed
+        from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
+
+        _compute_prob_inside_method(1, 1, 1, 1)
+        _count_paths_outside_method(1000, 1, 1, 1001)
+
+        assert_raises(FloatingPointError, _count_paths_outside_method, 1100, 1099, 1, 1)
+        assert_raises(FloatingPointError, _count_paths_outside_method, 2000, 1000, 1, 1)
+
+    def test_argument_checking(self):
+        # Check that an empty array causes a ValueError
+        assert_raises(ValueError, stats.ks_2samp, [], [1])
+        assert_raises(ValueError, stats.ks_2samp, [1], [])
+        assert_raises(ValueError, stats.ks_2samp, [], [])
 
 
 def test_ttest_rel():
