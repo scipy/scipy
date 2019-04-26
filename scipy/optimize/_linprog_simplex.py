@@ -506,6 +506,10 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         prevent cycling. If False, choose pivots which should lead to a
         converged solution more quickly. The latter method is subject to
         cycling (non-convergence) in rare instances.
+    unkown_options : dict
+        Optional arguments not used by this particular solver. If
+        `unknown_options` is non-empty a warning is issued listing all
+        unused options.
 
     Returns
     -------
