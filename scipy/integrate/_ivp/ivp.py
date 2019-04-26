@@ -154,7 +154,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, **options):
+              events=None, vectorized=False, args=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -258,6 +258,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         function in Python. 
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
+    args : tuple, optional
+        Additional arguments to pass to the user-defined functions.  If given,
+        the additional arguments are passed to all user-defined functions.
+        So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
+        then `jac` (if given) and any event functions must have the same
+        signature, and `args` must be a tuple of length 3.
     options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -380,6 +386,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [11] `Cauchy-Riemann equations
              <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
              Wikipedia.
+    .. [12] `Lotka-Volterra equations
+            <https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations>`_
+            on Wikipedia.
 
     Examples
     --------
@@ -443,6 +452,32 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
     >>> print(sol.sol(sol.t_events[1][0]))
     [100.   0.]
+
+    As an example of a system with additional parameters, we'll implement
+    the Lotka-Volterra equations [12]_.
+
+    >>> def lotkavolterra(t, z, a, b, c, d):
+    ...     x, y = z
+    ...     return [a*x - b*x*y, -c*y + d*x*y]
+    ...
+
+    We pass in the parameter values a=1.5, b=1, c=3 and d=1 with the `args`
+    argument.
+
+    >>> sol = solve_ivp(lotkavolterra, [0, 15], [10, 5], args=(1.5, 1, 3, 1),
+    ...                 dense_output=True)
+
+    Compute a dense solution and plot it.
+
+    >>> t = np.linspace(0, 15, 300)
+    >>> z = sol.sol(t)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, z.T)
+    >>> plt.xlabel('t')
+    >>> plt.legend(['x', 'y'], shadow=True)
+    >>> plt.title('Lotka-Volterra System')
+    >>> plt.show()
+
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
@@ -450,6 +485,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                          .format(METHODS))
 
     t0, tf = float(t_span[0]), float(t_span[1])
+
+    if args is not None:
+        # Wrap the user's fun (and jac, if given) in lambdas to hide the
+        # additional parameters.  Pass in the original fun as a keyword
+        # argument to keep it in the scope of the lambda.
+        fun = lambda t, x, fun=fun: fun(t, x, *args)
+        jac = options.get('jac')
+        if callable(jac):
+            options['jac'] = lambda t, x: jac(t, x, *args)
 
     if t_eval is not None:
         t_eval = np.asarray(t_eval)
@@ -492,6 +536,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     events, is_terminal, event_dir = prepare_events(events)
 
     if events is not None:
+        if args is not None:
+            # Wrap user functions in lambdas to hide the additional parameters.
+            # The original event function is passed as a keyword argument to the
+            # lambda to keep the original function in scope (i.e. avoid the
+            # late binding closure "gotcha").
+            events = [lambda t, x, event=event: event(t, x, *args)
+                      for event in events]
         g = [event(t0, y0) for event in events]
         t_events = [[] for _ in range(len(events))]
     else:
