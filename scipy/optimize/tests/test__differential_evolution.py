@@ -782,8 +782,8 @@ class TestDifferentialEvolutionSolver(object):
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
 
-        assert_allclose(res.x, x_opt, atol=1e-1, rtol=1e-1)
-        assert_allclose(res.fun, f_opt, atol=3e-2, rtol=3e-2)
+        assert_allclose(res.x, x_opt, atol=1e-1)
+        assert_allclose(res.fun, f_opt, atol=0.5)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
@@ -804,8 +804,11 @@ class TestDifferentialEvolutionSolver(object):
         constraints = (L, N, L2, N2)
         res = differential_evolution(f, bounds, constraints=constraints)
 
-        assert_allclose(res.x, x_opt, atol=1e-1, rtol=1e-1)
-        assert_allclose(res.fun, f_opt, atol=3e-2, rtol=3e-2)
+        assert_allclose(res.x, x_opt, atol=1e-1)
+        assert_allclose(res.fun, f_opt, atol=0.5)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
     def test_L2(self):
         # Lampinen ([5]) test problem 2
@@ -832,7 +835,7 @@ class TestDifferentialEvolutionSolver(object):
                                      constraints=constraints)
 
         f_opt = 680.6300599487869
-        assert_allclose(res.fun, f_opt, atol=5, rtol=1e-2)
+        assert_allclose(res.fun, f_opt, atol=5)
         assert_(np.all(np.array(c1(res.x)) >= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
@@ -872,8 +875,8 @@ class TestDifferentialEvolutionSolver(object):
         x_opt = (2.171996, 2.363683, 8.773926, 5.095984, 0.990654,
                  1.430574, 1.321644, 9.828726, 8.280092, 8.375927)
         f_opt = 24.3062091
-        assert_allclose(res.x, x_opt, atol=0.2, rtol=0.2)
-        assert_allclose(res.fun, f_opt, atol=0.5, rtol=0.05)
+        assert_allclose(res.x, x_opt, atol=0.2)
+        assert_allclose(res.fun, f_opt, atol=0.5)
         assert_(np.all(A @ res.x >= b))
         assert_(np.all(np.array(c1(res.x)) >= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
@@ -906,7 +909,7 @@ class TestDifferentialEvolutionSolver(object):
                                      mutation=0.9, recombination=0.9,
                                      constraints=constraints)
 
-        assert_allclose(res.fun, f_opt, atol=50, rtol=1)
+        assert_allclose(res.fun, f_opt, atol=75)
         assert_(np.all(A @ res.x <= b))
         assert_(np.all(np.array(c1(res.x)) >= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
@@ -934,8 +937,8 @@ class TestDifferentialEvolutionSolver(object):
                                      constraints=constraints)
         x_opt = (1.22067691, 4.24096915)
         f_opt = -0.10077999749728803
-        assert_allclose(res.x, x_opt, atol=1e-2, rtol=1e-2)
-        assert_allclose(res.fun, f_opt, atol=1e-4, rtol=1e-3)
+        assert_allclose(res.x, x_opt, atol=1e-2)
+        assert_allclose(res.fun, f_opt, atol=1e-4)
         assert_(np.all(np.array(c1(res.x)) <= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
@@ -960,8 +963,8 @@ class TestDifferentialEvolutionSolver(object):
                                      constraints=constraints)
         x_opt = (14.095, 0.84296)
         f_opt = -6961.81381
-        assert_allclose(res.x, x_opt, atol=1e-1, rtol=1e-1)
-        assert_allclose(res.fun, f_opt, atol=75, rtol=.01)
+        assert_allclose(res.x, x_opt, atol=1e-1)
+        assert_allclose(res.fun, f_opt, atol=75)
         assert_(np.all(np.array(c1(res.x)) >= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
@@ -973,7 +976,6 @@ class TestDifferentialEvolutionSolver(object):
             fun = (5.3578547*x[3]**2 + 0.8356891*x[1]*x[5] +
                    37.293239*x[1] - 40792.141)
             return fun
-
 
         def c1(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
@@ -992,8 +994,9 @@ class TestDifferentialEvolutionSolver(object):
                                      constraints=constraints)
         x_opt = (78.0, 33.0, 29.995, 45.0, 36.776)
         f_opt = -30665.5
-        assert_allclose(res.x, x_opt, atol=2)
+        assert_allclose(res.x, x_opt, atol=3)
         assert_allclose(res.fun, f_opt, atol=300)
-        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(np.array(c1(res.x)) >= np.array([0, 90, 20])))
+        assert_(np.all(np.array(c1(res.x)) <= np.array([92, 110, 25])))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
