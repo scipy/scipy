@@ -939,3 +939,29 @@ class TestDifferentialEvolutionSolver(object):
         assert_(np.all(np.array(c1(res.x)) <= 0))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L6(self):
+        # Lampinen ([5]) test problem 6
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = (x[1]-10)**3 + (x[2] - 20)**3
+            return fun
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [(x[1]-5)**2 + (x[2] - 5)**2 - 100,
+                    -(x[1]-6)**2 - (x[2] - 5)**2 + 82.81]
+
+        N = NonlinearConstraint(c1, 0, np.inf)
+        bounds = [(13, 100), (0, 100)]
+        constraints = (N)
+        res = differential_evolution(f, bounds, maxiter=1000, popsize=15,
+                                     mutation=0.9, recombination=0.9,
+                                     constraints=constraints)
+        x_opt = (14.095, 0.84296)
+        f_opt = -6961.81381
+        assert_allclose(res.x, x_opt, atol=1e-1, rtol=1e-1)
+        assert_allclose(res.fun, f_opt, atol=75, rtol=.01)
+        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
