@@ -3539,6 +3539,12 @@ class geninvgauss_gen(rv_continuous):
         # relying on logpdf avoids overflow of x**(p-1) for large x and p
         return np.exp(self._logpdf(x, p, b))
 
+    def _logquasipdf(self, x, p, b):
+        # log of the quasi-density (w/o normalizing constant) used in _rvs
+        return _lazywhere(x > 0, (x, p, b),
+                          lambda x, p, b: (p-1)*np.log(x) - b*(x+1/x)/2,
+                          -np.inf)
+
     def _rvs(self, p, b):
         # if p and b are scalar, use _rvs_scalar, otherwise need to create
         # output by iterating over parameters
@@ -3595,6 +3601,8 @@ class geninvgauss_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, p, b, numsamples=None):
+        # following [2], the quasi-pdf is used instead of the pdf for the
+        # generation of rvs
         invert_res = False
         if not(numsamples):
             numsamples = 1
@@ -3603,39 +3611,96 @@ class geninvgauss_gen(rv_continuous):
             p = -p
             invert_res = True
         m = self._mode(p, b)
+
+        # determine method to be used following [2]
+        ratio_unif = True
         if p >= 1 or b > 1:
-            # ratio of uniforms with mode shift
-            a2 = -2 * (p + 1) / b - m
-            a1 = 2 * m * (p - 1) / b - 1
-            # find roots of x**3 + a2 * x**2 + a1 * x + m (Cardano's formula)
-            p1 = a1 - a2**2 / 3
-            q1 = 2 * a2**3 / 27 - a2 * a1 / 3 + m
-            phi = np.arccos(-q1 * np.sqrt(-27 / p1**3) / 2)
-            s1 = -np.sqrt(-4 * p1 / 3)
-            root1 = s1 * np.cos(phi / 3 + np.pi / 3) - a2 / 3
-            root2 = -s1 * np.cos(phi / 3) - a2 / 3
-            # root3 = s1 * np.cos(phi / 3 - np.pi / 3) - a2 / 3
-            vmin = (root1 - m) * np.sqrt(self._pdf(root1, p, b))
-            vmax = (root2 - m) * np.sqrt(self._pdf(root2, p, b))
-            umax = np.sqrt(self._pdf(m, p, b))
-            rvs = rvs_ratio_uniforms(lambda x: self._pdf(x, p, b),
-                                     size=numsamples,
-                                     umax=umax, vmin=vmin, vmax=vmax, c=m,
-                                     random_state=self._random_state)
+            # ratio of uniforms with mode shift below
+            mode_shift = True
         elif b >= min(0.5, 2 * np.sqrt(1 - p) / 3):
-            # ratio of uniforms without mode shift
-            umax = np.sqrt(self._pdf(m, p, b))
-            xplus = ((1 + p) + np.sqrt((1 + p)**2 + b**2))/b
-            vmax = xplus * np.sqrt(self._pdf(xplus, p, b))
-            rvs = rvs_ratio_uniforms(lambda x: self._pdf(x, p, b),
-                                     size=numsamples,
-                                     umax=umax, vmin=0, vmax=vmax, c=0,
-                                     random_state=self._random_state)
+            # ratio of uniforms without mode shift below
+            mode_shift = False
         else:
             # new algorithm in [2]
+            ratio_unif = False
+
+        # prepare sampling of rvs
+        size1d = tuple(np.atleast_1d(numsamples))
+        N = np.prod(size1d)  # number of rvs needed, reshape upon return
+        x = np.zeros(N)
+        simulated = 0
+
+        if ratio_unif:
+            # use ratio of uniforms method
+            if mode_shift:
+                a2 = -2 * (p + 1) / b - m
+                a1 = 2 * m * (p - 1) / b - 1
+                # find roots of x**3 + a2*x**2 + a1*x + m (Cardano's formula)
+                p1 = a1 - a2**2 / 3
+                q1 = 2 * a2**3 / 27 - a2 * a1 / 3 + m
+                phi = np.arccos(-q1 * np.sqrt(-27 / p1**3) / 2)
+                s1 = -np.sqrt(-4 * p1 / 3)
+                root1 = s1 * np.cos(phi / 3 + np.pi / 3) - a2 / 3
+                root2 = -s1 * np.cos(phi / 3) - a2 / 3
+                # root3 = s1 * np.cos(phi / 3 - np.pi / 3) - a2 / 3
+
+                # if g is the quasipdf, rescale: g(x) / g(m) which we can write
+                # as exp(log(g(x)) - log(g(m))). This is important
+                # since for large values of p and b, g cannot be evaluated.
+                # denote the rescaled quasipdf by h
+                lm = self._logquasipdf(m, p, b)
+                d1 = self._logquasipdf(root1, p, b) - lm
+                d2 = self._logquasipdf(root2, p, b) - lm
+                # compute the bounding rectangle w.r.t. h. Note that
+                # np.exp(0.5*d1) = np.sqrt(g(root1)/g(m)) = np.sqrt(h(root1))
+                vmin = (root1 - m) * np.exp(0.5 * d1)
+                vmax = (root2 - m) * np.exp(0.5 * d2)
+                umax = 1  # umax = sqrt(h(m)) = 1
+
+                logqpdf = lambda x: self._logquasipdf(x, p, b) - lm
+                c = m
+            else:
+                # ratio of uniforms without mode shift
+                # compute np.sqrt(quasipdf(m))
+                umax = np.exp(0.5*self._logquasipdf(m, p, b))
+                xplus = ((1 + p) + np.sqrt((1 + p)**2 + b**2))/b
+                vmin = 0
+                # compute xplus * np.sqrt(quasipdf(xplus))
+                vmax = xplus * np.exp(0.5 * self._logquasipdf(xplus, p, b))
+                c = 0
+                logqpdf = lambda x: self._logquasipdf(x, p, b)
+
+            if vmin >= vmax:
+                raise ValueError("vmin must be smaller than vmax.")
+            if umax <= 0:
+                raise ValueError("umax must be positive.")
+
+            i = 1
+            while simulated < N:
+                k = N - simulated
+                # simulate uniform rvs on [0, umax] and [vmin, vmax]
+                u = umax * self._random_state.random_sample(size=k)
+                v = self._random_state.random_sample(size=k)
+                v = vmin + (vmax - vmin) * v
+                rvs = v / u + c
+                # rewrite acceptance condition u**2 <= pdf(rvs) by taking logs
+                accept = (2*np.log(u) <= logqpdf(rvs))
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    x[simulated:(simulated + num_accept)] = rvs[accept]
+                    simulated += num_accept
+
+                if (simulated == 0) and (i*N >= 50000):
+                    msg = ("Not a single random variate could be generated "
+                           "in {} attempts. Sampling does not appear to "
+                           "work for the provided parameters.".format(i*N))
+                    raise RuntimeError(msg)
+                i += 1
+        else:
+            # use new algorithm in [2]
             x0 = b / (1 - p)
             xs = np.max((x0, 2 / b))
-            k1 = self._pdf(m, p, b)
+            k1 = np.exp(self._logquasipdf(m, p, b))
             A1 = k1 * x0
             if x0 < 2 / b:
                 k2 = np.exp(-b)
@@ -3649,12 +3714,6 @@ class geninvgauss_gen(rv_continuous):
             A3 = 2 * k3 * np.exp(-xs * b / 2) / b
             A = A1 + A2 + A3
 
-            size1d = tuple(np.atleast_1d(numsamples))
-            N = np.prod(size1d)  # number of rvs needed, reshape upon return
-
-            # start sampling
-            x = np.zeros(N)
-            simulated = 0
             # [2]: rejection constant is < 2.73; so expected runtime is finite
             while simulated < N:
                 k = N - simulated
@@ -3679,14 +3738,13 @@ class geninvgauss_gen(rv_continuous):
                 rvs[cond3] = -2 / b * np.log(z)
                 h[cond3] = k3 * np.exp(-rvs[cond3] * b / 2)
                 # apply rejection method
-                accept = (u * h <= self._pdf(rvs, p, b))
+                accept = (np.log(u * h) <= self._logquasipdf(rvs, p, b))
                 num_accept = sum(accept)
                 if num_accept > 0:
                     x[simulated:(simulated + num_accept)] = rvs[accept]
                     simulated += num_accept
 
-            rvs = np.reshape(x, size1d)
-
+        rvs = np.reshape(x, size1d)
         if invert_res:
             rvs = 1 / rvs
         if self._size == ():
