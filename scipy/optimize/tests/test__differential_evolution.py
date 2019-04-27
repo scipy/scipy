@@ -752,9 +752,7 @@ class TestDifferentialEvolutionSolver(object):
         # Lampinen ([5]) test problem 1
 
         def f(x):
-            temp = x
-            x = np.zeros(14)
-            x[1:] = temp  # 1-indexed to match reference
+            x = np.hstack(([0], x))  # 1-indexed to match reference
             fun = np.sum(5*x[1:5]) - 5*x[1:5]@x[1:5] - np.sum(x[5:])
             return fun
 
@@ -788,16 +786,12 @@ class TestDifferentialEvolutionSolver(object):
         assert_allclose(res.fun, f_opt, atol=3e-2, rtol=3e-2)
 
         def c1(x):
-            temp = x
-            x = np.zeros(14)
-            x[1:] = temp
+            x = np.hstack(([0], x))
             return [2*x[2] + 2*x[3] + x[11] + x[12],
                     -8*x[3] + x[12]]
 
         def c2(x):
-            temp = x
-            x = np.zeros(14)
-            x[1:] = temp
+            x = np.hstack(([0], x))
             return -2*x[8] - x[9] + x[12]
 
         L = LinearConstraint(A[:5, :], -np.inf, b[:5])
@@ -806,5 +800,6 @@ class TestDifferentialEvolutionSolver(object):
         N2 = NonlinearConstraint(c2, -np.inf, b[8:9])
         constraints = (L, N, L2, N2)
         res = differential_evolution(f, bounds, constraints=constraints)
+
         assert_allclose(res.x, x_opt, atol=1e-1, rtol=1e-1)
         assert_allclose(res.fun, f_opt, atol=3e-2, rtol=3e-2)
