@@ -784,6 +784,9 @@ class TestDifferentialEvolutionSolver(object):
 
         assert_allclose(res.x, x_opt, atol=1e-1, rtol=1e-1)
         assert_allclose(res.fun, f_opt, atol=3e-2, rtol=3e-2)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:,0]))
+        assert_(np.all(res.x <= np.array(bounds)[:,1]))
 
         def c1(x):
             x = np.hstack(([0], x))
