@@ -486,6 +486,10 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
     disp : bool
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration.
+    unkown_options : dict
+        Optional arguments not used by this particular solver. If
+        `unknown_options` is non-empty a warning is issued listing all
+        unused options.
 
     Returns
     -------

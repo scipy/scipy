@@ -937,6 +937,10 @@ def _linprog_ip(
         interior point algorithm; test different values to determine which
         performs best for your problem. For more information, refer to
         ``scipy.sparse.linalg.splu``.
+    unkown_options : dict
+        Optional arguments not used by this particular solver. If
+        `unknown_options` is non-empty a warning is issued listing all
+        unused options.
 
     Returns
     -------
