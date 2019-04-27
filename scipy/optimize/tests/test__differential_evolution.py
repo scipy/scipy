@@ -837,8 +837,50 @@ class TestDifferentialEvolutionSolver(object):
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    def test_L3(self):
+        # Lampinen ([5]) test problem 3
+
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = (x[1]**2 + x[2]**2 + x[1]*x[2] - 14*x[1] - 16*x[2] +
+                   (x[3]-10)**2 + 4*(x[4]-5)**2 + (x[5]-3)**2 + 2*(x[6]-1)**2 +
+                   5*x[7]**2 + 7*(x[8]-11)**2 + 2*(x[9]-10)**2 +
+                   (x[10] - 7)**2 + 45
+                   )
+            return fun  # maximize
+
+        A = np.zeros((4, 11))
+        A[1, [1, 2, 7, 8]] = -4, -5, 3, -9
+        A[2, [1, 2, 7, 8]] = -10, 8, 17, -2
+        A[3, [1, 2, 9, 10]] = 8, -2, -5, 2
+        A = A[1:, 1:]
+        b = np.array([-105, 0, -12])
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [3*x[1] - 6*x[2] - 12*(x[9]-8)**2 + 7*x[10],
+                    -3*(x[1]-2)**2 - 4*(x[2]-3)**2 - 2*x[3]**2 + 7*x[4] + 120,
+                    -x[1]**2 - 2*(x[2]-2)**2 + 2*x[1]*x[2] - 14*x[5] + 6*x[6],
+                    -5*x[1]**2 - 8*x[2] - (x[3]-6)**2 + 2*x[4] + 40,
+                    -0.5*(x[1]-8)**2 - 2*(x[2]-4)**2 - 3*x[5]**2 + x[6] + 30]
+
+        L = LinearConstraint(A, b, np.inf)
+        N = NonlinearConstraint(c1, 0, np.inf)
+        bounds = [(-10, 10)]*10
+        constraints = (L, N)
+        res = differential_evolution(f, bounds, maxiter=5000, popsize=35, mutation=0.9, recombination=0.9, constraints=constraints)
+        x_opt = (2.171996, 2.363683, 8.773926, 5.095984, 0.990654,
+                 1.430574, 1.321644, 9.828726, 8.280092, 8.375927)
+        f_opt = 24.3062091
+        assert_allclose(res.x, x_opt, atol=0.2, rtol=0.2)
+        assert_allclose(res.fun, f_opt, atol=0.5, rtol=0.05)
+        assert_(np.all(A @ res.x >= b))
+        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
     def test_L5(self):
-        # Lampinen ([5]) test problem 2
+        # Lampinen ([5]) test problem 5
 
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
