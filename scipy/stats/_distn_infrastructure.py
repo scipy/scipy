@@ -913,14 +913,14 @@ class rv_generic(object):
         return Y
 
     def _logcdf(self, x, *args):
-        # with np.errstate(divide='ignore'):
+        with np.errstate(divide='ignore'):
             return log(self._cdf(x, *args))
 
     def _sf(self, x, *args):
         return 1.0-self._cdf(x, *args)
 
     def _logsf(self, x, *args):
-        # with np.errstate(divide='ignore'):
+        with np.errstate(divide='ignore'):
             return log(self._sf(x, *args))
 
     def _ppf(self, q, *args):
