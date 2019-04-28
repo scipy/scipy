@@ -485,6 +485,92 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
+    # @pytest.mark.xfail(reason="truncnorm rvs is know to fail at extreme tails")
+    def test_gh_2477_large_values(self):
+        # Check a case that used to fail because of extreme tailness.
+        low, high = 100, 101
+        with np.errstate(divide='ignore'):
+            x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        print(low, x.min(), x.max(), high)
+        assert_(low <= x.min() <= x.max() <= high), str([low, high, x])
+
+        # Check some additional extreme tails
+        low, high = 1000, 1001
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+        low, high = 10000, 10001
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+    def test_gh_9403_nontail_values(self):
+        for low, high in [[3, 4], [-4, -3]]:
+            xvals = np.array([-np.inf, low, high, np.inf])
+            xmid = (high+low)/2.0
+            cdfs = stats.truncnorm.cdf(xvals, low, high)
+            sfs = stats.truncnorm.sf(xvals, low, high)
+            pdfs = stats.truncnorm.pdf(xvals, low, high)
+            expected_cdfs = np.array([0, 0, 1, 1])
+            expected_sfs = np.array([1.0, 1.0, 0.0, 0.0])
+            expected_pdfs = np.array([0, 3.3619772, 0.1015229, 0])
+            if low < 0:
+                expected_pdfs = np.array([0, 0.1015229, 3.3619772, 0])
+            assert_almost_equal(cdfs, expected_cdfs)
+            assert_almost_equal(sfs, expected_sfs)
+            assert_almost_equal(pdfs, expected_pdfs)
+            assert_almost_equal(np.log(expected_pdfs[1]/expected_pdfs[2]), low+0.5)
+            pvals = np.array([0, 0.5, 1.0])
+            ppfs = stats.truncnorm.ppf(pvals, low, high)
+            expected_ppfs = np.array([low, np.sign(low)*3.1984741, high])
+            assert_almost_equal(ppfs, expected_ppfs)
+
+            if low < 0:
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 0.8475544278436675)
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 0.1524455721563326)
+            else:
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 0.8475544278436675)
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 0.1524455721563326)
+            pdf = stats.truncnorm.pdf(xmid, low, high)
+            assert_almost_equal(np.log(pdf/expected_pdfs[2]), (xmid+0.25)/2)
+
+    def test_gh_9403_medium_tail_values(self):
+        for low, high in [[39, 40], [-40, -39]]:
+            xvals = np.array([-np.inf, low, high, np.inf])
+            xmid = (high+low)/2.0
+            cdfs = stats.truncnorm.cdf(xvals, low, high)
+            sfs = stats.truncnorm.sf(xvals, low, high)
+            pdfs = stats.truncnorm.pdf(xvals, low, high)
+            expected_cdfs = np.array([0, 0, 1, 1])
+            expected_sfs = np.array([1.0, 1.0, 0.0, 0.0])
+            expected_pdfs = np.array([0, 3.90256074e+01, 2.73349092e-16, 0])
+            if low < 0:
+                expected_pdfs = np.array([0, 2.73349092e-16, 3.90256074e+01, 0])
+            assert_almost_equal(cdfs, expected_cdfs)
+            assert_almost_equal(sfs, expected_sfs)
+            assert_almost_equal(pdfs, expected_pdfs)
+            assert_almost_equal(np.log(expected_pdfs[1]/expected_pdfs[2]), low+0.5)
+            pvals = np.array([0, 0.5, 1.0])
+            ppfs = stats.truncnorm.ppf(pvals, low, high)
+            expected_ppfs = np.array([low, np.sign(low)*39.01775731, high])
+            assert_almost_equal(ppfs, expected_ppfs)
+            cdfs = stats.truncnorm.cdf(ppfs, low, high)
+            assert_almost_equal(cdfs, pvals)
+
+            if low < 0:
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 0.9999999970389126)
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 2.961048103554866e-09)
+            else:
+                assert_almost_equal(stats.truncnorm.cdf(xmid, low, high), 0.9999999970389126)
+                assert_almost_equal(stats.truncnorm.sf(xmid, low, high), 2.961048103554866e-09)
+            pdf = stats.truncnorm.pdf(xmid, low, high)
+            assert_almost_equal(np.log(pdf/expected_pdfs[2]), (xmid+0.25)/2)
+
+            xvals = np.linspace(low, high, 11)
+            xvals2 = -xvals[::-1]
+            assert_almost_equal(stats.truncnorm.cdf(xvals, low, high), stats.truncnorm.sf(xvals2, -high, -low)[::-1])
+            assert_almost_equal(stats.truncnorm.sf(xvals, low, high), stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
+            assert_almost_equal(stats.truncnorm.pdf(xvals, low, high), stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
+
     def test_moments(self):
         m, v, s, k = stats.truncnorm.stats(-30, 30, moments='mvsk')
         assert_almost_equal(m, 0)
@@ -492,13 +578,22 @@ class TestTruncnorm(object):
         assert_almost_equal(s, 0.0)
         assert_almost_equal(k, 0.0)
 
-    @pytest.mark.xfail(reason="truncnorm rvs is know to fail at extreme tails")
-    def test_gh_2477_large_values(self):
-        # Check a case that fails because of extreme tailness.
-        low, high = 100, 101
-        with np.errstate(divide='ignore'):
-            x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-        assert_(low < x.min() < x.max() < high)
+        m, v, s, k = stats.truncnorm.stats(-40, -39, moments='mvsk')
+        assert_almost_equal(m, -39.02560741993262)
+        assert_almost_equal(v, 0.0006548)
+        assert_almost_equal(s, -1.99608063)
+        assert_almost_equal(k, 6.70255909)
+
+        m, v, s, k = stats.truncnorm.stats(39, 40, moments='mvsk')
+        assert_almost_equal(m, 39.02560741993262)
+        assert_almost_equal(v, 0.0006548)
+        assert_almost_equal(s, 1.99608063)
+        assert_almost_equal(k, 6.7101596)
+
+    def test_9902_moments(self):
+        m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
+        assert_almost_equal(m, 0.79788456)
+        assert_almost_equal(v, 0.36338023)
 
     def test_gh_1489_trac_962_rvs(self):
         # Check the original example.
@@ -803,18 +898,18 @@ class TestGenpareto(object):
         # c >= 0: a, b = [0, inf]
         for c in [1., 0.]:
             c = np.asarray(c)
-            stats.genpareto._argcheck(c)  # ugh
             a, b = stats.genpareto._get_support(c)
             assert_equal(a, 0.)
             assert_(np.isposinf(b))
 
         # c < 0: a=0, b=1/|c|
         c = np.asarray(-2.)
-        stats.genpareto._argcheck(c)
-        assert_allclose(stats.genpareto._get_support(c), [0., 0.5])
+        a, b = stats.genpareto._get_support(c)
+        assert_allclose([a, b], [0., 0.5])
 
     def test_c0(self):
         # with c=0, genpareto reduces to the exponential distribution
+        # rv = stats.genpareto(c=0.)
         rv = stats.genpareto(c=0.)
         x = np.linspace(0, 10., 30)
         assert_allclose(rv.pdf(x), stats.expon.pdf(x))
@@ -2247,6 +2342,7 @@ class TestFrozen(object):
         # depends on the value of the shape parameter:
         # for c > 0: a, b = 0, inf
         # for c < 0: a, b = 0, -1/c
+
         c = -0.1
         rv = stats.genpareto(c=c)
         a, b = rv.dist._get_support(c)
@@ -2256,8 +2352,30 @@ class TestFrozen(object):
         stats.genpareto.pdf(0, c=c)
         assert_equal(rv.dist._get_support(c), [0, np.inf])
 
+        c = -0.1
+        rv = stats.genpareto(c=c)
+        a, b = rv.dist._get_support(c)
+        assert_equal([a, b], [0., 10.])
+
+        c = 0.1
+        stats.genpareto.pdf(0, c)  # this should NOT change genpareto.b
+        assert_equal((rv.dist.a, rv.dist.b), stats.genpareto._get_support(c))
+
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
+
+        # c >= 0: a, b = [0, inf]
+        for c in [1., 0.]:
+            c = np.asarray(c)
+            rv = stats.genpareto(c=c)
+            a, b = rv.a, rv.b
+            assert_equal(a, 0.)
+            assert_(np.isposinf(b))
+
+            # c < 0: a=0, b=1/|c|
+            c = np.asarray(-2.)
+            a, b = stats.genpareto._get_support(c)
+            assert_allclose([a, b], [0., 0.5])
 
     def test_rv_frozen_in_namespace(self):
         # Regression test for gh-3522

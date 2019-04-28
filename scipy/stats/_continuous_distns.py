@@ -6396,6 +6396,167 @@ class truncexpon_gen(rv_continuous):
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
 
 
+TRUNCNORM_TAIL_X = 30
+TRUNCNORM_MAX_BRENT_ITERS = 40
+
+
+def _truncnorm_get_delta(a, b):
+    if (a > TRUNCNORM_TAIL_X) or (b < -TRUNCNORM_TAIL_X):
+        return 0
+    if a > 0:
+        delta = _norm_cdf(b) - _norm_cdf(a)
+    else:
+        delta = _norm_sf(a) - _norm_sf(b)
+    delta = max(delta, 0)
+    return delta
+
+
+def _truncnorm_get_logdelta(a, b):
+    if (a <= TRUNCNORM_TAIL_X) and (b >= -TRUNCNORM_TAIL_X):
+        if a > 0:
+            delta = _norm_cdf(b) - _norm_cdf(a)
+        else:
+            delta = _norm_sf(a) - _norm_sf(b)
+        delta = max(delta, 0)
+        if delta > 0:
+            return np.log(delta)
+
+    if b < 0 or (np.abs(a) >= np.abs(b)):
+        nla = _norm_logcdf(a)
+        nlb = _norm_logcdf(b)
+        logdelta = nlb + np.log1p(-np.exp(nla - nlb))
+    else:
+        sla = _norm_logsf(a)
+        slb = _norm_logsf(b)
+        logdelta = sla + np.log1p(-np.exp(slb - sla))
+    return logdelta
+
+
+@np.vectorize
+def _truncnorm_logpdf(x, a, b):
+    _logdelta = _truncnorm_get_logdelta(a, b)
+    return _norm_logpdf(x) - _logdelta
+
+
+@np.vectorize
+def _truncnorm_pdf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return _norm_pdf(x) / delta
+    return np.exp(_truncnorm_logpdf(x, a, b))
+
+
+@np.vectorize
+def _truncnorm_logcdf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return np.log((_norm_cdf(x) - _norm_cdf(a)) / delta)
+    if x <= a:
+        return -np.inf
+    if x >= b:
+        return 0.0
+    if a < 0:
+        with np.errstate(divide='ignore'):
+            nla = _norm_logcdf(a)
+            nlb = _norm_logcdf(b)
+            tab = np.log1p(-np.exp(nla - nlb))
+            nlx = _norm_logcdf(x)
+            tax = np.log1p(-np.exp(nla - nlx))
+            return nlx + tax - (nlb + tab)
+    with np.errstate(divide='ignore'):
+        sla = _norm_logsf(a)
+        slb = _norm_logsf(b)
+        return np.log1p(-np.exp(_norm_logsf(x) - sla)) - np.log1p(-np.exp(slb - sla))
+
+
+@np.vectorize
+def _truncnorm_cdf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return (_norm_cdf(x) - _norm_cdf(a)) / delta
+    return np.exp(_truncnorm_logcdf(x, a, b))
+
+
+@np.vectorize
+def _truncnorm_logsf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return np.log((_norm_sf(x) - _norm_sf(b)) / delta)
+    if x <= a:
+        return 0
+    if x >= b:
+        return -np.inf
+    if b < 0:
+        with np.errstate(divide='ignore'):
+            nla = _norm_logcdf(a)
+            nlb = _norm_logcdf(b)
+            return np.log1p(-np.exp(_norm_logcdf(x) - nlb)) - np.log1p(-np.exp(nla - nlb))
+    with np.errstate(divide='ignore'):
+        sla = _norm_logsf(a)
+        slb = _norm_logsf(b)
+        tab = np.log1p(-np.exp(slb - sla))
+        slx = _norm_logsf(x)
+        tax = np.log1p(-np.exp(slb - slx))
+        return slx + tax - (sla + tab)
+
+
+@np.vectorize
+def _truncnorm_sf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return (_norm_sf(x) - _norm_sf(b)) / delta
+    return np.exp(_truncnorm_logsf(x, a, b))
+
+
+def _norm_ilogcdf(y):
+    """Inverse function to _norm_logcdf==sc.log_ndtr."""
+    # Apply approximate Newton-Raphson 3 times
+    z = -np.sqrt(-2*(y + np.log(2*np.pi)/2))
+    for _ in range(3):
+        z = z - (_norm_logcdf(z) - y) / (-z - 1/z + 1/z**3)
+    return z
+
+
+@np.vectorize
+def _truncnorm_ppf(q, a, b):
+    if q <= 0:
+        return a
+    if q >= 1:
+        return b
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        if a > 0:
+            sa = _norm_sf(a)
+            sb = _norm_sf(b)
+            return _norm_isf(q * sb + sa * (1.0 - q))
+        na = _norm_cdf(a)
+        nb = _norm_cdf(b)
+        return _norm_ppf(q * nb + na * (1.0 - q))
+
+    def _f_cdf(x, _a, _b, alpha):
+        y = _truncnorm_logcdf(x, _a, _b)
+        return y - alpha
+
+    def _f_sf(x, _a, _b, alpha):
+        y = _truncnorm_logsf(x, _a, _b)
+        return y - alpha
+
+    if np.isinf(b):
+        x = -_norm_ilogcdf((np.log1p(-q) + _norm_logsf(a)))
+        return x
+    elif np.isinf(a):
+        x = _norm_ilogcdf(np.log(q) + _norm_logcdf(b))
+        return x
+    if q <= 0.5:
+        args = (a, b, np.log(q))
+        ret = optimize.zeros.brentq(_f_cdf, a, b, args=args, maxiter=TRUNCNORM_MAX_BRENT_ITERS)
+        return ret
+
+    args = (a, b, np.log(1.0 - q))
+    ret = optimize.zeros.brentq(_f_sf, a, b, args=args, maxiter=TRUNCNORM_MAX_BRENT_ITERS)
+    return ret
+
+
 class truncnorm_gen(rv_continuous):
     r"""A truncated normal continuous random variable.
 
@@ -6423,46 +6584,36 @@ class truncnorm_gen(rv_continuous):
     def _get_support(self, a, b):
         return a, b
 
-    def _get_norms(self, a, b):
-        _nb = _norm_cdf(b)
-        _na = _norm_cdf(a)
-        _sb = _norm_sf(b)
-        _sa = _norm_sf(a)
-        _delta = np.where(a > 0, _sa - _sb, _nb - _na)
-        with np.errstate(divide='ignore'):
-            return _na, _nb, _sa, _sb, _delta, np.log(_delta)
-
     def _pdf(self, x, a, b):
-        ans = self._get_norms(a, b)
-        _delta = ans[4]
-        return _norm_pdf(x) / _delta
+        return _truncnorm_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
-        ans = self._get_norms(a, b)
-        _logdelta = ans[5]
-        return _norm_logpdf(x) - _logdelta
+        return _truncnorm_logpdf(x, a, b)
 
     def _cdf(self, x, a, b):
-        ans = self._get_norms(a, b)
-        _na, _delta = ans[0], ans[4]
-        return (_norm_cdf(x) - _na) / _delta
+        return _truncnorm_cdf(x, a, b)
+
+    def _logcdf(self, x, a, b):
+        return _truncnorm_logcdf(x, a, b)
+
+    def _sf(self, x, a, b):
+        return _truncnorm_sf(x, a, b)
+
+    def _logsf(self, x, a, b):
+        return _truncnorm_logsf(x, a, b)
 
     def _ppf(self, q, a, b):
-        # XXX Use _lazywhere...
-        ans = self._get_norms(a, b)
-        _na, _nb, _sa, _sb = ans[:4]
-        ppf = np.where(a > 0,
-                       _norm_isf(q*_sb + _sa*(1.0-q)),
-                       _norm_ppf(q*_nb + _na*(1.0-q)))
-        return ppf
+        return _truncnorm_ppf(q, a, b)
 
     def _stats(self, a, b):
-        ans = self._get_norms(a, b)
-        nA, nB = ans[:2]
-        d = nB - nA
-        pA, pB = _norm_pdf(a), _norm_pdf(b)
-        mu = (pA - pB) / d   # correction sign
-        mu2 = 1 + (a*pA - b*pB) / d - mu*mu
+        pA, pB = self.pdf([a, b], a, b)
+        mu = pA - pB
+        # mu2 has subtractive cancellation ---
+        # perhaps (a-mu)*pA - (b-mu)*pB + 1
+        term1 = _lazywhere(pA, [a, pA], lambda x, y: x*y, fillvalue=0)
+        term2 = _lazywhere(pB, [b, pB], lambda x, y: x*y, fillvalue=0)
+        mu2 = 1 + (term1 - term2) - mu*mu
+
         return mu, mu2, None, None
 
 

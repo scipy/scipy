@@ -426,10 +426,9 @@ class rv_frozen(object):
         # create a new instance
         self.dist = dist.__class__(**dist._updated_ctor_param())
 
-        # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
-        self.a, self.b = self.dist.a, self.dist.b
+        self.a, self.b = self.dist._get_support(*args, **kwds)
 
     @property
     def random_state(self):
@@ -873,7 +872,7 @@ class rv_generic(object):
             cond = logical_and(cond, (asarray(arg) > 0))
         return cond
 
-    def _get_support(self, *args):
+    def _get_support(self, *args, **kwargs):
         """Return the support of the (unscaled, unshifted) distribution.
 
         *Must* be overridden by distributions which have support dependent
@@ -914,13 +913,15 @@ class rv_generic(object):
         return Y
 
     def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
+        # with np.errstate(divide='ignore'):
+            return log(self._cdf(x, *args))
 
     def _sf(self, x, *args):
         return 1.0-self._cdf(x, *args)
 
     def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
+        # with np.errstate(divide='ignore'):
+            return log(self._sf(x, *args))
 
     def _ppf(self, q, *args):
         return self._ppfvec(q, *args)
@@ -1093,7 +1094,6 @@ class rv_generic(object):
                         mu3p = self._munp(3, *goodargs)
                         with np.errstate(invalid='ignore'):
                             mu3 = (-mu * mu - 3 * mu2) * mu + mu3p
-                            mu3 = mu3p - 3 * mu * mu2 - mu**3
                     with np.errstate(invalid='ignore'):
                         mu4 = ((-mu**2 - 6*mu2) * mu - 4*mu3)*mu + mu4p
                         g2 = mu4 / mu2**2.0 - 3.0
@@ -1806,7 +1806,7 @@ class rv_continuous(rv_generic):
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
-        cond2 = (x >= _b) & cond0
+        cond2 = (x >= np.asarray(_b)) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
