@@ -6521,7 +6521,7 @@ def _truncnorm_sf(x, a, b):
 
 def _norm_logcdfprime(z):
     # derivative of special.log_ndtr
-    assert z <  -TRUNCNORM_TAIL_X or z > TRUNCNORM_TAIL_X
+    assert np.abs(z) > TRUNCNORM_TAIL_X/2
     lhs = -z - 1/z
     denom_cons = 1/z**2
     numerator = 1
