@@ -77,7 +77,7 @@ def von_mises_cdf(k_obj, x_obj):
 def _kendall_dis(intp_t[:] x, intp_t[:] y):
     cdef:
         intp_t sup = 1 + np.max(y)
-        intp_t[::1] arr = np.zeros(sup, dtype=np.intp)
+        intp_t[::1] arr = np.zeros(sup + ((sup - 1) >> 14), dtype=np.intp)
         intp_t i = 0, k = 0, size = x.size, idx
         int64_t dis = 0
 
@@ -87,7 +87,7 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
                 dis += i
                 idx = y[k]
                 while idx != 0:
-                    dis -= arr[idx]
+                    dis -= arr[idx + (idx >> 14)]
                     idx = idx & (idx - 1)
 
                 k += 1
@@ -95,7 +95,7 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
             while i < k:
                 idx = y[i]
                 while idx < sup:
-                    arr[idx] += 1
+                    arr[idx + (idx >> 14)] += 1
                     idx += idx & -idx
                 i += 1
 
