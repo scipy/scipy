@@ -255,7 +255,8 @@ class TestDualAnnealing(TestCase):
             'method': 'SLSQP',
         }
         ret = dual_annealing(self.func, self.ld_bounds,
-                             local_search_options=minimizer_opts)
+                             local_search_options=minimizer_opts,
+                             seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-7)
 
     def test_wrong_restart_temp(self):
