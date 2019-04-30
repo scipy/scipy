@@ -875,8 +875,9 @@ class TestDifferentialEvolutionSolver(object):
         N = NonlinearConstraint(c1, 0, np.inf)
         bounds = [(-10, 10)]*10
         constraints = (L, N)
-        res = differential_evolution(f, bounds, maxiter=5000, popsize=35, mutation=0.9, recombination=0.9, constraints=constraints)
-        x_opt = (2.171996, 2.363683, 8.773926, 5.095984, 0.990654,
+        res = differential_evolution(f, bounds, maxiter=5000, popsize=35, mutation=0.9,
+                                     recombination=0.9, constraints=constraints)
+        x_opt = (2.171996, 2.363683, 8.773926, 5.095984, 0.9906548,
                  1.430574, 1.321644, 9.828726, 8.280092, 8.375927)
         f_opt = 24.3062091
 
