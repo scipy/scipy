@@ -650,6 +650,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if np.any(excesses > catol):
             res.success = False
 
+    if np.any(np.isnan(res.x)) or np.isnan(res.fun):
+        res.success = False
+
     return res
 
 
