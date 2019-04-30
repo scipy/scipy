@@ -36,7 +36,8 @@ from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
-                           NonlinearConstraint, LinearConstraint, Bounds)
+                           NonlinearConstraint, LinearConstraint, Bounds,
+                           PreparedConstraint)
 
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
@@ -581,49 +582,75 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         constraints = standardize_constraints(constraints, x0, meth)
 
     if meth == '_custom':
-        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
+        res = method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
                       bounds=bounds, constraints=constraints,
                       callback=callback, **options)
     elif meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, callback, **options)
+        res = _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, callback, **options)
+        res = _minimize_powell(fun, x0, args, callback, **options)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, callback, **options)
+        res = _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, callback, **options)
+        res = _minimize_bfgs(fun, x0, args, jac, callback, **options)
     elif meth == 'newton-cg':
-        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+        res = _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
                                   **options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds,
+        res = _minimize_lbfgsb(fun, x0, args, jac, bounds,
                                 callback=callback, **options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
+        res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
                              **options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, **options)
+        res = _minimize_cobyla(fun, x0, args, constraints, **options)
     elif meth == 'slsqp':
-        return _minimize_slsqp(fun, x0, args, jac, bounds,
+        res = _minimize_slsqp(fun, x0, args, jac, bounds,
                                constraints, callback=callback, **options)
     elif meth == 'trust-constr':
-        return _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
+        res = _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
                                             bounds, constraints,
                                             callback=callback, **options)
     elif meth == 'dogleg':
-        return _minimize_dogleg(fun, x0, args, jac, hess,
+        res = _minimize_dogleg(fun, x0, args, jac, hess,
                                 callback=callback, **options)
     elif meth == 'trust-ncg':
-        return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
+        res = _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
                                    callback=callback, **options)
     elif meth == 'trust-krylov':
-        return _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
+        res = _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
                                       callback=callback, **options)
     elif meth == 'trust-exact':
-        return _minimize_trustregion_exact(fun, x0, args, jac, hess,
+        res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    # cannot be a successful minimisation if the bounds are exceeded, or
+    # constraints aren't met
+    if bounds is not None:
+        # force to be new-style
+        b = standardize_bounds(bounds, res.x, 'trust-constr')
+        if np.any(res.x > b.ub) or np.any(res.x < b.lb):
+            res.success = False
+
+    if constraints is not None and len(constraints):
+        catol = 0.
+        if meth == 'cobyla':
+            catol = 2e-4
+            if 'catol' in options:
+                catol = options['catol']
+
+        x = np.squeeze(res.x)
+        # force to be new-style
+        cons = standardize_constraints(constraints, res.x, 'trust-constr')
+        pcons = [PreparedConstraint(con, x) for con in cons]
+        excesses = np.concatenate([pcon.violation(x) for
+                                   pcon in pcons])
+        if np.any(excesses > catol):
+            res.success = False
+
+    return res
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
