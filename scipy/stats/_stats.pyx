@@ -77,6 +77,7 @@ def von_mises_cdf(k_obj, x_obj):
 def _kendall_dis(intp_t[:] x, intp_t[:] y):
     cdef:
         intp_t sup = 1 + np.max(y)
+        # Use of `>> 14` improves cache performance of the Fenwick tree (see gh-10108)
         intp_t[::1] arr = np.zeros(sup + ((sup - 1) >> 14), dtype=np.intp)
         intp_t i = 0, k = 0, size = x.size, idx
         int64_t dis = 0
