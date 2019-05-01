@@ -5927,7 +5927,7 @@ powernorm = powernorm_gen(name='powernorm')
 
 
 class rdist_gen(rv_continuous):
-    r"""An R-distributed continuous random variable.
+    r"""An R-distributed (symmetric beta) continuous random variable.
 
     %(before_notes)s
 
@@ -5939,7 +5939,10 @@ class rdist_gen(rv_continuous):
 
         f(x, c) = \frac{(1-x^2)^{c/2-1}}{B(1/2, c/2)}
 
-    for :math:`-1 \le x \le 1`, :math:`c > 0`.
+    for :math:`-1 \le x \le 1`, :math:`c > 0`. `rdist` is also called the
+    symmetric beta distribution: if B has a `beta` distribution with
+    parameters (c/2, c/2), then X = 2*B - 1 follows a R-distribution with
+    parameter c.
 
     `rdist` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -5956,19 +5959,21 @@ class rdist_gen(rv_continuous):
     %(example)s
 
     """
+    # use relation to the beta distribution for pdf, cdf, etc
     def _pdf(self, x, c):
-        # rdist.pdf(x, c) = (1-x**2)**(c/2-1) / B(1/2, c/2)
-        return np.power((1.0 - x**2), c / 2.0 - 1) / sc.beta(0.5, c / 2.0)
+        return 0.5*beta._pdf((x+1)/2, c/2, c/2)
+
+    def _logpdf(self, x, c):
+        return -np.log(2) + beta._logpdf((x+1)/2, c/2, c/2)
 
     def _cdf(self, x, c):
-        term1 = x / sc.beta(0.5, c / 2.0)
-        res = 0.5 + term1 * sc.hyp2f1(0.5, 1 - c / 2.0, 1.5, x**2)
-        # There's an issue with hyp2f1, it returns nans near x = +-1, c > 100.
-        # Use the generic implementation in that case.  See gh-1285 for
-        # background.
-        if np.any(np.isnan(res)):
-            return rv_continuous._cdf(self, x, c)
-        return res
+        return beta._cdf((x+1)/2, c/2, c/2)
+
+    def _ppf(self, q, c):
+        return 2*beta._ppf(q, c/2, c/2) - 1
+
+    def _rvs(self, c):
+        return 2 * self._random_state.beta(c/2, c/2, self._size) - 1
 
     def _munp(self, n, c):
         numerator = (1 - (n % 2)) * sc.beta((n + 1.0) / 2, c / 2.0)
