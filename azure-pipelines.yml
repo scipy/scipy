@@ -23,7 +23,7 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib --user && \
+           pip3 install setuptools wheel numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib --user && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
@@ -32,7 +32,7 @@ jobs:
            cp -r ./usr/local/lib/* /usr/lib && \
            cp ./usr/local/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml"
+           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     continueOnError: true
   - task: PublishTestResults@2
@@ -40,6 +40,11 @@ jobs:
       testResultsFiles: '**/test-*.xml'
       failTaskOnFailedTests: true
       testRunTitle: 'Publish test results for Python 3.6-32 bit full Linux'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job: Windows
   pool:
     vmImage: 'VS2017-Win2016'
@@ -102,7 +107,7 @@ jobs:
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
     condition: eq(variables['BITS'], 64)
-  - script: python -m pip install numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler Pillow mpmath matplotlib
+  - script: python -m pip install numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib
     displayName: 'Install dependencies'
   - powershell: |
       If ($(BITS) -eq 32) {
@@ -124,7 +129,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml
+      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html
     displayName: 'Run SciPy Test Suite'
     continueOnError: true
   - task: PublishTestResults@2
@@ -132,3 +137,8 @@ jobs:
       testResultsFiles: '**/test-*.xml'
       failTaskOnFailedTests: true
       testRunTitle: 'Publish test results for Python $(python.version)'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
