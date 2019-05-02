@@ -227,15 +227,43 @@ def test_transposing():
     # so should be unchanged by algorithm
     cost_matrix = np.array([[0, 1, 0], [0, 0, 1]])
     munkres_1 = linear_sum_assignment(cost_matrix,
-                                                 maximize=True)
+                                      maximize=True)
     munkres_2 = linear_sum_assignment(cost_matrix.transpose(),
-                                                 maximize=True)
+                                      maximize=True)
     row_result = np.array([0, 1])
     col_result = np.array([1, 2])
     assert_array_equal(munkres_1[0], row_result)
     assert_array_equal(munkres_1[1], col_result)
     assert_array_equal(munkres_2[0], col_result)
     assert_array_equal(munkres_2[1], row_result)
+
+
+def test_case_that_violates_wikipedia_exposition():
+    """
+    At the time of writing, Wikipedia has a logical flaw in
+    its presentation of the Hungarian Algorithm that propagated
+    into the algorithm. That has been corrected and this test
+    confirms it.
+    """
+    # Original biadjacency matrix where zeros represent an edge and
+    # non-zero values represent  non-edges
+    munkres = linear_sum_assignment(np.array([[0, 0, 0, 0, 0],
+                                              [0, 1, 1, 1, 1],
+                                              [0, 1, 1, 1, 1]],
+                                    dtype=float))
+
+    # The maximum matching that will be found by
+    # _maximal_matching method
+    #  [[0, 1, 0, 0, 0],
+    #   [1, 0, 0, 0, 0],
+    #   [0, 0, 0, 0, 0]]
+
+    marked = np.array([[0, 1, 0, 0, 0],
+                       [1, 0, 0, 0, 0],
+                       [0, 0, 1, 0, 0]],
+                      dtype=bool)
+
+    assert_array_equal(munkres, np.nonzero(marked == 1))
 
 
 def test_aug_paths_1():
@@ -246,11 +274,11 @@ def test_aug_paths_1():
     # Original biadjacency matrix where zeros represent an edge and
     # non-zero values represent  non-edges
     munkres = linear_sum_assignment(np.array([[0, 0, 0, 0, 0],
-                                                         [0, 0, 0, 0, 1],
-                                                         [0, 0, 0, 1, 1],
-                                                         [0, 0, 1, 1, 1],
-                                                         [0, 1, 1, 1, 1]],
-                                                        dtype=float))
+                                              [0, 0, 0, 0, 1],
+                                              [0, 0, 0, 1, 1],
+                                              [0, 0, 1, 1, 1],
+                                              [0, 1, 1, 1, 1]],
+                                    dtype=float))
     # A maximal matching that is not maximum that will be found by
     # _maximal_matching method
     #  [[1, 0, 0, 0, 0],
@@ -277,11 +305,11 @@ def test_aug_paths_2():
     # Original biadjacency matrix where zeros represent an edge and non-zero
     # values represent non-edges
     munkres = linear_sum_assignment(np.array([[0, 1, 1, 1, 1, 1],
-                                                         [0, 0, 0, 1, 1, 1],
-                                                         [0, 1, 1, 0, 0, 1],
-                                                         [1, 1, 0, 0, 1, 0],
-                                                         [1, 1, 1, 0, 1, 1]],
-                                                        dtype=float))
+                                              [0, 0, 0, 1, 1, 1],
+                                              [0, 1, 1, 0, 0, 1],
+                                              [1, 1, 0, 0, 1, 0],
+                                              [1, 1, 1, 0, 1, 1]],
+                                    dtype=float))
     # A maximal matching that is not maximum that will be found by
     # _maximal_matching method
     #  [[1, 0, 0, 0, 0, 0],
@@ -314,9 +342,9 @@ def test_min_weight_matching_2():
     """ Test that the correct minimum weight matching is found"""
     # Not saturated case, wide
     munkres_two = linear_sum_assignment(-np.array([[5, 0, 2, 0],
-                                                              [1, 3, 4, 0],
-                                                              [2, 0, 0, 0]],
-                                                             dtype=float))
+                                                   [1, 3, 4, 0],
+                                                   [2, 0, 0, 0]],
+                                        dtype=float))
     row_result = np.array([0, 1, 2])
     col_result = np.array([0, 2, 1])
     assert_array_equal(munkres_two[0], row_result)
@@ -327,11 +355,11 @@ def test_min_weight_matching_3():
     """ Test that the correct minimum weight matching is found"""
     # Not saturated case, tall
     munkres_three = linear_sum_assignment(-np.array([[5, 0, 2, 0],
-                                                                [5, 0, 2, 0],
-                                                                [5, 0, 2, 0],
-                                                                [1, 3, 4, 0],
-                                                                [2, 2, 0, 2]],
-                                                               dtype=float))
+                                                     [5, 0, 2, 0],
+                                                     [5, 0, 2, 0],
+                                                     [1, 3, 4, 0],
+                                                     [2, 2, 0, 2]],
+                                          dtype=float))
     row_result = np.array([0, 1, 3, 4])
     col_result = np.array([0, 2, 1, 3])
     assert_array_equal(munkres_three[0], row_result)
@@ -342,12 +370,12 @@ def test_min_weight_matching_4():
     """ Test that the correct minimum weight matching is found"""
     # Saturated case tall
     munkres_four = linear_sum_assignment(-np.array([[5, 0, 2, 0],
-                                                               [5, 0, 2, 0],
-                                                               [5, 0, 2, 0],
-                                                               [1, 3, 4, 0],
-                                                               [2, 2, 0, 2],
-                                                               [2, 2, 0, 2]],
-                                                              dtype=float))
+                                                    [5, 0, 2, 0],
+                                                    [5, 0, 2, 0],
+                                                    [1, 3, 4, 0],
+                                                    [2, 2, 0, 2],
+                                                    [2, 2, 0, 2]],
+                                         dtype=float))
 
     row_result = np.array([0, 3, 4, 5])
     col_result = np.array([0, 2, 3, 1])
@@ -359,7 +387,7 @@ def test_max_weight_matching_1(matrix_for_tests):
     """ Test that the correct maximum weight matching is found"""
     # Fully saturated case, wide
     munkres_one = linear_sum_assignment(matrix_for_tests,
-                                                   maximize=True)
+                                        maximize=True)
     row_result = np.array([0, 1, 2])
     col_result = np.array([0, 2, 1])
     assert_array_equal(munkres_one[0], row_result)
@@ -370,10 +398,10 @@ def test_max_weight_matching_2():
     """ Test that the correct maximum weight matching is found"""
     # Not saturated case, wide
     munkres_two = linear_sum_assignment(np.array([[5, 0, 2, 0],
-                                                             [1, 3, 4, 0],
-                                                             [2, 0, 0, 0]],
-                                                            dtype=float),
-                                                   maximize=True)
+                                                  [1, 3, 4, 0],
+                                                  [2, 0, 0, 0]],
+                                        dtype=float),
+                                        maximize=True)
     row_result = np.array([0, 1, 2])
     col_result = np.array([0, 2, 1])
     assert_array_equal(munkres_two[0], row_result)
@@ -384,12 +412,12 @@ def test_max_weight_matching_3():
     """ Test that the correct maximum weight matching is found"""
     # Not saturated case, tall
     munkres_three = linear_sum_assignment(np.array([[5, 0, 2, 0],
-                                                               [5, 0, 2, 0],
-                                                               [5, 0, 2, 0],
-                                                               [1, 3, 4, 0],
-                                                               [2, 2, 0, 2]],
-                                                              dtype=float),
-                                                     maximize=True)
+                                                    [5, 0, 2, 0],
+                                                    [5, 0, 2, 0],
+                                                    [1, 3, 4, 0],
+                                                    [2, 2, 0, 2]],
+                                          dtype=float),
+                                          maximize=True)
     row_result = np.array([0, 1, 3, 4])
     col_result = np.array([0, 2, 1, 3])
     assert_array_equal(munkres_three[0], row_result)
@@ -400,13 +428,13 @@ def test_max_weight_matching_4():
     """ Test that the correct maximum weight matching is found"""
     # Saturated case tall
     munkres_four = linear_sum_assignment(np.array([[5, 0, 2, 0],
-                                                              [5, 0, 2, 0],
-                                                              [5, 0, 2, 0],
-                                                              [1, 3, 4, 0],
-                                                              [2, 2, 0, 2],
-                                                              [2, 2, 0, 2]],
-                                                             dtype=float),
-                                                    maximize=True)
+                                                   [5, 0, 2, 0],
+                                                   [5, 0, 2, 0],
+                                                   [1, 3, 4, 0],
+                                                   [2, 2, 0, 2],
+                                                   [2, 2, 0, 2]],
+                                         dtype=float),
+                                         maximize=True)
 
     row_result = np.array([0, 3, 4, 5])
     col_result = np.array([0, 2, 3, 1])
