@@ -154,7 +154,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, **options):
+              events=None, vectorized=False, args=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -169,11 +169,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     The goal is to find y(t) approximately satisfying the differential
     equations, given an initial value y(t0)=y0.
 
-    Some of the solvers support integration in the complex domain, but note that
-    for stiff ODE solvers, the right-hand side must be complex-differentiable
-    (satisfy Cauchy-Riemann equations [11]_). To solve a problem in the complex
-    domain, pass y0 with a complex data type. Another option is always to
-    rewrite your problem for real and imaginary parts separately.
+    Some of the solvers support integration in the complex domain, but
+    note that for stiff ODE solvers, the right-hand side must be complex-
+    differentiable (satisfy Cauchy-Riemann equations [11]_). To solve a
+    problem in the complex domain, pass y0 with a complex data type. Another
+    option is always to rewrite your problem for real and imaginary parts
+    separately.
 
     Parameters
     ----------
@@ -198,14 +199,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
             * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
               The error is controlled assuming accuracy of the fourth-order
-              method, but steps are taken using the fifth-order accurate formula
-              (local extrapolation is done). A quartic interpolation polynomial
-              is used for the dense output [2]_. Can be applied in the complex domain.
+              method, but steps are taken using the fifth-order accurate
+              formula (local extrapolation is done). A quartic interpolation
+              polynomial is used for the dense output [2]_. Can be applied in
+              the complex domain.
             * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
               is controlled assuming accuracy of the second-order method, but
               steps are taken using the third-order accurate formula (local
-              extrapolation is done). A cubic Hermite polynomial is used for the
-              dense output. Can be applied in the complex domain.
+              extrapolation is done). A cubic Hermite polynomial is used for
+              the dense output. Can be applied in the complex domain.
             * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
               order 5 [4]_. The error is controlled with a third-order accurate
               embedded formula. A cubic polynomial which satisfies the
@@ -214,8 +216,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               on a backward differentiation formula for the derivative
               approximation [5]_. The implementation follows the one described
               in [6]_. A quasi-constant step scheme is used and accuracy is
-              enhanced using the NDF modification. Can be applied in the complex
-              domain.
+              enhanced using the NDF modification. Can be applied in the
+              complex domain.
             * 'LSODA': Adams/BDF method with automatic stiffness detection and
               switching [7]_, [8]_. This is a wrapper of the Fortran solver
               from ODEPACK.
@@ -229,11 +231,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         You can also pass an arbitrary class derived from `OdeSolver` which
         implements the solver.
-    dense_output : bool, optional
-        Whether to compute a continuous solution. Default is False.
     t_eval : array_like or None, optional
         Times at which to store the computed solution, must be sorted and lie
         within `t_span`. If None (default), use points selected by the solver.
+    dense_output : bool, optional
+        Whether to compute a continuous solution. Default is False.
     events : callable, or list of callables, optional
         Events to track. If None (default), no events will be tracked.
         Each event occurs at the zeros of a continuous function of time and
@@ -258,6 +260,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         function in Python. 
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
+    args : tuple, optional
+        Additional arguments to pass to the user-defined functions.  If given,
+        the additional arguments are passed to all user-defined functions.
+        So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
+        then `jac` (if given) and any event functions must have the same
+        signature, and `args` must be a tuple of length 3.
     options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -278,10 +286,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
     jac : array_like, sparse_matrix, callable or None, optional
-        Jacobian matrix of the right-hand side of the system with respect to
-        y, required by the 'Radau', 'BDF' and 'LSODA' method. The Jacobian matrix
-        has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
-        There are three ways to define the Jacobian:
+        Jacobian matrix of the right-hand side of the system with respect
+        to y, required by the 'Radau', 'BDF' and 'LSODA' method. The
+        Jacobian matrix has shape (n, n) and its element (i, j) is equal to
+        ``d f_i / d y_j``.  There are three ways to define the Jacobian:
 
             * If array_like or sparse_matrix, the Jacobian is assumed to
               be constant. Not supported by 'LSODA'.
@@ -295,24 +303,24 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         It is generally recommended to provide the Jacobian rather than
         relying on a finite-difference approximation.
     jac_sparsity : array_like, sparse matrix or None, optional
-        Defines a sparsity structure of the Jacobian matrix for a
-        finite-difference approximation. Its shape must be (n, n). This argument
-        is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
-        elements in *each* row, providing the sparsity structure will greatly
-        speed up the computations [10]_. A zero entry means that a corresponding
-        element in the Jacobian is always zero. If None (default), the Jacobian
-        is assumed to be dense.
+        Defines a sparsity structure of the Jacobian matrix for a finite-
+        difference approximation. Its shape must be (n, n). This argument
+        is ignored if `jac` is not `None`. If the Jacobian has only few
+        non-zero elements in *each* row, providing the sparsity structure
+        will greatly speed up the computations [10]_. A zero entry means that
+        a corresponding element in the Jacobian is always zero. If None
+        (default), the Jacobian is assumed to be dense.
         Not supported by 'LSODA', see `lband` and `uband` instead.
     lband, uband : int or None, optional
-        Parameters defining the bandwidth of the Jacobian for the 'LSODA' method,
-        i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Default is
-        None. Setting these requires your jac routine to return the Jacobian in the
-        packed format: the returned array must have ``n`` columns and
-        ``uband + lband + 1`` rows in which Jacobian diagonals are written.
-        Specifically ``jac_packed[uband + i - j , j] = jac[i, j]``. The same format
-        is used in `scipy.linalg.solve_banded` (check for an illustration).
-        These parameters can be also used with ``jac=None`` to reduce the
-        number of Jacobian elements estimated by finite differences.
+        Parameters defining the bandwidth of the Jacobian for the 'LSODA'
+        method, i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``.
+        Default is None. Setting these requires your jac routine to return the
+        Jacobian in the packed format: the returned array must have ``n``
+        columns and ``uband + lband + 1`` rows in which Jacobian diagonals are
+        written. Specifically ``jac_packed[uband + i - j , j] = jac[i, j]``.
+        The same format is used in `scipy.linalg.solve_banded` (check for an
+        illustration).  These parameters can be also used with ``jac=None`` to
+        reduce the number of Jacobian elements estimated by finite differences.
     min_step : float, optional
         The minimum allowed step size for 'LSODA' method. 
         By default `min_step` is zero.
@@ -380,6 +388,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [11] `Cauchy-Riemann equations
              <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
              Wikipedia.
+    .. [12] `Lotka-Volterra equations
+            <https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations>`_
+            on Wikipedia.
 
     Examples
     --------
@@ -412,9 +423,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     Cannon fired upward with terminal event upon impact. The ``terminal`` and
     ``direction`` fields of an event are applied by monkey patching a function.
-    Here ``y[0]`` is position and ``y[1]`` is velocity. The projectile starts at
-    position 0 with velocity +10. Note that the integration never reaches t=100
-    because the event is terminal.
+    Here ``y[0]`` is position and ``y[1]`` is velocity. The projectile starts
+    at position 0 with velocity +10. Note that the integration never reaches
+    t=100 because the event is terminal.
 
     >>> def upward_cannon(t, y): return [y[1], -0.5]
     >>> def hit_ground(t, y): return y[0]
@@ -427,11 +438,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
 
-    Use `dense_output` and `events` to find position, which is 100, at the apex of
-    the cannonball's trajectory. Apex is not defined as terminal, so both apex
-    and hit_ground are found. There is no information at t=20, so the sol
-    attribute is used to evaluate the solution. The sol attribute is
-    returned by setting ``dense_output=True``.
+    Use `dense_output` and `events` to find position, which is 100, at the apex
+    of the cannonball's trajectory. Apex is not defined as terminal, so both
+    apex and hit_ground are found. There is no information at t=20, so the sol
+    attribute is used to evaluate the solution. The sol attribute is returned
+    by setting ``dense_output=True``.
 
     >>> def apex(t,y): return y[1]
     >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
@@ -443,6 +454,32 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
     >>> print(sol.sol(sol.t_events[1][0]))
     [100.   0.]
+
+    As an example of a system with additional parameters, we'll implement
+    the Lotka-Volterra equations [12]_.
+
+    >>> def lotkavolterra(t, z, a, b, c, d):
+    ...     x, y = z
+    ...     return [a*x - b*x*y, -c*y + d*x*y]
+    ...
+
+    We pass in the parameter values a=1.5, b=1, c=3 and d=1 with the `args`
+    argument.
+
+    >>> sol = solve_ivp(lotkavolterra, [0, 15], [10, 5], args=(1.5, 1, 3, 1),
+    ...                 dense_output=True)
+
+    Compute a dense solution and plot it.
+
+    >>> t = np.linspace(0, 15, 300)
+    >>> z = sol.sol(t)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, z.T)
+    >>> plt.xlabel('t')
+    >>> plt.legend(['x', 'y'], shadow=True)
+    >>> plt.title('Lotka-Volterra System')
+    >>> plt.show()
+
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
@@ -450,6 +487,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                          .format(METHODS))
 
     t0, tf = float(t_span[0]), float(t_span[1])
+
+    if args is not None:
+        # Wrap the user's fun (and jac, if given) in lambdas to hide the
+        # additional parameters.  Pass in the original fun as a keyword
+        # argument to keep it in the scope of the lambda.
+        fun = lambda t, x, fun=fun: fun(t, x, *args)
+        jac = options.get('jac')
+        if callable(jac):
+            options['jac'] = lambda t, x: jac(t, x, *args)
 
     if t_eval is not None:
         t_eval = np.asarray(t_eval)
@@ -492,6 +538,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     events, is_terminal, event_dir = prepare_events(events)
 
     if events is not None:
+        if args is not None:
+            # Wrap user functions in lambdas to hide the additional parameters.
+            # The original event function is passed as a keyword argument to the
+            # lambda to keep the original function in scope (i.e. avoid the
+            # late binding closure "gotcha").
+            events = [lambda t, x, event=event: event(t, x, *args)
+                      for event in events]
         g = [event(t0, y0) for event in events]
         t_events = [[] for _ in range(len(events))]
     else:
