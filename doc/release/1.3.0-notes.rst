@@ -220,9 +220,6 @@ alternative="two-sided", method="auto")``, still runs the two-sided test by
 default but returns the exact p-value for small samples and the approximated
 value for large samples. ``method="asymp"`` would be equivalent to the 
 old version but ``auto`` is the better choice.
-:func:`scipy.signal.resample` behavior for length-1 signal inputs has been
-fixed to output a constant (DC) value rather than an impulse, consistent with
-the assumption of signal periodicity in the FFT method.
 
 Other changes
 =============
