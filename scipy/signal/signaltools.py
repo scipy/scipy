@@ -396,7 +396,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
-    # Speed up FFT by padding to optimal size for FFTPACK
+    # Speed up FFT by padding to optimal size
     fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
     fslice = tuple([slice(sz) for sz in shape])
     if not complex_result:
@@ -2233,71 +2233,68 @@ def resample(x, num, t=None, axis=0, window=None):
         else:
             W = sp_fft.ifftshift(get_window(window, Nx))
         newshape_W = [1] * x.ndim
-        newshape_W[axis] = len(W)
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
-    newshape[axis] = num
-(??)(??)    N = int(np.minimum(num, Nx))
-(??)(??)    Y = zeros(newshape, 'D')
-(??)(??)    sl[axis] = slice(0, (N + 1) // 2)
-(??)(??)    Y[sl] = X[sl]
-(??)(??)    sl[axis] = slice(-(N - 1) // 2, None)
-(??)(??)    Y[sl] = X[sl]
-(??)(??)    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+    N = int(np.minimum(num, Nx))
 
-(??)    # Can we use faster real FFT?
-(??)    if not np.issubdtype(x.dtype, complex) and (_rfft_mt_safe or _rfft_lock.acquire(False)):
-(??)        try:
-(??)            X = fftpack.rfft(x, axis=axis)
-(??)            if window is not None:
-(??)                # Reorder the window to fit the order rfft produces its output
-(??)                W_real = W.copy()
-(??)                for i in range(1, Nx//2):
-(??)                    W_real[2*i] = W[i]
-(??)                    W_real[2*i-1] = W[i]
-(??)                # Deal with the different length for odd/even Nx
-(??)                W_real[Nx-1:] = W[Nx//2]
-(??)                X *= W_real.reshape(newshape_W)
-(??)            Y = zeros(newshape)
+    # Check if we can use faster real FFT
+    if np.isrealobj(x):
+        X = sp_fft.rfft(x, axis=axis)
+        if window is not None:
+            newshape_W[axis] = len(W)
+            # Fold the window back on itself to mimic previous behavior
+            W_real = W.copy()
+            W_real[1:] += W_real[-1:0:-1]
+            W_real[1:] /= 2
+            newshape_W[axis] = X.shape[axis]
+            X *= W_real[:X.shape[axis]].reshape(newshape_W)
 
-(??)            if num > Nx:
-(??)                if Nx % 2:
-(??)                    sl[axis] = slice(0, Nx)
-(??)                    Y[sl] = X[sl]
-(??)                else:
-(??)                    # X[-1] is only the real part
-(??)                    sl[axis] = slice(0, Nx-1)
-(??)                    Y[sl] = X[sl]
-(??)                    sl = [slice(None)] * len(x.shape)
-(??)                    sl[axis] = slice(Nx-1, Nx)
-(??)                    Y[sl] = 0.5*X[sl]
-(??)            else:
-(??)                sl[axis] = slice(0, num)
-(??)                Y[sl] = X[sl]     
+        newshape[axis] = num // 2 + 1
+        Y = zeros(newshape, X.dtype)
+        nyq = N // 2 + 1
+        sl[axis] = slice(0, nyq)
+        Y[tuple(sl)] = X[tuple(sl)]
 
-(??)            y = fftpack.irfft(Y, axis=axis, overwrite_x=True) 
-(??)            y *= (float(num) / float(Nx))
-(??)
-(??)        finally:
-(??)            if not _rfft_mt_safe:
-(??)                _rfft_lock.release()
-(??)
+        if N % 2 == 0:
+            sl[axis] = slice(nyq-1, nyq)
+            if num < Nx:  # downsampling
+                Y[tuple(sl)] *= 2.
+            elif Nx < num:  # upsampling
+                Y[tuple(sl)] *= 0.5
+
+        y = sp_fft.irfft(Y, num, axis=axis)
     # Full complex FFT
     else:
         X = sp_fft.fft(x, axis=axis)
         if window is not None:
+            newshape_W[axis] = len(W)
             X *= W.reshape(newshape_W)
-        Y = zeros(newshape, 'D')
+        newshape[axis] = num
+        Y = zeros(newshape, X.dtype)
         sl[axis] = slice(0, (N + 1) // 2)
         Y[tuple(sl)] = X[tuple(sl)]
         if N > 1:
             sl[axis] = slice(-(N - 1) // 2, None)
             Y[tuple(sl)] = X[tuple(sl)]
 
-(??)        y = fftpack.ifft(Y, axis=axis, overwrite_x=True) 
-(??)        y *= (float(num) / float(Nx))
+        # special treatment if low number of points is even.
+        # So far we have set Y[-N/2]=X[-N/2]
+        if N % 2 == 0:
+            if num < Nx:  # downsampling
+                # select the component at frequency N/2,
+                # add the component of X at N/2
+                sl[axis] = slice(N//2, N//2+1, None)
+                Y[tuple(sl)] += X[tuple(sl)]
+            elif Nx < num:  # upsampling
+                # select the component at frequency -N/2 and halve it
+                sl[axis] = slice(num-N//2, num-N//2+1, None)
+                Y[tuple(sl)] /= 2
+                temp = Y[tuple(sl)]
+                # set the component at +N/2 equal to the component at -N/2
+                sl[axis] = slice(N//2, N//2+1, None)
+                Y[tuple(sl)] = temp
 
-        y = fftpack.ifft(Y, axis=axis, overwrite_x=True)
+        y = sp_fft.ifft(Y, axis=axis, overwrite_x=True)
 
     y *= (float(num) / float(Nx))
 
