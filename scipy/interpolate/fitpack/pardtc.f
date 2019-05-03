@@ -24,7 +24,7 @@ c   nuy     derivative. 0<=nux<kx, 0<=nuy<ky.
 c
 c  output parameters:
 c   newc  : real array containing the coefficients of the derivative.
-c           the dimension is (nx-3*nux-kx-1)*(ny-3*nuy-ky-1).
+c           the dimension is (nx-nux-kx-1)*(ny-nuy-ky-1).
 c   ier   : integer error flag
 c    ier=0 : normal return
 c    ier=10: invalid input data (see restrictions)
@@ -52,13 +52,13 @@ c
 c  latest update : may 2019
 c
 c  ..scalar arguments..
-      integer nx,ny,kx,ky,newkx,newky,nux,nuy,ier
+      integer nx,ny,kx,ky,nux,nuy,ier
 c  ..array arguments..
       real*8 tx(nx),ty(ny),c((nx-kx-1)*(ny-ky-1)),
-     * newc((nx-3*nux-kx-1)*(ny-3*nuy-ky-1))
+     * newc((nx-nux-kx-1)*(ny-nuy-ky-1))
 c  ..local scalars..
       integer i,j,kx1,ky1,lx,ly,l1,l2,m,m0,m1,
-     * nc,nkx1,nky1,nxx,nyy
+     * nc,nkx1,nky1,nxx,nyy,newkx,newky
       real*8 ak,fac
 c  ..
 c  before starting computations a data check is made. if the input data
