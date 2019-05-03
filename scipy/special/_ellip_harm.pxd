@@ -63,7 +63,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
 
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
     cdef int r, tp, j, size, i, info, lwork, liwork, c, iu
-    cdef char t
+    cdef Py_UNICODE t
 
     r = n/2
     alpha = h2

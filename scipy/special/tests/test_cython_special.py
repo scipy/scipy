@@ -313,10 +313,9 @@ def test_cython_api(param):
     # Check results
     for typecodes in specializations:
         # Pick the correct specialized function
-        signature = []
-        for j, code in enumerate(typecodes):
-            if is_fused_code[j]:
-                signature.append(CYTHON_SIGNATURE_MAP[code])
+        signature = [CYTHON_SIGNATURE_MAP[code]
+                     for j, code in enumerate(typecodes)
+                     if is_fused_code[j]]
 
         if signature:
             cy_spec_func = cyfunc[tuple(signature)]

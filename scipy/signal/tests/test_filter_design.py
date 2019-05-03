@@ -3363,7 +3363,7 @@ class TestIIRNotch(object):
         # Get frequency response correspondent to each of those points
         hp = h[p]
 
-        # Check if the frequency response fulfil the specifications:
+        # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 0.3 and should be close to 1
         assert_allclose(abs(hp[0]), 1, rtol=1e-2)
@@ -3405,7 +3405,7 @@ class TestIIRNotch(object):
         # Get frequency response correspondent to each of those points
         hp = h[p]
 
-        # Check if the frequency response fulfil the specifications:
+        # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 1500 and should be close to 1
         assert_allclose(abs(hp[0]), 1, rtol=1e-2)
@@ -3455,7 +3455,7 @@ class TestIIRPeak(object):
         # Get frequency response correspondent to each of those points
         hp = h[p]
 
-        # Check if the frequency response fulfil the specifications:
+        # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 0.3 and should be close to 0
         assert_allclose(abs(hp[0]), 0, atol=1e-2)
@@ -3497,7 +3497,7 @@ class TestIIRPeak(object):
         # Get frequency response correspondent to each of those points
         hp = h[p]
 
-        # Check if the frequency response fulfil the specifications:
+        # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 1200 and should be close to 0
         assert_allclose(abs(hp[0]), 0, atol=1e-2)

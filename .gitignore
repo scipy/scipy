@@ -74,6 +74,7 @@ setup.cfg
 .deps
 .libs
 .eggs
+pip-wheel-metadata
 
 # Paver generated files #
 #########################
@@ -179,8 +180,9 @@ scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
+scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
-scipy/optimize/lbfgsb/_lbfgsbmodule.c
+scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
@@ -253,3 +255,6 @@ scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
+scipy/optimize/cython_optimize/_zeros.c
+scipy/optimize/cython_optimize/_zeros.pyx
+scipy/optimize/lbfgsb/_lbfgsbmodule.c

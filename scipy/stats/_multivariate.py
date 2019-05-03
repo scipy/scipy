@@ -7,7 +7,7 @@ import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
 import scipy.linalg
-from scipy.misc import doccer
+from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
@@ -1367,6 +1367,40 @@ class dirichlet_gen(multi_rv_generic):
     Note that the dirichlet interface is somewhat inconsistent.
     The array returned by the rvs function is transposed
     with respect to the format expected by the pdf and logpdf.
+
+    Examples
+    --------
+    >>> from scipy.stats import dirichlet
+
+    Generate a dirichlet random variable
+
+    >>> quantiles = np.array([0.2, 0.2, 0.6])  # specify quantiles
+    >>> alpha = np.array([0.4, 5, 15])  # specify concentration parameters
+    >>> dirichlet.pdf(quantiles, alpha)
+    0.2843831684937255
+
+    The same PDF but following a log scale
+
+    >>> dirichlet.logpdf(quantiles, alpha)
+    -1.2574327653159187
+
+    Once we specify the dirichlet distribution
+    we can then calculate quantities of interest
+
+    >>> dirichlet.mean(alpha)  # get the mean of the distribution
+    array([0.01960784, 0.24509804, 0.73529412])
+    >>> dirichlet.var(alpha) # get variance
+    array([0.00089829, 0.00864603, 0.00909517])
+    >>> dirichlet.entropy(alpha)  # calculate the differential entropy
+    -4.3280162474082715
+
+    We can also return random samples from the distribution
+
+    >>> dirichlet.rvs(alpha, size=1, random_state=1)
+    array([[0.00766178, 0.24670518, 0.74563305]])
+    >>> dirichlet.rvs(alpha, size=2, random_state=2)
+    array([[0.01639427, 0.1292273 , 0.85437844],
+           [0.00156917, 0.19033695, 0.80809388]])
 
     """
 
@@ -3354,13 +3388,13 @@ class special_ortho_group_gen(multi_rv_generic):
         D = np.empty((dim,))
         for n in range(dim-1):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt((x*x).sum())
+            x[0] += D[n]*np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = (np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
-            mat = np.eye(dim)
-            mat[n:, n:] = Hx
-            H = np.dot(H, mat)
+            H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
         D[-1] = (-1)**(dim-1)*D[:-1].prod()
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H = (D*H.T).T
@@ -3493,14 +3527,14 @@ class ortho_group_gen(multi_rv_generic):
         H = np.eye(dim)
         for n in range(dim):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             # random sign, 50/50, but chosen carefully to avoid roundoff error
             D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D*np.sqrt((x*x).sum())
+            x[0] += D * np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = -D*(np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
-            mat = np.eye(dim)
-            mat[n:, n:] = Hx
-            H = np.dot(H, mat)
+            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
         return H
 
 

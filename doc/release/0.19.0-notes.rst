@@ -76,7 +76,7 @@ perform weighted pair counting via the new keywords ``weights`` and
 details.
 
 `scipy.spatial.distance.pdist` and `scipy.spatial.distance.cdist` now support
-non-double custom metrics. 
+non-double custom metrics.
 
 `scipy.ndimage` improvements
 ----------------------------
@@ -181,7 +181,7 @@ context manager `scipy.special.errstate`.
 
 The names of orthogonal polynomial root functions have been changed to
 be consistent with other functions relating to orthogonal
-polynomials. For example, `scipy.special.j_roots` has been renamed
+polynomials. For example, ``scipy.special.j_roots`` has been renamed
 `scipy.special.roots_jacobi` for consistency with the related
 functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
 preserve back-compatibility the old names have been left as aliases.
@@ -440,7 +440,7 @@ Issues closed for 0.19.0
 - `#4234 <https://github.com/scipy/scipy/issues/4234>`__: scipy.signal.flattop documentation doesn't list a source for...
 - `#4831 <https://github.com/scipy/scipy/issues/4831>`__: Bugs in C code in __quadpack.h
 - `#4908 <https://github.com/scipy/scipy/issues/4908>`__: bug: unnessesary validity check for block dimension in scipy.sparse.block_diag
-- `#4917 <https://github.com/scipy/scipy/issues/4917>`__: BUG: indexing error for sparse matrix with ix_
+- `#4917 <https://github.com/scipy/scipy/issues/4917>`__: BUG: indexing error for sparse matrix with ix\_
 - `#4938 <https://github.com/scipy/scipy/issues/4938>`__: Docs on extending ndimage need to be updated.
 - `#5056 <https://github.com/scipy/scipy/issues/5056>`__: sparse matrix element-wise multiplying dense matrix returns dense...
 - `#5337 <https://github.com/scipy/scipy/issues/5337>`__: Formula in documentation for correlate is wrong
@@ -476,7 +476,7 @@ Issues closed for 0.19.0
 - `#6628 <https://github.com/scipy/scipy/issues/6628>`__: Incorrect parameter name in binomial documentation
 - `#6634 <https://github.com/scipy/scipy/issues/6634>`__: Expose LAPACK's xGESVX family for linalg.solve ill-conditioned...
 - `#6657 <https://github.com/scipy/scipy/issues/6657>`__: Confusing documentation for `scipy.special.sph_harm`
-- `#6676 <https://github.com/scipy/scipy/issues/6676>`__: optimize: Incorrect size of Jacobian returned by `minimize(...,...
+- `#6676 <https://github.com/scipy/scipy/issues/6676>`__: optimize: Incorrect size of Jacobian returned by \`minimize(...,...
 - `#6681 <https://github.com/scipy/scipy/issues/6681>`__: add a new context manager to wrap `scipy.special.seterr`
 - `#6700 <https://github.com/scipy/scipy/issues/6700>`__: BUG: scipy.io.wavfile.read stays in infinite loop, warns on wav...
 - `#6721 <https://github.com/scipy/scipy/issues/6721>`__: scipy.special.chebyt(N) throw a 'TypeError' when N > 64

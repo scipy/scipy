@@ -105,7 +105,7 @@ The solution can be found using the `newton_krylov` solver:
 
 """
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
-# Distributed under the same license as Scipy.
+# Distributed under the same license as SciPy.
 
 from __future__ import division, print_function, absolute_import
 
@@ -465,7 +465,7 @@ class TerminationCondition(object):
             return 1
 
         if self.iter is not None:
-            # backwards compatibility with Scipy 0.6.0
+            # backwards compatibility with SciPy 0.6.0
             return 2 * (self.iteration > self.iter)
 
         # NB: condition must succeed for rtol=inf even if norm == 0
@@ -1262,7 +1262,7 @@ class LinearMixing(GenericBroyden):
         return -f/np.conj(self.alpha)
 
     def todense(self):
-        return np.diag(-np.ones(self.shape[0])/self.alpha)
+        return np.diag(np.full(self.shape[0], -1/self.alpha))
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         pass
@@ -1298,7 +1298,7 @@ class ExcitingMixing(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.beta = self.alpha * np.ones((self.shape[0],), dtype=self.dtype)
+        self.beta = np.full((self.shape[0],), self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
         return -f*self.beta
@@ -1381,7 +1381,7 @@ class KrylovJacobian(Jacobian):
     Due to the use of iterative matrix inverses, these methods can
     deal with large nonlinear problems.
 
-    Scipy's `scipy.sparse.linalg` module offers a selection of Krylov
+    SciPy's `scipy.sparse.linalg` module offers a selection of Krylov
     solvers to choose from. The default here is `lgmres`, which is a
     variant of restarted GMRES iteration that reuses some of the
     information obtained in the previous Newton steps to invert

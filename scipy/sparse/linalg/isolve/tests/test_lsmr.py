@@ -1,6 +1,6 @@
 """
 Copyright (C) 2010 David Fong and Michael Saunders
-Distributed under the same license as Scipy
+Distributed under the same license as SciPy
 
 Testing Code for LSMR.
 

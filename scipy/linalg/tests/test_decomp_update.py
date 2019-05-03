@@ -81,11 +81,10 @@ def nonitemsize_strides(arrs):
         out.append(c)
     return out
 
+
 def make_nonnative(arrs):
-    out = []
-    for a in arrs:
-        out.append(a.astype(a.dtype.newbyteorder()))
-    return out
+    return [a.astype(a.dtype.newbyteorder()) for a in arrs]
+
 
 class BaseQRdeltas(object):
     def setup_method(self):
@@ -1616,6 +1615,15 @@ class BaseQRupdate(BaseQRdeltas):
         v[0,0] = np.nan
         assert_raises(ValueError, qr_update, q0, r0, u[:,0], v[:,0])
         assert_raises(ValueError, qr_update, q0, r0, u, v)
+
+    def test_u_exactly_in_span_q(self):
+        q = np.array([[0, 0], [0, 0], [1, 0], [0, 1]], self.dtype)
+        r = np.array([[1, 0], [0, 1]], self.dtype)
+        u = np.array([0, 0, 0, -1], self.dtype)
+        v = np.array([1, 2], self.dtype)
+        q1, r1 = qr_update(q, r, u, v)
+        a1 = np.dot(q, r) + np.outer(u, v.conj())
+        check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
 class TestQRupdate_f(BaseQRupdate):
     dtype = np.dtype('f')

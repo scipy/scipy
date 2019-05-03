@@ -39,6 +39,8 @@ def binned_statistic(x, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
           * 'count' : compute the count of points within each bin.  This is
@@ -213,6 +215,8 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
           * 'count' : compute the count of points within each bin.  This is
@@ -368,9 +372,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         as an (N,D) array.
     values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
-        the same shape as `x`, or a list of sequences - each with the same
-        shape as `x`.  If `values` is such a list, the statistic will be
-        computed on each independently.
+        the same shape as `sample`, or a list of sequences - each with the
+        same shape as `sample`.  If `values` is such a list, the statistic
+        will be computed on each independently.
     statistic : string or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
@@ -384,6 +388,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
             referenced.
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'min' : compute the minimum of values for points within each bin.
             Empty bins will be represented by NaN.
           * 'max' : compute the maximum of values for point within each bin.

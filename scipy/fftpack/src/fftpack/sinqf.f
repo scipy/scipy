@@ -1,5 +1,7 @@
       SUBROUTINE SINQF (N,X,WSAVE)
-      DIMENSION       X(*)       ,WSAVE(*)
+      IMPLICIT NONE
+      INTEGER :: N, K, KC, NS2
+      REAL :: X(*), WSAVE(*), XHOLD
       IF (N .EQ. 1) RETURN
       NS2 = N/2
       DO 101 K=1,NS2

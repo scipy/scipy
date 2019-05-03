@@ -10,7 +10,6 @@ import numpy as np
 from . import _iterative
 
 from scipy.sparse.linalg.interface import LinearOperator
-from scipy._lib.decorator import decorator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
@@ -130,8 +129,9 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
 
 @set_docstring('Use BIConjugate Gradient iteration to solve ``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
-               'It is required that the linear operator can produce\n'
-               '``Ax`` and ``A^T x``.')
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A,M,x,b,postprocess = make_system(A, M, x0, b)
@@ -200,7 +200,10 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
 
 @set_docstring('Use BIConjugate Gradient STABilized iteration to solve '
                '``Ax = b``.',
-               'The real or complex N-by-N matrix of the linear system.')
+               'The real or complex N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -264,7 +267,10 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
 
 @set_docstring('Use Conjugate Gradient iteration to solve ``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.\n'
-               '``A`` must represent a hermitian, positive definite matrix.')
+               '``A`` must represent a hermitian, positive definite matrix.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -332,7 +338,10 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
 
 
 @set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
-               'The real-valued N-by-N matrix of the linear system.')
+               'The real-valued N-by-N matrix of the linear system.\n'
+               'Alternatively, ``A`` can be a linear operator which can\n'
+               'produce ``Ax`` using, e.g.,\n'
+               '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -415,6 +424,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
@@ -609,8 +621,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
-        It is required that the linear operator can produce
-        ``Ax`` and ``A^T x``.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` and ``A^T x`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 

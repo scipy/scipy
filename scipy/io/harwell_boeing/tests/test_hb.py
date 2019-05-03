@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import os
 import sys
 if sys.version_info[0] >= 3:
     from io import StringIO
@@ -16,7 +15,6 @@ from numpy.testing import assert_equal, \
 from scipy.sparse import coo_matrix, csc_matrix, rand
 
 from scipy.io import hb_read, hb_write
-from scipy.io.harwell_boeing import HBFile, HBInfo
 
 
 SIMPLE = """\
@@ -36,12 +34,11 @@ RUA                      100           100            10             0
 """
 
 SIMPLE_MATRIX = coo_matrix(
-        (
-            (0.297124379969, 0.366236668288, 0.47869621747, 0.649006864799,
-             0.0661749042483, 0.887037034319, 0.419647859016,
-             0.564960307211, 0.993442388709, 0.691233499152,),
-            (np.array([[36, 70, 88, 17, 29, 44, 69, 18, 24, 51],
-                       [0, 4, 58, 61, 61, 72, 72, 73, 99, 99]]))))
+    ((0.297124379969, 0.366236668288, 0.47869621747, 0.649006864799,
+      0.0661749042483, 0.887037034319, 0.419647859016,
+      0.564960307211, 0.993442388709, 0.691233499152,),
+     (np.array([[36, 70, 88, 17, 29, 44, 69, 18, 24, 51],
+                [0, 4, 58, 61, 61, 72, 72, 73, 99, 99]]))))
 
 
 def assert_csc_almost_equal(r, l):
@@ -58,15 +55,17 @@ class TestHBReader(object):
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
 
 
-class TestRBRoundtrip(object):
-    def test_simple(self):
-        rm = rand(100, 1000, 0.05).tocsc()
-        fd, filename = tempfile.mkstemp(suffix="rb")
-        try:
-            hb_write(filename, rm, HBInfo.from_data(rm))
-            m = hb_read(filename)
-        finally:
-            os.close(fd)
-            os.remove(filename)
+class TestHBReadWrite(object):
 
-        assert_csc_almost_equal(m, rm)
+    def check_save_load(self, value):
+        with tempfile.NamedTemporaryFile(mode='w+t') as file:
+            hb_write(file, value)
+            file.file.seek(0)
+            value_loaded = hb_read(file)
+        assert_csc_almost_equal(value, value_loaded)
+
+    def test_simple(self):
+        random_matrix = rand(10, 100, 0.1)
+        for matrix_format in ('coo', 'csc', 'csr', 'bsr', 'dia', 'dok', 'lil'):
+            matrix = random_matrix.asformat(matrix_format, copy=False)
+            self.check_save_load(matrix)

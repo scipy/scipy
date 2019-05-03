@@ -80,7 +80,7 @@ void mtherr(const char *name, int code)
     /* Display error message defined
      * by the code argument.
      */
-    if (code <= 0 || code >= sizeof(conv_to_sf) / sizeof(conv_to_sf[0])) {
+    if (code <= 0 || (unsigned long) code >= sizeof(conv_to_sf) / sizeof(conv_to_sf[0])) {
         code = 0;
     }
 

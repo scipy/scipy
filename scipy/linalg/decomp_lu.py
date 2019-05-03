@@ -196,7 +196,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
 
     Notes
     -----
-    This is a LU factorization routine written for Scipy.
+    This is a LU factorization routine written for SciPy.
 
     Examples
     --------

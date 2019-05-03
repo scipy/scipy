@@ -1,3 +1,5 @@
+:orphan:
+
 .. _CoC_reporting_manual:
 
 SciPy Code of Conduct - How to follow up on a report

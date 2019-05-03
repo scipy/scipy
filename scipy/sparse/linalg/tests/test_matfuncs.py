@@ -21,6 +21,7 @@ from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
+from scipy.sparse.sputils import matrix
 from scipy.linalg import logm
 from scipy.special import factorial, binom
 import scipy.sparse
@@ -80,20 +81,20 @@ class TestExpM(object):
         assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
 
     def test_zero_matrix(self):
-        a = np.matrix([[0.,0],[0,0]])
+        a = matrix([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_misc_types(self):
         A = expm(np.array([[1]]))
         assert_allclose(expm(((1,),)), A)
         assert_allclose(expm([[1]]), A)
-        assert_allclose(expm(np.matrix([[1]])), A)
+        assert_allclose(expm(matrix([[1]])), A)
         assert_allclose(expm(np.array([[1]])), A)
         assert_allclose(expm(csc_matrix([[1]])).A, A)
         B = expm(np.array([[1j]]))
         assert_allclose(expm(((1j,),)), B)
         assert_allclose(expm([[1j]]), B)
-        assert_allclose(expm(np.matrix([[1j]])), B)
+        assert_allclose(expm(matrix([[1j]])), B)
         assert_allclose(expm(csc_matrix([[1j]])).A, B)
 
     def test_bidiagonal_sparse(self):
@@ -211,8 +212,7 @@ class TestExpM(object):
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
-                       "scipy.linalg.solve\nIll-conditioned.*")
+            sup.filter(RuntimeWarning, "Ill-conditioned.*")
             A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny

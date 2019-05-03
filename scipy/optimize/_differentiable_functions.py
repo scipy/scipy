@@ -4,7 +4,6 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from copy import deepcopy
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')

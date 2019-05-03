@@ -63,7 +63,7 @@ class TestInterpolativeDecomposition(object):
         S = np.linalg.svd(A, compute_uv=False)
         try:
             rank = np.nonzero(S < eps)[0][0]
-        except:
+        except IndexError:
             rank = n
 
         # print input summary

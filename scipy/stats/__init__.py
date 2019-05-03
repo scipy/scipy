@@ -3,7 +3,7 @@
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
 
-.. module:: scipy.stats
+.. currentmodule:: scipy.stats
 
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
@@ -159,6 +159,7 @@ Discrete distributions
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
+   yulesimon         -- Yule-Simon
 
 An overview of statistical functions is given below.
 Several of these functions have a similar version in
@@ -188,11 +189,13 @@ Summary statistics
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
+   gstd              -- Geometric Standard Deviation
    iqr
    sem
    bayes_mvs
    mvsdist
    entropy
+   median_absolute_deviation
 
 Frequency statistics
 ====================
@@ -226,6 +229,7 @@ Correlation functions
    kendalltau
    weightedtau
    linregress
+   siegelslopes
    theilslopes
 
 Statistical tests
@@ -242,6 +246,7 @@ Statistical tests
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    tiecorrect
    rankdata
@@ -279,6 +284,9 @@ Transformations
    boxcox
    boxcox_normmax
    boxcox_llf
+   yeojohnson
+   yeojohnson_normmax
+   yeojohnson_llf
    obrientransform
    sigmaclip
    trimboth
@@ -294,6 +302,14 @@ Statistical distances
 
    wasserstein_distance
    energy_distance
+
+Random variate generation
+=========================
+
+.. autosummary::
+   :toctree: generated/
+
+   rvs_ratio_uniforms
 
 Circular statistical functions
 ==============================
@@ -326,6 +342,7 @@ Plot-tests
    ppcc_plot
    probplot
    boxcox_normplot
+   yeojohnson_normplot
 
 
 Masked statistics functions
@@ -336,13 +353,22 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/
 
    gaussian_kde
+
+Warnings used in :mod:`scipy.stats`
+===================================
+
+.. autosummary::
+   :toctree: generated/
+
+   PearsonRConstantInputWarning
+   PearsonRNearConstantInputWarning
 
 For many more stat related functions install the software R and the
 interface package rpy.

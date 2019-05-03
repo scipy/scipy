@@ -1,7 +1,13 @@
 # Makefile for Sphinx documentation
 #
 
-PYVER ?= 3.6
+# PYVER needs to be major.minor, just "3" doesn't work - it will result in
+# issues with the amendments to PYTHONPATH and install paths (see DIST_VARS).
+
+# Use explicit "version_info" indexing since make cannot handle colon characters, and
+# evaluate it now to allow easier debugging when printing the varaible
+
+PYVER:=$(shell python3 -c 'from sys import version_info as v; print("{0}.{1}".format(v[0], v[1]))')
 PYTHON = python$(PYVER)
 
 # You can set these variables from the command line.
@@ -30,8 +36,10 @@ help:
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
+	@echo "  clean     to clean all build files/directories"
 	@echo "  dist PYVER=... to make a distribution-ready tree"
 	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
+	@echo "  show      to show the html-scipyorg output"
 
 clean:
 	-rm -rf build/* source/generated
@@ -105,7 +113,7 @@ html:
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
@@ -156,3 +164,7 @@ linkcheck:
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in build/linkcheck/output.txt."
+
+show:
+	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
+

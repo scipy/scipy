@@ -33,7 +33,7 @@ from __future__ import division, print_function, absolute_import
 # otherwise the key would be inserted into userspace attributes.
 
 
-__all__ = ['netcdf_file']
+__all__ = ['netcdf_file', 'netcdf_variable']
 
 
 import sys
@@ -810,7 +810,7 @@ class netcdf_file(object):
 
 class netcdf_variable(object):
     """
-    A data object for the `netcdf` module.
+    A data object for netcdf files.
 
     `netcdf_variable` objects are constructed by calling the method
     `netcdf_file.createVariable` on the `netcdf_file` object. `netcdf_variable`

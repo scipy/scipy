@@ -46,7 +46,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
         economy-size ('economic', see Notes). The final option 'raw'
-        (added in Scipy 0.11) makes the function return two matrices
+        (added in SciPy 0.11) makes the function return two matrices
         (Q, TAU) in the internal format used by LAPACK.
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing

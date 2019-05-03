@@ -1,9 +1,11 @@
+.. _deprecations:
+
 Deprecations
 ============
 
 There are various reasons for wanting to remove existing functionality: it's
 buggy, the API isn't understandable, it's superseded by functionality with
-better performance, it needs to be moved to another Scipy submodule, etc.
+better performance, it needs to be moved to another SciPy submodule, etc.
 
 In general it's not a good idea to remove something without warning users about
 that removal first.  Therefore this is what should be done before removing

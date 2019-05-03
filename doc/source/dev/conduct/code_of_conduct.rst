@@ -122,7 +122,7 @@ considering your report. Alternatively, if for any reason you feel
 uncomfortable making a report to the committee, then you can also contact:
 
 - Chair of the SciPy Steering Committee: Ralf Gommers, or
-- Executive Director of NumFOCUS: Leah Silen
+- Senior `NumFOCUS staff <https://numfocus.org/code-of-conduct#persons-responsible>`__: conduct@numfocus.org
 
 
 Incident reporting resolution & Code of Conduct enforcement

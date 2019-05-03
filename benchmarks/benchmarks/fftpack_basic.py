@@ -98,7 +98,7 @@ class Fftn(Benchmark):
     param_names = ['size', 'type', 'module']
 
     def setup(self, size, cmplx, module):
-        size = map(int, size.split("x"))
+        size = list(map(int, size.split("x")))
 
         if cmplx != 'cmplx':
             self.x = random(size).astype(double)
@@ -110,3 +110,6 @@ class Fftn(Benchmark):
             numpy.fft.fftn(self.x)
         else:
             fftn(self.x)
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_fftn.version = "7b630bc6eb41ec0eab713d35b6318dea7a11d785891dae4add928eaac6ed95a4"

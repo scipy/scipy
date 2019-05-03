@@ -105,7 +105,8 @@ extern const double2 DD_C_LOG10;
 extern const double2 DD_C_ZERO;
 extern const double2 DD_C_ONE;
 
-#if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && defined(NAN)
+/* NAN definition in AIX's math.h doesn't make it qualify as constant literal. */
+#if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && defined(NAN) && !defined(_AIX)
 #define DD_C_NAN_IS_CONST
 extern const double2 DD_C_NAN;
 extern const double2 DD_C_INF;

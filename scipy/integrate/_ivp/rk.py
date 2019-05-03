@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, warn_extraneous)
+                     norm, warn_extraneous, validate_first_step)
 
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
@@ -89,7 +89,8 @@ class RungeKutta(OdeSolver):
     n_stages = NotImplemented
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, vectorized=False, **extraneous):
+                 rtol=1e-3, atol=1e-6, vectorized=False,
+                 first_step=None, **extraneous):
         warn_extraneous(extraneous)
         super(RungeKutta, self).__init__(fun, t0, y0, t_bound, vectorized,
                                          support_complex=True)
@@ -97,9 +98,12 @@ class RungeKutta(OdeSolver):
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         self.f = self.fun(self.t, self.y)
-        self.h_abs = select_initial_step(
-            self.fun, self.t, self.y, self.f, self.direction,
-            self.order, self.rtol, self.atol)
+        if first_step is None:
+            self.h_abs = select_initial_step(
+                self.fun, self.t, self.y, self.f, self.direction,
+                self.order, self.rtol, self.atol)
+        else:
+            self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.K = np.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
 
     def _step_impl(self):
@@ -193,6 +197,9 @@ class RK23(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
@@ -279,6 +286,9 @@ class RK45(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.

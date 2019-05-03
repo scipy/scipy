@@ -47,6 +47,10 @@ the roadmap:
    :maxdepth: 1
 
    roadmap
+   roadmap-detailed
+   toolchain
+
+.. module:: scipy
 
 API Reference
 -------------

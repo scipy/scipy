@@ -553,9 +553,8 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
         # Stop criteria - Negative curvature
         if pt_H_p <= 0:
             if np.isinf(trust_radius):
-                    raise ValueError("Negative curvature not "
-                                     "allowed for unrestrited "
-                                     "problems.")
+                raise ValueError("Negative curvature not allowed "
+                                 "for unrestricted problems.")
             else:
                 # Find intersection with constraints
                 _, alpha, intersect = box_sphere_intersections(

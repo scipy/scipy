@@ -234,9 +234,12 @@ def test_empty():
 
 
 def test_initial_constraints_as_canonical():
+    # rng is only used to generate the coefficients of the quadratic
+    # function that is used by the nonlinear constraint.
     rng = np.random.RandomState(0)
-    n = 4
-    x0 = np.random.rand(n)
+
+    x0 = np.array([0.5, 0.4, 0.3, 0.2])
+    n = len(x0)
 
     lb1 = [-1, -np.inf, -2, 3]
     ub1 = [1, np.inf, np.inf, 3]

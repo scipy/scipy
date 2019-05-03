@@ -44,7 +44,7 @@ class OdeSolver(object):
            which returns a `DenseOutput` object covering the last successful
            step.
         5. A solver must have attributes listed below in Attributes section.
-           Note that `t_old` and `step_size` are updated automatically.
+           Note that ``t_old`` and ``step_size`` are updated automatically.
         6. Use `fun(self, t, y)` method for the system rhs evaluation, this
            way the number of function evaluations (`nfev`) will be tracked
            automatically.

@@ -38,6 +38,7 @@ Finding functions
 -----------------
 
 .. autosummary::
+   :toctree: generated/
 
    get_lapack_funcs
 
@@ -67,6 +68,11 @@ All functions
    dgebal
    cgebal
    zgebal
+
+   sgecon
+   dgecon
+   cgecon
+   zgecon
 
    sgees
    dgees
@@ -98,15 +104,15 @@ All functions
    cgehrd_lwork
    zgehrd_lwork
 
-   sgelss
-   dgelss
-   cgelss
-   zgelss
+   sgels
+   dgels
+   cgels
+   zgels
 
-   sgelss_lwork
-   dgelss_lwork
-   cgelss_lwork
-   zgelss_lwork
+   sgels_lwork
+   dgels_lwork
+   cgels_lwork
+   zgels_lwork
 
    sgelsd
    dgelsd
@@ -117,6 +123,16 @@ All functions
    dgelsd_lwork
    cgelsd_lwork
    zgelsd_lwork
+
+   sgelss
+   dgelss
+   cgelss
+   zgelss
+
+   sgelss_lwork
+   dgelss_lwork
+   cgelss_lwork
+   zgelss_lwork
 
    sgelsy
    dgelsy
@@ -153,6 +169,11 @@ All functions
    cgesdd_lwork
    zgesdd_lwork
 
+   sgesv
+   dgesv
+   cgesv
+   zgesv
+
    sgesvd
    dgesvd
    cgesvd
@@ -163,70 +184,10 @@ All functions
    cgesvd_lwork
    zgesvd_lwork
 
-   sgesv
-   dgesv
-   cgesv
-   zgesv
-
    sgesvx
    dgesvx
    cgesvx
    zgesvx
-
-   sgecon
-   dgecon
-   cgecon
-   zgecon
-
-   ssysv
-   dsysv
-   csysv
-   zsysv
-
-   ssysv_lwork
-   dsysv_lwork
-   csysv_lwork
-   zsysv_lwork
-
-   ssysvx
-   dsysvx
-   csysvx
-   zsysvx
-
-   ssysvx_lwork
-   dsysvx_lwork
-   csysvx_lwork
-   zsysvx_lwork
-
-   ssygst
-   dsygst
-
-   ssytrd
-   dsytrd
-
-   ssytrd_lwork
-   dsytrd_lwork
-
-   chetrd
-   zhetrd
-
-   chetrd_lwork
-   zhetrd_lwork
-
-   chesv
-   zhesv
-
-   chesv_lwork
-   zhesv_lwork
-
-   chesvx
-   zhesvx
-
-   chesvx_lwork
-   zhesvx_lwork
-
-   chegst
-   zhegst
 
    sgetrf
    dgetrf
@@ -258,11 +219,29 @@ All functions
    cggev
    zggev
 
+   sgglse
+   dgglse
+   cgglse
+   zgglse
+
+   sgglse_lwork
+   dgglse_lwork
+   cgglse_lwork
+   zgglse_lwork
+
+   sgtsv
+   dgtsv
+   cgtsv
+   zgtsv
+
    chbevd
    zhbevd
 
    chbevx
    zhbevx
+
+   checon
+   zhecon
 
    cheev
    zheev
@@ -273,6 +252,9 @@ All functions
    cheevr
    zheevr
 
+   chegst
+   zhegst
+
    chegv
    zhegv
 
@@ -281,6 +263,41 @@ All functions
 
    chegvx
    zhegvx
+
+   chesv
+   zhesv
+
+   chesv_lwork
+   zhesv_lwork
+
+   chesvx
+   zhesvx
+
+   chesvx_lwork
+   zhesvx_lwork
+
+   chetrd
+   zhetrd
+
+   chetrd_lwork
+   zhetrd_lwork
+
+   chetrf
+   zhetrf
+
+   chetrf_lwork
+   zhetrf_lwork
+
+   chfrk
+   zhfrk
+
+   slamch
+   dlamch
+
+   slange
+   dlange
+   clange
+   zlange
 
    slarf
    dlarf
@@ -310,6 +327,26 @@ All functions
    clauum
    zlauum
 
+   sorghr
+   dorghr
+   sorghr_lwork
+   dorghr_lwork
+
+   sorgqr
+   dorgqr
+
+   sorgrq
+   dorgrq
+
+   sormqr
+   dormqr
+
+   sormrz
+   dormrz
+
+   sormrz_lwork
+   dormrz_lwork
+
    spbsv
    dpbsv
    cpbsv
@@ -324,54 +361,6 @@ All functions
    dpbtrs
    cpbtrs
    zpbtrs
-
-   sposv
-   dposv
-   cposv
-   zposv
-
-   sposvx
-   dposvx
-   cposvx
-   zposvx
-
-   spocon
-   dpocon
-   cpocon
-   zpocon
-
-   spotrf
-   dpotrf
-   cpotrf
-   zpotrf
-
-   spotri
-   dpotri
-   cpotri
-   zpotri
-
-   spotrs
-   dpotrs
-   cpotrs
-   zpotrs
-
-   crot
-   zrot
-
-   strsyl
-   dtrsyl
-   ctrsyl
-   ztrsyl
-
-   strtri
-   dtrtri
-   ctrtri
-   ztrtri
-
-   strtrs
-   dtrtrs
-   ctrtrs
-   ztrtrs
 
    spftrf
    dpftrf
@@ -388,8 +377,216 @@ All functions
    cpftrs
    zpftrs
 
+   spocon
+   dpocon
+   cpocon
+   zpocon
+
+   sposv
+   dposv
+   cposv
+   zposv
+
+   sposvx
+   dposvx
+   cposvx
+   zposvx
+
+   spotrf
+   dpotrf
+   cpotrf
+   zpotrf
+
+   spotri
+   dpotri
+   cpotri
+   zpotri
+
+   spotrs
+   dpotrs
+   cpotrs
+   zpotrs
+
+   sptsv
+   dptsv
+   cptsv
+   zptsv
+
+   crot
+   zrot
+
+   ssbev
+   dsbev
+
+   ssbevd
+   dsbevd
+
+   ssbevx
+   dsbevx
+
+   ssfrk
+   dsfrk
+
+   sstebz
+   dstebz
+
+   sstein
+   dstein
+
+   sstemr
+   dstemr
+
+   sstemr_lwork
+   dstemr_lwork
+
+   ssterf
+   dsterf
+
+   sstev
+   dstev
+
+   ssycon
+   dsycon
+   csycon
+   zsycon
+
+   ssyconv
+   dsyconv
+   csyconv
+   zsyconv
+
+   ssyev
+   dsyev
+
+   ssyevd
+   dsyevd
+
+   ssyevr
+   dsyevr
+
+   ssygst
+   dsygst
+
+   ssygv
+   dsygv
+
+   ssygvd
+   dsygvd
+
+   ssygvx
+   dsygvx
+
+   ssysv
+   dsysv
+   csysv
+   zsysv
+
+   ssysv_lwork
+   dsysv_lwork
+   csysv_lwork
+   zsysv_lwork
+
+   ssysvx
+   dsysvx
+   csysvx
+   zsysvx
+
+   ssysvx_lwork
+   dsysvx_lwork
+   csysvx_lwork
+   zsysvx_lwork
+
+   ssytf2
+   dsytf2
+   csytf2
+   zsytf2
+
+   ssytrd
+   dsytrd
+
+   ssytrd_lwork
+   dsytrd_lwork
+
+   ssytrf
+   dsytrf
+   csytrf
+   zsytrf
+
+   ssytrf_lwork
+   dsytrf_lwork
+   csytrf_lwork
+   zsytrf_lwork
+
+   stfsm
+   dtfsm
+   ctfsm
+   ztfsm
+
+   stfttp
+   dtfttp
+   ctfttp
+   ztfttp
+
+   stfttr
+   dtfttr
+   ctfttr
+   ztfttr
+
+   stgsen
+   dtgsen
+   ctgsen
+   ztgsen
+
+   stpttf
+   dtpttf
+   ctpttf
+   ztpttf
+
+   stpttr
+   dtpttr
+   ctpttr
+   ztpttr
+
+   strsyl
+   dtrsyl
+   ctrsyl
+   ztrsyl
+
+   strtri
+   dtrtri
+   ctrtri
+   ztrtri
+
+   strtrs
+   dtrtrs
+   ctrtrs
+   ztrtrs
+
+   strttf
+   dtrttf
+   ctrttf
+   ztrttf
+
+   strttp
+   dtrttp
+   ctrttp
+   ztrttp
+
+   stzrzf
+   dtzrzf
+   ctzrzf
+   ztzrzf
+
+   stzrzf_lwork
+   dtzrzf_lwork
+   ctzrzf_lwork
+   ztzrzf_lwork
+
    cunghr
    zunghr
+
+   cunghr_lwork
+   zunghr_lwork
 
    cungqr
    zungqr
@@ -406,139 +603,6 @@ All functions
    cunmrz_lwork
    zunmrz_lwork
 
-   sgtsv
-   dgtsv
-   cgtsv
-   zgtsv
-
-   sptsv
-   dptsv
-   cptsv
-   zptsv
-
-   slamch
-   dlamch
-
-   sorghr
-   dorghr
-   sorgqr
-   dorgqr
-
-   sorgrq
-   dorgrq
-
-   sormqr
-   dormqr
-
-   sormrz
-   dormrz
-
-   sormrz_lwork
-   dormrz_lwork
-
-   ssbev
-   dsbev
-
-   ssbevd
-   dsbevd
-
-   ssbevx
-   dsbevx
-
-   sstebz
-   dstebz
-
-   sstemr
-   dstemr
-
-   ssterf
-   dsterf
-
-   sstein
-   dstein
-
-   sstev
-   dstev
-
-   ssyev
-   dsyev
-
-   ssyevd
-   dsyevd
-
-   ssyevr
-   dsyevr
-
-   ssygv
-   dsygv
-
-   ssygvd
-   dsygvd
-
-   ssygvx
-   dsygvx
-
-   ssfrk
-   dsfrk
-
-   chfrk
-   zhfrk
-
-   stfsm
-   dtfsm
-   ctfsm
-   ztfsm
-
-   stpttf
-   dtpttf
-   ctpttf
-   ztpttf
-
-   stfttp
-   dtfttp
-   ctfttp
-   ztfttp
-
-   stfttr
-   dtfttr
-   ctfttr
-   ztfttr
-
-   strttf
-   dtrttf
-   ctrttf
-   ztrttf
-
-   stpttr
-   dtpttr
-   ctpttr
-   ztpttr
-
-   strttp
-   dtrttp
-   ctrttp
-   ztrttp
-
-   stfsm
-   dtfsm
-   ctfsm
-   dtfsm
-
-   stzrzf
-   dtzrzf
-   ctzrzf
-   ztzrzf
-
-   stzrzf_lwork
-   dtzrzf_lwork
-   ctzrzf_lwork
-   ztzrzf_lwork
-
-   slange
-   dlange
-   clange
-   zlange
-
    ilaver
 
 """
@@ -547,16 +611,8 @@ All functions
 #
 
 from __future__ import division, print_function, absolute_import
-
-__all__ = ['get_lapack_funcs']
-
 import numpy as _np
-
 from .blas import _get_funcs
-
-# Backward compatibility:
-from .blas import find_best_blas_type as find_best_lapack_type
-
 from scipy.linalg import _flapack
 try:
     from scipy.linalg import _clapack
@@ -564,6 +620,7 @@ except ImportError:
     _clapack = None
 
 # Backward compatibility
+from .blas import find_best_blas_type as find_best_lapack_type
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
 clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
 flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
@@ -572,6 +629,8 @@ flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 empty_module = None
 from scipy.linalg._flapack import *
 del empty_module
+
+__all__ = ['get_lapack_funcs']
 
 _dep_message = """The `*gegv` family of routines has been deprecated in
 LAPACK 3.6.0 in favor of the `*ggev` family of routines.

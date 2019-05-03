@@ -9,7 +9,6 @@ strings (e.g. '(3I4)', '(10I3)', etc...)
 from __future__ import division, print_function, absolute_import
 
 import re
-import warnings
 
 import numpy as np
 

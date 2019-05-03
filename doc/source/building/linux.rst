@@ -6,8 +6,8 @@ Building From Source on Linux
 Generic instructions
 ====================
 
-To build NumPy/SciPy from source, get the :doc:`source package
-</scipylib/download>`, unpack it, and:
+To build NumPy/SciPy from source, get the `source package
+<https://github.com/scipy/scipy>`__, unpack it, and:
 
 ::
 

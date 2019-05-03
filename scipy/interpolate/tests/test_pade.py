@@ -7,6 +7,10 @@ def test_pade_trivial():
     nump, denomp = pade([1.0], 0)
     assert_array_equal(nump.c, [1.0])
     assert_array_equal(denomp.c, [1.0])
+    
+    nump, denomp = pade([1.0], 0, 0)
+    assert_array_equal(nump.c, [1.0])
+    assert_array_equal(denomp.c, [1.0])
 
 
 def test_pade_4term_exp():
@@ -29,4 +33,34 @@ def test_pade_4term_exp():
     nump, denomp = pade(an, 3)
     assert_array_almost_equal(nump.c, [1.0])
     assert_array_almost_equal(denomp.c, [-1.0/6, 0.5, -1.0, 1.0])
+   
+    # Testing inclusion of optional parameter
+    nump, denomp = pade(an, 0, 3)
+    assert_array_almost_equal(nump.c, [1.0/6, 0.5, 1.0, 1.0])
+    assert_array_almost_equal(denomp.c, [1.0])
+
+    nump, denomp = pade(an, 1, 2)
+    assert_array_almost_equal(nump.c, [1.0/6, 2.0/3, 1.0])
+    assert_array_almost_equal(denomp.c, [-1.0/3, 1.0])
+
+    nump, denomp = pade(an, 2, 1)
+    assert_array_almost_equal(nump.c, [1.0/3, 1.0])
+    assert_array_almost_equal(denomp.c, [1.0/6, -2.0/3, 1.0])
+
+    nump, denomp = pade(an, 3, 0)
+    assert_array_almost_equal(nump.c, [1.0])
+    assert_array_almost_equal(denomp.c, [-1.0/6, 0.5, -1.0, 1.0])
+   
+    # Testing reducing array
+    nump, denomp = pade(an, 0, 2)
+    assert_array_almost_equal(nump.c, [0.5, 1.0, 1.0])
+    assert_array_almost_equal(denomp.c, [1.0])
+
+    nump, denomp = pade(an, 1, 1)
+    assert_array_almost_equal(nump.c, [1.0/2, 1.0])
+    assert_array_almost_equal(denomp.c, [-1.0/2, 1.0])
+
+    nump, denomp = pade(an, 2, 0)
+    assert_array_almost_equal(nump.c, [1.0])
+    assert_array_almost_equal(denomp.c, [1.0/2, -1.0, 1.0])
 

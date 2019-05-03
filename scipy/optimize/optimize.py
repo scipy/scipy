@@ -32,12 +32,13 @@ import sys
 import numpy
 from scipy._lib.six import callable, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
-                   vectorize, asarray, sqrt, Inf, asfarray, isinf)
+                   asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import MapWrapper
 
 
 # standard status messages of optimizers
@@ -65,7 +66,7 @@ class MemoizeJac(object):
         return fg[0]
 
     def derivative(self, x, *args):
-        if self.jac is not None and numpy.alltrue(x == self.x):
+        if self.jac is not None and numpy.all(x == self.x):
             return self.jac
         else:
             self(x, *args)
@@ -138,7 +139,7 @@ def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
         # Stack level 4: this is called from _minimize_*, which is
-        # called from another function in Scipy. Level 4 is the first
+        # called from another function in SciPy. Level 4 is the first
         # level in user code.
         warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
@@ -184,6 +185,13 @@ def rosen(x):
     --------
     rosen_der, rosen_hess, rosen_hess_prod
 
+    Examples
+    --------
+    >>> from scipy.optimize import rosen
+    >>> X = 0.1 * np.arange(10)
+    >>> rosen(X)
+    76.56
+
     """
     x = asarray(x)
     r = numpy.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
@@ -208,6 +216,13 @@ def rosen_der(x):
     See Also
     --------
     rosen, rosen_hess, rosen_hess_prod
+
+    Examples
+    --------
+    >>> from scipy.optimize import rosen_der
+    >>> X = 0.1 * np.arange(9)
+    >>> rosen_der(X)
+    array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
 
     """
     x = asarray(x)
@@ -240,6 +255,16 @@ def rosen_hess(x):
     --------
     rosen, rosen_der, rosen_hess_prod
 
+    Examples
+    --------
+    >>> from scipy.optimize import rosen_hess
+    >>> X = 0.1 * np.arange(4)
+    >>> rosen_hess(X)
+    array([[-38.,   0.,   0.,   0.],
+           [  0., 134., -40.,   0.],
+           [  0., -40., 130., -80.],
+           [  0.,   0., -80., 200.]])
+
     """
     x = atleast_1d(x)
     H = numpy.diag(-400 * x[:-1], 1) - numpy.diag(400 * x[:-1], -1)
@@ -271,6 +296,14 @@ def rosen_hess_prod(x, p):
     See Also
     --------
     rosen, rosen_der, rosen_hess
+
+    Examples
+    --------
+    >>> from scipy.optimize import rosen_hess_prod
+    >>> X = 0.1 * np.arange(9)
+    >>> p = 0.5 * np.arange(9)
+    >>> rosen_hess_prod(X, p)
+    array([  -0.,   27.,  -10.,  -95., -192., -265., -278., -195., -180.])
 
     """
     x = atleast_1d(x)
@@ -2371,8 +2404,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
     """
-    Minimize a function using modified Powell's method. This method
-    only uses function values, not derivatives.
+    Minimize a function using modified Powell's method.
+
+    This method only uses function values, not derivatives.
 
     Parameters
     ----------
@@ -2382,12 +2416,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func.
-    callback : callable, optional
-        An optional user-supplied function, called after each
-        iteration.  Called as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
-    direc : ndarray, optional
-        Initial direction set.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
@@ -2397,12 +2425,25 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     maxfun : int, optional
         Maximum number of function evaluations to make.
     full_output : bool, optional
-        If True, fopt, xi, direc, iter, funcalls, and
-        warnflag are returned.
+        If True, ``fopt``, ``xi``, ``direc``, ``iter``, ``funcalls``, and
+        ``warnflag`` are returned.
     disp : bool, optional
         If True, print convergence messages.
     retall : bool, optional
         If True, return a list of the solution at each iteration.
+    callback : callable, optional
+        An optional user-supplied function, called after each
+        iteration.  Called as ``callback(xk)``, where ``xk`` is the
+        current parameter vector.
+    direc : ndarray, optional
+        Initial fitting step and parameter order set as an (N, N) array, where N
+        is the number of fitting parameters in `x0`.  Defaults to step size 1.0
+        fitting all parameters simultaneously (``np.ones((N, N))``).  To
+        prevent initial consideration of values in a step or to change initial
+        step size, set to 0 or desired step size in the Jth position in the Mth
+        block, where J is the position in `x0` and M is the desired evaluation
+        step, with steps being evaluated in index order.  Step size and ordering
+        will change freely as minimization proceeds.
 
     Returns
     -------
@@ -2426,7 +2467,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     See also
     --------
     minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Powell' `method` in particular.
+        multivariate functions. See the 'Powell' method in particular.
 
     Notes
     -----
@@ -2434,13 +2475,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     a function of N variables. Powell's method is a conjugate
     direction method.
 
-    The algorithm has two loops. The outer loop
-    merely iterates over the inner loop. The inner loop minimizes
-    over each current direction in the direction set. At the end
-    of the inner loop, if certain conditions are met, the direction
-    that gave the largest decrease is dropped and replaced with
-    the difference between the current estimated x and the estimated
-    x from the beginning of the inner-loop.
+    The algorithm has two loops.  The outer loop merely iterates over the inner
+    loop. The inner loop minimizes over each current direction in the direction
+    set. At the end of the inner loop, if certain conditions are met, the
+    direction that gave the largest decrease is dropped and replaced with the
+    difference between the current estimated x and the estimated x from the
+    beginning of the inner-loop.
 
     The technical conditions for replacing the direction of greatest
     increase amount to checking that
@@ -2450,6 +2490,15 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     2. The direction of greatest increase accounted for a large sufficient
        fraction of the decrease in the function value from that iteration of
        the inner loop.
+
+    References
+    ----------
+    Powell M.J.D. (1964) An efficient method for finding the minimum of a
+    function of several variables without calculating derivatives,
+    Computer Journal, 7 (2):155-162.
+
+    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
+    Numerical Recipes (any edition), Cambridge University Press
 
     Examples
     --------
@@ -2465,15 +2514,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
              Function evaluations: 18
     >>> minimum
     array(0.0)
-
-    References
-    ----------
-    Powell M.J.D. (1964) An efficient method for finding the minimum of a
-    function of several variables without calculating derivatives,
-    Computer Journal, 7 (2):155-162.
-
-    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
-    Numerical Recipes (any edition), Cambridge University Press
 
     """
     opts = {'xtol': xtol,
@@ -2647,7 +2687,7 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
 
 
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
-          disp=False):
+          disp=False, workers=1):
     """Minimize a function over a given range by brute force.
 
     Uses the "brute force" method, i.e. computes the function's value
@@ -2697,7 +2737,18 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         and/or `disp` as keyword arguments.  Use None if no "polishing"
         function is to be used. See Notes for more details.
     disp : bool, optional
-        Set to True to print convergence messages.
+        Set to True to print convergence messages from the `finish` callable.
+    workers : int or map-like callable, optional
+        If `workers` is an int the grid is subdivided into `workers`
+        sections and evaluated in parallel (uses
+        `multiprocessing.Pool <multiprocessing>`).
+        Supply `-1` to use all cores available to the Process.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the grid in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        Requires that `func` be pickleable.
+
+        .. versionadded:: 1.3.0
 
     Returns
     -------
@@ -2820,16 +2871,27 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     if (N == 1):
         lrange = lrange[0]
 
-    def _scalarfunc(*params):
-        params = asarray(params).flatten()
-        return func(params, *args)
+    grid = np.mgrid[lrange]
 
-    vecfunc = vectorize(_scalarfunc)
-    grid = mgrid[lrange]
-    if (N == 1):
-        grid = (grid,)
-    Jout = vecfunc(*grid)
+    # obtain an array of parameters that is iterable by a map-like callable
+    inpt_shape = grid.shape
+    if (N > 1):
+        grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
+
+    wrapped_func = _Brute_Wrapper(func, args)
+
+    # iterate over input arrays, possibly in parallel
+    with MapWrapper(pool=workers) as mapper:
+        Jout = np.array(list(mapper(wrapped_func, grid)))
+        if (N == 1):
+            grid = (grid,)
+            Jout = np.squeeze(Jout)
+        elif (N > 1):
+            Jout = np.reshape(Jout, inpt_shape[1:])
+            grid = np.reshape(grid.T, inpt_shape)
+
     Nshape = shape(Jout)
+
     indx = argmin(Jout.ravel(), axis=-1)
     Nindx = zeros(N, int)
     xmin = zeros(N, float)
@@ -2844,6 +2906,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     if (N == 1):
         grid = grid[0]
         xmin = xmin[0]
+
     if callable(finish):
         # set up kwargs for `finish` function
         finish_args = _getargspec(finish).args
@@ -2880,6 +2943,19 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         return xmin
 
 
+class _Brute_Wrapper(object):
+    """
+    Object to wrap user cost function for optimize.brute, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        # flatten needed for one dimensional case.
+        return self.f(np.asarray(x).flatten(), *self.args)
+
+
 def show_options(solver=None, method=None, disp=True):
     """
     Show documentation for additional options of optimization solvers.
@@ -2903,7 +2979,7 @@ def show_options(solver=None, method=None, disp=True):
     Returns
     -------
     text
-        Either None (for disp=False) or the text string (disp=True)
+        Either None (for disp=True) or the text string (disp=False)
 
     Notes
     -----
@@ -2975,6 +3051,16 @@ def show_options(solver=None, method=None, disp=True):
             ('linearmixing', 'scipy.optimize._root._root_linearmixing_doc'),
             ('krylov', 'scipy.optimize._root._root_krylov_doc'),
             ('df-sane', 'scipy.optimize._spectral._root_df_sane'),
+        ),
+        'root_scalar': (
+            ('bisect', 'scipy.optimize._root_scalar._root_scalar_bisect_doc'),
+            ('brentq', 'scipy.optimize._root_scalar._root_scalar_brentq_doc'),
+            ('brenth', 'scipy.optimize._root_scalar._root_scalar_brenth_doc'),
+            ('ridder', 'scipy.optimize._root_scalar._root_scalar_ridder_doc'),
+            ('toms748', 'scipy.optimize._root_scalar._root_scalar_toms748_doc'),
+            ('secant', 'scipy.optimize._root_scalar._root_scalar_secant_doc'),
+            ('newton', 'scipy.optimize._root_scalar._root_scalar_newton_doc'),
+            ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
         ),
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),

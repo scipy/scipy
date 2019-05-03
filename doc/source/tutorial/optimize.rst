@@ -19,17 +19,18 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
+2. Global optimization routines  (e.g. :func:`basinhopping`,
+   :func:`differential_evolution`, :func:`shgo`, :func:`dual_annealing`).
 
 3. Least-squares minimization (:func:`least_squares`) and curve fitting
    (:func:`curve_fit`) algorithms
 
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
-   root finders (:func:`newton`)
+   root finders (:func:`root_scalar`)
 
 5. Multivariate equation system solvers (:func:`root`) using a variety of
    algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
-   methods such as Newton-Krylov).
+   methods such as Newton-Krylov [KK]_).
 
 Below, several examples demonstrate their basic usage.
 
@@ -44,7 +45,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
 
-    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
+    f\left(\mathbf{x}\right)=\sum_{i=2}^{N}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -428,10 +429,10 @@ example using the Rosenbrock function follows:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-    
+
 .. [NW] J. Nocedal, S.J. Wright "Numerical optimization."
 	2nd edition. Springer Science (2006).
-.. [CGT] Conn, A. R., Gould, N. I., & Toint, P. L. 
+.. [CGT] Conn, A. R., Gould, N. I., & Toint, P. L.
         "Trust region methods". Siam. (2000). pp. 169-200.
 
 
@@ -441,10 +442,10 @@ Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
 The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBLYA'``. They require the constraints
+namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
 to be defined using slightly different structures. The method ``'trust-constr'`` requires
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
-:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBLYA'``, on the other hand,
+:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
 require constraints to be defined  as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
@@ -453,7 +454,7 @@ As an example let us consider the constrained minimization of the Rosenbrock fun
 .. math::
    :nowrap:
 
-     \begin{eqnarray*} \min_{x_0, x_1} & ~~100\left(x_{0}-x_{1}^{2}\right)^{2}+\left(1-x_{0}\right)^{2} &\\
+     \begin{eqnarray*} \min_{x_0, x_1} & ~~100\left(x_{1}-x_{0}^{2}\right)^{2}+\left(1-x_{0}\right)^{2} &\\
                      \text{subject to: } & x_0 + 2 x_1 \leq 1 & \\
 		                         & x_0^2 + x_1 \leq 1  & \\
 		                         & x_0^2 - x_1 \leq 1  & \\
@@ -523,7 +524,7 @@ The nonlinear constraint:
 
      \begin{equation*} c(x) =
      \begin{bmatrix} x_0^2 + x_1 \\ x_0^2 - x_1\end{bmatrix}
-      \leq 
+      \leq
       \begin{bmatrix} 1 \\ 1\end{bmatrix}, \end{equation*}
 
 with Jacobian matrix:
@@ -540,7 +541,7 @@ and linear combination of the Hessians:
    :nowrap:
 
      \begin{equation*} H(x, v) = \sum_{i=0}^1 v_i \nabla^2 c_i(x) =
-     v_0\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix} + 
+     v_0\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix} +
      v_1\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix},
      \end{equation*}
 
@@ -564,7 +565,7 @@ as a sparse matrix,
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1,
     ...                                            jac=cons_J, hess=cons_H_sparse)
 
-or as a :func:`LinearOperator` object.
+or as a :obj:`~scipy.sparse.linalg.LinearOperator` object.
 
     >>> from scipy.sparse.linalg import LinearOperator
     >>> def cons_H_linear_operator(x, v):
@@ -606,7 +607,7 @@ The optimization problem is solved using:
     >>> print(res.x)
     [0.41494531 0.17010937]
 
-When needed, the objective function Hessian can be defined using a :func:`LinearOperator` object,
+When needed, the objective function Hessian can be defined using a :obj:`~scipy.sparse.linalg.LinearOperator` object,
 
     >>> def rosen_hess_linop(x):
     ...     def matvec(p):
@@ -620,7 +621,7 @@ When needed, the objective function Hessian can be defined using a :func:`Linear
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
     >>> print(res.x)
     [0.41494531 0.17010937]
-  
+
 or a Hessian-vector product through the parameter ``hessp``.
 
     >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hessp=rosen_hess_p,
@@ -687,7 +688,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
 And the optimization problem is solved with:
 
     >>> x0 = np.array([0.5, 0])
-    >>> res = minimize(rosen, x0, method='SLSQP', jac=rosen_der, 
+    >>> res = minimize(rosen, x0, method='SLSQP', jac=rosen_der,
     ...                constraints=[eq_cons, ineq_cons], options={'ftol': 1e-9, 'disp': True},
     ...                bounds=bounds)
     # may vary
@@ -702,6 +703,121 @@ And the optimization problem is solved with:
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
 
+Global optimization
+-------------------
+
+Global optimization aims to find the global minimum of a function within given
+bounds, in the presence of potentially many local minima. Typically global
+minimizers efficiently search the parameter space, while using a local
+minimizer (e.g. :func:`minimize`) under the hood.  SciPy contains a
+number of good global optimizers.  Here we'll use those on the same objective
+function, namely the (aptly named) ``eggholder`` function::
+
+   >>> def eggholder(x):
+   ...     return (-(x[1] + 47) * np.sin(np.sqrt(abs(x[0]/2 + (x[1]  + 47))))
+   ...             -x[0] * np.sin(np.sqrt(abs(x[0] - (x[1]  + 47)))))
+
+   >>> bounds = [(-512, 512), (-512, 512)]
+
+This function looks like an egg carton::
+
+   >>> import matplotlib.pyplot as plt
+   >>> from mpl_toolkits.mplot3d import Axes3D
+
+   >>> x = np.arange(-512, 513)
+   >>> y = np.arange(-512, 513)
+   >>> xgrid, ygrid = np.meshgrid(x, y)
+   >>> xy = np.stack([xgrid, ygrid])
+
+   >>> fig = plt.figure()
+   >>> ax = fig.add_subplot(111, projection='3d')
+   >>> ax.view_init(45, -45)
+   >>> ax.plot_surface(xgrid, ygrid, eggholder(xy), cmap='terrain')
+   >>> ax.set_xlabel('x')
+   >>> ax.set_ylabel('y')
+   >>> ax.set_zlabel('eggholder(x, y)')
+   >>> plt.show()
+
+.. plot:: tutorial/examples/optimize_global_2.py
+   :align: center
+   :include-source: 0
+
+We now use the global optimizers to obtain the minimum and the function value
+at the minimum. We'll store the results in a dictionary so we can compare
+different optimization results later.
+
+   >>> from scipy import optimize
+   >>> results = dict()
+   >>> results['shgo'] = optimize.shgo(eggholder, bounds)
+   >>> results['shgo']
+        fun: -935.3379515604197  # may vary
+       funl: array([-935.33795156])
+    message: 'Optimization terminated successfully.'
+       nfev: 42
+        nit: 2
+      nlfev: 37
+      nlhev: 0
+      nljev: 9
+    success: True
+          x: array([439.48096952, 453.97740589])
+         xl: array([[439.48096952, 453.97740589]])
+
+   >>> results['DA'] = optimize.dual_annealing(eggholder, bounds)
+   >>> results['DA']
+        fun: -956.9182316237413  # may vary
+    message: ['Maximum number of iteration reached']
+       nfev: 4091
+       nhev: 0
+        nit: 1000
+       njev: 0
+          x: array([482.35324114, 432.87892901])
+
+All optimizers return an ``OptimizeResult``, which in addition to the solution
+contains information on the number of function evaluations, whether the
+optimization was successful, and more.  For brevity we won't show the full
+output of the other optimizers::
+
+   >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
+   >>> results['BH'] = optimize.basinhopping(eggholder, bounds)
+
+:func:`shgo` has a second method, which returns all local minima rather than
+only what it thinks is the global minimum::
+
+   >>> results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=200, iters=5,
+   ...                                       sampling_method='sobol')
+
+We'll now plot all found minima on a heatmap of the function::
+
+   >>> fig = plt.figure()
+   >>> ax = fig.add_subplot(111)
+   >>> im = ax.imshow(eggholder(xy), interpolation='bilinear', origin='lower',
+   ...                cmap='gray')
+   >>> ax.set_xlabel('x')
+   >>> ax.set_ylabel('y')
+   >>>
+   >>> def plot_point(res, marker='o', color=None):
+   ...     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
+
+   >>> plot_point(results['BH'], color='y')  # basinhopping           - yellow
+   >>> plot_point(results['DE'], color='c')  # differential_evolution - cyan
+   >>> plot_point(results['DA'], color='w')  # dual_annealing.        - white
+
+   >>> # SHGO produces multiple minima, plot them all (with a smaller marker size)
+   >>> plot_point(results['shgo'], color='r', marker='+')
+   >>> plot_point(results['shgo_sobol'], color='r', marker='x')
+   >>> for i in range(results['shgo_sobol'].xl.shape[0]):
+   ...     ax.plot(512 + results['shgo_sobol'].xl[i, 0],
+   ...             512 + results['shgo_sobol'].xl[i, 1],
+   ...             'ro', ms=2)
+
+   >>> ax.set_xlim([-4, 514*2])
+   >>> ax.set_ylim([-4, 514*2])
+   >>> plt.show()
+
+.. plot:: tutorial/examples/optimize_global_1.py
+   :align: center
+   :include-source: 0
+
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
 
@@ -710,7 +826,7 @@ least-squares problems:
 
 .. math::
    :nowrap:
-   
+
    \begin{align}
    &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
    &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
@@ -720,12 +836,12 @@ Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
 The purpose of a scalar valued function :math:`\rho(\cdot)` is to reduce the
 influence of outlier residuals and contribute to robustness of the solution,
-we refer to it as a loss function. A linear loss function gives a standard 
+we refer to it as a loss function. A linear loss function gives a standard
 least-squares problem. Additionally, constraints in a form of lower and upper
 bounds on some of :math:`x_j` are allowed.
 
 All methods specific to least-squares minimization utilize a :math:`m \times n`
-matrix of partial derivatives called Jacobian and defined as 
+matrix of partial derivatives called Jacobian and defined as
 :math:`J_{ij} = \partial f_i / \partial x_j`. It is highly recommended to
 compute this matrix analytically and pass it to :func:`least_squares`,
 otherwise it will be estimated by finite differences which takes a lot of
@@ -733,7 +849,7 @@ additional time and can be very inaccurate in hard cases.
 
 Function :func:`least_squares` can be used for fitting a function
 :math:`\varphi(t; \mathbf{x})` to empirical data :math:`\{(t_i, y_i), i = 0, \ldots, m-1\}`.
-To do this one should simply precompute residuals as 
+To do this one should simply precompute residuals as
 :math:`f_i(\mathbf{x}) = w_i (\varphi(t_i; \mathbf{x}) - y_i)`, where :math:`w_i`
 are weights assigned to each observation.
 
@@ -795,6 +911,7 @@ finally plots the original data and the fitted model function:
     ...               4.56e-2, 3.42e-2, 3.23e-2, 2.35e-2, 2.46e-2])
     >>> x0 = np.array([2.5, 3.9, 4.15, 3.9])
     >>> res = least_squares(fun, x0, jac=jac, bounds=(0, 100), args=(u, y), verbose=1)
+    # may vary
     `ftol` termination condition is satisfied.
     Function evaluations 130, initial cost 4.4383e+00, final cost 1.5375e-04, first-order optimality 4.92e-08.
     >>> res.x
@@ -983,11 +1100,15 @@ Root finding
 Scalar functions
 ^^^^^^^^^^^^^^^^
 
-If one has a single-variable equation, there are four different root
-finding algorithms that can be tried. Each of these algorithms requires the
+If one has a single-variable equation, there are multiple different root
+finding algorithms that can be tried. Most of these algorithms require the
 endpoints of an interval in which a root is expected (because the function
 changes signs). In general :obj:`brentq` is the best choice, but the other
 methods may be useful in certain circumstances or for academic purposes.
+When a bracket is not available, but one or more derivatives are available,
+then :obj:`newton` (or ``halley``, ``secant``) may be applicable.
+This is especially the case if the function is defined on a subset of the
+complex plane, and the bracketing methods cannot be used.
 
 
 Fixed-point solving
@@ -1227,7 +1348,8 @@ lot more depth to this topic than is shown here.
 
 .. rubric:: References
 
-Some further reading and related software:
+Some further reading and related software, such as Newton-Krylov [KK]_,
+PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
         J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010

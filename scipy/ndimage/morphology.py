@@ -30,6 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 import warnings
+import operator
 
 import numpy
 from . import _ni_support
@@ -214,6 +215,11 @@ def generate_binary_structure(rank, connectivity):
 
 def _binary_erosion(input, structure, iterations, mask, output,
                     border_value, origin, invert, brute_force):
+    try:
+        iterations = operator.index(iterations)
+    except TypeError:
+        raise TypeError('iterations parameter should be an integer')
+
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -225,7 +231,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise RuntimeError('structure and input must have same dimensionality')
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if numpy.product(structure.shape, axis=0) < 1:
+    if numpy.prod(structure.shape, axis=0) < 1:
         raise RuntimeError('structure must not be empty')
     if mask is not None:
         mask = numpy.asarray(mask)
@@ -296,7 +302,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
         Structuring element used for the erosion. Non-zero elements are
         considered True. If no structuring element is provided, an element
         is generated with a square connectivity equal to one.
-    iterations : {int, float}, optional
+    iterations : int, optional
         The erosion is repeated `iterations` times (one, by default).
         If iterations is less than 1, the erosion is repeated until the
         result does not change anymore.
@@ -391,10 +397,11 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
         Structuring element used for the dilation. Non-zero elements are
         considered True. If no structuring element is provided an element
         is generated with a square connectivity equal to one.
-    iterations : {int, float}, optional
+    iterations : int, optional
         The dilation is repeated `iterations` times (one, by default).
         If iterations is less than 1, the dilation is repeated until the
-        result does not change anymore.
+        result does not change anymore. Only an integer of iterations is
+        accepted.
     mask : array_like, optional
         If a mask is given, only those elements with a True value at
         the corresponding mask element are modified at each iteration.
@@ -526,11 +533,11 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         is generated with a square connectivity equal to one (i.e., only
         nearest neighbors are connected to the center, diagonally-connected
         elements are not considered neighbors).
-    iterations : {int, float}, optional
+    iterations : int, optional
         The erosion step of the opening, then the dilation step are each
         repeated `iterations` times (one, by default). If `iterations` is
         less than 1, each operation is repeated until the result does
-        not change anymore.
+        not change anymore. Only an integer of iterations is accepted.
     output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
@@ -649,11 +656,11 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         is generated with a square connectivity equal to one (i.e., only
         nearest neighbors are connected to the center, diagonally-connected
         elements are not considered neighbors).
-    iterations : {int, float}, optional
+    iterations : int, optional
         The dilation step of the closing, then the erosion step are each
         repeated `iterations` times (one, by default). If iterations is
         less than 1, each operations is repeated until the result does
-        not change anymore.
+        not change anymore. Only an integer of iterations is accepted.
     output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
@@ -815,7 +822,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
 
     See also
     --------
-    ndimage.morphology, binary_erosion
+    binary_erosion
 
     References
     ----------
@@ -1145,7 +1152,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     See also
     --------
     binary_erosion, grey_dilation, grey_opening, grey_closing
-    generate_binary_structure, ndimage.minimum_filter
+    generate_binary_structure, minimum_filter
 
     Notes
     -----
@@ -1255,7 +1262,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
     See also
     --------
     binary_dilation, grey_erosion, grey_closing, grey_opening
-    generate_binary_structure, ndimage.maximum_filter
+    generate_binary_structure, maximum_filter
 
     Notes
     -----
@@ -1568,7 +1575,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
 
     See also
     --------
-    grey_dilation, grey_erosion, ndimage.gaussian_gradient_magnitude
+    grey_dilation, grey_erosion, gaussian_gradient_magnitude
 
     Notes
     -----
@@ -2012,7 +2019,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        sz = numpy.product(dt.shape, axis=0)
+        sz = numpy.prod(dt.shape, axis=0)
         ft = numpy.arange(sz, dtype=numpy.int32)
         ft.shape = dt.shape
     else:

@@ -309,7 +309,7 @@ def _remove_redundancy_sparse(A, rhs):
     # I tried and tried and tried to improve performance using the
     # Bartels-Golub update. It works, but it's only practical if the LU
     # factorization can be specialized as described, and that is not possible
-    # until the Scipy SuperLU interface permits control over column
+    # until the SciPy SuperLU interface permits control over column
     # permutation - see issue #7700.
 
     for i in v:
@@ -432,7 +432,7 @@ def _remove_redundancy(A, b):
                        "off redundancy removal, or try turning off presolve "
                        "altogether.")
             break
-        if np.any(np.abs(v.dot(b)) > tol):
+        if np.any(np.abs(v.dot(b)) > tol * 10):  # factor of 10 to fix 10038
             status = 2
             message = ("There is a linear combination of rows of A_eq that "
                        "results in zero, suggesting a redundant constraint. "

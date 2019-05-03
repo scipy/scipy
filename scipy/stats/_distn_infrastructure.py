@@ -13,7 +13,7 @@ import re
 import types
 import warnings
 
-from scipy.misc import doccer
+from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
@@ -354,11 +354,6 @@ docdict_discrete['default'] = _doc_default_disc
 for obj in [s for s in dir() if s.startswith('_doc_')]:
     exec('del ' + obj)
 del obj
-try:
-    del s
-except NameError:
-    # in Python 3, loop variables are not visible after the loop
-    pass
 
 
 def _moment(data, n, mu=None):
@@ -516,6 +511,9 @@ class rv_frozen(object):
         else:
             return self.dist.expect(func, a, loc, scale, lb, ub,
                                     conditional, **kwds)
+
+    def support(self):
+        return self.dist.support(*self.args, **self.kwds)
 
 
 # This should be rewritten
@@ -730,7 +728,10 @@ class rv_generic(object):
             if self.shapes is None:
                 # necessary because we use %(shapes)s in two forms (w w/o ", ")
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+            try:
+                self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+            except TypeError as e:
+                raise Exception("Unable to construct docstring for distribution \"%s\": %s" % (self.name, repr(e)))
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
@@ -870,11 +871,34 @@ class rv_generic(object):
             cond = logical_and(cond, (asarray(arg) > 0))
         return cond
 
-    def _support_mask(self, x):
-        return (self.a <= x) & (x <= self.b)
+    def _get_support(self, *args):
+        """Return the support of the (unscaled, unshifted) distribution.
 
-    def _open_support_mask(self, x):
-        return (self.a < x) & (x < self.b)
+        *Must* be overridden by distributions which have support dependent
+        upon the shape parameters of the distribution.  Any such override
+        *must not* set or change any of the class members, as these members
+        are shared amongst all instances of the distribution.
+
+        Parameters
+        ----------
+        arg1, arg2, ... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        Returns
+        -------
+        a, b : numeric (float, or int or +/-np.inf)
+            end-points of the distribution's support for the specified
+            shape parameters.
+        """
+        return self.a, self.b
+
+    def _support_mask(self, x, *args):
+        a, b = self._get_support(*args)
+        return (a <= x) & (x <= b)
+
+    def _open_support_mask(self, x, *args):
+        a, b = self._get_support(*args)
+        return (a < x) & (x < b)
 
     def _rvs(self, *args):
         # This method must handle self._size being a tuple, and it must
@@ -1049,7 +1073,7 @@ class rv_generic(object):
                         mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu * mu
                     with np.errstate(invalid='ignore'):
-                        mu3 = mu3p - 3 * mu * mu2 - mu**3
+                        mu3 = (-mu*mu - 3*mu2)*mu + mu3p
                         g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
                 place(out0, cond, g1)
@@ -1066,18 +1090,16 @@ class rv_generic(object):
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
                         with np.errstate(invalid='ignore'):
+                            mu3 = (-mu * mu - 3 * mu2) * mu + mu3p
                             mu3 = mu3p - 3 * mu * mu2 - mu**3
                     with np.errstate(invalid='ignore'):
-                        mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
+                        mu4 = ((-mu**2 - 6*mu2) * mu - 4*mu3)*mu + mu4p
                         g2 = mu4 / mu2**2.0 - 3.0
                 out0 = default.copy()
                 place(out0, cond, g2)
                 output.append(out0)
         else:  # no valid args
-            output = []
-            for _ in moments:
-                out0 = default.copy()
-                output.append(out0)
+            output = [default.copy() for _ in moments]
 
         if len(output) == 1:
             return output[0]
@@ -1187,7 +1209,7 @@ class rv_generic(object):
 
         See Also
         --------
-        stats.distributions.rv_discrete.ppf
+        rv_discrete.ppf
             Inverse of the CDF
 
         """
@@ -1302,6 +1324,29 @@ class rv_generic(object):
         b = self.ppf(q2, *args, **kwds)
         return a, b
 
+    def support(self, *args, **kwargs):
+        """
+        Return the support of the distribution.
+
+        Parameters
+        ----------
+        arg1, arg2, ... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            location parameter, Default is 0.
+        scale : array_like, optional
+            scale parameter, Default is 1.
+        Returns
+        -------
+        a, b : float
+            end-points of the distribution's support.
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwargs)
+        _a, _b = self._get_support(*args)
+        return _a * scale + loc, _b * scale + loc
+
 
 ##  continuous random variables: implement maybe later
 ##
@@ -1383,13 +1428,14 @@ class rv_continuous(rv_generic):
     fit
     fit_loc_scale
     nnlf
+    support
 
     Notes
     -----
     Public methods of an instance of a distribution class (e.g., ``pdf``,
     ``cdf``) check their arguments and pass valid arguments to private,
     computational methods (``_pdf``, ``_cdf``). For ``pdf(x)``, ``x`` is valid
-    if it is within the support of a distribution, ``self.a <= x <= self.b``.
+    if it is within the support of the distribution.
     Whether a shape parameter is valid is decided by an ``_argcheck`` method
     (which defaults to checking that its arguments are strictly positive.)
 
@@ -1402,12 +1448,29 @@ class rv_continuous(rv_generic):
     If positive argument checking is not correct for your RV
     then you will also need to re-define the ``_argcheck`` method.
 
+    For most of the scipy.stats distributions, the support interval doesn't
+    depend on the shape parameters. ``x`` being in the support interval is
+    equivalent to ``self.a <= x <= self.b``.  If either of the endpoints of
+    the support do depend on the shape parameters, then
+    i) the distribution must implement the ``_get_support`` method; and
+    ii) those dependent endpoints must be omitted from the distribution's
+    call to the ``rv_continuous`` initializer.
+
     Correct, but potentially slow defaults exist for the remaining
     methods but for speed and/or accuracy you can over-ride::
 
       _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
 
-    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
+    The default method ``_rvs`` relies on the inverse of the cdf, ``_ppf``,
+    applied to a uniform random variate. In order to generate random variates
+    efficiently, either the default ``_ppf`` needs to be overwritten (e.g.
+    if the inverse cdf can expressed in an explicit form) or a sampling
+    method needs to be implemented in a custom ``_rvs`` method.
+
+    If possible, you should override ``_isf``, ``_sf`` or ``_logsf``.
+    The main reason would be to improve numerical accuracy: for example,
+    the survival function ``_sf`` is computed as ``1 - _cdf`` which can
+    result in loss of precision if ``_cdf(x)`` is close to one.
 
     **Methods that can be overwritten by subclasses**
     ::
@@ -1422,6 +1485,7 @@ class rv_continuous(rv_generic):
       _munp
       _entropy
       _argcheck
+      _get_support
 
     There are additional (internal and private) generic methods that can
     be useful for cross-checking and for debugging, but might work in all
@@ -1445,7 +1509,7 @@ class rv_continuous(rv_generic):
     rv = generic(<shape(s)>, loc=0, scale=1)
         `rv_frozen` object with the same methods but holding the given shape,
         location, and scale fixed
-        
+
     **Statistics**
 
     Statistics are computed using numerical integration by default.
@@ -1571,10 +1635,11 @@ class rv_continuous(rv_generic):
 
     def _ppf_single(self, q, *args):
         left = right = None
-        if self.a > -np.inf:
-            left = self.a
-        if self.b < np.inf:
-            right = self.b
+        _a, _b = self._get_support(*args)
+        if _a > -np.inf:
+            left = _a
+        if _b < np.inf:
+            right = _b
 
         factor = 10.
         if not left:  # i.e. self.a = -inf
@@ -1598,7 +1663,8 @@ class rv_continuous(rv_generic):
         return x**m * self.pdf(x, *args)
 
     def _mom0_sc(self, m, *args):
-        return integrate.quad(self._mom_integ0, self.a, self.b,
+        _a, _b = self._get_support(*args)
+        return integrate.quad(self._mom_integ0, _a, _b,
                               args=(m,)+args)[0]
 
     # moment calculated using ppf
@@ -1616,7 +1682,8 @@ class rv_continuous(rv_generic):
         return log(self._pdf(x, *args))
 
     def _cdf_single(self, x, *args):
-        return integrate.quad(self._pdf, self.a, x, args=args)[0]
+        _a, _b = self._get_support(*args)
+        return integrate.quad(self._pdf, _a, x, args=args)[0]
 
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
@@ -1652,7 +1719,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = self._support_mask(x) & (scale > 0)
+        cond1 = self._support_mask(x, *args) & (scale > 0)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
@@ -1694,7 +1761,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = self._support_mask(x) & (scale > 0)
+        cond1 = self._support_mask(x, *args) & (scale > 0)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
@@ -1730,13 +1797,14 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = self._open_support_mask(x) & (scale > 0)
-        cond2 = (x >= self.b) & cond0
+        cond1 = self._open_support_mask(x, *args) & (scale > 0)
+        cond2 = (x >= _b) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
@@ -1771,13 +1839,14 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = self._open_support_mask(x) & (scale > 0)
-        cond2 = (x >= self.b) & cond0
+        cond1 = self._open_support_mask(x, *args) & (scale > 0)
+        cond2 = (x >= _b) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
@@ -1813,13 +1882,14 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = self._open_support_mask(x) & (scale > 0)
-        cond2 = cond0 & (x <= self.a)
+        cond1 = self._open_support_mask(x, *args) & (scale > 0)
+        cond2 = cond0 & (x <= _a)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
@@ -1857,13 +1927,14 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = self._open_support_mask(x) & (scale > 0)
-        cond2 = cond0 & (x <= self.a)
+        cond1 = self._open_support_mask(x, *args) & (scale > 0)
+        cond2 = cond0 & (x <= _a)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
@@ -1899,6 +1970,7 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         q, loc, scale = map(asarray, (q, loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
@@ -1908,8 +1980,8 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond), value=self.badvalue)
 
-        lower_bound = self.a * scale + loc
-        upper_bound = self.b * scale + loc
+        lower_bound = _a * scale + loc
+        upper_bound = _b * scale + loc
         place(output, cond2, argsreduce(cond2, lower_bound)[0])
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
@@ -1944,6 +2016,7 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         q, loc, scale = map(asarray, (q, loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
@@ -1953,8 +2026,8 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond), value=self.badvalue)
 
-        lower_bound = self.a * scale + loc
-        upper_bound = self.b * scale + loc
+        lower_bound = _a * scale + loc
+        upper_bound = _b * scale + loc
         place(output, cond2, argsreduce(cond2, lower_bound)[0])
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
@@ -1991,12 +2064,12 @@ class rv_continuous(rv_generic):
             return inf
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
-        if np.any(~self._support_mask(x)):
+        if np.any(~self._support_mask(x, *args)):
             return inf
         return self._nnlf(x, *args) + n_log_scale
 
     def _nnlf_and_penalty(self, x, args):
-        cond0 = ~self._support_mask(x)
+        cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0, axis=0)
         if n_bad > 0:
             x = argsreduce(~cond0, x)[0]
@@ -2241,7 +2314,8 @@ class rv_continuous(rv_generic):
 
         # Compute the support according to the shape parameters.
         self._argcheck(*args)
-        a, b = self.a, self.b
+        _a, _b = self._get_support(*args)
+        a, b = _a, _b
         support_width = b - a
 
         # If the support is empty then return the moment-based estimates.
@@ -2317,8 +2391,9 @@ class rv_continuous(rv_generic):
             return entr(val)
 
         # upper limit is often inf, so suppress warnings when integrating
+        _a, _b = self._get_support(*args)
         olderr = np.seterr(over='ignore')
-        h = integrate.quad(integ, self.a, self.b)[0]
+        h = integrate.quad(integ, _a, _b)[0]
         np.seterr(**olderr)
 
         if not np.isnan(h):
@@ -2326,27 +2401,35 @@ class rv_continuous(rv_generic):
         else:
             # try with different limits if integration problems
             low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
-            if np.isinf(self.b):
+            if np.isinf(_b):
                 upper = upp
             else:
-                upper = self.b
-            if np.isinf(self.a):
+                upper = _b
+            if np.isinf(_a):
                 lower = low
             else:
-                lower = self.a
+                lower = _a
             return integrate.quad(integ, lower, upper)[0]
 
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
         """Calculate expected value of a function with respect to the
-        distribution.
+        distribution by numerical integration.
 
         The expected value of a function ``f(x)`` with respect to a
         distribution ``dist`` is defined as::
 
-                    ubound
-            E[x] = Integral(f(x) * dist.pdf(x))
-                    lbound
+                    ub
+            E[f(x)] = Integral(f(x) * dist.pdf(x)),
+                    lb
+
+        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)``
+        distribution. If the bounds ``lb`` and ``ub`` correspond to the
+        support of the distribution, e.g. ``[-inf, inf]`` in the default
+        case, then the integral is the unrestricted expectation of ``f(x)``.
+        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0``
+        outside a finite interval in which case the expectation is
+        calculated within the finite range ``[lb, ub]``.
 
         Parameters
         ----------
@@ -2378,12 +2461,35 @@ class rv_continuous(rv_generic):
         Notes
         -----
         The integration behavior of this function is inherited from
-        `integrate.quad`.
+        `scipy.integrate.quad`. Neither this function nor
+        `scipy.integrate.quad` can verify whether the integral exists or is
+        finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
+        ``cauchy(0).expect()`` returns ``0.0``.
 
+        Examples
+        --------
+
+        To understand the effect of the bounds of integration consider
+        >>> from scipy.stats import expon
+        >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
+        0.6321205588285578
+
+        This is close to
+
+        >>> expon(1).cdf(2.0) - expon(1).cdf(0.0)
+        0.6321205588285577
+
+        If ``conditional=True``
+
+        >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True)
+        1.0000000000000002
+
+        The slight deviation from 1 is due to numerical integration.
         """
         lockwds = {'loc': loc,
                    'scale': scale}
         self._argcheck(*args)
+        _a, _b = self._get_support(*args)
         if func is None:
             def fun(x, *args):
                 return x * self.pdf(x, *args, **lockwds)
@@ -2391,9 +2497,9 @@ class rv_continuous(rv_generic):
             def fun(x, *args):
                 return func(x) * self.pdf(x, *args, **lockwds)
         if lb is None:
-            lb = loc + self.a * scale
+            lb = loc + _a * scale
         if ub is None:
-            ub = loc + self.b * scale
+            ub = loc + _b * scale
         if conditional:
             invfac = (self.sf(lb, *args, **lockwds)
                       - self.sf(ub, *args, **lockwds))
@@ -2412,16 +2518,19 @@ def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
     def fun(x):
         return np.power(x, n) * self._pmf(x, *args)
-    return _expect(fun, self.a, self.b, self.ppf(0.5, *args), self.inc)
+
+    _a, _b = self._get_support(*args)
+    return _expect(fun, _a, _b, self.ppf(0.5, *args), self.inc)
 
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
-    b = self.b
-    a = self.a
+    _a, _b = self._get_support(*args)
+    b = _b
+    a = _a
     if isinf(b):            # Be sure ending point is > q
         b = int(max(100*q, 10))
         while 1:
-            if b >= self.b:
+            if b >= _b:
                 qb = 1.0
                 break
             qb = self._cdf(b, *args)
@@ -2434,7 +2543,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     if isinf(a):    # be sure starting point < q
         a = int(min(-100*q, -10))
         while 1:
-            if a <= self.a:
+            if a <= _a:
                 qb = 0.0
                 break
             qa = self._cdf(a, *args)
@@ -2538,8 +2647,9 @@ class rv_discrete(rv_generic):
     moment_tol : float, optional
         The tolerance for the generic calculation of moments.
     values : tuple of two array_like, optional
-        ``(xk, pk)`` where ``xk`` are integers with non-zero
-        probabilities ``pk``  with ``sum(pk) = 1``.
+        ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
+        probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
+        and ``pk`` must have the same shape.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -2591,6 +2701,7 @@ class rv_discrete(rv_generic):
     var
     interval
     __call__
+    support
 
 
     Notes
@@ -2769,7 +2880,8 @@ class rv_discrete(rv_generic):
         return log(self._pmf(k, *args))
 
     def _cdf_single(self, k, *args):
-        m = arange(int(self.a), k+1)
+        _a, _b = self._get_support(*args)
+        m = arange(int(_a), k+1)
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
@@ -2827,11 +2939,12 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
@@ -2863,11 +2976,12 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)
@@ -2900,12 +3014,13 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k < self.b)
-        cond2 = (k >= self.b)
+        cond1 = (k >= _a) & (k < _b)
+        cond2 = (k >= _b)
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
@@ -2939,12 +3054,13 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k < self.b)
-        cond2 = (k >= self.b)
+        cond1 = (k >= _a) & (k < _b)
+        cond2 = (k >= _b)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)
@@ -2979,12 +3095,13 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k < self.b)
-        cond2 = (k < self.a) & cond0
+        cond1 = (k >= _a) & (k < _b)
+        cond2 = (k < _a) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
@@ -3020,12 +3137,13 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k < self.b)
-        cond2 = (k < self.a) & cond0
+        cond1 = (k >= _a) & (k < _b)
+        cond2 = (k < _a) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)
@@ -3059,6 +3177,7 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         q, loc = map(asarray, (q, loc))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (loc == loc)
@@ -3067,8 +3186,8 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond), value=self.badvalue, typecode='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), self.a-1)
-        place(output, cond2, self.b)
+        place(output, (q == 0)*(cond == cond), _a-1)
+        place(output, cond2, _b)
         if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
@@ -3099,6 +3218,7 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
+        _a, _b = self._get_support(*args)
         q, loc = map(asarray, (q, loc))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (loc == loc)
@@ -3109,8 +3229,8 @@ class rv_discrete(rv_generic):
         # same problem as with ppf; copied from ppf and changed
         output = valarray(shape(cond), value=self.badvalue, typecode='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), self.b)
-        place(output, cond2, self.a-1)
+        place(output, (q == 0)*(cond == cond), _b)
+        place(output, cond2, _a-1)
 
         # call place only if at least 1 valid argument
         if np.any(cond):
@@ -3127,14 +3247,15 @@ class rv_discrete(rv_generic):
         if hasattr(self, 'pk'):
             return entropy(self.pk)
         else:
+            _a, _b = self._get_support(*args)
             return _expect(lambda x: entr(self.pmf(x, *args)),
-                           self.a, self.b, self.ppf(0.5, *args), self.inc)
+                           _a, _b, self.ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
         """
         Calculate expected value of a function with respect to the distribution
-        for discrete distribution.
+        for discrete distribution by numerical summation.
 
         Parameters
         ----------
@@ -3195,12 +3316,13 @@ class rv_discrete(rv_generic):
         # not anymore, seems to work now with _pmf
 
         self._argcheck(*args)  # (re)generate scalar self.a and self.b
+        _a, _b = self._get_support(*args)
         if lb is None:
-            lb = self.a
+            lb = _a
         else:
             lb = lb - loc   # convert bound for standardized distribution
         if ub is None:
-            ub = self.b
+            ub = _b
         else:
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
@@ -3321,8 +3443,10 @@ class rv_sample(rv_discrete):
 
         xk, pk = values
 
-        if len(xk) != len(pk):
-            raise ValueError("xk and pk need to have the same length.")
+        if np.shape(xk) != np.shape(pk):
+            raise ValueError("xk and pk must have the same shape.")
+        if np.less(pk, 0.0).any():
+            raise ValueError("All elements of pk must be non-negative.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
 
@@ -3331,6 +3455,7 @@ class rv_sample(rv_discrete):
         self.pk = np.take(np.ravel(pk), indx, 0)
         self.a = self.xk[0]
         self.b = self.xk[-1]
+
         self.qvals = np.cumsum(self.pk, axis=0)
 
         self.shapes = ' '   # bypass inspection
@@ -3340,6 +3465,21 @@ class rv_sample(rv_discrete):
                                   locscale_out='loc, 1')
 
         self._construct_docstrings(name, longname, extradoc)
+
+    def _get_support(self, *args):
+        """Return the support of the (unscaled, unshifted) distribution.
+
+        Parameters
+        ----------
+        arg1, arg2, ... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        Returns
+        -------
+        a, b : numeric (float, or int or +/-np.inf)
+            end-points of the distribution's support.
+        """
+        return self.a, self.b
 
     def _pmf(self, x):
         return np.select([x == k for k in self.xk],
