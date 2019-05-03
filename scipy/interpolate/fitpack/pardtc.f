@@ -55,22 +55,22 @@ c  ..scalar arguments..
       integer nx,ny,kx,ky,nux,nuy,ier
 c  ..array arguments..
       real*8 tx(nx),ty(ny),c((nx-kx-1)*(ny-ky-1)),
-     * newc((nx-nux-kx-1)*(ny-nuy-ky-1))
+     * newc((nx-kx-1)*(ny-ky-1))
 c  ..local scalars..
       integer i,j,kx1,ky1,lx,ly,l1,l2,m,m0,m1,
-     * nc,nkx1,nky1,nxx,nyy,newkx,newky
+     * nnewc,nkx1,nky1,nxx,nyy,newkx,newky
       real*8 ak,fac
 c  ..
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.
       ier = 10
+      if(nux.lt.0 .or. nux.ge.kx) go to 400
+      if(nuy.lt.0 .or. nuy.ge.ky) go to 400
       kx1 = kx+1
       ky1 = ky+1
       nkx1 = nx-kx1
       nky1 = ny-ky1
       nc = nkx1*nky1
-      if(nux.lt.0 .or. nux.ge.kx) go to 400
-      if(nuy.lt.0 .or. nuy.ge.ky) go to 400
       ier = 0
       nxx = nkx1
       nyy = nky1
