@@ -1064,24 +1064,33 @@ class BivariateSpline(_BivariateSplineBase):
         kx, ky = self.degrees
         return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
-    @staticmethod
-    def _validate_input(x, y, z, w, kx, ky, eps):
-        x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
-        if not x.size == y.size == z.size:
-            raise ValueError('x, y, and z should have a same length')
+    def partial_derivative(self, nx, ny):
+        """Construct a new spline representing a partial derivative of this
+        spline.
 
-        if w is not None:
-            w = np.asarray(w)
-            if x.size != w.size:
-                raise ValueError('x, y, z, and w should have a same length')
-            elif not np.all(w >= 0.0):
-                raise ValueError('w should be positive')
-        if (eps is not None) and (not 0.0 < eps < 1.0):
-            raise ValueError('eps should be between (0, 1)')
-        if not x.size >= (kx + 1) * (ky + 1):
-            raise ValueError('The length of x, y and z should be at least'
-                             ' (kx+1) * (ky+1)')
-        return x, y, z, w
+        Parameters
+        ----------
+        nx, ny : int
+            Orders of the derivative in x and y respectively.
+
+        Returns
+        -------
+        spline :
+            Another spline of the same class, of order (kx - nx, ky - ny),
+            representing the derivative of this spline.
+        """
+        if nx == 0 and ny == 0:
+            return self
+        else:
+            tx, ty, c = self.tck[:3]
+            kx, ky = self.degrees
+            newc, ier = pardtc(tx, ty, c, kx, ky, nx, ny)
+            if not ier == 0:
+                raise ValueError("Error code returned by pardtc: %s" % ier)
+            newtx = tx[nx:len(tx) - 2 * nx]
+            newty = tx[ny:len(tx) - 2 * ny]
+            newkx, newky = kx - nx, ky - ny
+            return self._from_tck((newtx, newty, newc, newkx, newky))
 
 
 class SmoothBivariateSpline(BivariateSpline):
