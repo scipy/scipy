@@ -340,7 +340,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
             else:
                 phase = 2
                 x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve.copy()), *_T_o,
+            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve.copy(), *_T_o,
                                                     tol=tol)
 
             if callback is not None:
