@@ -892,6 +892,14 @@ class TestRectBivariateSpline(object):
                                                                grid=False),
                                   dxdy)
 
+    def test_partial_derivative_order_too_large(self):
+        x = array([0, 1, 2, 3, 4], dtype=float)
+        y = x.copy()
+        z = ones((x.size, y.size))
+        lut = RectBivariateSpline(x, y, z)
+        with assert_raises(ValueError):
+            dlut = lut.partial_derivative(4, 1)
+
     def test_broadcast(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
