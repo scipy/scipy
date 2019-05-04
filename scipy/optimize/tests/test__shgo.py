@@ -645,6 +645,12 @@ class TestShgoArguments(object):
         run_test(test1_1, n=1, iters=7, options=options,
                  sampling_method='sobol')
 
+    def test_16_disp_bounds_minimizer(self):
+        """Test disp=True with minimizers that do not support bounds """
+        options = {'disp': True}
+        minimizer_kwargs = {'method': 'nelder-mead'}
+        run_test(test1_2, sampling_method='simplicial',
+                 options=options, minimizer_kwargs=minimizer_kwargs)
 
 # Failure test functions
 class TestShgoFailures(object):
