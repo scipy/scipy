@@ -1081,6 +1081,16 @@ class BivariateSpline(_BivariateSplineBase):
         spline :
             A new spline of degrees (kx - nux, ky - nuy) representing the
             derivative of this spline.
+
+        Notes
+        -----
+        The returned spline is an instance of the class
+        ``_DerivedBivariateSpline`` that supports spline evaluation operations,
+        but is not directly constructed from original data.
+
+        See Also
+        --------
+        _DerivedBivariateSpline
         """
         if nux == 0 and nuy == 0:
             return self
@@ -1104,7 +1114,36 @@ class BivariateSpline(_BivariateSplineBase):
             newty = ty[nuy:ny - nuy]
             newkx, newky = kx - nux, ky - nuy
             newclen = (nx - nux - kx - 1) * (ny - nuy - ky - 1)
-            return self._from_tck((newtx, newty, newc[:newclen], newkx, newky))
+            return _DerivedBivariateSpline._from_tck((newtx, newty,
+                                                      newc[:newclen],
+                                                      newkx, newky))
+
+
+class _DerivedBivariateSpline(BivariateSpline):
+    """Bivariate spline constructed from the coefficients and knots of another
+    spline.
+
+    Notes
+    -----
+    The class is not meant to be instantiated directly from the data to be
+    interpolated or smoothed. As a result, its ``fp`` attribute and
+    ``get_residual`` method are inherited but overriden; ``AttributeError`` is
+    raised when they are accessed.
+
+    The other inherited attributes can be used as usual.
+    """
+    __invalid_why = ("is unavailable, because _DerivedBivariateSpline"
+                     " instance is not constructed from data that are to be"
+                     " interpolated or smoothed, but derived from the"
+                     " underlying knots and coefficients of another spline"
+                     " object")
+
+    @property
+    def fp(self):
+        raise AttributeError("attribute \"fp\" %s" % self.__invalid_why)
+
+    def get_residual(self):
+        raise AttributeError("method \"get_residual\" %s" % self.__invalid_why)
 
 
 class SmoothBivariateSpline(BivariateSpline):
