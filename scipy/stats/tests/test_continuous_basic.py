@@ -50,7 +50,7 @@ distcont_extra = [
 
 distslow = ['kappa4', 'rdist', 'gausshyper',
             'recipinvgauss', 'genexpon',
-            'vonmises', 'vonmises_line', 'mielke', 'semicircular',
+            'vonmises', 'vonmises_line', 'mielke',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
