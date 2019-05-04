@@ -1,4 +1,7 @@
 # Created by Pearu Peterson, June 2003
+from __future__ import division, print_function, absolute_import
+
+import itertools
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, suppress_warnings)
@@ -1095,3 +1098,56 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
                 - func(x + eps, y - eps) + func(x - eps, y - eps)) / (2*eps)**2
     else:
         raise ValueError("invalid derivative order")
+
+
+class Test_DerivedBivariateSpline(object):
+    """Test the creation, usage, and attribute access of the (private)
+    _DerivedBivariateSpline class.
+    """
+    def setup_method(self):
+        x = np.concatenate(list(zip(range(10), range(10))))
+        y = np.concatenate(list(zip(range(10), range(1, 11))))
+        z = np.concatenate((np.linspace(3, 1, 10), np.linspace(1, 3, 10)))
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            self.lut_lsq = LSQBivariateSpline(x, y, z,
+                                              linspace(0.5, 19.5, 4),
+                                              linspace(1.5, 20.5, 4),
+                                              eps=1e-2)
+        self.lut_smooth = SmoothBivariateSpline(x, y, z)
+        xx = linspace(0, 1, 20)
+        yy = xx + 1.0
+        zz = array([np.roll(z, i) for i in range(z.size)])
+        self.lut_rect = RectBivariateSpline(xx, yy, zz)
+        self.orders = list(itertools.product(range(3), range(3)))
+
+    def test_creation_from_LSQ(self):
+        for nux, nuy in self.orders:
+            lut_der = self.lut_lsq.partial_derivative(nux, nuy)
+            a = lut_der(3.5, 3.5, grid=False)
+            b = self.lut_lsq(3.5, 3.5, dx=nux, dy=nuy, grid=False)
+            assert_equal(a, b)
+
+    def test_creation_from_Smooth(self):
+        for nux, nuy in self.orders:
+            lut_der = self.lut_smooth.partial_derivative(nux, nuy)
+            a = lut_der(5.5, 5.5, grid=False)
+            b = self.lut_smooth(5.5, 5.5, dx=nux, dy=nuy, grid=False)
+            assert_equal(a, b)
+
+    def test_creation_from_Rect(self):
+        for nux, nuy in self.orders:
+            lut_der = self.lut_rect.partial_derivative(nux, nuy)
+            a = lut_der(0.5, 1.5, grid=False)
+            b = self.lut_rect(0.5, 1.5, dx=nux, dy=nuy, grid=False)
+            assert_equal(a, b)
+
+    def test_invalid_attribute_fp(self):
+        der = self.lut_rect.partial_derivative(1, 1)
+        with assert_raises(AttributeError):
+            a = der.fp
+
+    def test_invalid_attribute_get_residual(self):
+        der = self.lut_smooth.partial_derivative(1, 1)
+        with assert_raises(AttributeError):
+            a = der.get_residual()
