@@ -1072,22 +1072,32 @@ class BivariateSpline(_BivariateSplineBase):
         Parameters
         ----------
         nux, nuy : int
-            Orders of the derivative in x and y respectively.
+            Orders of the derivative in x and y respectively. They must be
+            non-negative integers and less than the respective degree of the
+            original spline (self) in that direction (kx, ky).
 
         Returns
         -------
         spline :
-            Another spline of the same class, of order (kx - nux, ky - nuy),
-            representing the derivative of this spline.
+            A new spline of degrees (kx - nux, ky - nuy) representing the
+            derivative of this spline.
         """
         if nux == 0 and nuy == 0:
             return self
         else:
-            tx, ty, c = self.tck[:3]
             kx, ky = self.degrees
+            if not (nux >= 0 and nuy >= 0):
+                raise ValueError("order of derivative must be positive or"
+                                 " zero")
+            if not (nux < kx and nuy < ky):
+                raise ValueError("order of derivative must be less than"
+                                 " degree of spline")
+            tx, ty, c = self.tck[:3]
             newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, nux, nuy)
-            if not ier == 0:
-                raise ValueError("Error code returned by pardtc: %s" % ier)
+            if ier != 0:
+                # This should not happen under normal conditions.
+                raise ValueError("Unexpected error code returned by"
+                                 " pardtc: %d" % ier)
             nx = len(tx)
             ny = len(ty)
             newtx = tx[nux:nx - nux]
