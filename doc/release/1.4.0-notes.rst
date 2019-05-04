@@ -30,6 +30,14 @@ Highlights of this release
 New features
 ============
 
+`scipy.integrate` improvements
+------------------------------
+
+The function `scipy.integrate.solve_ivp` now has an ``args`` argument.
+This allows the user-defined functions passed to the function to have
+additional parameters without having to create wrapper functions or
+lambda expressions for them.
+
 `scipy.interpolate` improvements
 --------------------------------
 
