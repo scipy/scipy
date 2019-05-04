@@ -131,7 +131,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
 {
     int npoles = 0, more;
     npy_intp kk, lines, len;
-    double *buffer = NULL, gain, poles[MAX_SPLINE_FILTER_POLES];
+    double *buffer = NULL, poles[MAX_SPLINE_FILTER_POLES];
     NI_LineBuffer iline_buffer, oline_buffer;
     NPY_BEGIN_THREADS_DEF;
 
