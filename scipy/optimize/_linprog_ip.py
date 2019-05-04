@@ -794,7 +794,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         go = rho_p > tol or rho_d > tol or rho_A > tol
 
         if disp:
-            _display_iter(rho_p, rho_d, rho_g, alpha, float(rho_mu), obj)
+            _display_iter(rho_p, rho_d, rho_g, float(alpha),
+                          float(rho_mu), obj)
         if callback is not None:
             x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
                                                     tol=tol)
