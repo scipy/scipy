@@ -75,6 +75,12 @@ def linprog_verbose_callback(res):
         message : str
             A string descriptor of the exit status of the optimization.
     """
+    warn(
+        "linprog_verbose_callback is set to be depreciated in version 1.6. "
+        "It demonstrates the callback interface using the simplex method, "
+        "which has been superseded by the interior-point and revised "
+        "simplex solvers.", DeprecationWarning)
+
     x = res['x']
     fun = res['fun']
     phase = res['phase']

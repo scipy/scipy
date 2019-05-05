@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_less)
 from pytest import raises as assert_raises
-from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize import linprog, linprog_verbose_callback, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
@@ -207,6 +207,12 @@ def generic_callback_test(self):
     assert_allclose(last_cb['x'], res['x'])
     assert_allclose(last_cb['con'], res['con'])
     assert_allclose(last_cb['slack'], res['slack'])
+
+
+def test_linprog_verbose_callback_deprecation_warning():
+    c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+    with pytest.deprecated_call():
+        linprog(c, A_ub, b_ub, A_eq, b_eq, callback=linprog_verbose_callback)
 
 
 def test_unknown_solver():
