@@ -49,6 +49,11 @@ cdef extern from "lapack_defs.h":
 cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                                       void **bufferp, double signm,
                                       double signn) nogil:
+
+    # Ensure that the caller can safely call free(*bufferp) even if an
+    # invalid argument is found in the following validation code.
+    bufferp[0] = NULL
+
     if n < 0:
         sf_error.error("ellip_harm", sf_error.ARG, "invalid value for n")
         return NULL
