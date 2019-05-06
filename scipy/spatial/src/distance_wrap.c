@@ -193,7 +193,7 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n, status;
-  double *dm, *dimbuf;
+  double *dm;
   const double *XA, *XB;
   const double *covinv;
   static char *kwlist[] = {"XA", "XB", "dm", "VI", NULL};
