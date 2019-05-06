@@ -1014,6 +1014,13 @@ class TestRectSphereBivariateSpline(object):
         assert_allclose(lut(x, y, dtheta=1, dphi=1), _numdiff_2d(lut, x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
+        assert_array_equal(lut(x, y, dtheta=1),
+                           lut.partial_derivative(1, 0)(x, y))
+        assert_array_equal(lut(x, y, dphi=1),
+                           lut.partial_derivative(0, 1)(x, y))
+        assert_array_equal(lut(x, y, dtheta=1, dphi=1),
+                           lut.partial_derivative(1, 1)(x, y))
+
     def test_derivatives(self):
         y = linspace(0.01, 2*pi-0.01, 7)
         x = linspace(0.01, pi-0.01, 7)
@@ -1037,39 +1044,12 @@ class TestRectSphereBivariateSpline(object):
                         _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
-    def test_invalid_input(self):
-        data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
-                      np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
-
-        with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(-1, 170, 9) * np.pi / 180.
-            lons = np.linspace(0, 350, 18) * np.pi / 180.
-            RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between [0, pi]" in str(exc_info.value)
-
-        with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(10, 181, 9) * np.pi / 180.
-            lons = np.linspace(0, 350, 18) * np.pi / 180.
-            RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between [0, pi]" in str(exc_info.value)
-
-        with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(10, 170, 9) * np.pi / 180.
-            lons = np.linspace(-181, 10, 18) * np.pi / 180.
-            RectSphereBivariateSpline(lats, lons, data)
-        assert "v[0] should be between [-pi, pi)" in str(exc_info.value)
-
-        with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(10, 170, 9) * np.pi / 180.
-            lons = np.linspace(-10, 360, 18) * np.pi / 180.
-            RectSphereBivariateSpline(lats, lons, data)
-        assert "v[-1] should be v[0] + 2pi or less" in str(exc_info.value)
-
-        with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(10, 170, 9) * np.pi / 180.
-            lons = np.linspace(10, 350, 18) * np.pi / 180.
-            RectSphereBivariateSpline(lats, lons, data, s=-1)
-        assert "s should be positive" in str(exc_info.value)
+        assert_array_equal(lut(x, y, dtheta=1, grid=False),
+                           lut.partial_derivative(1, 0)(x, y, grid=False))
+        assert_array_equal(lut(x, y, dphi=1, grid=False),
+                           lut.partial_derivative(0, 1)(x, y, grid=False))
+        assert_array_equal(lut(x, y, dtheta=1, dphi=1, grid=False),
+                           lut.partial_derivative(1, 1)(x, y, grid=False))
 
     def test_array_like_input(self):
         y = linspace(0.01, 2 * pi - 0.01, 7)

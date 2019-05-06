@@ -965,10 +965,6 @@ class _BivariateSplineBase(object):
         The returned spline is an instance of the class
         ``_DerivedBivariateSpline`` that supports spline evaluation operations,
         but is not directly constructed from original data.
-
-        See Also
-        --------
-        _DerivedBivariateSpline
         """
         if nux == 0 and nuy == 0:
             return self
