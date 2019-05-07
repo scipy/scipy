@@ -491,7 +491,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     """
     meth = method.lower()
-    default_tol = 1e-12 if meth == 'simplex' else 1e-9
 
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
@@ -499,7 +498,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0 = _parse_linprog(
         c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0)
-    tol = solver_options.get('tol', default_tol)
+    tol = solver_options.get('tol', 1e-9)
 
     iteration = 0
     complete = False    # will become True if solved in presolve
