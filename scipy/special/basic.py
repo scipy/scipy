@@ -1945,7 +1945,8 @@ def comb(N, k, exact=False, repetition=False):
     Notes
     -----
     - Array arguments accepted only for exact=False case.
-    - If k > N, N < 0, or k < 0, then a 0 is returned.
+    - If N < 0, or k < 0, then a 0 is returned.    
+    - If k > N and repetition=False, then a 0 is returned.
 
     Examples
     --------
