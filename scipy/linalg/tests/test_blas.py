@@ -25,6 +25,7 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
 from numpy.random import rand, seed
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve, \
                                           solve_triangular
+from scipy.linalg import svd
 
 try:
     from scipy.linalg import _cblas as cblas
@@ -1077,3 +1078,14 @@ def test_trsm():
         Al[arange(m), arange(m)] = dtype(1)
         x2 = solve(Al.conj().T, alpha*B2.conj().T)
         assert_allclose(x1, x2.conj().T, atol=tol)
+
+
+def test_svd_avx_issue():
+    # test for OpenBLAS AVX issue reported
+    # upstream in NumPy Issue 13401, where
+    # SciPy fails with SkylakeX architecture
+    np.random.seed(0)
+    X = np.random.randn(100, 100) * 10
+    u, s, v = svd(X)
+    assert np.abs(np.mean(X - u @ np.diag(s) @ v)) < 1e-12
+    assert np.std(X - u @ np.diag(s) @ v) < 1e-12

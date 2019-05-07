@@ -142,3 +142,49 @@ jobs:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+
+- job: Intel_SDE
+  pool:
+    # have to use Mac to reproduce SciPy problem reported in
+    # NumPy Issue 13401 because manylinux1
+    # gcc too old to enable our ecosystem OpenBLAS
+    # binaries to switch to SkylakeX kernel
+    vmImage: 'macOS-10.13'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+        versionSpec: '3.7'
+        architecture: 'x64'
+  - script: /bin/bash -c "sudo xcode-select -s /Applications/Xcode_10.app/Contents/Developer"
+    displayName: 'select Xcode version'
+  - script: |
+      python -m pip install --upgrade pip setuptools wheel
+    displayName: 'install tools'
+  - script: python -m pip install numpy cython pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib
+    displayName: 'Install dependencies'
+  - script: |
+      brew install gcc49
+      ln -s /usr/local/Cellar/gcc@4.9/4.9.4_1/lib/gcc/4.9/libgfortran.3.dylib /usr/local/lib/libgfortran.3.dylib
+      ln -s /usr/local/Cellar/gcc@4.9/4.9.4_1/lib/gcc/4.9/libquadmath.0.dylib /usr/local/lib/libquadmath.0.dylib
+    displayName: 'install gfortran'
+  - script: |
+       mkdir openblas && cd openblas
+       wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.3-186-g701ea883-macosx_10_9_x86_64-gf_1becaaa.tar.gz
+       tar -zxvf openblas-v0.3.3-186-g701ea883-macosx_10_9_x86_64-gf_1becaaa.tar.gz
+       cp ./usr/local/lib/* /usr/local/lib/
+       cp ./usr/local/include/* /usr/local/include/
+       cd ..
+    displayName: 'install OpenBLAS'
+  - script: |
+      mkdir dist
+      F77=gfortran-4.9 F90=gfortran-4.9 python -m pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
+      ls -tlrh dist
+      python -m pip install dist/scipy*.whl
+    displayName: 'Build / Install SciPy'
+  - bash: |
+      mkdir SDE && cd SDE
+      wget -O sde-external-8.35.0-2019-03-11-mac.tar.bz2 https://www.dropbox.com/s/rkgx577cb7pxc8c/sde-external-8.35.0-2019-03-11-mac.tar.bz2?dl=0
+      tar -xjvf sde-external-8.35.0-2019-03-11-mac.tar.bz2
+      cd ..
+      ./SDE/sde-external-8.35.0-2019-03-11-mac/sde64 -cpuid_in ./SDE/sde-external-8.35.0-2019-03-11-mac/misc/cpuid/skx/cpuid.def -- python runtests.py -n -s "linalg" --mode=full
+    displayName: 'Intel SDE testing for linalg / OpenBLAS'
