@@ -997,27 +997,14 @@ class LinprogCommonTests(object):
 
         c = np.array([-1.0, 1, 1, 1, 1, 1, 1, 1, 1,
                       1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
-
-        if self.method == 'simplex':
-            with pytest.warns(OptimizeWarning):
-                res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
-                              method=self.method, options=self.options)
-            # even though the problem is feasible, this is OK because the
-            # message corresponding with status=2 states that simplex
-            # phase 1 _could not find_ a feasible solution - not that problem
-            # _is_ infeasible
-            assert_equal(res.status, 2)
-            assert_equal(res.message[:36],
-                         "Phase 1 of the simplex method failed")
-        else:
-            with suppress_warnings() as sup:
-                sup.filter(OptimizeWarning,
-                           "Solving system with option 'sym_pos'")
-                sup.filter(RuntimeWarning, "invalid value encountered")
-                sup.filter(LinAlgWarning)
-                res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
-                              method=self.method, options=self.options)
-            _assert_success(res, desired_fun=-106.63507541835018)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning,
+                       "Solving system with option 'sym_pos'")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            sup.filter(LinAlgWarning)
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=self.options)
+        _assert_success(res, desired_fun=-106.63507541835018)
 
     def test_bug_6139(self):
         # linprog(method='simplex') fails to find a basic feasible solution
@@ -1161,11 +1148,7 @@ class LinprogCommonTests(object):
             sup.filter(LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
-        if self.method == "simplex":
-            assert_equal(res.message[:29], "The solution does not satisfy")
-            assert_equal(res.status, 4)
-        else:
-            _assert_success(res, desired_fun=-2.0080717488789235, atol=1e-6)
+        _assert_success(res, desired_fun=-2.0080717488789235, atol=1e-6)
 
     def test_bug_8174_2(self):
         # Test supplementary example from issue 8174.
@@ -1367,51 +1350,75 @@ class LinprogRSTests(LinprogCommonTests):
 
 
 class TestLinprogSimplexDefault(LinprogSimplexTests):
-    options = {}
 
-    def test_bug_7237(self):
-        # we want to check for the error
+    def setup_method(self):
+        self.options = {}
+
+    def test_bug_5400(self):
+        with pytest.raises(ValueError):
+            super(TestLinprogSimplexDefault, self).test_bug_5400()
+
+    def test_bug_7237_low_tol(self):
+        # this will pass sucessfully with the new default tolerance of 1e-9
+        # however here we want to test the error is returned for tol=1e-12.
+        self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexDefault, self).test_bug_7237()
 
-    def test_bug_8174(self):
-        # we want to check for the warning about the pivot
+    @pytest.mark.xfail(reason='Fails with too low tolerance.')
+    def test_bug_8174_low_tol(self):
+        # this will pass sucessfully with the new default tolerance of 1e-9
+        # however here we will still want to test the warning is raised.
+        self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexDefault, self).test_bug_8174()
 
 
 class TestLinprogSimplexBland(LinprogSimplexTests):
-    options = {'bland': True}
 
-    # we want to check for the error
+    def setup_method(self):
+        self.options = {'bland': True}
+
     def test_bug_5400(self):
         with pytest.raises(ValueError):
             super(TestLinprogSimplexBland, self).test_bug_5400()
 
-    def test_bug_8174(self):
+    @pytest.mark.xfail(reason='Fails with too low tolerance.')
+    def test_bug_8174_low_tol(self):
+        # this will pass sucessfully with the new default tolerance of 1e-9
+        # however here we will still want to test the warning is raised.
+        self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
-            pytest.skip("This fails, but it shouldn't.")
+            super(TestLinprogSimplexBland, self).test_bug_8174()
 
 
 class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
-    options = {'presolve': False}
 
-    def test_bug_6139(self):
+    def setup_method(self):
+        self.options = {'presolve': False}
+
+    def test_bug_6139_low_tol(self):
         # Linprog(method='simplex') fails to find a basic feasible solution
         # if phase 1 pseudo-objective function is outside the provided tol.
         # https://github.com/scipy/scipy/issues/6139
         # Without ``presolve`` eliminating such rows the result is incorrect.
+        self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
 
-    def test_bug_7237(self):
-        # we want to check for the error
+    def test_bug_7237_low_tol(self):
+        # this will pass sucessfully with the new default tolerance of 1e-9
+        # however here we want to test the error is returned for tol=1e-12.
+        self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
 
-    def test_bug_8174(self):
+    @pytest.mark.xfail(reason='Fails with too low tolerance.')
+    def test_bug_8174_low_tol(self):
+        # this will pass sucessfully with the new default tolerance of 1e-9
+        # however here we will still want to test the warning is raised.
+        self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
-            # wanted to check for the warning about the pivot
             super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
 
     def test_unbounded_no_nontrivial_constraints_1(self):
