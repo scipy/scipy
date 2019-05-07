@@ -1114,7 +1114,7 @@ def _display_summary(message, status, fun, iteration):
 
 
 def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-               complete=False, undo=[], tol=1e-8):
+               complete=False, undo=[], tol=1e-8, copy=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1187,7 +1187,9 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         x = x.tolist()
         for i, val in zip(undo[0], undo[1]):
             x.insert(i, val)
-        x = np.array(x)
+        copy = True
+    if copy:
+        x = np.array(x, copy=True)
 
     # now undo variable substitutions
     # if "complete", problem was solved in presolve; don't do anything here
