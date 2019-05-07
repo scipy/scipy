@@ -6088,35 +6088,17 @@ class semicircular_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        # semicircular.pdf(x) = 2/pi * sqrt(1-x**2)
         return 2.0/np.pi*np.sqrt(1-x*x)
 
     def _cdf(self, x):
         return 0.5+1.0/np.pi*(x*np.sqrt(1-x*x) + np.arcsin(x))
 
     def _rvs(self):
-        size1d = tuple(np.atleast_1d(self._size))
-        N = int(np.prod(size1d))
-        x = np.zeros(N)
-        simulated = 0
-        # apply rejection method using that pdf(x) <= 2/pi on [-1,1]
-        # therefore pdf(x) <= 4/pi * pdf_uniform[-1, 1]
-        # see Devroye: Non-Uniform Random Variate Generation, 1986, p. 43
-        while simulated < N:
-            k = N - simulated
-            u = self._random_state.random_sample(size=k)
-            v = -1.0 + 2 * self._random_state.random_sample(size=k)
-            # accept = (4/np.pi * u <= self._pdf(v)) can be simplified to:
-            accept = (4*u**2 + v**2 <= 1)
-            num_accept = np.sum(accept)
-            if num_accept > 0:
-                x[simulated:(simulated + num_accept)] = v[accept]
-                simulated += num_accept
-
-        if self._size == ():
-            # return scalar if rvs() is called without size specified
-            return x[0]
-        return np.reshape(x, size1d)
+        # generate values uniformly distributed on the area under the pdf
+        # (semi-circle) by randomly generating the radius and angle
+        r = np.sqrt(self._random_state.random_sample(size=self._size))
+        a = np.cos(np.pi * self._random_state.random_sample(size=self._size))
+        return r * a
 
     def _stats(self):
         return 0, 0.25, 0, -1.0
