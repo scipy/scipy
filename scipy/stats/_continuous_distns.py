@@ -750,6 +750,7 @@ class burr_gen(rv_continuous):
     --------
     fisk : a special case of either `burr` or `burr12` with ``d=1``
     burr12 : Burr Type XII distribution
+    mielke : Mielke Beta-Kappa / Dagum distribution
 
     Notes
     -----
@@ -4592,7 +4593,7 @@ maxwell = maxwell_gen(a=0.0, name='maxwell')
 
 
 class mielke_gen(rv_continuous):
-    r"""A Mielke Beta-Kappa continuous random variable.
+    r"""A Mielke Beta-Kappa / Dagum continuous random variable.
 
     %(before_notes)s
 
@@ -4604,7 +4605,10 @@ class mielke_gen(rv_continuous):
 
         f(x, k, s) = \frac{k x^{k-1}}{(1+x^s)^{1+k/s}}
 
-    for :math:`x >= 0` and :math:`k, s > 0`.
+    for :math:`x > 0` and :math:`k, s > 0`. The distribution is sometimes
+    called Dagum distribution ([2]_). It was already defined in [3]_, called
+    a Burr Type III distribution (`burr` with parameters ``c=s`` and
+    ``d=k/s``).
 
     `mielke` takes ``k`` and ``s`` as shape parameters.
 
@@ -4614,13 +4618,22 @@ class mielke_gen(rv_continuous):
     ----------
     .. [1] Mielke, P.W., 1973 "Another Family of Distributions for Describing
            and Analyzing Precipitation Data." J. Appl. Meteor., 12, 275-280
+    .. [2] Dagum, C., 1977 "A new model for personal income distribution."
+           Economie Appliquee, 33, 327-367.
+    .. [3] Burr, I. W. "Cumulative frequency functions", Annals of
+           Mathematical Statistics, 13(2), pp 215-232 (1942).
 
     %(example)s
 
     """
+    def _argcheck(self, k, s):
+        return (k > 0) & (s > 0)
+
     def _pdf(self, x, k, s):
-        # mielke.pdf(x, k, s) = k * x**(k-1) / (1+x**s)**(1+k/s)
         return k*x**(k-1.0) / (1.0+x**s)**(1.0+k*1.0/s)
+
+    def _logpdf(self, x, k, s):
+        return np.log(k) + np.log(x)*(k-1.0) - np.log1p(x**s)*(1.0+k*1.0/s)
 
     def _cdf(self, x, k, s):
         return x**k / (1.0+x**s)**(k*1.0/s)
@@ -4628,6 +4641,13 @@ class mielke_gen(rv_continuous):
     def _ppf(self, q, k, s):
         qsk = pow(q, s*1.0/k)
         return pow(qsk/(1.0-qsk), 1.0/s)
+
+    def _munp(self, n, k, s):
+        def nth_moment(n, k, s):
+            # n-th moment is defined for -k < n < s
+            return sc.gamma((k+n)/s)*sc.gamma(1-n/s)/sc.gamma(k/s)
+
+        return _lazywhere(n > s, (n, k, s), nth_moment, np.inf)
 
 
 mielke = mielke_gen(a=0.0, name='mielke')

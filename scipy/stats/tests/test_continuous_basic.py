@@ -35,11 +35,10 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
-# Last four of these fail all around. Need to be checked
+# Last three of these fail all around. Need to be checked
 distcont_extra = [
     ['betaprime', (100, 86)],
     ['fatiguelife', (5,)],
-    ['mielke', (4.6420495492121487, 0.59707419545516938)],
     ['invweibull', (0.58847112119264788,)],
     # burr: sample mean test fails still for c<1
     ['burr', (0.94839838075366045, 4.3820284068855795)],
@@ -48,10 +47,9 @@ distcont_extra = [
 ]
 
 
-distslow = ['kappa4', 'rdist', 'gausshyper',
-            'recipinvgauss', 'genexpon',
-            'vonmises', 'vonmises_line', 'mielke',
-            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
+distslow = ['kappa4', 'rdist', 'gausshyper', 'recipinvgauss', 'genexpon',
+            'vonmises', 'vonmises_line', 'cosine', 'invweibull',
+            'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
 
