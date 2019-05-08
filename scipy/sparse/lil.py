@@ -48,7 +48,7 @@ class lil_matrix(spmatrix, IndexMixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         LIL format data array of the matrix
     rows
