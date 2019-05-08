@@ -42,7 +42,7 @@ class dia_matrix(_data_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         DIA format data array of the matrix
     offsets
