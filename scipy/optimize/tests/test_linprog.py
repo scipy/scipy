@@ -46,8 +46,12 @@ def _assert_unbounded(res):
 
 def _assert_unable_to_find_basic_feasible_sol(res):
     # res: linprog result object
+
+    # The status may be either 2 or 4 depending on why the feasible solution
+    # could not be found. If the undelying problem is expected to not have a
+    # feasible solution _assert_infeasible should be used.
     assert_(not res.success, "incorrectly reported success")
-    assert_equal(res.status, 2, "failed to report optimization failure")
+    assert_(res.status in (2, 4), "failed to report optimization failure")
 
 
 def _assert_success(res, desired_fun=None, desired_x=None,
@@ -1148,7 +1152,11 @@ class LinprogCommonTests(object):
             sup.filter(LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-2.0080717488789235, atol=1e-6)
+
+        if self.options.get('tol', 1e-9) < 1e-10 and self.method == 'simplex':
+            _assert_unable_to_find_basic_feasible_sol(res)
+        else:
+            _assert_success(res, desired_fun=-2.0080717488789235, atol=1e-6)
 
     def test_bug_8174_2(self):
         # Test supplementary example from issue 8174.
@@ -1359,16 +1367,15 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
             super(TestLinprogSimplexDefault, self).test_bug_5400()
 
     def test_bug_7237_low_tol(self):
-        # this will pass sucessfully with the new default tolerance of 1e-9
-        # however here we want to test the error is returned for tol=1e-12.
+        # Fails if the tolerance is too strict. Here we test that
+        # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexDefault, self).test_bug_7237()
 
-    @pytest.mark.xfail(reason='Fails with too low tolerance.')
     def test_bug_8174_low_tol(self):
-        # this will pass sucessfully with the new default tolerance of 1e-9
-        # however here we will still want to test the warning is raised.
+        # Fails if the tolerance is too strict. Here we test that
+        # even if the solutuion is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexDefault, self).test_bug_8174()
@@ -1383,19 +1390,23 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
         with pytest.raises(ValueError):
             super(TestLinprogSimplexBland, self).test_bug_5400()
 
-    @pytest.mark.xfail(reason='Fails with too low tolerance.')
     def test_bug_8174_low_tol(self):
-        # this will pass sucessfully with the new default tolerance of 1e-9
-        # however here we will still want to test the warning is raised.
+        # Fails if the tolerance is too strict. Here we test that
+        # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
-        with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplexBland, self).test_bug_8174()
+        with pytest.raises(AssertionError):
+            with pytest.warns(OptimizeWarning):
+                super(TestLinprogSimplexBland, self).test_bug_8174()
 
 
 class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 
     def setup_method(self):
         self.options = {'presolve': False}
+
+    @pytest.mark.xfail(reason='Fails with warning on 32-bit linux')
+    def test_bug_5400(self):
+        super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
 
     def test_bug_6139_low_tol(self):
         # Linprog(method='simplex') fails to find a basic feasible solution
@@ -1407,16 +1418,15 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
             return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
 
     def test_bug_7237_low_tol(self):
-        # this will pass sucessfully with the new default tolerance of 1e-9
-        # however here we want to test the error is returned for tol=1e-12.
+        # Fails if the tolerance is too strict. Here we test that
+        # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
 
-    @pytest.mark.xfail(reason='Fails with too low tolerance.')
     def test_bug_8174_low_tol(self):
-        # this will pass sucessfully with the new default tolerance of 1e-9
-        # however here we will still want to test the warning is raised.
+        # Fails if the tolerance is too strict. Here we test that
+        # even if the solutuion is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
