@@ -93,7 +93,6 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     basis = basis[keep_rows]
     x = x[:n]
     m = A.shape[0]
-
     return x, basis, A, b, residual, status, iter_k
 
 
@@ -342,7 +341,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
                 phase = 2
                 x_postsolve = x
             x_o, fun, slack, con, _, _ = _postsolve(x_postsolve, *_T_o,
-                                                    tol=tol)
+                                                    tol=tol, copy=True)
 
             if callback is not None:
                 res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
