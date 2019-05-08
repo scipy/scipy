@@ -54,7 +54,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         Data array of the matrix
     indices
