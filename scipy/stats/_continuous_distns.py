@@ -4647,7 +4647,7 @@ class mielke_gen(rv_continuous):
             # n-th moment is defined for -k < n < s
             return sc.gamma((k+n)/s)*sc.gamma(1-n/s)/sc.gamma(k/s)
 
-        return _lazywhere(n > s, (n, k, s), nth_moment, np.inf)
+        return _lazywhere(n < s, (n, k, s), nth_moment, np.inf)
 
 
 mielke = mielke_gen(a=0.0, name='mielke')
