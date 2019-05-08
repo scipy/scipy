@@ -50,7 +50,7 @@ distcont_extra = [
 
 distslow = ['kappa4', 'rdist', 'gausshyper',
             'recipinvgauss', 'genexpon',
-            'vonmises', 'vonmises_line', 'mielke', 'semicircular',
+            'vonmises', 'vonmises_line', 'mielke',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
@@ -240,7 +240,8 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['betaprime', 'dgamma', 'exponnorm', 'norminvgauss',
-                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm']
+                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm',
+                          'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

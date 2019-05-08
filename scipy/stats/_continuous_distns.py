@@ -6079,15 +6079,26 @@ class semicircular_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Wigner semicircle distribution",
+           https://en.wikipedia.org/wiki/Wigner_semicircle_distribution
+
     %(example)s
 
     """
     def _pdf(self, x):
-        # semicircular.pdf(x) = 2/pi * sqrt(1-x**2)
         return 2.0/np.pi*np.sqrt(1-x*x)
 
     def _cdf(self, x):
         return 0.5+1.0/np.pi*(x*np.sqrt(1-x*x) + np.arcsin(x))
+
+    def _rvs(self):
+        # generate values uniformly distributed on the area under the pdf
+        # (semi-circle) by randomly generating the radius and angle
+        r = np.sqrt(self._random_state.random_sample(size=self._size))
+        a = np.cos(np.pi * self._random_state.random_sample(size=self._size))
+        return r * a
 
     def _stats(self):
         return 0, 0.25, 0, -1.0
