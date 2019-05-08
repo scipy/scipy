@@ -600,3 +600,5 @@ Pull requests for 1.3.0
 * `#10090 <https://github.com/scipy/scipy/pull/10090>`__: MAINT: Fix CubicSplinerInterpolator for pandas
 * `#10091 <https://github.com/scipy/scipy/pull/10091>`__: MAINT: improve logcdf and logsf of hypergeometric distribution
 * `#10095 <https://github.com/scipy/scipy/pull/10095>`__: MAINT: Clean \`\`_clean_inputs\`\` in linprog
+* `#10116 <https://github.com/scipy/scipy/pull/10116>`__: MAINT: update scipy-sphinx-theme
+* `#10135 <https://github.com/scipy/scipy/pull/10135>`__: BUG: fix linprog revised simplex docstring problem failure
