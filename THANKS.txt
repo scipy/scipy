@@ -1,13 +1,6 @@
-SciPy is an open source library of routines for science and engineering
-using Python.  It is a community project sponsored by Enthought, Inc.
-SciPy originated with code contributions by Travis Oliphant, Pearu
-Peterson, and Eric Jones.  Travis Oliphant and Eric Jones each contributed
-about half the initial code.  Pearu Peterson developed f2py, which is the
-integral to wrapping the many Fortran libraries used in SciPy.
+SciPy is an open source library of routines for science and engineering using Python.  It is a community project sponsored by Enthought, Inc. SciPy originated with code contributions by Travis Oliphant, Pearu Peterson, and Eric Jones. Travis Oliphant and Eric Jones each contributed about half the initial code. Pearu Peterson developed f2py, which is the integral to wrapping the many Fortran libraries used in SciPy.
 
-Since then many people have contributed to SciPy, both in code development,
-suggestions, and financial support.  Below is a partial list.  If you've
-been left off, please email the "SciPy Developers List" <scipy-dev@python.org>.
+Since then many people have contributed to SciPy, both in code development, suggestions, and financial support. Below is a partial list.  If you've been left off, please email the "SciPy Developers List" <scipy-dev@python.org>.
 
 Please add names as needed so that we can keep up with all the contributors.
 
