@@ -22,6 +22,7 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 import scipy as sp
 import scipy.sparse as sps
+import numbers
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
@@ -557,12 +558,12 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
     # no clue why this works
     fmt = '{0:<20.13}{1:<20.13}{2:<20.13}{3:<17.13}{4:<20.13}{5:<20.13}'
     print(fmt.format(
-        rho_p,
-        rho_d,
-        rho_g,
-        alpha,
-        rho_mu,
-        obj))
+        float(rho_p),
+        float(rho_d),
+        float(rho_g),
+        float(alpha) if isinstance(alpha, numbers.Number) else alpha,
+        float(rho_mu),
+        float(obj)))
 
 
 def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
@@ -722,6 +723,14 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
+    if callback is not None:
+        x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
+                                                tol=tol)
+        res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
+                              'con': con, 'nit': iteration, 'phase': 1,
+                              'complete': False, 'status': 0,
+                              'message': "", 'success': False})
+        callback(res)
 
     status = 0
     message = "Optimization terminated successfully."
@@ -794,7 +803,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         go = rho_p > tol or rho_d > tol or rho_A > tol
 
         if disp:
-            _display_iter(rho_p, rho_d, rho_g, alpha, float(rho_mu), obj)
+            _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
             x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
                                                     tol=tol)
