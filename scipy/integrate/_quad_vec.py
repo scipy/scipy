@@ -89,6 +89,15 @@ def _get_sizeof(obj):
         return 64
 
 
+class _Bunch(object):
+    def __init__(self, **kwargs):
+        self.__keys = kwargs.keys()
+        self.__dict__.update(**kwargs)
+    def __repr__(self):
+        return "_Bunch({})".format(", ".join("{}={}".format(k, repr(self.__dict__[k]))
+                                             for k in self.__keys))
+
+
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
              workers=1, points=None, quadrature='gk21', full_output=False):
     """Adaptive integration of a vector-valued function.
@@ -123,8 +132,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
         'trapz' (composite trapezoid rule).
     full_output : bool, optional
-        If true, populate ``info`` return value with "alist", "blist",
-        "rlist", "elist", "iord" keys.
+        Return an additional ``info`` dictionary.
 
     Returns
     -------
@@ -133,9 +141,24 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     err : float
         Error estimate for the result in the given norm
     info : dict
-        Info dictionary. Has always the keys "neval" and "last"
-    ier : int
-        Result code
+        Returned only when ``full_output=True``.
+        Info dictionary. Is an object with the attributes:
+
+            success : bool
+                Whether integration reached target precision.
+            status : int
+                Indicator for convergence, success (0),
+                failure (1), and failure due to rounding error (2).
+            neval : int
+                Number of function evaluations.
+            intervals : ndarray, shape (num_intervals, 2)
+                Start and end points of subdivision intervals.
+            integrals : ndarray, shape (num_intervals, ...)
+                Integral for each interval.
+                Note that at most ``cache_size`` values are recorded,
+                and the array may contains *nan* for missing items.
+            errors : ndarray, shape (num_intervals,)
+                Estimated integration error for each interval.
 
     Notes
     -----
@@ -172,7 +195,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     # Use simple transformations to deal with integrals over infinite
     # intervals.
-    args = (epsabs, epsrel, norm, cache_size, limit, workers, points, quadrature, full_output)
+    args = [epsabs, epsrel, norm, cache_size, limit, workers, points, quadrature, full_output]
     if np.isfinite(a) and np.isinf(b):
         f2 = SemiInfiniteFunc(f, start=a, infty=b)
         if points is not None:
@@ -269,9 +292,19 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     heapq.heapify(intervals)
 
+    CONVERGED = 0
+    NOT_CONVERGED = 1
+    ROUNDING_ERROR = 2
+
+    status_msg = {
+        CONVERGED: "Target precision reached.",
+        NOT_CONVERGED: "Target precision not reached.",
+        ROUNDING_ERROR: "Target precision could not be reached due to rounding error."
+    }
+
     # Process intervals
     with mapwrapper:
-        ier = 1
+        ier = NOT_CONVERGED
 
         while intervals and len(intervals) < limit:
             # Select intervals with largest errors for subdivision
@@ -307,27 +340,33 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
             if len(intervals) >= min_intervals:
                 tol = max(epsabs, epsrel*norm_func(global_integral))
                 if global_error < tol/8:
-                    ier = 0
+                    ier = CONVERGED
                     break
                 if global_error < rounding_error:
-                    ier = 2
+                    ier = ROUNDING_ERROR
                     break
 
     res = global_integral
     err = global_error + rounding_error
-    info = dict(neval=neval,
-                last=len(intervals))
+
     if full_output:
-        info['alist'] = np.array([z[1] for z in intervals])
-        info['blist'] = np.array([z[2] for z in intervals])
         res_arr = np.asarray(res)
         dummy = np.full(res_arr.shape, np.nan, dtype=res_arr.dtype)
-        info['rlist'] = np.array([interval_cache.get((z[1], z[2]), dummy)
-                                  for z in intervals], dtype=res_arr.dtype)
-        info['elist'] = np.array([-z[0] for z in intervals])
-        info['iord'] = np.argsort(-info['elist'])
+        integrals = np.array([interval_cache.get((z[1], z[2]), dummy)
+                                      for z in intervals], dtype=res_arr.dtype)
+        errors = np.array([-z[0] for z in intervals])
+        intervals = np.array([[z[1], z[2]] for z in intervals])
 
-    return (res, err, info, ier)
+        info = _Bunch(neval=neval,
+                      success=(ier == CONVERGED),
+                      status=ier,
+                      message=status_msg[ier],
+                      intervals=intervals,
+                      integrals=integrals,
+                      errors=errors)
+        return (res, err, info)
+    else:
+        return (res, err)
 
 
 def _subdivide_interval(args):
