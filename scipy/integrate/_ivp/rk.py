@@ -20,6 +20,7 @@ class RungeKutta(OdeSolver):
     E = NotImplemented
     P = NotImplemented
     order = NotImplemented
+    error_estimator_order = NotImplemented
     n_stages = NotImplemented
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
@@ -39,6 +40,7 @@ class RungeKutta(OdeSolver):
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.K = np.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
+        self.error_exponent = -1 / (self.error_estimator_order + 1)
 
     def _estimate_errors(self, K, h):
         return np.dot(K.T, self.E) * h
@@ -60,7 +62,6 @@ class RungeKutta(OdeSolver):
         else:
             h_abs = self.h_abs
 
-        order = self.order
         step_accepted = False
 
         while not step_accepted:
@@ -86,12 +87,14 @@ class RungeKutta(OdeSolver):
                 h_abs *= MAX_FACTOR
                 step_accepted = True
             elif error_norm < 1:
-                h_abs *= min(MAX_FACTOR,
-                             max(1, SAFETY * error_norm ** (-1 / (order + 1))))
+                h_abs *= min(
+                    MAX_FACTOR,
+                    max(1, SAFETY * error_norm ** self.error_exponent)
+                )
                 step_accepted = True
             else:
                 h_abs *= max(MIN_FACTOR,
-                             SAFETY * error_norm ** (-1 / (order + 1)))
+                             SAFETY * error_norm ** self.error_exponent)
 
         self.y_old = y
 
@@ -184,7 +187,8 @@ class RK23(RungeKutta):
     .. [1] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
     """
-    order = 2
+    order = 3
+    error_estimator_order = 2
     n_stages = 3
     C = np.array([0, 1/2, 3/4])
     A = np.array([
@@ -279,7 +283,8 @@ class RK45(RungeKutta):
     .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
            of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     """
-    order = 4
+    order = 5
+    error_estimator_order = 4
     n_stages = 6
     C = np.array([0, 1/5, 3/10, 4/5, 8/9, 1])
     A = np.array([

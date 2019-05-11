@@ -448,7 +448,7 @@ def test_max_step():
                             dense_output=True)
             assert_equal(res.t[0], t_span[0])
             assert_equal(res.t[-1], t_span[-1])
-            assert_(np.all(np.abs(np.diff(res.t)) <= 0.5))
+            assert_(np.all(np.abs(np.diff(res.t)) <= 0.5 + 1e-15))
             assert_(res.t_events is None)
             assert_(res.success)
             assert_equal(res.status, 0)
