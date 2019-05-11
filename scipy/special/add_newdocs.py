@@ -5009,7 +5009,7 @@ add_newdoc("scipy.special", "modstruve",
     modified Struve function is defined as,
 
     .. math::
-        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(x),
+        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(\imath x),
 
     where :math:`H_v` is the Struve function.
 
