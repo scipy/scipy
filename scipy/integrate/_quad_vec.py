@@ -127,10 +127,12 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         This evaluation is carried out as ``workers(func, iterable)``.
     points : list, optional
         List of additional breakpoints.
-    quardarture : {'gk21', 'trapz'}, optional
+    quardarture : {'gk21', 'gk15', 'trapz'}, optional
         Quadrature rule to use on subintervals.
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
+        'gk15' (Gauss-Kronrod 15-point rule),
         'trapz' (composite trapezoid rule).
+        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
     full_output : bool, optional
         Return an additional ``info`` dictionary.
 
@@ -195,7 +197,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     # Use simple transformations to deal with integrals over infinite
     # intervals.
-    args = [epsabs, epsrel, norm, cache_size, limit, workers, points, quadrature, full_output]
+    args = (epsabs, epsrel, norm, cache_size, limit, workers, points,
+            'gk15' if quadrature is None else quadrature,
+            full_output)
     if np.isfinite(a) and np.isinf(b):
         f2 = SemiInfiniteFunc(f, start=a, infty=b)
         if points is not None:
@@ -241,6 +245,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     try:
         _quadrature = {None: _quadrature_gk21,
                        'gk21': _quadrature_gk21,
+                       'gk15': _quadrature_gk15,
                        'trapz': _quadrature_trapz}[quadrature]
     except KeyError:
         raise ValueError("unknown quadrature {!r}".format(quadrature))
@@ -422,6 +427,57 @@ _quadrature_trapz.cache_size = 3 * 3
 _quadrature_trapz.num_eval = 3
 
 
+def _quadrature_gk(a, b, f, norm_func, x, w, v):
+    """
+    Generic Gauss-Kronrod quadrature
+    """
+
+    fv = [0.0]*len(x)
+
+    c = 0.5 * (a + b)
+    h = 0.5 * (b - a)
+
+    # Gauss-Kronrod
+    s_k = 0.0
+    s_k_abs = 0.0
+    for i in range(len(x)):
+        ff = f(c + h*x[i])
+        fv[i] = ff
+
+        vv = v[i]
+
+        # \int f(x)
+        s_k += vv * ff
+        # \int |f(x)|
+        s_k_abs += vv * abs(ff)
+
+    # Gauss
+    s_g = 0.0
+    for i in range(len(w)):
+        s_g += w[i] * fv[2*i + 1]
+
+    # Quadrature of abs-deviation from average
+    s_k_dabs = 0.0
+    y0 = s_k / 2.0
+    for i in range(len(x)):
+        # \int |f(x) - y0|
+        s_k_dabs += v[i] * abs(fv[i] - y0)
+
+    # Use similar error estimation as quadpack
+    err = float(norm_func((s_k - s_g) * h))
+    dabs = float(norm_func(s_k_dabs * h))
+    if dabs != 0 and err != 0:
+        err = dabs * min(1.0, (200 * err / dabs)**1.5)
+
+    eps = sys.float_info.epsilon
+    round_err = float(norm_func(50 * eps * h * s_k_abs))
+
+    if round_err > sys.float_info.min:
+        err = max(err, round_err)
+
+    return h * s_k, err, round_err
+
+
 def _quadrature_gk21(a, b, f, norm_func):
     """
     Gauss-Kronrod 21 quadrature with error estimate
@@ -484,50 +540,60 @@ def _quadrature_gk21(a, b, f, norm_func):
          0.032558162307964727478818972459390,
          0.011694638867371874278064396062192)
 
-    fv = [0.0]*21
-
-    c = 0.5 * (a + b)
-    h = 0.5 * (b - a)
-
-    # 21-point Gauss-Kronrod
-    s_k = 0.0
-    s_k_abs = 0.0
-    for i in range(21):
-        ff = f(c + h*x[i])
-        fv[i] = ff
-
-        vv = v[i]
-
-        # \int f(x)
-        s_k += vv * ff
-        # \int |f(x)|
-        s_k_abs += vv * abs(ff)
-
-    # 10-point Gauss
-    s_g = 0.0
-    for i in range(10):
-        s_g += w[i] * fv[2*i + 1]
-
-    # Quadrature of abs-deviation from average
-    s_k_dabs = 0.0
-    y0 = s_k / 2.0
-    for i in range(21):
-        # \int |f(x) - y0|
-        s_k_dabs += v[i] * abs(fv[i] - y0)
-
-    # Use similar error estimation as quadpack
-    err = float(norm_func((s_k - s_g) * h))
-    dabs = float(norm_func(s_k_dabs * h))
-    if dabs != 0 and err != 0:
-        err = dabs * min(1.0, (200 * err / dabs)**1.5)
-
-    eps = sys.float_info.epsilon
-    round_err = float(norm_func(50 * eps * h * s_k_abs))
-
-    if round_err > sys.float_info.min:
-        err = max(err, round_err)
-
-    return h * s_k, err, round_err
+    return _quadrature_gk(a, b, f, norm_func, x, w, v)
 
 
 _quadrature_gk21.num_eval = 21
+
+
+def _quadrature_gk15(a, b, f, norm_func):
+    """
+    Gauss-Kronrod 15 quadrature with error estimate
+    """
+    # Gauss-Kronrod points
+    x = (0.991455371120812639206854697526329,
+         0.949107912342758524526189684047851,
+         0.864864423359769072789712788640926,
+         0.741531185599394439863864773280788,
+         0.586087235467691130294144838258730,
+         0.405845151377397166906606412076961,
+         0.207784955007898467600689403773245,
+         0.000000000000000000000000000000000,
+         0.207784955007898467600689403773245,
+         0.405845151377397166906606412076961,
+         0.586087235467691130294144838258730,
+         0.741531185599394439863864773280788,
+         0.864864423359769072789712788640926,
+         0.949107912342758524526189684047851,
+         0.991455371120812639206854697526329)
+
+    # 7-point weights
+    w = (0.129484966168869693270611432679082,
+         0.279705391489276667901467771423780,
+         0.381830050505118944950369775488975,
+         0.417959183673469387755102040816327,
+         0.381830050505118944950369775488975,
+         0.279705391489276667901467771423780,
+         0.129484966168869693270611432679082)
+
+    # 15-point weights
+    v = (0.022935322010529224963732008058970,
+         0.063092092629978553290700663189204,
+         0.104790010322250183839876322541518,
+         0.140653259715525918745189590510238,
+         0.169004726639267902826583426598550,
+         0.190350578064785409913256402421014,
+         0.204432940075298892414161999234649,
+         0.209482141084727828012999174891714,
+         0.204432940075298892414161999234649,
+         0.190350578064785409913256402421014,
+         0.169004726639267902826583426598550,
+         0.140653259715525918745189590510238,
+         0.104790010322250183839876322541518,
+         0.063092092629978553290700663189204,
+         0.022935322010529224963732008058970)
+
+    return _quadrature_gk(a, b, f, norm_func, x, w, v)
+
+
+_quadrature_gk15.num_eval = 15
