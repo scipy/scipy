@@ -40,6 +40,9 @@ class RungeKutta(OdeSolver):
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.K = np.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
 
+    def _estimate_errors(self, K, h):
+        return np.dot(K.T, self.E) * h
+
     def _step_impl(self):
         t = self.t
         y = self.y
@@ -75,7 +78,7 @@ class RungeKutta(OdeSolver):
 
             y_new, f_new = rk_step(self.fun, t, y, self.f, h, self.A,
                                    self.B, self.C, self.K)
-            error = np.dot(self.K.T, self.E) * h
+            error = self._estimate_errors(self.K, h)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
 
