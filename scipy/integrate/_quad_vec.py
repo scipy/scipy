@@ -117,7 +117,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     norm : {'max', '2'}, optional
         Vector norm to use for error estimation.
     cache_size : int, optional
-        Number bytes to use for memoization.
+        Number of bytes to use for memoization.
     workers : int or map-like callable, optional
         If `workers` is an integer, part of the computation is done in
         parallel subdivided to this many tasks (using `multiprocessing.Pool`).
@@ -127,7 +127,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         This evaluation is carried out as ``workers(func, iterable)``.
     points : list, optional
         List of additional breakpoints.
-    quardarture : {'gk21', 'gk15', 'trapz'}, optional
+    quadrature : {'gk21', 'gk15', 'trapz'}, optional
         Quadrature rule to use on subintervals.
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
         'gk15' (Gauss-Kronrod 15-point rule),
