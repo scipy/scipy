@@ -5009,7 +5009,7 @@ add_newdoc("scipy.special", "modstruve",
     modified Struve function is defined as,
 
     .. math::
-        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(x),
+        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(\imath x),
 
     where :math:`H_v` is the Struve function.
 
@@ -5031,8 +5031,8 @@ add_newdoc("scipy.special", "modstruve",
     Three methods discussed in [1]_ are used to evaluate the function:
 
     - power series
-    - expansion in Bessel functions (if :math:`|z| < |v| + 20`)
-    - asymptotic large-z expansion (if :math:`z \geq 0.7v + 12`)
+    - expansion in Bessel functions (if :math:`|x| < |v| + 20`)
+    - asymptotic large-x expansion (if :math:`x \geq 0.7v + 12`)
 
     Rounding errors are estimated based on the largest terms in the sums, and
     the result associated with the smallest error is returned.
