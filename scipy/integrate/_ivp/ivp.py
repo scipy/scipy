@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
-from .rk import RK23, RK45
+from .rk import RK23, RK45, DOP853
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
@@ -12,6 +12,7 @@ from .base import OdeSolver
 
 METHODS = {'RK23': RK23,
            'RK45': RK45,
+           'DOP853': DOP853,
            'Radau': Radau,
            'BDF': BDF,
            'LSODA': LSODA}
@@ -206,8 +207,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
               is controlled assuming accuracy of the second-order method, but
               steps are taken using the third-order accurate formula (local
-              extrapolation is done). A cubic Hermite polynomial is used for
-              the dense output. Can be applied in the complex domain.
+              extrapolation is done). A cubic Hermite polynomial is used for the
+              dense output. Can be applied in the complex domain.
+            * 'DOP853': Explicit Runge-Kutta method of order 8 [13]_.
+              Python implementation of the "DOP853" algorithm originally
+              written in Fortran [14]_. A 7-th order interpolation polynomial
+              accurate to 7-th order is used for the dense output.
             * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
               order 5 [4]_. The error is controlled with a third-order accurate
               embedded formula. A cubic polynomial which satisfies the
@@ -391,6 +396,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [12] `Lotka-Volterra equations
             <https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations>`_
             on Wikipedia.
+    .. [13] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
+            Equations I: Nonstiff Problems", Sec. II.
+    .. [14] `Page with original Fortran code of DOP853
+            <http://www.unige.ch/~hairer/software.html>`_.
 
     Examples
     --------
