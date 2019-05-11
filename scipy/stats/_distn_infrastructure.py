@@ -777,7 +777,9 @@ class rv_generic(object):
     def _stats(self, *args, **kwds):
         return None, None, None, None
 
-    #  Central moments
+    # Noncentral moments (also known as the moment about the origin).
+    # Expressed in LaTeX, munp would be $\mu'_{n}$, i.e. "mu-sub-n-prime".
+    # The primed mu is a widely used notation for the noncentral moment.
     def _munp(self, n, *args):
         # Silence floating point warnings from integration.
         olderr = np.seterr(all='ignore')
