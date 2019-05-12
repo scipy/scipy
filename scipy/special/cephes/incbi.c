@@ -56,8 +56,6 @@ double incbi(double aa, double bb, double yy0)
     double a, b, y0, d, y, x, x0, x1, lgm, yp, di, dithresh, yl, yh, xt;
     int i, rflg, dir, nflg;
 
-    printf("incbi: aa = %8.5f  bb=%8.5f, yy0=%8.5f\n", aa, bb, yy0);
-
     i = 0;
     if (yy0 <= 0)
 	return (0.0);
@@ -277,6 +275,5 @@ double incbi(double aa, double bb, double yy0)
 	else
 	    x = 1.0 - x;
     }
-    printf("incbi: returning %8.5f\n", x);
     return (x);
 }
