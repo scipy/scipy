@@ -693,7 +693,15 @@ def _approx_fprime_helper(xk, f, epsilon, args=(), f0=None):
     for k in range(len(xk)):
         ei[k] = 1.0
         d = epsilon * ei
-        grad[k] = (f(*((xk + d,) + args)) - f0) / d[k]
+        df = (f(*((xk + d,) + args)) - f0) / d[k]
+        if not np.isscalar(df):
+            try:
+                df = df.item()
+            except ValueError:
+                raise ValueError("The user-provided "
+                                 "objective function must "
+                                 "return a scalar value.")
+        grad[k] = df
         ei[k] = 0.0
     return grad
 
