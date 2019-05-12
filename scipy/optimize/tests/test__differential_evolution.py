@@ -940,13 +940,14 @@ class TestDifferentialEvolutionSolver(object):
                                      seed=1234, constraints=constraints,
                                      popsize=3)
 
-        f_opt = 7049.330923
-        x_opt = (579.3167, 1359.943, 5110.071, 182.0174, 295.5985, 217.9799,
-                 286.4162, 395.5979)
+        f_opt = 7049.248
 
-        assert_allclose(f(x_opt), f_opt)
-        assert_allclose(res.fun, f_opt, atol=0.1)
-        assert_allclose(res.x, x_opt, atol=0.12)
+        x_opt= [579.306692, 1359.97063, 5109.9707, 182.0177, 295.601172,
+                217.9823, 286.416528, 395.601172]
+
+        assert_allclose(f(x_opt), f_opt, atol=0.001)
+        assert_allclose(res.fun, f_opt, atol=0.001)
+        assert_allclose(res.x, x_opt, atol=0.0001)
         assert res.success
         assert_(np.all(A @ res.x <= b))
         assert_(np.all(np.array(c1(res.x)) >= 0))
@@ -959,7 +960,7 @@ class TestDifferentialEvolutionSolver(object):
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
             fun = (np.sin(2*np.pi*x[1])**3*np.sin(2*np.pi*x[2]) /
-                   (x[1]**3*(x[1]*x[2])))
+                   (x[1]**3*(x[1]+x[2])))
             return -fun  # maximize
 
         def c1(x):
@@ -974,11 +975,10 @@ class TestDifferentialEvolutionSolver(object):
         res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
                                      constraints=constraints)
 
-        x_opt = (1.22067691, 4.24096915)
-        f_opt = -0.100738
-
-        assert_allclose(f(x_opt), f_opt, atol=2e-7)
-        assert_allclose(res.x, x_opt, atol=5e-3)
+        x_opt = (1.22797135, 4.24537337)
+        f_opt = -0.095825
+        print(res)
+        assert_allclose(f(x_opt), f_opt, atol=2e-5)
         assert_allclose(res.fun, f_opt, atol=1e-4)
         assert res.success
         assert_(np.all(np.array(c1(res.x)) <= 0))
@@ -1001,12 +1001,12 @@ class TestDifferentialEvolutionSolver(object):
         bounds = [(13, 100), (0, 100)]
         constraints = (N)
         res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
-                                     constraints=constraints)
+                                     constraints=constraints, tol=1e-7)
         x_opt = (14.095, 0.84296)
         f_opt = -6961.814744
 
         assert_allclose(f(x_opt), f_opt, atol=1e-6)
-        assert_allclose(res.fun, f_opt, atol=0.05)
+        assert_allclose(res.fun, f_opt, atol=0.001)
         assert_allclose(res.x, x_opt, atol=1e-4)
         assert res.success
         assert_(np.all(np.array(c1(res.x)) >= 0))
@@ -1036,18 +1036,23 @@ class TestDifferentialEvolutionSolver(object):
 
         N = NonlinearConstraint(c1, [0, 90, 20], [92, 110, 25])
 
-        bounds = [(78, 102), (33, 45)]+[(27, 45)]*3
+        bounds = [(78, 102), (33, 45)] + [(27, 45)]*3
         constraints = (N)
 
         res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
                                      constraints=constraints)
 
-        x_opt = (78.0, 33.0, 29.995, 45.0, 36.776)
-        f_opt = -30665.608768
+        # using our best solution, rather than Lampinen/Koziel. Koziel solution
+        # doesn't satisfy constraints, Lampinen f_opt just plain wrong.
+        x_opt = [78.00000686, 33.00000362, 29.99526064, 44.99999971,
+                 36.77579979]
+
+        f_opt = -30665.537578
 
         assert_allclose(f(x_opt), f_opt)
-        assert_allclose(res.fun, f_opt, atol=0.1)
         assert_allclose(res.x, x_opt, atol=1e-3)
+        assert_allclose(res.fun, f_opt, atol=1e-3)
+
         assert res.success
         assert_(np.all(np.array(c1(res.x)) >= np.array([0, 90, 20])))
         assert_(np.all(np.array(c1(res.x)) <= np.array([92, 110, 25])))

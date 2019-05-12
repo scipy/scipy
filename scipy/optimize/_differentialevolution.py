@@ -168,9 +168,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     constraints : {NonLinearConstraint, LinearConstraint, Bounds}
         Constraints on the solver, over and above those applied by the `bounds`
-        kwd. Uses the approach by Lampinen [5]_. There is no particular
-        advantage employing `LinearConstraint` over `NonLinearConstraint` as no
-        Jacobian/Hessian of the constraint functions is used.
+        kwd. Uses the approach by Lampinen [5]_.
 
         .. versionadded:: 1.4.0
 
@@ -446,9 +444,7 @@ class DifferentialEvolutionSolver(object):
         Requires that `func` be pickleable.
     constraints : {NonLinearConstraint, LinearConstraint, Bounds}
         Constraints on the solver, over and above those applied by the `bounds`
-        kwd. Uses the approach by Lampinen. There is no particular
-        advantage employing `LinearConstraint` over `NonLinearConstraint` as no
-        Jacobian/Hessian of the constraint functions is used.
+        kwd. Uses the approach by Lampinen.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
