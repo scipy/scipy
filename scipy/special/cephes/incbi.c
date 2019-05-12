@@ -44,7 +44,10 @@
  * Copyright 1984, 1996 by Stephen L. Moshier
  */
 
+#include <stdio.h>
 #include "mconf.h"
+
+extern double incbet(double, double, double);
 
 extern double MACHEP, MAXLOG, MINLOG;
 
@@ -52,6 +55,8 @@ double incbi(double aa, double bb, double yy0)
 {
     double a, b, y0, d, y, x, x0, x1, lgm, yp, di, dithresh, yl, yh, xt;
     int i, rflg, dir, nflg;
+
+    printf("incbi: aa = %8.5f  bb=%8.5f, yy0=%8.5f\n", aa, bb, yy0);
 
     i = 0;
     if (yy0 <= 0)
@@ -113,6 +118,7 @@ double incbi(double aa, double bb, double yy0)
 
     /* Resort to interval halving if not close enough. */
   ihalve:
+    print("incbi: at ihalve;  x=%8.5f,  y=%8.5f\n", x, y);
 
     dir = 0;
     di = 0.5;
@@ -204,6 +210,7 @@ double incbi(double aa, double bb, double yy0)
     }
 
   newt:
+    print("incbi: at newt;  x=%8.5f,  y=%8.5f\n", x, y);
 
     if (nflg)
 	goto done;
@@ -270,5 +277,6 @@ double incbi(double aa, double bb, double yy0)
 	else
 	    x = 1.0 - x;
     }
+    print("incbi: returning %8.5f\n", x);
     return (x);
 }
