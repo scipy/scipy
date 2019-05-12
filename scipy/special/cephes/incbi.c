@@ -116,7 +116,6 @@ double incbi(double aa, double bb, double yy0)
 
     /* Resort to interval halving if not close enough. */
   ihalve:
-    printf("incbi: at ihalve;  x=%8.5f,  y=%8.5f\n", x, y);
 
     dir = 0;
     di = 0.5;
@@ -208,7 +207,6 @@ double incbi(double aa, double bb, double yy0)
     }
 
   newt:
-    printf("incbi: at newt;  x=%8.5f,  y=%8.5f\n", x, y);
 
     if (nflg)
 	goto done;
