@@ -942,7 +942,7 @@ class TestDifferentialEvolutionSolver(object):
 
         f_opt = 7049.248
 
-        x_opt= [579.306692, 1359.97063, 5109.9707, 182.0177, 295.601172,
+        x_opt = [579.306692, 1359.97063, 5109.9707, 182.0177, 295.601172,
                 217.9823, 286.416528, 395.601172]
 
         assert_allclose(f(x_opt), f_opt, atol=0.001)
