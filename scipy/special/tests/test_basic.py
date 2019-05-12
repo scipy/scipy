@@ -198,10 +198,16 @@ class TestCephes(object):
         assert_allclose(cephes.btdtri(c/2, c/2, 0.5), 0.5,
                         rtol=1e-14, atol=1e-15)
 
-    def test_btdtri_another(self):
+    def test_btdtri_025(self):
         c = 0.9
         expected = 0.1293832227273411655
         assert_allclose(cephes.btdtri(c/2, c/2, 0.25), expected,
+                        rtol=1e-14, atol=1e-15)
+
+    def test_btdtri_075(self):
+        c = 0.9
+        expected = 1 - 0.1293832227273411655
+        assert_allclose(cephes.btdtri(c/2, c/2, 0.75), expected,
                         rtol=1e-14, atol=1e-15)
 
     def test_btdtria(self):
