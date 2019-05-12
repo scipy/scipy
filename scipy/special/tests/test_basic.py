@@ -1338,6 +1338,10 @@ class TestBeta(object):
         btinc = special.betainc(1,1,.2)
         assert_almost_equal(btinc,0.2,8)
 
+    def test_betainc_half(self):
+        assert_allclose(special.betainc(0.45, 0.45, 0.5), 0.5,
+                        rtol=1e-14, atol=1e-15)
+
     def test_betaincinv(self):
         y = special.betaincinv(2,4,.5)
         comp = special.betainc(2,4,y)
