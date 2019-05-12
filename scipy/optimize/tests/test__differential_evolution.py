@@ -947,7 +947,7 @@ class TestDifferentialEvolutionSolver(object):
 
         assert_allclose(f(x_opt), f_opt, atol=0.001)
         assert_allclose(res.fun, f_opt, atol=0.001)
-        assert_allclose(res.x, x_opt, atol=0.0001)
+        assert_allclose(res.x, x_opt, atol=0.002)
         assert res.success
         assert_(np.all(A @ res.x <= b))
         assert_(np.all(np.array(c1(res.x)) >= 0))
