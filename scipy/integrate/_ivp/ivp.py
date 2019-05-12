@@ -170,12 +170,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     The goal is to find y(t) approximately satisfying the differential
     equations, given an initial value y(t0)=y0.
 
-    Some of the solvers support integration in the complex domain, but
-    note that for stiff ODE solvers, the right-hand side must be complex-
-    differentiable (satisfy Cauchy-Riemann equations [11]_). To solve a
-    problem in the complex domain, pass y0 with a complex data type. Another
-    option is always to rewrite your problem for real and imaginary parts
-    separately.
+    Some of the solvers support integration in the complex domain, but note
+    that for stiff ODE solvers, the right-hand side must be
+    complex-differentiable (satisfy Cauchy-Riemann equations [11]_).
+    To solve a problem in the complex domain, pass y0 with a complex data type.
+    Another option always available is to rewrite your problem for real and
+    imaginary parts separately.
 
     Parameters
     ----------
@@ -194,7 +194,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         integrates until it reaches t=tf.
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
-        complex data type (even if the initial guess is purely real).
+        complex data type (even if the initial value is purely real).
     method : string or `OdeSolver`, optional
         Integration method to use:
 
@@ -213,6 +213,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               Python implementation of the "DOP853" algorithm originally
               written in Fortran [14]_. A 7-th order interpolation polynomial
               accurate to 7-th order is used for the dense output.
+              Can be applied in the complex domain.
             * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
               order 5 [4]_. The error is controlled with a third-order accurate
               embedded formula. A cubic polynomial which satisfies the
@@ -227,12 +228,16 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               switching [7]_, [8]_. This is a wrapper of the Fortran solver
               from ODEPACK.
 
-        You should use the 'RK45' or 'RK23' method for non-stiff problems and
-        'Radau' or 'BDF' for stiff problems [9]_. If not sure, first try to run
-        'RK45'. If needs unusually many iterations, diverges, or fails, your
-        problem is likely to be stiff and you should use 'Radau' or 'BDF'.
-        'LSODA' can also be a good universal choice, but it might be somewhat
-        less convenient to work with as it wraps old Fortran code.
+        Explicit Runge-Kutta methods ('RK23', 'RK45', 'DOP853') should be used
+        for non-stiff problems and implicit methods ('Radau', 'BDF') for
+        stiff problems [9]_. Among Runge-Kutta methods, 'DOP853' is recommended
+        for solving with high precision (low values of `rtol` and `atol`).
+
+        If not sure, first try to run 'RK45'. If it makes unusually many
+        iterations, diverges, or fails, your problem is likely to be stiff and
+        you should use 'Radau' or 'BDF'. 'LSODA' can also be a good universal
+        choice, but it might be somewhat less convenient to work with as it
+        wraps old Fortran code.
 
         You can also pass an arbitrary class derived from `OdeSolver` which
         implements the solver.
@@ -300,7 +305,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               be constant. Not supported by 'LSODA'.
             * If callable, the Jacobian is assumed to depend on both
               t and y; it will be called as ``jac(t, y)`` as necessary.
-              For the 'Radau' and 'BDF' methods, the return value might be a
+              For 'Radau' and 'BDF' methods, the return value might be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
               finite differences.
