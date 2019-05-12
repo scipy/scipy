@@ -103,7 +103,7 @@ class RungeKutta(OdeSolver):
         self.error_exponent = -1 / (self.error_estimator_order + 1)
         self.h_previous = None
 
-    def _estimate_errors(self, K, h):
+    def _estimate_error(self, K, h):
         return np.dot(K.T, self.E) * h
 
     def _step_impl(self):
@@ -140,7 +140,7 @@ class RungeKutta(OdeSolver):
 
             y_new, f_new = rk_step(self.fun, t, y, self.f, h, self.A,
                                    self.B, self.C, self.K)
-            error = self._estimate_errors(self.K, h)
+            error = self._estimate_error(self.K, h)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
 
@@ -476,7 +476,7 @@ class DOP853(RungeKutta):
                                     self.n), dtype=self.y.dtype)
         self.K = self.K_extended[:self.n_stages + 1]
 
-    def _estimate_errors(self, K, h):
+    def _estimate_error(self, K, h):
         err5 = np.dot(K.T, self.E5)
         err3 = np.dot(K.T, self.E3)
         denom = np.hypot(np.abs(err5), 0.1 * np.abs(err3))
