@@ -431,6 +431,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6, rtol=1e-7)
 
 
+def test_obj_func_returns_scalar():
+    match = ("The user-provided "
+             "objective function must "
+             "return a scalar value.")
+    with assert_raises(ValueError, match=match):
+        optimize.minimize(lambda x: x, np.array([1, 1]))
+    
+
 def test_neldermead_xatol_fatol():
     # gh4484
     # test we can call with fatol, xatol specified
