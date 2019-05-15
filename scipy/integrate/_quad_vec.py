@@ -93,6 +93,7 @@ class _Bunch(object):
     def __init__(self, **kwargs):
         self.__keys = kwargs.keys()
         self.__dict__.update(**kwargs)
+
     def __repr__(self):
         return "_Bunch({})".format(", ".join("{}={}".format(k, repr(self.__dict__[k]))
                                              for k in self.__keys))
