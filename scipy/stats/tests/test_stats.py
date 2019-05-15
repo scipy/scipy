@@ -369,7 +369,7 @@ class TestCorrPearsonr(object):
 
         # The expected r and p are exact.
         assert_allclose(r, -1.0)
-        assert_allclose(p, 0.0)
+        assert_allclose(p, 0.0, atol=1e-7)
 
     def test_unequal_lengths(self):
         x = [1, 2, 3]
