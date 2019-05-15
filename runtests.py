@@ -284,7 +284,8 @@ def main(argv):
                       extra_argv=extra_argv,
                       doctests=args.doctests,
                       coverage=args.coverage,
-                      tests=tests)
+                      tests=tests,
+                      parallel=args.parallel)
     finally:
         os.chdir(cwd)
 
