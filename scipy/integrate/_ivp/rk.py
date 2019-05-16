@@ -106,6 +106,9 @@ class RungeKutta(OdeSolver):
     def _estimate_error(self, K, h):
         return np.dot(K.T, self.E) * h
 
+    def _estimate_error_norm(self, K, h, scale):
+        return norm(self._estimate_error(K, h) / scale)
+
     def _step_impl(self):
         t = self.t
         y = self.y
@@ -140,9 +143,8 @@ class RungeKutta(OdeSolver):
 
             y_new, f_new = rk_step(self.fun, t, y, self.f, h, self.A,
                                    self.B, self.C, self.K)
-            error = self._estimate_error(self.K, h)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
-            error_norm = norm(error / scale)
+            error_norm = self._estimate_error_norm(self.K, h, scale)
 
             if error_norm == 0.0:
                 h_abs *= MAX_FACTOR
@@ -476,7 +478,7 @@ class DOP853(RungeKutta):
                                     self.n), dtype=self.y.dtype)
         self.K = self.K_extended[:self.n_stages + 1]
 
-    def _estimate_error(self, K, h):
+    def _estimate_error(self, K, h):  # Left for testing purposes.
         err5 = np.dot(K.T, self.E5)
         err3 = np.dot(K.T, self.E3)
         denom = np.hypot(np.abs(err5), 0.1 * np.abs(err3))
@@ -484,6 +486,15 @@ class DOP853(RungeKutta):
         mask = denom > 0
         correction_factor[mask] = np.abs(err5[mask]) / denom[mask]
         return h * err5 * correction_factor
+
+    def _estimate_error_norm(self, K, h, scale):
+        err5 = np.dot(K.T, self.E5) / scale
+        err3 = np.dot(K.T, self.E3) / scale
+
+        err5_norm_2 = np.sum(err5**2)
+        err3_norm_2 = np.sum(err3**2)
+        denom = err5_norm_2 + 0.01 * err3_norm_2
+        return np.abs(h) * err5_norm_2 / np.sqrt(denom * len(scale))
 
     def _dense_output_impl(self):
         K = self.K_extended
