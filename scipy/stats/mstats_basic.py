@@ -1533,11 +1533,34 @@ trim1 = trimtail
 
 def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                  axis=None):
-    """Returns the trimmed mean of the data along the given axis.
+    """
+    Returns the trimmed mean of the data along the given axis.
 
-    %s
+    Parameters
+    ----------
+    a : sequence
+        Input array
+    limits : {(0.1,0.1), tuple of float}, optional
+        tuple (lower percentage, upper percentage) to cut  on each side of the
+        array, with respect to the number of unmasked data.
 
-    """ % trimdoc
+        If n is the number of unmasked data before trimming, the values
+        smaller than ``n * limits[0]`` and the values larger than
+        ``n * `limits[1]`` are masked, and the total number of unmasked
+        data after trimming is ``n * (1.-sum(limits))``.  In each case,
+        the value of one limit can be set to None to indicate an open interval.
+        If `limits` is None, no trimming is performed.
+    inclusive : {(bool, bool) tuple} optional
+        Tuple indicating whether the number of data being masked on each side
+        should be rounded (True) or truncated (False).
+	relative : bool, optional
+    axis : int, optional
+        Axis along which to trim.
+
+    Returns
+    -------
+    trimmed_mean : scalar or ndarray
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -1548,15 +1571,38 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
 
 def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
-    """Returns the trimmed variance of the data along the given axis.
+    """
+    Returns the trimmed variance of the data along the given axis.
 
-    %s
+    Parameters
+    ----------
+    a : sequence
+        Input array
+    limits : {(0.1,0.1), tuple of float}, optional
+        tuple (lower percentage, upper percentage) to cut  on each side of the
+        array, with respect to the number of unmasked data.
+
+        If n is the number of unmasked data before trimming, the values
+        smaller than ``n * limits[0]`` and the values larger than
+        ``n * `limits[1]`` are masked, and the total number of unmasked
+        data after trimming is ``n * (1.-sum(limits))``.  In each case,
+        the value of one limit can be set to None to indicate an open interval.
+        If `limits` is None, no trimming is performed.
+    inclusive : {(bool, bool) tuple} optional
+        Tuple indicating whether the number of data being masked on each side
+        should be rounded (True) or truncated (False).
+	relative : bool, optional
+    axis : int, optional
+        Axis along which to trim.
     ddof : {0,integer}, optional
         Means Delta Degrees of Freedom. The denominator used during computations
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """ % trimdoc
+    Returns
+    -------
+    trimmed_var : scalar or ndarray
+    """ 
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -1569,14 +1615,37 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
 
 def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
-    """Returns the trimmed standard deviation of the data along the given axis.
+    """
+    Returns the trimmed standard deviation of the data along the given axis.
 
-    %s
+    Parameters
+    ----------
+    a : sequence
+        Input array
+    limits : {(0.1,0.1), tuple of float}, optional
+        tuple (lower percentage, upper percentage) to cut  on each side of the
+        array, with respect to the number of unmasked data.
+
+        If n is the number of unmasked data before trimming, the values
+        smaller than ``n * limits[0]`` and the values larger than
+        ``n * `limits[1]`` are masked, and the total number of unmasked
+        data after trimming is ``n * (1.-sum(limits))``.  In each case,
+        the value of one limit can be set to None to indicate an open interval.
+        If `limits` is None, no trimming is performed.
+    inclusive : {(bool, bool) tuple} optional
+        Tuple indicating whether the number of data being masked on each side
+        should be rounded (True) or truncated (False).
+	relative : bool, optional
+    axis : int, optional
+        Axis along which to trim.
     ddof : {0,integer}, optional
         Means Delta Degrees of Freedom. The denominator used during computations
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
+    Returns
+    -------
+    trimmed_std : scalar or ndarray
     """ % trimdoc
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
@@ -1614,7 +1683,6 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     Returns
     -------
     trimmed_stde : scalar or ndarray
-
     """
     def _trimmed_stde_1D(a, low_limit, up_limit, low_inclusive, up_inclusive):
         "Returns the standard error of the trimmed mean for a 1D input data."
