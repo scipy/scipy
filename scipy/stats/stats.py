@@ -2306,13 +2306,9 @@ def zscore(a, axis=0, ddof=0):
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis)
-    sstd = a.std(axis=axis, ddof=ddof)
-    if axis and mns.ndim < a.ndim:
-        return ((a - np.expand_dims(mns, axis=axis)) /
-                np.expand_dims(sstd, axis=axis))
-    else:
-        return (a - mns) / sstd
+    mns = a.mean(axis=axis, keepdims=True)
+    sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+    return (a - mns) / sstd
 
 
 def zmap(scores, compare, axis=0, ddof=0):
@@ -2358,13 +2354,9 @@ def zmap(scores, compare, axis=0, ddof=0):
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
     scores, compare = map(np.asanyarray, [scores, compare])
-    mns = compare.mean(axis=axis)
-    sstd = compare.std(axis=axis, ddof=ddof)
-    if axis and mns.ndim < compare.ndim:
-        return ((scores - np.expand_dims(mns, axis=axis)) /
-                np.expand_dims(sstd, axis=axis))
-    else:
-        return (scores - mns) / sstd
+    mns = compare.mean(axis=axis, keepdims=True)
+    sstd = compare.std(axis=axis, ddof=ddof, keepdims=True)
+    return (scores - mns) / sstd
 
 
 def gstd(a, axis=0, ddof=1):
