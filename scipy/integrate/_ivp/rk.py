@@ -127,6 +127,7 @@ class RungeKutta(OdeSolver):
             h_abs = self.h_abs
 
         step_accepted = False
+        step_rejected = False
 
         while not step_accepted:
             if h_abs < min_step:
@@ -146,18 +147,23 @@ class RungeKutta(OdeSolver):
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = self._estimate_error_norm(self.K, h, scale)
 
-            if error_norm == 0.0:
-                h_abs *= MAX_FACTOR
-                step_accepted = True
-            elif error_norm < 1:
-                h_abs *= min(
-                    MAX_FACTOR,
-                    max(1, SAFETY * error_norm ** self.error_exponent)
-                )
+            if error_norm < 1:
+                if error_norm == 0:
+                    factor = MAX_FACTOR
+                else:
+                    factor = min(MAX_FACTOR,
+                                 SAFETY * error_norm ** self.error_exponent)
+
+                if step_rejected:
+                    factor = min(1, factor)
+
+                h_abs *= factor
+
                 step_accepted = True
             else:
                 h_abs *= max(MIN_FACTOR,
                              SAFETY * error_norm ** self.error_exponent)
+                step_rejected = True
 
         self.h_previous = h
         self.y_old = y
