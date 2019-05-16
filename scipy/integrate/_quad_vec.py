@@ -301,11 +301,13 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     CONVERGED = 0
     NOT_CONVERGED = 1
     ROUNDING_ERROR = 2
+    NOT_A_NUMBER = 3
 
     status_msg = {
         CONVERGED: "Target precision reached.",
         NOT_CONVERGED: "Target precision not reached.",
-        ROUNDING_ERROR: "Target precision could not be reached due to rounding error."
+        ROUNDING_ERROR: "Target precision could not be reached due to rounding error.",
+        NOT_A_NUMBER: "Non-finite values encountered."
     }
 
     # Process intervals
@@ -351,6 +353,10 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                 if global_error < rounding_error:
                     ier = ROUNDING_ERROR
                     break
+
+            if not (np.isfinite(global_error) and np.isfinite(rounding_error)):
+                ier = NOT_A_NUMBER
+                break
 
     res = global_integral
     err = global_error + rounding_error
