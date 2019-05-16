@@ -2845,6 +2845,37 @@ class TestBurr(object):
         assert_(np.isfinite(mean))
         assert_(np.isnan(variance))
 
+        c, d = 0.5, 3
+        e1, e2, e3, e4 = stats.burr._munp(np.array([1, 2, 3, 4]), c, d)
+        assert_(np.isnan(e1))
+        assert_(np.isnan(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 1.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isnan(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 2.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 3.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isfinite(e3))
+        assert_(np.isnan(e4))
+        c, d = 4.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isfinite(e3))
+        assert_(np.isfinite(e4))
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567

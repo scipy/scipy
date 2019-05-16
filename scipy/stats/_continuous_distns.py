@@ -845,8 +845,13 @@ class burr_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
-        nc = 1. * n / c
-        return d * sc.beta(1.0 - nc, d + nc)
+        def __munp(n, c, d):
+            nc = 1. * n / c
+            return d * sc.beta(1.0 - nc, d + nc)
+        n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
+        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
+                          lambda c, d, n: __munp(n, c, d),
+                          np.nan)
 
 
 burr = burr_gen(a=0.0, name='burr')
