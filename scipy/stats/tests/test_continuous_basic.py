@@ -454,7 +454,6 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
     points = np.array([0, 1])
     vals = distfn.ppf(points, *args)
     vals = vals[np.isfinite(vals)]
-    vals = vals[distfn._support_mask(vals)]
     with suppress_warnings() as sup:
         # Several distributions incur divide by zero or encounter invalid values when computing
         # the pdf or logpdf at the endpoints.
