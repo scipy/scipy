@@ -697,7 +697,7 @@ def _approx_fprime_helper(xk, f, epsilon, args=(), f0=None):
         if not np.isscalar(df):
             try:
                 df = df.item()
-            except ValueError:
+            except (ValueError, AttributeError):
                 raise ValueError("The user-provided "
                                  "objective function must "
                                  "return a scalar value.")
