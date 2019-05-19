@@ -741,6 +741,9 @@ class randint_gen(rv_discrete):
 
     def _rvs(self, low, high):
         """An array of *size* random integers >= ``low`` and < ``high``."""
+        if np.asarray(low).size == 1 and np.asarray(high).size == 1:
+            # no need to vectorize in that case
+            return self._random_state.randint(low, high, size=self._size)
         if self._size is not None:
             # NumPy's RandomState.randint() doesn't broadcast its arguments.
             # Use `broadcast_to()` to extend the shapes of low and high
