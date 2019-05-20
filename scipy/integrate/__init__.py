@@ -12,6 +12,7 @@ Integrating functions, given function object
    :toctree: generated/
 
    quad          -- General purpose integration
+   quad_vec      -- General purpose integration of vector-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
    nquad         -- General purpose n-dimensional integration
@@ -93,6 +94,7 @@ from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
                    OdeSolver, RK23, RK45, Radau, BDF, LSODA)
+from ._quad_vec import quad_vec
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
