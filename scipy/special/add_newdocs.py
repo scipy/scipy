@@ -3419,19 +3419,20 @@ add_newdoc("scipy.special", "hyp2f1",
        \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
        \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
 
-    and defined on the rest of the complex z-plane by analytic continuation.
+    and defined on the rest of the complex z-plane by analytic
+    continuation [1]_.
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree :math:`n`.
 
-    The implementation for complex values of ``z`` is described in [1]_.
+    The implementation for complex values of ``z`` is described in [2]_.
 
     References
     ----------
-    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
-    .. [2] Cephes Mathematical Functions Library,
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/15.2
+    .. [2] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [3] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/
 
     """)
 
