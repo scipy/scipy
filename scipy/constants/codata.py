@@ -1550,12 +1550,12 @@ _aliases = {}
 for k in _physical_constants_2002:
     if 'magn.' in k:
         _aliases[k] = k.replace('magn.', 'mag.')
-for k in _physical_constants_2006:
+for k in _physical_constants_2010:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')
-for k in _physical_constants_2018:
+        _aliases[k] = k.replace('mom.um', 'momentum')
+for k in _physical_constants_2014:
     if 'momentum' in k:
-        _aliases[k] = k.replace('momentum', 'mom.um')
+        _aliases[k] = k.replace('mom.um', 'momentum')
 
 
 class ConstantWarning(DeprecationWarning):
