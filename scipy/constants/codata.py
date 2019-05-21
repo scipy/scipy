@@ -1511,7 +1511,7 @@ def parse_constants_2002to2014(d):
         constants[name] = (val, units, uncert)
     return constants
 
-def parse_constants_2018tofuture(d):
+def parse_constants_2018toxxxx(d):
     constants = {}
     for line in d.split('\n'):
         name = line[:60].rstrip()
@@ -1528,7 +1528,7 @@ _physical_constants_2002 = parse_constants_2002to2014(txt2002)
 _physical_constants_2006 = parse_constants_2002to2014(txt2006)
 _physical_constants_2010 = parse_constants_2002to2014(txt2010)
 _physical_constants_2014 = parse_constants_2002to2014(txt2014)
-_physical_constants_2018 = par_constants_2018tofuture(txt2018)
+_physical_constants_2018 = parse_constants_2018toxxxx(txt2018)
 
 
 physical_constants.update(_physical_constants_2002)
