@@ -1637,7 +1637,7 @@ def precision(key):
     --------
     >>> from scipy import constants
     >>> constants.precision(u'proton mass')
-    1.2555138746605121e-08
+    3.0491050773439597e-10
 
     """
     _check_obsolete(key)
@@ -1672,13 +1672,13 @@ def find(sub=None, disp=False):
     ['Boltzmann constant',
      'Boltzmann constant in Hz/K',
      'Boltzmann constant in eV/K',
-     'Boltzmann constant in inverse meters per kelvin',
+     'Boltzmann constant in inverse meter per kelvin',
      'Stefan-Boltzmann constant']
 
     Get the constant called 'Boltzmann constant in Hz/K':
 
     >>> physical_constants['Boltzmann constant in Hz/K']
-    (20836612000.0, 'Hz K^-1', 12000.0)
+    (20836612000.0, 'Hz K^-1', 0.0)
 
     Find constants with 'radius' in the key:
 
