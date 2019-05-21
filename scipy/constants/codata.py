@@ -1551,10 +1551,10 @@ for k in _physical_constants_2002:
     if 'magn.' in k:
         _aliases[k] = k.replace('magn.', 'mag.')
 for k in _physical_constants_2010:
-    if 'momentum' in k:
+    if 'mom.um' in k:
         _aliases[k] = k.replace('mom.um', 'momentum')
 for k in _physical_constants_2014:
-    if 'momentum' in k:
+    if 'mom.um' in k:
         _aliases[k] = k.replace('mom.um', 'momentum')
 
 
