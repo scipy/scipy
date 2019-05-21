@@ -1553,6 +1553,9 @@ for k in _physical_constants_2002:
 for k in _physical_constants_2006:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
+for k in _physical_constants_2018:
+    if 'momentum' in k:
+        _aliases[k] = k.replace('momentum', 'mom.um')
 
 
 class ConstantWarning(DeprecationWarning):
