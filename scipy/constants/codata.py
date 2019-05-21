@@ -2,7 +2,7 @@
 # updated to 2002 values by BasSw, 2006
 # Updated to 2006 values by Vincent Davis June 2010
 # Updated to 2014 values by Joseph Booker, 2015
-# Updated to 2018 values by Jakob Jakobson, 2018
+# Updated to 2018 values by Jakob Jakobson, 2019
 
 """
 Fundamental Physical Constants
