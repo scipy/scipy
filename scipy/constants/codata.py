@@ -1499,7 +1499,7 @@ W to Z mass ratio                                           0.881 53            
 physical_constants = {}
 
 
-def parse_constants(d):
+def parse_constants_2002to2014(d):
     constants = {}
     for line in d.split('\n'):
         name = line[:55].rstrip()
@@ -1511,12 +1511,24 @@ def parse_constants(d):
         constants[name] = (val, units, uncert)
     return constants
 
+def parse_constants_2018tofuture(d):
+    constants = {}
+    for line in d.split('\n'):
+        name = line[:60].rstrip()
+        val = line[60:85].replace(' ', '').replace('...', '')
+        val = float(val)
+        uncert = line[85:110].replace(' ', '').replace('(exact)', '0')
+        uncert = float(uncert)
+        units = line[110:].rstrip()
+        constants[name] = (val, units, uncert)
+    return constants    
 
-_physical_constants_2002 = parse_constants(txt2002)
-_physical_constants_2006 = parse_constants(txt2006)
-_physical_constants_2010 = parse_constants(txt2010)
-_physical_constants_2014 = parse_constants(txt2014)
-_physical_constants_2018 = parse_constants(txt2018)
+
+_physical_constants_2002 = parse_constants_2002to2014(txt2002)
+_physical_constants_2006 = parse_constants_2002to2014(txt2006)
+_physical_constants_2010 = parse_constants_2002to2014(txt2010)
+_physical_constants_2014 = parse_constants_2002to2014(txt2014)
+_physical_constants_2018 = par_constants_2018tofuture(txt2018)
 
 
 physical_constants.update(_physical_constants_2002)
