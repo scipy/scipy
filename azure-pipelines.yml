@@ -23,8 +23,9 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib --user && \
-           apt-get -y install gfortran-5 wget && \
+           pip3 install setuptools wheel numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib gcovr --user && \
+           export DEBIAN_FRONTEND=noninteractive && \
+           apt-get -y install g++-5 gcc-5 gfortran-5 wget mono-complete && \
            cd .. && \
            mkdir openblas && cd openblas && \
            wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.3-186-g701ea883-manylinux1_i686.tar.gz && \
@@ -32,7 +33,25 @@ jobs:
            cp -r ./usr/local/lib/* /usr/lib && \
            cp ./usr/local/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html"
+           ln -sf /usr/bin/gfortran-5 /usr/bin/gfortran && \
+           ln -sf /usr/bin/gcc-5 /usr/bin/gcc && \
+           ln -sf /usr/bin/gcov-5 /usr/bin/gcov && \
+           ln -sf /usr/bin/g++-5 /usr/bin/g++ && \
+           wget https://dist.nuget.org/win-x86-commandline/latest/nuget.exe && \
+           mono nuget.exe install ReportGenerator && \
+           export NPY_DISTUTILS_APPEND_FLAGS=1 && \
+           export CC='gcc --coverage' && \
+           export CXX='g++ --coverage' && \
+           export F77='gfortran --coverage' && \
+           export F90='gfortran --coverage' && \
+           export LDFLAGS='--coverage' && \
+           export FOPT='-O1' && \
+           export OPT='-O1' && \
+           python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html && \
+           find . -name '*.gcno' -type f -exec gcov -pb {} + && \
+           /root/.local/bin/gcovr -r . --xml -o coverage_compiled_langs.xml && \
+           mono ./ReportGenerator.4.1.7/tools/net47/ReportGenerator.exe '-reports:**/coverage*.xml' '-targetdir:.' -reporttypes:Cobertura && \
+           find . -name 'coverage*.xml' -delete"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -43,7 +62,7 @@ jobs:
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
-      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/Cobertura.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 - job: Windows
   pool:
