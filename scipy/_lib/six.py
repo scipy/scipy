@@ -274,3 +274,13 @@ _add_doc(reraise, """Reraise an exception.""")
 def with_metaclass(meta, base=object):
     """Create a base class with a metaclass."""
     return meta("NewBase", (base,), {})
+
+
+if PY3:
+    from textwrap import indent
+else:
+    def indent(text, prefix, predicate=None):
+        return ''.join(
+            prefix+line if predicate is None or predicate(line) else line
+            for line in text.splitlines(True)
+        )

@@ -30,7 +30,7 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from scipy._lib.six import callable, xrange
+from scipy._lib.six import callable, indent, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
@@ -119,10 +119,15 @@ class OptimizeResult(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+    def __formatvforrepr(self, v, m):
+        if isinstance(v, OptimizeResult):
+            return "\n" + indent(repr(v), ' '*m)
+        return repr(v)
+
     def __repr__(self):
         if self.keys():
             m = max(map(len, list(self.keys()))) + 1
-            return '\n'.join([k.rjust(m) + ': ' + repr(v)
+            return '\n'.join([k.rjust(m) + ': ' + self.__formatvforrepr(v, m)
                               for k, v in sorted(self.items())])
         else:
             return self.__class__.__name__ + "()"
