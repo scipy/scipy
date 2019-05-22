@@ -755,6 +755,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
+        ysize = len(infodict['fvec'])
         cost = np.sum(infodict['fvec'] ** 2)
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
@@ -769,6 +770,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if not res.success:
             raise RuntimeError("Optimal parameters not found: " + res.message)
 
+        ysize = len(res.fun)
         cost = 2 * res.cost  # res.cost is half sum of squares!
         popt = res.x
 
@@ -787,8 +789,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov.fill(inf)
         warn_cov = True
     elif not absolute_sigma:
-        if ydata.size > p0.size:
-            s_sq = cost / (ydata.size - p0.size)
+        if ysize > p0.size:
+            s_sq = cost / (ysize - p0.size)
             pcov = pcov * s_sq
         else:
             pcov.fill(inf)
