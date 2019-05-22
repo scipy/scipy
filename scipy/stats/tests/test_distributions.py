@@ -2803,6 +2803,20 @@ class TestTriang(object):
             assert_equal(stats.triang.cdf(1., 1.), 1)
 
 
+class TestMielke(object):
+    def test_moments(self):
+        k, s = 4.642, 0.597
+        # n-th moment exists only if n < s
+        assert_equal(stats.mielke(k, s).moment(1), np.inf)
+        assert_equal(stats.mielke(k, 1.0).moment(1), np.inf)
+        assert_(np.isfinite(stats.mielke(k, 1.01).moment(1)))
+
+    def test_burr_equivalence(self):
+        x = np.linspace(0.01, 100, 50)
+        k, s = 2.45, 5.32
+        assert_allclose(stats.burr.pdf(x, s, k/s), stats.mielke.pdf(x, k, s))
+
+
 class TestBurr(object):
     def test_endpoints_7491(self):
         # gh-7491
