@@ -121,10 +121,12 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Number of bytes to use for memoization.
     workers : int or map-like callable, optional
         If `workers` is an integer, part of the computation is done in
-        parallel subdivided to this many tasks (using `multiprocessing.Pool`).
+        parallel subdivided to this many tasks (using
+        :class:`python:multiprocessing.pool.Pool`).
         Supply `-1` to use all cores available to the Process.
         Alternatively, supply a map-like callable, such as
-        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        :meth:`python:multiprocessing.pool.Pool.map` for evaluating the
+        population in parallel.
         This evaluation is carried out as ``workers(func, iterable)``.
     points : list, optional
         List of additional breakpoints.
