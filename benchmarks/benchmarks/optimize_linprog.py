@@ -5,9 +5,9 @@ from __future__ import division, print_function, absolute_import
 
 # Import testing parameters
 try:
-    from scipy.optimize import linprog
+    from scipy.optimize import linprog, OptimizeWarning
     from scipy.linalg import toeplitz
-    from scipy.optimize.tests.test_linprog import lpgen_2d
+    from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
     from numpy.testing import suppress_warnings
     import numpy as np
     import os
@@ -16,7 +16,7 @@ except ImportError:
 
 from .common import Benchmark
 
-methods = ["simplex", "interior-point"]
+methods = ["revised simplex", "interior-point"]
 problems = ["AFIRO", "BLEND"]
 
 
@@ -28,6 +28,24 @@ def klee_minty(D):
     b_ub = np.array([5**(i + 1) for i in range(D)])
     c = -np.array([2**(D - i - 1) for i in range(D)])
     return c, A_ub, b_ub
+
+
+class MagicSquare(Benchmark):
+
+    params = [
+        methods,
+        [3, 4]
+    ]
+    param_names = ['method', 'dimensions']
+
+    def setup(self, meth, dims):
+        self.A_eq, self.b_eq, self.c, numbers = magic_square(dims)
+
+    def time_magic_square(self, meth, dims):
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear")
+            linprog(c=self.c, A_eq=self.A_eq, b_eq=self.b_eq,
+                    bounds=(0, 1), method=meth)
 
 
 class KleeMinty(Benchmark):
