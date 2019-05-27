@@ -356,6 +356,11 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         found.  Otherwise, the solution was not found. In either case, the
         optional output variable 'mesg' gives more information.
 
+    See Also
+    --------
+    least_squares : Newer interface to solve nonlinear least-squares problems
+        with bounds on the variables. See ``method=='lm'`` in particular.
+
     Notes
     -----
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
