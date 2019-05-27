@@ -141,6 +141,16 @@ class TestUnivariateSpline(object):
         assert_allclose(spl2(0.6) - spl2(0.2),
                         spl.integral(0.2, 0.6))
 
+    def test_derivative_extrapolation(self):
+        # Regression test for #10195
+        x_values = [1, 2, 4, 6, 8.5]
+        y_values = [0.5, 0.8, 1.3, 2.5, 5]
+        f = UnivariateSpline(x_values, y_values, ext='const', k=3)
+
+        x = np.linspace(0, 10, 1000)
+        y = f(x)
+        assert_allclose(f.derivative()(x), np.diff(y) / np.diff(x))
+
     def test_nan(self):
         # bail out early if the input data contains nans
         x = np.arange(10, dtype=float)
