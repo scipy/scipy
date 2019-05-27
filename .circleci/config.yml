@@ -12,6 +12,18 @@ jobs:
       - checkout
 
       - run:
+          name: merge with upstream
+          command: |
+            echo $(git log -1 --pretty=%B) | tee gitlog.txt
+            echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
+            if [[ $(cat merge.txt) != "" ]]; then
+              echo "Merging $(cat merge.txt)";
+              git remote add upstream git://github.com/scipy/scipy.git;
+              git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
+              git fetch upstream master;
+            fi
+
+      - run:
           name: update submodules
           command: |
             git submodule init
