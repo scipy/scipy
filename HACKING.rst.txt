@@ -6,7 +6,7 @@ This document aims to give an overview of how to contribute to SciPy.  It
 tries to answer commonly asked questions, and provide some insight into how the
 community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
-`git workflow`_ documentation.
+:ref:`git-development` documentation.
 
 There are a lot of ways you can contribute:
 
