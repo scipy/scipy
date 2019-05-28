@@ -1,6 +1,6 @@
 """
 ==================================================
-Discrete Fourier transforms (:mod:`scipy.fft`)
+Discrete Fourier transforms (:mod:`scipy.fftpack`)
 ==================================================
 
 Fast Fourier Transforms (FFTs)
@@ -58,26 +58,51 @@ Helper functions
 Note that ``fftshift``, ``ifftshift`` and ``fftfreq`` are numpy functions
 exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
 
+Convolutions (:mod:`scipy.fftpack.convolve`)
+============================================
+
+.. module:: scipy.fftpack.convolve
+
+.. autosummary::
+   :toctree: generated/
+
+   convolve
+   convolve_z
+   init_convolution_kernel
+   destroy_convolve_cache
+
 """
+
+# List of possibly useful functions in scipy.fftpack._fftpack:
+#   drfft
+#   zfft
+#   zrfft
+#   zfftnd
+#   destroy_drfft_cache
+#   destroy_zfft_cache
+#   destroy_zfftnd_cache
 
 from __future__ import division, print_function, absolute_import
 
-from scipy.fft._fftpack import (
-    fft,ifft,fftn,ifftn,rfft,irfft,
-    fft2,ifft2,
-    diff,
-    tilbert,itilbert,hilbert,ihilbert,
-    sc_diff,cs_diff,cc_diff,ss_diff,
-    shift,
-    fftfreq, rfftfreq,
-    fftshift, ifftshift,
-    next_fast_len,
-    dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
-from numpy.dual import register_func
-for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
-    register_func(k, eval(k))
-del k, register_func
+__all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
+           'fft2','ifft2',
+           'diff',
+           'tilbert','itilbert','hilbert','ihilbert',
+           'sc_diff','cs_diff','cc_diff','ss_diff',
+           'shift',
+           'fftfreq', 'rfftfreq',
+           'fftshift', 'ifftshift',
+           'next_fast_len',
+           ]
+
+from .basic import *
+from .pseudo_diffs import *
+from .helper import *
+
+from .realtransforms import *
+__all__.extend(['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn',
+                'idstn'])
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

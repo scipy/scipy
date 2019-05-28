@@ -73,7 +73,7 @@ Convolutions (:mod:`scipy.fftpack.convolve`)
 
 """
 
-# List of possibly useful functions in scipy.fftpack._fftpack:
+# List of possibly useful functions in scipy.fft.fftpack._fftpack:
 #   drfft
 #   zfft
 #   zrfft
@@ -94,20 +94,13 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fftfreq', 'rfftfreq',
            'fftshift', 'ifftshift',
            'next_fast_len',
+           'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn'
            ]
 
 from .basic import *
 from .pseudo_diffs import *
 from .helper import *
-
-from numpy.dual import register_func
-for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
-    register_func(k, eval(k))
-del k, register_func
-
 from .realtransforms import *
-__all__.extend(['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn',
-                'idstn'])
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
