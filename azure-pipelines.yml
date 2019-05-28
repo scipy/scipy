@@ -10,6 +10,8 @@ trigger:
 # despite the numbering on the downloaded files
 # and should be updated to match scipy-wheels as appropriate
 
+variables:
+    disable.coverage.autogenerate: 'true'
 jobs:
 - job: Linux_Python_36_32bit_full
   pool:
@@ -47,10 +49,10 @@ jobs:
            export LDFLAGS='--coverage' && \
            export FOPT='-O1' && \
            export OPT='-O1' && \
-           python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html && \
+           python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml && \
            find . -name '*.gcno' -type f -exec gcov -pb {} + && \
            /root/.local/bin/gcovr -r . --xml -o coverage_compiled_langs.xml && \
-           mono ./ReportGenerator.4.1.7/tools/net47/ReportGenerator.exe '-reports:**/coverage*.xml' '-targetdir:.' -reporttypes:Cobertura && \
+           mono ./ReportGenerator*/tools/net47/ReportGenerator.exe '-reports:**/coverage*.xml' '-targetdir:.' -reporttypes:'HtmlInline_AzurePipelines;Cobertura' && \
            find . -name 'coverage*.xml' -delete"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
@@ -63,7 +65,7 @@ jobs:
     inputs:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/Cobertura.xml'
-      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+      reportDirectory: '$(System.DefaultWorkingDirectory)'
 - job: Windows
   pool:
     vmImage: 'VS2017-Win2016'
@@ -148,7 +150,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html
+      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml
     displayName: 'Run SciPy Test Suite'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
