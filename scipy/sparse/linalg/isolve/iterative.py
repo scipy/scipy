@@ -469,7 +469,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         error tolerance.  By default, no preconditioner is used.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(rk), where rk is the current residual vector.
+        as callback(xk), where xk is the current solution vector.
     restrt : int, optional
         DEPRECATED - use `restart` instead.
 
@@ -560,7 +560,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):  # gmres success, update last residual
             if resid_ready and callback is not None:
-                callback(presid / bnrm2)
+                callback(x)
                 resid_ready = False
             break
         elif (ijob == 1):
@@ -576,7 +576,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
             if resid_ready and callback is not None:
-                callback(presid / bnrm2)
+                callback(x)
                 resid_ready = False
                 iter_num = iter_num+1
 
