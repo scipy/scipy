@@ -14,7 +14,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include "pocketfft_hdronly.h"
+#include "pocketfft.h"
 
 //
 // Python interface

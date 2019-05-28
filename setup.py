@@ -467,6 +467,8 @@ def setup_package():
         build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
+    build_requires += ['pybind11>=2.2.4']
+
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
