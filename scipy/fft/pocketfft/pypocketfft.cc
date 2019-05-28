@@ -29,10 +29,10 @@ namespace py = pybind11;
 
 auto c64 = py::dtype("complex64");
 auto c128 = py::dtype("complex128");
-auto c256 = py::dtype("complex256");
+auto c256 = py::dtype("longcomplex");
 auto f32 = py::dtype("float32");
 auto f64 = py::dtype("float64");
-auto f128 = py::dtype("float128");
+auto f128 = py::dtype("longfloat");
 
 shape_t copy_shape(const py::array &arr)
   {
