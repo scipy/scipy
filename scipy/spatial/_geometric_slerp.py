@@ -1,0 +1,185 @@
+from __future__ import division, print_function, absolute_import
+
+__all__ = ['geometric_slerp']
+
+import math
+import numpy as np
+from . import _slerp
+from scipy.spatial.distance import euclidean
+
+def geometric_slerp(start_coord,
+                    end_coord,
+                    t_values,
+                    tol=1e-7):
+    """
+    Spherical linear interpolation along unit-radius
+    great circle arc in arbitrary dimensional space.
+
+    Parameters
+    ----------
+    start_coord : (D, ) ndarray
+        Single D-dimensional input coordinate in a 1-D array.
+        Starting coordinate for interpolation will be converted
+        to float64.
+    end_coord : (D, ) ndarray
+        Single D-dimensional input coordinate in a 1-D array.
+        End coordinate for interpolation will be converted to
+        float64.
+    t_values : array
+        An array of doubles representing interpolation parameters,
+        with values required in the inclusive interval between
+        0 and 1. A common approach is to generate the array with
+        ``np.linspace(0, 1, n_pts)`` for linearly spaced points.
+        Ascending, descending, and scrambled orders are permitted.
+    tol: float
+        The absolute tolerance for determining if the start and end
+        coordinates are antipodes. Antipode detection will
+        raise an exception because of the ambiguity in the path.
+
+    Returns
+    -------
+    result : (t_values.size, D)
+        An array of doubles containing the interpolated
+        spherical path and including start_coord and
+        end_coord when 0 and 1 t_values are used. The
+        interpolated values should correspond to the
+        same sort order provided in the t_values array.
+
+    Notes
+    -----
+    The implementation is based on the mathematical formula provided in [1]_,
+    and the first known presentation of this algorithm, derived from study of
+    4-D geometry, is credited to Glenn Davis in a footnote of the original
+    quaternion Slerp publication by Ken Shoemake [2]_.
+
+    .. versionadded:: 1.4.0
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Slerp#Geometric_Slerp
+    .. [2] Ken Shoemake (1985) Animating rotation with quaternion curves.
+           ACM SIGGRAPH Computer Graphics, 19(3): 245-254.
+
+    See Also
+    --------
+    scipy.spatial.transform.Slerp : 3-D Slerp that works with quaternions
+
+    Examples
+    --------
+    Interpolate four linearly-spaced values on the circumference of
+    a circle spanning 90 degrees:
+
+    >>> from scipy.spatial import geometric_slerp
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> start = np.array([1, 0])
+    >>> end = np.array([0, 1])
+    >>> t_vals = np.linspace(0, 1, 4)
+    >>> result = geometric_slerp(start,
+    ...                          end,
+    ...                          t_vals)
+
+    The interpolated results should be at 30 degree intervals
+    recognizable on the unit circle:
+    >>> ax.scatter(result[...,0], result[...,1], c='k')
+    >>> circle = plt.Circle((0, 0), 1, color='grey')
+    >>> ax.add_artist(circle)
+    >>> plt.show()
+
+    Attempting to interpolate between antipodes on a circle is
+    ambiguous because there are two possible paths, and on a
+    sphere there are infinite possible paths on the geodesic surface:
+
+    >>> opposite_pole = np.array([-1, 0])
+    >>> try:
+    ...     geometric_slerp(start,
+    ...                     opposite_pole,
+    ...                     t_vals)
+    ... except ValueError:
+    ...     print("ValueError")
+    ValueError
+
+
+    Extend the original example to a sphere and plot interpolation
+    points in 3D:
+
+    >>> from mpl_toolkits.mplot3d import proj3d
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111, projection='3d')
+
+    Plot the unit sphere for reference (optional):
+
+    >>> u = np.linspace(0, 2 * np.pi, 100)
+    >>> v = np.linspace(0, np.pi, 100)
+    >>> x = np.outer(np.cos(u), np.sin(v))
+    >>> y = np.outer(np.sin(u), np.sin(v))
+    >>> z = np.outer(np.ones(np.size(u)), np.cos(v))
+    >>> ax.plot_surface(x, y, z, color='y', alpha=0.1)
+
+    Interpolating over a larger number of points
+    may provide the appearance of a smooth curve on
+    the surface of the sphere, which is also useful
+    for discretized integration calculations on a
+    sphere surface:
+
+    >>> start = np.array([1, 0, 0])
+    >>> end = np.array([0, 0, 1])
+    >>> t_vals = np.linspace(0, 1, 200)
+    >>> result = geometric_slerp(start,
+    ...                          end,
+    ...                          t_vals)
+    >>> ax.plot(result[...,0],
+    ...         result[...,1],
+    ...         result[...,2],
+    ...         c='k')
+    >>> plt.show()
+    """
+
+    if start_coord.ndim != 1 or end_coord.ndim != 1:
+        raise ValueError("Start and end coordinates must be flat")
+
+    if start_coord.size != end_coord.size:
+        raise ValueError("The dimensions of start_coord and "
+                         "end_coord must match (have same size)")
+
+    if start_coord.size == 0 or end_coord.size == 0:
+        raise ValueError("One or both input coordinates are empty")
+
+    if not isinstance(tol, float):
+        raise ValueError("tol must be a float")
+    else:
+        tol = math.fabs(tol)
+
+    coord_dist = euclidean(start_coord, end_coord)
+
+    # diameter of 2 within tolerance means antipodes, which is a problem
+    # for all unit n-spheres (even the 0-sphere would have an ambiguous path)
+    if np.allclose(coord_dist, 2.0, rtol=0, atol=tol):
+        raise ValueError("start_coord and end_coord are antipodes"
+                         " using the specified tolerance or they"
+                         " are not on a unit n-sphere")
+
+    # a diameter > 2 within tol violates requirement for input to be on
+    # unit n-sphere
+    if coord_dist > (2.0 + tol):
+        raise ValueError("start_coord and end_coord are not"
+                         " on a unit n-sphere")
+
+    # similarly for points that violate equation for n-sphere
+    # NOTE: this is tricky to think about for the 0-sphere;
+    # performing the check for 1-sphere (circle) and up
+    if start_coord.size > 1:
+        for coord in [start_coord, end_coord]:
+            if not np.allclose(np.square(coord).sum(), 1.0, rtol=0, atol=tol):
+                raise ValueError("start_coord and end_coord are not"
+                                 " on a unit n-sphere")
+
+    t_values = np.asanyarray(t_values).astype(np.float64)
+    if t_values.min() < 0 or t_values.max() > 1:
+        raise ValueError("interpolation parameter must be in [0, 1]")
+
+    result = _slerp._geometric_slerp(start_coord.astype(np.float64),
+                                     end_coord.astype(np.float64),
+                                     t_values)
+    return result
