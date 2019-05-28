@@ -33,6 +33,15 @@ __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 __docformat__ = "restructuredtext en"
 
 
+@np.deprecate(
+    message="linprog_verbose_callback is to be deprecated in a future version. "
+    "It was designed to demonstrate the callback behaviour when the simplex "
+    "method was the only available solver, which has been superseded by the "
+    "interior-point and revised simplex methods. The callback displays "
+    "information, such as the simplex tableau and current phase, which are "
+    "not relevant for all available solvers and may confuse users who are not "
+    "familiar with each specific method. An example callback function "
+    "will be available in the SciPy tutorial.")
 def linprog_verbose_callback(res):
     """
     A sample callback function demonstrating the linprog callback interface.
@@ -75,12 +84,6 @@ def linprog_verbose_callback(res):
         message : str
             A string descriptor of the exit status of the optimization.
     """
-    warn(
-        "linprog_verbose_callback is set to be depreciated in version 1.6. "
-        "It demonstrates the callback interface using the simplex method, "
-        "which has been superseded by the interior-point and revised "
-        "simplex solvers.", DeprecationWarning)
-
     x = res['x']
     fun = res['fun']
     phase = res['phase']
