@@ -530,12 +530,15 @@ class TestQMR(object):
 class TestGMRES(object):
     def test_callback(self):
 
-        def store_residual(r, rvec):
-            rvec[rvec.nonzero()[0].max()+1] = r
-
         # Define, A,b
         A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
         b = ones((A.shape[0],))
+
+
+        def store_residual(x, rvec):
+            rvec[rvec.nonzero()[0].max()+1] = np.linalg.norm(A @ x - b)
+
+
         maxiter = 1
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
