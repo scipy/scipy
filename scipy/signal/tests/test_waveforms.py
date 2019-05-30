@@ -355,25 +355,28 @@ class TestUnitImpulse(object):
 
 class TestColouredNoise(object):
     def test_std(self):
-        noise = waveforms.coloured_noise(0.5, 5, scale_std=False)
+        noise = waveforms.coloured_noise(0.5, 60, scale_std=True,
+                                         scale_mean=False)
         assert_almost_equal(noise, np.std(noise), 1)
 
     def test_mean(self):
-        noise = waveforms.coloured_noise(0.5, 5, scale_mean=False)
+        noise = waveforms.coloured_noise(0.5, 60, scale_mean=True,
+                                         scale_std=False)
         assert_almost_equal(noise, np.mean(noise), 1)
 
     def test_length(self):
-        length = 5
-        noise = waveforms.coloured_noise(0, length)
-        assert_equal(len(noise), length)
+        length = 60
+        noise = waveforms.coloured_noise(alpha=0, size=length)
+        assert_(len(noise) == length)
 
     def test_alpha_generation(self):
         noise = waveforms.coloured_noise(alpha=1, size=500)
-        h = hurst_dfa(noise, 5, 20)
+        h = hurst_dfa(noise, s_min=5, s_max=20)
 
         assert_(np.abs(1-h) <= 0.3)  # Approximation won't be ideal at this size
 
     def test_colour_input(self):
-        noise = waveforms.coloured_noise(alpha=1, size=500)
+        noise = waveforms.coloured_noise(alpha=2, size=500)
+        h = hurst_dfa(noise, s_min=5, s_max=20)
 
-        assert_(len(noise == 500))
+        assert_(np.abs(1.5 - h) <= 0.3)  # Should be 1.5
