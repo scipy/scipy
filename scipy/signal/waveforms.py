@@ -4,17 +4,21 @@
 # Feb. 2010: Updated by Warren Weckesser:
 #   Rewrote much of chirp()
 #   Added sweep_poly()
+#
+# May 2019: Updated by Oliver Gordon:
+#   Added coloured_noise()
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
-    exp, cos, sin, polyval, polyint
-
+    exp, cos, sin, polyval, polyint, argmin, std, mean
+from numpy.fft import irfft, rfftfreq
+from numpy.random import normal
+import warnings
 from scipy._lib.six import string_types
 
-
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
-           'unit_impulse']
+           'unit_impulse', 'coloured_noise']
 
 
 def sawtooth(t, width=1):
@@ -679,3 +683,101 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     out[idx] = 1
     return out
+
+
+def coloured_noise(alpha, size, scale_mean=True, scale_std=True):
+    """
+    Creates signal with colour in the form 1/f
+
+    Parameters
+    ----------
+    alpha : float or str
+        The alpha value describing the colour of noise to generate. Can also
+        be one of {'white', 'pink', 'brown', 'blue', 'violet'.
+    size : int
+        Number of samples in the output
+    scale_mean : bool, optional
+        If the output should be scaled to have mean = 0. Default is True.
+    scale_std
+        If the output should be scaled to have std = 1. Default is True.
+
+    Returns
+    -------
+    out_signal : ndarray
+        1D numpy array containing the coloured noise signal
+
+    See Also
+    -------
+    signal.spectral.hurst_dfa : Calcuates the Hurst exponent of the noise
+
+    Examples
+    --------
+    Create a 10,000 long 1D array of pink noise in the form 1/f, and
+    violet noise in the form 1/f^-2
+
+    >>> from scipy.signal import coloured_noise
+    >>> pink_noise = coloured_noise(alpha='pink', size=10000)
+    >>> violet_noise = coloured_noise(alpha=-2, size=10000)
+
+    Compute and plot the power spectral densities:
+
+    >>> import matplotlib.pyplot as plt
+    >>> psd_pink, freq_pink = plt.psd(pink_noise, NFFT=2**13)
+    >>> psd_violet, freq_violet = plt.psd(violet_noise, NFFT=2**13)
+    >>> plt.show()
+
+    Notes
+    --------
+    .. versionadded:: 1.4.0
+
+    References
+    --------
+    .. [1] Voss, Richard F., and John Clarke.
+    "‘1/fnoise’in music and speech." Nature 258.5533 (1975): 317.
+    :doi : `10.1038/258317a0`
+
+    .. [2] Timmer, J., and M. König. "On generating power law noise." Astronomy
+    and Astrophysics 300 (1995): 707
+    """
+
+    _colours = {'white': 0, 'pink': 1, 'brown': 2, 'blue': -1, 'violet': -2}
+    if isinstance(size, int) is False:
+        raise TypeError("Output size must be an int")
+    if isinstance(alpha, (str, float, int)) is False:
+        raise ValueError("Colour must be a float or one of " +
+                         str(_colours.keys()))
+    if size < 20:
+        warnings.warn(
+            "Low output size may result in inaccurately coloured noise")
+    if isinstance(alpha, str):
+        alpha = _colours[alpha]
+
+    # Generate fourier frequencies, multiply using alpha and draw normal
+    # distributed numbers
+    freqs_all = rfftfreq(size)
+    freqs_cutoff = freqs_all
+
+    cutoff_index = argmin(freqs_all < 1/size)
+    freqs_cutoff[:cutoff_index] = freqs_cutoff[cutoff_index]
+
+    freqs_cutoff = (1/freqs_cutoff)**(alpha / 2)
+
+    rand_real = normal(scale=freqs_cutoff)
+    rand_imag = normal(scale=freqs_cutoff)
+
+    # Set coefficients to 0 as appropriate
+    rand_imag[0] = 0
+    if not size % 2:
+        rand_imag[-1] = 0
+
+    # Combine real + imaginary components and take inverse transform
+    out_signal_fourier = rand_real + (1J * rand_imag)
+    out_signal = irfft(out_signal_fourier)
+
+    # Scale output and return
+    if scale_std:
+        out_signal /= std(out_signal)
+    if scale_mean:
+        out_signal += mean(out_signal)
+
+    return out_signal

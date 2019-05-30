@@ -11,8 +11,8 @@ from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA, check_NOLA,
-                          coloured_noise)
-from scipy.signal.spectral import _spectral_helper, hurst_dfa
+                          coloured_noise, hurst_dfa)
+from scipy.signal.spectral import _spectral_helper
 
 
 class TestPeriodogram(object):
@@ -1467,26 +1467,26 @@ class TestSTFT(object):
 
 class TestHurstDFA(object):
     def test_negative_s(self):
-        x = np.zeros(10)
+        x = np.random.rand(10)
 
         with assert_raises(ValueError):
             _ = hurst_dfa(x, s_min=-1, s_max=4)
 
     def test_oversized_s(self):
-        x = np.zeros(10)
+        x = np.random.rand(10)
 
         with assert_raises(ValueError):
-            _ = hurst_dfa(x, s_min=1, s_max=11)
+            _ = hurst_dfa(x, s_min=2, s_max=11)
 
     def test_return_all_length(self):
-        x = np.zeros(10)
-        (outs) = hurst_dfa(x, s_min=1, s_max=2, full=True)
+        x = np.random.rand(10)
+        (outs) = hurst_dfa(x, s_min=2, s_max=4, full=True)
 
-        assert_(len(outs == 5))
+        assert_(len(outs) == 5)
 
     def test_return_just_hurst(self):
-        x = np.zeros(10)
-        (outs) = hurst_dfa(x, s_min=1, s_max=2, full=False)
+        x = np.random.rand(10)
+        (outs) = hurst_dfa(x, s_min=2, s_max=4, full=False)
 
         assert_(hasattr(outs, '__len__' is False))
 

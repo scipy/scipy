@@ -14,7 +14,8 @@ import warnings
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
+           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
+           'hurst_dfa']
 
 
 def lombscargle(x,
