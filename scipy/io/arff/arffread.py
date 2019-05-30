@@ -132,7 +132,8 @@ class NominalAttribute(Attribute):
         """
         m = r_nominal.match(atrv)
         if m:
-            return tuple(strip_quotes(i.strip()) for i in m.group(1).split(','))
+            attrs, _ = split_data_line(m.group(1))
+            return tuple(attrs)
         else:
             raise ValueError("This does not look like a nominal string")
 
@@ -392,14 +393,6 @@ class RelationalAttribute(Attribute):
 # -----------------
 # Various utilities
 # -----------------
-def strip_quotes(s):
-    """Strip matching quotes at start and end, if any"""
-    if s[0] == s[-1] and (s[0] == '"' or s[0] == "'"):
-        return s[1:-1]
-    else:
-        return s
-
-
 def to_attribute(name, attr_string):
     attr_classes = (NominalAttribute, NumericAttribute, DateAttribute,
                     StringAttribute, RelationalAttribute)
