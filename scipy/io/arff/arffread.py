@@ -156,7 +156,6 @@ class NominalAttribute(Attribute):
         """
         Parse a value of this type.
         """
-        data_str = data_str.strip()
         if data_str in self.values:
             return data_str
         elif data_str == '?':
