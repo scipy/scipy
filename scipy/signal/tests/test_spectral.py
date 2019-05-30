@@ -11,8 +11,8 @@ from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA, check_NOLA,
-                          hurst_dfa, coloured_noise)
-from scipy.signal.spectral import _spectral_helper
+                          coloured_noise)
+from scipy.signal.spectral import _spectral_helper, hurst_dfa
 
 
 class TestPeriodogram(object):

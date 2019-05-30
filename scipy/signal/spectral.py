@@ -14,8 +14,7 @@ import warnings
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
-           'hurst_dfa']
+           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
 def lombscargle(x,
@@ -188,7 +187,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
@@ -281,7 +280,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     elif nfft > x.shape[axis]:
         nperseg = x.shape[axis]
     elif nfft < x.shape[axis]:
-        s = [np.s_[:]] * len(x.shape)
+        s = [np.s_[:]]*len(x.shape)
         s[axis] = np.s_[:nfft]
         x = x[tuple(s)]
         nperseg = nfft
@@ -334,7 +333,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
@@ -499,7 +498,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
@@ -642,7 +641,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
@@ -886,8 +885,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
             raise ValueError('window must have length of nperseg')
 
     step = nperseg - noverlap
-    binsums = sum(
-        win[ii * step:(ii + 1) * step] for ii in range(nperseg // step))
+    binsums = sum(win[ii*step:(ii+1)*step] for ii in range(nperseg//step))
 
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]
@@ -1015,11 +1013,10 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
             raise ValueError('window must have length of nperseg')
 
     step = nperseg - noverlap
-    binsums = sum(
-        win[ii * step:(ii + 1) * step] ** 2 for ii in range(nperseg // step))
+    binsums = sum(win[ii*step:(ii+1)*step]**2 for ii in range(nperseg//step))
 
     if nperseg % step != 0:
-        binsums[:nperseg % step] += win[-(nperseg % step):] ** 2
+        binsums[:nperseg % step] += win[-(nperseg % step):]**2
 
     return np.min(binsums) > tol
 
@@ -1063,7 +1060,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         done. Defaults to `False`.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     boundary : str or None, optional
         Specifies whether the input signal is extended at both ends, and
@@ -1361,7 +1358,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     if input_onesided:
         # Assume even segment length
-        n_default = 2 * (Zxx.shape[freq_axis] - 1)
+        n_default = 2*(Zxx.shape[freq_axis] - 1)
     else:
         n_default = Zxx.shape[freq_axis]
 
@@ -1385,7 +1382,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         nfft = int(nfft)
 
     if noverlap is None:
-        noverlap = nperseg // 2
+        noverlap = nperseg//2
     else:
         noverlap = int(noverlap)
     if noverlap >= nperseg:
@@ -1393,7 +1390,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     nstep = nperseg - noverlap
 
     # Rearrange axes if necessary
-    if time_axis != Zxx.ndim - 1 or freq_axis != Zxx.ndim - 2:
+    if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
         # Turn negative indices to positive for the call to transpose
         if freq_axis < 0:
             freq_axis = Zxx.ndim + freq_axis
@@ -1402,7 +1399,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         zouter = list(range(Zxx.ndim))
         for ax in sorted([time_axis, freq_axis], reverse=True):
             zouter.pop(ax)
-        Zxx = np.transpose(Zxx, zouter + [freq_axis, time_axis])
+        Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
 
     # Get window as array
     if isinstance(window, string_types) or type(window) is tuple:
@@ -1422,8 +1419,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
 
     # Initialize output and normalization arrays
-    outputlength = nperseg + (nseg - 1) * nstep
-    x = np.zeros(list(Zxx.shape[:-2]) + [outputlength], dtype=xsubs.dtype)
+    outputlength = nperseg + (nseg-1)*nstep
+    x = np.zeros(list(Zxx.shape[:-2])+[outputlength], dtype=xsubs.dtype)
     norm = np.zeros(outputlength, dtype=xsubs.dtype)
 
     if np.result_type(win, xsubs) != xsubs.dtype:
@@ -1435,13 +1432,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # This loop could perhaps be vectorized/strided somehow...
     for ii in range(nseg):
         # Window the ifft
-        x[..., ii * nstep:ii * nstep + nperseg] += xsubs[..., ii] * win
-        norm[..., ii * nstep:ii * nstep + nperseg] += win ** 2
+        x[..., ii*nstep:ii*nstep+nperseg] += xsubs[..., ii] * win
+        norm[..., ii*nstep:ii*nstep+nperseg] += win**2
 
     # Remove extension points
     if boundary:
-        x = x[..., nperseg // 2:-(nperseg // 2)]
-        norm = norm[..., nperseg // 2:-(nperseg // 2)]
+        x = x[..., nperseg//2:-(nperseg//2)]
+        norm = norm[..., nperseg//2:-(nperseg//2)]
 
     # Divide out normalization where non-tiny
     if np.sum(norm > 1e-10) != len(norm):
@@ -1453,12 +1450,12 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Put axes back
     if x.ndim > 1:
-        if time_axis != Zxx.ndim - 1:
+        if time_axis != Zxx.ndim-1:
             if freq_axis < time_axis:
                 time_axis -= 1
             x = np.rollaxis(x, -1, time_axis)
 
-    time = np.arange(x.shape[0]) / float(fs)
+    time = np.arange(x.shape[0])/float(fs)
     return time, x
 
 
@@ -1577,7 +1574,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     _, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                  noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis)
 
-    Cxy = np.abs(Pxy) ** 2 / Pxx / Pyy
+    Cxy = np.abs(Pxy)**2 / Pxx / Pyy
 
     return freqs, Cxy
 
@@ -1629,7 +1626,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
@@ -1756,7 +1753,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         nfft = int(nfft)
 
     if noverlap is None:
-        noverlap = nperseg // 2
+        noverlap = nperseg//2
     else:
         noverlap = int(noverlap)
     if noverlap >= nperseg:
@@ -1771,14 +1768,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if boundary is not None:
         ext_func = boundary_funcs[boundary]
-        x = ext_func(x, nperseg // 2, axis=-1)
+        x = ext_func(x, nperseg//2, axis=-1)
         if not same_data:
-            y = ext_func(y, nperseg // 2, axis=-1)
+            y = ext_func(y, nperseg//2, axis=-1)
 
     if padded:
         # Pad to integer number of windowed segments
         # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-        nadd = (-(x.shape[-1] - nperseg) % nstep) % nperseg
+        nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
         x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
         if not same_data:
@@ -1806,9 +1803,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         win = win.astype(outdtype)
 
     if scaling == 'density':
-        scale = 1.0 / (fs * (win * win).sum())
+        scale = 1.0 / (fs * (win*win).sum())
     elif scaling == 'spectrum':
-        scale = 1.0 / win.sum() ** 2
+        scale = 1.0 / win.sum()**2
     else:
         raise ValueError('Unknown scaling: %r' % scaling)
 
@@ -1831,9 +1828,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         sides = 'twosided'
 
     if sides == 'twosided':
-        freqs = fftpack.fftfreq(nfft, 1 / fs)
+        freqs = fftpack.fftfreq(nfft, 1/fs)
     elif sides == 'onesided':
-        freqs = np.fft.rfftfreq(nfft, 1 / fs)
+        freqs = np.fft.rfftfreq(nfft, 1/fs)
 
     # Perform the windowed FFTs
     result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
@@ -1854,10 +1851,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             # Last point is unpaired Nyquist freq point, don't double
             result[..., 1:-1] *= 2
 
-    time = np.arange(nperseg / 2, x.shape[-1] - nperseg / 2 + 1,
-                     nperseg - noverlap) / float(fs)
+    time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
+                     nperseg - noverlap)/float(fs)
     if boundary is not None:
-        time -= (nperseg / 2) / fs
+        time -= (nperseg/2) / fs
 
     result = result.astype(outdtype)
 
@@ -1904,8 +1901,8 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     else:
         # https://stackoverflow.com/a/5568169
         step = nperseg - noverlap
-        shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // step, nperseg)
-        strides = x.strides[:-1] + (step * x.strides[-1], x.strides[-1])
+        shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
+        strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
         result = np.lib.stride_tricks.as_strided(x, shape=shape,
                                                  strides=strides)
 
@@ -2004,7 +2001,7 @@ def _median_bias(n):
     bias : float
         Calculated bias.
     """
-    ii_2 = 2 * np.arange(1., (n - 1) // 2 + 1)
+    ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
     return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)
 
 
