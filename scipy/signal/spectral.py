@@ -14,7 +14,8 @@ import warnings
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
+           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
+           'hurst_dfa']
 
 
 def lombscargle(x,
@@ -280,7 +281,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     elif nfft > x.shape[axis]:
         nperseg = x.shape[axis]
     elif nfft < x.shape[axis]:
-        s = [np.s_[:]]*len(x.shape)
+        s = [np.s_[:]] * len(x.shape)
         s[axis] = np.s_[:nfft]
         x = x[tuple(s)]
         nperseg = nfft
@@ -885,7 +886,8 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
             raise ValueError('window must have length of nperseg')
 
     step = nperseg - noverlap
-    binsums = sum(win[ii*step:(ii+1)*step] for ii in range(nperseg//step))
+    binsums = sum(
+        win[ii * step:(ii + 1) * step] for ii in range(nperseg // step))
 
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]
@@ -1013,10 +1015,11 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
             raise ValueError('window must have length of nperseg')
 
     step = nperseg - noverlap
-    binsums = sum(win[ii*step:(ii+1)*step]**2 for ii in range(nperseg//step))
+    binsums = sum(
+        win[ii * step:(ii + 1) * step] ** 2 for ii in range(nperseg // step))
 
     if nperseg % step != 0:
-        binsums[:nperseg % step] += win[-(nperseg % step):]**2
+        binsums[:nperseg % step] += win[-(nperseg % step):] ** 2
 
     return np.min(binsums) > tol
 
@@ -1358,7 +1361,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     if input_onesided:
         # Assume even segment length
-        n_default = 2*(Zxx.shape[freq_axis] - 1)
+        n_default = 2 * (Zxx.shape[freq_axis] - 1)
     else:
         n_default = Zxx.shape[freq_axis]
 
@@ -1382,7 +1385,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         nfft = int(nfft)
 
     if noverlap is None:
-        noverlap = nperseg//2
+        noverlap = nperseg // 2
     else:
         noverlap = int(noverlap)
     if noverlap >= nperseg:
@@ -1390,7 +1393,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     nstep = nperseg - noverlap
 
     # Rearrange axes if necessary
-    if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
+    if time_axis != Zxx.ndim - 1 or freq_axis != Zxx.ndim - 2:
         # Turn negative indices to positive for the call to transpose
         if freq_axis < 0:
             freq_axis = Zxx.ndim + freq_axis
@@ -1399,7 +1402,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         zouter = list(range(Zxx.ndim))
         for ax in sorted([time_axis, freq_axis], reverse=True):
             zouter.pop(ax)
-        Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
+        Zxx = np.transpose(Zxx, zouter + [freq_axis, time_axis])
 
     # Get window as array
     if isinstance(window, string_types) or type(window) is tuple:
@@ -1419,8 +1422,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
 
     # Initialize output and normalization arrays
-    outputlength = nperseg + (nseg-1)*nstep
-    x = np.zeros(list(Zxx.shape[:-2])+[outputlength], dtype=xsubs.dtype)
+    outputlength = nperseg + (nseg - 1) * nstep
+    x = np.zeros(list(Zxx.shape[:-2]) + [outputlength], dtype=xsubs.dtype)
     norm = np.zeros(outputlength, dtype=xsubs.dtype)
 
     if np.result_type(win, xsubs) != xsubs.dtype:
@@ -1432,13 +1435,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # This loop could perhaps be vectorized/strided somehow...
     for ii in range(nseg):
         # Window the ifft
-        x[..., ii*nstep:ii*nstep+nperseg] += xsubs[..., ii] * win
-        norm[..., ii*nstep:ii*nstep+nperseg] += win**2
+        x[..., ii * nstep:ii * nstep + nperseg] += xsubs[..., ii] * win
+        norm[..., ii * nstep:ii * nstep + nperseg] += win ** 2
 
     # Remove extension points
     if boundary:
-        x = x[..., nperseg//2:-(nperseg//2)]
-        norm = norm[..., nperseg//2:-(nperseg//2)]
+        x = x[..., nperseg // 2:-(nperseg // 2)]
+        norm = norm[..., nperseg // 2:-(nperseg // 2)]
 
     # Divide out normalization where non-tiny
     if np.sum(norm > 1e-10) != len(norm):
@@ -1450,12 +1453,12 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Put axes back
     if x.ndim > 1:
-        if time_axis != Zxx.ndim-1:
+        if time_axis != Zxx.ndim - 1:
             if freq_axis < time_axis:
                 time_axis -= 1
             x = np.rollaxis(x, -1, time_axis)
 
-    time = np.arange(x.shape[0])/float(fs)
+    time = np.arange(x.shape[0]) / float(fs)
     return time, x
 
 
@@ -1574,7 +1577,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     _, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                  noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis)
 
-    Cxy = np.abs(Pxy)**2 / Pxx / Pyy
+    Cxy = np.abs(Pxy) ** 2 / Pxx / Pyy
 
     return freqs, Cxy
 
@@ -1753,7 +1756,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         nfft = int(nfft)
 
     if noverlap is None:
-        noverlap = nperseg//2
+        noverlap = nperseg // 2
     else:
         noverlap = int(noverlap)
     if noverlap >= nperseg:
@@ -1768,14 +1771,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if boundary is not None:
         ext_func = boundary_funcs[boundary]
-        x = ext_func(x, nperseg//2, axis=-1)
+        x = ext_func(x, nperseg // 2, axis=-1)
         if not same_data:
-            y = ext_func(y, nperseg//2, axis=-1)
+            y = ext_func(y, nperseg // 2, axis=-1)
 
     if padded:
         # Pad to integer number of windowed segments
         # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-        nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
+        nadd = (-(x.shape[-1] - nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
         x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
         if not same_data:
@@ -1803,9 +1806,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         win = win.astype(outdtype)
 
     if scaling == 'density':
-        scale = 1.0 / (fs * (win*win).sum())
+        scale = 1.0 / (fs * (win * win).sum())
     elif scaling == 'spectrum':
-        scale = 1.0 / win.sum()**2
+        scale = 1.0 / win.sum() ** 2
     else:
         raise ValueError('Unknown scaling: %r' % scaling)
 
@@ -1828,9 +1831,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         sides = 'twosided'
 
     if sides == 'twosided':
-        freqs = fftpack.fftfreq(nfft, 1/fs)
+        freqs = fftpack.fftfreq(nfft, 1 / fs)
     elif sides == 'onesided':
-        freqs = np.fft.rfftfreq(nfft, 1/fs)
+        freqs = np.fft.rfftfreq(nfft, 1 / fs)
 
     # Perform the windowed FFTs
     result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
@@ -1851,10 +1854,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             # Last point is unpaired Nyquist freq point, don't double
             result[..., 1:-1] *= 2
 
-    time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
-                     nperseg - noverlap)/float(fs)
+    time = np.arange(nperseg / 2, x.shape[-1] - nperseg / 2 + 1,
+                     nperseg - noverlap) / float(fs)
     if boundary is not None:
-        time -= (nperseg/2) / fs
+        time -= (nperseg / 2) / fs
 
     result = result.astype(outdtype)
 
@@ -1901,8 +1904,8 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     else:
         # https://stackoverflow.com/a/5568169
         step = nperseg - noverlap
-        shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
-        strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
+        shape = x.shape[:-1] + ((x.shape[-1] - noverlap) // step, nperseg)
+        strides = x.strides[:-1] + (step * x.strides[-1], x.strides[-1])
         result = np.lib.stride_tricks.as_strided(x, shape=shape,
                                                  strides=strides)
 
@@ -2001,5 +2004,173 @@ def _median_bias(n):
     bias : float
         Calculated bias.
     """
-    ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
+    ii_2 = 2 * np.arange(1., (n - 1) // 2 + 1)
     return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)
+
+
+def hurst_dfa(x, s_min, s_max, plot=False, full=False):
+    """
+    Returns the Hurst exponent of a 1D array.
+
+    Parameters
+    ----------
+    x : array_like
+        Array or sequence containing the signal to be calculated.
+    s_min : int
+        Minimum window size. Must be positive.
+    s_max : int
+        Maximum window size. Cannot be larger than the length of x.
+    plot : bool, optional
+        Plot the graph from which the Hurst exponent is calculated.
+        Default is False.
+    full : bool, optional
+        Return the full fitting parameters describing the quality of the fit.
+
+    Returns
+    -------
+    hurst : float
+        The hurst exponent of the signal.
+    residuals, rank, singular_values, rcond
+        Only present if full=True. For more details, see np.linalg.lstsq
+
+    Raises
+    -------
+    ValueError
+        If s_min is negative or if s_max is longer than the input signal
+
+    See Also
+    -------
+    signal.waveforms.coloured_noise : Generate data with defined Hurst exponent
+    np.linalg.lstsq : Description of the "full" parameter
+
+    Examples
+    -------
+    Generate some pink noise, with alpha = 1 and H = (1+alpha)/2 = 1
+
+    >>> from scipy import signal
+    >>> pink_noise = signal.coloured_noise(beta='pink', size=100)
+
+    Calculate the Hurst exponent is correct
+
+    >>> hurst_exponent = hurst_dfa(pink_noise, s_min=5, s_max=50, plot=True)
+    1
+
+    Notes
+    -------
+    Noise and noisy signals can be quantified by their "colour", which has been
+    found to follow the form 1/f^a [1]_. The value of alpha quantifies the
+    self-affinity of a system as it evolves over time. Detrended Fluctuation
+    Analysis (DFA) is one of a variety of methods by which this alpha exponent
+    can be measured through calculation of the Hurst exponent, :math:`H`.
+
+    If a signal is self-correlated and fractal, any subsection of the signal
+    will be statistically self-identical to any other subsection of the data.
+    This corresponds to a Hurst exponent of :math:`0.5 \\leq H \\leq 1.5`.
+    If the signal is anti-correlated, :math:`−0.5 \\leq H \\leq 0.5`.
+    Alternatively, if the data is uncorrelated,(as in the case of white noise),
+    :math:`H` = 0.5. Noise correlation has been identified to be present in a
+    wide variety of seemingly signals, such as in music performances,
+    penmanship, and the financial markets.
+
+    To calculate H for a signal, x, cumulative fluctuations about the
+    mean, :math: `\\Delta y`, are first calculated:
+
+    .. math:: \\Delta y(i) = \\sum\\limits_{j=1}^i (x(j) - \\bar{x}
+
+    This is then repeated for :math: 1\\leq i \\leq N
+
+    Next, the :math:`N` values of :math:`x` are split up into an integer number
+    of windows of size :math:`s` along the :math:`i` axis of :math:`x`. This
+    forms a total of :math:`N/s` "windows" along :math:`x. A linear polynomial
+    is then fit along each "window", and the curve fit values of :math:`x`,
+    :math:`y_s`, recorded.
+
+    The root-mean-square fluctuations along each window, :math:`F_k` is then
+    calculated:
+
+    .. math::
+        F_k(s)=\\sqrt{\\frac{1}{s}\\sum\\limits_{i=ks+1}^{ks+s}[y(i)-y_s(i)]^2}
+
+    where :math:`k` is an integer in the range :math:`0\\leq k \\leq (N/s)-1`.
+    This produces :math:`N/s` values of :math:`F_k(s)` for each value of k.
+
+    We then take the mean along the :math:`k` axis, to calculate :math:`F(s)`.
+    We can then exploit the fact that :math:`F(s) \\propto s^H` [2]_
+    and calculate the gradient of a graph of log(F(s)) vs log(s). This returns
+    :math:`H`, which is related to :math:`\\alpha` by the simple equation
+
+    .. math:: H = (1+\\alpha)/2
+
+    .. versionadded:: 1.4.0
+
+    References
+    -------
+    .. [1] Peng, C‐K., et al. "Quantification of scaling exponents and crossover
+           phenomena in nonstationary heartbeat time series." Chaos: An
+           Interdisciplinary Journal of Nonlinear Science 5.1 (1995): 82-87.
+
+    .. [2] Kantelhardt, Jan W., et al. "Detecting long-range correlations with
+           detrended fluctuation analysis." Physica A: Statistical Mechanics
+           and its Applications 295.3-4 (2001): 441-454.
+    """
+
+    if s_min < 0:
+        raise ValueError("s_min must be positive")
+    if s_max >= len(x):
+        raise ValueError("s_max cannot be longer than x. Decrease s_max")
+    if s_min == 1:
+        warnings.warn('Fitting is inaccurate for s_min == 1. Increase s_min')
+
+    # Pre-allocate array of f_k
+    f_k_s = np.zeros((len(x), s_max))
+    mean_x = np.mean(x)
+
+    for s in range(s_min, s_max + 1):
+        # Pre-allocate/reset inner loops
+        fitrange = np.arange(start=1, stop=len(x) - s + 1, step=s)
+        delta_y_s = np.zeros(fitrange[-1] + s - 1)
+        f_k_substep = np.zeros(np.floor(len(delta_y_s) / s).astype(int))
+        s_axis = np.arange(1, s + 1)
+
+        # Sum diff for i=1 -> N and j=1->i and ensure integer num of windows
+        delta_y = np.cumsum(x - mean_x)[:len(delta_y_s)]
+
+        # Perform linear fits
+        for fitx in range(0, len(delta_y), s):
+            polyco = np.polyfit(s_axis, delta_y[fitx:fitx + s], 1)
+            delta_y_s[fitx:fitx + s] = (s_axis * polyco[0]) + polyco[1]
+
+        # Calculate RMS fluctuations of linear detrending
+        for k_range in range(len(f_k_substep)):
+            sumstart = (k_range * s)
+            sumend = (k_range * s) + s
+
+            f_k_substep[k_range] = sum((delta_y[sumstart:sumend] -
+                                        delta_y_s[sumstart:sumend]) ** 2)
+        f_k_s[:len(f_k_substep), s - 1] = np.sqrt((1 / s) * f_k_substep)
+
+    # Calculate mean (ignoring leftover values = 0).
+    f_k_s[f_k_s == 0] = np.nan
+    f_s = np.nanmean(f_k_s[:, s_min - 1:], axis=0)
+
+    # Calculate Hurst exponent
+    log_f_s = np.log(f_s)
+    log_s_axis = np.log(np.arange(s_min, s_max + 1))
+    c, resids, rank, s, rcond = np.polyfit(log_s_axis, log_f_s, 1, full=True)
+    hurst = c[0]
+
+    # Plot
+    if plot:
+        import matplotlib.pyplot as plt
+        plt.plot(log_s_axis, log_f_s, 'x')
+        plt.plot(log_s_axis, (c[0] * log_s_axis) + c[1], 'k')
+        plt.title('Hurst Exponent')
+        plt.xlabel(r'Log (Window Size, $s$)')
+        plt.xlim(0)
+        plt.ylabel(r'Log ($F_s$)')
+        plt.show()
+
+    if full:
+        return hurst, resids, rank, s, rcond
+    else:
+        return hurst
