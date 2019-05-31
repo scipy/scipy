@@ -36,6 +36,9 @@ test8 = pjoin(data_path, 'test8.arff')
 test9 = pjoin(data_path, 'test9.arff')
 test10 = pjoin(data_path, 'test10.arff')
 test11 = pjoin(data_path, 'test11.arff')
+test_quoted_nominal = pjoin(data_path, 'quoted_nominal.arff')
+test_quoted_nominal_spaces = pjoin(data_path, 'quoted_nominal_spaces.arff')
+
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
                 (-0.1, -0.2, -0.3, -0.4, 'class2'),
                 (1, 2, 3, 4, 'class3')]
@@ -328,3 +331,95 @@ class TestRelationalAttributeLong(object):
 
         assert_array_equal(self.data["attr_relational"][0],
                            expected)
+
+     
+class TestQuotedNominal(object):
+    """
+    Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
+    """
+    
+    def setup_method(self):
+        self.data, self.meta = loadarff(test_quoted_nominal)
+
+    def test_attributes(self):
+        assert_equal(len(self.meta._attributes), 2)
+
+        age, smoker = self.meta._attributes.values()
+
+        assert_equal(age.name, 'age')
+        assert_equal(age.type_name, 'numeric')
+        assert_equal(smoker.name, 'smoker')
+        assert_equal(smoker.type_name, 'nominal')
+        assert_equal(smoker.values, ['yes', 'no'])
+
+    def test_data(self):
+        
+        age_dtype_instance = np.float_
+        smoker_dtype_instance = '<S3'
+
+        age_expected = np.array([
+            18,
+            24,
+            44,
+            56,
+            89,
+            11,
+        ], dtype=age_dtype_instance)
+        
+        smoker_expected = np.array([
+            'no',
+            'yes',
+            'no',
+            'no',
+            'yes',
+            'no',
+        ], dtype=smoker_dtype_instance)
+
+        assert_array_equal(self.data["age"], age_expected)
+        assert_array_equal(self.data["smoker"], smoker_expected)
+
+
+class TestQuotedNominalSpaces(object):
+    """
+    Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
+    """
+    
+    def setup_method(self):
+        self.data, self.meta = loadarff(test_quoted_nominal_spaces)
+
+    def test_attributes(self):
+        assert_equal(len(self.meta._attributes), 2)
+
+        age, smoker = self.meta._attributes.values()
+
+        assert_equal(age.name, 'age')
+        assert_equal(age.type_name, 'numeric')
+        assert_equal(smoker.name, 'smoker')
+        assert_equal(smoker.type_name, 'nominal')
+        assert_equal(smoker.values, ['  yes', 'no  '])
+
+    def test_data(self):
+        
+        age_dtype_instance = np.float_
+        smoker_dtype_instance = '<S5'
+
+        age_expected = np.array([
+            18,
+            24,
+            44,
+            56,
+            89,
+            11,
+        ], dtype=age_dtype_instance)
+        
+        smoker_expected = np.array([
+            'no  ',
+            '  yes',
+            'no  ',
+            'no  ',
+            '  yes',
+            'no  ',
+        ], dtype=smoker_dtype_instance)
+
+        assert_array_equal(self.data["age"], age_expected)
+        assert_array_equal(self.data["smoker"], smoker_expected)
