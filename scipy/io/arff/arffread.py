@@ -455,7 +455,7 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
         space = bool(m[n])
 
         dq_regexp = re.compile(
-            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
+            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
             {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
         )
 
