@@ -69,19 +69,17 @@ def _fix_shape(x, shape, axes):
     return z, True
 
 
-def _normalization_factor(shape, axes, norm, forward):
-    """Returns the normalisation factor for a given nd-fft"""
+def _normalization(norm, forward):
+    """Returns the pypocketfft normalization mode from the norm argment"""
 
-    # TODO: This isn't passed through to pypocketfft as long double
-    factor = np.longfloat(1.)
     if norm is None:
         if forward:
-            return factor
+            return pfft.norm_t.none
         else:
-            return factor / np.prod(shape, dtype=np.longfloat)
+            return pfft.norm_t.size
 
     if norm == 'ortho':
-        return factor / np.sqrt(np.prod(shape, dtype=np.longfloat))
+        return pfft.norm_t.ortho
 
     raise ValueError(
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
@@ -178,9 +176,9 @@ def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     tmp, copied = _fix_shape(tmp, shape, axes)
     overwrite_x = overwrite_x or copied
 
-    fct = _normalization_factor(shape, axes, norm, True)
+    norm = _normalization(norm, True)
 
-    return pfft.fftn(tmp, axes, fct, overwrite_x, _default_workers)
+    return pfft.fftn(tmp, axes, norm, overwrite_x, _default_workers)
 
 
 def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -202,9 +200,9 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     tmp, copied = _fix_shape(tmp, shape, axes)
     overwrite_x = overwrite_x or copied
 
-    fct = _normalization_factor(shape, axes, norm, False)
+    norm = _normalization(norm, False)
 
-    return pfft.ifftn(tmp, axes, fct, overwrite_x, _default_workers)
+    return pfft.ifftn(tmp, axes, norm, overwrite_x, _default_workers)
 
 def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Return multi-dimentional discrete Fourier transform of real input"""
@@ -212,13 +210,13 @@ def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     tmp, _ = _fix_shape(tmp, shape, axes)
-    fct = _normalization_factor(shape, axes, norm, True)
+    norm = _normalization(norm, True)
 
     if len(axes) == 0:
         return x
 
     # Note: overwrite_x is not utilised
-    return pfft.rfftn(tmp, axes, fct, _default_workers)
+    return pfft.rfftn(tmp, axes, norm, _default_workers)
 
 def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Multi-dimensional inverse discrete fourier transform with real output"""
@@ -238,7 +236,7 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     if noshape:
         shape[-1] = (x.shape[axes[-1]] - 1) * 2
 
-    fct = _normalization_factor(shape, axes, norm, False)
+    norm = _normalization(norm, False)
 
     # Last axis utilises hermitian symmetry
     lastsize = shape[-1]
@@ -247,4 +245,4 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     tmp, _ = _fix_shape(tmp, shape, axes)
 
     # Note: overwrite_x is not utilised
-    return pfft.irfftn(tmp, axes, lastsize, fct, _default_workers)
+    return pfft.irfftn(tmp, axes, lastsize, norm, _default_workers)
