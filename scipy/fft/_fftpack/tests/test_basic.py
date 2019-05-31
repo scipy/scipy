@@ -15,9 +15,9 @@ from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less)
 import pytest
 from pytest import raises as assert_raises
-from scipy.fftpack import ifft, fft, fftn, ifftn, rfft, irfft, fft2
-from scipy.fftpack import _fftpack as fftpack
-from scipy.fftpack.basic import _is_safe_size
+from scipy.fft._fftpack import ifft, fft, fftn, ifftn, rfft, irfft, fft2
+from scipy.fft._fftpack import _fftpack as fftpack
+from scipy.fft._fftpack.basic import _is_safe_size
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
                    swapaxes, double, cdouble)

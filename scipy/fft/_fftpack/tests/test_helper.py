@@ -13,10 +13,9 @@ Run tests if fftpack is not installed:
 
 from pytest import raises as assert_raises
 from numpy.testing import assert_array_almost_equal, assert_equal, assert_
-from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
-from scipy.fftpack.helper import (next_fast_len,
-                                  _init_nd_shape_and_axes,
-                                  _init_nd_shape_and_axes_sorted)
+from scipy.fft._fftpack import fftshift,ifftshift,fftfreq,rfftfreq
+from scipy.fft._fftpack.helper import (next_fast_len, _init_nd_shape_and_axes,
+                                       _init_nd_shape_and_axes_sorted)
 
 from numpy import pi, random
 import numpy as np
