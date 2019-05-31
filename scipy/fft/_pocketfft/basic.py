@@ -53,7 +53,7 @@ def _fix_shape(x, shape, axes):
     # Build an nd slice with the dimensions to be read from x
     index = [slice(None)]*len(s)
     for n, ax in zip(shape, axes):
-        if x.shape[ax] > n:
+        if x.shape[ax] >= n:
             index[ax] = slice(0, n)
         else:
             index[ax] = slice(0, x.shape[ax])
