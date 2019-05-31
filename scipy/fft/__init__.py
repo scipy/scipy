@@ -17,6 +17,10 @@ Fast Fourier Transforms (FFTs)
    ifftn - n-dimensional inverse FFT
    rfft - FFT of strictly real-valued sequence
    irfft - Inverse of rfft
+   rfft2 - Two dimensional FFT of real sequence
+   irfft2 - Inverse of rfft2
+   rfftn - n-dimensional FFT of real sequence
+   irfftn - Inverse of rfftn
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
    dctn - n-dimensional Discrete cosine transform
@@ -25,23 +29,6 @@ Fast Fourier Transforms (FFTs)
    idst - Inverse discrete sine transform
    dstn - n-dimensional Discrete sine transform
    idstn - n-dimensional Inverse discrete sine transform
-
-Differential and pseudo-differential operators
-==============================================
-
-.. autosummary::
-   :toctree: generated/
-
-   diff - Differentiation and integration of periodic sequences
-   tilbert - Tilbert transform:         cs_diff(x,h,h)
-   itilbert - Inverse Tilbert transform: sc_diff(x,h,h)
-   hilbert - Hilbert transform:         cs_diff(x,inf,inf)
-   ihilbert - Inverse Hilbert transform: sc_diff(x,inf,inf)
-   cs_diff - cosh/sinh pseudo-derivative of periodic sequences
-   sc_diff - sinh/cosh pseudo-derivative of periodic sequences
-   ss_diff - sinh/sinh pseudo-derivative of periodic sequences
-   cc_diff - cosh/cosh pseudo-derivative of periodic sequences
-   shift - Shift periodic sequences
 
 Helper functions
 ================
@@ -62,12 +49,11 @@ exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
 
 from __future__ import division, print_function, absolute_import
 
-from scipy.fft._fftpack import (
-    fft,ifft,fftn,ifftn,rfft,irfft,
-    fft2,ifft2,
-    diff,
-    tilbert,itilbert,hilbert,ihilbert,
-    sc_diff,cs_diff,cc_diff,ss_diff,
+from scipy.fft._pocketfft import (
+    fft, ifft, fft2,ifft2, fftn, ifftn,
+    rfft, irfft, rfft2, irfft2, rfftn, irfftn)
+
+from scipy.fft._fftpack import(
     shift,
     fftfreq, rfftfreq,
     fftshift, ifftshift,
