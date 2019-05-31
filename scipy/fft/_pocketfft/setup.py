@@ -42,6 +42,7 @@ def configuration(parent_package='', top_path=None):
                          extra_link_args=python_module_link_args)
 
     config.add_data_files('LICENSE.md')
+    config.add_data_dir('tests')
     return config
 
 

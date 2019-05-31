@@ -72,6 +72,7 @@ def _fix_shape(x, shape, axes):
 def _normalization_factor(shape, axes, norm, forward):
     """Returns the normalisation factor for a given nd-fft"""
 
+    # TODO: This isn't passed through to pypocketfft as long double
     factor = np.longfloat(1.)
     if norm is None:
         if forward:
@@ -168,12 +169,16 @@ def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
     tmp = _asfarray(x)
 
     # TODO: Optimize for real input.
-    # First perform rfftn, then use hermitian symmetry to fill output
+    # First perform rfftn, then use hermitian symmetry to fill remaining output
     if np.isrealobj(tmp):
         tmp = tmp + 0.j
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
+
+    # TODO: pocketfft raises here, should we?
+    if len(axes) == 0:
+        return x
 
     tmp, copied = _fix_shape(tmp, shape, axes)
     overwrite_x = overwrite_x or copied
@@ -199,6 +204,9 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
 
+    if len(axes) == 0:
+        return x
+
     tmp, copied = _fix_shape(tmp, shape, axes)
     overwrite_x = overwrite_x or copied
 
@@ -210,12 +218,15 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
 
 def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
           workers=None):
-    """Return multi-dimentional descrete Fourier transform of real input"""
+    """Return multi-dimentional discrete Fourier transform of real input"""
     tmp = _asfarray(x)
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     tmp, _ = _fix_shape(tmp, shape, axes)
     fct = _normalization_factor(shape, axes, norm, True)
+
+    if len(axes) == 0:
+        return x
 
     if workers is None:
         workers = _default_workers
@@ -228,15 +239,19 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
     """Multi-dimensional inverse discrete fourier transform with real output"""
     tmp = _asfarray(x)
 
-    noshape = shape is None
-    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
-    if noshape:
-        shape[-1] = (x.shape[axes[-1]] - 1) * 2
-
-
     # TODO: Optimize for hermitian and real?
     if np.isrealobj(tmp):
         tmp = tmp + 0.j
+
+    noshape = shape is None
+    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
+
+    if len(axes) == 0:
+        return x
+
+    # TODO: defaulting to 2n - 1 may be a better choice (numpy/numpy#13357)
+    if noshape:
+        shape[-1] = (x.shape[axes[-1]] - 1) * 2
 
     fct = _normalization_factor(shape, axes, norm, False)
 
