@@ -1470,35 +1470,41 @@ class TestHurstDFA(object):
         x = np.random.rand(60)
 
         with assert_raises(ValueError):
-            _ = hurst_dfa(x, s_min=-1, s_max=4)
+            _, _ = hurst_dfa(x, s_min=-1, s_max=4)
+
+    def test_zero_s(self):
+        x = np.random.rand(60)
+
+        with assert_raises(ValueError):
+            _, _ = hurst_dfa(x, s_min=0, s_max=4)
+
+    def test_s_max_smaller_than_s_min(self):
+        x = np.random.rand(60)
+
+        with assert_raises(ValueError):
+            _, _ = hurst_dfa(x, s_min=5, s_max=4)
 
     def test_oversized_s(self):
         x = np.random.rand(60)
 
         with assert_raises(ValueError):
-            _ = hurst_dfa(x, s_min=2, s_max=61)
-
-    def test_return_all_length(self):
-        x = np.random.rand(60)
-        (outs) = hurst_dfa(x, s_min=2, s_max=4, full=True)
-
-        assert_(len(outs) == 5)
+            _, _ = hurst_dfa(x, s_min=2, s_max=61)
 
     def test_white_noise(self):
         x = np.random.rand(300)
-        h = hurst_dfa(x, s_min=5, s_max=20)
+        h, _ = hurst_dfa(x, s_min=5, s_max=20)
 
         assert_(np.abs(0.5 - h) <= 0.3)  # Should be 0.5
 
     def test_coloured_noise(self):
         x = coloured_noise(alpha=2, size=500)
-        h = hurst_dfa(x, s_min=5, s_max=20)
+        h, _ = hurst_dfa(x, s_min=5, s_max=20)
 
         assert_(np.abs(1.5 - h) <= 0.3)  # Should be 1.5
 
     def test_flat(self):
         x = np.ones(60)
         x[-1] = 1+0.0001
-        h = hurst_dfa(x, s_min=5, s_max=25)
+        h, _ = hurst_dfa(x, s_min=5, s_max=25)
 
         assert_(np.abs(0 - h) <= 0.3)  # Should be 0

@@ -357,12 +357,16 @@ class TestColouredNoise(object):
     def test_std(self):
         noise = waveforms.coloured_noise(0.5, 60, scale_std=True,
                                          scale_mean=False)
-        assert_almost_equal(noise, np.std(noise), 1)
+
+        std_calc = np.std(noise)
+        assert_almost_equal(1, std_calc, 1)
 
     def test_mean(self):
         noise = waveforms.coloured_noise(0.5, 60, scale_mean=True,
                                          scale_std=False)
-        assert_almost_equal(noise, np.mean(noise), 1)
+
+        mean_calc = np.mean(noise)
+        assert_almost_equal(0, mean_calc, 1)
 
     def test_length(self):
         length = 60
@@ -371,12 +375,12 @@ class TestColouredNoise(object):
 
     def test_alpha_generation(self):
         noise = waveforms.coloured_noise(alpha=1, size=500)
-        h = hurst_dfa(noise, s_min=5, s_max=20)
+        h, _ = hurst_dfa(noise, s_min=5, s_max=20)
 
         assert_(np.abs(1-h) <= 0.3)  # Approximation won't be ideal at this size
 
     def test_colour_input(self):
         noise = waveforms.coloured_noise(alpha=2, size=500)
-        h = hurst_dfa(noise, s_min=5, s_max=20)
+        h, _ = hurst_dfa(noise, s_min=5, s_max=20)
 
         assert_(np.abs(1.5 - h) <= 0.3)  # Should be 1.5

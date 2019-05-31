@@ -224,6 +224,7 @@ Waveforms
    square       -- Square wave
    sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial
    unit_impulse -- Discrete unit impulse
+   coloured_noise -- Noise with self-affinity (colour)
 
 Window functions
 ================
@@ -282,6 +283,7 @@ Spectral Analysis
    istft          -- Compute the Inverse Short Time Fourier Transform
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction
+   hurst_dfa      -- Compute the Hurst exponent of a signal, using DFA
 
 """
 from __future__ import division, print_function, absolute_import
