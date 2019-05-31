@@ -14,20 +14,9 @@ class _deferred_pybind11_include(object):
 # TODO: Compiler arguments should be determined by the compiler used
 
 include_dirs = [_deferred_pybind11_include(True), _deferred_pybind11_include()]
-extra_compile_args = ['--std=c++11', '-march=native', '-O3']
+#extra_compile_args = ['--std=c++11', '-march=native', '-O3']
+extra_compile_args = []
 python_module_link_args = []
-
-if sys.platform == 'darwin':
-    import distutils.sysconfig
-    extra_compile_args += ['--stdlib=libc++', '-mmacosx-version-min=10.9', '-openmp']
-    vars = distutils.sysconfig.get_config_vars()
-    vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '')
-    python_module_link_args+=['-bundle', '-openmp']
-else:
-    extra_compile_args += ['-DPOCKETFFT_OPENMP', '-fopenmp', '-Wfatal-errors', '-Wfloat-conversion' ,'-Wsign-conversion', '-Wconversion' ,'-W', '-Wall', '-Wstrict-aliasing=2', '-Wwrite-strings', '-Wredundant-decls', '-Woverloaded-virtual', '-Wcast-qual', '-Wcast-align', '-Wpointer-arith']
-    python_module_link_args += ['-march=native', '-Wl,-rpath,$ORIGIN', '-fopenmp']
-
-# if you don't want debugging info, add "-s" to python_module_link_args
 
 
 def configuration(parent_package='', top_path=None):

@@ -8,7 +8,7 @@ from scipy.fft._pocketfft import pypocketfft as pfft
 from scipy.fft._fftpack.helper import _init_nd_shape_and_axes
 
 
-# TODO: Add configuration support
+# TODO: Build with OpenMp and add configuration support
 _default_workers = 1
 
 def _datacopied(arr, original):
@@ -99,70 +99,65 @@ def _1d_to_nd_shape_and_axes(n, axis):
     return shape, axes
 
 
-def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """ Return discrete Fourier transform of real or complex sequence. """
     shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return fftn(x, shape, axes, norm, overwrite_x, workers)
+    return fftn(x, shape, axes, norm, overwrite_x)
 
 
-def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return discrete inverse Fourier transform of real or complex sequence.
     """
     shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return ifftn(x, shape, axes, norm, overwrite_x, workers)
+    return ifftn(x, shape, axes, norm, overwrite_x)
 
 
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Discrete Fourier transform of a real sequence.
     """
     shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return rfftn(x, shape, axes, norm, overwrite_x, workers)
+    return rfftn(x, shape, axes, norm, overwrite_x)
 
 
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
+def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return inverse discrete Fourier transform of real sequence x.
     """
     shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return irfftn(x, shape, axes, norm, overwrite_x, workers)
+    return irfftn(x, shape, axes, norm, overwrite_x)
 
 
-def fft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False,
-         workers=None):
+def fft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete Fourier transform.
     """
-    return fftn(x, shape, axes, norm, overwrite_x, workers)
+    return fftn(x, shape, axes, norm, overwrite_x)
 
 
-def ifft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False,
-          workers=None):
+def ifft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of real or complex sequence.
     """
-    return ifftn(x, shape, axes, norm, overwrite_x, workers)
+    return ifftn(x, shape, axes, norm, overwrite_x)
 
 
-def rfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False,
-          workers=None):
+def rfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D dicsrete Fourier transform of a real sequence
     """
-    return rfftn(x, shape, axes, norm, overwrite_x, workers)
+    return rfftn(x, shape, axes, norm, overwrite_x)
 
 
-def irfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False,
-          workers=None):
+def irfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D dicsrete inverse Fourier transform of a real sequence
     """
-    return irfftn(x, shape, axes, norm, overwrite_x, workers)
+    return irfftn(x, shape, axes, norm, overwrite_x)
 
 
-def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
-         workers=None):
+def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional discrete Fourier transform.
     """
@@ -184,14 +179,11 @@ def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
     overwrite_x = overwrite_x or copied
 
     fct = _normalization_factor(shape, axes, norm, True)
-    if workers is None:
-        workers = _default_workers
 
-    return pfft.fftn(tmp, axes, fct, overwrite_x, workers)
+    return pfft.fftn(tmp, axes, fct, overwrite_x, _default_workers)
 
 
-def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
-          workers=None):
+def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return inverse multi-dimensional discrete Fourier transform.
     """
@@ -211,13 +203,10 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
     overwrite_x = overwrite_x or copied
 
     fct = _normalization_factor(shape, axes, norm, False)
-    if workers is None:
-        workers = _default_workers
 
-    return pfft.ifftn(tmp, axes, fct, overwrite_x, workers)
+    return pfft.ifftn(tmp, axes, fct, overwrite_x, _default_workers)
 
-def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
-          workers=None):
+def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Return multi-dimentional discrete Fourier transform of real input"""
     tmp = _asfarray(x)
 
@@ -228,14 +217,10 @@ def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
     if len(axes) == 0:
         return x
 
-    if workers is None:
-        workers = _default_workers
-
     # Note: overwrite_x is not utilised
-    return pfft.rfftn(tmp, axes, fct, workers)
+    return pfft.rfftn(tmp, axes, fct, _default_workers)
 
-def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
-           workers=None):
+def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Multi-dimensional inverse discrete fourier transform with real output"""
     tmp = _asfarray(x)
 
@@ -261,9 +246,5 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False,
 
     tmp, _ = _fix_shape(tmp, shape, axes)
 
-
-    if workers is None:
-        workers = _default_workers
-
     # Note: overwrite_x is not utilised
-    return pfft.irfftn(tmp, axes, lastsize, fct, workers)
+    return pfft.irfftn(tmp, axes, lastsize, fct, _default_workers)
