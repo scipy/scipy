@@ -2,9 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import re
-import itertools
 import datetime
-from functools import partial
 from collections import OrderedDict
 
 import numpy as np
@@ -132,7 +130,8 @@ class NominalAttribute(Attribute):
         """
         m = r_nominal.match(atrv)
         if m:
-            return tuple(i.strip() for i in m.group(1).split(','))
+            attrs, _ = split_data_line(m.group(1))
+            return tuple(attrs)
         else:
             raise ValueError("This does not look like a nominal string")
 
@@ -155,7 +154,6 @@ class NominalAttribute(Attribute):
         """
         Parse a value of this type.
         """
-        data_str = data_str.strip()
         if data_str in self.values:
             return data_str
         elif data_str == '?':
@@ -404,6 +402,72 @@ def to_attribute(name, attr_string):
     raise ParseArffError("unknown attribute %s" % attr_string)
 
 
+def csv_sniffer_has_bug_last_field():
+    """
+    Checks if the bug https://bugs.python.org/issue30157 is unpatched.
+    """
+
+    # We only compute this once.
+    has_bug = getattr(csv_sniffer_has_bug_last_field, "has_bug", None)
+
+    if has_bug is None:
+        dialect = csv.Sniffer().sniff("3, 'a'")
+        csv_sniffer_has_bug_last_field.has_bug = dialect.quotechar != "'"
+        has_bug = csv_sniffer_has_bug_last_field.has_bug
+
+    return has_bug
+
+
+def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
+    """
+    Workaround for the bug https://bugs.python.org/issue30157 if is unpatched.
+    """
+    if csv_sniffer_has_bug_last_field():
+        # Reuses code from the csv module
+        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'
+
+        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",
+                      right_regex,  # ,".*?"
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)
+            regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
+            matches = regexp.findall(sniff_line)
+            if matches:
+                break
+
+        # If it does not match the expression that was bugged, then this bug does not apply
+        if restr != right_regex:
+            return
+
+        groupindex = regexp.groupindex
+
+        # There is only one end of the string
+        assert len(matches) == 1
+        m = matches[0]
+
+        n = groupindex['quote'] - 1
+        quote = m[n]
+
+        n = groupindex['delim'] - 1
+        delim = m[n]
+
+        n = groupindex['space'] - 1
+        space = bool(m[n])
+
+        dq_regexp = re.compile(
+            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
+            {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
+        )
+
+        doublequote = bool(dq_regexp.search(sniff_line))
+
+        dialect.quotechar = quote
+        if delim in delimiters:
+            dialect.delimiter = delim
+        dialect.doublequote = doublequote
+        dialect.skipinitialspace = space
+
+
 def split_data_line(line, dialect=None):
     delimiters = ",\t"
 
@@ -424,6 +488,9 @@ def split_data_line(line, dialect=None):
 
     if dialect is None:
         dialect = csv.Sniffer().sniff(sniff_line, delimiters=delimiters)
+        workaround_csv_sniffer_bug_last_field(sniff_line=sniff_line,
+                                              dialect=dialect,
+                                              delimiters=delimiters)
 
     row = next(csv.reader([line], dialect))
 
@@ -634,7 +701,7 @@ class MetaData(object):
 
     def __getitem__(self, key):
         attr = self._attributes[key]
-        
+
         return (attr.type_name, attr.range)
 
     def names(self):
