@@ -6404,6 +6404,7 @@ TRUNCNORM_MAX_BRENT_ITERS = 40
 def _vectorize(**kwargs):
     def vectorize_decorator(f):
         vf = np.vectorize(f, **kwargs)
+
         @functools.wraps(f)
         def vf_wrapper(*args):
             return vf(*args)
@@ -6477,7 +6478,8 @@ def _truncnorm_logcdf(x, a, b):
     with np.errstate(divide='ignore'):
         sla = _norm_logsf(a)
         slb = _norm_logsf(b)
-        return np.log1p(-np.exp(_norm_logsf(x) - sla)) - np.log1p(-np.exp(slb - sla))
+        return (np.log1p(-np.exp(_norm_logsf(x) - sla))
+                - np.log1p(-np.exp(slb - sla)))
 
 
 @_vectorize(otypes=['float'])
@@ -6501,7 +6503,8 @@ def _truncnorm_logsf(x, a, b):
         with np.errstate(divide='ignore'):
             nla = _norm_logcdf(a)
             nlb = _norm_logcdf(b)
-            return np.log1p(-np.exp(_norm_logcdf(x) - nlb)) - np.log1p(-np.exp(nla - nlb))
+            return (np.log1p(-np.exp(_norm_logcdf(x) - nlb))
+                   - np.log1p(-np.exp(nla - nlb)))
     with np.errstate(divide='ignore'):
         sla = _norm_logsf(a)
         slb = _norm_logsf(b)
@@ -6574,7 +6577,8 @@ def _truncnorm_ppf(q, a, b):
             return y - alpha
 
         args = (a, b, np.log(q))
-        ret = optimize.zeros.brentq(_f_cdf, a, b, args=args, maxiter=TRUNCNORM_MAX_BRENT_ITERS)
+        ret = optimize.zeros.brentq(_f_cdf, a, b, args=args,
+                                    maxiter=TRUNCNORM_MAX_BRENT_ITERS)
         return ret
     else:
         def _f_sf(x, _a, _b, alpha):
@@ -6582,7 +6586,8 @@ def _truncnorm_ppf(q, a, b):
             return y - alpha
 
         args = (a, b, np.log(1.0 - q))
-        ret = optimize.zeros.brentq(_f_sf, a, b, args=args, maxiter=TRUNCNORM_MAX_BRENT_ITERS)
+        ret = optimize.zeros.brentq(_f_sf, a, b, args=args,
+                                    maxiter=TRUNCNORM_MAX_BRENT_ITERS)
         return ret
 
 
@@ -6634,18 +6639,55 @@ class truncnorm_gen(rv_continuous):
     def _ppf(self, q, a, b):
         return _truncnorm_ppf(q, a, b)
 
-    def _stats(self, a, b):
-        pA, pB = self.pdf([a, b], a, b)
-        mu = pA - pB
+    def _munp(self, n, a, b):
+        def n_th_moment(n, a, b):
+            """
+            Returns n-th moment. Defined only if n >= 0.
+            Function cannot broadcast due to the loop over n
+            """
+            pA, pB = self._pdf([a, b], a, b)
+            probs = [pA, -pB]
+            moments = [0, 1]
+            for k in range(1, n+1):
+                # a or b might be infinite, and the corresponding pdf value
+                # is 0 in that case, but nan is returned for the
+                # multiplication.  However, as b->infinity,  pdf(b)*b**k -> 0.
+                # So it is safe to use _lazywhere to avoid the nan.
+                vals = _lazywhere(probs, [probs, [a, b]],
+                                  lambda x, y: x * y**(k-1), fillvalue=0)
+                mk = np.sum(vals) + (k-1) * moments[-2]
+                moments.append(mk)
+            return moments[-1]
+
+        return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
+                          np.vectorize(n_th_moment, otypes=[np.float]), np.nan)
+
+    def _stats(self, a, b, moments='mv'):
+        pA, pB = self._pdf([a, b], a, b)
+        m1 = pA - pB
+        mu = m1
+        # use _lazywhere to avoid nan (See detailed comment in _munp)
+        probs = [pA, -pB]
+        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
+                          fillvalue=0)
+        m2 = 1 + np.sum(vals)
+        vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
+                          fillvalue=0)
+        # mu2 = m2 - mu**2, but not as numerically stable as:
         # mu2 = (a-mu)*pA - (b-mu)*pB + 1
-        # a or b might be infinite, but the corresponding pdf value is 0
-        # in that case.  A nan is returned for the multiplication.
-        # However, as  b->infinity,  pdf(b)*b -> 0.  So it is safe to
-        # use _lazywhere to avoid the nan.
-        probs = [pA, pB]
-        vals = _lazywhere(probs, [probs, [a-mu, mu-b]], lambda x, y: x*y, fillvalue=0)
         mu2 = 1 + np.sum(vals)
-        return mu, mu2, None, None
+        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
+                          fillvalue=0)
+        m3 = 2*m1 + np.sum(vals)
+        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
+                          fillvalue=0)
+        m4 = 3*m2 + np.sum(vals)
+
+        mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
+        g1 = mu3 / np.power(mu2, 1.5)
+        mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
+        g2 = mu4 / mu2**2 - 3
+        return mu, mu2, g1, g2
 
 
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)

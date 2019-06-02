@@ -32,7 +32,6 @@ from .test_continuous_basic import distcont
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
-
 # Generate test cases to test cdf and distribution consistency.
 # Note that this list does not include all distributions.
 dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
@@ -571,29 +570,34 @@ class TestTruncnorm(object):
             assert_almost_equal(stats.truncnorm.sf(xvals, low, high), stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high), stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
+    def _test_moments_one_range(self, a, b, expected):
+        m0, v0, s0, k0 = expected[:4]
+        m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
+        assert_almost_equal(m, m0)
+        assert_almost_equal(v, v0)
+        assert_almost_equal(s, s0)
+        assert_almost_equal(k, k0)
+
     def test_moments(self):
-        m, v, s, k = stats.truncnorm.stats(-30, 30, moments='mvsk')
-        assert_almost_equal(m, 0)
-        assert_almost_equal(v, 1)
-        assert_almost_equal(s, 0.0)
-        assert_almost_equal(k, 0.0)
+        # Values validated by changing TRUNCNORM_TAIL_X so as to evaluate
+        # using both the _norm_XXX() and _norm_logXXX() functions, and by
+        # removing the _stats and _munp methods in truncnorm tp force
+        # numerical quadrature.
+        self._test_moments_one_range(-30, 30, [0, 1, 0.0, 0.0])
+        self._test_moments_one_range(-10, 10, [0, 1, 0.0, 0.0])
+        self._test_moments_one_range(-3, 3, [0, 0.97333692, 0.0, -0.17111444])
+        self._test_moments_one_range(-2, 2, [0, 0.7737413, 0.0, -0.63446328])
 
-        m, v, s, k = stats.truncnorm.stats(-40, -39, moments='mvsk')
-        assert_almost_equal(m, -39.02560741993262)
-        assert_almost_equal(v, 0.0006548)
-        # Observed -1.9961805 for s, so relax this a little
-        assert_almost_equal(s, -1.99608063, decimal=4)
-        # Observed 6.7112454 returned for k, so make this a very weak test
-        # Observed 6.66129932 on 32-bit Ubuntu. Relax to 1(!) decimal
-        assert_almost_equal(k, 6.70255909, decimal=1)
+        self._test_moments_one_range(0, np.inf, [0.79788456, 0.36338023, 0.99527175, 0.8691773])
 
-        m, v, s, k = stats.truncnorm.stats(39, 40, moments='mvsk')
-        assert_almost_equal(m, 39.02560741993262)
-        assert_almost_equal(v, 0.0006548)
-        assert_almost_equal(s, 1.99608063, decimal=4)
-        # Observed 6.7112454 returned for k, so make this a very weak test
-        # Observed 6.66129932 on 32-bit Ubuntu. Relax to 1 decimal
-        assert_almost_equal(k, 6.7101596, decimal=1)
+        self._test_moments_one_range(-1, 3, [0.2827861, 0.61614174, 0.53930185, -0.20582065])
+        self._test_moments_one_range(-3, 1, [-0.2827861, 0.61614174, -0.53930185, -0.20582065])
+
+        self._test_moments_one_range(-10, -9, [-9.10845629, 0.01144881, -1.89856073, 5.07334611])
+        self._test_moments_one_range(-20, -19, [-19.05234395, 0.00272507, -1.9838686, 5.87208674])
+        self._test_moments_one_range(-30, -29, [-29.03440124, 0.00118066, -1.99297727, 5.9303358])
+        self._test_moments_one_range(-40, -39, [-39.02560741993262, 0.0006548, -1.99631464, 5.61677584])
+        self._test_moments_one_range(39, 40, [39.02560741993262, 0.0006548, 1.99631464, 5.61677584])
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
