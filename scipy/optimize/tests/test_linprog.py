@@ -2,6 +2,7 @@
 Unit test for Linear Programming
 """
 from __future__ import division, print_function, absolute_import
+import sys
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
@@ -1404,7 +1405,12 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
     def setup_method(self):
         self.options = {'presolve': False}
 
-    @pytest.mark.xfail(reason='Fails with warning on 32-bit linux')
+    is_32_bit = np.intp(0).itemsize < 8
+    is_linux = sys.platform.startswith('linux')
+
+    @pytest.mark.xfail(
+        condition=is_32_bit and is_linux,
+        reason='Fails with warning on 32-bit linux')
     def test_bug_5400(self):
         super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
 
