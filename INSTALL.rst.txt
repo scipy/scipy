@@ -203,7 +203,7 @@ in one command::
      OS, its distribution name and version information
      etc.
 
-2) Information about C,C++,Fortran compilers/linkers as reported by
+2) Information about C, C++, Fortran compilers/linkers as reported by
    the compilers when requesting their version information, e.g.,
    the output of
    ::
