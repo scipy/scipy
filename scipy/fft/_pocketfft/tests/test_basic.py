@@ -3,7 +3,8 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
-                           assert_array_almost_equal_nulp, assert_array_less)
+                           assert_array_almost_equal_nulp, assert_array_less,
+                           assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 from scipy.fft._pocketfft import ifft, fft, fftn, ifftn, rfft, irfft, fft2
@@ -220,9 +221,9 @@ class _TestIFFTBase(object):
             x = np.arange(n)
             y = ifft(x.astype(self.cdt))
             y2 = numpy.fft.ifft(x)
-            assert_array_almost_equal(y,y2)
+            assert_allclose(y,y2, rtol=self.rtol, atol=self.atol)
             y = ifft(x)
-            assert_array_almost_equal(y,y2)
+            assert_allclose(y,y2, rtol=self.rtol, atol=self.atol)
 
     def test_random_complex(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
@@ -247,24 +248,19 @@ class _TestIFFTBase(object):
 
     def test_size_accuracy(self):
         # Sanity check for the accuracy for prime and non-prime sized inputs
-        if self.rdt == np.float32:
-            rtol = 1e-5
-        elif self.rdt == np.float64:
-            rtol = 1e-10
-
         for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
             np.random.seed(1234)
             x = np.random.rand(size).astype(self.rdt)
             y = ifft(fft(x))
-            _assert_close_in_norm(x, y, rtol, size, self.rdt)
+            _assert_close_in_norm(x, y, self.rtol, size, self.rdt)
             y = fft(ifft(x))
-            _assert_close_in_norm(x, y, rtol, size, self.rdt)
+            _assert_close_in_norm(x, y, self.rtol, size, self.rdt)
 
             x = (x + 1j*np.random.rand(size)).astype(self.cdt)
             y = ifft(fft(x))
-            _assert_close_in_norm(x, y, rtol, size, self.rdt)
+            _assert_close_in_norm(x, y, self.rtol, size, self.rdt)
             y = fft(ifft(x))
-            _assert_close_in_norm(x, y, rtol, size, self.rdt)
+            _assert_close_in_norm(x, y, self.rtol, size, self.rdt)
 
     def test_invalid_sizes(self):
         assert_raises(ValueError, ifft, [])
@@ -275,12 +271,16 @@ class TestDoubleIFFT(_TestIFFTBase):
     def setup_method(self):
         self.cdt = np.cdouble
         self.rdt = np.double
+        self.rtol = 1e-10
+        self.atol = 1e-10
 
 
 class TestSingleIFFT(_TestIFFTBase):
     def setup_method(self):
         self.cdt = np.complex64
         self.rdt = np.float32
+        self.rtol = 1e-5
+        self.atol = 1e-4
 
 
 class _TestRFFTBase(object):
