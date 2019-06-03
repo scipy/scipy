@@ -68,6 +68,63 @@ shape_t makeaxes(const py::array &in, py::object axes)
   return tmp;
   }
 
+
+template<typename T> struct array_iterator
+  {
+  T * data, * cur;
+
+  stride_t strides;
+  shape_t shape, idx;
+
+  array_iterator(T * data_, stride_t strides_, shape_t shape_):
+    data(data_),
+    cur(data_),
+    strides(strides_),
+    shape(shape_),
+    idx(shape.size())
+    {
+    }
+
+  void reset()
+    {
+    fill(idx.begin(), idx.end(), 0);
+    cur = data;
+    }
+
+  /** Advance by 1, wrapping around into higher dimensions as necessary */
+  bool advance()
+    {
+    for (ptrdiff_t i = shape.size() - 1; i >= 0; --i)
+      {
+      ++idx[i];
+      cur += strides[i];
+
+      if (idx[i] < shape[i])
+        return true;
+
+      cur -= idx[i] * strides[i];
+      idx[i] = 0;
+      }
+    return false;
+    }
+
+  bool empty()
+    {
+    return any_of(shape.begin(), shape.end(), [](size_t len){ return len == 0; });
+    }
+
+  /** Take a slice along a single axis and reset index to (0,0,...,0) */
+  void slice(size_t dim, ptrdiff_t begin, ptrdiff_t end, ptrdiff_t step=1)
+    {
+    data += begin * strides[dim];
+    shape[dim] = end - begin;
+    strides[dim] *= step;
+    reset();
+    }
+  };
+
+
+
 #define DISPATCH(arr, T1, T2, T3, func, args) \
   auto dtype = arr.dtype(); \
   if (dtype.is(T1)) return func<double> args; \
@@ -97,7 +154,7 @@ template<typename T> T norm_fct(norm_t norm, const shape_t & shape,
     throw invalid_argument("invalid normalization type");
   }
 
-template<typename T> py::array xfftn_internal(const py::array &in,
+template<typename T> py::array xfftn_complex(const py::array &in,
   const shape_t &axes, norm_t norm, bool inplace, bool fwd, size_t nthreads)
   {
   auto dims(copy_shape(in));
@@ -109,11 +166,101 @@ template<typename T> py::array xfftn_internal(const py::array &in,
   return res;
   }
 
+template<typename T> py::array xfftn_real(const py::array &in,
+  const shape_t & axes, norm_t norm, bool /*inplace*/, bool fwd, size_t nthreads)
+  {
+  auto dims_in = copy_shape(in);
+  auto dims_out = dims_in;
+
+  const auto full_len = dims_in[axes.back()];
+  const auto rfft_len = full_len / 2 + 1;
+
+  dims_out[axes.back()] = rfft_len;
+  auto res = py::array_t<complex<T>>(dims_in);
+  fill(res.mutable_data(), res.mutable_data() + res.size(), 0);
+
+  // Perform real fft on the last axis
+  auto fct = norm_fct<T>(norm, dims_in, axes);
+  auto strides_out = copy_strides(res);
+  r2c(dims_in, copy_strides(in), strides_out, axes.back(),
+      reinterpret_cast<const T *>(in.data()), res.mutable_data(), fct,
+      nthreads);
+
+
+  const auto size = static_cast<size_t>(res.size());
+  auto * data = res.mutable_data();
+
+  // For real input, ifft is the conjugate of the fft
+  if (!fwd)
+    {
+    for (size_t i = 0; i < size; i++)
+      data[i] = conj(data[i]);
+    }
+
+  // Perform complex (i)fft on remaining axes
+  if (axes.size() > 1)
+    {
+    shape_t new_axes(axes.begin(), axes.end()-1);
+    c2c(dims_out, strides_out, strides_out, new_axes, fwd, data, data, T(1),
+        nthreads);
+    }
+
+  // Convert strides from bytes to objects
+  for (auto & s : strides_out)
+    s /= sizeof(complex<T>);
+
+  // Use hermitian symmetry to fill remaining output
+  array_iterator<complex<T>> work(data, strides_out, dims_in);
+  work.slice(axes.back(), 1, (full_len + 1) / 2);
+
+  if (!work.empty())
+    {
+    do {
+      auto mirror_offset =
+        dims_in[axes.back()] - 2 - 2*work.idx[axes.back()];
+      work.cur[mirror_offset * work.strides[axes.back()]] =
+        conj(work.cur[0]);
+      } while (work.advance());
+    }
+
+
+  // FFT(conj(x)) is the reverse of conj(FFT(x)) so for each complex transform,
+  // we reverse the output along the FFT axis
+  for (auto itr = axes.begin(); itr != prev(axes.end()); ++itr)
+    {
+    auto m_axis = *itr;
+
+    array_iterator<complex<T>> work(data, strides_out, dims_in);
+    work.slice(axes.back(), rfft_len, full_len);
+    work.slice(m_axis, 1, (dims_in[m_axis]+1) / 2);
+
+    if (work.empty())
+      continue;
+
+    do {
+      auto mirror_offset = dims_in[m_axis] - 2 - 2*work.idx[m_axis];
+      swap(work.cur[0], work.cur[mirror_offset * work.strides[m_axis]]);
+      } while(work.advance());
+    }
+
+  return res;
+  }
+
 py::array xfftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
   bool fwd, size_t nthreads)
   {
-  DISPATCH(a, c128, c64, c256, xfftn_internal, (a, makeaxes(a, axes), norm,
-           inplace, fwd, nthreads))
+  auto dtype = a.dtype();
+#define X_(NP_TYPE, FUNC)                                               \
+  if (dtype.is(NP_TYPE))                                                \
+	  return FUNC(a, makeaxes(a, axes), norm, inplace, fwd, nthreads)
+  X_(c64,  xfftn_complex<float>);
+  X_(c128, xfftn_complex<double>);
+  X_(c256, xfftn_complex<long double>);
+  X_(f32,  xfftn_real<float>);
+  X_(f64,  xfftn_real<double>);
+  X_(f128, xfftn_real<long double>);
+#undef X_
+  throw runtime_error("unsupported data type");
   }
 
 py::array fftn(const py::array &a, py::object axes, norm_t norm, bool inplace,

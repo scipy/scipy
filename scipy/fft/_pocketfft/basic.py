@@ -161,11 +161,6 @@ def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     tmp = _asfarray(x)
 
-    # TODO: Optimize for real input.
-    # First perform rfftn, then use hermitian symmetry to fill remaining output
-    if np.isrealobj(tmp):
-        tmp = tmp + 0.j
-
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
 
@@ -186,10 +181,6 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     Return inverse multi-dimensional discrete Fourier transform.
     """
     tmp = _asfarray(x)
-
-    # TODO: Optimize for hermitian signal?
-    if np.isrealobj(tmp):
-        tmp = tmp + 0.j
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
