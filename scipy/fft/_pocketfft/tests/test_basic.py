@@ -267,6 +267,16 @@ class _TestIFFTBase(object):
         assert_raises(ValueError, ifft, [[1,1],[2,2]], -5)
 
 
+@pytest.mark.skipif(np.longdouble is np.float64,
+                    reason="Long double is aliased to double")
+class TestLongDoubleIFFT(_TestIFFTBase):
+    def setup_method(self):
+        self.cdt = np.longcomplex
+        self.rdt = np.longdouble
+        self.rtol = 1e-10
+        self.atol = 1e-10
+
+
 class TestDoubleIFFT(_TestIFFTBase):
     def setup_method(self):
         self.cdt = np.cdouble
@@ -330,6 +340,14 @@ class _TestRFFTBase(object):
         # Data should not have been overwritten
         assert_equal(x, expected)
         assert_equal(xs.data, expected)
+
+@pytest.mark.skipif(np.longfloat is np.float64,
+                    reason="Long double is aliased to double")
+class TestRFFTDouble(_TestRFFTBase):
+    def setup_method(self):
+        self.cdt = np.longcomplex
+        self.rdt = np.longfloat
+
 
 class TestRFFTDouble(_TestRFFTBase):
     def setup_method(self):
@@ -409,6 +427,15 @@ class _TestIRFFTBase(object):
 
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of
 # significant digits
+
+@pytest.mark.skipif(np.longfloat is np.float64,
+                    reason="Long double is aliased to double")
+class TestIRFFTLongDouble(_TestIRFFTBase):
+    def setup_method(self):
+        self.cdt = np.cdouble
+        self.rdt = np.double
+        self.ndec = 14
+
 
 class TestIRFFTDouble(_TestIRFFTBase):
     def setup_method(self):
