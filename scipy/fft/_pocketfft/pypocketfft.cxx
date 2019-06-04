@@ -34,6 +34,10 @@ auto f32 = py::dtype("float32");
 auto f64 = py::dtype("float64");
 auto f128 = py::dtype("longfloat");
 
+// Only instantiate long double transforms if they offer more precision
+using longfloat_t = typename std::conditional<
+	sizeof(long double) == sizeof(double), double, long double>::type;
+
 shape_t copy_shape(const py::array &arr)
   {
   shape_t res(size_t(arr.ndim()));
@@ -129,7 +133,7 @@ template<typename T> struct array_iterator
   auto dtype = arr.dtype(); \
   if (dtype.is(T1)) return func<double> args; \
   if (dtype.is(T2)) return func<float> args; \
-  if (dtype.is(T3)) return func<long double> args; \
+  if (dtype.is(T3)) return func<longfloat_t> args; \
   throw runtime_error("unsupported data type");
 
 enum class norm_t
@@ -176,8 +180,7 @@ template<typename T> py::array xfftn_real(const py::array &in,
   const auto rfft_len = full_len / 2 + 1;
 
   dims_out[axes.back()] = rfft_len;
-  auto res = py::array_t<complex<T>>(dims_in);
-  fill(res.mutable_data(), res.mutable_data() + res.size(), 0);
+  py::array_t<complex<T>> res(dims_in);
 
   // Perform real fft on the last axis
   auto fct = norm_fct<T>(norm, dims_in, axes);
@@ -252,13 +255,13 @@ py::array xfftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
   auto dtype = a.dtype();
 #define X_(NP_TYPE, FUNC)                                               \
   if (dtype.is(NP_TYPE))                                                \
-	  return FUNC(a, makeaxes(a, axes), norm, inplace, fwd, nthreads)
+    return FUNC(a, makeaxes(a, axes), norm, inplace, fwd, nthreads)
   X_(c64,  xfftn_complex<float>);
   X_(c128, xfftn_complex<double>);
-  X_(c256, xfftn_complex<long double>);
+  X_(c256, xfftn_complex<longfloat_t>);
   X_(f32,  xfftn_real<float>);
   X_(f64,  xfftn_real<double>);
-  X_(f128, xfftn_real<long double>);
+  X_(f128, xfftn_real<longfloat_t>);
 #undef X_
   throw runtime_error("unsupported data type");
   }

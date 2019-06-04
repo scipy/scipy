@@ -70,7 +70,7 @@ def _fix_shape(x, shape, axes):
 
 
 def _normalization(norm, forward):
-    """Returns the pypocketfft normalization mode from the norm argment"""
+    """Returns the pypocketfft normalization mode from the norm argument"""
 
     if norm is None:
         if forward:
