@@ -3,6 +3,8 @@
 Discrete Fourier transforms (:mod:`scipy.fft`)
 ==============================================
 
+.. currentmodule:: scipy.fft
+
 Fast Fourier Transforms (FFTs)
 ==============================
 
@@ -49,14 +51,15 @@ exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
 
 from __future__ import division, print_function, absolute_import
 
-from scipy.fft._pocketfft import (
+from .basic import (
     fft, ifft, fft2,ifft2, fftn, ifftn,
     rfft, irfft, rfft2, irfft2, rfftn, irfftn)
 
-from .realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
-from .helper import next_fast_len
-
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
+
+from scipy.fft._fftpack import(
+    next_fast_len,
+    dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
