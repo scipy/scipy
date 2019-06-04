@@ -1,7 +1,7 @@
 """
-==================================================
+==============================================
 Discrete Fourier transforms (:mod:`scipy.fft`)
-==================================================
+==============================================
 
 Fast Fourier Transforms (FFTs)
 ==============================
@@ -53,12 +53,17 @@ from scipy.fft._pocketfft import (
     fft, ifft, fft2,ifft2, fftn, ifftn,
     rfft, irfft, rfft2, irfft2, rfftn, irfftn)
 
-from scipy.fft._fftpack import(
-    shift,
-    fftfreq, rfftfreq,
-    fftshift, ifftshift,
-    next_fast_len,
-    dct, idct, dst, idst, dctn, idctn, dstn, idstn)
+from .realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
+from .helper import next_fast_len
+
+from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
+
+__all__ = [
+    'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
+    'rfft', 'irfft', 'rfft2', 'irfft2', 'rfftn', 'irfftn',
+    'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
+    'next_fast_len',
+    'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 from numpy.dual import register_func
 for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
@@ -68,3 +73,20 @@ del k, register_func
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+
+# Hack to allow numpy.fft.fft to be called as scipy.fft
+import sys
+class _FFTModule(sys.modules[__name__].__class__):
+    @staticmethod
+    def __call__(*args, **kwargs):
+        import numpy as np
+        return np.fft.fft(*args, **kwargs)
+
+
+import os
+if os.environ.get('_SCIPY_BUILDING_DOC') != 'True':
+    sys.modules[__name__].__class__ = _FFTModule
+del os
+del _FFTModule
+del sys

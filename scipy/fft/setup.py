@@ -6,6 +6,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('fft', parent_package, top_path)
     config.add_subpackage('_fftpack')
     config.add_subpackage('_pocketfft')
+    config.add_data_dir('tests')
     return config
 
 
