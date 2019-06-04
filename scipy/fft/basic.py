@@ -23,6 +23,9 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See the notes below for more details.
 
     Returns
     -------
@@ -53,6 +56,12 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     The DFT is defined, with the conventions used in this implementation, in
     the documentation for the `scipy.fft` module.
+
+    When ``overwrite_x=True`` is specified, the memory referenced by ``x`` may
+    be used by the implementation in any way. This may include reusing the
+    memory for the result, but this is in no way guarunteed. You should not
+    rely on the contents of ``x`` after the transform as this may change in
+    future without warning.
 
     References
     ----------
@@ -122,6 +131,9 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         axis is used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -192,6 +204,9 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -280,6 +295,9 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         axis is used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -363,6 +381,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -467,6 +488,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         axis is performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -553,6 +577,9 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         that a one-dimensional FFT is performed.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -648,6 +675,9 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         that a one-dimensional FFT is performed.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -726,6 +756,9 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x):
         axes are used, or all axes if `s` is also not specified.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -796,6 +829,9 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         Axes over which to compute the FFT.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -853,6 +889,9 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         axis is performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
@@ -925,6 +964,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         Default is the last two axes.
     norm : {None, "ortho"}, optional
         Normalization mode (see `scipy.fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
 
     Returns
     -------
