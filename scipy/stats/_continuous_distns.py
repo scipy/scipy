@@ -5325,7 +5325,7 @@ class nct_gen(rv_continuous):
     has a non-central Student's t distribution on the real line.
     The degrees of freedom parameter :math:`k` (denoted ``df`` in the
     implementation) satisfies :math:`k > 0` and the noncentrality parameter
-    :math:`c` (denoted ``nct`` in the implementation) is a real number.
+    :math:`c` (denoted ``nc`` in the implementation) is a real number.
 
     %(after_notes)s
 
