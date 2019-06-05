@@ -1,5 +1,4 @@
-import ._pocketfft
-
+from . import _pocketfft
 
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
@@ -728,7 +727,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     return _pocketfft.fftnd(x, s, axes, ifft, norm, overwrite_x)
 
 
-def rfftn(x, s=None, axes=None, norm=None, overwrite_x):
+def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional discrete Fourier Transform for real input.
 
