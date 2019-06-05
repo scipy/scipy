@@ -50,6 +50,8 @@ from scipy.integrate import quad
 #  good target for 1.0 status
 X = array([1,2,3,4,5,6,7,8,9], float)
 ZERO = array([0,0,0,0,0,0,0,0,0], float)
+X_UNFLATTENED = array([[1], [2], [3], [4], [5], [6], [7], [8], [9]], float)
+X_NESTED = array([X], float)
 BIG = array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,
              99999998,99999999], float)
 LITTLE = array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,
@@ -76,6 +78,18 @@ class TestTrimmedStats(object):
 
         y = stats.tvar(X, limits=None)
         assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+
+        y = stats.tvar(X_UNFLATTENED, limits=(2, 8), inclusive=(True, True), axis=0)
+        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+
+        y = stats.tvar(X_NESTED, limits=(2, 8), inclusive=(True, True), axis=1)
+        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+
+        y = stats.tvar(X_UNFLATTENED, limits=(2, 8), inclusive=(True, True), axis=None)
+        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+
+        y = stats.tvar(X_NESTED, limits=(2, 8), inclusive=(True, True), axis=None)
+        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
 
     def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
