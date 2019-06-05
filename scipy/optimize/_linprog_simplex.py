@@ -34,7 +34,7 @@ from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_util import _postsolve
 
 
-def _pivot_col(T, tol=1.0E-12, bland=False):
+def _pivot_col(T, tol=1e-9, bland=False):
     """
     Given a linear programming simplex tableau, determine the column
     of the variable to enter the basis.
@@ -94,7 +94,7 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     return True, np.ma.nonzero(ma == ma.min())[0][0]
 
 
-def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
+def _pivot_row(T, basis, pivcol, phase, tol=1e-9, bland=False):
     """
     Given a linear programming simplex tableau, determine the row for the
     pivot operation.
@@ -165,7 +165,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     return True, min_rows[0]
 
 
-def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
+def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
     """
     Pivot the simplex tableau inplace on the element given by (pivrow, pivol).
     The entering variable corresponds to the column given by pivcol forcing
@@ -229,7 +229,7 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
-                   callback=None, tol=1.0E-12, nit0=0, bland=False, _T_o=None):
+                   callback=None, tol=1e-9, nit0=0, bland=False, _T_o=None):
     """
     Solve a linear programming problem in "standard form" using the Simplex
     Method. Linear Programming is intended to solve the following problem form:
@@ -372,7 +372,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                             if abs(T[pivrow, col]) > tol]
             if len(non_zero_row) > 0:
                 pivcol = non_zero_row[0]
-                _apply_pivot(T, basis, pivrow, pivcol)
+                _apply_pivot(T, basis, pivrow, pivcol, tol)
                 nit += 1
 
     if len(basis[:m]) == 0:
@@ -424,13 +424,13 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                 status = 1
                 complete = True
             else:
-                _apply_pivot(T, basis, pivrow, pivcol)
+                _apply_pivot(T, basis, pivrow, pivcol, tol)
                 nit += 1
     return nit, status
 
 
 def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
-                     tol=1.0E-12, bland=False, _T_o=None, **unknown_options):
+                     tol=1e-9, bland=False, _T_o=None, **unknown_options):
     """
     Minimize a linear objective function subject to linear equality and
     non-negativity constraints using the two phase simplex method.
