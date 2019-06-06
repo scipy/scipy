@@ -23,6 +23,12 @@ Fast Fourier Transforms (FFTs)
    irfft2 - Inverse of rfft2
    rfftn - n-dimensional FFT of real sequence
    irfftn - Inverse of rfftn
+
+Discrete Sin and Cosine Transforms (DST and DCT)
+================================================
+.. autosummary::
+   :toctree: generated/
+
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
    dctn - n-dimensional Discrete cosine transform
@@ -43,9 +49,6 @@ Helper functions
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
-
-Note that ``fftshift``, ``ifftshift`` and ``fftfreq`` are numpy functions
-exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
 
 """
 

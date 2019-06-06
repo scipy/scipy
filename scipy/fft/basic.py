@@ -21,7 +21,9 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         Axis over which to compute the FFT.  If not given, the last axis is
         used.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode. Default is None, meaning no normalization on the
+        forward transforms and scaling by ``1/n`` on the `ifft`.
+        For ``norm="ortho"``, both directions are scaled by ``1/sqrt(n)``.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See the notes below for more details.
@@ -39,22 +41,44 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : for definition of the DFT and conventions used.
     ifft : The inverse of `fft`.
     fft2 : The two-dimensional FFT.
     fftn : The *n*-dimensional FFT.
     rfftn : The *n*-dimensional FFT of real input.
     fftfreq : Frequency bins for given FFT parameters.
+    next_fast_len : Size to pad input to for most efficient transforms
 
     Notes
     -----
-    FFT (Fast Fourier Transform) refers to a way the discrete Fourier
-    Transform (DFT) can be calculated efficiently, by using symmetries in the
-    calculated terms.  The symmetry is highest when `n` is a power of 2, and
-    the transform is therefore most efficient for these sizes.
 
-    The DFT is defined, with the conventions used in this implementation, in
-    the documentation for the `scipy.fft` module.
+    FFT (Fast Fourier Transform) refers to a way the discrete Fourier Transform
+    (DFT) can be calculated efficiently, by using symmetries in the calculated
+    terms. The symmetry is highest when `n` is a power of 2, and the transform
+    is therefore most efficient for these sizes. If you can tolerate
+    zero-padding the input, use `next_fast_len`.
+
+    If ``x`` is a 1d array, then the `fft` is equivalent to ::
+
+        y[k] = np.sum(x * np.exp(-2j * np.pi * k * np.arange(n)/n))
+
+    The frequency term ``f=k/n`` is found at ``y[k]``. At ``y[n/2]`` we reach
+    the Nyquist frequency and wrap around to the negative-frequency terms. So,
+    for an 8-point transform, the frequencies of the result are
+    [0, 1, 2, 3, -4, -3, -2, -1]. To rearrange the fft output so that the
+    zero-frequency component is centered, like [-4, -3, -2, -1, 0, 1, 2, 3],
+    use `fftshift`.
+
+    Transforms can be done in single, double or extended precision (long
+    double) floating point. Half precision inputs will be converted to single
+    precision and non floating-point inputs will be converted to double
+    precision.
+
+    If the data type of ``x`` is real, a "real FFT" algorithm is automatically
+    used, which roughly halves the computation time.  To increase efficiency
+    a little further, use `rfft`, which does the same calculation, but only
+    outputs half of the symmetrical spectrum.  If the data is both real and
+    symmetrical, the `dct` can again double the efficiency, by generating
+    half of the spectrum from half of the signal.
 
     When ``overwrite_x=True`` is specified, the memory referenced by ``x`` may
     be used by the implementation in any way. This may include reusing the
@@ -70,6 +94,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> scipy.fft.fft(np.exp(2j * np.pi * np.arange(8) / 8))
     array([-2.33486982e-16+1.14423775e-17j,  8.00000000e+00-1.25557246e-15j,
             2.33486982e-16+2.33486982e-16j,  0.00000000e+00+1.22464680e-16j,
@@ -77,13 +102,13 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
             1.14423775e-17+1.14423775e-17j,  0.00000000e+00+1.22464680e-16j])
 
     In this example, real input has an FFT which is Hermitian, i.e., symmetric
-    in the real part and anti-symmetric in the imaginary part, as described in
-    the `scipy.fft` documentation:
+    in the real part and anti-symmetric in the imaginary part:
 
+    >>> from scipy.fft import fft, fftfreq, fftshift
     >>> import matplotlib.pyplot as plt
     >>> t = np.arange(256)
-    >>> sp = scipy.fft.fft(np.sin(t))
-    >>> freq = scipy.fft.fftfreq(t.shape[-1])
+    >>> sp = fftshift(fft(np.sin(t)))
+    >>> freq = fftshift(fftfreq(t.shape[-1]))
     >>> plt.plot(freq, sp.real, freq, sp.imag)
     [<matplotlib.lines.Line2D object at 0x...>, <matplotlib.lines.Line2D object at 0x...>]
     >>> plt.show()
@@ -100,8 +125,6 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     This function computes the inverse of the one-dimensional *n*-point
     discrete Fourier transform computed by `fft`.  In other words,
     ``ifft(fft(x)) == x`` to within numerical accuracy.
-    For a general description of the algorithm and definitions,
-    see `scipy.fft`.
 
     The input should be ordered in the same way as is returned by `fft`,
     i.e.,
@@ -113,7 +136,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     For an even number of input points, ``x[n//2]`` represents the sum of
     the values at the positive and negative Nyquist frequencies, as the two
-    are aliased together. See `scipy.fft` for details.
+    are aliased together. See `fft` for details.
 
     Parameters
     ----------
@@ -129,7 +152,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         Axis over which to compute the inverse DFT.  If not given, the last
         axis is used.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -147,7 +170,6 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : An introduction, with definitions and general explanations.
     fft : The one-dimensional (forward) FFT, of which `ifft` is the inverse
     ifft2 : The two-dimensional inverse FFT.
     ifftn : The n-dimensional inverse FFT.
@@ -159,8 +181,16 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     approach, it might lead to surprising results.  If a different padding is
     desired, it must be performed before calling `ifft`.
 
+    If ``x`` is a 1d array, then the `ifft` is equivalent to ::
+
+        y[k] = np.sum(x * np.exp(2j * np.pi * k * np.arange(n)/n)) / len(x)
+
+    As with `fft`, `ifft` has support for all floating point types and is
+    optimized for real input.
+
     Examples
     --------
+    >>> import scipy.fft
     >>> scipy.fft.ifft([0, 4, 0, 0])
     array([ 1.+0.j,  0.+1.j, -1.+0.j,  0.-1.j]) # may vary
 
@@ -202,7 +232,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         Axis over which to compute the FFT. If not given, the last axis is
         used.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -222,7 +252,6 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : For definition of the DFT and conventions used.
     irfft : The inverse of `rfft`.
     fft : The one-dimensional FFT of general (complex) input.
     fftn : The *n*-dimensional FFT.
@@ -250,6 +279,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> scipy.fft.fft([0, 1, 0, 0])
     array([ 1.+0.j,  0.-1.j, -1.+0.j,  0.+1.j]) # may vary
     >>> scipy.fft.rfft([0, 1, 0, 0])
@@ -293,7 +323,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         Axis over which to compute the inverse FFT. If not given, the last
         axis is used.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -314,7 +344,6 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : For definition of the DFT and conventions used.
     rfft : The one-dimensional FFT of real input, of which `irfft` is inverse.
     fft : The one-dimensional FFT.
     irfft2 : The inverse of the two-dimensional FFT of real input.
@@ -339,6 +368,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> scipy.fft.ifft([1, -1j, -1, 1j])
     array([0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]) # may vary
     >>> scipy.fft.irfft([1, -1j, -1])
@@ -379,7 +409,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         Repeated indices in `axes` means that the transform over that axis is
         performed multiple times.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -400,8 +430,6 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : Overall view of discrete Fourier transforms, with definitions
-        and conventions used.
     ifftn : The inverse of `fftn`, the inverse *n*-dimensional FFT.
     fft : The one-dimensional FFT, with definitions and conventions used.
     rfftn : The *n*-dimensional FFT of real input.
@@ -416,10 +444,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     of all axes and the negative frequency terms in the second half of all
     axes, in order of decreasingly negative frequency.
 
-    See `scipy.fft` for details, definitions and conventions used.
-
     Examples
     --------
+    >>> import scipy.fft
     >>> x = np.mgrid[:3, :3, :3][0]
     >>> scipy.fft.fftn(x, axes=(1, 2))
     array([[[ 0.+0.j,   0.+0.j,   0.+0.j], # may vary
@@ -448,7 +475,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fftnd(x, s, axes, norm, overwrite_x)
+    return _pocketfft.fftn(x, s, axes, norm, overwrite_x)
 
 
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
@@ -459,7 +486,6 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     Fourier Transform over any number of axes in an M-dimensional array by
     means of the Fast Fourier Transform (FFT).  In other words,
     ``ifftn(fftn(x)) == x`` to within numerical accuracy.
-    For a description of the definitions and conventions used, see `scipy.fft`.
 
     The input, analogously to `ifft`, should be ordered in the same way as is
     returned by `fftn`, i.e. it should have the term for zero frequency
@@ -486,7 +512,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         Repeated indices in `axes` means that the inverse transform over that
         axis is performed multiple times.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -507,8 +533,6 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : Overall view of discrete Fourier transforms, with definitions
-         and conventions used.
     fftn : The forward *n*-dimensional FFT, of which `ifftn` is the inverse.
     ifft : The one-dimensional inverse FFT.
     ifft2 : The two-dimensional inverse FFT.
@@ -517,8 +541,6 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     Notes
     -----
-    See `scipy.fft` for definitions and conventions used.
-
     Zero-padding, analogously with `ifft`, is performed by appending zeros to
     the input along the specified dimension.  Although this is the common
     approach, it might lead to surprising results.  If another form of zero
@@ -526,6 +548,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> x = np.eye(4)
     >>> scipy.fft.ifftn(scipy.fft.fftn(x, axes=(0,)), axes=(1,))
     array([[1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j], # may vary
@@ -545,7 +568,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     >>> plt.show()
 
     """
-    return _pocketfft.fftnd(x, s, axes, norm, overwrite_x)
+    return _pocketfft.ifftn(x, s, axes, norm, overwrite_x)
 
 
 def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
@@ -575,7 +598,7 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         that axis is performed multiple times.  A one-element sequence means
         that a one-dimensional FFT is performed.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -596,8 +619,6 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : Overall view of discrete Fourier transforms, with definitions
-         and conventions used.
     ifft2 : The inverse two-dimensional FFT.
     fft : The one-dimensional FFT.
     fftn : The *n*-dimensional FFT.
@@ -615,12 +636,13 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     middle of the axes and the negative frequency terms in the second half of
     the axes, in order of decreasingly negative frequency.
 
-    See `fftn` for details and a plotting example, and `scipy.fft` for
+    See `fftn` for details and a plotting example, and `fft` for
     definitions and conventions used.
 
 
     Examples
     --------
+    >>> import scipy.fft
     >>> x = np.mgrid[:5, :5][0]
     >>> scipy.fft.fft2(x)
     array([[ 50.  +0.j        ,   0.  +0.j        ,   0.  +0.j        , # may vary
@@ -673,7 +695,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         that axis is performed multiple times.  A one-element sequence means
         that a one-dimensional FFT is performed.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -694,8 +716,6 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     See Also
     --------
-    scipy.fft : Overall view of discrete Fourier transforms, with definitions
-         and conventions used.
     fft2 : The forward 2-dimensional FFT, of which `ifft2` is the inverse.
     ifftn : The inverse of the *n*-dimensional FFT.
     fft : The one-dimensional FFT.
@@ -705,7 +725,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     -----
     `ifft2` is just `ifftn` with a different default for `axes`.
 
-    See `ifftn` for details and a plotting example, and `scipy.fft` for
+    See `ifftn` for details and a plotting example, and `fft` for
     definition and conventions used.
 
     Zero-padding, analogously with `ifft`, is performed by appending zeros to
@@ -715,6 +735,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> x = 4 * np.eye(4)
     >>> scipy.fft.ifft2(x)
     array([[1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j], # may vary
@@ -724,7 +745,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fftnd(x, s, axes, ifft, norm, overwrite_x)
+    return _pocketfft.ifft2(x, s, axes, norm, overwrite_x)
 
 
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
@@ -754,7 +775,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         Axes over which to compute the FFT.  If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -797,6 +818,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> x = np.ones((2, 2, 2))
     >>> scipy.fft.rfftn(x)
     array([[[8.+0.j,  0.+0.j], # may vary
@@ -827,7 +849,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     axes : sequence of ints, optional
         Axes over which to compute the FFT.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -849,7 +871,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.rfftn(x, s, axes, norm, overwrite_x)
+    return _pocketfft.rfft2(x, s, axes, norm, overwrite_x)
 
 
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
@@ -887,7 +909,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
         Repeated indices in `axes` means that the inverse transform over that
         axis is performed multiple times.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
@@ -934,6 +956,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     Examples
     --------
+    >>> import scipy.fft
     >>> x = np.zeros((3, 2, 2))
     >>> x[0, 0, 0] = 3 * 2 * 2
     >>> scipy.fft.irfftn(a)
@@ -962,7 +985,7 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         The axes over which to compute the inverse fft.
         Default is the last two axes.
     norm : {None, "ortho"}, optional
-        Normalization mode (see `scipy.fft`). Default is None.
+        Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
