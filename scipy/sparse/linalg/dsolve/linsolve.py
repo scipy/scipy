@@ -1,6 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+import os
 from warnings import warn
+futures_available = True
+try:
+    import concurrent.futures as cf
+except ImportError:
+    futures_available = False
 
 import numpy as np
 from numpy import asarray
@@ -17,6 +24,7 @@ except ImportError:
     noScikit = True
 
 useUmfpack = not noScikit
+num_cpu = os.cpu_count()
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
            'MatrixRankWarning', 'spsolve_triangular']
@@ -80,7 +88,22 @@ def _get_umf_family(A):
 
     return family
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True):
+def _splu_solve(A, job_cols):
+    Afactsolve = factorized(A)
+    result = {}
+    for (j, _bj) in job_cols:
+        bj = _bj.A.ravel()
+        xj = Afactsolve(bj)
+        w = np.flatnonzero(xj)
+        segment_length = w.shape[0]
+        row_seg = w
+        col_seg = np.full(segment_length, j, dtype=int)
+        data_seg = np.asarray(xj[w], dtype=A.dtype)
+        result[j] = (row_seg, col_seg, data_seg)
+
+    return result
+
+def spsolve(A, b, permc_spec=None, splu_parallel=True, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -137,7 +160,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
-    
+
     # sum duplicates for non-canonical format
     A.sum_duplicates()
     A = A.asfptype()  # upcast to a floating point format
@@ -194,6 +217,43 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 x.fill(np.nan)
             if b_is_vector:
                 x = x.ravel()
+        elif splu_parallel and futures_available:
+            if not isspmatrix_csc(b):
+                warn('spsolve is more efficient when sparse b '
+                     'is in the CSC matrix format', SparseEfficiencyWarning)
+                b = csc_matrix(b)
+
+            jobs = []
+            for x in range(num_cpu):
+                jobs.append([])
+            for j in range(b.shape[1]):
+                b_col = b[:, j]
+                jobs[j % num_cpu].append((j, b_col))
+
+            solve_data = {}
+            with cf.ProcessPoolExecutor(max_workers=num_cpu) as executor:
+                splu_col_result = {executor.submit(_splu_solve, A, job_cols):
+                                   job_cols for job_cols in jobs}
+                for future in cf.as_completed(splu_col_result):
+                    result = splu_col_result[future]
+                    try:
+                        data = future.result()
+                        solve_data.update(data)
+                    except Exception as exc:
+                        print('%r generated an exception: %s' % (result, exc))
+            data_segs = []
+            row_segs = []
+            col_segs = []
+            for j in range(b.shape[1]):
+                row_segs.append(solve_data[j][0])
+                col_segs.append(solve_data[j][1])
+                data_segs.append(solve_data[j][2])
+            sparse_data = np.concatenate(data_segs)
+            sparse_row = np.concatenate(row_segs)
+            sparse_col = np.concatenate(col_segs)
+            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
+                           shape=b.shape, dtype=A.dtype)
+
         else:
             # b is sparse
             Afactsolve = factorized(A)
