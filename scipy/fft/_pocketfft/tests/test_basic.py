@@ -886,7 +886,6 @@ class TestOverwrite(object):
             else:
                 return tuple(np.take(shape, axes))
 
-
         def should_overwrite(data, shape, axes):
             s = part_shape(data.shape, axes)
             return (overwrite_x and
