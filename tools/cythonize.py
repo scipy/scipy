@@ -45,8 +45,12 @@ import subprocess
 from multiprocessing.dummy import Pool, Lock
 from os.path import dirname, join
 
+
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
+GENERATE_PYX = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'generate_pyx.py')
+)
 
 # WindowsError is not defined on unix systems
 try:
@@ -236,13 +240,15 @@ def process(path, fromfile, tofile, processor_function, hash_db,
         # store hash in db
         hash_db[normpath(fullfrompath)] = current_hash
 
-def process_generate_pyx(path, lock):
+def process_generate_pyx(config_file, lock):
     with lock:
-        print('Running {}'.format(path))
-    ret = subprocess.call([sys.executable, path])
+        print('Generating Cython from {}'.format(config_file))
+    ret = subprocess.call([sys.executable, GENERATE_PYX, config_file])
     with lock:
         if ret != 0:
-            raise RuntimeError("Running {} failed".format(path))
+            raise RuntimeError(
+                "Failed to generate Cython from {}".format(config_file)
+            )
 
 def find_process_files(root_dir):
     lock = Lock()
@@ -259,14 +265,16 @@ def find_process_files(root_dir):
     # .pxi file the changes won't be detected.
     dep_hashes = {}
 
-    # Run any _generate_pyx.py scripts
+    # Generate ufuncs for the module if they exist
     jobs = []
     for cur_dir, dirs, files in os.walk(root_dir):
-        generate_pyx = os.path.join(cur_dir, '_generate_pyx.py')
-        if os.path.exists(generate_pyx):
-            jobs.append(generate_pyx)
+        config = os.path.join(cur_dir, 'config.json')
+        if os.path.exists(config):
+            jobs.append(config)
 
-    for result in pool.imap_unordered(lambda fn: process_generate_pyx(fn, lock), jobs):
+    for result in pool.imap_unordered(
+            lambda config: process_generate_pyx(config, lock), jobs
+    ):
         pass
 
     # Process pyx files

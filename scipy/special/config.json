@@ -1,0 +1,5 @@
+{
+    "function_declarations": "functions.json",
+    "docs_module": "add_newdocs.py",
+    "cython_api": "cython_special"
+}
