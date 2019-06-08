@@ -2,50 +2,31 @@ from . import _fftpack
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
-def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
-    return _fftpack.dctn(x, type, shape, axes, norm, overwrite_x)
+def _doc_wrap(transform_func, new_func):
+    doc = transform_func.__doc__ or ''
+    new_func.__doc__ = doc.replace('fftpack', 'fft')
+    new_func.__name__ = transform_func.__name__
+    return new_func
 
 
-dctn.__doc__ = _fftpack.dctn.__doc__.replace('fftpack', 'fft')
-
-def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
-    return _fftpack.idctn(x, type, shape, axes, norm, overwrite_x)
-
-
-idctn.__doc__ = _fftpack.idctn.__doc__.replace('fftpack', 'fft')
-
-def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
-    return _fftpack.dstn(x, type, shape, axes, norm, overwrite_x)
+def _doc_wrap_1d(transform_func):
+    def inner(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+        return transform_func(x, type, n, axis, norm, overwrite_x)
+    return _doc_wrap(transform_func, inner)
 
 
-dstn.__doc__ = _fftpack.dstn.__doc__.replace('fftpack', 'fft')
-
-def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
-    return _fftpack.idstn(x, type, shape, axes, norm, overwrite_x)
-
-
-idstn.__doc__ = _fftpack.idstn.__doc__.replace('fftpack', 'fft')
-
-def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    return _fftpack.dct(x, type, n, axis, norm, overwrite_x)
+def _doc_wrap_nd(transform_func):
+    def inner(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+        return transform_func(x, type, shape, axes, norm, overwrite_x)
+    return _doc_wrap(transform_func, inner)
 
 
-dct.__doc__ = _fftpack.dct.__doc__.replace('fftpack', 'fft')
+dctn = _doc_wrap_nd(_fftpack.dctn)
+idctn = _doc_wrap_nd(_fftpack.idctn)
+dstn = _doc_wrap_nd(_fftpack.dstn)
+idstn = _doc_wrap_nd(_fftpack.idstn)
 
-def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    return _fftpack.idct(x, type, n, axis, norm, overwrite_x)
-
-
-idct.__doc__ = _fftpack.idct.__doc__.replace('fftpack', 'fft')
-
-def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    return _fftpack.dst(x, type, n, axis, norm, overwrite_x)
-
-
-dst.__doc__ = _fftpack.dst.__doc__.replace('fftpack', 'fft')
-
-def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    return _fftpack.idst(x, type, n, axis, norm, overwrite_x)
-
-
-idst.__doc__ = _fftpack.idst.__doc__.replace('fftpack', 'fft')
+dct = _doc_wrap_1d(_fftpack.dct)
+idct = _doc_wrap_1d(_fftpack.idct)
+dst = _doc_wrap_1d(_fftpack.dst)
+idst = _doc_wrap_1d(_fftpack.idst)
