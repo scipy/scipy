@@ -225,7 +225,7 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
             "Removing redundant constraints, changing the pivot strategy "
             "via Bland's rule or increasing the tolerance may "
             "help reduce the issue.".format(pivval, tol))
-        warn(message, OptimizeWarning)
+        warn(message, OptimizeWarning, stacklevel=5)
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
