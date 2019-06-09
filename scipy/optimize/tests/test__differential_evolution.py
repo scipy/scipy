@@ -663,7 +663,6 @@ class TestDifferentialEvolutionSolver(object):
         with warns(UserWarning):
             res = solver.solve()
 
-        assert_allclose(res.x, [0, 0], atol=1e-5)
         assert res.maxcv > 0
         assert not res.success
 
