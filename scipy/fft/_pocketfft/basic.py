@@ -199,6 +199,9 @@ def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Return multi-dimentional discrete Fourier transform of real input"""
     tmp = _asfarray(x)
 
+    if not np.isrealobj(tmp):
+        raise TypeError("x must be real sequence")
+
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     tmp, _ = _fix_shape(tmp, shape, axes)
     norm = _normalization(norm, True)

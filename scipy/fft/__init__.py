@@ -54,12 +54,12 @@ Helper functions
 
 from __future__ import division, print_function, absolute_import
 
-from .basic import (
+from ._basic import (
     fft, ifft, fft2,ifft2, fftn, ifftn,
     rfft, irfft, rfft2, irfft2, rfftn, irfftn)
+from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
+from ._helper import next_fast_len
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
-from .realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
-from scipy.fft._fftpack import next_fast_len
 
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
