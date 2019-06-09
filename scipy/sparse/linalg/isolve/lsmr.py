@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['lsmr']
 
-from numpy import zeros, infty, atleast_1d
+from numpy import zeros, infty, atleast_1d, result_type
 from numpy.linalg import norm
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
@@ -221,6 +221,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if maxiter is None:
         maxiter = minDim
 
+    dtype = result_type(b, float)
+
     if show:
         print(' ')
         print('LSMR            Least-squares solution of  Ax = b\n')
@@ -232,7 +234,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     u = b
     normb = norm(b)
     if x0 is None:
-        x = zeros(n)
+        x = zeros(n, dtype)
         beta = normb.copy()
     else:
         x = atleast_1d(x0)
@@ -244,7 +246,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         v = A.rmatvec(u)
         alpha = norm(v)
     else:
-        v = zeros(n)
+        v = zeros(n, dtype)
         alpha = 0
 
     if alpha > 0:
@@ -261,7 +263,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     sbar = 0
 
     h = v.copy()
-    hbar = zeros(n)
+    hbar = zeros(n, dtype)
 
     # Initialize variables for estimation of ||r||.
 
