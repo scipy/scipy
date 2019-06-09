@@ -102,7 +102,7 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 .. _Homebrew: https://brew.sh/
 
 .. |PYTHONPATH| replace:: ``PYTHONPATH``
-.. _PYTHONPATH: https://docs.python.org/3/using/cmdline.html#environment-variables)
+.. _PYTHONPATH: https://docs.python.org/3/using/cmdline.html#environment-variables
 
 .. |br| raw:: html
 
