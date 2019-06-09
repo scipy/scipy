@@ -16,4 +16,5 @@ Build instructions for different operating systems:
    linux
    windows
    macosx
-
+   
+For additional information, see the :ref:`build-install-faq`.
