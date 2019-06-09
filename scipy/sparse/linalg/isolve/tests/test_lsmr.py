@@ -66,6 +66,16 @@ class TestLSMR:
         x = lsmr(A, b)[0]
         assert_almost_equal(norm(A.dot(x) - b), 0)
 
+    def testComplex1(self):
+        A = eye(self.n)
+        xtrue = transpose(arange(self.n,0,-1).astype(complex))
+        self.assertCompatibleSystem(A, xtrue)
+
+    def testComplex2(self):
+        A = eye(self.n).astype(complex)
+        xtrue = transpose(arange(self.n,0,-1).astype(complex))
+        self.assertCompatibleSystem(A, xtrue)
+        
     def testColumnB(self):
         A = eye(self.n)
         b = ones((self.n, 1))
