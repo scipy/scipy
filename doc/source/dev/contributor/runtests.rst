@@ -87,6 +87,11 @@ after a change to the codebase, try deleting the ``scipy/build``
 directory. This forces ``runtest.py`` to completely rebuild SciPy before
 performing tests.
 
+There is an additional level of very slow tests (several minutes),
+which are disabled even when calling ``python runtests.py -m full``.
+They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
+before running the test suite.
+
 .. |runtests-py| replace:: ``runtests.py``
 .. _runtests-py: https://github.com/scipy/scipy/blob/master/runtests.py
 

@@ -55,9 +55,10 @@ Benchmarks
 
 .. _toc-cython:
 
-Cython
-------
+Compiled Code
+-------------
 - :ref:`adding-cython` - Extending and compiling Python code with `Cython`_ can significantly improve its performance. This document helps you get started.
+- :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy.
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
