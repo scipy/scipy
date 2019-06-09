@@ -29,6 +29,9 @@ Editing SciPy
 - `SciPy Development Workflow`_ is also the name of a five-minute video example of fixing a bug and submitting a pull request.
 - `PEP8 and SciPy`_ gives some tips for ensuring that your code is PEP8 compliant.
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world. It is written in the context of NumPy, but working with SciPy is essentially identical - just substitute the text SciPy/``scipy`` wherever NumPy/``numpy`` appears.
+- :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API. If you are going to import other SciPy code, read this first.
+- `NumPy Distutils - Users Guide <https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt>`_ - Check this out before adding any new files to SciPy.
+- `SciPy Core Developer Guide <https://docs.scipy.org/doc/scipy/reference/dev/index.html>`_ has background information including how decisions are made and how a release is prepared. It's geared toward :ref:`Core Developers<governance>`, but contains useful information for all contributors.
  
 .. _unit-tests:
 
