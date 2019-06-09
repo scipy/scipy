@@ -38,7 +38,7 @@ Editing SciPy
 Unit Tests
 ----------
 - `NumPy/SciPy Testing Guidelines`_ is the definitive guide to writing SciPy unit tests.
-- `Running SciPy Tests Locally`_ documents ``runtests.py``, a convenient script for building SciPy and running tests locally.
+- :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally.
 
 .. _docs:
 
@@ -61,13 +61,9 @@ Cython
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
-.. _PEP8 and SciPy: https://github.com/scipy/scipy/wiki/PEP8-and-SciPy
-
 .. _NumPy Distutils - Users Guide: https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt
 
 .. _NumPy/SciPy Testing Guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
-
-.. _Running SciPy Tests Locally: https://github.com/scipy/scipy/wiki/Running-SciPy-Tests
 
 .. _numpydoc docstring guide: https://numpydoc.readthedocs.io/en/latest/format.html
 
