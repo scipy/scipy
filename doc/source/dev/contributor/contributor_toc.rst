@@ -25,7 +25,11 @@ Development Environment
 
 Editing SciPy
 -------------
-
+- :ref:`development-workflow` lays out what to do after your development environment is set up.
+- `SciPy Development Workflow`_ is also the name of a five-minute video example of fixing a bug and submitting a pull request.
+- `PEP8 and SciPy`_ gives some tips for ensuring that your code is PEP8 compliant.
+- :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world. It is written in the context of NumPy, but working with SciPy is essentially identical - just substitute the text SciPy/``scipy`` wherever NumPy/``numpy`` appears.
+ 
 .. _unit-tests:
 
 Unit Tests
@@ -46,4 +50,6 @@ Benchmarks
 Cython
 ------
 
-.. _SciPy Development Environment: https://packaging.python.org
+.. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
+
+.. _PEP8 and SciPy: https://github.com/scipy/scipy/wiki/PEP8-and-SciPy
