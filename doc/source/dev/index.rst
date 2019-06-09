@@ -1,6 +1,6 @@
-*********************
-SciPy Developer Guide
-*********************
+**************************
+SciPy Core Developer Guide
+**************************
 
 .. include:: decisions.rst
 
