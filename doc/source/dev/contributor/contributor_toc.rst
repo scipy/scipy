@@ -57,7 +57,7 @@ Benchmarks
 
 Cython
 ------
-- `Adding Cython to SciPy <https://github.com/scipy/scipy/wiki/Adding-Cython-to-SciPy>`_ - Extending and compiling Python code with `Cython`_ can significantly improve its performance. This document helps you get started.
+- :ref:`adding-cython` - Extending and compiling Python code with `Cython`_ can significantly improve its performance. This document helps you get started.
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
