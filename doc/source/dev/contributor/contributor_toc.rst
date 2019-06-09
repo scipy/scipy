@@ -4,7 +4,7 @@
 Contributor Table of Contents
 =============================
 
-This table of contents is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've find the right place. Start with the bold links (in order), then expand your knowledge with the rest.
+This table of contents is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place. Start with the bold links (in order), then expand your knowledge with the rest.
 
 - :ref:`dev-env` - how to set up and maintain a development environment, including installing compilers and SciPy dependencies, creating a personal fork of the SciPy repository on GitHub, using git to manage a local repository with development branches, performing an in-place build of SciPy, and creating a virtual environment that adds this development version of SciPy to the Python path
 - :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding which module contains SciPy functionality to be edited, adding new modules to SciPy, and complying with PEP8 style standards
@@ -17,8 +17,9 @@ This table of contents is designed to help you quickly find the information you 
 
 Development Environment
 -----------------------
-
-- `SciPy Development Environment`_
+- :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment on macOS.
+- :ref:`building` - If you don't have macOS, try these instructions to help you build SciPy on your operating system.
+- :ref:`recommended-development-setup` includes additional notes about the development setup. All of this information is contained elsewhere, but it is retained as a legacy document.
 
 .. _editing-scipy:
 
