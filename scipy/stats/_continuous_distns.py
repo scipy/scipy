@@ -5244,7 +5244,7 @@ class t_gen(rv_continuous):
     .. math::
 
         f(x, \nu) = \frac{\Gamma((\nu+1)/2)}
-                        {\sqrt{\pi \nu} \Gamma(\nu)}
+                        {\sqrt{\pi \nu} \Gamma(\nu/2)}
                     (1+x^2/\nu)^{-(\nu+1)/2}
 
     where :math:`x` is a real number and the degrees of freedom parameter
