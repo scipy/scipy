@@ -40,6 +40,12 @@ def test_linear_sum_assignment():
         # n == 2, m == 0 matrix
         ([[], []],
          []),
+
+        # Square with positive infinities
+        ([[10, float("inf"), float("inf")],
+          [float("inf"), float("inf"), 1],
+          [float("inf"), 7, float("inf")]],
+         [10, 1, 7]),
     ]:
         cost_matrix = np.array(cost_matrix)
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -71,5 +77,9 @@ def test_linear_sum_assignment_input_validation():
     assert_raises(ValueError, linear_sum_assignment, I)
 
     I = np.identity(3)
-    I[1][1] = np.inf
+    I[1][1] = -np.inf
+    assert_raises(ValueError, linear_sum_assignment, I)
+
+    I = np.identity(3)
+    I[:, 0] = np.inf
     assert_raises(ValueError, linear_sum_assignment, I)
