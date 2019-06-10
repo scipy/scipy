@@ -66,13 +66,37 @@ if show_numpy_config is None:
         "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
-# Import numpy symbols to scipy name space
+# Import numpy symbols to scipy name space (DEPRECATED)
+from ._lib.deprecation import _deprecated
 import numpy as _num
 linalg = None
-from numpy import *
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.{0} instead')
+for _key in dir(_num):
+    if not _key.startswith('_'):
+        _fun = getattr(_num, _key)
+        if callable(_fun):
+            _fun = _deprecated(_msg.format(_key))(_fun)
+        globals()[_key] = _fun
 from numpy.random import rand, randn
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.random.{0} instead')
+rand = _deprecated(_msg.format('rand'))(rand)
+randn = _deprecated(_msg.format('randn'))(randn)
 from numpy.fft import fft, ifft
-from numpy.lib.scimath import *
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.fft.{0} instead')
+fft = _deprecated(_msg.format('fft'))(fft)
+ifft = _deprecated(_msg.format('ifft'))(ifft)
+import numpy.lib.scimath as _sci
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.lib.scimath.{0} instead')
+for _key in dir(_sci):
+    if not _key.startswith('_'):
+        _fun = getattr(_sci, _key)
+        if callable(_fun):
+            _fun = _deprecated(_msg.format(_key))(_fun)
+        globals()[_key] = _fun
 
 # Allow distributors to run custom init code
 from . import _distributor_init

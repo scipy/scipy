@@ -4,8 +4,10 @@ from multiprocessing.pool import Pool as PWL
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
-from pytest import raises as assert_raises
+import pytest
+from pytest import raises as assert_raises, deprecated_call
 
+import scipy
 from scipy._lib._util import _aligned_zeros, check_random_state, MapWrapper
 
 
@@ -112,3 +114,29 @@ class TestMapWrapper(object):
             assert_equal(list(out), self.output)
         finally:
             p.close()
+
+
+# get our custom ones and a few from the "import *" cases
+@pytest.mark.parametrize(
+    'key', ('fft', 'ifft', 'diag', 'arccos',
+            'randn', 'rand', 'array', 'finfo'))
+def test_numpy_deprecation(key):
+    """Test that 'from numpy import *' functions are deprecated."""
+    if key in ('fft', 'ifft', 'diag', 'arccos'):
+        arg = [1.0, 0.]
+    elif key == 'finfo':
+        arg = float
+    else:
+        arg = 2
+    func = getattr(scipy, key)
+    with deprecated_call(match=r'scipy\.%s is deprecated.*2\.0\.0' % key):
+        func(arg)  # deprecated
+    if key in ('rand', 'randn'):
+        root = np.random
+    elif key in ('fft', 'ifft'):
+        root = np.fft
+    else:
+        root = np
+    func_np = getattr(root, key)
+    func_np(arg)  # not deprecated
+    assert func_np is not func

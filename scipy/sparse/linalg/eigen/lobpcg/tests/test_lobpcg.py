@@ -11,10 +11,11 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 
 import pytest
 
-from scipy import (ones, rand, r_, diag)
-from scipy.linalg import (eig, eigh, toeplitz, orth)
-from scipy.sparse import (spdiags, diags, eye, random)
-from scipy.sparse.linalg import (eigs, LinearOperator)
+from numpy import ones, r_, diag, eye
+from numpy.random import rand
+from scipy.linalg import eig, eigh, toeplitz, orth
+from scipy.sparse import spdiags, diags, eye, random
+from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
 def ElasticRod(n):
@@ -257,7 +258,7 @@ def test_eigs_consistency(n, atol):
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
-def test_verbosity():
+def test_verbosity(tmpdir):
     """Check that nonzero verbosity level code runs.
     """
     A, B = ElasticRod(100)

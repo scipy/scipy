@@ -76,6 +76,13 @@ correct values for real-valued matrices.
 Deprecated features
 ===================
 
+`scipy` deprecations
+--------------------
+Support for NumPy functions exposed via the root SciPy namespace is deprecated
+and will be removed in 2.0.0. For example, if you use ``scipy.rand`` or
+``scipy.diag``, you should change your code to directly use
+:func:`numpy.random.rand` or :func:`numpy.diag`, respectively.
+
 Backwards incompatible changes
 ==============================
 
