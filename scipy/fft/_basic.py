@@ -1,5 +1,16 @@
-from . import _pocketfft
+from scipy._uarray import generate_multimethod, Dispatchable
+import numpy as np
 
+def _dispatch(func):
+
+    def replacer(args, kwargs, dispatchables):
+        return args, kwargs
+
+    return generate_multimethod(func, replacer, "scipy.fft")
+
+
+
+@_dispatch
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the one-dimensional discrete Fourier Transform.
@@ -120,9 +131,10 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the one-dimensional inverse discrete Fourier Transform.
@@ -213,9 +225,10 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     >>> plt.show()
 
     """
-    return _pocketfft.ifft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the one-dimensional discrete Fourier Transform for real input.
@@ -295,9 +308,10 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     exploited to compute only the non-negative frequency terms.
 
     """
-    return _pocketfft.rfft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the inverse of the n-point DFT for real input.
@@ -385,9 +399,10 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     specified, and the output array is purely real.
 
     """
-    return _pocketfft.irfft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
@@ -456,9 +471,10 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     >>> hfft(signal, 10)  # Input entire signal and truncate
     array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
     """
-    return _pocketfft.hfft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the inverse FFT of a signal that has Hermitian symmetry.
@@ -508,9 +524,10 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     >>> ihfft(spectrum)
     array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
     """
-    return _pocketfft.ihfft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional discrete Fourier Transform.
@@ -603,9 +620,10 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional inverse discrete Fourier Transform.
@@ -696,9 +714,10 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     >>> plt.show()
 
     """
-    return _pocketfft.ifftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional discrete Fourier Transform
@@ -786,9 +805,10 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional inverse discrete Fourier Transform.
@@ -873,9 +893,10 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.ifft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional discrete Fourier Transform for real input.
@@ -961,9 +982,10 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
             [0.+0.j,  0.+0.j]]])
 
     """
-    return _pocketfft.rfftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional FFT of a real array.
@@ -999,9 +1021,10 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.rfft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the inverse of the N-dimensional FFT of real input.
@@ -1096,9 +1119,10 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
             [1.,  1.]]])
 
     """
-    return _pocketfft.irfftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional inverse FFT of a real array.
@@ -1133,10 +1157,10 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     For more details see `irfftn`.
 
     """
+    return (Dispatchable(x, np.ndarray),)
 
-    return _pocketfft.irfft2(x, s, axes, norm, overwrite_x)
 
-
+@_dispatch
 def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional FFT of Hermitian symmetric complex input, i.e. a
@@ -1238,9 +1262,10 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
             [ 0.,  0.]]])
 
     """
-    return _pocketfft.hfftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional FFT of a Hermitian complex array.
@@ -1275,9 +1300,10 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     For more details see `hfftn`.
 
     """
-    return _pocketfft.hfft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional inverse discrete Fourier Transform for a real
@@ -1358,9 +1384,10 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
             [0.+0.j,  0.+0.j]]])
 
     """
-    return _pocketfft.ihfftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional inverse FFT of a real spectrum.
@@ -1395,4 +1422,4 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     For more details see `ihfftn`.
 
     """
-    return _pocketfft.ihfft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)

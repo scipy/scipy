@@ -66,6 +66,7 @@ from ._basic import (
     hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
 from ._helper import next_fast_len
+from ._backend import set_backend, backend
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 
 __all__ = [
@@ -74,7 +75,8 @@ __all__ = [
     'hfft', 'ihfft', 'hfft2', 'ihfft2', 'hfftn', 'ihfftn',
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
     'next_fast_len',
-    'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
+    'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
+    'set_backend', 'backend']
 
 from numpy.dual import register_func
 for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:

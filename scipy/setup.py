@@ -26,6 +26,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('ndimage')
     config.add_subpackage('_build_utils')
     config.add_subpackage('_lib')
+    config.add_subpackage('_uarray')
     config.make_config_py()
     return config
 
