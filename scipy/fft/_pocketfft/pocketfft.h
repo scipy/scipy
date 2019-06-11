@@ -58,13 +58,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if defined(__GNUC__)
 #define NOINLINE __attribute__((noinline))
-#define restrict __restrict__
+#define RESTRICT __restrict__
 #elif defined(_MSC_VER)
 #define NOINLINE __declspec(noinline)
-#define restrict __restrict
+#define RESTRICT __restrict
 #else
 #define NOINLINE
-#define restrict
+#define RESTRICT
 #endif
 
 namespace pocketfft {
@@ -245,7 +245,7 @@ template<typename T> class sincos_2pibyn
     using Thigh = typename TypeSelector<T, double, (sizeof(T)>sizeof(double))>::type;
     arr<T> data;
 
-    void my_sincosm1pi (Thigh a_, Thigh *restrict res)
+    void my_sincosm1pi (Thigh a_, Thigh *RESTRICT res)
       {
       if (sizeof(Thigh)>sizeof(double)) // don't have the code for long double
         {
@@ -283,7 +283,7 @@ template<typename T> class sincos_2pibyn
       res[1] = s;
       }
 
-    NOINLINE void calc_first_octant(size_t den, T * restrict res)
+    NOINLINE void calc_first_octant(size_t den, T * RESTRICT res)
       {
       size_t n = (den+4)>>3;
       if (n==0) return;
@@ -316,9 +316,9 @@ template<typename T> class sincos_2pibyn
         }
       }
 
-    void calc_first_quadrant(size_t n, T * restrict res)
+    void calc_first_quadrant(size_t n, T * RESTRICT res)
       {
-      T * restrict p = res+n;
+      T * RESTRICT p = res+n;
       calc_first_octant(n<<1, p);
       size_t ndone=(n+2)>>2;
       size_t i=0, idx1=0, idx2=2*ndone-2;
@@ -331,7 +331,7 @@ template<typename T> class sincos_2pibyn
         { res[idx1] = p[2*i]; res[idx1+1] = p[2*i+1]; }
       }
 
-    void calc_first_half(size_t n, T * restrict res)
+    void calc_first_half(size_t n, T * RESTRICT res)
       {
       int ndone=int(n+1)>>1;
       T * p = res+n-1;
@@ -347,7 +347,7 @@ template<typename T> class sincos_2pibyn
         { auto xm = 2*in-i4; res[2*i] = -p[2*xm]; res[2*i+1] = p[2*xm+1]; }
       }
 
-    void fill_first_quadrant(size_t n, T * restrict res)
+    void fill_first_quadrant(size_t n, T * RESTRICT res)
       {
       constexpr T hsqt2 = T(0.707106781186547524400844362104849L);
       size_t quart = n>>2;
@@ -357,7 +357,7 @@ template<typename T> class sincos_2pibyn
         { res[j] = res[i+1]; res[j+1] = res[i]; }
       }
 
-    NOINLINE void fill_first_half(size_t n, T * restrict res)
+    NOINLINE void fill_first_half(size_t n, T * RESTRICT res)
       {
       size_t half = n>>1;
       if ((n&3)==0)
@@ -368,7 +368,7 @@ template<typename T> class sincos_2pibyn
           { res[j] = -res[i]; res[j+1] = res[i+1]; }
       }
 
-    void fill_second_half(size_t n, T * restrict res)
+    void fill_second_half(size_t n, T * RESTRICT res)
       {
       if ((n&1)==0)
         for (size_t i=0; i<n; ++i)
@@ -378,7 +378,7 @@ template<typename T> class sincos_2pibyn
           { res[j] = res[i]; res[j+1] = -res[i+1]; }
       }
 
-    NOINLINE void sincos_2pibyn_half(size_t n, T * restrict res)
+    NOINLINE void sincos_2pibyn_half(size_t n, T * RESTRICT res)
       {
       if ((n&3)==0)
         {
@@ -548,7 +548,7 @@ template<typename T0> class cfftp
       { fact.push_back({factor, nullptr, nullptr}); }
 
 template<bool bwd, typename T> void pass2 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=2;
 
@@ -592,7 +592,7 @@ template<bool bwd, typename T> void pass2 (size_t ido, size_t l1,
         CH(i,k,u2) = db.template special_mul<bwd>(WA(u2-1,i)); \
         }
 template<bool bwd, typename T> void pass3 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=3;
   constexpr T0 tw1r=-0.5,
@@ -624,7 +624,7 @@ template<bool bwd, typename T> void pass3 (size_t ido, size_t l1,
 #undef PREP3
 
 template<bool bwd, typename T> void pass4 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=4;
 
@@ -694,7 +694,7 @@ template<bool bwd, typename T> void pass4 (size_t ido, size_t l1,
         CH(i,k,u2) = db.template special_mul<bwd>(WA(u2-1,i)); \
         }
 template<bool bwd, typename T> void pass5 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=5;
   constexpr T0 tw1r= T0(0.3090169943749474241022934171828191L),
@@ -758,7 +758,7 @@ template<bool bwd, typename T> void pass5 (size_t ido, size_t l1,
         }
 
 template<bool bwd, typename T> void pass7(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=7;
   constexpr T0 tw1r= T0(0.6234898018587335305250048840042398L),
@@ -820,7 +820,7 @@ template<typename T> inline void PMINPLACE(T &a, T &b)
   { T t = a; a.r+=b.r; a.i+=b.i; b.r=t.r-b.r; b.i=t.i-b.i; }
 
 template<bool bwd, typename T> void pass8 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=8;
 
@@ -930,7 +930,7 @@ template<bool bwd, typename T> void pass8 (size_t ido, size_t l1,
         }
 
 template<bool bwd, typename T> void pass11 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa)
   {
   constexpr size_t cdim=11;
   constexpr T0 tw1r= T0(0.8412535328311811688618116489193677L),
@@ -987,8 +987,8 @@ template<bool bwd, typename T> void pass11 (size_t ido, size_t l1,
 #define CH2(a,b) ch[(a)+idl1*(b)]
 
 template<bool bwd, typename T> void passg (size_t ido, size_t ip,
-  size_t l1, T * restrict cc, T * restrict ch, const cmplx<T0> * restrict wa,
-  const cmplx<T0> * restrict csarr)
+  size_t l1, T * RESTRICT cc, T * RESTRICT ch, const cmplx<T0> * RESTRICT wa,
+  const cmplx<T0> * RESTRICT csarr)
   {
   const size_t cdim=ip;
   size_t ipph = (ip+1)/2;
@@ -1259,7 +1259,7 @@ template<typename T1, typename T2, typename T3> inline void MULPM
 #define CH(a,b,c) ch[(a)+ido*((b)+cdim*(c))]
 
 template<typename T> void radf2 (size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=2;
 
@@ -1283,8 +1283,15 @@ template<typename T> void radf2 (size_t ido, size_t l1,
       }
   }
 
+// a2=a+b; b2=i*(b-a);
+#define REARRANGE(rx, ix, ry, iy) \
+  {\
+  auto t1=rx+ry, t2=ry-rx, t3=ix+iy, t4=ix-iy; \
+  rx=t1; ix=t3; ry=t4; iy=t2; \
+  }
+
 template<typename T> void radf3(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=3;
   constexpr T0 taur=-0.5, taui=T0(0.8660254037844386467637231707529362L);
@@ -1304,21 +1311,20 @@ template<typename T> void radf3(size_t ido, size_t l1,
       T di2, di3, dr2, dr3;
       MULPM (dr2,di2,WA(0,i-2),WA(0,i-1),CC(i-1,k,1),CC(i,k,1)); // d2=conj(WA0)*CC1
       MULPM (dr3,di3,WA(1,i-2),WA(1,i-1),CC(i-1,k,2),CC(i,k,2)); // d3=conj(WA1)*CC2
-      T cr2=dr2+dr3; // c add
-      T ci2=di2+di3;
-      CH(i-1,0,k) = CC(i-1,k,0)+cr2; // c add
-      CH(i  ,0,k) = CC(i  ,k,0)+ci2;
-      T tr2 = CC(i-1,k,0)+taur*cr2; // c add
-      T ti2 = CC(i  ,k,0)+taur*ci2;
-      T tr3 = taui*(di2-di3);  // t3 = taui*i*(d3-d2)?
-      T ti3 = taui*(dr3-dr2);
+      REARRANGE(dr2, di2, dr3, di3);
+      CH(i-1,0,k) = CC(i-1,k,0)+dr2; // c add
+      CH(i  ,0,k) = CC(i  ,k,0)+di2;
+      T tr2 = CC(i-1,k,0)+taur*dr2; // c add
+      T ti2 = CC(i  ,k,0)+taur*di2;
+      T tr3 = taui*dr3;  // t3 = taui*i*(d3-d2)?
+      T ti3 = taui*di3;
       PM(CH(i-1,2,k),CH(ic-1,1,k),tr2,tr3); // PM(i) = t2+t3
       PM(CH(i  ,2,k),CH(ic  ,1,k),ti3,ti2); // PM(ic) = conj(t2-t3)
       }
   }
 
 template<typename T> void radf4(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=4;
   constexpr T0 hsqt2=T0(0.707106781186547524400844362104849L);
@@ -1359,7 +1365,7 @@ template<typename T> void radf4(size_t ido, size_t l1,
   }
 
 template<typename T> void radf5(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=5;
   constexpr T0 tr11= T0(0.3090169943749474241022934171828191L),
@@ -1380,27 +1386,25 @@ template<typename T> void radf5(size_t ido, size_t l1,
     }
   if (ido==1) return;
   for (size_t k=0; k<l1;++k)
-    for (size_t i=2; i<ido; i+=2)
+    for (size_t i=2, ic=ido-2; i<ido; i+=2, ic-=2)
       {
-      T ci2, di2, ci4, ci5, di3, di4, di5, ci3, cr2, cr3, dr2, dr3,
-        dr4, dr5, cr5, cr4, ti2, ti3, ti5, ti4, tr2, tr3, tr4, tr5;
-      size_t ic=ido-i;
+      T di2, di3, di4, di5, dr2, dr3, dr4, dr5;
       MULPM (dr2,di2,WA(0,i-2),WA(0,i-1),CC(i-1,k,1),CC(i,k,1));
       MULPM (dr3,di3,WA(1,i-2),WA(1,i-1),CC(i-1,k,2),CC(i,k,2));
       MULPM (dr4,di4,WA(2,i-2),WA(2,i-1),CC(i-1,k,3),CC(i,k,3));
       MULPM (dr5,di5,WA(3,i-2),WA(3,i-1),CC(i-1,k,4),CC(i,k,4));
-      PM(cr2,ci5,dr5,dr2);
-      PM(ci2,cr5,di2,di5);
-      PM(cr3,ci4,dr4,dr3);
-      PM(ci3,cr4,di3,di4);
-      CH(i-1,0,k)=CC(i-1,k,0)+cr2+cr3;
-      CH(i  ,0,k)=CC(i  ,k,0)+ci2+ci3;
-      tr2=CC(i-1,k,0)+tr11*cr2+tr12*cr3;
-      ti2=CC(i  ,k,0)+tr11*ci2+tr12*ci3;
-      tr3=CC(i-1,k,0)+tr12*cr2+tr11*cr3;
-      ti3=CC(i  ,k,0)+tr12*ci2+tr11*ci3;
-      MULPM(tr5,tr4,cr5,cr4,ti11,ti12);
-      MULPM(ti5,ti4,ci5,ci4,ti11,ti12);
+      REARRANGE(dr2, di2, dr5, di5);
+      REARRANGE(dr3, di3, dr4, di4);
+      CH(i-1,0,k)=CC(i-1,k,0)+dr2+dr3;
+      CH(i  ,0,k)=CC(i  ,k,0)+di2+di3;
+      T tr2=CC(i-1,k,0)+tr11*dr2+tr12*dr3;
+      T ti2=CC(i  ,k,0)+tr11*di2+tr12*di3;
+      T tr3=CC(i-1,k,0)+tr12*dr2+tr11*dr3;
+      T ti3=CC(i  ,k,0)+tr12*di2+tr11*di3;
+      T tr5 = ti11*dr5 + ti12*dr4;
+      T ti5 = ti11*di5 + ti12*di4;
+      T tr4 = ti12*dr5 - ti11*dr4;
+      T ti4 = ti12*di5 - ti11*di4;
       PM(CH(i-1,2,k),CH(ic-1,1,k),tr2,tr5);
       PM(CH(i  ,2,k),CH(ic  ,1,k),ti5,ti2);
       PM(CH(i-1,4,k),CH(ic-1,3,k),tr3,tr4);
@@ -1416,8 +1420,8 @@ template<typename T> void radf5(size_t ido, size_t l1,
 #define CC(a,b,c) cc[(a)+ido*((b)+cdim*(c))]
 #define CH(a,b,c) ch[(a)+ido*((b)+l1*(c))]
 template<typename T> void radfg(size_t ido, size_t ip, size_t l1,
-  T * restrict cc, T * restrict ch, const T0 * restrict wa,
-  const T0 * restrict csarr)
+  T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa,
+  const T0 * RESTRICT csarr)
   {
   const size_t cdim=ip;
   size_t ipph=(ip+1)/2;
@@ -1560,8 +1564,8 @@ template<typename T> void radfg(size_t ido, size_t ip, size_t l1,
 #define CH(a,b,c) ch[(a)+ido*((b)+l1*(c))]
 #define CC(a,b,c) cc[(a)+ido*((b)+cdim*(c))]
 
-template<typename T> void radb2(size_t ido, size_t l1, const T * restrict cc,
-  T * restrict ch, const T0 * restrict wa)
+template<typename T> void radb2(size_t ido, size_t l1, const T * RESTRICT cc,
+  T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=2;
 
@@ -1586,7 +1590,7 @@ template<typename T> void radb2(size_t ido, size_t l1, const T * restrict cc,
   }
 
 template<typename T> void radb3(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=3;
   constexpr T0 taur=-0.5, taui=T0(0.8660254037844386467637231707529362L);
@@ -1601,9 +1605,8 @@ template<typename T> void radb3(size_t ido, size_t l1,
     }
   if (ido==1) return;
   for (size_t k=0; k<l1; k++)
-    for (size_t i=2; i<ido; i+=2)
+    for (size_t i=2, ic=ido-2; i<ido; i+=2, ic-=2)
       {
-      size_t ic=ido-i;
       T tr2=CC(i-1,2,k)+CC(ic-1,1,k); // t2=CC(I) + conj(CC(ic))
       T ti2=CC(i  ,2,k)-CC(ic  ,1,k);
       T cr2=CC(i-1,0,k)+taur*tr2;     // c2=CC +taur*t2
@@ -1621,7 +1624,7 @@ template<typename T> void radb3(size_t ido, size_t l1,
   }
 
 template<typename T> void radb4(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=4;
   constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
@@ -1667,7 +1670,7 @@ template<typename T> void radb4(size_t ido, size_t l1,
   }
 
 template<typename T> void radb5(size_t ido, size_t l1,
-  const T * restrict cc, T * restrict ch, const T0 * restrict wa)
+  const T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa)
   {
   constexpr size_t cdim=5;
   constexpr T0 tr11= T0(0.3090169943749474241022934171828191L),
@@ -1691,9 +1694,8 @@ template<typename T> void radb5(size_t ido, size_t l1,
     }
   if (ido==1) return;
   for (size_t k=0; k<l1;++k)
-    for (size_t i=2; i<ido; i+=2)
+    for (size_t i=2, ic=ido-2; i<ido; i+=2, ic-=2)
       {
-      size_t ic=ido-i;
       T tr2, tr3, tr4, tr5, ti2, ti3, ti4, ti5;
       PM(tr2,tr5,CC(i-1,2,k),CC(ic-1,1,k));
       PM(ti5,ti2,CC(i  ,2,k),CC(ic  ,1,k));
@@ -1729,8 +1731,8 @@ template<typename T> void radb5(size_t ido, size_t l1,
 #define CH2(a,b) ch[(a)+idl1*(b)]
 
 template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
-  T * restrict cc, T * restrict ch, const T0 * restrict wa,
-  const T0 * restrict csarr)
+  T * RESTRICT cc, T * RESTRICT ch, const T0 * RESTRICT wa,
+  const T0 * RESTRICT csarr)
   {
   const size_t cdim=ip;
   size_t ipph=(ip+1)/ 2;
@@ -2765,5 +2767,8 @@ using detail::r2r_fftpack;
 using detail::r2r_hartley;
 
 } // namespace pocketfft
+
+#undef NOINLINE
+#undef RESTRICT
 
 #endif // POCKETFFT_HDRONLY_H
