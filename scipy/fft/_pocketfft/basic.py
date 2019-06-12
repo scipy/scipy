@@ -44,14 +44,10 @@ def _asfarray(x):
 
 def _fix_shape(x, shape, axes):
     """Internal auxiliary function for _raw_fft, _raw_fftnd."""
-    s = list(x.shape)
-    for n, axis in zip(shape, axes):
-        s[axis] = n
-
     must_copy = False
 
     # Build an nd slice with the dimensions to be read from x
-    index = [slice(None)]*len(s)
+    index = [slice(None)]*x.ndim
     for n, ax in zip(shape, axes):
         if x.shape[ax] >= n:
             index[ax] = slice(0, n)
@@ -63,6 +59,10 @@ def _fix_shape(x, shape, axes):
 
     if not must_copy:
         return x[index], False
+
+    s = list(x.shape)
+    for n, axis in zip(shape, axes):
+        s[axis] = n
 
     z = np.zeros(s, x.dtype)
     z[index] = x[index]
@@ -85,46 +85,96 @@ def _normalization(norm, forward):
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
 
 
-def _1d_to_nd_shape_and_axes(n, axis):
-    """Convert 1d arguments into nd form"""
+def _init_1d_shape_and_axes(x, n, axis):
+    if axis < 0:
+        axis += x.ndim
+
+    if axis >= x.ndim or axis < 0:
+        raise ValueError("axis exceeds dimensionality of input")
+
     if n is None:
-        shape = None
-    else:
-        shape = (n,)
+        n = x.shape[axis]
 
-    axes = (axis,)
+    if n < 1:
+        raise ValueError(
+            "invalid number of data points ({0}) specified".format(n))
 
-    return shape, axes
+    return (n,), (axis,)
 
 
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """ Return discrete Fourier transform of real or complex sequence. """
-    shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return fftn(x, shape, axes, norm, overwrite_x)
+    tmp = _asfarray(x)
+    shape, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    overwrite_x = overwrite_x or _datacopied(tmp, x)
+    norm = _normalization(norm, True)
+
+    if n is not None:
+        tmp, copied = _fix_shape(tmp, shape, axes)
+        overwrite_x = overwrite_x or copied
+
+    return pfft.fftn(tmp, axes, norm, overwrite_x, _default_workers)
 
 
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return discrete inverse Fourier transform of real or complex sequence.
     """
-    shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return ifftn(x, shape, axes, norm, overwrite_x)
+    tmp = _asfarray(x)
+    shape, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    overwrite_x = overwrite_x or _datacopied(tmp, x)
+    norm = _normalization(norm, False)
+
+    if n is not None:
+        tmp, copied = _fix_shape(tmp, shape, axes)
+        overwrite_x = overwrite_x or copied
+
+    return pfft.ifftn(tmp, axes, norm, overwrite_x, _default_workers)
 
 
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Discrete Fourier transform of a real sequence.
     """
-    shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return rfftn(x, shape, axes, norm, overwrite_x)
+    tmp = _asfarray(x)
+    shape, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    norm = _normalization(norm, True)
+
+    if not np.isrealobj(tmp):
+        raise TypeError("x must be real sequence")
+
+    if n is not None:
+        tmp, _ = _fix_shape(tmp, shape, axes)
+
+    # Note: overwrite_x is not utilised
+    return pfft.rfftn(tmp, axes, norm, _default_workers)
 
 
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return inverse discrete Fourier transform of real sequence x.
     """
-    shape, axes = _1d_to_nd_shape_and_axes(n, axis)
-    return irfftn(x, shape, axes, norm, overwrite_x)
+    tmp = _asfarray(x)
+    _, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    norm = _normalization(norm, False)
+
+    # TODO: Optimize for hermitian and real?
+    if np.isrealobj(tmp):
+        tmp = tmp + 0.j
+
+    noshape = n is None
+    if noshape:
+        n = (x.shape[axes[-1]] - 1) * 2
+
+    # Last axis utilises hermitian symmetry
+    lastsize = n
+    n = (n // 2) + 1
+
+    if not noshape:
+        tmp, _ = _fix_shape(tmp, (n,), axes)
+
+    # Note: overwrite_x is not utilised
+    return pfft.irfftn(tmp, axes, lastsize, norm, _default_workers)
 
 
 def fft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
