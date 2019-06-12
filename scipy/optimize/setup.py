@@ -22,6 +22,17 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
+    config.add_library('jonkervolgenant',
+                       sources='jonkervolgenant/jonkervolgenant.cpp',
+                       headers='jonkervolgenant/jonkervolgenant.h')
+    config.add_extension('_jonkervolgenant',
+                         sources=['_jonkervolgenant_module.c'],
+                         libraries=['jonkervolgenant'],
+                         depends=(['jonkervolgenant/jonkervolgenant.cpp',
+                                   'jonkervolgenant/jonkervolgenant.h']),
+                         include_dirs=include_dirs,
+                         **numpy_nodepr_api)
+
     rootfind_src = [join('Zeros','*.c')]
     rootfind_hdr = [join('Zeros','zeros.h')]
     config.add_library('rootfind',
