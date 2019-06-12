@@ -76,21 +76,18 @@ def test_linear_sum_assignment_input_validation():
     assert_array_equal(linear_sum_assignment(C),
                        linear_sum_assignment(matrix(C)))
 
-    C = np.identity(3)
-    assert_array_equal(linear_sum_assignment(C.astype(np.bool)),
-                       linear_sum_assignment(C))
-    assert_raises(ValueError, linear_sum_assignment, C.astype(str))
+    I = np.identity(3)
+    assert_array_equal(linear_sum_assignment(I.astype(np.bool)),
+                       linear_sum_assignment(I))
+    assert_raises(ValueError, linear_sum_assignment, I.astype(str))
 
-    for sign in [-1, 1]:
-        maximize = sign == -1
-        C = np.identity(3)
-        C[0][0] = np.nan
-        assert_raises(ValueError, linear_sum_assignment, C)
+    I[0][0] = np.nan
+    assert_raises(ValueError, linear_sum_assignment, I)
 
-        C = np.identity(3)
-        C[1][1] = -np.inf
-        assert_raises(ValueError, linear_sum_assignment, C)
+    I = np.identity(3)
+    I[1][1] = -np.inf
+    assert_raises(ValueError, linear_sum_assignment, I)
 
-        C = np.identity(3)
-        C[:, 0] = np.inf
-        assert_raises(ValueError, linear_sum_assignment, C)
+    I = np.identity(3)
+    I[:, 0] = np.inf
+    assert_raises(ValueError, linear_sum_assignment, I)
