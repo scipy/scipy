@@ -84,7 +84,8 @@ static int augmenting_path(int nc, std::vector<double>& cost,
                 shortestPathCosts[j] = r;
             }
 
-            if (shortestPathCosts[j] < lowest) {
+            if (shortestPathCosts[j] < lowest
+                || (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
                 lowest = shortestPathCosts[j];
                 index = it;
             }
