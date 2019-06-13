@@ -93,6 +93,40 @@ template<typename T> T norm_fct(norm_t norm, const pocketfft::shape_t & shape,
   throw std::invalid_argument("invalid normalization type");
   }
 
+
+pybind11::array asfarray(const pybind11::array & a, bool & inplace)
+  {
+    auto dtype = a.dtype();
+    switch (dtype.kind())
+      {
+      case 'c': // complex
+        return a;
+
+      case 'f': // floating
+        {
+        static const auto f16 = pybind11::dtype("float16");
+        if (!dtype.is(f16))
+          return a;
+
+        inplace = true;
+        return a.cast<pybind11::array_t<float>>();
+        }
+
+      default:
+        {
+        inplace = true;
+        return a.cast<pybind11::array_t<double>>();
+        }
+      }
+  }
+
+pybind11::array asfarray(const pybind11::array & a)
+  {
+  bool ignored;
+  return asfarray(a, ignored);
+  }
+
+
 namespace scipy {
 // Copied from pypocketfft.cxx
 pocketfft::shape_t copy_shape(const pybind11::array &arr)

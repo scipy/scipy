@@ -60,13 +60,18 @@ shape_t makeaxes(const py::array &in, py::object axes)
       res[i]=i;
     return res;
     }
-  auto tmp=axes.cast<shape_t>();
-  if ((tmp.size()>size_t(in.ndim())) || (tmp.size()==0))
+  auto tmp=axes.cast<std::vector<ptrdiff_t>>();
+  auto ndim = in.ndim();
+  if ((tmp.size()>size_t(ndim)) || (tmp.size()==0))
     throw runtime_error("bad axes argument");
-  for (auto sz: tmp)
-    if (sz>=size_t(in.ndim()))
-      throw runtime_error("invalid axis number");
-  return tmp;
+  for (auto& sz: tmp)
+    {
+    if (sz<0)
+      sz += ndim;
+    if ((sz>=ndim) || (sz<0))
+      throw invalid_argument("axes exceeds dimensionality of output");
+    }
+  return shape_t(tmp.begin(), tmp.end());
   }
 
 #define DISPATCH(arr, T1, T2, T3, func, args) \
@@ -93,9 +98,10 @@ template<typename T> py::array xfftn_internal(const py::array &in,
   return res;
   }
 
-py::array xfftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
+py::array xfftn(const py::array &in, py::object axes, norm_t norm, bool inplace,
                 bool fwd, size_t nthreads)
   {
+    py::array a = asfarray(in, inplace);
     auto dtype = a.dtype();
 #define X_(NP_TYPE, FUNC)                                               \
     if (dtype.is(NP_TYPE)) \
@@ -140,7 +146,8 @@ template<typename T> py::array rfftn_internal(const py::array &in,
 py::array rfftn(const py::array &in, py::object axes_, norm_t norm,
   size_t nthreads)
   {
-  DISPATCH(in, f64, f32, f128, rfftn_internal, (in, axes_, norm, nthreads))
+  py::array a = asfarray(in);
+  DISPATCH(a, f64, f32, f128, rfftn_internal, (a, axes_, norm, nthreads))
   }
 
 template<typename T> py::array xrfft_scipy(const py::array &in,
@@ -163,14 +170,16 @@ template<typename T> py::array xrfft_scipy(const py::array &in,
 py::array rfft_scipy(const py::array &in, size_t axis, norm_t norm, bool inplace,
   size_t nthreads)
   {
-  DISPATCH(in, f64, f32, f128, xrfft_scipy, (in, axis, norm, inplace, true,
+  py::array a = asfarray(in, inplace);
+  DISPATCH(a, f64, f32, f128, xrfft_scipy, (a, axis, norm, inplace, true,
     nthreads))
   }
 
 py::array irfft_scipy(const py::array &in, size_t axis, norm_t norm,
   bool inplace, size_t nthreads)
   {
-  DISPATCH(in, f64, f32, f128, xrfft_scipy, (in, axis, norm, inplace, false,
+  py::array a = asfarray(in, inplace);
+  DISPATCH(a, f64, f32, f128, xrfft_scipy, (a, axis, norm, inplace, false,
     nthreads))
   }
 template<typename T> py::array irfftn_internal(const py::array &in,
@@ -199,7 +208,8 @@ template<typename T> py::array irfftn_internal(const py::array &in,
 py::array irfftn(const py::array &in, py::object axes_, size_t lastsize,
   norm_t norm, size_t nthreads)
   {
-  DISPATCH(in, c128, c64, c256, irfftn_internal, (in, axes_, lastsize, norm,
+  py::array a = asfarray(in);
+  DISPATCH(a, c128, c64, c256, irfftn_internal, (a, axes_, lastsize, norm,
     nthreads))
   }
 
@@ -484,7 +494,7 @@ PYBIND11_MODULE(pypocketfft, m)
     .value("ortho", norm_t::ortho)
     .value("size",  norm_t::size);
   m.def("fftn",&fftn, fftn_DS, "a"_a, "axes"_a=py::none(), "norm"_a=norm_t::none,
-    "inplace"_a=false, "nthreads"_a=1);
+        "inplace"_a=false, "nthreads"_a=1);
   m.def("ifftn",&ifftn, ifftn_DS, "a"_a, "axes"_a=py::none(),
         "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
   m.def("rfftn",&rfftn, rfftn_DS, "a"_a, "axes"_a=py::none(),

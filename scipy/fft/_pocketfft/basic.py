@@ -23,25 +23,6 @@ def _datacopied(arr, original):
     return arr.base is None
 
 
-def _asfarray(x):
-    """Like numpy asfarray, except that it does not modify x dtype if x is
-    already an array with a float dtype, and do not cast complex types to
-    real."""
-    if not hasattr(x, "dtype"):
-        x = np.asarray(x)
-
-    if x.dtype.char in np.typecodes["AllFloat"]:
-        # 'dtype' attribute does not ensure that the
-        # object is an ndarray (e.g. Series class
-        # from the pandas library)
-        if x.dtype == np.half:
-            # no half-precision routines, so convert to single precision
-            return np.asarray(x, dtype=np.float32)
-        return np.asarray(x, dtype=x.dtype)
-
-    return np.asfarray(x)
-
-
 def _fix_shape(x, shape, axes):
     """Internal auxiliary function for _raw_fft, _raw_fftnd."""
     must_copy = False
@@ -69,14 +50,19 @@ def _fix_shape(x, shape, axes):
     return z, True
 
 
+def _fix_shape_1d(x, n, axis):
+    if n < 1:
+        raise ValueError(
+            "invalid number of data points ({0}) specified".format(n))
+
+    return _fix_shape(x, (n,), (axis,))
+
+
 def _normalization(norm, forward):
     """Returns the pypocketfft normalization mode from the norm argument"""
 
     if norm is None:
-        if forward:
-            return pfft.norm_t.none
-        else:
-            return pfft.norm_t.size
+        return pfft.norm_t.none if forward else pfft.norm_t.size
 
     if norm == 'ortho':
         return pfft.norm_t.ortho
@@ -85,96 +71,82 @@ def _normalization(norm, forward):
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
 
 
-def _init_1d_shape_and_axes(x, n, axis):
-    if axis < 0:
-        axis += x.ndim
-
-    if axis >= x.ndim or axis < 0:
-        raise ValueError("axis exceeds dimensionality of input")
-
-    if n is None:
-        n = x.shape[axis]
-
-    if n < 1:
-        raise ValueError(
-            "invalid number of data points ({0}) specified".format(n))
-
-    return (n,), (axis,)
-
-
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """ Return discrete Fourier transform of real or complex sequence. """
-    tmp = _asfarray(x)
-    shape, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    tmp = np.asarray(x)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
     norm = _normalization(norm, True)
 
     if n is not None:
-        tmp, copied = _fix_shape(tmp, shape, axes)
+        tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
+    elif tmp.shape[axis] < 1:
+        raise ValueError("invalid number of data points ({0}) specified"
+                         .format(tmp.shape[axis]))
 
-    return pfft.fftn(tmp, axes, norm, overwrite_x, _default_workers)
+    return pfft.fftn(tmp, (axis,), norm, overwrite_x, _default_workers)
 
 
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return discrete inverse Fourier transform of real or complex sequence.
     """
-    tmp = _asfarray(x)
-    shape, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    tmp = np.asarray(x)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
     norm = _normalization(norm, False)
 
     if n is not None:
-        tmp, copied = _fix_shape(tmp, shape, axes)
+        tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
+    elif tmp.shape[axis] < 1:
+        raise ValueError("invalid number of data points ({0}) specified"
+                         .format(tmp.shape[axis]))
 
-    return pfft.ifftn(tmp, axes, norm, overwrite_x, _default_workers)
+    return pfft.ifftn(tmp, (axis,), norm, overwrite_x, _default_workers)
 
 
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Discrete Fourier transform of a real sequence.
     """
-    tmp = _asfarray(x)
-    shape, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    tmp = np.asarray(x)
     norm = _normalization(norm, True)
 
     if not np.isrealobj(tmp):
         raise TypeError("x must be real sequence")
 
     if n is not None:
-        tmp, _ = _fix_shape(tmp, shape, axes)
+        tmp, _ = _fix_shape_1d(tmp, n, axis)
+    elif tmp.shape[axis] < 1:
+        raise ValueError("invalid number of data points ({0}) specified"
+                         .format(tmp.shape[axis]))
 
     # Note: overwrite_x is not utilised
-    return pfft.rfftn(tmp, axes, norm, _default_workers)
+    return pfft.rfftn(tmp, (axis,), norm, _default_workers)
 
 
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return inverse discrete Fourier transform of real sequence x.
     """
-    tmp = _asfarray(x)
-    _, axes = _init_1d_shape_and_axes(tmp, n, axis)
+    tmp = np.asarray(x)
     norm = _normalization(norm, False)
 
     # TODO: Optimize for hermitian and real?
     if np.isrealobj(tmp):
         tmp = tmp + 0.j
 
-    noshape = n is None
-    if noshape:
-        n = (x.shape[axes[-1]] - 1) * 2
-
     # Last axis utilises hermitian symmetry
-    lastsize = n
-    n = (n // 2) + 1
-
-    if not noshape:
-        tmp, _ = _fix_shape(tmp, (n,), axes)
+    if n is None:
+        n = (tmp.shape[axis] - 1) * 2
+        if n < 1:
+            raise ValueError("Invalid number of data points ({0}) specified"
+                             .format(n))
+    else:
+        tmp, _ = _fix_shape_1d(tmp, (n//2) + 1, axis)
 
     # Note: overwrite_x is not utilised
-    return pfft.irfftn(tmp, axes, lastsize, norm, _default_workers)
+    return pfft.irfftn(tmp, (axis,), n, norm, _default_workers)
 
 
 def fft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
@@ -209,7 +181,7 @@ def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional discrete Fourier transform.
     """
-    tmp = _asfarray(x)
+    tmp = np.asarray(x)
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
@@ -230,7 +202,7 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return inverse multi-dimensional discrete Fourier transform.
     """
-    tmp = _asfarray(x)
+    tmp = np.asarray(x)
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
@@ -247,7 +219,7 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
 
 def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Return multi-dimentional discrete Fourier transform of real input"""
-    tmp = _asfarray(x)
+    tmp = np.asarray(x)
 
     if not np.isrealobj(tmp):
         raise TypeError("x must be real sequence")
@@ -264,7 +236,7 @@ def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
 
 def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Multi-dimensional inverse discrete fourier transform with real output"""
-    tmp = _asfarray(x)
+    tmp = np.asarray(x)
 
     # TODO: Optimize for hermitian and real?
     if np.isrealobj(tmp):
