@@ -1924,7 +1924,7 @@ def anderson_ksamp(samples, midrank=True):
     significance_level : float
         An approximate significance level at which the null hypothesis for the
         provided samples can be rejected. The value is floored / capped at
-        1% / 25%.
+        0.1% / 25%.
 
     Raises
     ------
