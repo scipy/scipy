@@ -209,6 +209,7 @@ William Conner DiPaolo for improvements to the Clarkson-Woodruff transform.
 Forrest Collman for adding multi-target dijsktra to scipy.sparse.csgraph
 Carlos Ramos Carreño for adding support for relational attributes in loadarff.
 Clement Ng for modifying tests in scipy.stats.
+Jason M. Manley for documentation fixes.
 
 Institutions
 ------------

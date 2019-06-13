@@ -655,14 +655,14 @@ class TestDifferentialEvolutionSolver(object):
         nlc = NonlinearConstraint(constr_f, -np.inf, -1)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc), popsize=3)
+                                             constraints=(nlc), popsize=3,
+                                             seed=1)
 
         # a UserWarning is issued because the 'trust-constr' polishing is
         # attempted on the least infeasible solution found.
         with warns(UserWarning):
             res = solver.solve()
 
-        assert_allclose(res.x, [0, 0], atol=1e-6)
         assert res.maxcv > 0
         assert not res.success
 

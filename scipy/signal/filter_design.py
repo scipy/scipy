@@ -2084,7 +2084,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2215,7 +2216,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2783,7 +2785,8 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2890,7 +2893,8 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -3006,7 +3010,8 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -3119,7 +3124,8 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 

@@ -635,8 +635,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     a = asarray(a)
     a = a.astype(float)
     if limits is None:
-        n = len(a)
-        return a.var() * n / (n - 1.)
+        return np.ma.var(a, ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
     return np.ma.var(am, ddof=ddof, axis=axis)
 
