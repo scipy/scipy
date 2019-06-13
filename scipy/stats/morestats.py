@@ -1919,7 +1919,8 @@ def anderson_ksamp(samples, midrank=True):
     statistic : float
         Normalized k-sample Anderson-Darling test statistic.
     critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+        0.5%, 0.1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
         provided samples can be rejected. The value is floored / capped at
