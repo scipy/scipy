@@ -41,10 +41,10 @@ static PyObject *calculate_assignment(PyObject *self, PyObject *args) {
     if (obj_cont == NULL)
         return NULL;
 
-    int num_rows = PyArray_DIM(obj_cont, 0);
-    int num_cols = PyArray_DIM(obj_cont, 1);
+    int num_rows = PyArray_DIM((PyArrayObject*)obj_cont, 0);
+    int num_cols = PyArray_DIM((PyArrayObject*)obj_cont, 1);
 
-    double *cost_matrix = (double *)PyArray_DATA(obj_cont);
+    double *cost_matrix = (double *)PyArray_DATA((PyArrayObject*)obj_cont);
     if (cost_matrix == NULL)
         return NULL;
 
