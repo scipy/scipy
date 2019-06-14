@@ -67,7 +67,7 @@ def test_pade_4term_exp():
     
 def test_pade_ints():
     # Simple test sequences (one of ints, one of floats).
-    an_int = [1,   2,   3,   4]
+    an_int = [1, 2, 3, 4]
     an_flt = [1.0, 2.0, 3.0, 4.0]
 
     # Make sure integer arrays give the same result as float arrays with same values.
