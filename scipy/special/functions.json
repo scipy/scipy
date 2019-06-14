@@ -339,6 +339,36 @@
             "ellpk": "d->d"
         }
     },
+    "elliprc": {
+	"ellint_carlson_wrap.h": {
+	    "fellint_RC_w": "dd->d",
+	    "cellint_RC_w": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.h": {
+	    "fellint_RD_w": "ddd->d",
+	    "cellint_RD_w": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.h": {
+	    "fellint_RF_w": "ddd->d",
+	    "cellint_RF_w": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.h": {
+	    "fellint_RG_w": "ddd->d",
+	    "cellint_RG_w": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.h": {
+	    "fellint_RJ_w": "dddd->d",
+	    "cellint_RJ_w": "DDDD->D"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"

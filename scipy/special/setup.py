@@ -39,6 +39,8 @@ def configuration(parent_package='',top_path=None):
     c_misc_hdr = [join('c_misc','*.h')]
     cephes_src = [join('cephes','*.c')]
     cephes_hdr = [join('cephes', '*.h')]
+    ellint_carlson_src = [join('ellint_carlson', 'ellint_*.c')]
+    ellint_carlson_hdr = [join('ellint_carlson', '*.h')]
     config.add_library('sc_c_misc',sources=c_misc_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + cephes_src
@@ -48,6 +50,12 @@ def configuration(parent_package='',top_path=None):
     config.add_library('sc_cephes',sources=cephes_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + ['*.h']),
+                       macros=define_macros)
+    config.add_library('sc_ellint_carlson',sources=ellint_carlson_src,
+                       include_dirs=[curdir] + inc_dirs,
+                       depends=(ellint_carlson_hdr + ['*.h']),
+                       extra_compiler_args=['-O3',
+                                            '-fno-unsafe-math-optimizations'],
                        macros=define_macros)
 
     # Fortran/C++ libraries
@@ -70,14 +78,16 @@ def configuration(parent_package='',top_path=None):
                          libraries=['sc_specfun'])
 
     # Extension _ufuncs
-    headers = ['*.h', join('c_misc', '*.h'), join('cephes', '*.h')]
+    headers = ['*.h', join('c_misc', '*.h'), join('cephes', '*.h'),
+               join('ellint_carlson', '*.h')]
     ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src',
-                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
+                  "amos_wrappers.c", "cdf_wrappers.c", "ellint_carlson_wrap.c",
+                  "specfun_wrappers.c"]
     ufuncs_dep = (headers + ufuncs_src + amos_src + c_misc_src + cephes_src
-                  + mach_src + cdf_src + specfun_src)
+                  + ellint_carlson_src + mach_src + cdf_src + specfun_src)
     cfg = dict(get_system_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
-    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
+    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_ellint_carlson','sc_mach',
                                             'sc_cdf', 'sc_specfun'])
     cfg.setdefault('define_macros', []).extend(define_macros)
     config.add_extension('_ufuncs',
@@ -111,11 +121,11 @@ def configuration(parent_package='',top_path=None):
     cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
                           "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
     cython_special_dep = (headers + ufuncs_src + ufuncs_cxx_src + amos_src
-                          + c_misc_src + cephes_src + mach_src + cdf_src
+                          + c_misc_src + cephes_src + ellint_carlson_src + mach_src + cdf_src
                           + specfun_src)
     cfg = dict(get_system_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
-    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
+    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_ellint_carlson','sc_mach',
                                             'sc_cdf', 'sc_specfun'])
     cfg.setdefault('define_macros', []).extend(define_macros)
     config.add_extension('cython_special',
