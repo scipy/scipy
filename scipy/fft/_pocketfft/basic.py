@@ -113,7 +113,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     norm = _normalization(norm, True)
 
     if not np.isrealobj(tmp):
-        raise TypeError("x must be real sequence")
+        raise TypeError("x must be a real sequence")
 
     if n is not None:
         tmp, _ = _fix_shape_1d(tmp, n, axis)
@@ -186,7 +186,6 @@ def fftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
 
-    # TODO: pocketfft raises here, should we?
     if len(axes) == 0:
         return x
 
@@ -222,14 +221,14 @@ def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     tmp = np.asarray(x)
 
     if not np.isrealobj(tmp):
-        raise TypeError("x must be real sequence")
+        raise TypeError("x must be a real sequence")
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     tmp, _ = _fix_shape(tmp, shape, axes)
     norm = _normalization(norm, True)
 
     if len(axes) == 0:
-        return x
+        raise ValueError("at least 1 axis must be transformed")
 
     # Note: overwrite_x is not utilised
     return pfft.rfftn(tmp, axes, norm, _default_workers)
@@ -246,9 +245,8 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
 
     if len(axes) == 0:
-        return x
+        raise ValueError("at least 1 axis must be transformed")
 
-    # TODO: defaulting to 2n - 1 may be a better choice (numpy/numpy#13357)
     if noshape:
         shape[-1] = (x.shape[axes[-1]] - 1) * 2
 

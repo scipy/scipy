@@ -7,7 +7,8 @@ from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
-from scipy.fft._pocketfft import ifft, fft, fftn, ifftn, rfft, irfft, fft2
+from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
+                                  rfft, irfft, rfftn, irfftn, fft2)
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
                    swapaxes, double, cdouble)
@@ -103,6 +104,10 @@ def direct_irdft(x, n):
         if i > 0 and 2*i < n:
             x1[n-i] = np.conj(x[i])
     return direct_idft(x1).real
+
+
+def direct_rdftn(x):
+    return fftn(rfft(x), axes=range(x.ndim - 1))
 
 
 class _TestFFTBase(object):
@@ -317,6 +322,11 @@ class _TestRFFTBase(object):
         assert_raises(ValueError, rfft, [])
         assert_raises(ValueError, rfft, [[1,1],[2,2]], -5)
 
+    def test_complex_input(self):
+        x = np.zeros(10, dtype=self.cdt)
+        with assert_raises(TypeError, match="x must be a real sequence"):
+            rfft(x)
+
     # See gh-5790
     class MockSeries(object):
         def __init__(self, data):
@@ -343,7 +353,7 @@ class _TestRFFTBase(object):
 
 @pytest.mark.skipif(np.longfloat is np.float64,
                     reason="Long double is aliased to double")
-class TestRFFTDouble(_TestRFFTBase):
+class TestRFFTLongDouble(_TestRFFTBase):
     def setup_method(self):
         self.cdt = np.longcomplex
         self.rdt = np.longfloat
@@ -745,6 +755,10 @@ class TestFftn(object):
                            r" \(\[ 4 -3\]\) specified"):
             fftn([[1, 1], [2, 2]], (4, -3))
 
+    def test_no_axes(self):
+        x = numpy.random.random((2,2,2))
+        assert_allclose(fftn(x, axes=[]), x, atol=1e-7)
+
 
 class TestIfftn(object):
     dtype = None
@@ -787,6 +801,61 @@ class TestIfftn(object):
                            match="invalid number of data points"
                            r" \(\[ 4 -3\]\) specified"):
             ifftn([[1, 1], [2, 2]], (4, -3))
+
+    def test_no_axes(self):
+        x = numpy.random.random((2,2,2))
+        assert_allclose(ifftn(x, axes=[]), x, atol=1e-7)
+
+class TestRfftn(object):
+    dtype = None
+    cdtype = None
+
+    def setup_method(self):
+        np.random.seed(1234)
+
+    @pytest.mark.parametrize('dtype,cdtype,maxnlp',
+                             [(np.float64, np.complex128, 2000),
+                              (np.float32, np.complex64, 3500)])
+    def test_definition(self, dtype, cdtype, maxnlp):
+        x = np.array([[1, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9]], dtype=dtype)
+        y = rfftn(x)
+        assert_equal(y.dtype, cdtype)
+        assert_array_almost_equal_nulp(y, direct_rdftn(x), maxnlp)
+
+        x = random((20, 26))
+        assert_array_almost_equal_nulp(rfftn(x), direct_rdftn(x), maxnlp)
+
+        x = random((5, 4, 3, 20))
+        assert_array_almost_equal_nulp(rfftn(x), direct_rdftn(x), maxnlp)
+
+    @pytest.mark.parametrize('size', [1, 2, 51, 32, 64, 92])
+    def test_random(self, size):
+        x = random([size, size])
+        assert_allclose(irfftn(rfftn(x), x.shape), x, atol=1e-10)
+
+    @pytest.mark.parametrize('func', [rfftn, irfftn])
+    def test_invalid_sizes(self, func):
+        with assert_raises(ValueError,
+                           match="invalid number of data points"
+                           r" \(\[1 0\]\) specified"):
+            func([[]])
+
+        with assert_raises(ValueError,
+                           match="invalid number of data points"
+                           r" \(\[ 4 -3\]\) specified"):
+            func([[1, 1], [2, 2]], (4, -3))
+
+    @pytest.mark.parametrize('func', [rfftn, irfftn])
+    def test_no_axes(self, func):
+        with assert_raises(ValueError,
+                           match="at least 1 axis must be transformed"):
+            y = func([], axes=[])
+
+    def test_complex_input(self):
+        with assert_raises(TypeError, match="x must be a real sequence"):
+            rfftn(np.zeros(10, dtype=np.complex64))
 
 
 class FakeArray(object):
@@ -924,3 +993,12 @@ class TestOverwrite(object):
                            overwrite_x)
         self._check_nd_one(ifftn, dtype, shape, axes, overwritable,
                            overwrite_x)
+
+
+@pytest.mark.parametrize('func', [fft, ifft, fftn, ifftn,
+                                 rfft, irfft, rfftn, irfftn])
+def test_invalid_norm(func):
+    x = np.arange(10, dtype=float)
+    with assert_raises(ValueError,
+                       match='Invalid norm value o, should be None or "ortho"'):
+        func(x, norm='o')
