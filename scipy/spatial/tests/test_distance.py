@@ -1529,7 +1529,7 @@ class TestSomeDistanceFunctions(object):
             # This could be extended to more test inputs with np.min_scalar_type(np.max(input_matrix)).
             a = np.array([352, 916])
             b = np.array([350, 660])
-            assert_equal(minkowski(a, b), minkowski(a.astype('uint16'), b.astype('uint16'))
+            assert_equal(minkowski(a, b), minkowski(a.astype('uint16'), b.astype('uint16')))
 
     def test_old_wminkowski(self):
         with suppress_warnings() as wrn:
