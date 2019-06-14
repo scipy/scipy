@@ -37,14 +37,14 @@ static PyObject *calculate_assignment(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "O", &obj_cost))
         return NULL;
 
-    PyObject *obj_cont = PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
+    PyArrayObject *obj_cont = (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
     if (obj_cont == NULL)
         return NULL;
 
-    int num_rows = PyArray_DIM((PyArrayObject*)obj_cont, 0);
-    int num_cols = PyArray_DIM((PyArrayObject*)obj_cont, 1);
+    int num_rows = PyArray_DIM(obj_cont, 0);
+    int num_cols = PyArray_DIM(obj_cont, 1);
 
-    double *cost_matrix = (double *)PyArray_DATA((PyArrayObject*)obj_cont);
+    double *cost_matrix = (double *)PyArray_DATA(obj_cont);
     if (cost_matrix == NULL)
         return NULL;
 
@@ -52,6 +52,7 @@ static PyObject *calculate_assignment(PyObject *self, PyObject *args) {
     PyObject *x = PyArray_SimpleNew(1, dim, NPY_INT64);
     int result = solve_jonker_volgenant(num_rows, num_cols, cost_matrix,
                                         PyArray_DATA((PyArrayObject *)x));
+    Py_DECREF((PyObject*)obj_cont);
     if (result != 0) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
         Py_DECREF(x);
