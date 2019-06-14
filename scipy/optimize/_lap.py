@@ -59,16 +59,6 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     -----
     .. versionadded:: 0.17.0
 
-    Examples
-    --------
-    >>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
-    >>> from scipy.optimize import linear_sum_assignment
-    >>> row_ind, col_ind = linear_sum_assignment(cost)
-    >>> col_ind
-    array([1, 0, 2])
-    >>> cost[row_ind, col_ind].sum()
-    5
-
     References
     ----------
 
@@ -81,6 +71,16 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     3. DF Crouse. On implementing 2D rectangular assignment algorithms.
        *IEEE Transactions on Aerospace and Electronic Systems*,
        52(4):1679-1696, August 2016, https://doi.org/10.1109/TAES.2016.140952
+
+    Examples
+    --------
+    >>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
+    >>> from scipy.optimize import linear_sum_assignment
+    >>> row_ind, col_ind = linear_sum_assignment(cost)
+    >>> col_ind
+    array([1, 0, 2])
+    >>> cost[row_ind, col_ind].sum()
+    5
     """
     cost_matrix = np.asarray(cost_matrix)
     if len(cost_matrix.shape) != 2:
