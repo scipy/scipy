@@ -51,7 +51,7 @@ def test_pade_4term_exp():
     assert_array_almost_equal(nump.c, [1.0])
     assert_array_almost_equal(denomp.c, [-1.0/6, 0.5, -1.0, 1.0])
    
-    # Testing reducing array
+    # Testing reducing array.
     nump, denomp = pade(an, 0, 2)
     assert_array_almost_equal(nump.c, [0.5, 1.0, 1.0])
     assert_array_almost_equal(denomp.c, [1.0])
