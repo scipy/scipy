@@ -125,10 +125,6 @@ class LSODA(OdeSolver):
 
         rtol, atol = validate_tol(rtol, atol, self.n)
 
-        if jac is None:  # No lambda as PEP8 insists.
-            def jac():
-                return None
-
         solver = ode(self.fun, jac)
         solver.set_integrator('lsoda', rtol=rtol, atol=atol, max_step=max_step,
                               min_step=min_step, first_step=first_step,
@@ -150,7 +146,7 @@ class LSODA(OdeSolver):
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
         solver._y, solver.t = integrator.run(
-            solver.f, solver.jac, solver._y, solver.t,
+            solver.f, solver.jac or (lambda: None), solver._y, solver.t,
             self.t_bound, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
 
