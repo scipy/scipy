@@ -305,5 +305,6 @@ them to ``upstream`` as follows:
     first that you're about to push the changes you want to the place you
     want.
 
+.. _scipy/master: https://github.com/scipy/scipy
 
 .. include:: git_links.inc

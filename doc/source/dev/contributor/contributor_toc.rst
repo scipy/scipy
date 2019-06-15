@@ -1,10 +1,10 @@
 .. _contributor-toc:
 
-=============================
-Contributor Table of Contents
-=============================
+=======================
+SciPy Contributor Guide
+=======================
 
-This table of contents is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place. Start with the bold links (in order), then expand your knowledge with the rest.
+This guide is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place. Start with the bold links (in order), then expand your knowledge with the rest.
 
 - :ref:`dev-env` - how to set up and maintain a development environment, including installing compilers and SciPy dependencies, creating a personal fork of the SciPy repository on GitHub, using git to manage a local repository with development branches, performing an in-place build of SciPy, and creating a virtual environment that adds this development version of SciPy to the Python path
 - :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding which module contains SciPy functionality to be edited, adding new modules to SciPy, and complying with PEP8 style standards
@@ -13,7 +13,20 @@ This table of contents is designed to help you quickly find the information you 
 - :ref:`toc-benchmarking` - how to benchmark code with AirSpeed Velocity
 - :ref:`toc-cython` - how to add fast, compiled code to SciPy
 
+.. toctree::
+    :hidden:
+
+    quickstart_mac
+    recommended_development_setup
+    development_workflow
+    pep8
+    cython
+    benchmarking
+    compiled_code
+    runtests
+
 .. _dev-env:
+
 
 Development Environment
 -----------------------
@@ -32,7 +45,7 @@ Editing SciPy
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API. If you are going to import other SciPy code, read this first.
 - `NumPy Distutils - Users Guide`_ - Check this out before adding any new files to SciPy.
 - :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared. It's geared toward :ref:`Core Developers<governance>`, but contains useful information for all contributors.
- 
+
 .. _unit-tests:
 
 Unit Tests
@@ -73,4 +86,3 @@ Compiled Code
 .. _Airspeed Velocity: https://asv.readthedocs.io/en/stable/
 
 .. _Cython: https://cython.org/
- 

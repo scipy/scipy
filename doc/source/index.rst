@@ -25,11 +25,10 @@ submodules.
 
    tutorial/index.rst
 
-Developer's Guide
------------------
+Developer Documentation
+-----------------------
 
-Explanations of how to start contributing to SciPy, and descriptions of
-maintenance activities and policies.
+If you're interested in contributing to SciPy, start here:
 
 .. toctree::
    :maxdepth: 1
@@ -37,8 +36,6 @@ maintenance activities and policies.
    dev/conduct/code_of_conduct
    hacking
    dev/contributor/contributor_toc
-   dev/index
-   dev/governance/governance
 
 To get an overview of where help or new features are desired or planned, see
 the roadmap:
@@ -49,6 +46,19 @@ the roadmap:
    roadmap
    roadmap-detailed
    toolchain
+
+For a more detailed look at how the SciPy project works:
+
+.. toctree::
+   :maxdepth: 1
+
+   dev/index
+   dev/governance/governance
+
+.. toctree::
+
+    building/index
+    dev/gitwash/gitwash
 
 .. module:: scipy
 

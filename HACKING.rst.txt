@@ -1,11 +1,11 @@
 .. _hacking:
 
-=====================
-Contributing to SciPy
-=====================
+==================
+Ways to Contribute
+==================
 
-This document aims to give an overview of how to contribute to SciPy.  It
-tries to answer commonly asked questions, and provide some insight into how the
+This document aims to give an overview of the ways to contribute to SciPy.  It
+tries to answer commonly asked questions and provide some insight into how the
 community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
 :ref:`contributor-toc`.
@@ -13,8 +13,7 @@ community and are experienced Python coders may want to jump straight to the
 There are a lot of ways you can contribute:
 
 - Contributing new code
-- Fixing bugs and other maintenance work
-- Improving the documentation
+- Fixing bugs, improving documentation, and other maintenance work
 - Reviewing open pull requests
 - Triaging issues
 - Working on the `scipy.org`_ website
@@ -30,11 +29,11 @@ for others too".  Perhaps it's a good idea then to contribute it to SciPy or
 another open source project.  The first question to ask is then, where does
 this code belong?  That question is hard to answer here, so we start with a
 more specific one: *what code is suitable for putting into SciPy?*
-Almost all of the new code added to scipy has in common that it's potentially
+Almost all of the new code added to SciPy has in common that it's potentially
 useful in multiple scientific domains and it fits in the scope of existing
-scipy submodules.  In principle new submodules can be added too, but this is
+SciPy subpackages.  In principle new subpackages can be added too, but this is
 far less common.  For code that is specific to a single application, there may
-be an existing project that can use the code.  Some scikits (`scikit-learn`_,
+be an existing project that can use the code.  Some SciKits (`scikit-learn`_,
 `scikit-image`_, `statsmodels`_, etc.) are good examples here; they have a
 narrower focus and because of that more domain-specific code than SciPy.
 
@@ -66,7 +65,7 @@ tests and correct code style.
     within the interpreter, and are compiled into a reference guide in html and
     pdf format.  Higher-level documentation for key (areas of) functionality is
     provided in tutorial format and/or in module docstrings.  A guide on how to
-    write documentation is given in `how to document`_.
+    write documentation is given in the `numpydoc docstring guide`_.
 
 3. Code style
     Uniformity of style in which code is written is important to others trying
@@ -77,25 +76,25 @@ tests and correct code style.
     tabs by four spaces.  Using `pyflakes`_ to check your code is also a good
     idea.
 
-At the end of this document a checklist is given that may help to check if your
-code fulfills all requirements for inclusion in SciPy.
+A :ref:`checklist<pr-checklist>`, including these and other requirements, is
+available at the end of the example :ref:`development-workflow`.
 
 Another question you may have is: *where exactly do I put my code*?  To answer
 this, it is useful to understand how the SciPy public API (application
 programming interface) is defined.  For most modules the API is two levels
 deep, which means your new function should appear as
-``scipy.submodule.my_new_func``.  ``my_new_func`` can be put in an existing or
-new file under ``/scipy/<submodule>/``, its name is added to the ``__all__``
+``scipy.subpackage.my_new_func``.  ``my_new_func`` can be put in an existing or
+new file under ``/scipy/<subpackage>/``, its name is added to the ``__all__``
 list in that file (which lists all public functions in the file), and those
-public functions are then imported in  ``/scipy/<submodule>/__init__.py``.  Any
+public functions are then imported in  ``/scipy/<subpackage>/__init__.py``.  Any
 private functions/classes should have a leading underscore (``_``) in their
 name.  A more detailed description of what the public API of SciPy is, is given
-in `SciPy API`_.
+in :ref:`scipy-api`.
 
 Once you think your code is ready for inclusion in SciPy, you can send a pull
 request (PR) on Github.  We won't go into the details of how to work with git
-here, this is described well in the `git workflow`_ section of the NumPy
-documentation and on the `Github help pages`_.  When you send the PR for a new
+here, this is described well in :ref:`git-development`
+and on the `Github help pages`_.  When you send the PR for a new
 feature, be sure to also mention this on the scipy-dev mailing list.  This can
 prompt interested people to help review your PR.  Assuming that you already got
 positive feedback before on the general idea of your code/feature, the purpose
@@ -140,15 +139,15 @@ more contributions overall, and companies often publish their modifications
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
 
-Contributing by helping maintain existing code
-==============================================
+Maintaining existing code
+=========================
 
 The previous section talked specifically about adding new functionality to
 SciPy.  A large part of that discussion also applies to maintenance of existing
 code.  Maintenance means fixing bugs, improving code quality, documenting
-existing functionality better, adding missing unit tests, keeping
-build scripts up-to-date, etc.  The SciPy `issue list`_ contains all
-reported bugs, build/documentation issues, etc.  Fixing issues
+existing functionality better, adding missing unit tests, adding performance
+benchmarks, keeping build scripts up-to-date, etc.  The SciPy `issue list`_
+contains all reported bugs, build/documentation issues, etc.  Fixing issues
 helps improve the overall quality of SciPy, and is also a good way
 of getting familiar with the project.  You may also want to fix a bug because
 you ran into it and need the function in question to work correctly.
@@ -201,13 +200,13 @@ If we do not know you yet, consider introducing yourself.
 Other ways to contribute
 ========================
 
-There are many ways to contribute other than contributing code.
+There are many ways to contribute other than writing code.
 
 Triaging issues (investigating bug reports for validity and possible actions to
 take) is also a useful activity.  SciPy has many hundreds of open issues;
 closing invalid ones and correctly labeling valid ones (ideally with some first
 thoughts in a comment) allows prioritizing maintenance work and finding related
-issues easily when working on an existing function or submodule.
+issues easily when working on an existing function or subpackage.
 
 Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
 a contribution in itself.  Everyone who writes to those lists with a problem or
@@ -219,17 +218,25 @@ project and SciPy the community, and it can always use a new pair of hands.
 The sources for the website live in their own separate repo:
 https://github.com/scipy/scipy.org
 
+Getting started
+===============
+
+Thanks for your interest in contributing to SciPy! If you're interested in
+contributing code, we hope you'll continue on to the :ref:`contributor-toc`
+for details on how to set up your development environment, implement your
+improvements, and submit your first PR!
+
 .. _scikit-learn: http://scikit-learn.org
 
 .. _scikit-image: http://scikit-image.org/
 
 .. _statsmodels: https://www.statsmodels.org/
 
-.. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
+.. _testing guidelines: https://docs.scipy.org/doc/numpy/reference/testing.html
 
 .. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
-.. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+.. _numpydoc docstring guide: https://numpydoc.readthedocs.io/en/latest/format.html
 
 .. _bug report: https://scipy.org/bug-report.html
 

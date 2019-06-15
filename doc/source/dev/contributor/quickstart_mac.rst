@@ -9,23 +9,23 @@ This quickstart guide will cover:
 * setting up and maintaining a development environment, including installing compilers and SciPy dependencies;
 * creating a personal fork of the SciPy repository on GitHub;
 * using git to manage a local repository with development branches;
-* performing an in-place build of SciPy; and 
+* performing an in-place build of SciPy; and
 * creating a virtual environment that adds this development version of SciPy to the Python path on macOS.
 
 Its companion videos `Anaconda SciPy Dev: Part I (macOS)`_ and `Anaconda SciPy Dev: Part I (macOS)`_ show many of the steps being performed. This guide may diverge slightly from the videos over time with the goal of keeping this guide the simplest, up-to-date procedure.
 
-.. note:: 
+.. note::
 
 	This guide does not present the only way to set up a development environment; there are many valid choices of Python distribution, C/Fortran compiler, and installation options. The steps here can often be adapted for other choices, but we cannot provide documentation tailored for them.
-	
-	This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line. 
+
+	This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line.
 
 Building SciPy
 --------------
 
-(Consider following along with the companion video `Anaconda SciPy Dev: Part I (macOS)`_) 
+(Consider following along with the companion video `Anaconda SciPy Dev: Part I (macOS)`_)
 
-#. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the Spyder integrated development environment (IDE), the ``conda`` package manager, and tools for managing virtual environments. 
+#. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the Spyder integrated development environment (IDE), the ``conda`` package manager, and tools for managing virtual environments.
 
 #. Install Apple Developer Tools. An easy way to do this is to `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_, enter the command ``xcode-select --install``, and follow the prompts. Apple Developer Tools includes `git <https://git-scm.com/>`_, the software we need to download and manage the SciPy source code.
 
@@ -53,10 +53,10 @@ Building SciPy
 
 #. Test the build: enter ``python3 runtests.py -v``. `runtests.py` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output.
 
-If the tests were successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build from within the SciPy root directory. This would be inconvenient, for instance, if you wrote a script that performs an ``import`` of something you changed in SciPy but wanted to save it elsewhere on your computer. Without taking additional steps to add this version of SciPy to the |PYTHONPATH|_ this script would ``import`` from the version of SciPy distributed with Anaconda rather than the development version you just built. (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`_ for much more information about how Python imports modules.)
+If the tests were successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build from within the SciPy root directory. This would be inconvenient, for instance, if you wrote a script that performs an ``import`` of something you changed in SciPy but wanted to save it elsewhere on your computer. Without taking additional steps to add this version of SciPy to the |PYTHONPATH|_ this script would ``import`` from the version of SciPy distributed with Anaconda rather than the development version you just built. (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`__ for much more information about how Python imports modules.)
 
 Installing SciPy
---------------
+----------------
 
 (Consider following along with the companion video `Anaconda SciPy Dev: Part II (macOS)`_)
 
@@ -66,7 +66,7 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 
 #. Enter ``conda create --name scipydev``. |br| This tells conda to creates a virtual environment named ``scipydev``. Note that `scipydev` can be replaced by any name you'd like to refer to your virtual environment.
 
-#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`_.
+#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no modules installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
 
@@ -83,11 +83,11 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
    - ``conda``, ``activate.d``, and ``deactivate.d`` are new folders; and
 
    - ``env_vars.sh`` is the name of two new plain text files |br| with the contents |br|
-   
+
    - ``export PYTHONPATH=/scipy`` (where ``scipy`` is to be replaced with the full path of the SciPy root directory), and
-   
+
    - ``unset PYTHONPATH``,
-   
+
    respectively.
 
 #. In a new terminal window, test your setup. If you activate your virtual environment (e.g. ``conda activate scipydev``) and run Python code that imports from SciPy, any changes you make to the SciPy code should be reflected when the code runs. After deactivating the virtual environment (``conda deactivate``), Python imports from the version of SciPy installed by Anaconda.

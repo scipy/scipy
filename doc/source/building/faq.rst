@@ -49,3 +49,9 @@ and on Windows
 Now editing a Python source file in SciPy allows you to immediately
 test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
+
+.. _virtualenv: https://virtualenv.pypa.io/
+
+.. _virtualenvwrapper: https://bitbucket.org/dhellmann/virtualenvwrapper/
+
+.. _Spyder: https://www.spyder-ide.org/

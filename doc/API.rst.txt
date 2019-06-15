@@ -5,7 +5,7 @@ SciPy API
 
 Importing from SciPy
 ---------------------
-  
+
 In Python the distinction between what is the public API of a library and what
 are private implementation details is not always clear.  Unlike in other
 languages like Java, it is possible in Python to access "private" function or
@@ -149,7 +149,7 @@ change is made.
   - ``scipy.stats.distributions``
   - `scipy.stats.mstats`
 
-  
+
 SciPy structure
 ---------------
 
@@ -175,7 +175,7 @@ following, a *SciPy module* is defined as a Python package, say
   for instance ``yyy/_somemodule.py``.
 
 * User-visible functions should have good documentation following
-  the NumPy documentation style, see `how to document`_
+  the `NumPy documentation style`_.
 
 * The ``__init__.py`` of the module should contain the main reference
   documentation in its docstring. This is connected to the Sphinx
@@ -192,3 +192,5 @@ following, a *SciPy module* is defined as a Python package, say
 See the existing SciPy submodules for guidance.
 
 For further details on NumPy distutils, see `NumPy Distutils - User's Guide <https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt>`_.
+
+.. _NumPy documentation style: https://numpydoc.readthedocs.io/en/latest/format.html
