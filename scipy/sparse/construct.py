@@ -678,7 +678,7 @@ def block_diag(mats, format=None, dtype=None):
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
-           random_state=None, data_rvs=None):
+           random_state=None, data_rvs=None, density_estimation="exact"):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
@@ -706,6 +706,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         by this function.  By default, uniform [0, 1) random values will be
         sampled using the same random state as is used for sampling
         the sparsity structure.
+    density_estimation: str, optional
+        Should be either "exact" (default) or "probabilistic".
 
     Returns
     -------
@@ -764,9 +766,6 @@ greater than %d - this is not supported on this machine
 """
         raise ValueError(msg % np.iinfo(tp).max)
 
-    # Number of non zero values
-    k = int(density * m * n)
-
     if random_state is None:
         random_state = np.random
     elif isinstance(random_state, (int, np.integer)):
@@ -785,7 +784,26 @@ greater than %d - this is not supported on this machine
         else:
             data_rvs = random_state.rand
 
-    ind = random_state.choice(mn, size=k, replace=False)
+    # Number of non zero values
+    k = int(density * m * n)
+    if density_estimation == "exact":
+        ind = random_state.choice(mn, size=k, replace=False)
+    elif density_estimation == "probabilistic":
+        if k >= n*m:
+            raise ValueError("provided density={:.f} is too high for method "
+                             "density_estimation='probabilistic'!"
+                             .format(density))
+
+        # When sampling (1..N) with replacement p times we get
+        # on average k unique values,
+        #     k = N*(1 - ((N - 1)/N)**p)
+        # or inversly here with N=n*m,
+        p = int(np.log(1 - k / (n*m)) / np.log(1 - 1 / (n*m)))
+        ind = random_state.randint(0, n*m, size=p)
+        ind = np.unique(ind)
+        k = ind.shape[0]
+    else:
+        raise ValueError
 
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
@@ -794,7 +812,8 @@ greater than %d - this is not supported on this machine
                                                              copy=False)
 
 
-def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None,
+         density_estimation="exact"):
     """Generate a sparse matrix of the given shape and density with uniformly
     distributed values.
 
@@ -839,4 +858,5 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
             [0.        , 0.        , 0.        , 0.        ]])
 
     """
-    return random(m, n, density, format, dtype, random_state)
+    return random(m, n, density, format, dtype, random_state,
+                  density_estimation=density_estimation)
