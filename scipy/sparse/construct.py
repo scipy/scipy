@@ -722,9 +722,9 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Only float types are supported for now.
 
     The run time and peak memory usage scale as ``O(n*m)`` or worse when
-    ``density_estimation`` method is "exact" (default), which can be  slow for
-    large array sizes. using the "probabilistic" method, which scales
-    as `O(nnz)` is then preferrable.
+    ``density_estimation`` method is "exact" (default), which can be slow for
+    large array sizes. Using the "probabilistic" method, which scales
+    as ``O(nnz)``, is then preferable.
 
     Examples
     --------
@@ -805,7 +805,7 @@ greater than %d - this is not supported on this machine
         # When sampling (1..N) with replacement p times we get
         # on average k unique values,
         #     k = N*(1 - ((N - 1)/N)**p)
-        # or inversly here with N=n*m,
+        # or inversely here with N=n*m,
         p = int(np.log(1 - k / (n*m)) / np.log(1 - 1 / (n*m)))
         ind = random_state.randint(0, n*m, size=p)
         ind = np.unique(ind)
@@ -857,9 +857,9 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None,
     Only float types are supported for now.
 
     The run time and peak memory usage scale as ``O(n*m)`` or worse when
-    ``density_estimation`` method is "exact" (default), which can be  slow for
-    large array sizes. using the "probabilistic" method, which scales
-    as `O(nnz)` is then preferrable.
+    ``density_estimation`` method is "exact" (default), which can be slow for
+    large array sizes. Using the "probabilistic" method, which scales
+    as ``O(nnz)``, is then preferable.
 
     See Also
     --------
