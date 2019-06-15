@@ -1,4 +1,4 @@
-from . import _fftpack
+import scipy.fftpack as _fftpack
 
 def next_fast_len(target, dtype=None):
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.

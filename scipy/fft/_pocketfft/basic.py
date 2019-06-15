@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.fft._pocketfft import pypocketfft as pfft
-from scipy.fft._fftpack.helper import _init_nd_shape_and_axes
+from scipy.fftpack.helper import _init_nd_shape_and_axes
 
 
 # TODO: Build with OpenMp and add configuration support

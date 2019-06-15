@@ -13,7 +13,7 @@ from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
-from scipy.fft._fftpack.helper import _init_nd_shape_and_axes_sorted
+from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
@@ -404,7 +404,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.next_fast_len(d) for d in shape[axes]]
+    fshape = [fftpack.helper.next_fast_len(d) for d in shape[axes]]
     fslice = tuple([slice(sz) for sz in shape])
     # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
     # sure we only call rfftn/irfftn from one thread at a time.

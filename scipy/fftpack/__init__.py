@@ -78,7 +78,7 @@ Convolutions (:mod:`scipy.fftpack.convolve`)
 
 """
 
-# List of possibly useful functions in scipy.fft.fftpack._fftpack:
+# List of possibly useful functions in scipy.fftpack._fftpack:
 #   drfft
 #   zfft
 #   zrfft

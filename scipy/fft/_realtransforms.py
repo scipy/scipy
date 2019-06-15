@@ -1,4 +1,4 @@
-from . import _fftpack
+import scipy.fftpack as _fftpack
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 

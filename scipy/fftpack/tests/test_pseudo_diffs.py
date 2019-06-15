@@ -13,9 +13,9 @@ Run tests if fftpack is not installed:
 
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal)
-from scipy.fft._fftpack import (diff, fft, ifft, tilbert, itilbert, hilbert,
-                                ihilbert, shift, fftfreq, cs_diff, sc_diff,
-                                ss_diff, cc_diff)
+from scipy.fftpack import (diff, fft, ifft, tilbert, itilbert, hilbert,
+                           ihilbert, shift, fftfreq, cs_diff, sc_diff,
+                           ss_diff, cc_diff)
 
 import numpy as np
 from numpy import arange, sin, cos, pi, exp, tanh, sum, sign
