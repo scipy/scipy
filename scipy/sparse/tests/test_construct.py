@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_equal, assert_,
+from numpy.testing import (assert_equal, assert_, assert_allclose,
         assert_array_equal, assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
@@ -473,3 +473,34 @@ class TestConstructUtils(object):
         # for the dtype
         a = construct.random(10, 10, dtype='d')
 
+    def test_random_density_estimation_probabilistic(self):
+        with assert_raises(ValueError, match="expected density < 1"):
+            construct.random(20, 100, density=1,
+                             density_estimation="probabilistic")
+
+        with assert_raises(ValueError,
+                           match="density_estimation.*expected one of"):
+            construct.random(20, 100, density_estimation="unknown")
+
+        n, m = 20, 1000
+        density = 0.01
+        x1 = construct.random(n, m, density, random_state=0)
+        x2 = construct.random(n, m, density, random_state=0,
+                              density_estimation="probabilistic")
+        assert x1.shape == x2.shape == (n, m)
+        assert x1.format == x2.format
+        assert x1.dtype == x2.dtype
+        assert_allclose(x1.nnz, x2.nnz, rtol=0.1)
+
+        def get_nnz_per_row(x):
+            """Returns the number of non null elements for each
+            row of a sparse matrix x"""
+            return (np.abs(x.toarray()) > 0).sum(axis=1)
+
+        row_nnz_std_1 = np.std(get_nnz_per_row(x1))
+        row_nnz_std_2 = np.std(get_nnz_per_row(x2))
+
+        # The standard deviation of the number of non zero elements
+        # per row with respect to its mean is comparable between the
+        # two density_estimation methods.
+        assert_allclose(row_nnz_std_1, row_nnz_std_2, rtol=0.1)

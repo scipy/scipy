@@ -707,7 +707,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sampled using the same random state as is used for sampling
         the sparsity structure.
     density_estimation: str, optional
-        Should be either "exact" (default) or "probabilistic".
+        If "exact" (default) the condition ``res.nnz == int(n*m*density)`` is
+        strictly verified. If "probabilistic", it is verified on average but
+        for any given random state small deviations are expected.
+        The "probabilistic" method is often significantly faster, particularly
+        when``density < 0.1``.
 
     Returns
     -------
@@ -716,6 +720,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Notes
     -----
     Only float types are supported for now.
+
+    The run time and peak memory usage scale as ``O(n*m)`` or worse when
+    ``density_estimation`` method is "exact" (default), which can be  slow for
+    large array sizes. using the "probabilistic" method, which scales
+    as `O(nnz)` is then preferrable.
 
     Examples
     --------
@@ -790,9 +799,8 @@ greater than %d - this is not supported on this machine
         ind = random_state.choice(mn, size=k, replace=False)
     elif density_estimation == "probabilistic":
         if k >= n*m:
-            raise ValueError("provided density={:.f} is too high for method "
-                             "density_estimation='probabilistic'!"
-                             .format(density))
+            raise ValueError("expected density < 1 with "
+                             "density_estimation='probabilistic'!")
 
         # When sampling (1..N) with replacement p times we get
         # on average k unique values,
@@ -803,7 +811,9 @@ greater than %d - this is not supported on this machine
         ind = np.unique(ind)
         k = ind.shape[0]
     else:
-        raise ValueError
+        raise ValueError("density_estimation={}, expected one of "
+                         "['exact', 'probabilistic']!"
+                         .format(density_estimation))
 
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
@@ -831,6 +841,12 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None,
     random_state : {numpy.random.RandomState, int}, optional
         Random number generator or random seed. If not given, the singleton
         numpy.random will be used.
+    density_estimation: str, optional
+        If "exact" (default) the condition ``res.nnz == int(n*m*density)`` is
+        strictly verified. If "probabilistic", it is verified on average but
+        for any given random state small deviations are expected.
+        The "probabilistic" method is often significantly faster, particularly
+        when``density < 0.1``.
 
     Returns
     -------
@@ -839,6 +855,11 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None,
     Notes
     -----
     Only float types are supported for now.
+
+    The run time and peak memory usage scale as ``O(n*m)`` or worse when
+    ``density_estimation`` method is "exact" (default), which can be  slow for
+    large array sizes. using the "probabilistic" method, which scales
+    as `O(nnz)` is then preferrable.
 
     See Also
     --------
