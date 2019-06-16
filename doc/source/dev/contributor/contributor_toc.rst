@@ -4,33 +4,20 @@
 SciPy Contributor Guide
 =======================
 
-This guide is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place. Start with the bold links (in order), then expand your knowledge with the rest.
+This guide is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place.
 
 - :ref:`dev-env` - how to set up and maintain a development environment, including installing compilers and SciPy dependencies, creating a personal fork of the SciPy repository on GitHub, using git to manage a local repository with development branches, performing an in-place build of SciPy, and creating a virtual environment that adds this development version of SciPy to the Python path
 - :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding which module contains SciPy functionality to be edited, adding new modules to SciPy, and complying with PEP8 style standards
 - :ref:`unit-tests` - how to write and run unit tests for SciPy with the pytest framework
-- :ref:`docs` - how to write reStructuredText documentation that complies with docstring standards, build documentation locally, and view documentation built during continuous integration checks
+- :ref:`docs` - how to write reStructuredText documentation that complies with docstring standards, build documentation locally with Sphinx, and view documentation built during continuous integration checks
 - :ref:`toc-benchmarking` - how to benchmark code with AirSpeed Velocity
 - :ref:`toc-cython` - how to add fast, compiled code to SciPy
 
-.. toctree::
-    :hidden:
-
-    quickstart_mac
-    recommended_development_setup
-    development_workflow
-    pep8
-    cython
-    benchmarking
-    compiled_code
-    runtests
-
 .. _dev-env:
-
 
 Development Environment
 -----------------------
-- :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment on macOS.
+- :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS.
 - :ref:`building` - If you don't have macOS, try these instructions to help you build SciPy on your operating system.
 - :ref:`recommended-development-setup` includes additional notes about the development setup. All of this information is contained elsewhere, but it is retained as a legacy document.
 
@@ -39,9 +26,9 @@ Development Environment
 Editing SciPy
 -------------
 - :ref:`development-workflow` lays out what to do after your development environment is set up.
-- `SciPy Development Workflow`_ is also the name of a five-minute video example of fixing a bug and submitting a pull request.
+- `SciPy Development Workflow`_ is a five-minute video example of fixing a bug and submitting a pull request.
 - :ref:`pep8-scipy` gives some tips for ensuring that your code is PEP8 compliant.
-- :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world. It is written in the context of NumPy, but working with SciPy is essentially identical - just substitute the text SciPy/``scipy`` wherever NumPy/``numpy`` appears.
+- :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world.
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API. If you are going to import other SciPy code, read this first.
 - `NumPy Distutils - Users Guide`_ - Check this out before adding any new files to SciPy.
 - :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared. It's geared toward :ref:`Core Developers<governance>`, but contains useful information for all contributors.
@@ -50,7 +37,7 @@ Editing SciPy
 
 Unit Tests
 ----------
-- `NumPy/SciPy Testing Guidelines`_ is the definitive guide to writing SciPy unit tests.
+- `NumPy/SciPy Testing Guidelines`_ is the definitive guide to writing unit tests of SciPy code.
 - :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally.
 
 .. _docs:
@@ -58,7 +45,7 @@ Unit Tests
 Documentation
 -------------
 - `numpydoc docstring guide`_ contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_.
-- `Rendering SciPy Documentation <https://github.com/scipy/scipy/wiki/Rendering-SciPy-Documentation>`_ - It's important to check how changes to the documentation render before merging a PR; this document explains how you can do that.
+- :ref:`rendering-documentation` - It's important to check how changes to the documentation render before merging a PR; this document explains how you can do that.
 
 .. _toc-benchmarking:
 
@@ -73,11 +60,25 @@ Compiled Code
 - :ref:`adding-cython` - Extending and compiling Python code with `Cython`_ can significantly improve its performance. This document helps you get started.
 - :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy.
 
+Here is a toctree, purely to appease Sphinx.
+
+.. toctree::
+
+   quickstart_mac
+   recommended_development_setup
+   development_workflow
+   pep8
+   rendering_documentation
+   runtests
+   benchmarking
+   cython
+   compiled_code
+
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
-.. _NumPy Distutils - Users Guide: https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt
+.. _NumPy Distutils - Users Guide: https://docs.scipy.org/doc/numpy/reference/distutils_guide.html
 
-.. _NumPy/SciPy Testing Guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
+.. _NumPy/SciPy Testing Guidelines: https://docs.scipy.org/doc/numpy/reference/testing.html
 
 .. _numpydoc docstring guide: https://numpydoc.readthedocs.io/en/latest/format.html
 
@@ -86,3 +87,5 @@ Compiled Code
 .. _Airspeed Velocity: https://asv.readthedocs.io/en/stable/
 
 .. _Cython: https://cython.org/
+
+.. |*| replace:: \ :sup:`*` \

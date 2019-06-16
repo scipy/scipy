@@ -55,7 +55,9 @@ For a more detailed look at how the SciPy project works:
    dev/index
    dev/governance/governance
 
-.. toctree::
+Purely to appease Sphinx:
+
+  .. toctree::
 
     building/index
     dev/gitwash/gitwash
