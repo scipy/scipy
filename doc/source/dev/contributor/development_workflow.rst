@@ -43,9 +43,8 @@ as clear as possible.
 Making a new feature branch
 ===========================
 
-First, fetch new commits from the ``upstream`` repository:
-
-::
+First, navigate to the SciPy root directory in your terminal and fetch new
+commits from the ``upstream`` repository::
 
    git fetch upstream
 
@@ -54,6 +53,38 @@ repository::
 
    git checkout -b my-new-feature upstream/master
 
+Equivalently, you might want to keep the master branch of your own repository
+up to date and create a new branch based on that::
+
+   git checkout master
+   git rebase upstream/master
+   git checkout -b my-new-feature
+
+In order, these commands
+
+#. ensure that the ``master`` branch of your local repository is checked out,
+
+#. apply all the latest changes from the ``upstream/master`` (main SciPy
+   repository master branch) to your local ``master`` branch, and
+
+#. create and check out a new branch (``-b``) based on your local ``master``
+   branch.
+
+In any case, it's important that your feature branch include the latest
+changes from the upstream master to help avoid
+`merge conflicts <https://help.github.com/en/articles/resolving-a-merge-conflict-using-the-command-line>`_
+when it's time to submit a pull request.
+
+It's also a good idea to build this branch and run tests before continuing.
+Assuming you've followed :ref:`quickstart-mac` to set up your development
+environment, you'll need to activate your virtual environment, perform an
+in place build, and run tests::
+
+   conda activate name-of-your-virtual-environment
+   python setup.py build_ext --inplace
+   python runtests.py -v
+
+Otherwise, see :ref:`building`, :ref:`runtests` for more information.
 
 .. _editing-workflow:
 
@@ -205,24 +236,41 @@ and a motivation for your changes.
 Checklist before submitting a PR
 --------------------------------
 
--  Are there unit tests with good code coverage?
--  Do all public function have docstrings including examples?
--  Is the code style correct (PEP8, pyflakes)
+-  Did you check that the code can be distributed under a BSD license? See
+   :ref:`license-considerations`.
+-  Are there unit tests with good code coverage? See
+   `NumPy/SciPy Testing Guidelines`_.
+-  Do all unit tests pass locally? See :ref:`runtests`.
+-  Do all public function have docstrings including examples? See the
+   `numpydoc docstring guide`_.
+-  Does the documentation render correctly? See :ref:`rendering-documentation`.
+-  Is the code style correct? See :ref:`pep8-scipy`.
 -  Is the commit message `formatted correctly`_?
--  Is the new functionality tagged with ``.. versionadded:: X.Y.Z`` (with
-   X.Y.Z the version number of the next release - can be found in setup.py)?
 -  Is the new functionality mentioned in the release notes of the next
-   release?
--  Is the new functionality added to the reference guide?
+   release? An editable draft of the most recent notes is on `the wiki`_.
+-  Is the docstring of the new functionality tagged with
+   ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
+   next release? See the ``updating``, ``workers``, and ``constraints``
+   documentation of |differential_evolution|_, for example. You can get the
+   next version number from the most recent release notes on `the wiki`_.
 -  In case of larger additions, is there a tutorial or more extensive
-   module-level description?
--  In case compiled code is added, is it integrated correctly via setup.py
--  If you are a first-time contributor, did you add yourself to THANKS.txt?
-   Please note that this is perfectly normal and desirable - the aim is to
-   give every single contributor credit, and if you don't add yourself it's
-   simply extra work for the reviewer (or worse, the reviewer may forget).
--  Did you check that the code can be distributed under a BSD license?
+   module-level description? Tutorial files are in ``doc/source/tutorial``.
+-  If compiled code is added, is it integrated correctly via ``setup.py``?
+   See :ref:`compiled-code` for more information.
+-  If you are a first-time contributor, did you add yourself to ``THANKS.txt``?
+   Please note that this is perfectly normal and desirable; every contributor
+   deserves credit.
 
 .. include:: ../gitwash/git_links.inc
 
 .. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
+
+.. _NumPy/SciPy Testing Guidelines: https://docs.scipy.org/doc/numpy/reference/testing.html
+
+.. _numpydoc docstring guide: https://numpydoc.readthedocs.io/en/latest/format.html
+
+.. _the wiki: https://github.com/scipy/scipy/wiki
+
+.. |differential_evolution| replace:: ``differential_evolution``
+.. _differential_evolution: https://github.com/scipy/scipy/blob/master/scipy/optimize/_differentialevolution.py
+

@@ -53,7 +53,10 @@ Benchmarks
 ----------
 - :ref:`benchmarking-with-asv` explains how to add benchmarks to SciPy using `Airspeed Velocity`_.
 
+
 .. _toc-cython:
+
+.. _compiled-code:
 
 Compiled Code
 -------------
