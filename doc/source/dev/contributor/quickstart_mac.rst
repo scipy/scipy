@@ -20,6 +20,8 @@ Its companion videos `Anaconda SciPy Dev: Part I (macOS)`_ and `Anaconda SciPy D
 
 	This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line.
 
+.. _quickstart-mac-build:
+
 Building SciPy
 --------------
 
@@ -54,6 +56,8 @@ Building SciPy
 #. Test the build: enter ``python3 runtests.py -v``. ``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output.
 
 If the tests were successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build from within the SciPy root directory. This would be inconvenient, for instance, if you wrote a script that performs an ``import`` of something you changed in SciPy but wanted to save it elsewhere on your computer. Without taking additional steps to add this version of SciPy to the |PYTHONPATH|_ , this script would ``import`` from the version of SciPy distributed with Anaconda rather than the development version you just built. (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`__ for much more information about how Python imports modules.)
+
+.. _quickstart-mac-install:
 
 Installing SciPy
 ----------------

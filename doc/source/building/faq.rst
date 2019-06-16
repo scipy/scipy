@@ -7,7 +7,10 @@ Build/Install FAQ
 *How do I set up a development version of SciPy in parallel to a released
 version that I use to do my job/research?*
 
-One simple way to achieve this is to install the released version in
+If you use the ``conda`` package manager, this is covered in the
+:ref:`quickstart-mac`, specifically in :ref:`quickstart-mac-install`.
+
+Another simple way to achieve this is to install the released version in
 site-packages, by using a binary installer or pip for example, and set
 up the development version in a virtualenv.  First install
 `virtualenv`_ (optionally use `virtualenvwrapper`_), then create your
@@ -42,13 +45,16 @@ and OSX, you can run the command::
 
     $ export PYTHONPATH=$PWD
 
-and on Windows
+and on Windows::
 
     $ set PYTHONPATH=/path/to/scipy
 
 Now editing a Python source file in SciPy allows you to immediately
 test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
+
+If you use the macOS, please find more information in the
+:ref:`quickstart-mac`.
 
 .. _virtualenv: https://virtualenv.pypa.io/
 
