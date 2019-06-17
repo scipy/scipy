@@ -492,6 +492,8 @@ offers two possibilites that can also be used complementarily. By passing the `t
 option to the function call `solve_ivp` returns the solutions of these time points
 of `t_eval` in its output.
 
+>>> import numpy as np
+>>> t = np.linspace(0, 4, 100)
 >>> sol3 = solve_ivp(func, t_span, y0, t_eval=t)
 
 If the jacobian matrix of function is known, it can be passed to the `solve_ivp`
@@ -500,10 +502,9 @@ to achieve better results. Please be aware however that the default integration 
 to be chosen. One of the integration methods that support a jacobian matrix is the for
 example the `Radau` method of following example.
 
->>> t_start, t_end = 0, 1
 >>> def gradient(t, y):
 ...     return [[0,t], [1,0]]
->>> sol4 = solve_ivp(func, [t_start, t_end], y0, method='Radau', jac=gradient)
+>>> sol4 = solve_ivp(func, t_span, y0, method='Radau', jac=gradient)
 
 Solving a system with a banded Jacobian matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
