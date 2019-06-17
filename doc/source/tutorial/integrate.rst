@@ -472,8 +472,8 @@ function the time vector created by `solve_ivp` is passed to the `airy` function
 >>> print("sol1.y[1]: {}".format(sol1.y[1]))
 sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
      0.00371189 0.00410178]
->>> print("airy(sol.t)[0][::6]:  {}".format(airy(sol1.t)[0][::6]))
-airy(sol1.t)[0][::6]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
+>>> print("airy(sol.t)[0]:  {}".format(airy(sol1.t)[0]))
+airy(sol.t)[0]:  [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
  0.00235403 0.00095156]
  
 The solution of `solve_ivp` with its standard parameters shows a big deviation
@@ -484,27 +484,15 @@ tolerances can be used.
 >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
 >>> print("sol2.y[1][::6]: {}".format(sol2.y[1][0::6]))
 sol2.y[1][::6]: [0.35502805 0.19133491 0.06422892 0.01908572 0.00469766 0.00095159]
->>> print("airy(sol2.t)[::6]: {}".format(airy(sol2.t)[::6]))
-airy(sol2.t)[::6]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.00364769
- 0.00095156]
+>>> print("airy(sol2.t)[0][::6]: {}".format(airy(sol2.t)[0][::6]))
+airy(sol2.t)[0][::6]: [0.35502805 0.19133491 0.06422892 0.01908572 0.00469765 0.00095156]
  
 To specify user defined time points for the solution of `solve_ivp`, `solve_ivp`
 offers two possibilites that can also be used complementarily. By passing the `t_eval`
 option to the function call `solve_ivp` returns the solutions of these time points
 of `t_eval` in its output.
->>> import numpy as np
->>> t_start, t_end = 0, 3
->>> t = np.linspace(t_start, t_end, 50)
+
 >>> sol3 = solve_ivp(func, t_span, y0, t_eval=t)
-
-If the time points of interest are however unknown, the `dense_ouput` option can be
-used. Setting it to `True` returns a continuous solution and the solution at
-any arbitrary time point within the time span can be calculated
-via interpolation.
-
->>> sol4 = solve_ivp(func, t_span, y0, dense_ouput=True)
->>> print("sol4.sol(2)[1]: {}".format(sol4.sol(2)[1]))
-sol4.sol(2)[1]: 0.035042622042422505
 
 If the jacobian matrix of function is known, it can be passed to the `solve_ivp`
 to achieve better results. Please be aware however that the default integration method
@@ -515,7 +503,7 @@ example the `Radau` method of following example.
 >>> t_start, t_end = 0, 1
 >>> def gradient(t, y):
 ...     return [[0,t], [1,0]]
->>> sol5 = solve_ivp(func, [t_start, t_end], y0, method='Radau', jac=gradient)
+>>> sol4 = solve_ivp(func, [t_start, t_end], y0, method='Radau', jac=gradient)
 
 Solving a system with a banded Jacobian matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
