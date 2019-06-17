@@ -470,9 +470,9 @@ specified otherwise. To compare the solution of `solve_ivp` with the `airy`
 function the time vector created by `solve_ivp` is passed to the `airy` function.
 
 >>> print("sol1.y[1]: {}".format(sol1.y[1]))
->>> print("airy(sol.t):  {}".format(airy(sol1.t))
-sol1.y[1]:       [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
- 0.00371189 0.00410178]
+sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
+     0.00371189 0.00410178]
+>>> print("airy(sol.t):  {}".format(airy(sol1.t)))
 airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
  0.00235403 0.00095156]
  
@@ -482,10 +482,8 @@ tolerances can be used.
 
 >>> rtol, atol = (1e-8, 1e-8)
 >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
->>> print("sol2.y[1]: {}".format(sol2.y[1]))
+>>> print("sol2.y[1]: {}".format(sol2.y[1][0::6]))
 >>> print("airy(sol2.t)[0]: {}".format(airy(sol2.t)[0::6]))
-sol2.y[1]:      [0.35502805 0.22162462 0.09180607 0.03590249 0.01219994 0.0036477
- 0.00095159]
 airy(sol2.t)[0::6]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.00364769
  0.00095156]
  
@@ -494,6 +492,7 @@ offers two possibilites that can also be used complementarily. By passing the `t
 option to the function call `solve_ivp` returns the solutions of these time points
 of `t_eval` in its output.
 >>> import numpy as np
+>>> t_start, t_end = 0, 3
 >>> t = np.linspace(t_start, t_end, 50)
 >>> sol3 = solve_ivp(func, t_span, y0, t_eval=t)
 
