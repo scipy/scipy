@@ -472,8 +472,8 @@ function the time vector created by `solve_ivp` is passed to the `airy` function
 >>> print("sol1.y[1]: {}".format(sol1.y[1]))
 sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
      0.00371189 0.00410178]
->>> print("airy(sol.t):  {}".format(airy(sol1.t)))
-airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
+>>> print("airy(sol.t)[0][::6]:  {}".format(airy(sol1.t)[0][::6]))
+airy(sol1.t)[0][::6]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
  0.00235403 0.00095156]
  
 The solution of `solve_ivp` with its standard parameters shows a big deviation
@@ -482,9 +482,10 @@ tolerances can be used.
 
 >>> rtol, atol = (1e-8, 1e-8)
 >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
->>> print("sol2.y[1]: {}".format(sol2.y[1][0::6]))
->>> print("airy(sol2.t)[0]: {}".format(airy(sol2.t)[0::6]))
-airy(sol2.t)[0::6]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.00364769
+>>> print("sol2.y[1][::6]: {}".format(sol2.y[1][0::6]))
+sol2.y[1][::6]: [0.35502805 0.19133491 0.06422892 0.01908572 0.00469766 0.00095159]
+>>> print("airy(sol2.t)[::6]: {}".format(airy(sol2.t)[::6]))
+airy(sol2.t)[::6]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.00364769
  0.00095156]
  
 To specify user defined time points for the solution of `solve_ivp`, `solve_ivp`
