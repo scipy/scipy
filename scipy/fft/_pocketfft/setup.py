@@ -1,16 +1,26 @@
 
-# TODO: As of python 3.6, CCompiler has a `has_flag` method to use instead.
-def has_flag(compiler, flagname):
-    # Return True if the flag is supported by the compiler
+def try_compile(compiler, code=None, flags=[], ext='.cpp'):
+    """Returns True if the compiler is able to compile the given code"""
     import tempfile
     from distutils.errors import CompileError
-    with tempfile.NamedTemporaryFile('w', suffix='.cpp') as f:
-        f.write('int main (int argc, char **argv) { return 0; }')
+    import os
+
+    code = code or 'int main (int argc, char **argv) { return 0; }'
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        fname = os.path.join(temp_dir, 'main'+ext)
+        with open(fname, 'w') as f:
+            f.write(code)
+
         try:
-            compiler.compile([f.name], extra_postargs=[flagname])
+            compiler.compile([fname], extra_postargs=flags)
         except CompileError:
             return False
     return True
+
+
+def has_flag(compiler, flag):
+    return try_compile(compiler, flags=[flag])
 
 
 def get_std_flag(compiler):
@@ -36,7 +46,7 @@ def get_std_flag(compiler):
 
 def try_add_flag(args, compiler, flag):
     """Appends flag to the list of arguments if supported by the compiler"""
-    if has_flag(compiler, flag):
+    if try_compile(compiler, flags=args+[flag]):
         args.append(flag)
 
 
@@ -55,8 +65,8 @@ def pre_build_hook(build_ext, ext):
 
         import sys
         if sys.platform == 'darwin':
-            try_add_flag(args, cc, '-stdlib=libc++')
             args.append('-mmacosx-version-min=10.7')
+            try_add_flag(args, cc, '-stdlib=libc++')
 
 
 def configuration(parent_package='', top_path=None):
