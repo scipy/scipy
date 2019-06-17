@@ -385,12 +385,12 @@ The Python tuple is returned as expected in a reduced amount of time.  All
 optional parameters can be used with this method including specifying
 singularities, infinite bounds, etc.
 
-Ordinary differential equations (:func:`odeint`)
+Ordinary differential equations (:func:`solve_ivp`)
 ------------------------------------------------
 
 Integrating a set of ordinary differential equations (ODEs) given
 initial conditions is another useful example. The function
-:obj:`odeint` is available in SciPy for integrating a first-order
+:obj:`solve_ivp` is available in SciPy for integrating a first-order
 vector differential equation:
 
 .. math::
@@ -445,49 +445,77 @@ has an exact solution using the matrix exponential:
 
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
-There are many optional inputs and outputs available when using odeint
-which can help tune the solver. These additional inputs and outputs
-are not needed much of the time, however, and the three required input
-arguments and the output solution suffice. The required inputs are the
-function defining the derivative, *fprime*, the initial conditions
-vector, *y0*, and the time points to obtain a solution, *t*, (with
-the initial value point as the first element of this sequence).  The
-output to :obj:`odeint` is a matrix where each row contains the
-solution vector at each requested time point (thus, the initial
-conditions are given in the first output row).
+This differential equation can be solved using the function :obj:`solve_ivp`.
+It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+and the initial conditions vector, *y0*, as input arguments and returns 
+an object whose *y* field is an array with consecutive solution values as 
+columns. The initial conditions are therefore given in the first output column.
 
-The following example illustrates the use of odeint including the
-usage of the *Dfun* option which allows the user to specify a gradient
-(with respect to :math:`\mathbf{y}` ) of the function,
-:math:`\mathbf{f}\left(\mathbf{y},t\right)`.
+>>> from scipy.integrate import solve_ivp
+>>> from scipy.special import gamma, airy
+>>> y1_0 = +1 / 3**(2/3) / gamma(2/3)
+>>> y0_0 = -1 / 3**(1/3) / gamma(1/3)
+>>> y0 = [y0_0, y1_0]
+>>> def func(t, y):
+...     return [t*y[1],y[0]]
+...
+>>> t_span = [0, 4]
+>>> sol1 = solve_ivp(func, t_span, y0)
+>>> print("sol1.t:    {}".format(sol1.t))
+sol1.t:    [0.         0.10097672 1.04643602 1.86341289 2.45798743 2.99814154
+     3.54800133 4.        ]
 
-    >>> from scipy.integrate import odeint
-    >>> from scipy.special import gamma, airy
-    >>> y1_0 = 1.0 / 3**(2.0/3.0) / gamma(2.0/3.0)
-    >>> y0_0 = -1.0 / 3**(1.0/3.0) / gamma(1.0/3.0)
-    >>> y0 = [y0_0, y1_0]
-    >>> def func(y, t):
-    ...     return [t*y[1],y[0]]
-    ...
+As it can be seen `solve_ivp` determines its time steps automatically if not
+specified otherwise. To compare the solution of `solve_ivp` with the `airy` 
+function the time vector created by `solve_ivp` is passed to the `airy` function.
 
-    >>> def gradient(y, t):
-    ...     return [[0,t], [1,0]]
-    ...
+>>> print("sol1.y[1]: {}".format(sol1.y[1]))
+>>> print("airy(sol.t):  {}".format(airy(sol1.t))
+sol1.y[1]:       [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
+ 0.00371189 0.00410178]
+airy(sol1.t)[0]: [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
+ 0.00235403 0.00095156]
+ 
+The solution of `solve_ivp` with its standard parameters shows a big deviation
+to the airy function. To minimize this deviation, relative and absolute
+tolerances can be used.
 
-    >>> x = np.arange(0, 4.0, 0.01)
-    >>> t = x
-    >>> ychk = airy(x)[0]
-    >>> y = odeint(func, y0, t)
-    >>> y2 = odeint(func, y0, t, Dfun=gradient)
+>>> rtol, atol = (1e-8, 1e-8)
+>>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
+>>> print("sol2.y[1]: {}".format(sol2.y[1]))
+>>> print("airy(sol2.t)[0]: {}".format(airy(sol2.t)[0::6]))
+sol2.y[1]:      [0.35502805 0.22162462 0.09180607 0.03590249 0.01219994 0.0036477
+ 0.00095159]
+airy(sol2.t)[0::6]: [0.35502805 0.22162462 0.09180606 0.03590248 0.01219993 0.00364769
+ 0.00095156]
+ 
+To specify user defined time points for the solution of `solve_ivp`, `solve_ivp`
+offers two possibilites that can also be used complementarily. By passing the `t_eval`
+option to the function call `solve_ivp` returns the solutions of these time points
+of `t_eval` in its output.
+>>> import numpy as np
+>>> t = np.linspace(t_start, t_end, 50)
+>>> sol3 = solve_ivp(func, t_span, y0, t_eval=t)
 
-    >>> ychk[:36:6]
-    array([0.355028, 0.339511, 0.324068, 0.308763, 0.293658, 0.278806])
+If the time points of interest are however unknown, the `dense_ouput` option can be
+used. Setting it to `True` returns a continuous solution and the solution at
+any arbitrary time point within the time span can be calculated
+via interpolation.
 
-    >>> y[:36:6,1]
-    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
+>>> sol4 = solve_ivp(func, t_span, y0, dense_ouput=True)
+>>> print("sol4.sol(2)[1]: {}".format(sol4.sol(2)[1]))
+sol4.sol(2)[1]: 0.035042622042422505
 
-    >>> y2[:36:6,1]
-    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
+If the jacobian matrix of function is known, it can be passed to the `solve_ivp`
+to achieve better results. Please be aware however that the default integration method
+`RK45` does not support jacobian matrices and thereby another integration method has
+to be chosen. One of the integration methods that support a jacobian matrix is the for
+example the `Radau` method of following example.
+
+>>> t_start, t_end = 0, 1
+>>> def gradient(t, y):
+...     return [[0,t], [1,0]]
+>>> sol5 = solve_ivp(func, [t_start, t_end], y0, method='Radau', jac=gradient)
 
 Solving a system with a banded Jacobian matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
