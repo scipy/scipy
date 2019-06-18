@@ -1704,8 +1704,8 @@ class TestEllipCarlson(object):
                       [-1.0+1.0j, -1.0-1.0j, 1.0, 2.0],
                       [1.0j, -1.0j, 0.0, 1.0-1.0j],
                       [-1.0+1.0j, -1.0-1.0j, 1.0, -3.0+1.0j],
-                      [2.0, 3.0, 4.0, -0.5],    #Cauchy principal value
-                      [2.0, 3.0, 4.0, -5.0]])   #Cauchy principal value
+                      [2.0, 3.0, 4.0, -0.5],    # Cauchy principal value
+                      [2.0, 3.0, 4.0, -5.0]])   # Cauchy principal value
         expected_results = array([0.77688623778582,
                                   0.14297579667157,
                                   0.13613945827771-0.38207561624427j,
