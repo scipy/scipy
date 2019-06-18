@@ -66,7 +66,7 @@ within :math:`1.04\times10^{-11}` of the exact result --- well below the
 reported error bound.
 
 
-If the function to integrate takes additional parameters, the can be provided
+If the function to integrate takes additional parameters, they can be provided
 in the `args` argument. Suppose that the following integral shall be calculated:
 
 .. math::
