@@ -1211,7 +1211,7 @@ class PPoly(_PPolyBase):
 
         >>> from scipy.interpolate import PPoly
         >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
-        >>> pp.roots()
+        >>> pp.solve()
         array([-1.,  1.])
         """
         if extrapolate is None:
