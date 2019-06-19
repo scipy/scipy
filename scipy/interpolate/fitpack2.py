@@ -461,7 +461,9 @@ class UnivariateSpline(object):
 
         """
         tck = fitpack.splder(self._eval_args, n)
-        return UnivariateSpline._from_tck(tck, self.ext)
+        # if self.ext is 'const', derivative.ext will be 'zeros'
+        ext = 1 if self.ext == 3 else self.ext
+        return UnivariateSpline._from_tck(tck, ext=ext)
 
     def antiderivative(self, n=1):
         """
