@@ -1724,6 +1724,7 @@ class Delaunay(_QhullUser):
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
     furthest_site
         True if this was a furthest site triangulation and False if not.
+
         .. versionadded:: x.y.z
 
     Raises
@@ -2522,6 +2523,7 @@ class Voronoi(_QhullUser):
         for points that are not associated with a Voronoi region.
     furthest_site
         True if this was a furthest site triangulation and False if not.
+
         .. versionadded:: x.y.z
 
     Raises
