@@ -35,14 +35,14 @@ def next_fast_len(target, dtype=None):
     >>> b = fft.fft(a)
 
     Zero-padding to the next regular length reduces computation time to
-    1.3 ms, a speedup of 33 times:
+    1.3 ms, a speedup of 13 times:
 
     >>> fft.next_fast_len(min_len)
     93312
     >>> b = fft.fft(a, 93312)
 
     Rounding up to the next power of 2 is not optimal, taking 1.9 ms to
-    compute; 1.3 times as long as the size given by ``next_fast_len``:
+    compute; 1.3 times longer than the size given by ``next_fast_len``:
 
     >>> b = fft.fft(a, 131072)
 
