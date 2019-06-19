@@ -1,5 +1,7 @@
 from __future__ import division, absolute_import, print_function
 
+import queue
+import threading
 import numpy as np
 import pytest
 from numpy.random import random
@@ -7,7 +9,6 @@ from numpy.testing import (
         assert_array_almost_equal, assert_array_equal, assert_raises,
         )
 import scipy.fft as fft
-
 
 def fft1(x):
     L = len(x)
@@ -209,3 +210,54 @@ def test_fft_with_order(dtype, order, fft):
             assert_array_almost_equal(X_res, Y_res)
     else:
         raise ValueError
+
+
+class TestFFTThreadSafe(object):
+    threads = 16
+    input_shape = (800, 200)
+
+    def _test_mtsame(self, func, *args):
+        def worker(args, q):
+            q.put(func(*args))
+
+        q = queue.Queue()
+        expected = func(*args)
+
+        # Spin off a bunch of threads to call the same function simultaneously
+        t = [threading.Thread(target=worker, args=(args, q))
+             for i in range(self.threads)]
+        [x.start() for x in t]
+
+        [x.join() for x in t]
+        # Make sure all threads returned the correct value
+        for i in range(self.threads):
+            assert_array_equal(q.get(timeout=5), expected,
+                'Function returned wrong value in multithreaded context')
+
+    def test_fft(self):
+        a = np.ones(self.input_shape) * 1+0j
+        self._test_mtsame(fft.fft, a)
+
+    def test_ifft(self):
+        a = np.ones(self.input_shape) * 1+0j
+        self._test_mtsame(fft.ifft, a)
+
+    def test_rfft(self):
+        a = np.ones(self.input_shape)
+        self._test_mtsame(fft.rfft, a)
+
+    def test_irfft(self):
+        a = np.ones(self.input_shape) * 1+0j
+        self._test_mtsame(fft.irfft, a)
+
+
+class TestIRFFTN(object):
+
+    def test_not_last_axis_success(self):
+        ar, ai = np.random.random((2, 16, 8, 32))
+        a = ar + 1j*ai
+
+        axes = (-2,)
+
+        # Should not raise error
+        fft.irfftn(a, axes=axes)
