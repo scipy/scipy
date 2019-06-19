@@ -63,18 +63,18 @@ There are two ways to build Scipy on Windows:
 
 1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is what Anaconda
    and Enthought Canopy use.
-2. Use MSVC + gfortran with OpenBLAS.  This is how the SciPy Windows wheels are
+2. Use MSVC + GFortran with OpenBLAS.  This is how the SciPy Windows wheels are
    built.
 
 Mac OS X
 --------
 
-It is recommended to use gcc or clang, both work fine. Gcc is available for
+It is recommended to use GCC or Clang, both work fine. Gcc is available for
 free when installing Xcode, the developer toolsuite on Mac OS X. You also
-need a fortran compiler, which is not included with Xcode: you should use a
-recent gfortran from an OS X package manager (like Homebrew).
+need a Fortran compiler, which is not included with Xcode: you should use a
+recent GFortran from an OS X package manager (like Homebrew).
 
-Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
+Please do NOT use GFortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
 it is known to generate buggy scipy binaries.
 
 You should also use a BLAS/LAPACK library from an OS X package manager.
@@ -90,13 +90,13 @@ Linux
 Most common distributions include all the dependencies.  You will need to
 install a BLAS/LAPACK (all of ATLAS, OpenBLAS, MKL work fine) including
 development headers, as well as development headers for Python itself.  Those
-are typically packaged as python-dev
+are typically packaged as python-dev.
 
 
 INSTALLING SCIPY
 ================
 
-For the latest information, see the web site:
+For the latest information, see the website:
 
   https://www.scipy.org
 
@@ -132,12 +132,12 @@ computer.
 TESTING
 =======
 
-To test SciPy after installation (highly recommended), execute in Python
+To test SciPy after installation (highly recommended), execute in Python::
 
    >>> import scipy
    >>> scipy.test()
 
-To run the full test suite use
+To run the full test suite use::
 
    >>> scipy.test('full')
 
@@ -166,7 +166,7 @@ To see a valid list of <Vendor> names, run::
 
 IMPORTANT: It is highly recommended that all libraries that scipy uses (e.g.
 BLAS and ATLAS libraries) are built with the same Fortran compiler. In most
-cases, if you mix compilers, you will not be able to import Scipy at best, have
+cases, if you mix compilers, you will not be able to import Scipy at best, and will have
 crashes and random results at worst.
 
 UNINSTALLING
