@@ -41,7 +41,7 @@ To render the documentation on your own machine (macOS or Linux):
    is rebuilt. In this case, you can build from scratch by deleting the
    ``scipy/doc/build`` directory, then building again.
 
-.. _rendering-documentation-cloud
+.. _rendering-documentation-cloud:
 
 Checking Documentation on the Cloud
 -----------------------------------
