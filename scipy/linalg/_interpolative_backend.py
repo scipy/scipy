@@ -228,7 +228,10 @@ def iddr_id(A, k):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    if A.flags['F_CONTIGUOUS']:
+        A = A.copy()
+    else:
+        A = np.asfortranarray(A)
     idx, rnorms = _id.iddr_id(A, k)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
