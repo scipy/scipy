@@ -9,9 +9,9 @@ from numpy.random import rand
 import scipy.fftpack
 import numpy.fft
 try:
-    import scipy.fft
+    import scipy.fft as scipy_fft
 except ImportError:
-    pass
+    scipy_fft = {}
 
 from .common import Benchmark
 
@@ -40,6 +40,13 @@ def direct_idft(x):
     return y
 
 
+module_map = {
+    'scipy.fftpack': scipy.fftpack,
+    'scipy.fft': scipy_fft,
+    'numpy.fft': numpy.fft
+}
+
+
 class Fft(Benchmark):
     params = [
         [100, 256, 313, 512, 1000, 1024, 2048, 2048*2, 2048*4],
@@ -54,8 +61,9 @@ class Fft(Benchmark):
         else:
             self.x = random([size]).astype(double)
 
-        self.fft = eval(module + '.fft')
-        self.ifft = eval(module + '.ifft')
+        module = module_map[module]
+        self.fft = getattr(module, 'fft')
+        self.ifft = getattr(module, 'ifft')
 
     def time_fft(self, size, cmplx, module):
         self.fft(self.x)
@@ -74,8 +82,9 @@ class RFft(Benchmark):
     def setup(self, size, module):
         self.x = random([size]).astype(double)
 
-        self.rfft = eval(module + '.rfft')
-        self.irfft = eval(module + '.irfft')
+        module = module_map[module]
+        self.rfft = getattr(module, 'rfft')
+        self.irfft = getattr(module, 'irfft')
 
         self.y = self.rfft(self.x)
 
@@ -102,7 +111,7 @@ class Fftn(Benchmark):
         else:
             self.x = random(size).astype(cdouble)+random(size).astype(cdouble)*1j
 
-        self.fftn = eval(module + '.fftn')
+        self.fftn = getattr(module_map[module], 'fftn')
 
     def time_fftn(self, size, cmplx, module):
         self.fftn(self.x)
