@@ -449,9 +449,6 @@ Hypergeometric Functions
    hyp1f1 -- Confluent hypergeometric function 1F1(a, b; x)
    hyperu -- Confluent hypergeometric function U(a, b, x) of the second kind
    hyp0f1 -- Confluent hypergeometric limit function 0F1.
-   hyp2f0 -- Hypergeometric function 2F0 in y and an error estimate
-   hyp1f2 -- Hypergeometric function 1F2 and error estimate
-   hyp3f0 -- Hypergeometric function 3F0 in y and an error estimate
 
 
 Parabolic Cylinder Functions
@@ -650,87 +647,6 @@ from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
 from .lambertw import lambertw
 from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
                                 spherical_kn)
-
-
-##############################################################################
-# Create copies of NumPy's _Deprecate and deprecate so that the message
-# is inserted where it won't break docstring parsing
-
-class _Deprecate(object):
-    """
-    Decorator class to deprecate old functions.
-
-    Refer to `deprecate` for details.
-
-    See Also
-    --------
-    deprecate
-
-    """
-
-    def __init__(self, old_name=None, new_name=None, message=None):
-        self.old_name = old_name
-        self.new_name = new_name
-        self.message = message
-
-    def __call__(self, func, *args, **kwargs):
-        """
-        Decorator call.  Refer to ``decorate``.
-
-        """
-        old_name = self.old_name
-        new_name = self.new_name
-        message = self.message
-
-        if old_name is None:
-            try:
-                old_name = func.__name__
-            except AttributeError:
-                old_name = func.__name__
-        if new_name is None:
-            depdoc = "`%s` is deprecated!" % old_name
-        else:
-            depdoc = "`%s` is deprecated, use `%s` instead!" % \
-                     (old_name, new_name)
-
-        if message is not None:
-            depdoc += "\n" + message
-
-        def newfunc(*args,**kwds):
-            """`arrayrange` is deprecated, use `arange` instead!"""
-            warnings.warn(depdoc, DeprecationWarning, stacklevel=2)
-            return func(*args, **kwds)
-
-        newfunc.__name__ = old_name
-        doc = func.__doc__
-        # insert in the correct place
-        doc = doc.splitlines()
-        doc.insert(3, '\n')
-        doc.insert(4, depdoc)
-        doc.insert(5, '\n')
-        doc = '\n'.join(doc)
-        newfunc.__doc__ = doc
-        try:
-            d = func.__dict__
-        except AttributeError:
-            pass
-        else:
-            newfunc.__dict__.update(d)
-        return newfunc
-
-
-def deprecate(*args, **kwargs):
-    fn = args[0]
-    args = args[1:]
-    return _Deprecate(*args, **kwargs)(fn)
-
-
-hyp2f0 = deprecate(hyp2f0, message="hyp2f0 is deprecated in SciPy 1.2")
-hyp1f2 = deprecate(hyp1f2, message="hyp1f2 is deprecated in SciPy 1.2")
-hyp3f0 = deprecate(hyp3f0, message="hyp3f0 is deprecated in SciPy 1.2")
-del deprecate, _Deprecate
-
-##############################################################################
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
