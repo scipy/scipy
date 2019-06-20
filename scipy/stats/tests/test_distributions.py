@@ -32,6 +32,9 @@ from .test_continuous_basic import distcont
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
+
+_is_32bit_platform = np.intp(0).itemsize < 8
+
 # Generate test cases to test cdf and distribution consistency.
 # Note that this list does not include all distributions.
 dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
@@ -578,6 +581,8 @@ class TestTruncnorm(object):
         assert_almost_equal(s, s0)
         assert_almost_equal(k, k0)
 
+    @pytest.mark.xfail(condition=_is_32bit_platform,
+                       reason="reduced accuracy with 32bit platforms.")
     def test_moments(self):
         # Values validated by changing TRUNCNORM_TAIL_X so as to evaluate
         # using both the _norm_XXX() and _norm_logXXX() functions, and by
