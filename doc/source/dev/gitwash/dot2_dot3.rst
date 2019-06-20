@@ -4,8 +4,6 @@
  Two and three dots in difference specs
 ========================================
 
-Thanks to Yarik Halchenko for this explanation.
-
 Imagine a series of commits A, B, C, D...  Imagine that there are two
 branches, *topic* and *master*.  You branched *topic* off *master* when
 *master* was at commit 'E'.  The graph of the commits looks like this::
