@@ -66,6 +66,7 @@ extern double MACHEP;
 
 static double hy1f1p(double a, double b, double x, double *acanc);
 static double hy1f1a(double a, double b, double x, double *acanc);
+static double hyp2f0(double a, double b, double x, int type, double *err);
 
 double hyperg(a, b, x)
 double a, b, x;
@@ -191,11 +192,11 @@ double *err;
 /*                                                     hy1f1a()        */
 /* asymptotic formula for hypergeometric function:
  *
- *        (    -a                         
- *  --    ( |z|                           
+ *        (    -a
+ *  --    ( |z|
  * |  (b) ( -------- 2f0( a, 1+a-b, -1/x )
- *        (  --                           
- *        ( |  (b-a)                      
+ *        (  --
+ *        ( |  (b-a)
  *
  *
  *                                x    a-b                     )

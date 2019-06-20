@@ -3356,37 +3356,6 @@ add_newdoc("scipy.special", "hyp1f1",
     Confluent hypergeometric function 1F1(a, b; x)
     """)
 
-add_newdoc("scipy.special", "hyp1f2",
-    """
-    hyp1f2(a, b, c, x)
-
-    Hypergeometric function 1F2 and error estimate
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
-    """)
-
-add_newdoc("scipy.special", "hyp2f0",
-    """
-    hyp2f0(a, b, x, type)
-
-    Hypergeometric function 2F0 in y and an error estimate
-
-    The parameter `type` determines a convergence factor and can be
-    either 1 or 2.
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
-    """)
-
 add_newdoc("scipy.special", "hyp2f1",
     r"""
     hyp2f1(a, b, c, z)
@@ -3434,20 +3403,6 @@ add_newdoc("scipy.special", "hyp2f1",
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
-    """)
-
-add_newdoc("scipy.special", "hyp3f0",
-    """
-    hyp3f0(a, b, c, x)
-
-    Hypergeometric function 3F0 in y and an error estimate
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
     """)
 
 add_newdoc("scipy.special", "hyperu",
