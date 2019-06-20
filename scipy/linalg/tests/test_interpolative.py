@@ -30,6 +30,7 @@ import scipy.linalg.interpolative as pymatrixid
 import numpy as np
 from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
+from scipy.linalg.interpolative import interp_decomp
 import time
 
 from numpy.testing import assert_, assert_allclose
@@ -276,3 +277,12 @@ class TestInterpolativeDecomposition(object):
         B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
         assert_allclose(A, B.dot(P))
 
+    def test_bug_9793(self):
+        A = np.array([[-1, -1, -1, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1],
+                      [1, 0, 0, 1, 0, 0],
+                      [0, 1, 0, 0, 1, 0],
+                      [0, 0, 1, 0, 0, 1]], dtype=float)
+        B = A.copy()
+        idx, proj = interp_decomp(A.T, 1, rand=False)
+        assert_(np.array_equal(A, B))
