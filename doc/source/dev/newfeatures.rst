@@ -1,3 +1,5 @@
+.. _deciding-on-new-features:
+
 Deciding on new features
 ========================
 The general decision rule to accept a proposed new feature has so far
@@ -5,11 +7,18 @@ been conditional on:
 
 1. The method is applicable in many fields and "generally agreed" to
    be useful,
-2. Fits the topic of the submodule, and does not require extensive
+2. It fits the topic of the submodule, and does not require extensive
    support frameworks to operate,
 3. The implementation looks sound and unlikely to need much tweaking in
-   the future (e.g., limited expected maintenance burden), and
-4. Someone wants to do it.
+   the future (e.g., limited expected maintenance burden),
+4. Someone wants to contribute it, and
+5. Someone wants to review it.
+
+The last criterion is often a sticking point for proposed features. Code cannot
+be added unless it can be thoroughly reviewed, and there is always a backlog
+of maintenance tasks that compete for reviewers' time. Ideally, contributors
+should line up a reviewer with suitable domain expertise before beginning
+work.
 
 Although it's difficult to give hard rules on what "generally useful
 and generally agreed to work" means, it may help to weigh the following

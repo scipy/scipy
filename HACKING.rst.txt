@@ -31,18 +31,22 @@ this code belong?  That question is hard to answer here, so we start with a
 more specific one: *what code is suitable for putting into SciPy?*
 Almost all of the new code added to SciPy has in common that it's potentially
 useful in multiple scientific domains and it fits in the scope of existing
-SciPy subpackages.  In principle new subpackages can be added too, but this is
-far less common.  For code that is specific to a single application, there may
-be an existing project that can use the code.  Some SciKits (`scikit-learn`_,
-`scikit-image`_, `statsmodels`_, etc.) are good examples here; they have a
-narrower focus and because of that more domain-specific code than SciPy.
+SciPy subpackages (see :ref:`deciding-on-new-features`).  In principle new
+subpackages can be added too, but this is far less common.  For code that is
+specific to a single application, there may be an existing project that can
+use the code.  Some SciKits (`scikit-learn`_, `scikit-image`_, `statsmodels`_,
+etc.) are good examples here; they have a narrower focus and because of that
+more domain-specific code than SciPy.
 
 Now if you have code that you would like to see included in SciPy, how do you
 go about it?  After checking that your code can be distributed in SciPy under a
 compatible license (see :ref:`license-considerations`), the first step is to
 discuss on the scipy-dev mailing list.  All new features, as well as changes to
 existing code, are discussed and decided on there.  You can, and probably
-should, already start this discussion before your code is finished.
+should, already start this discussion before your code is finished. Remember
+that in order to be added to SciPy your code will need to be reviewed by
+someone else, so try to find someone willing to review your work while you're
+at it.
 
 Assuming the outcome of the discussion on the mailing list is positive and you
 have a function or piece of code that does what you need it to do, what next?
