@@ -1725,7 +1725,7 @@ class Delaunay(_QhullUser):
     furthest_site
         True if this was a furthest site triangulation and False if not.
 
-        .. versionadded:: x.y.z
+        .. versionadded:: 1.4.0
 
     Raises
     ------
@@ -2524,7 +2524,7 @@ class Voronoi(_QhullUser):
     furthest_site
         True if this was a furthest site triangulation and False if not.
 
-        .. versionadded:: x.y.z
+        .. versionadded:: 1.4.0
 
     Raises
     ------
