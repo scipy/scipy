@@ -211,6 +211,7 @@ Carlos Ramos Carreño for adding support for relational attributes in loadarff.
 Jason M. Manley for documentation fixes.
 Aidan Dang for block QR wrappers in scipy.linalg.lapack.
 Clement Ng for modifying tests in scipy.stats.
+Fletcher H. Easton for a bug fix in scipy.linalg.interpolative.
 
 Institutions
 ------------
