@@ -52,7 +52,7 @@ For a more detailed look at how the SciPy project works:
 .. toctree::
    :maxdepth: 1
 
-   dev/index
+   dev/core-dev/index
    dev/governance/governance
 
 Purely to appease Sphinx:

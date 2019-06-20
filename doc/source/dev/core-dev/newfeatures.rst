@@ -1,5 +1,3 @@
-.. _deciding-on-new-features:
-
 Deciding on new features
 ========================
 The general decision rule to accept a proposed new feature has so far
@@ -15,7 +13,7 @@ been conditional on:
 5. Someone wants to review it.
 
 The last criterion is often a sticking point for proposed features. Code cannot
-be added unless it can be thoroughly reviewed, and there is always a backlog
+be merged until it has been thoroughly reviewed, and there is always a backlog
 of maintenance tasks that compete for reviewers' time. Ideally, contributors
 should line up a reviewer with suitable domain expertise before beginning
 work.
