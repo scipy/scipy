@@ -595,7 +595,7 @@ class Ufunc(Func):
     """
     def __init__(self, name, signatures):
         super(Ufunc, self).__init__(name, signatures)
-        self.doc = add_newdocs.get("scipy.special." + name)
+        self.doc = add_newdocs.get(name)
         if self.doc is None:
             raise ValueError("No docstring for ufunc %r" % name)
         self.doc = textwrap.dedent(self.doc).strip()
