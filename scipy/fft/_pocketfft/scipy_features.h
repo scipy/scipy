@@ -83,12 +83,13 @@ template<typename T> T norm_fct(norm_t norm, const pocketfft::shape_t & shape,
   {
   if (norm == norm_t::none) return T(1);
 
-  T N(1);
+  size_t N = 1;
   for (auto a : axes)
     N *= shape[a];
 
-  if (norm == norm_t::size) return T(1) / N;
-  if (norm == norm_t::ortho) return T(1) / sqrt(N);
+  auto nl = static_cast<long double>(N);
+  if (norm == norm_t::size) return static_cast<T>(1.L / nl);
+  if (norm == norm_t::ortho) return static_cast<T>(1.L / std::sqrt(nl));
 
   throw std::invalid_argument("invalid normalization type");
   }
