@@ -633,3 +633,48 @@ class TestGMRES(object):
 
         # The solution should be OK outside null space of A
         assert_allclose(A.dot(A.dot(x)), A.dot(b))
+
+    def test_callback_type(self):
+        # The legacy callback type changes meaning of 'maxiter'
+        np.random.seed(1)
+        A = np.random.rand(20, 20)
+        b = np.random.rand(20)
+
+        cb_count = [0]
+
+        def pr_norm_cb(r):
+            cb_count[0] += 1
+            assert_(isinstance(r, float))
+
+        def x_cb(x):
+            cb_count[0] += 1
+            assert_(isinstance(x, np.ndarray))
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            # 2 iterations is not enough to solve the problem
+            cb_count = [0]
+            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
+            assert info == 2
+            assert cb_count[0] == 2
+
+        # With `callback_type` specified, no warning should be raised
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='legacy')
+        assert info == 2
+        assert cb_count[0] == 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='pr_norm')
+        assert info == 0
+        assert cb_count[0] > 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
+                        callback_type='x')
+        assert info == 0
+        assert cb_count[0] == 2
