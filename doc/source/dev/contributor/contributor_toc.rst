@@ -63,20 +63,6 @@ Compiled Code
 - :ref:`adding-cython` - Extending and compiling Python code with `Cython`_ can significantly improve its performance. This document helps you get started.
 - :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy.
 
-Here is a toctree, purely to appease Sphinx.
-
-.. toctree::
-
-   quickstart_mac
-   recommended_development_setup
-   development_workflow
-   pep8
-   rendering_documentation
-   runtests
-   benchmarking
-   cython
-   compiled_code
-
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
 .. _NumPy Distutils - Users Guide: https://docs.scipy.org/doc/numpy/reference/distutils_guide.html

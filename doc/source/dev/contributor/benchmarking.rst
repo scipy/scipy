@@ -1,3 +1,5 @@
+:orphan:
+
 .. _benchmarking-with-asv:
 
 Benchmarking SciPy with Airspeed Velocity
@@ -8,7 +10,7 @@ benchmark test results online, writing a benchmark test, and running it
 locally. For a video run-through of writing a test and running it
 locally, see* \ `Benchmarking SciPy`_\ *.*
 
-As written in the `airspeed velocity (asv) documentation`_: 
+As written in the `airspeed velocity (asv) documentation`_:
 
  airspeed velocity (asv) is a tool for benchmarking Python packages over their
  lifetime. Runtime, memory consumption and even custom-computed values
@@ -42,7 +44,7 @@ To see how benchmarks are written, take a look at
 ``Benchmark`` defines a benchmark test. For example, the ``KleeMinty``
 class defines a benchmark test based on the `Klee-Minty hypercube
 problem`_, a diabolical test of the simplex algorithm for linear
-programming. The class has four parts: 
+programming. The class has four parts:
 
 -  ``setup`` prepares the benchmark to run. The execution time of this
    function is *not* counted in the benchmark results, so this is a good

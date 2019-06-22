@@ -1,3 +1,5 @@
+:orphan:
+
 .. _recommended-development-setup:
 
 =============================

@@ -55,12 +55,26 @@ For a more detailed look at how the SciPy project works:
    dev/core-dev/index
    dev/governance/governance
 
-Purely to appease Sphinx:
+.. This toctree defines previous/next for contributor guide documents
+.. toctree::
+   :hidden:
 
-  .. toctree::
+   dev/contributor/quickstart_mac
+   dev/contributor/development_workflow
+   dev/contributor/pep8
+   dev/contributor/rendering_documentation
+   dev/contributor/runtests
+   dev/contributor/benchmarking
+   dev/contributor/cython
 
-    building/index
-    dev/gitwash/gitwash
+.. These files are not intended to be in any toctree. because they have not
+   been maintained.They should only be reached via the contributor guide if
+   they are specifically sought, not via next/previous links.
+..   building/index
+..   dev/gitwash/gitwash
+..   dev/contributor/recommended_development_setup
+..   dev/contributor/compiled_code
+
 
 .. module:: scipy
 

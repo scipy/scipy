@@ -1,3 +1,5 @@
+:orphan:
+
 .. _runtests:
 
 ===========================
@@ -54,29 +56,29 @@ test name:
 ::
 
    python runtests.py -v -t scipy/optimize/tests/test_linprog.py::TestLinprogIPDense::test_nontrivial_problem
-   
-Other useful options include: 
+
+Other useful options include:
 
 -  ``-c`` or ``--coverage`` to generate a test coverage report in
    ``scipy/build/coverage/index.html``. *Note:* |pytest-cov|_ *must be
    installed.*
--  ``-n`` or ``--no-build`` to prevent SciPy from updating the build 
-   before testing 
--  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy; 
-   e.g. \ ``python runtests.py -j 4`` engages four cores. As of `#10172`_ 
+-  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
+   before testing
+-  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;
+   e.g. \ ``python runtests.py -j 4`` engages four cores. As of `#10172`_
    this also runs the tests on four cores if |pytest-xdist|_ is installed.
--  ``-m`` or ``--mode`` ``full`` to run the full test suite, including slow 
+-  ``-m`` or ``--mode`` ``full`` to run the full test suite, including slow
    tests. For example, ``python runtests.py -m full``.
--  ``--`` to send remaining command line arguments to ``pytest`` instead of 
-   ``runtest.py``. For instance, while ``-n`` sent to ``pytest.py`` activates 
-   the ``--no-build`` option, ``-n`` sent to ``pytest`` runs the tests on 
-   multiple cores; e.g. \ ``python runtests.py -- -n 4`` runs tests using 
-   four cores. *Note:* |pytest-xdist|_ *must be installed for testing on 
+-  ``--`` to send remaining command line arguments to ``pytest`` instead of
+   ``runtest.py``. For instance, while ``-n`` sent to ``pytest.py`` activates
+   the ``--no-build`` option, ``-n`` sent to ``pytest`` runs the tests on
+   multiple cores; e.g. \ ``python runtests.py -- -n 4`` runs tests using
+   four cores. *Note:* |pytest-xdist|_ *must be installed for testing on
    multiple cores.*
 
 Other options not documented here are listed in the ``main`` function of
 the source code for |runtests-py|_. For much more information about
-``pytest``, see the ``pytest`` 
+``pytest``, see the ``pytest``
 `documentation <https://docs.pytest.org/en/latest/usage.html>`_.
 
 Tips:

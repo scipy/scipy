@@ -1,3 +1,5 @@
+:orphan:
+
 .. _using-git:
 .. _git-development:
 
@@ -30,5 +32,5 @@ Contents:
    useful_git
    git_resources
    dot2_dot3
-   
+
 .. include:: git_links.inc

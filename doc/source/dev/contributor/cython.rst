@@ -1,9 +1,11 @@
+:orphan:
+
 .. _adding-cython:
 
 Adding Cython to SciPy
 ======================
 
-As written on the `Cython website`_: 
+As written on the `Cython website`_:
 
  Cython is an optimising static
  compiler for both the Python programming language and the extended
@@ -17,12 +19,12 @@ SciPy. Once you have your code compiling, you can learn more about how
 to optimize it by reviewing the `Cython documentation`_.
 
 There are only two things you need to do in order for SciPy compile your
-code with Cython: 
+code with Cython:
 
 #. Include your code in a file with a ``.pyx``
    extension rather than a ``.py`` extension. All files with a ``.pyx``
    extension are automatically converted by Cython to ``.c`` files when
-   SciPy is built. 
+   SciPy is built.
 
 #. Add an extension from this ``.c`` file to the
    configuration of the subpackage in which your code lives. Typically,
@@ -128,7 +130,7 @@ Excercise
       359 ms ± 6.98 ms per loop
 
    Cython sped up the pure Python code by a factor of ~2.
-   
+
 #.  That’s not much of an improvement in the scheme of things. To see
     why, it helps to have Cython create an “annotated” version of our
     code to show bottlenecks. In a terminal window, call Cython on your
