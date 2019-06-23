@@ -142,6 +142,8 @@ without giving anything back, it is felt that the larger user base results in
 more contributions overall, and companies often publish their modifications
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
+For more information about SciPy's license, see :ref:`scipy-licensing`.
+
 
 Maintaining existing code
 =========================
