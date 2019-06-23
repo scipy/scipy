@@ -20,7 +20,7 @@ Rendering Documentation Locally
 
 To render the documentation on your own machine (macOS or Linux):
 
-#. Install `Sphinx`_ or ensure that your installation is up to date.
+#. Install `Sphinx`_ or ensure that your installation is up to date. For example, if you're using the Anaconda distribution of Python, enter in a terminal window ``conda install sphinx`` or ``conda update sphinx``.
 #. In a terminal window, browse to the ``scipy/doc`` directory. Note the
    presence of the file ``Makefile``.
 #. If this is your first time building the docs, execute ``git submodule
