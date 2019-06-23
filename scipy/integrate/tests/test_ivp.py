@@ -296,6 +296,29 @@ def test_integration_const_jac():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
 
 
+def test_integration_stiff():
+    rtol = 1e-6
+    atol = 1e-6
+    y0 = [1e4, 0, 0]
+    tspan = [0, 1e8]
+
+    def fun_robertson(t, state):
+        x, y, z = state
+        return [
+            -0.04 * x + 1e4 * y * z,
+            0.04 * x - 1e4 * y * z - 3e7 * y * y,
+            3e7 * y * y,
+        ]
+
+    for method in ['Radau', 'BDF', 'LSODA']:
+        res = solve_ivp(fun_robertson, tspan, y0, rtol=rtol,
+                        atol=atol, method=method)
+
+        # If the stiff mode is not activated correctly, these numbers will be much bigger
+        assert_(res.nfev < 5000)
+        assert_(res.njev < 200)
+
+
 def test_events():
     def event_rational_1(t, y):
         return y[0] - y[1] ** 0.7
