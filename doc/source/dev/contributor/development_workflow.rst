@@ -6,6 +6,9 @@
 Development workflow
 ====================
 
+*Note: consider watching* `SciPy Development Workflow`_ *before or after
+reading to see an example of fixing a bug and submitting a pull request.*
+
 In :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you created your own
 fork (copy) of the SciPy repository, cloned the repository on your own machine,
 and and built SciPy from this source code. Before getting started here,
@@ -30,11 +33,10 @@ SciPy.
    Note that when you cloned your fork of the SciPy repository, Git already
    associated the name ``origin`` with your fork. The reason you need both of
    these `"remotes"`_ is that you will typically start with the latest version
-   of SciPy from the official repository ``upstream``, "push" your changes to
-   your fork of the repository ``origin``, and then submit a "pull request"
-   asking SciPy to "pull" your changes from your fork into the official
-   repository.
-
+   of SciPy from the official repository ``upstream``, make changes, "push"
+   your changes to    your fork of the repository ``origin``, and then submit
+   a "pull request" asking SciPy to "pull" your changes from your fork into
+   the official repository.
 
 Basic workflow
 ##############
@@ -287,6 +289,8 @@ Checklist before submitting a PR
    deserves credit.
 
 .. include:: ../gitwash/git_links.inc
+
+.. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
 .. _Setting your commit email address in Git: https://help.github.com/en/articles/setting-your-commit-email-address-in-git
 
