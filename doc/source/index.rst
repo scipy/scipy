@@ -60,6 +60,7 @@ For a more detailed look at how the SciPy project works:
    :hidden:
 
    dev/contributor/quickstart_mac
+   dev/contributor/quickstart_ubuntu
    dev/contributor/development_workflow
    dev/contributor/pep8
    dev/contributor/rendering_documentation
