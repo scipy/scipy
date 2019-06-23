@@ -6,12 +6,35 @@
 Development workflow
 ====================
 
-You already have your own forked copy of the `SciPy repository`_, by
-following :ref:`forking`, :ref:`set-up-fork`, you have configured git_
-by following :ref:`configure-git`, and have linked the upstream
-repository as explained in :ref:`linking-to-upstream`.
+In :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you created your own
+fork (copy) of the SciPy repository, cloned the repository on your own machine,
+and and built SciPy from this source code. Before getting started here,
+there are two other things you need to do just once before you start modifying
+SciPy.
 
-What is described below is a recommended workflow with Git.
+#. In a terminal, introduce yourself to Git::
+
+      git config --global user.email you@yourdomain.com
+      git config --global user.name "Your Name"
+
+   This information credits you for your work, but note that it will become
+   publicly available if you "push" your work to GitHub. See
+   `Setting your commit email address in Git`_ for more information.
+
+#. Navigate to the root directory of your local SciPy repository and enter::
+
+      git remote add upstream https://github.com/scipy/scipy.git
+
+   This associates the name ``upstream`` with the official SciPy repository
+   located at `https://github.com/scipy/scipy.git <https://github.com/scipy/scipy.git>`_.
+   Note that when you cloned your fork of the SciPy repository, Git already
+   associated the name ``origin`` with your fork. The reason you need both of
+   these `"remotes"`_ is that you will typically start with the latest version
+   of SciPy from the official repository ``upstream``, "push" your changes to
+   your fork of the repository ``origin``, and then submit a "pull request"
+   asking SciPy to "pull" your changes from your fork into the official
+   repository.
+
 
 Basic workflow
 ##############
@@ -78,9 +101,9 @@ changes from the upstream master to help avoid
 when it's time to submit a pull request.
 
 It's also a good idea to build this branch and run tests before continuing.
-Assuming you've followed :ref:`quickstart-mac` to set up your development
-environment, you'll need to activate your virtual environment, perform an
-in place build, and run tests::
+Assuming you've followed :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`
+to set up your development environment, you'll need to activate your
+development virtual environment, perform an in place build, and run tests::
 
    conda activate name-of-your-virtual-environment
    python setup.py build_ext --inplace
@@ -264,6 +287,10 @@ Checklist before submitting a PR
    deserves credit.
 
 .. include:: ../gitwash/git_links.inc
+
+.. _Setting your commit email address in Git: https://help.github.com/en/articles/setting-your-commit-email-address-in-git
+
+.. _"remotes": https://help.github.com/en/categories/managing-remotes
 
 .. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
