@@ -402,18 +402,21 @@ subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
 end subroutine <prefix2c>unmqr
 
 subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
-    ! a,t,info = geqrt(a,[nb=min(a.shape),overwrite_a=0])
+    ! a,t,info = geqrt(nb,a,[overwrite_a=0])
+    ! Computes a QR factorization with block size nb of a general matrix A,
+    ! using the compact WY representation for Q. T stores the upper triangular
+    ! block reflectors.
 
     callstatement (*f2py_func)(&m,&n,&nb,a,&lda,t,&ldt,work,&info)
     callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
-    integer intent(hide),check(m>=0):: m = shape(a,0)
-    integer intent(hide),check(n>=0):: n = shape(a,1)
-    integer optional,intent(in),check(MIN(m,n)>=nb&&nb>=1):: nb = MIN(m,n)
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(in),depend(m,n),check(MIN(m,n)>=nb&&nb>=1):: nb
     <ftype> dimension(m,n),intent(in,out,copy):: a
-    integer intent(hide):: lda = MAX(1,shape(a,0))
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
     <ftype> dimension(nb,MIN(m,n)),intent(out):: t
-    integer intent(hide):: ldt = MAX(1,shape(t,0))
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
     <ftype> dimension(nb,n),intent(hide,cache):: work
     integer intent(out):: info
 
@@ -421,43 +424,52 @@ end subroutine <prefix>geqrt
 
 subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
     ! c = gemqrt(side,trans,v,t,c,[overwrite_c=0])
+    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+    ! elementary reflectors stored in matrix V and the upper triangular block
+    ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
+    ! matrices), or its adjoint (for complex matrices) from the left or right.
 
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
     character intent(in),check(*side=='L'||*side=='R'):: side
     character intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans
-    integer intent(hide),check(m>=0):: m = shape(c,0)
-    integer intent(hide),check(n>=0):: n = shape(c,1)
-    integer intent(hide),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
-    integer intent(hide),check(k>=nb&&nb>=1):: nb = shape(t,0)
+    integer intent(hide),depend(c):: m = shape(c,0)
+    integer intent(hide),depend(c):: n = shape(c,1)
+    integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
+    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
     <ftype> dimension((*side=='L'?m:n),k),intent(in):: v
-    integer intent(hide):: ldv = MAX(1,shape(v,0))
+    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
     <ftype> dimension(nb,k),intent(in):: t
-    integer intent(hide):: ldt = MAX(1,shape(t,0))
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
     <ftype> dimension(m,n),intent(in,out,copy):: c
-    integer intent(hide):: ldc = MAX(1,shape(c,0))
+    integer intent(hide),depend(c):: ldc = MAX(1,shape(c,0))
     <ftype> dimension((*side=='L'?n:m)*nb),intent(hide,cache):: work
     integer intent(out):: info
 
 end subroutine <prefix>gemqrt
 
 subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
-    ! a,b,t = tpqrt(l,a,b,[nb=b.shape[1],overwrite_a=0,overwrite_b=0])
+    ! a,b,t = tpqrt(l,nb,a,b,[overwrite_a=0,overwrite_b=0])
+    ! Computes a QR factorization with block size nb of a triangular-pentagonal
+    ! matrix consisting of square upper triangular matrix A and pentagonal
+    ! matrix B, in the compact WY representation. L is the order of the
+    ! trapezoidal part of matrix B. T stores the upper triangular block
+    ! reflectors.
 
     callstatement (*f2py_func)(&m,&n,&l,&nb,a,&lda,b,&ldb,t,&ldt,work,&info)
     callprotoargument int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
-    integer intent(hide),check(m>=0):: m = shape(b,0)
-    integer intent(hide),check(n>=0):: n = shape(b,1)
-    integer intent(in),check(MIN(m,n)>=l&&l>=0):: l
-    integer optional,intent(in),check(n>=nb&&nb>=1):: nb = n
+    integer intent(hide),depend(b):: m = shape(b,0)
+    integer intent(hide),depend(b):: n = shape(b,1)
+    integer intent(in),depend(m,n),check(MIN(m,n)>=l&&l>=0):: l
+    integer intent(in),depend(n),check(n>=nb&&nb>=1):: nb
     <ftype> dimension(n,n),intent(in,out,copy):: a
-    integer intent(hide):: lda = MAX(1,shape(a,0))
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
     <ftype> dimension(m,n),intent(in,out,copy):: b
-    integer intent(hide):: ldb = MAX(1,shape(b,0))
+    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
     <ftype> dimension(nb,n),intent(out):: t
-    integer intent(hide):: ldt = MAX(1,shape(t,0))
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
     <ftype> dimension(nb,n),intent(hide,cache):: work
     integer intent(out):: info
 
@@ -465,25 +477,38 @@ end subroutine <prefix>tpqrt
 
 subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,info)
     ! a,b = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
+    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+    ! elementary reflectors stored in the pentagonal matrix V and the upper
+    ! triangular block reflectors in matrix T. L is the order of the trapezoidal
+    ! part of matrix V. Matrix C consists of blocks A and B, and may be
+    ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
+    ! complex matrices) from the left or right.
+
+
+    ! Multiplies a general M-by-N matrix C by the orthogonal matrix Q defined by
+    ! the k elementary reflectors stored in matrix V and the upper triangular
+    ! block reflector's factors in matrix T, resulting from a QR factorization
+    ! with block size nb. C may be multiplied by Q, its transpose (for real
+    ! matrices), or its adjoint (for complex matrices) from the left or right.
 
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
     character intent(in),check(*side=='L'||*side=='R'):: side
     character intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans
-    integer intent(hide),check(m>=0):: m = shape(b,0)
-    integer intent(hide),check(n>=0):: n = shape(b,1)
-    integer intent(hide),check(k>=0):: k = shape(v,1)
-    integer intent(in),check(k>=l&&l>=0):: l
+    integer intent(hide),depend(b):: m = shape(b,0)
+    integer intent(hide),depend(b):: n = shape(b,1)
+    integer intent(hide),depend(t):: k = shape(t,1)
+    integer intent(in),depend(k),check(k>=l&&l>=0):: l
     integer intent(hide),check(k>=nb&&nb>=1):: nb = shape(t,0)
     <ftype> dimension((*side=='L'?m:n),k),intent(in):: v
-    integer intent(hide):: ldv = MAX(1,shape(v,0))
+    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
     <ftype> dimension(nb,k),intent(in):: t
-    integer intent(hide):: ldt = MAX(1,shape(t,0))
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
     <ftype> dimension((*side=='L'?k:m),(*side=='L'?n:k)),intent(in,out,copy):: a
-    integer intent(hide):: lda = MAX(1,shape(a,0))
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
     <ftype> dimension(m,n),intent(in,out,copy):: b
-    integer intent(hide):: ldb = MAX(1,shape(b,0))
+    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
     <ftype> dimension((*side=='L'?n:m)*nb),intent(hide,cache):: work
     integer intent(out):: info
 
