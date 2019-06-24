@@ -484,13 +484,6 @@ subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,inf
     ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
     ! complex matrices) from the left or right.
 
-
-    ! Multiplies a general M-by-N matrix C by the orthogonal matrix Q defined by
-    ! the k elementary reflectors stored in matrix V and the upper triangular
-    ! block reflector's factors in matrix T, resulting from a QR factorization
-    ! with block size nb. C may be multiplied by Q, its transpose (for real
-    ! matrices), or its adjoint (for complex matrices) from the left or right.
-
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
