@@ -7,6 +7,9 @@ import warnings
 
 import numpy as np
 
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
+
 # Check Sphinx version
 import sphinx
 if sphinx.__version__ < "1.6":
