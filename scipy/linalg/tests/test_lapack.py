@@ -1301,13 +1301,14 @@ class TestBlockedQR(object):
 
             # Extract elementary reflectors from lower triangle, adding the main
             # diagonal of ones.
-            elem_reflectors = np.tril(a, -1) + np.eye(n)
+            v = np.tril(a, -1) + np.eye(n, dtype=dtype)
             # Generate the block Householder transform I - VTV^H
-            Q = np.eye(n) - elem_reflectors @ t @ elem_reflectors.T.conj()
+            Q = np.eye(n, dtype=dtype) - v @ t @ v.T.conj()
             R = np.triu(a)
 
             # Test columns of Q are orthogonal
-            assert_allclose(Q.T.conj() @ Q, np.eye(n), atol=tol, rtol=0.)
+            assert_allclose(Q.T.conj() @ Q, np.eye(n, dtype=dtype), atol=tol,
+                            rtol=0.)
             assert_allclose(Q @ R, A, atol=tol, rtol=0.)
 
             if ind > 1:
@@ -1328,12 +1329,80 @@ class TestBlockedQR(object):
                         q = Q
 
                     if side == 'L':
-                        qc = q @ C
+                        qC = q @ C
                     else:
-                        qc = C @ q
+                        qC = C @ q
 
-                    # Test that Q has been multiplied into C correctly
-                    assert_allclose(c, qc, atol=tol, rtol=0.)
+                    assert_allclose(c, qC, atol=tol, rtol=0.)
 
     def test_tpqrt_tpmqrt(self):
-        pass
+        seed(1234)
+        for ind, dtype in enumerate(DTYPES):
+            n = 6
+
+            if ind > 1:
+                A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                B = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            else:
+                A = (rand(n, n)).astype(dtype)
+                B = (rand(n, n)).astype(dtype)
+
+            tol = 100*np.spacing(dtype(1.0).real)
+            tpqrt, tpmqrt = get_lapack_funcs(('tpqrt', 'tpmqrt'), dtype=dtype)
+
+            # Test for the range of pentagonal B, from square to upper
+            # triangular
+            for l in (0, n // 2, n):
+                a, b, t, info = tpqrt(l, n, A, B)
+                assert(info == 0)
+
+                # Check that lower triangular portion of A has not been modified
+                assert_equal(np.tril(a, -1), np.tril(A, -1))
+                # Check that elements not part of the pentagonal portion of B
+                # have not been modified.
+                assert_equal(np.tril(b, l - n - 1), np.tril(B, l - n - 1))
+
+                # Extract pentagonal portion of B
+                B_pent, b_pent = np.triu(B, l - n), np.triu(b, l - n)
+
+                # Generate elementary reflectors
+                v = np.concatenate((np.eye(n, dtype=dtype), b_pent))
+                # Generate the block Householder transform I - VTV^H
+                Q = np.eye(2 * n, dtype=dtype) - v @ t @ v.T.conj()
+                R = np.concatenate((np.triu(a), np.zeros_like(a)))
+
+                # Test columns of Q are orthogonal
+                assert_allclose(Q.T.conj() @ Q, np.eye(2 * n, dtype=dtype),
+                                atol=tol, rtol=0.)
+                assert_allclose(Q @ R, np.concatenate((np.triu(A), B_pent)),
+                                atol=tol, rtol=0.)
+
+                if ind > 1:
+                    C = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                    D = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                    transpose = 'C'
+                else:
+                    C = (rand(n, n)).astype(dtype)
+                    D = (rand(n, n)).astype(dtype)
+                    transpose = 'T'
+
+                for side in ('L', 'R'):
+                    for trans in ('N', transpose):
+                        c, d, info = tpmqrt(side, trans, l, b, t, C, D)
+                        assert(info == 0)
+
+                        if trans == transpose:
+                            q = Q.T.conj()
+                        else:
+                            q = Q
+
+                        if side == 'L':
+                            cd = np.concatenate((c, d), axis=0)
+                            CD = np.concatenate((C, D), axis=0)
+                            qCD = q @ CD
+                        else:
+                            cd = np.concatenate((c, d), axis=1)
+                            CD = np.concatenate((C, D), axis=1)
+                            qCD = CD @ q
+
+                        assert_allclose(cd, qCD, atol=tol, rtol=0.)
