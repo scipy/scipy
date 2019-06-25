@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, assert_no_warnings)
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
@@ -296,7 +297,8 @@ def test_integration_const_jac():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
 
 
-def test_integration_stiff():
+@pytest.mark.parametrize('method', ['Radau', 'BDF', 'LSODA'])
+def test_integration_stiff(method):
     rtol = 1e-6
     atol = 1e-6
     y0 = [1e4, 0, 0]
@@ -310,13 +312,12 @@ def test_integration_stiff():
             3e7 * y * y,
         ]
 
-    for method in ['Radau', 'BDF', 'LSODA']:
-        res = solve_ivp(fun_robertson, tspan, y0, rtol=rtol,
-                        atol=atol, method=method)
+    res = solve_ivp(fun_robertson, tspan, y0, rtol=rtol,
+                    atol=atol, method=method)
 
-        # If the stiff mode is not activated correctly, these numbers will be much bigger
-        assert_(res.nfev < 5000)
-        assert_(res.njev < 200)
+    # If the stiff mode is not activated correctly, these numbers will be much bigger
+    assert res.nfev < 5000
+    assert res.njev < 200
 
 
 def test_events():
