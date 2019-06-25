@@ -403,6 +403,7 @@ end subroutine <prefix2c>unmqr
 
 subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
     ! a,t,info = geqrt(nb,a,[overwrite_a=0])
+    !
     ! Computes a QR factorization with block size nb of a general matrix A,
     ! using the compact WY representation for Q. T stores the upper triangular
     ! block reflectors.
@@ -423,7 +424,8 @@ subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
 end subroutine <prefix>geqrt
 
 subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
-    ! c = gemqrt(side,trans,v,t,c,[overwrite_c=0])
+    ! c,info = gemqrt(side,trans,v,t,c,[overwrite_c=0])
+    !
     ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
     ! elementary reflectors stored in matrix V and the upper triangular block
     ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
@@ -450,7 +452,8 @@ subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
 end subroutine <prefix>gemqrt
 
 subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
-    ! a,b,t = tpqrt(l,nb,a,b,[overwrite_a=0,overwrite_b=0])
+    ! a,b,t,info = tpqrt(l,nb,a,b,[overwrite_a=0,overwrite_b=0])
+    !
     ! Computes a QR factorization with block size nb of a triangular-pentagonal
     ! matrix consisting of square upper triangular matrix A and pentagonal
     ! matrix B, in the compact WY representation. L is the order of the
@@ -476,7 +479,8 @@ subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
 end subroutine <prefix>tpqrt
 
 subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,info)
-    ! a,b = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
+    ! a,b,info = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
+    !
     ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
     ! elementary reflectors stored in the pentagonal matrix V and the upper
     ! triangular block reflectors in matrix T. L is the order of the trapezoidal
