@@ -1001,7 +1001,7 @@ def dft(n, scale=None):
     -----
     When `scale` is None, multiplying a vector by the matrix returned by
     `dft` is mathematically equivalent to (but much less efficient than)
-    the calculation performed by `scipy.fftpack.fft`.
+    the calculation performed by `scipy.fft.fft`.
 
     .. versionadded:: 0.14.0
 
