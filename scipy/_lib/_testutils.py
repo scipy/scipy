@@ -77,12 +77,9 @@ def _pytest_has_xdist():
     """
     Check if the pytest-xdist plugin is installed, providing parallel tests
     """
-
-    try:
-        import xdist
-        return True
-    except ImportError:
-        return False
+    # Check xdist exists without importing, otherwise pytests emits warnings
+    from importlib.util import find_spec
+    return find_spec('xdist') is not None
 
 
 def check_free_memory(free_mb):

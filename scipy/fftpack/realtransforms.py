@@ -252,7 +252,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    """
+    r"""
     Return the Discrete Cosine Transform of arbitrary type sequence x.
 
     Parameters
@@ -294,18 +294,22 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type I**
 
     There are several definitions of the DCT-I; we use the following
-    (for ``norm=None``)::
+    (for ``norm=None``)
 
-                                         N-2
-      y[k] = x[0] + (-1)**k x[N-1] + 2 * sum x[n]*cos(pi*k*n/(N-1))
-                                         n=1
+    .. math::
 
-    If ``norm='ortho'``, ``x[0]`` and ``x[N-1]`` are multiplied by
-    a scaling factor of ``sqrt(2)``, and ``y[k]`` is multiplied by a
-    scaling factor `f`::
+       y_k = x_0 + (-1)^k x_{N-1} + 2 \sum_{n=1}^{N-2} x_n \cos\left(
+       \frac{\pi k n}{N-1} \right)
 
-      f = 0.5*sqrt(1/(N-1)) if k = 0 or N-1,
-      f = 0.5*sqrt(2/(N-1)) otherwise.
+    If ``norm='ortho'``, ``x[0]`` and ``x[N-1]`` are multiplied by a scaling
+    factor of :math:`\sqrt{2}`, and ``y[k]`` is multiplied by a scaling factor
+    ``f``
+
+    .. math::
+
+        f = \begin{cases}
+         \frac{1}{2}\sqrt{\frac{1}{N-1}} & \text{if }k=0\text{ or }N-1, \\
+         \frac{1}{2}\sqrt{\frac{2}{N-1}} & \text{otherwise} \end{cases}
 
     .. versionadded:: 1.2.0
        Orthonormalization in DCT-I.
@@ -316,35 +320,36 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type II**
 
     There are several definitions of the DCT-II; we use the following
-    (for ``norm=None``)::
+    (for ``norm=None``)
 
+    .. math::
 
-                N-1
-      y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
-                n=0
+       y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi k(2n+1)}{2N} \right)
 
-    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
 
-      f = sqrt(1/(4*N)) if k = 0,
-      f = sqrt(1/(2*N)) otherwise.
+    .. math::
+       f = \begin{cases}
+       \sqrt{\frac{1}{4N}} & \text{if }k=0, \\
+       \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
 
     Which makes the corresponding matrix of coefficients orthonormal
-    (``OO' = Id``).
+    (``O @ O.T = np.eye(N)``).
 
     **Type III**
 
-    There are several definitions, we use the following
-    (for ``norm=None``)::
+    There are several definitions, we use the following (for ``norm=None``)
 
-                        N-1
-      y[k] = x[0] + 2 * sum x[n]*cos(pi*(k+0.5)*n/N), 0 <= k < N.
-                        n=1
+    .. math::
 
-    or, for ``norm='ortho'`` and 0 <= k < N::
+       y_k = x_0 + 2 \sum_{n=1}^{N-1} x_n \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
-                                          N-1
-      y[k] = x[0] / sqrt(N) + sqrt(2/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
-                                          n=1
+    or, for ``norm='ortho'``
+
+    .. math::
+
+       y_k = \frac{x_0}{\sqrt{N}} + \sqrt{\frac{2}{N}} \sum_{n=1}^{N-1} x_n
+       \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
     to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of
@@ -353,16 +358,17 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type IV**
 
     There are several definitions of the DCT-IV; we use the following
-    (for ``norm=None``)::
+    (for ``norm=None``)
 
+    .. math::
 
-                N-1
-      y[k] = 2* sum x[n]*cos(pi*(2k+1)*(2n+1)/(4*N)), 0 <= k < N.
-                n=0
+       y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi(2k+1)(2n+1)}{4N} \right)
 
-    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
 
-      f = 0.5*sqrt(2/N)
+    .. math::
+
+        f = \frac{1}{\sqrt{2N}}
 
     .. versionadded:: 1.2.0
        Support for DCT-IV.
@@ -541,7 +547,7 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
 
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    """
+    r"""
     Return the Discrete Sine Transform of arbitrary type sequence x.
 
     Parameters
@@ -582,59 +588,63 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type I**
 
     There are several definitions of the DST-I; we use the following
-    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N. ::
+    for ``norm=None``. DST-I assumes the input is odd around `n=-1` and `n=N`.
 
-                 N-1
-      y[k] = 2 * sum x[n]*sin(pi*(k+1)*(n+1)/(N+1))
-                 n=0
+    .. math::
 
-    Note that the DST-I is only supported for input size > 1
+        y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(n+1)}{N+1}\right)
+
+    Note that the DST-I is only supported for input size > 1.
     The (unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
     The orthonormalized DST-I is exactly its own inverse.
 
     **Type II**
 
-    There are several definitions of the DST-II; we use the following
-    for ``norm=None``.  DST-II assumes the input is odd around n=-1/2 and
-    n=N-1/2; the output is odd around k=-1 and even around k=N-1 ::
+    There are several definitions of the DST-II; we use the following for
+    ``norm=None``. DST-II assumes the input is odd around `n=-1/2` and
+    `n=N-1/2`; the output is odd around :math:`k=-1` and even around `k=N-1`
 
-                N-1
-      y[k] = 2* sum x[n]*sin(pi*(k+1)*(n+0.5)/N), 0 <= k < N.
-                n=0
+    .. math::
 
-    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f` ::
+        y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(2n+1)}{2N}\right)
 
-        f = sqrt(1/(4*N)) if k == 0
-        f = sqrt(1/(2*N)) otherwise.
+    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
+
+    .. math::
+
+        f = \begin{cases}
+        \sqrt{\frac{1}{4N}} & \text{if }k = 0, \\
+        \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
 
     **Type III**
 
-    There are several definitions of the DST-III, we use the following
-    (for ``norm=None``).  DST-III assumes the input is odd around n=-1
-    and even around n=N-1 ::
+    There are several definitions of the DST-III, we use the following (for
+    ``norm=None``). DST-III assumes the input is odd around `n=-1` and even
+    around `n=N-1`
 
-                                 N-2
-      y[k] = x[N-1]*(-1)**k + 2* sum x[n]*sin(pi*(k+0.5)*(n+1)/N), 0 <= k < N.
-                                 n=0
+    .. math::
+
+        y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n \sin\left(
+        \frac{\pi(2k+1)(n+1)}{2N}\right)
 
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor `2N`.  The orthonormalized DST-III is exactly the inverse of
-    the orthonormalized DST-II.
+    to a factor `2N`. The orthonormalized DST-III is exactly the inverse of the
+    orthonormalized DST-II.
 
     .. versionadded:: 0.11.0
 
     **Type IV**
 
-    There are several definitions of the DST-IV, we use the following
-    (for ``norm=None``).  DST-IV assumes the input is odd around n=-0.5
-    and even around n=N-0.5 ::
+    There are several definitions of the DST-IV, we use the following (for
+    ``norm=None``). DST-IV assumes the input is odd around `n=-0.5` and even
+    around `n=N-0.5`
 
-                N-1
-      y[k] = 2* sum x[n]*sin(pi*(k+0.5)*(n+0.5)/N), 0 <= k < N.
-                n=0
+    .. math::
 
-    The (unnormalized) DST-IV is its own inverse, up
-    to a factor `2N`.  The orthonormalized DST-IV is exactly its own inverse.
+        y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(2k+1)(2n+1)}{4N}\right)
+
+    The (unnormalized) DST-IV is its own inverse, up to a factor `2N`. The
+    orthonormalized DST-IV is exactly its own inverse.
 
     .. versionadded:: 1.2.0
        Support for DST-IV.

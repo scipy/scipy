@@ -3,14 +3,15 @@
 from __future__ import division, absolute_import, print_function
 
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
-import numpy.fft
 
 from numpy.random import rand
 
+import scipy.fftpack
+import numpy.fft
 try:
-    from scipy.fftpack import ifft, fft, fftn, irfft, rfft
+    import scipy.fft as scipy_fft
 except ImportError:
-    pass
+    scipy_fft = {}
 
 from .common import Benchmark
 
@@ -39,11 +40,18 @@ def direct_idft(x):
     return y
 
 
+module_map = {
+    'scipy.fftpack': scipy.fftpack,
+    'scipy.fft': scipy_fft,
+    'numpy.fft': numpy.fft
+}
+
+
 class Fft(Benchmark):
     params = [
-        [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
+        [100, 256, 313, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['real', 'cmplx'],
-        ['scipy', 'numpy']
+        ['scipy.fftpack', 'scipy.fft', 'numpy.fft']
     ]
     param_names = ['size', 'type', 'module']
 
@@ -53,47 +61,45 @@ class Fft(Benchmark):
         else:
             self.x = random([size]).astype(double)
 
+        module = module_map[module]
+        self.fft = getattr(module, 'fft')
+        self.ifft = getattr(module, 'ifft')
+
     def time_fft(self, size, cmplx, module):
-        if module == 'numpy':
-            numpy.fft.fft(self.x)
-        else:
-            fft(self.x)
+        self.fft(self.x)
 
     def time_ifft(self, size, cmplx, module):
-        if module == 'numpy':
-            numpy.fft.ifft(self.x)
-        else:
-            ifft(self.x)
+        self.ifft(self.x)
 
 
 class RFft(Benchmark):
     params = [
-        [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
-        ['scipy', 'numpy']
+        [100, 256, 313, 512, 1000, 1024, 2048, 2048*2, 2048*4],
+        ['scipy.fftpack', 'scipy.fft', 'numpy.fft']
     ]
     param_names = ['size', 'module']
 
     def setup(self, size, module):
         self.x = random([size]).astype(double)
 
+        module = module_map[module]
+        self.rfft = getattr(module, 'rfft')
+        self.irfft = getattr(module, 'irfft')
+
+        self.y = self.rfft(self.x)
+
     def time_rfft(self, size, module):
-        if module == 'numpy':
-            numpy.fft.rfft(self.x)
-        else:
-            rfft(self.x)
+        self.rfft(self.x)
 
     def time_irfft(self, size, module):
-        if module == 'numpy':
-            numpy.fft.irfft(self.x)
-        else:
-            irfft(self.x)
+        self.irfft(self.y)
 
 
 class Fftn(Benchmark):
     params = [
-        ["100x100", "1000x100", "256x256", "512x512"],
+        ["100x100", "313x100", "1000x100", "256x256", "512x512"],
         ['real', 'cmplx'],
-        ['scipy', 'numpy']
+        ['scipy.fftpack', 'scipy.fft', 'numpy.fft']
     ]
     param_names = ['size', 'type', 'module']
 
@@ -105,11 +111,7 @@ class Fftn(Benchmark):
         else:
             self.x = random(size).astype(cdouble)+random(size).astype(cdouble)*1j
 
-    def time_fftn(self, size, cmplx, module):
-        if module == 'numpy':
-            numpy.fft.fftn(self.x)
-        else:
-            fftn(self.x)
+        self.fftn = getattr(module_map[module], 'fftn')
 
-    # Retain old benchmark results (remove this if changing the benchmark)
-    time_fftn.version = "7b630bc6eb41ec0eab713d35b6318dea7a11d785891dae4add928eaac6ed95a4"
+    def time_fftn(self, size, cmplx, module):
+        self.fftn(self.x)

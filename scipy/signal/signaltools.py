@@ -1219,6 +1219,10 @@ def lfilter(b, a, x, axis=-1, zi=None):
     form II transposed implementation of the standard difference equation
     (see Notes).
 
+    The function `sosfilt` (and filter design using ``output='sos'``) should be
+    preferred over `lfilter` for most filtering tasks, as second-order sections
+    have fewer numerical problems.
+
     Parameters
     ----------
     b : array_like
@@ -2987,6 +2991,10 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     twice that of the original.
 
     The function provides options for handling the edges of the signal.
+
+    The function `sosfiltfilt` (and filter design using ``output='sos'``)
+    should be preferred over `filtfilt` for most filtering tasks, as
+    second-order sections have fewer numerical problems.
 
     Parameters
     ----------

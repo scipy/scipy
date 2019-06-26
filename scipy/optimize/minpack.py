@@ -517,10 +517,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         The model function, f(x, ...).  It must take the independent
         variable as the first argument and the parameters to fit as
         separate remaining arguments.
-    xdata : array_like
+    xdata : array_like or object
         The independent variable where the data is measured.
-        Must be an M-length sequence or an (k,M)-shaped array for functions
-        with k predictors.
+        Should usually be an M-length sequence or an (k,M)-shaped array for
+        functions with k predictors, but can actually be any object.
     ydata : array_like
         The dependent data, a length M array - nominally ``f(xdata, ...)``.
     p0 : array_like, optional
@@ -701,28 +701,24 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("Method 'lm' only works for unconstrained problems. "
                          "Use 'trf' or 'dogbox' instead.")
 
+    # optimization may produce garbage for float32 inputs, cast them to float64
+
     # NaNs can not be handled
     if check_finite:
-        ydata = np.asarray_chkfinite(ydata)
+        ydata = np.asarray_chkfinite(ydata, float)
     else:
-        ydata = np.asarray(ydata)
+        ydata = np.asarray(ydata, float)
 
     if isinstance(xdata, (list, tuple, np.ndarray)):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
         if check_finite:
-            xdata = np.asarray_chkfinite(xdata)
+            xdata = np.asarray_chkfinite(xdata, float)
         else:
-            xdata = np.asarray(xdata)
+            xdata = np.asarray(xdata, float)
 
-    if xdata.size == 0:
-        raise ValueError("`xdata` must not be empty!")
     if ydata.size == 0:
         raise ValueError("`ydata` must not be empty!")
-
-    # optimization may produce garbage for float32 inputs, cast them to float64
-    xdata = xdata.astype(float)
-    ydata = ydata.astype(float)
 
     # Determine type of sigma
     if sigma is not None:

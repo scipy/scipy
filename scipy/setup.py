@@ -8,6 +8,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('scipy',parent_package,top_path)
     config.add_subpackage('cluster')
     config.add_subpackage('constants')
+    config.add_subpackage('fft')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
     config.add_subpackage('interpolate')
