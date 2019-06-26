@@ -1320,7 +1320,7 @@ class TestBlockedQR(object):
 
             for side in ('L', 'R'):
                 for trans in ('N', transpose):
-                    c, info = gemqrt(side, trans, a, t, C)
+                    c, info = gemqrt(a, t, C, side=side, trans=trans)
                     assert(info == 0)
 
                     if trans == transpose:
@@ -1334,6 +1334,16 @@ class TestBlockedQR(object):
                         qC = C @ q
 
                     assert_allclose(c, qC, atol=tol, rtol=0.)
+
+                    # Test default arguments
+                    if (side, trans) == ('L', 'N'):
+                        c_default, info = gemqrt(a, t, C)
+                        assert(info == 0)
+                        assert_equal(c_default, c)
+
+            # Test invalid side/trans
+            assert_raises(Exception, gemqrt, a, t, C, side='A')
+            assert_raises(Exception, gemqrt, a, t, C, trans='A')
 
     def test_tpqrt_tpmqrt(self):
         seed(1234)
@@ -1388,7 +1398,8 @@ class TestBlockedQR(object):
 
                 for side in ('L', 'R'):
                     for trans in ('N', transpose):
-                        c, d, info = tpmqrt(side, trans, l, b, t, C, D)
+                        c, d, info = tpmqrt(l, b, t, C, D, side=side,
+                                            trans=trans)
                         assert(info == 0)
 
                         if trans == transpose:
@@ -1406,3 +1417,13 @@ class TestBlockedQR(object):
                             qCD = CD @ q
 
                         assert_allclose(cd, qCD, atol=tol, rtol=0.)
+
+                        if (side, trans) == ('L', 'N'):
+                            c_default, d_default, info = tpmqrt(l, b, t, C, D)
+                            assert(info == 0)
+                            assert_equal(c_default, c)
+                            assert_equal(d_default, d)
+
+                # Test invalid side/trans
+                assert_raises(Exception, tpmqrt, l, b, t, C, D, side='A')
+                assert_raises(Exception, tpmqrt, l, b, t, C, D, trans='A')

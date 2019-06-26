@@ -434,8 +434,8 @@ subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
-    character intent(in),check(*side=='L'||*side=='R'):: side
-    character intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
     integer intent(hide),depend(c):: m = shape(c,0)
     integer intent(hide),depend(c):: n = shape(c,1)
     integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
@@ -491,8 +491,8 @@ subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,inf
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
 
-    character intent(in),check(*side=='L'||*side=='R'):: side
-    character intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
     integer intent(hide),depend(b):: m = shape(b,0)
     integer intent(hide),depend(b):: n = shape(b,1)
     integer intent(hide),depend(t):: k = shape(t,1)
