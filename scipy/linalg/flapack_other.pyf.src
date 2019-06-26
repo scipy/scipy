@@ -497,7 +497,7 @@ subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,inf
     integer intent(hide),depend(b):: n = shape(b,1)
     integer intent(hide),depend(t):: k = shape(t,1)
     integer intent(in),depend(k),check(k>=l&&l>=0):: l
-    integer intent(hide),check(k>=nb&&nb>=1):: nb = shape(t,0)
+    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
     <ftype> dimension((*side=='L'?m:n),k),intent(in):: v
     integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
     <ftype> dimension(nb,k),intent(in):: t
