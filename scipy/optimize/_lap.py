@@ -28,8 +28,8 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     .. math::
         \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
 
-    s.t. each row is assignment to at most one column, and each column to at
-    most one row.
+    where, in the case where the matrix X is square, each row is assigned to
+    exactly one column, and each column to exactly one row.
 
     This function can also solve a generalization of the classic assignment
     problem where the cost matrix is rectangular. If it has more rows than
