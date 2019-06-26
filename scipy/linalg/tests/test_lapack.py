@@ -1338,7 +1338,7 @@ class TestBlockedQR(object):
     def test_tpqrt_tpmqrt(self):
         seed(1234)
         for ind, dtype in enumerate(DTYPES):
-            n = 6
+            n = 20
 
             if ind > 1:
                 A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
