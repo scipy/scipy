@@ -1,4 +1,5 @@
 import scipy.fftpack as _fftpack
+from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted  # noqa: F401
 
 
 def next_fast_len(target, dtype=None):

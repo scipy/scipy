@@ -12,8 +12,8 @@ from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
-from scipy import fftpack, linalg
-from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
+from scipy import linalg, fft as sp_fft
+from scipy.fft._helper import _init_nd_shape_and_axes_sorted
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
@@ -48,11 +48,6 @@ _modedict = {'valid': 0, 'same': 1, 'full': 2}
 
 _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
                  'symmetric': 1, 'reflect': 4}
-
-
-_rfft_mt_safe = (NumpyVersion(np.__version__) >= '1.9.0.dev-e24486e')
-
-_rfft_lock = threading.Lock()
 
 
 def _valfrommode(mode):
@@ -404,28 +399,16 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.helper.next_fast_len(d) for d in shape[axes]]
+    fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
     fslice = tuple([slice(sz) for sz in shape])
-    # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
-    # sure we only call rfftn/irfftn from one thread at a time.
-    if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
-        try:
-            sp1 = np.fft.rfftn(in1, fshape, axes=axes)
-            sp2 = np.fft.rfftn(in2, fshape, axes=axes)
-            ret = np.fft.irfftn(sp1 * sp2, fshape, axes=axes)[fslice].copy()
-        finally:
-            if not _rfft_mt_safe:
-                _rfft_lock.release()
+    if not complex_result:
+        sp1 = sp_fft.rfftn(in1, fshape, axes=axes)
+        sp2 = sp_fft.rfftn(in2, fshape, axes=axes)
+        ret = sp_fft.irfftn(sp1 * sp2, fshape, axes=axes)[fslice].copy()
     else:
-        # If we're here, it's either because we need a complex result, or we
-        # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
-        # is already in use by another thread).  In either case, use the
-        # (threadsafe but slower) SciPy complex-FFT routines instead.
-        sp1 = fftpack.fftn(in1, fshape, axes=axes)
-        sp2 = fftpack.fftn(in2, fshape, axes=axes)
-        ret = fftpack.ifftn(sp1 * sp2, axes=axes)[fslice].copy()
-        if not complex_result:
-            ret = ret.real
+        sp1 = sp_fft.fftn(in1, fshape, axes=axes)
+        sp2 = sp_fft.fftn(in2, fshape, axes=axes)
+        ret = sp_fft.ifftn(sp1 * sp2, axes=axes)[fslice].copy()
 
     if mode == "full":
         return ret
@@ -1547,10 +1530,6 @@ def hilbert(x, N=None, axis=-1):
     xa : ndarray
         Analytic signal of `x`, of each 1-D array along `axis`
 
-    See Also
-    --------
-    scipy.fftpack.hilbert : Return Hilbert transform of a periodic sequence x.
-
     Notes
     -----
     The analytic signal ``x_a(t)`` of signal ``x(t)`` is:
@@ -1625,7 +1604,7 @@ def hilbert(x, N=None, axis=-1):
     if N <= 0:
         raise ValueError("N must be positive.")
 
-    Xf = fftpack.fft(x, N, axis=axis)
+    Xf = sp_fft.fft(x, N, axis=axis)
     h = zeros(N)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
@@ -1638,7 +1617,7 @@ def hilbert(x, N=None, axis=-1):
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[tuple(ind)]
-    x = fftpack.ifft(Xf * h, axis=axis)
+    x = sp_fft.ifft(Xf * h, axis=axis)
     return x
 
 
@@ -1679,7 +1658,7 @@ def hilbert2(x, N=None):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
-    Xf = fftpack.fft2(x, N, axes=(0, 1))
+    Xf = sp_fft.fft2(x, N, axes=(0, 1))
     h1 = zeros(N[0], 'd')
     h2 = zeros(N[1], 'd')
     for p in range(2):
@@ -1698,7 +1677,7 @@ def hilbert2(x, N=None):
     while k > 2:
         h = h[:, newaxis]
         k -= 1
-    x = fftpack.ifft2(Xf * h, axes=(0, 1))
+    x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
 
 
@@ -2225,7 +2204,7 @@ def resample(x, num, t=None, axis=0, window=None):
 
     As noted, `resample` uses FFT transformations, which can be very
     slow if the number of input or output samples is large and prime;
-    see `scipy.fftpack.fft`.
+    see `scipy.fft.fft`.
 
     Examples
     --------
@@ -2245,17 +2224,17 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.show()
     """
     x = asarray(x)
-    X = fftpack.fft(x, axis=axis)
+    X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
     if window is not None:
         if callable(window):
-            W = window(fftpack.fftfreq(Nx))
+            W = window(sp_fft.fftfreq(Nx))
         elif isinstance(window, ndarray):
             if window.shape != (Nx,):
                 raise ValueError('window must have the same length as data')
             W = window
         else:
-            W = fftpack.ifftshift(get_window(window, Nx))
+            W = sp_fft.ifftshift(get_window(window, Nx))
         newshape = [1] * x.ndim
         newshape[axis] = len(W)
         W.shape = newshape
@@ -2282,7 +2261,7 @@ def resample(x, num, t=None, axis=0, window=None):
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
             Y[tuple(sl)] = temp  # set that equal to the component at -N/2
 
-    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+    y = sp_fft.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
     if x.dtype.char not in ['F', 'D']:
         y = y.real

@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy import fftpack
+from scipy import fft as sp_fft
 from . import signaltools
 from .windows import get_window
 from ._spectral import _lombscargle
@@ -187,7 +187,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
@@ -333,7 +333,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
@@ -498,7 +498,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
@@ -641,7 +641,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
@@ -697,6 +697,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Examples
     --------
     >>> from scipy import signal
+    >>> from scipy.fft import fftshift
     >>> import matplotlib.pyplot as plt
 
     Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
@@ -725,7 +726,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Note, if using output that is not one sided, then use the following:
 
     >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
-    >>> plt.pcolormesh(t, np.fft.fftshift(f), np.fft.fftshift(Sxx, axes=0))
+    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0))
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -1060,7 +1061,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         done. Defaults to `False`.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     boundary : str or None, optional
         Specifies whether the input signal is extended at both ends, and
@@ -1411,11 +1412,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if win.shape[0] != nperseg:
             raise ValueError('window must have length of {0}'.format(nperseg))
 
-    if input_onesided:
-        ifunc = np.fft.irfft
-    else:
-        ifunc = fftpack.ifft
-
+    ifunc = sp_fft.irfft if input_onesided else sp_fft.ifft
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
 
     # Initialize output and normalization arrays
@@ -1626,7 +1623,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         done. Defaults to 'constant'.
     return_onesided : bool, optional
         If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum. Defaults to `True`, but for 
+        `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
@@ -1828,9 +1825,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         sides = 'twosided'
 
     if sides == 'twosided':
-        freqs = fftpack.fftfreq(nfft, 1/fs)
+        freqs = sp_fft.fftfreq(nfft, 1/fs)
     elif sides == 'onesided':
-        freqs = np.fft.rfftfreq(nfft, 1/fs)
+        freqs = sp_fft.rfftfreq(nfft, 1/fs)
 
     # Perform the windowed FFTs
     result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
@@ -1914,10 +1911,10 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
     if sides == 'twosided':
-        func = fftpack.fft
+        func = sp_fft.fft
     else:
         result = result.real
-        func = np.fft.rfft
+        func = sp_fft.rfft
     result = func(result, n=nfft)
 
     return result
