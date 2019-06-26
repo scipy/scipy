@@ -90,7 +90,8 @@ def _pivot_col(T, tol=1e-9, bland=False):
     if ma.count() == 0:
         return False, np.nan
     if bland:
-        return True, np.nonzero(ma.mask == False)[0][0]
+        # ma.mask is sometimes 0d
+        return True, np.nonzero(np.logical_not(np.atleast_1d(ma.mask)))[0][0]
     return True, np.ma.nonzero(ma == ma.min())[0][0]
 
 
@@ -225,7 +226,7 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
             "Removing redundant constraints, changing the pivot strategy "
             "via Bland's rule or increasing the tolerance may "
             "help reduce the issue.".format(pivval, tol))
-        warn(message, OptimizeWarning)
+        warn(message, OptimizeWarning, stacklevel=5)
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',

@@ -1001,7 +1001,7 @@ def dft(n, scale=None):
     -----
     When `scale` is None, multiplying a vector by the matrix returned by
     `dft` is mathematically equivalent to (but much less efficient than)
-    the calculation performed by `scipy.fftpack.fft`.
+    the calculation performed by `scipy.fft.fft`.
 
     .. versionadded:: 0.14.0
 
@@ -1012,19 +1012,23 @@ def dft(n, scale=None):
     Examples
     --------
     >>> from scipy.linalg import dft
-    >>> np.set_printoptions(precision=5, suppress=True)
-    >>> x = np.array([1, 2, 3, 0, 3, 2, 1, 0])
-    >>> m = dft(8)
-    >>> m.dot(x)   # Compute the DFT of x
-    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
-            -0.+4.j,  -2.+2.j])
+    >>> np.set_printoptions(precision=2, suppress=True)  # for compact output
+    >>> m = dft(5)
+    >>> m
+    array([[ 1.  +0.j  ,  1.  +0.j  ,  1.  +0.j  ,  1.  +0.j  ,  1.  +0.j  ],
+           [ 1.  +0.j  ,  0.31-0.95j, -0.81-0.59j, -0.81+0.59j,  0.31+0.95j],
+           [ 1.  +0.j  , -0.81-0.59j,  0.31+0.95j,  0.31-0.95j, -0.81+0.59j],
+           [ 1.  +0.j  , -0.81+0.59j,  0.31-0.95j,  0.31+0.95j, -0.81-0.59j],
+           [ 1.  +0.j  ,  0.31+0.95j, -0.81+0.59j, -0.81-0.59j,  0.31-0.95j]])
+    >>> x = np.array([1, 2, 3, 0, 3])
+    >>> m @ x  # Compute the DFT of x
+    array([ 9.  +0.j  ,  0.12-0.81j, -2.12+3.44j, -2.12-3.44j,  0.12+0.81j])
 
-    Verify that ``m.dot(x)`` is the same as ``fft(x)``.
+    Verify that ``m @ x`` is the same as ``fft(x)``.
 
-    >>> from scipy.fftpack import fft
-    >>> fft(x)     # Same result as m.dot(x)
-    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
-             0.+4.j,  -2.+2.j])
+    >>> from scipy.fft import fft
+    >>> fft(x)     # Same result as m @ x
+    array([ 9.  +0.j  ,  0.12-0.81j, -2.12+3.44j, -2.12-3.44j,  0.12+0.81j])
     """
     if scale not in [None, 'sqrtn', 'n']:
         raise ValueError("scale must be None, 'sqrtn', or 'n'; "

@@ -1,0 +1,278 @@
+diff --git a/scipy/fft/_pocketfft/pypocketfft.cxx b/scipy/fft/_pocketfft/pypocketfft.cxx
+index 6fb321563..155314f11 100644
+--- a/scipy/fft/_pocketfft/pypocketfft.cxx
++++ b/scipy/fft/_pocketfft/pypocketfft.cxx
+@@ -14,7 +14,8 @@
+ #include <pybind11/numpy.h>
+ #include <pybind11/stl.h>
+
+-#include "pocketfft_hdronly.h"
++#include "pocketfft.h"
++#include "scipy_features.h"
+
+ //
+ // Python interface
+@@ -29,10 +30,10 @@ namespace py = pybind11;
+
+ auto c64 = py::dtype("complex64");
+ auto c128 = py::dtype("complex128");
+-auto c256 = py::dtype("complex256");
++auto c256 = py::dtype("longcomplex");
+ auto f32 = py::dtype("float32");
+ auto f64 = py::dtype("float64");
+-auto f128 = py::dtype("float128");
++auto f128 = py::dtype("longfloat");
+
+ shape_t copy_shape(const py::array &arr)
+   {
+@@ -59,24 +60,29 @@ shape_t makeaxes(const py::array &in, py::object axes)
+       res[i]=i;
+     return res;
+     }
+-  auto tmp=axes.cast<shape_t>();
+-  if ((tmp.size()>size_t(in.ndim())) || (tmp.size()==0))
++  auto tmp=axes.cast<std::vector<ptrdiff_t>>();
++  auto ndim = in.ndim();
++  if ((tmp.size()>size_t(ndim)) || (tmp.size()==0))
+     throw runtime_error("bad axes argument");
+-  for (auto sz: tmp)
+-    if (sz>=size_t(in.ndim()))
+-      throw runtime_error("invalid axis number");
+-  return tmp;
++  for (auto& sz: tmp)
++    {
++    if (sz<0)
++      sz += ndim;
++    if ((sz>=ndim) || (sz<0))
++      throw invalid_argument("axes exceeds dimensionality of output");
++    }
++  return shape_t(tmp.begin(), tmp.end());
+   }
+
+ #define DISPATCH(arr, T1, T2, T3, func, args) \
+   auto dtype = arr.dtype(); \
+   if (dtype.is(T1)) return func<double> args; \
+   if (dtype.is(T2)) return func<float> args; \
+-  if (dtype.is(T3)) return func<long double> args; \
++  if (dtype.is(T3)) return func<longfloat_t> args; \
+   throw runtime_error("unsupported data type");
+
+ template<typename T> py::array xfftn_internal(const py::array &in,
+-  const shape_t &axes, long double fct, bool inplace, bool fwd, size_t nthreads)
++  const shape_t &axes, norm_t norm, bool inplace, bool fwd, size_t nthreads)
+   {
+   auto dims(copy_shape(in));
+   py::array res = inplace ? in : py::array_t<complex<T>>(dims);
+@@ -86,28 +92,40 @@ template<typename T> py::array xfftn_internal(const py::array &in,
+   auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
+   {
+   py::gil_scoped_release release;
+-  c2c(dims, s_in, s_out, axes, fwd, d_in, d_out, T(fct), nthreads);
++  auto fct = norm_fct<T>(norm, dims, axes);
++  c2c(dims, s_in, s_out, axes, fwd, d_in, d_out, fct, nthreads);
+   }
+   return res;
+   }
+
+-py::array xfftn(const py::array &a, py::object axes, double fct, bool inplace,
+-  bool fwd, size_t nthreads)
++py::array xfftn(const py::array &in, py::object axes, norm_t norm, bool inplace,
++                bool fwd, size_t nthreads)
+   {
+-  DISPATCH(a, c128, c64, c256, xfftn_internal, (a, makeaxes(a, axes), fct,
+-           inplace, fwd, nthreads))
++    py::array a = asfarray(in, inplace);
++    auto dtype = a.dtype();
++#define X_(NP_TYPE, FUNC)                                               \
++    if (dtype.is(NP_TYPE)) \
++      return FUNC(a, makeaxes(a, axes), norm, inplace, fwd, nthreads)
++    X_(c64,  xfftn_internal<float>);
++    X_(c128, xfftn_internal<double>);
++    X_(c256, xfftn_internal<longfloat_t>);
++    X_(f32,  xfftn_real<float>);
++    X_(f64,  xfftn_real<double>);
++    X_(f128, xfftn_real<longfloat_t>);
++#undef X_
++    throw runtime_error("unsupported data type");
+   }
+
+-py::array fftn(const py::array &a, py::object axes, double fct, bool inplace,
++py::array fftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
+   size_t nthreads)
+-  { return xfftn(a, axes, fct, inplace, true, nthreads); }
++  { return xfftn(a, axes, norm, inplace, true, nthreads); }
+
+-py::array ifftn(const py::array &a, py::object axes, double fct, bool inplace,
++py::array ifftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
+   size_t nthreads)
+-  { return xfftn(a, axes, fct, inplace, false, nthreads); }
++  { return xfftn(a, axes, norm, inplace, false, nthreads); }
+
+ template<typename T> py::array rfftn_internal(const py::array &in,
+-  py::object axes_, long double fct, size_t nthreads)
++  py::object axes_, norm_t norm, size_t nthreads)
+   {
+   auto axes = makeaxes(in, axes_);
+   auto dims_in(copy_shape(in)), dims_out(dims_in);
+@@ -119,19 +137,21 @@ template<typename T> py::array rfftn_internal(const py::array &in,
+   auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
+   {
+   py::gil_scoped_release release;
+-  r2c(dims_in, s_in, s_out, axes, d_in, d_out, T(fct), nthreads);
++  auto fct = norm_fct<T>(norm, dims_in, axes);
++  r2c(dims_in, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+   }
+   return res;
+   }
+
+-py::array rfftn(const py::array &in, py::object axes_, double fct,
++py::array rfftn(const py::array &in, py::object axes_, norm_t norm,
+   size_t nthreads)
+   {
+-  DISPATCH(in, f64, f32, f128, rfftn_internal, (in, axes_, fct, nthreads))
++  py::array a = asfarray(in);
++  DISPATCH(a, f64, f32, f128, rfftn_internal, (a, axes_, norm, nthreads))
+   }
+
+ template<typename T> py::array xrfft_scipy(const py::array &in,
+-  size_t axis, long double fct, bool inplace, bool fwd, size_t nthreads)
++  size_t axis, norm_t norm, bool inplace, bool fwd, size_t nthreads)
+   {
+   auto dims(copy_shape(in));
+   py::array res = inplace ? in : py::array_t<T>(dims);
+@@ -141,26 +161,29 @@ template<typename T> py::array xrfft_scipy(const py::array &in,
+   auto d_out=reinterpret_cast<T *>(res.mutable_data());
+   {
+   py::gil_scoped_release release;
+-  r2r_fftpack(dims, s_in, s_out, axis, fwd, d_in, d_out, T(fct), nthreads);
++  auto fct = norm_fct<T>(norm, dims, {axis});
++  r2r_fftpack(dims, s_in, s_out, axis, fwd, d_in, d_out, fct, nthreads);
+   }
+   return res;
+   }
+
+-py::array rfft_scipy(const py::array &in, size_t axis, double fct, bool inplace,
++py::array rfft_scipy(const py::array &in, size_t axis, norm_t norm, bool inplace,
+   size_t nthreads)
+   {
+-  DISPATCH(in, f64, f32, f128, xrfft_scipy, (in, axis, fct, inplace, true,
++  py::array a = asfarray(in, inplace);
++  DISPATCH(a, f64, f32, f128, xrfft_scipy, (a, axis, norm, inplace, true,
+     nthreads))
+   }
+
+-py::array irfft_scipy(const py::array &in, size_t axis, double fct,
++py::array irfft_scipy(const py::array &in, size_t axis, norm_t norm,
+   bool inplace, size_t nthreads)
+   {
+-  DISPATCH(in, f64, f32, f128, xrfft_scipy, (in, axis, fct, inplace, false,
++  py::array a = asfarray(in, inplace);
++  DISPATCH(a, f64, f32, f128, xrfft_scipy, (a, axis, norm, inplace, false,
+     nthreads))
+   }
+ template<typename T> py::array irfftn_internal(const py::array &in,
+-  py::object axes_, size_t lastsize, long double fct, size_t nthreads)
++  py::object axes_, size_t lastsize, norm_t norm, size_t nthreads)
+   {
+   auto axes = makeaxes(in, axes_);
+   size_t axis = axes.back();
+@@ -176,20 +199,22 @@ template<typename T> py::array irfftn_internal(const py::array &in,
+   auto d_out=reinterpret_cast<T *>(res.mutable_data());
+   {
+   py::gil_scoped_release release;
+-  c2r(dims_out, s_in, s_out, axes, d_in, d_out, T(fct), nthreads);
++  auto fct = norm_fct<T>(norm, dims_out, axes);
++  c2r(dims_out, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+   }
+   return res;
+   }
+
+ py::array irfftn(const py::array &in, py::object axes_, size_t lastsize,
+-  double fct, size_t nthreads)
++  norm_t norm, size_t nthreads)
+   {
+-  DISPATCH(in, c128, c64, c256, irfftn_internal, (in, axes_, lastsize, fct,
++  py::array a = asfarray(in);
++  DISPATCH(a, c128, c64, c256, irfftn_internal, (a, axes_, lastsize, norm,
+     nthreads))
+   }
+
+ template<typename T> py::array hartley_internal(const py::array &in,
+-  py::object axes_, long double fct, bool inplace, size_t nthreads)
++  py::object axes_, norm_t norm, bool inplace, size_t nthreads)
+   {
+   auto dims(copy_shape(in));
+   py::array res = inplace ? in : py::array_t<T>(dims);
+@@ -200,15 +225,16 @@ template<typename T> py::array hartley_internal(const py::array &in,
+   auto d_out=reinterpret_cast<T *>(res.mutable_data());
+   {
+   py::gil_scoped_release release;
+-  r2r_hartley(dims, s_in, s_out, axes, d_in, d_out, T(fct), nthreads);
++  auto fct = norm_fct<T>(norm, dims, axes);
++  r2r_hartley(dims, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+   }
+   return res;
+   }
+
+-py::array hartley(const py::array &in, py::object axes_, double fct,
++py::array hartley(const py::array &in, py::object axes_, norm_t norm,
+   bool inplace, size_t nthreads)
+   {
+-  DISPATCH(in, f64, f32, f128, hartley_internal, (in, axes_, fct, inplace,
++  DISPATCH(in, f64, f32, f128, hartley_internal, (in, axes_, norm, inplace,
+     nthreads))
+   }
+
+@@ -264,10 +290,10 @@ py::array mycomplex2hartley(const py::array &in,
+   DISPATCH(in, f64, f32, f128, complex2hartley, (in, tmp, axes_, inplace))
+   }
+
+-py::array hartley2(const py::array &in, py::object axes_, double fct,
++py::array hartley2(const py::array &in, py::object axes_, norm_t norm,
+   bool inplace, size_t nthreads)
+   {
+-  return mycomplex2hartley(in, rfftn(in, axes_, fct, nthreads), axes_,
++  return mycomplex2hartley(in, rfftn(in, axes_, norm, nthreads), axes_,
+     inplace);
+   }
+
+@@ -463,21 +489,25 @@ PYBIND11_MODULE(pypocketfft, m)
+   using namespace pybind11::literals;
+
+   m.doc() = pypocketfft_DS;
+-  m.def("fftn",&fftn, fftn_DS, "a"_a, "axes"_a=py::none(), "fct"_a=1.,
+-    "inplace"_a=false, "nthreads"_a=1);
+-  m.def("ifftn",&ifftn, ifftn_DS, "a"_a, "axes"_a=py::none(), "fct"_a=1.,
+-    "inplace"_a=false, "nthreads"_a=1);
+-  m.def("rfftn",&rfftn, rfftn_DS, "a"_a, "axes"_a=py::none(), "fct"_a=1.,
+-    "nthreads"_a=1);
+-  m.def("rfft_scipy",&rfft_scipy, rfft_scipy_DS, "a"_a, "axis"_a, "fct"_a=1.,
+-    "inplace"_a=false, "nthreads"_a=1);
++  py::enum_<norm_t>(m, "norm_t")
++    .value("none",  norm_t::none)
++    .value("ortho", norm_t::ortho)
++    .value("size",  norm_t::size);
++  m.def("fftn",&fftn, fftn_DS, "a"_a, "axes"_a=py::none(), "norm"_a=norm_t::none,
++        "inplace"_a=false, "nthreads"_a=1);
++  m.def("ifftn",&ifftn, ifftn_DS, "a"_a, "axes"_a=py::none(),
++        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
++  m.def("rfftn",&rfftn, rfftn_DS, "a"_a, "axes"_a=py::none(),
++        "norm"_a=norm_t::none, "nthreads"_a=1);
++  m.def("rfft_scipy",&rfft_scipy, rfft_scipy_DS, "a"_a, "axis"_a,
++        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
+   m.def("irfftn",&irfftn, irfftn_DS, "a"_a, "axes"_a=py::none(), "lastsize"_a=0,
+-    "fct"_a=1., "nthreads"_a=1);
+-  m.def("irfft_scipy",&irfft_scipy, irfft_scipy_DS, "a"_a, "axis"_a, "fct"_a=1.,
+-    "inplace"_a=false, "nthreads"_a=1);
+-  m.def("hartley",&hartley, hartley_DS, "a"_a, "axes"_a=py::none(), "fct"_a=1.,
+-    "inplace"_a=false, "nthreads"_a=1);
+-  m.def("hartley2",&hartley2, "a"_a, "axes"_a=py::none(), "fct"_a=1.,
++    "norm"_a=norm_t::none, "nthreads"_a=1);
++  m.def("irfft_scipy",&irfft_scipy, irfft_scipy_DS, "a"_a, "axis"_a,
++        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
++  m.def("hartley",&hartley, hartley_DS, "a"_a, "axes"_a=py::none(),
++        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
++  m.def("hartley2",&hartley2, "a"_a, "axes"_a=py::none(), "norm"_a=norm_t::none,
+     "inplace"_a=false, "nthreads"_a=1);
+   m.def("complex2hartley",&mycomplex2hartley, "in"_a, "tmp"_a, "axes"_a,
+     "inplace"_a=false);

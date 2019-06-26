@@ -644,7 +644,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data,
             major, major + 1, minor, minor + 1)
-        return np.array(data.sum(), dtype=self.dtype)
+        return data.sum(dtype=self.dtype)
 
     def _get_sliceXslice(self, row, col):
         major, minor = self._swap((row, col))

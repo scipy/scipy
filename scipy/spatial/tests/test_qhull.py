@@ -949,6 +949,14 @@ class TestVoronoi:
         """
         self._compare_qvoronoi(points, output, furthest_site=True)
 
+    def test_furthest_site_flag(self):
+        points = [(0, 0), (0, 1), (1, 0), (0.5, 0.5), (1.1, 1.1)]
+
+        vor = Voronoi(points)
+        assert_equal(vor.furthest_site,False)
+        vor = Voronoi(points,furthest_site=True)
+        assert_equal(vor.furthest_site,True)
+
     @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
     def test_incremental(self, name):
         # Test incremental construction of the triangulation

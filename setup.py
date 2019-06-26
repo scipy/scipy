@@ -240,6 +240,10 @@ def get_build_ext_override():
                     ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
 
+            # Allow late configuration
+            if hasattr(ext, '_pre_build_hook'):
+                ext._pre_build_hook(self, ext)
+
             old_build_ext.build_extension(self, ext)
 
         def __is_using_gnu_linker(self, ext):
@@ -466,6 +470,8 @@ def setup_package():
         # See gh-5184.
         build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
+
+    build_requires += ['pybind11>=2.2.4']
 
     metadata = dict(
         name='scipy',

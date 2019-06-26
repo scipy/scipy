@@ -17,7 +17,7 @@ cdef extern from "numpy/npy_math.h" nogil:
     double npy_isnan(double)
     double nan "NPY_NAN"
 
-from ._cephes cimport (bdtrc, bdtr, bdtri, expn, hyp2f0, nbdtrc,
+from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
                        nbdtr, nbdtri, pdtrc, pdtr, pdtri, kn, yn,
                        smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
@@ -73,13 +73,6 @@ cdef inline double expn_unsafe(double n, double x) nogil:
         return n
     _legacy_cast_check("expn", n, 0)
     return expn(<int>n, x)
-
-cdef inline double hyp2f0_unsafe(double a, double b, double x,
-                                 double type, double *err) nogil:
-    if npy_isnan(type):
-        return type
-    _legacy_cast_check("hyp2f0", type, 0)
-    return hyp2f0(a, b, x, <int>type, err)
 
 cdef inline double nbdtrc_unsafe(double k, double n, double p) nogil:
     if npy_isnan(k) or npy_isnan(n):

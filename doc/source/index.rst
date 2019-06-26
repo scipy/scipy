@@ -64,6 +64,7 @@ parameters available for the algorithms.
 
    cluster
    constants
+   fft
    fftpack
    integrate
    interpolate

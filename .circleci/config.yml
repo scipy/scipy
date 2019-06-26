@@ -45,6 +45,7 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
             pip install nose mpmath argparse Pillow codecov matplotlib "Sphinx<2.1"
+            pip install pybind11
 
       - run:
           name: build docs

@@ -1,5 +1,6 @@
 numpy
 cython
+pybind11
 pytest
 pytest-timeout
 pytest-xdist

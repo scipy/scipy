@@ -85,6 +85,13 @@ del _num
 del linalg
 __all__.remove('linalg')
 
+# The existence of the scipy.fft function breaks doc builds
+import os as _os
+if _os.environ.get('_SCIPY_BUILDING_DOC') == 'True':
+    del fft
+    __all__.remove('fft')
+del _os
+
 # We first need to detect if we're being called as part of the scipy
 # setup procedure itself in a reliable manner.
 try:

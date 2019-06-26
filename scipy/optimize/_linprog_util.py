@@ -65,7 +65,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
-             OptimizeWarning)
+             OptimizeWarning, stacklevel=4)
     return options, A_ub, A_eq
 
 
@@ -745,7 +745,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
             A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
             if A_eq.shape[0] < n_rows_A:
-                warn(redundancy_warning, OptimizeWarning)
+                warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
                 complete = True
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
@@ -760,7 +760,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
         except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
-        warn(redundancy_warning, OptimizeWarning)
+        warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
         if dim_row_nullspace <= small_nullspace:
             A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)

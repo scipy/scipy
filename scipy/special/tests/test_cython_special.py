@@ -279,10 +279,9 @@ def _generate_test_points(typecodes):
 
 def test_cython_api_completeness():
     # Check that everything is tested
-    skip = {'hyp2f0', 'hyp1f2', 'hyp3f0'}
     for name in dir(cython_special):
         func = getattr(cython_special, name)
-        if callable(func) and not (name.startswith('_') or name in skip):
+        if callable(func) and not name.startswith('_'):
             for _, cyfun, _, _ in PARAMS:
                 if cyfun is func:
                     break
