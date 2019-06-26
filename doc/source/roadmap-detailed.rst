@@ -106,24 +106,8 @@ constants
 This module is basically done, low-maintenance and without open issues.
 
 
-fftpack
-```````
-We aim to follow NumPy in adopting ``pocketfft`` (see `this NumPy PR
-<https://github.com/numpy/numpy/pull/11888>`__).  That will address a number of
-maintenance issues, and increase performance (both accuracy and speed).
-Of particular interest regarding performance is the Bluestein algorithm (or
-chirp Z-transform), which we have been wanting to add to ``fftpack`` for a long
-time.
-
-We probably want to deprecate fftpack.convolve as public function (it was not
-meant to be public).
-
-There's a large overlap with ``numpy.fft``.  This duplication has to change
-(both are too widely used to deprecate one); in the documentation we should
-make clear that ``scipy.fftpack`` is preferred over ``numpy.fft``.
-If there are differences in signature or functionality, the best version
-should be picked case by case (example: numpy's ``rfft`` is preferred, see
-`gh-2487 <https://github.com/scipy/scipy/issues/2487>`__).
+fft
+````
 
 Ideas for new features:
 
