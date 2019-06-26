@@ -53,11 +53,8 @@ along.  The tentative plan is:
 Fourier transform enhancements
 ------------------------------
 
-We want to integrate PocketFFT into ``scipy.fftpack`` for significant
-performance improvements (see `this NumPy PR
-<https://github.com/numpy/numpy/pull/11888>`__ for details),
-add a backend system to support PyFFTW and mkl-fft,
-and align the function signatures of ``numpy.fft`` and ``scipy.fftpack``.
+The new ``scipy.fft`` submodule should be extended to add a backend system with
+support for PyFFTW and mkl-fft.
 
 
 Support for distributed arrays and GPU arrays
