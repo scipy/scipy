@@ -18,7 +18,8 @@ Using any of these subpackages requires an explicit import.  For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
@@ -85,13 +86,6 @@ del _num
 del linalg
 __all__.remove('linalg')
 
-# The existence of the scipy.fft function breaks doc builds
-import os as _os
-if _os.environ.get('_SCIPY_BUILDING_DOC') == 'True':
-    del fft
-    __all__.remove('fft')
-del _os
-
 # We first need to detect if we're being called as part of the scipy
 # setup procedure itself in a reliable manner.
 try:
@@ -128,3 +122,7 @@ else:
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
     del PytestTester
+
+    # This makes "from scipy import fft" return scipy.fft, not np.fft
+    del fft
+    from . import fft

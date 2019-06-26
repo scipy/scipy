@@ -213,7 +213,7 @@ class TestConvolve(_TestConvolve):
                 kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
                 # atol is default for np.allclose
-                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
+                kwargs = {'rtol': 1e-3, 'atol': 1e-3}
             else:
                 # defaults for np.allclose (different from assert_allclose)
                 kwargs = {'rtol': 1e-5, 'atol': 1e-8}
@@ -699,9 +699,10 @@ class TestFFTConvolve(object):
                                       [-4, -1],
                                       [-1, -4]])
     def test_random_data_multidim_axes(self, axes):
+        a_shape, b_shape = (123, 22), (132, 11)
         np.random.seed(1234)
-        a = np.random.rand(123, 222) + 1j * np.random.rand(123, 222)
-        b = np.random.rand(132, 111) + 1j * np.random.rand(132, 111)
+        a = np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape)
+        b = np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape)
         expected = convolve2d(a, b, 'full')
 
         a = a[:, :, None, None, None]
@@ -718,7 +719,7 @@ class TestFFTConvolve(object):
         expected = np.tile(expected, [2, 1, 3, 4, 1])
 
         out = fftconvolve(a, b, 'full', axes=axes)
-        assert_(np.allclose(out, expected, rtol=1e-10))
+        assert_allclose(out, expected, rtol=1e-10, atol=1e-10)
 
     @pytest.mark.slow
     @pytest.mark.parametrize(
@@ -2655,7 +2656,7 @@ class TestDeconvolve(object):
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
 
-        
+
 class TestDetrend(object):
 
     def test_basic(self):
@@ -2664,7 +2665,7 @@ class TestDetrend(object):
         assert_array_almost_equal(detrended, detrended_exact)
 
     def test_copy(self):
-        x = array([1, 1.2, 1.5, 1.6, 2.4]) 
+        x = array([1, 1.2, 1.5, 1.6, 2.4])
         copy_array = detrend(x, overwrite_data=False)
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)
