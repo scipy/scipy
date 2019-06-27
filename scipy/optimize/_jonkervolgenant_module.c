@@ -32,26 +32,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "numpy/arrayobject.h"
 #include "numpy/ndarraytypes.h"
 
-static PyObject *calculate_assignment(PyObject *self, PyObject *args) {
-    PyObject *obj_cost = NULL;
+static PyObject*
+calculate_assignment(PyObject* self, PyObject* args)
+{
+    PyObject* obj_cost = NULL;
     if (!PyArg_ParseTuple(args, "O", &obj_cost))
         return NULL;
 
-    PyArrayObject *obj_cont = (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
-    if (obj_cont == NULL)
+    PyArrayObject* obj_cont =
+      (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
+    if (obj_cont == NULL) {
         return NULL;
+    }
 
     int num_rows = PyArray_DIM(obj_cont, 0);
     int num_cols = PyArray_DIM(obj_cont, 1);
 
-    double *cost_matrix = (double *)PyArray_DATA(obj_cont);
-    if (cost_matrix == NULL)
+    double* cost_matrix = (double*)PyArray_DATA(obj_cont);
+    if (cost_matrix == NULL) {
         return NULL;
+    }
 
-    npy_intp dim[1] = {num_rows};
-    PyObject *x = PyArray_SimpleNew(1, dim, NPY_INT64);
+    npy_intp dim[1] = { num_rows };
+    PyObject* x = PyArray_SimpleNew(1, dim, NPY_INT64);
     int result = solve_jonker_volgenant(num_rows, num_cols, cost_matrix,
-                                        PyArray_DATA((PyArrayObject *)x));
+                                        PyArray_DATA((PyArrayObject*)x));
     Py_DECREF((PyObject*)obj_cont);
     if (result != 0) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
@@ -63,9 +68,10 @@ static PyObject *calculate_assignment(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef jonkervolgenant_methods[] = {
-    {"calculate_assignment", calculate_assignment, METH_VARARGS,
-     "Solves rectangular linear sum assignment problem."},
-    {NULL, NULL, 0, NULL}};
+    { "calculate_assignment", calculate_assignment, METH_VARARGS,
+      "Solves rectangular linear sum assignment problem." },
+    { NULL, NULL, 0, NULL }
+};
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
@@ -79,9 +85,10 @@ static struct PyModuleDef moduledef = {
     NULL,
 };
 
-PyObject *PyInit__jonkervolgenant(void)
+PyObject*
+PyInit__jonkervolgenant(void)
 {
-    PyObject *m;
+    PyObject* m;
     m = PyModule_Create(&moduledef);
     import_array();
     return m;

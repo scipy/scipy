@@ -47,22 +47,24 @@ Author: PM Larsen
 */
 
 #include <algorithm>
-#include <vector>
 #include <cmath>
+#include <vector>
 
-static int augmenting_path(int nc, std::vector<double>& cost,
-                           std::vector<double> &u, std::vector<double> &v,
-                           std::vector<int> &path, std::vector<int> &row4col,
-                           std::vector<double> &shortestPathCosts, int i,
-                           std::vector<bool> &SR, std::vector<bool> &SC,
-                           double *p_minVal) {
+static int
+augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
+                std::vector<double>& v, std::vector<int>& path,
+                std::vector<int>& row4col,
+                std::vector<double>& shortestPathCosts, int i,
+                std::vector<bool>& SR, std::vector<bool>& SC, double* p_minVal)
+{
     double minVal = 0;
 
     int num_remaining = nc;
     std::vector<int> remaining(nc);
-    //std::iota(remaining.begin(), remaining.end(), 0); //needs C++11
-    for (int it=0;it<nc;it++)
+    // std::iota(remaining.begin(), remaining.end(), 0); //needs C++11
+    for (int it = 0; it < nc; it++) {
         remaining[it] = it;
+    }
 
     std::fill(SR.begin(), SR.end(), false);
     std::fill(SC.begin(), SC.end(), false);
@@ -84,8 +86,8 @@ static int augmenting_path(int nc, std::vector<double>& cost,
                 shortestPathCosts[j] = r;
             }
 
-            if (shortestPathCosts[j] < lowest
-                || (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
+            if (shortestPathCosts[j] < lowest ||
+                (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
                 lowest = shortestPathCosts[j];
                 index = it;
             }
@@ -93,13 +95,15 @@ static int augmenting_path(int nc, std::vector<double>& cost,
 
         minVal = lowest;
         int j = remaining[index];
-        if (minVal == INFINITY) // infeasible cost matrix
+        if (minVal == INFINITY) { // infeasible cost matrix
             return -1;
+        }
 
-        if (row4col[j] == -1)
+        if (row4col[j] == -1) {
             sink = j;
-        else
+        } else {
             i = row4col[j];
+        }
 
         SR[i] = true;
         SC[j] = true;
@@ -111,14 +115,16 @@ static int augmenting_path(int nc, std::vector<double>& cost,
     return sink;
 }
 
-static int _solve(int nr, int nc, double *input_cost,
-                     int64_t *output_col4row) {
+static int
+solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
+{
 
     // build a non-negative cost matrix
     std::vector<double> cost(nr * nc);
     double minval = *std::min_element(input_cost, input_cost + nr * nc);
-    for (int i = 0; i < nr * nc; i++)
+    for (int i = 0; i < nr * nc; i++) {
         cost[i] = input_cost[i] - minval;
+    }
 
     // initialize variables
     std::vector<double> u(nr, 0);
@@ -136,18 +142,23 @@ static int _solve(int nr, int nc, double *input_cost,
         double minVal;
         int sink = augmenting_path(nc, cost, u, v, path, row4col,
                                    shortestPathCosts, curRow, SR, SC, &minVal);
-        if (sink < 0)
+        if (sink < 0) {
             return -1;
+        }
 
         // update dual variables
         u[curRow] += minVal;
-        for (int i = 0; i < nr; i++)
-            if (SR[i] && i != curRow)
+        for (int i = 0; i < nr; i++) {
+            if (SR[i] && i != curRow) {
                 u[i] += minVal - shortestPathCosts[col4row[i]];
+            }
+        }
 
-        for (int i = 0; i < nc; i++)
-            if (SC[i])
+        for (int i = 0; i < nc; i++) {
+            if (SC[i]) {
                 v[i] -= minVal - shortestPathCosts[i];
+            }
+        }
 
         // augment previous solution
         int j = sink;
@@ -155,13 +166,15 @@ static int _solve(int nr, int nc, double *input_cost,
             int i = path[j];
             row4col[j] = i;
             std::swap(col4row[i], j);
-            if (i == curRow)
+            if (i == curRow) {
                 break;
+            }
         }
     }
 
-    for (int i = 0; i < nr; i++)
+    for (int i = 0; i < nr; i++) {
         output_col4row[i] = col4row[i];
+    }
 
     return 0;
 }
@@ -170,9 +183,10 @@ static int _solve(int nr, int nc, double *input_cost,
 extern "C" {
 #endif
 
-int solve_jonker_volgenant(int nr, int nc, double *input_cost,
-                              int64_t *col4row) {
-    return _solve(nr, nc, input_cost, col4row);
+int
+solve_jonker_volgenant(int nr, int nc, double* input_cost, int64_t* col4row)
+{
+    return solve(nr, nc, input_cost, col4row);
 }
 
 #ifdef __cplusplus
