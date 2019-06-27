@@ -440,13 +440,13 @@ subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
     integer intent(hide),depend(c):: n = shape(c,1)
     integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
     integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
-    <ftype> dimension((*side=='L'?m:n),k),intent(in):: v
+    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
     integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
     <ftype> dimension(nb,k),intent(in):: t
     integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
     <ftype> dimension(m,n),intent(in,out,copy):: c
     integer intent(hide),depend(c):: ldc = MAX(1,shape(c,0))
-    <ftype> dimension((*side=='L'?n:m)*nb),intent(hide,cache):: work
+    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
     integer intent(out):: info
 
 end subroutine <prefix>gemqrt
@@ -498,15 +498,15 @@ subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,inf
     integer intent(hide),depend(t):: k = shape(t,1)
     integer intent(in),depend(k),check(k>=l&&l>=0):: l
     integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
-    <ftype> dimension((*side=='L'?m:n),k),intent(in):: v
+    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
     integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
     <ftype> dimension(nb,k),intent(in):: t
     integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
-    <ftype> dimension((*side=='L'?k:m),(*side=='L'?n:k)),intent(in,out,copy):: a
+    <ftype> dimension((side[0]=='L'?k:m),(side[0]=='L'?n:k)),intent(in,out,copy):: a
     integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
     <ftype> dimension(m,n),intent(in,out,copy):: b
     integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
-    <ftype> dimension((*side=='L'?n:m)*nb),intent(hide,cache):: work
+    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
     integer intent(out):: info
 
 end subroutine <prefix>tpmqrt
