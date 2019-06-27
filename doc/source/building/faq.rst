@@ -23,7 +23,7 @@ command ``source scipy-dev/bin/activate``, and ``deactivate`` to exit from the
 virtual environment and back to your previous shell.  With scipy-dev
 activated, install first Scipy's dependencies::
 
-    $ pip install NumPy pytest Cython
+    $ pip install NumPy pytest Cython pybind11
 
 After that, you can install a development version of Scipy, for example via::
 

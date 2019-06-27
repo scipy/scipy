@@ -51,7 +51,7 @@ Building SciPy
 
 #. Use Homebrew to install ``gcc`` by entering the command ``brew install gcc``.
 
-#. In the terminal, update/upgrade all of SciPy's build dependencies: ``conda update setuptools wheel cython numpy matplotlib pytest``
+#. In the terminal, update/upgrade all of SciPy's build dependencies: ``conda update setuptools wheel cython numpy matplotlib pytest pybind11``
 
 #. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``/scipy`` directory, not in a directory ending ``/scipy/scipy``.
 
