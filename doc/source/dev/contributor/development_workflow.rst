@@ -279,7 +279,8 @@ Checklist before submitting a PR
    ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
    next release? See the ``updating``, ``workers``, and ``constraints``
    documentation of |differential_evolution|_, for example. You can get the
-   next version number from the most recent release notes on `the wiki`_.
+   next version number from the most recent release notes on `the wiki`_ or
+   from the ``MAJOR`` and ``MINOR`` version number variables in |setup.py|_.
 -  In case of larger additions, is there a tutorial or more extensive
    module-level description? Tutorial files are in ``doc/source/tutorial``.
 -  If compiled code is added, is it integrated correctly via ``setup.py``?
@@ -306,4 +307,7 @@ Checklist before submitting a PR
 
 .. |differential_evolution| replace:: ``differential_evolution``
 .. _differential_evolution: https://github.com/scipy/scipy/blob/master/scipy/optimize/_differentialevolution.py
+
+.. |setup.py| replace:: ``setup.py``
+.. _setup.py: https://github.com/scipy/scipy/blob/master/setup.py
 
