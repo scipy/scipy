@@ -53,22 +53,14 @@ Checking Documentation on the Cloud
 Once a PR is opened, you can check that documentation renders correctly
 on the cloud.
 
-#. At the bottom of the PR, select “Show all Checks”.
+#. Log in to `GitHub`_.
+#. Log in `CircleCI`_ using your GitHub account.
+#. Back in GitHub, at the bottom of the PR, select “Show all Checks”.
 #. Next to “ci/circleci: build_docs”, select “Details”.
-#. Find the CircleCI job number. This is the 4-5 digit number in the URL of
-   the page you are brought to, and it is listed on the page; e.g.
-   “Jobs >> scipy >> scipy >> pull/10166 >> **13179** (build_docs)”.
-   Note that this is *not* the same as the PR number.
-#. Visit ``https://circle-artifacts.com/gh/scipy/scipy/13179/artifacts/0/html-scipyorg/index.html``
-   after replacing ``13179`` with your CircleCI job number.
-
-If you are a SciPy core developer, checking cloud-built documentation
-becomes a little more convenient.
-
-#. Log into CircleCI with your GitHub account.
-#. Visit the “ci/circleci: build_docs” job page as explained above.
 #. Select the “Artifacts” tab and find ``index.html``.
 
+.. _GitHub: https://github.com/
+.. _CircleCI: https://circleci.com/vcs-authorize/
 .. _Sphinx: http://www.sphinx-doc.org/en/master/
 .. _Rendering SciPy Documentation with Sphinx: https://youtu.be/kGSYU39EhJQ
 .. _git submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules
