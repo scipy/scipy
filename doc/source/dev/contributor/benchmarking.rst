@@ -1,5 +1,7 @@
 :orphan:
 
+.. highlight:: console
+
 .. _benchmarking-with-asv:
 
 Benchmarking SciPy with Airspeed Velocity
@@ -35,9 +37,9 @@ consider writing benchmarks.
 Writing benchmarks
 ------------------
 
-*The* \ `Writing benchmarks`_ \ *section of the airspeed velocity
-documentation is the definitive guide to writing benchmarks. Please see
-also the* \ `SciPy benchmarks readme`_\ *.*
+*The* \ :ref:`Writing benchmarks <asv:writing-benchmarks>` \ *section of the
+airspeed velocity documentation is the definitive guide to writing benchmarks.
+Please see also the* \ `SciPy benchmarks readme`_\ *.*
 
 To see how benchmarks are written, take a look at
 |optimize-linprog-py|_. Each subclass of
@@ -88,9 +90,7 @@ After contributing new benchmarks, you should test them locally before
 submitting a pull request.
 
 To run all benchmarks, navigate to the root SciPy directory at the
-command line and execute
-
-::
+command line and execute::
 
    python runtests.py --bench
 
@@ -102,23 +102,17 @@ execution times.*)
 
 To run benchmarks from a particular benchmark module, such as
 ``optimize_linprog.py``, simply append the filename without the
-extension:
-
-::
+extension::
 
    python runtests.py --bench optimize_linprog
 
 To run a benchmark defined in a class, such as ``KleeMinty`` from
-``optimize_linprog.py``:
-
-::
+``optimize_linprog.py``::
 
    python runtests.py --bench optimize_linprog.KleeMinty
 
 To compare benchmark results between the active branch and another, such
-as ``master``:
-
-::
+as ``master``::
 
    python runtests.py --bench-compare master optimize_linprog.KleeMinty
 
@@ -134,9 +128,7 @@ some environment variables for you, then sends all remaining command
 line arguments to ``asv``.
 
 To use it, navigate to ``scipy/benchmarks`` in the console and then
-execute:
-
-::
+execute::
 
    python run.py run
 
@@ -145,9 +137,7 @@ whole benchmark suite and saves the results for comparison against
 future commits.
 
 To run only a single benchmark, such as ``KleeMinty`` from
-``optimize_linprog.py``:
-
-::
+``optimize_linprog.py``::
 
    python run.py run --bench optimize_linprog.KleeMinty
 
@@ -159,22 +149,18 @@ benchmark not just for the current commit, but for every commit in a
 range. ``linprog`` ``method='interior-point'`` was merged into SciPy
 with commit |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32|_, so let’s
 run the ``KleeMinty`` benchmark for 10 commits between then and now to
-track its performance over time.
-
-::
+track its performance over time::
 
    python run.py run --bench optimize_linprog.KleeMinty --steps 10 7fa17f..
 
 .. note::
 
-   this will take a while, because SciPy has to be rebuilt for each
+   This will take a while, because SciPy has to be rebuilt for each
    commit! For more information about specifying ranges of commits, see
    the `git revisions documentation`_.
 
 To "publish" the results (prepare them to be viewed) and "preview" them
-in an interactive console:
-
-::
+in an interactive console::
 
    python run.py publish
    python run.py preview
@@ -195,7 +181,6 @@ check out the ``asv find`` command and the ``--quick``,
 .. _Benchmarking SciPy: https://youtu.be/edLQ8KRpupQ
 .. _airspeed velocity (asv) documentation: https://asv.readthedocs.io/en/stable/
 .. _airspeed velocity of an unladen scipy: https://pv.github.io/scipy-bench/
-.. _Writing benchmarks: https://asv.readthedocs.io/en/stable/writing_benchmarks.html
 .. _SciPy benchmarks readme: https://github.com/scipy/scipy/blob/master/benchmarks/README.rst
 .. _Klee-Minty hypercube problem: https://en.wikipedia.org/wiki/Klee%E2%80%93Minty_cube
 .. _KleeMinty.time_klee_minty: https://pv.github.io/scipy-bench/#optimize_linprog.KleeMinty.time_klee_minty

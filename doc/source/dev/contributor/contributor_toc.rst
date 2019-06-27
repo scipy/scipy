@@ -32,21 +32,21 @@ Editing SciPy
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world.
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API. If you are going to import other SciPy code, read this first.
 - :ref:`reviewing-prs` explains how to review another author's SciPy code locally.
-- `NumPy Distutils - Users Guide`_ - Check this out before adding any new files to SciPy.
+- :doc:`numpy:reference/distutils_guide` - Check this out before adding any new files to SciPy.
 - :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared. It's geared toward :ref:`Core Developers<governance>`, but contains useful information for all contributors.
 
 .. _unit-tests:
 
 Unit Tests
 ----------
-- `NumPy/SciPy Testing Guidelines`_ is the definitive guide to writing unit tests of SciPy code.
+- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of SciPy code.
 - :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally.
 
 .. _docs:
 
 Documentation
 -------------
-- `numpydoc docstring guide`_ contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_.
+- :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_.
 - :ref:`rendering-documentation` - It's important to check how changes to the documentation render before merging a PR; this document explains how you can do that.
 
 .. _toc-benchmarking:
@@ -66,12 +66,6 @@ Compiled Code
 - :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy.
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
-
-.. _NumPy Distutils - Users Guide: https://docs.scipy.org/doc/numpy/reference/distutils_guide.html
-
-.. _NumPy/SciPy Testing Guidelines: https://docs.scipy.org/doc/numpy/reference/testing.html
-
-.. _numpydoc docstring guide: https://numpydoc.readthedocs.io/en/latest/format.html
 
 .. _Sphinx: http://www.sphinx-doc.org/en/master/
 

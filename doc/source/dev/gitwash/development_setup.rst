@@ -114,11 +114,6 @@ so it pulls from ``upstream`` by default.  This can be done with::
    git config branch.master.remote upstream
    git config branch.master.merge refs/heads/master
 
-You may also want to have easy access to all pull requests sent to the
-SciPy repository::
-
-   git config --add remote.upstream.fetch '+refs/pull/*/head:refs/remotes/upstream/pr/*'
-
 Your config file should now look something like (from
 ``$ cat .git/config``)::
 
@@ -135,7 +130,6 @@ Your config file should now look something like (from
    [remote "upstream"]
            url = https://github.com/scipy/scipy.git
            fetch = +refs/heads/*:refs/remotes/upstream/*
-           fetch = +refs/pull/*/head:refs/remotes/upstream/pr/*
    [branch "master"]
            remote = upstream
            merge = refs/heads/master

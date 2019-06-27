@@ -272,6 +272,7 @@ Checklist before submitting a PR
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.
 -  Is the code style correct? See :ref:`pep8-scipy`.
+-  Are there benchmarks? See :ref:`benchmarking-with-asv`.
 -  Is the commit message `formatted correctly`_?
 -  Is the new functionality mentioned in the release notes of the next
    release? An editable draft of the most recent notes is on `the wiki`_.

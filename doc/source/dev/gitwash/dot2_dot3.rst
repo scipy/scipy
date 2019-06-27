@@ -1,8 +1,8 @@
 .. _dot2-dot3:
 
-========================================
- Two and three dots in difference specs
-========================================
+======================================
+Two and three dots in difference specs
+======================================
 
 Imagine a series of commits A, B, C, D...  Imagine that there are two
 branches, *topic* and *master*.  You branched *topic* off *master* when
