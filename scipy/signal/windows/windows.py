@@ -13,7 +13,7 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_cosine','general_gaussian',
            'general_hamming', 'chebwin', 'slepian', 'cosine', 'hann',
-           'exponential', 'tukey', 'dpss', 'get_window']
+           'exponential', 'tukey', 'dpss', 'lanczos', 'get_window']
 
 
 def _len_guards(M):
@@ -1970,6 +1970,78 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     return (windows, ratios) if return_ratios else windows
 
 
+def lanczos(M, sym=True):
+    r"""Return a Lanczos window also known as a sinc window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The Lanczos window is defined as
+    .. math::  w(n) = sinc \left( \frac{2n}{M - 1} - 1 \right)
+    where
+    .. math::  sinc(x) = \frac{\sin(\pi x)}{\pi x}
+    The Lanczos window has reduced Gibbs oscillations and is widely used for
+    filtering climate timeseries with good properties in the physical and
+    spectral domains.
+
+    References
+    ----------
+    .. [1] Lanczos, C., and Teichmann, T. (1957). Applied analysis.
+           Physics Today, 10, 44.
+    .. [2] Duchon C. E. (1979) Lanczos Filtering in One and Two Dimensions.
+           Journal of Applied Meteorology, Vol 18, pp 1016-1022.
+    .. [3] Thomson, R. E. and Emery, W. J. (2014) Data Analysis Methods in
+           Physical Oceanography (Third Edition), Elsevier, pp 593-637.
+    .. [4] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+    >>> window = signal.lanczos(51)
+    >>> plt.plot(window)
+    >>> plt.title("Lanczos window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the lanczos window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    >>> plt.show()
+    """
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
+    w = np.sinc(2. * np.arange(0, M) / (M - 1) - 1.)
+
+    return _truncate(w, needs_trunc)
+
+
 def _fftautocorr(x):
     """Compute the autocorrelation of a real array and crop the result."""
     N = x.shape[-1]
@@ -2000,6 +2072,7 @@ _win_equiv_raw = {
     ('hamming', 'hamm', 'ham'): (hamming, False),
     ('hanning', 'hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
+    ('lanczos', 'sinc'): (lanczos, False),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
@@ -2058,6 +2131,7 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.nuttall`
     - `~scipy.signal.windows.barthann`
     - `~scipy.signal.windows.kaiser` (needs beta)
+    - `~scipy.signal.windows.lanczos`
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
     - `~scipy.signal.windows.slepian` (needs width)

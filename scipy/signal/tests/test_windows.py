@@ -37,6 +37,7 @@ window_funcs = [
     ('hann', ()),
     ('exponential', ()),
     ('tukey', (0.5,)),
+    ('lanczos', ())
     ]
 
 
@@ -520,6 +521,31 @@ class TestDPSS(object):
         assert_raises(ValueError, windows.dpss, 3, -1, 3)  # NW must be pos
         assert_raises(ValueError, windows.dpss, 3, 0, 3)
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
+
+
+class TestLanczos(object):
+
+    def test_basic(self):
+        # Analytical results:
+        # sinc(x) = sinc(-x)
+        # sinc(pi) = 0, sinc(0) = 1
+        # Hand computation on WolframAlpha:
+        # sinc(2 pi / 3) = 0.413496672
+        # sinc(pi / 3) = 0.826993343
+        # sinc(3 pi / 5) = 0.504551152
+        # sinc(pi / 5) = 0.935489284
+        assert_allclose(windows.lanczos(6, False),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672])
+        assert_allclose(windows.lanczos(6),
+                        [0., 0.504551152,
+                         0.935489284, 0.935489284,
+                         0.504551152, 0.])
+        assert_allclose(windows.lanczos(7, sym=True),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672, 0.])
 
 
 class TestGetWindow(object):

@@ -30,6 +30,7 @@ The suite of window functions for filtering and spectral estimation.
    hann              -- Hann window
    hanning           -- Hann window
    kaiser            -- Kaiser window
+   lanczos           -- Lanczos window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window
    slepian           -- Slepian window
@@ -44,4 +45,4 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'general_cosine',
            'general_hamming', 'chebwin', 'slepian', 'cosine', 'hann',
-           'exponential', 'tukey', 'get_window', 'dpss']
+           'exponential', 'tukey', 'lanczos', 'get_window', 'dpss']
