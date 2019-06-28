@@ -82,7 +82,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     When ``overwrite_x=True`` is specified, the memory referenced by ``x`` may
     be used by the implementation in any way. This may include reusing the
-    memory for the result, but this is in no way guarunteed. You should not
+    memory for the result, but this is in no way guaranteed. You should not
     rely on the contents of ``x`` after the transform as this may change in
     future without warning.
 
@@ -361,7 +361,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     thus resample a series to `m` points via Fourier interpolation by:
     ``a_resamp = irfft(rfft(a), m)``.
 
-    The default value of `n` assumes an even output length. By the hermitian
+    The default value of `n` assumes an even output length. By the Hermitian
     symmetry, the last imaginary component must be 0 and so is ignored. To
     avoid losing information, the correct length of the real input *must* be
     given.
@@ -950,7 +950,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     The default value of `s` assumes an even output length in the final
     transformation axis. When performing the final complex to real
-    transformation, the hermitian symmetry requires that the last imaginary
+    transformation, the Hermitian symmetry requires that the last imaginary
     component along that axis must be 0 and so it is ignored. To avoid losing
     information, the correct length of the real input *must* be given.
 
