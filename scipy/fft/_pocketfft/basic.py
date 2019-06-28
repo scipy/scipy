@@ -165,14 +165,14 @@ def ifft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
 
 def rfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
-    2-D dicsrete Fourier transform of a real sequence
+    2-D discrete Fourier transform of a real sequence
     """
     return rfftn(x, shape, axes, norm, overwrite_x)
 
 
 def irfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
-    2-D dicsrete inverse Fourier transform of a real sequence
+    2-D discrete inverse Fourier transform of a real sequence
     """
     return irfftn(x, shape, axes, norm, overwrite_x)
 
@@ -217,7 +217,7 @@ def ifftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     return pfft.ifftn(tmp, axes, norm, overwrite_x, _default_workers)
 
 def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
-    """Return multi-dimentional discrete Fourier transform of real input"""
+    """Return multi-dimensional discrete Fourier transform of real input"""
     tmp = np.asarray(x)
 
     if not np.isrealobj(tmp):
