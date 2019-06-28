@@ -6,7 +6,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     This function computes the one-dimensional *n*-point discrete Fourier
     Transform (DFT) with the efficient Fast Fourier Transform (FFT)
-    algorithm [CT].
+    algorithm [1]_.
 
     Parameters
     ----------
@@ -54,8 +54,10 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     FFT (Fast Fourier Transform) refers to a way the discrete Fourier Transform
     (DFT) can be calculated efficiently, by using symmetries in the calculated
     terms. The symmetry is highest when `n` is a power of 2, and the transform
-    is therefore most efficient for these sizes. If you can tolerate
-    zero-padding the input, use `next_fast_len`.
+    is therefore most efficient for these sizes. For poorly factorizable sizes,
+    `scipy.fft` uses Bluestein's algorithm [2]_ and so is never worse than
+    O(`n` log `n`). Further performance improvements may be seen by zero-padding
+    the input using `next_fast_len`.
 
     If ``x`` is a 1d array, then the `fft` is equivalent to ::
 
@@ -88,9 +90,12 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     References
     ----------
-    .. [CT] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
-            machine calculation of complex Fourier series," *Math. Comput.*
-            19: 297-301.
+    .. [1] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
+           machine calculation of complex Fourier series," *Math. Comput.*
+           19: 297-301.
+    .. [2] Bluestein, L., 1970, "A linear filtering approach to the
+           computation of discrete Fourier transform". *IEEE Transactions on
+           Audio and Electroacoustics.* 18 (4): 451-455.
 
     Examples
     --------
