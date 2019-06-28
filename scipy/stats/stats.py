@@ -2467,9 +2467,7 @@ def gstd(a, axis=0, ddof=1):
                 'is defined for strictly positive values only.')
         a_nan = np.isnan(a)
         a_nan_any = a_nan.any()
-        if a_nan.any():
-            return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
-        elif ((a_nan_any and np.less_equal(a[~a_nan], 0).any()) or
+        if ((a_nan_any and np.less_equal(a[~a_nan], 0).any()) or
               (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
