@@ -386,7 +386,7 @@ optional parameters can be used with this method including specifying
 singularities, infinite bounds, etc.
 
 Ordinary differential equations (:func:`solve_ivp`)
-------------------------------------------------
+---------------------------------------------------
 
 Integrating a set of ordinary differential equations (ODEs) given
 initial conditions is another useful example. The function
