@@ -621,7 +621,7 @@ def test_svd_simple_complex():
 
 def test_svd_maxiter():
     # check that maxiter works as expected
-    x = hilbert(6)
+    x = hilbert(10)
     # ARPACK shouldn't converge on such an ill-conditioned matrix with just
     # one iteration
     assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
