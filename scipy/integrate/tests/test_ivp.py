@@ -297,6 +297,7 @@ def test_integration_const_jac():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
 
 
+@pytest.mark.timeout(5)
 @pytest.mark.parametrize('method', ['Radau', 'BDF', 'LSODA'])
 def test_integration_stiff(method):
     rtol = 1e-6
