@@ -4,20 +4,20 @@
 SciPy Core Developer Guide
 ==========================
 
-.. include:: decisions.rst
+.. include:: decisions.rst.inc
 
-.. include:: newfeatures.rst
+.. include:: newfeatures.rst.inc
 
-.. include:: github.rst
+.. include:: github.rst.inc
 
-.. include:: licensing.rst
+.. include:: licensing.rst.inc
 
-.. include:: versioning.rst
+.. include:: versioning.rst.inc
 
-.. include:: deprecations.rst
+.. include:: deprecations.rst.inc
 
-.. include:: distributing.rst
+.. include:: distributing.rst.inc
 
-.. include:: releasing.rst
+.. include:: releasing.rst.inc
 
-.. include:: modules.rst
+.. include:: modules.rst.inc

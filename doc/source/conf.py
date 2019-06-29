@@ -104,19 +104,10 @@ show_authors = False
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-# Enusre all our internal links work
+# Ensure all our internal links work
 nitpicky = True
 exclude_patterns = [  # glob-style
-    # these are all included directly in dev/core-dev/index.rst:
-    'dev/core-dev/decisions.rst',
-    'dev/core-dev/deprecations.rst',
-    'dev/core-dev/distributing.rst',
-    'dev/core-dev/github.rst',
-    'dev/core-dev/licensing.rst',
-    'dev/core-dev/modules.rst',
-    'dev/core-dev/newfeatures.rst',
-    'dev/core-dev/releasing.rst',
-    'dev/core-dev/versioning.rst',
+
 ]
 
 # be strict about warnings in our examples, we should write clean code
