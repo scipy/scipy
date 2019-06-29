@@ -9,10 +9,10 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas    
+c     Rice University
+c     Houston, Texas
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: statn.F   SID: 2.4   DATE OF SID: 4/20/96   RELEASE: 2
 c
       subroutine sstatn
@@ -22,7 +22,7 @@ c     | See stat.doc for documentation |
 c     %--------------------------------%
 c
       include   'stat.h'
-c 
+c
 c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
@@ -32,7 +32,7 @@ c
       nrorth = 0
       nitref = 0
       nrstrt = 0
-c 
+c
       tnaupd = 0.0E+0
       tnaup2 = 0.0E+0
       tnaitr = 0.0E+0
@@ -43,14 +43,14 @@ c
       titref = 0.0E+0
       tgetv0 = 0.0E+0
       trvec  = 0.0E+0
-c 
+c
 c     %----------------------------------------------------%
 c     | User time including reverse communication overhead |
 c     %----------------------------------------------------%
 c
       tmvopx = 0.0E+0
       tmvbx  = 0.0E+0
-c 
+c
       return
 c
 c

@@ -1,4 +1,137 @@
+arpack-ng - 3.7.0
+
+[ Franck Houssen ]
+ * [BUG FIX] ICB: missing workev for *[ds]neupd (real+not-sym) => API/ABI change for *[ds]neupd_c.
+ * [BUG FIX] autotools - make distcheck: fix circular dependencies.
+ * arpackmm: utility to test arpack with matrix market files.
+ * ICB: add ILP64 support.
+    The idea is:
+    - cmake      generates arpackdef.h from arpackdef.cmake.h.in
+    - autoheader generates arpackdef.h from arpackdef.autotools.h[.in]
+    - arpack includes arpackdef.h when/where needed:
+      - #define provide c_int/a_int according to architecture.
+      - all f90 who need to include "arpackdef.h" must be moved to F90.
+        Note: by convention, F90 are preprocessed (f90 are not).
+    - MPI does not support ILP64: integer*4 must be imposed in all
+      calls involving MPI (f90 example/test code).
+    To enable ILP64 users to compile/link, arpackdef.h is added in
+    the arpack installation (make install).
+
+ [ Kyle Guinn ]
+ * Autoconf/Automake simplifications and fixes.
+ * Simplify the generation of arpackdef.h.
+
+ -- Sylvestre Ledru <sylvestre@debian.org> Sat, 12 Jan 2019 16:24:00 +0100
+
+arpack-ng - 3.6.3
+
+[ Franck Houssen ]
+ * Add Fortran common initialization (block data).
+
+ [ Marco Caliari ]
+ * Give up forcing the initial residual to be in the range of the operator OP after a restart (Closes: #142).
+
+ -- Sylvestre Ledru <sylvestre@debian.org> Wed, 19 Sep 2018 09:59:59 +0200
+
+arpack-ng - 3.6.2
+
+ * Remove all trailing whitespaces
+
+ [ Franck Houssen ]
+ * Install: move headers into a dedicated directory (local/include/arpack).
+   (Closes #126)
+ * Add configuration summary.
+ * Improve the flag detection. Hopefully fix the ppc64el and other archs
+   issues in Debian
+
+ -- Sylvestre Ledru <sylvestre@debian.org> Sat, 23 Jun 2018 14:56:54 +0200
+
+arpack-ng - 3.6.1
+
+ [ Ruslan Kabatsayev ]
+ * Fix a regression on i386 and other archs (Closes #123)
+
+ -- Sylvestre Ledru <sylvestre@debian.org> Thu Jun 7 21:41:16 2018 +0200
+
+arpack-ng - 3.6.0
+
+ [ Franck Houssen ]
+ * Add support for ISO_C_BINDING (Fortran 2003) for ARPACK, PARPACK (Fortran <-> C/C++).
+   ARPACK:  example of   C/Fortran binding can be found in the         TESTS/icb_arpack_c.c          file.
+   ARPACK:  example of C++/Fortran binding can be found in the         TESTS/icb_arpack_cpp.cpp      file.
+   PARPACK: example of   C/Fortran binding can be found in the PARPACK/TESTS/MPI/icb_parpack_c.c     file.
+   PARPACK: example of C++/Fortran binding can be found in the PARPACK/TESTS/MPI/icb_parpack_cpp.cpp file.
+   DEBUG:   add support for debug.
+   STAT:    add support for statistics (timers, nb operations, ...).
+ * Provide tarball generation using cmake (cpack).
+ * Provide find_package for (cmake) users to find arpack-ng.
+
+ [ Denis Davydov ]
+ * Rename pslamch to pslamch10 to avoid symbol collision with Scalapack 2.0.2 in MPI context.
+
+ [ Kyle Guinn ]
+ * Autoconf cleanup; move generated files to the build-aux subdirectory.
+
+ [ Marco Caliari ]
+ * Force the initial residual to be in the range of the operator OP in the standard case, too (Closes: #79).
+
+ [ Sylvestre Ledru ]
+ * Add coverage information to improve testing: https://coveralls.io/github/opencollab/arpack-ng
+
+ [ Darcy Beurle]
+ * Add C++11 interface through arpack.hpp and parpack.hpp
+ * Rewrite C++ examples / tests demonstrating new C++11 interface
+ * Pre-C++11 interface available through arpack.h and parpack.h
+
+ -- Sylvestre Ledru <sylvestre@debian.org> Mon, 30 Oct 2017 14:21:48 +0200
+
+arpack-ng - 3.5.0
+
+ [ Julien Schueller ]
+ * Improve cmake build system: disable C++ detection, set default build type.
+
+ [ Marco Atzeri]
+ * Use AC_PROG_FC instead of AC_PROG_F77 for proper inizialization
+   for the usage of AC_FC_LINE_LENGTH. Noted on Cygwin.
+
+ [ Denis Davydov ]
+ * Improve cmake build system: add make install and fix shared libraries.
+
+ [ Zhang Z ]
+ * fix usages of DLACPY to not alias inputs
+   (patch from https://software.intel.com/en-us/articles/how-to-resolve-arpack-issues-with-intel-mkl-110-update-3)
+
+ [ Iskakov Sergei ]
+ *  Fix possible deadlock when PARPACK call uses communicator with a larger
+    number of CPUs than previous call
+
+ [ Kyle Guinn ]
+ * Portability improvements to the autotools build system.
+ * Let cmake guess the default installation directories.  Can be
+   overridden by changing CMAKE_INSTALL_LIBDIR and CMAKE_INSTALL_BINDIR.
+ * Shared libraries built by cmake now have their SONAME set identical to
+   those built by autotools.
+
+ [ Marco Caliari ]
+ * Avoid purification stage in [d,s]neupd.f if it requires division
+    by zero (Closes: #58)
+
+ -- Sylvestre Ledru <sylvestre@debian.org>  Mon, 15 May 2017 14:21:48 +0200
+
+arpack-ng - 3.4.0
+
+  [ Milan Bouchet-Valat ]
+  * Allow adding suffixes to symbols and library names to build ILP64 version
+    based on ILP64 BLAS/LAPACK with suffixes. This avoids conflicts when loading
+    libraries with different integer sizes in the same program.
+
+  [ Martin Reuter ]
+  * Add the support of cmake build system
+
+ -- Sylvestre Ledru <sylvestre@debian.org>  Sat, 02 Jul 2016 21:51:52 +0200
+
 arpack-ng - 3.3.0
+
  [ Denis Davydov ]
  * Rename pdlamch to pdlamch10 to avoid symbol collision with Scalapack 2.0.2 in MPI context.
 
@@ -6,7 +139,7 @@ arpack-ng - 3.3.0
  * General improvements on the build system
  * libparpack links against libarpack (instead of doing a static link)
 
- [Guillaume Horel]
+ [ Guillaume Horel ]
  * reverts using {d,s}lahqr from lapack 2
  * use dlahqr from lapack 3 instead of dlaqrb (credit to Marco Caliari)
 
@@ -40,7 +173,7 @@ arpack-ng - 3.1.5
 arpack-ng - 3.1.4
 
  * libparpack2: missing dependency on MPI:
-   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=718790
+   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=718790
 
  * Replace LAPACK second function with ARPACK's own arscnd in PARPACK
 
@@ -85,7 +218,7 @@ arpack-ng - 3.1.2
 
    * Wrong call to pdlamch was causing segfaults
      Thanks to Kyrre Sjøbæk for finding the bug and the fix.
-   * Get rid of the mpif.h occurences in the source code (Closes: #782)
+   * Get rid of the mpif.h occurrences in the source code (Closes: #782)
    * Compile also PARPACK / MPI example (Closes: #783)
    * Configure detected built-in LAPACK and BLAS, but refused to use them
      (Closes: #784)
@@ -110,7 +243,7 @@ arpack-ng - 3.1.0
    * Change the bug report from arpack@caam.rice.edu to
      http://forge.scilab.org/index.php/p/arpack-ng/issues/
    * Provide a M4 macro (detect_arpack_bug.m4) to check if the underlying
-     arpack is buggy (ie not arpack-ng). This allows developper applications
+     arpack is buggy (ie not arpack-ng). This allows developer applications
      to perform the check in their autotools build system (configure).
    * Fixed a lack of appropriate bounds check in DNAUP2. Thanks to Pauli Virtanen
      for the patch (Closes: #632)

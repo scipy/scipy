@@ -26,7 +26,7 @@ c          products (involving the operator OP) per Arnoldi iteration.
 c          The logic for adjusting is contained within the current
 c          subroutine.
 c          If ISHIFT=0, NP is the number of shifts the user needs
-c          to provide via reverse comunication. 0 < NP < NCV-NEV.
+c          to provide via reverse communication. 0 < NP < NCV-NEV.
 c          NP may be less than NCV-NEV since a leading block of the current
 c          upper Hessenberg matrix has split off and contains "unwanted"
 c          Ritz values.
@@ -142,7 +142,7 @@ c     dvout    ARPACK utility routine that prints vectors.
 c     dlamch   LAPACK routine that determines machine constants.
 c     dlapy2   LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     zcopy    Level 1 BLAS that copies one vector to another .
-c     wzdotc    Level 1 BLAS that computes the scalar product of two vectors.
+c     zdotc    Level 1 BLAS that computes the scalar product of two vectors.
 c     zswap    Level 1 BLAS that swaps two vectors.
 c     dznrm2   Level 1 BLAS that computes the norm of a vector.
 c
@@ -247,10 +247,10 @@ c     | External functions |
 c     %--------------------%
 c
       Complex*16
-     &           wzdotc
+     &           zdotc
       Double precision
      &           dznrm2 , dlamch , dlapy2
-      external   wzdotc , dznrm2 , dlamch , dlapy2
+      external   zdotc , dznrm2 , dlamch , dlapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -754,7 +754,7 @@ c
          end if
 c
          if (bmat .eq. 'G') then
-            cmpnorm = wzdotc  (n, resid, 1, workd, 1)
+            cmpnorm = zdotc  (n, resid, 1, workd, 1)
             rnorm = sqrt(dlapy2 (dble (cmpnorm),dimag (cmpnorm)))
          else if (bmat .eq. 'I') then
             rnorm = dznrm2 (n, resid, 1)

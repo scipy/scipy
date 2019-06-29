@@ -4,7 +4,7 @@ c
 c\Name: ssortc
 c
 c\Description:
-c  Sorts the complex array in XREAL and XIMAG into the order 
+c  Sorts the complex array in XREAL and XIMAG into the order
 c  specified by WHICH and optionally applies the permutation to the
 c  real array Y. It is assumed that if an element of XIMAG is
 c  nonzero, then its negative is also an element. In other words,
@@ -49,14 +49,14 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
 c\Revision history:
 c     xx/xx/92: Version ' 2.1'
 c               Adapted from the sort routine in LANSO.
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: sortc.F   SID: 2.3   DATE OF SID: 4/20/96   RELEASE: 2
 c
 c\EndLib
@@ -77,7 +77,7 @@ c     %-----------------%
 c     | Array Arguments |
 c     %-----------------%
 c
-      Real     
+      Real
      &           xreal(0:n-1), ximag(0:n-1), y(0:n-1)
 c
 c     %---------------%
@@ -85,14 +85,14 @@ c     | Local Scalars |
 c     %---------------%
 c
       integer    i, igap, j
-      Real     
+      Real
      &           temp, temp1, temp2
 c
 c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
-      Real     
+      Real
      &           slapy2
       external   slapy2
 c
@@ -101,7 +101,7 @@ c     | Executable Statements |
 c     %-----------------------%
 c
       igap = n / 2
-c 
+c
       if (which .eq. 'LM') then
 c
 c        %------------------------------------------------------%
@@ -169,7 +169,7 @@ c
                temp = ximag(j)
                ximag(j) = ximag(j+igap)
                ximag(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -183,7 +183,7 @@ c
    60    continue
          igap = igap / 2
          go to 40
-c 
+c
       else if (which .eq. 'LR') then
 c
 c        %------------------------------------------------%
@@ -207,7 +207,7 @@ c
                temp = ximag(j)
                ximag(j) = ximag(j+igap)
                ximag(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -221,7 +221,7 @@ c
    90    continue
          igap = igap / 2
          go to 70
-c 
+c
       else if (which .eq. 'SR') then
 c
 c        %------------------------------------------------%
@@ -244,7 +244,7 @@ c
                temp = ximag(j)
                ximag(j) = ximag(j+igap)
                ximag(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -258,7 +258,7 @@ c
   120    continue
          igap = igap / 2
          go to 100
-c 
+c
       else if (which .eq. 'LI') then
 c
 c        %------------------------------------------------%
@@ -281,7 +281,7 @@ c
                temp = ximag(j)
                ximag(j) = ximag(j+igap)
                ximag(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -295,7 +295,7 @@ c
   150    continue
          igap = igap / 2
          go to 130
-c 
+c
       else if (which .eq. 'SI') then
 c
 c        %------------------------------------------------%
@@ -318,7 +318,7 @@ c
                temp = ximag(j)
                ximag(j) = ximag(j+igap)
                ximag(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -333,7 +333,7 @@ c
          igap = igap / 2
          go to 160
       end if
-c 
+c
  9000 continue
       return
 c
