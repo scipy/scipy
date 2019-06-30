@@ -53,6 +53,8 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
 {
     double minVal = 0;
 
+    // Crouse's pseudocode uses set complements to keep track of remaining
+    // nodes.  Here we use a vector, as it is more efficient in C++.
     int num_remaining = nc;
     std::vector<int> remaining(nc);
     for (int it = 0; it < nc; it++) {
@@ -79,6 +81,9 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
                 shortestPathCosts[j] = r;
             }
 
+            // When multiple nodes have the minimum cost, we select one which
+            // gives us a new sink node. This is particularly important for
+            // integer cost matrices with small co-efficients.
             if (shortestPathCosts[j] < lowest ||
                 (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
                 lowest = shortestPathCosts[j];
