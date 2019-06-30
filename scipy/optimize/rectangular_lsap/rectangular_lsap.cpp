@@ -177,7 +177,8 @@ extern "C" {
 #endif
 
 int
-solve_rectangular_linear_sum_assignment(int nr, int nc, double* input_cost, int64_t* col4row)
+solve_rectangular_linear_sum_assignment(int nr, int nc, double* input_cost,
+                                        int64_t* col4row)
 {
     return solve(nr, nc, input_cost, col4row);
 }
