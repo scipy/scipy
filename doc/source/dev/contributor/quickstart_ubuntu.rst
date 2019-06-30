@@ -33,7 +33,7 @@ Building SciPy
 
    In Ubuntu, the Anaconda download comes as a ``.sh`` file. `In a terminal, navigate <https://help.ubuntu.com/community/UsingTheTerminal>`_ to the directory in which the ``.sh`` file is located and enter ``./file.sh``, where ``file.sh`` is to be replaced with the full name of the Anaconda download. This starts the installation process; from there, simply follow the prompts.
 
-#. Install git. An easy way to do this is to enter the command ``sudo apt-get install git`` in the terminal and follow the prompts. We'll use this software to download and manage the SciPy source code.
+#. Install git. An easy way to do this is to enter the command ``sudo apt install git`` in the terminal and follow the prompts. We'll use this software to download and manage the SciPy source code.
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
