@@ -28,15 +28,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-This code implements the Jonker-Volgenant algorithm for the rectangular
-assignment problem:
-
-    R. Jonker and A. Volgenant. A Shortest Augmenting Path Algorithm for
-    Dense and Sparse Linear Assignment Problems. *Computing*, 38:325-340
-    December 1987.
-
-The code is based on the pseudocode described in pages
-1685-1686 of:
+This code implements the shortest augmenting path algorithm for the
+rectangular assignment problem.  This implementation is based on the
+pseudocode described in pages 1685-1686 of:
 
     DF Crouse. On implementing 2D rectangular assignment algorithms.
     IEEE Transactions on Aerospace and Electronic Systems
@@ -61,7 +55,6 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
 
     int num_remaining = nc;
     std::vector<int> remaining(nc);
-    // std::iota(remaining.begin(), remaining.end(), 0); //needs C++11
     for (int it = 0; it < nc; it++) {
         remaining[it] = it;
     }
@@ -184,7 +177,7 @@ extern "C" {
 #endif
 
 int
-solve_jonker_volgenant(int nr, int nc, double* input_cost, int64_t* col4row)
+solve_rectangular_linear_sum_assignment(int nr, int nc, double* input_cost, int64_t* col4row)
 {
     return solve(nr, nc, input_cost, col4row);
 }

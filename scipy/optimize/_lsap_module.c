@@ -28,7 +28,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "jonkervolgenant/jonkervolgenant.h"
+#include "rectangular_lsap/rectangular_lsap.h"
 #include "numpy/arrayobject.h"
 #include "numpy/ndarraytypes.h"
 
@@ -55,7 +55,7 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     npy_intp dim[1] = { num_rows };
     PyObject* x = PyArray_SimpleNew(1, dim, NPY_INT64);
-    int result = solve_jonker_volgenant(num_rows, num_cols, cost_matrix,
+    int result = solve_rectangular_linear_sum_assignment(num_rows, num_cols, cost_matrix,
                                         PyArray_DATA((PyArrayObject*)x));
     Py_DECREF((PyObject*)obj_cont);
     if (result != 0) {
@@ -67,18 +67,18 @@ calculate_assignment(PyObject* self, PyObject* args)
     }
 }
 
-static PyMethodDef jonkervolgenant_methods[] = {
+static PyMethodDef lsap_module_methods[] = {
     { "calculate_assignment", calculate_assignment, METH_VARARGS,
-      "Solves rectangular linear sum assignment problem." },
+      "Solves the rectangular linear sum assignment problem." },
     { NULL, NULL, 0, NULL }
 };
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_jonkervolgenant",
-    "Jonker-Volgenant algorithm for rectangular linear sum assignment.",
+    "_lsap_module",
+    "Solves the rectangular linear sum assignment.",
     -1,
-    jonkervolgenant_methods,
+    lsap_module_methods,
     NULL,
     NULL,
     NULL,
@@ -86,7 +86,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyObject*
-PyInit__jonkervolgenant(void)
+PyInit__lsap_module(void)
 {
     PyObject* m;
     m = PyModule_Create(&moduledef);

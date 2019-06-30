@@ -10,7 +10,7 @@
 # License: 3-clause BSD
 
 import numpy as np
-from . import _jonkervolgenant
+from . import _lsap_module
 
 
 def linear_sum_assignment(cost_matrix, maximize=False):
@@ -64,11 +64,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
 
     1. https://en.wikipedia.org/wiki/Assignment_problem
 
-    2. R. Jonker and A. Volgenant. A Shortest Augmenting Path Algorithm for
-       Dense and Sparse Linear Assignment Problems. *Computing*, 38:325-340
-       December 1987.
-
-    3. DF Crouse. On implementing 2D rectangular assignment algorithms.
+    2. DF Crouse. On implementing 2D rectangular assignment algorithms.
        *IEEE Transactions on Aerospace and Electronic Systems*,
        52(4):1679-1696, August 2016, https://doi.org/10.1109/TAES.2016.140952
 
@@ -103,9 +99,9 @@ def linear_sum_assignment(cost_matrix, maximize=False):
 
     # The algorithm expects more columns than rows in the cost matrix.
     if cost_matrix.shape[1] < cost_matrix.shape[0]:
-        b = _jonkervolgenant.calculate_assignment(cost_matrix.T)
+        b = _lsap_module.calculate_assignment(cost_matrix.T)
         indices = np.argsort(b)
         return (b[indices], a[indices])
     else:
-        b = _jonkervolgenant.calculate_assignment(cost_matrix)
+        b = _lsap_module.calculate_assignment(cost_matrix)
         return (a, b)

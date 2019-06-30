@@ -28,8 +28,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef JONKERVOLGENANT_H
-#define JONKERVOLGENANT_H
+#ifndef RECTANGULAR_LSAP_H
+#define RECTANGULAR_LSAP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,8 +37,8 @@ extern "C" {
 
 #include <stdint.h>
 
-int solve_jonker_volgenant(int nr, int nc, double *input_cost,
-                           int64_t *col4row);
+int solve_rectangular_linear_sum_assignment(int nr, int nc, double *input_cost,
+                                int64_t *col4row);
 
 #ifdef __cplusplus
 }
