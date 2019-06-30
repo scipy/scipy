@@ -66,16 +66,31 @@ class TestLSMR:
         x = lsmr(A, b)[0]
         assert_almost_equal(norm(A.dot(x) - b), 0)
 
-    def testComplex1(self):
+    def testComplexX(self):
         A = eye(self.n)
-        xtrue = transpose(arange(self.n,0,-1).astype(complex))
+        xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
         self.assertCompatibleSystem(A, xtrue)
 
-    def testComplex2(self):
-        A = eye(self.n).astype(complex)
-        xtrue = transpose(arange(self.n,0,-1).astype(complex))
+    def testComplexX0(self):
+        A = 4 * eye(self.n) + ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1))
+        b = aslinearoperator(A).matvec(xtrue)
+        x0 = zeros(self.n, dtype=complex)
+        x = lsmr(A, b, x0=x0)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+
+    def testComplexA(self):
+        A = 4 * eye(self.n) + 1j * ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1).astype(complex))
         self.assertCompatibleSystem(A, xtrue)
-        
+
+    def testComplexB(self):
+        A = 4 * eye(self.n) + ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
+        b = aslinearoperator(A).matvec(xtrue)
+        x = lsmr(A, b)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+
     def testColumnB(self):
         A = eye(self.n)
         b = ones((self.n, 1))
