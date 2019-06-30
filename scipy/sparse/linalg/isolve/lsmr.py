@@ -221,7 +221,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if maxiter is None:
         maxiter = minDim
 
-    dtype = result_type(b, float)
+    if x0 is None:
+        dtype = result_type(A, b, float)
+    else:
+        dtype = result_type(A, b, x0, float)
 
     if show:
         print(' ')
