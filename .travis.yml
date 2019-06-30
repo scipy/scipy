@@ -154,7 +154,7 @@ before_install:
   - travis_retry pip install --upgrade pip setuptools wheel
   - travis_retry pip install cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
-  - travis_retry pip install --upgrade pytest pytest-xdist pytest-faulthandler mpmath argparse Pillow codecov
+  - travis_retry pip install --upgrade pytest pytest-xdist mpmath argparse Pillow codecov
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - travis_retry pip install pybind11
   - |
