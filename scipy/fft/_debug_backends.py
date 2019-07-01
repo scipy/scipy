@@ -2,7 +2,7 @@ import numpy as np
 try:
     import pyfftw.interfaces.numpy_fft as pyfftw_fft
 except ImportError:
-    pass
+    pyfftw_fft = {}
 
 class NumPyBackend:
     """Backend that uses numpy.fft"""
@@ -12,7 +12,7 @@ class NumPyBackend:
     def __ua_function__(method, args, kwargs):
         kwargs.pop("overwrite_x", None)
 
-        fn = getattr(np.fft, method.__name__)
+        fn = getattr(np.fft, method.__name__, None)
         return (NotImplemented if fn is None
                 else fn(*args, **kwargs))
 
@@ -24,7 +24,7 @@ class PyfftwBackend:
     def __ua_function__(method, args, kwargs):
         kwargs.pop('overwrite_x', None)
 
-        fn = getattr(pyfftw_fft, method.__name__)
+        fn = getattr(pyfftw_fft, method.__name__, None)
         return (NotImplemented if fn is None
                 else fn(*args, **kwargs))
 
