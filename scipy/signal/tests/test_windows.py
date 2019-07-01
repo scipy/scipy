@@ -537,15 +537,18 @@ class TestLanczos(object):
         assert_allclose(windows.lanczos(6, False),
                         [0., 0.413496672,
                          0.826993343, 1., 0.826993343,
-                         0.413496672])
+                         0.413496672],
+                        atol=1e-9)
         assert_allclose(windows.lanczos(6),
                         [0., 0.504551152,
                          0.935489284, 0.935489284,
-                         0.504551152, 0.])
+                         0.504551152, 0.],
+                        atol=1e-9)
         assert_allclose(windows.lanczos(7, sym=True),
                         [0., 0.413496672,
                          0.826993343, 1., 0.826993343,
-                         0.413496672, 0.])
+                         0.413496672, 0.],
+                        atol=1e-9)
 
 
 class TestGetWindow(object):
