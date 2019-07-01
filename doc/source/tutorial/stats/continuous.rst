@@ -215,6 +215,7 @@ Continuous Distributions in `scipy.stats`
    continuous_betaprime
    continuous_bradford
    continuous_burr
+   continuous_burr12
    continuous_cauchy
    continuous_chi
    continuous_chi2
