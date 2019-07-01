@@ -42,7 +42,7 @@ def test_backend_call(func, np_func, mock):
     answer = np_func(x)
     assert_allclose(func(x), answer, atol=1e-10)
 
-    with set_backend(mock_backend.MockBackend(), only=True):
+    with set_backend(mock_backend, only=True):
         mock.number_calls = 0
         y = func(x)
         assert_equal(y, mock.return_value)

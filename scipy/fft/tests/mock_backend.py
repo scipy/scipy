@@ -40,40 +40,11 @@ idst = _MockFunction(np.random.random(10))
 dstn = _MockFunction(np.random.random(10))
 idstn = _MockFunction(np.random.random(10))
 
-implemented = {}
 
-implemented[scipy.fft.fft] = fft
-implemented[scipy.fft.fft2] = fft2
-implemented[scipy.fft.fftn] = fftn
+__ua_domain__ = "scipy.fft"
 
-implemented[scipy.fft.ifft] = ifft
-implemented[scipy.fft.ifft2] = ifft2
-implemented[scipy.fft.ifftn] = ifftn
 
-implemented[scipy.fft.rfft] = rfft
-implemented[scipy.fft.rfft2] = rfft2
-implemented[scipy.fft.rfftn] = rfftn
-
-implemented[scipy.fft.irfft] = irfft
-implemented[scipy.fft.irfft2] = irfft2
-implemented[scipy.fft.irfftn] = irfftn
-
-implemented[scipy.fft.dct] = dct
-implemented[scipy.fft.idct] = idct
-implemented[scipy.fft.dctn] = dctn
-implemented[scipy.fft.idctn] = idctn
-
-implemented[scipy.fft.dst] = dst
-implemented[scipy.fft.idst] = idst
-implemented[scipy.fft.dstn] = dstn
-implemented[scipy.fft.idstn] = idstn
-
-class MockBackend:
-    __ua_domain__ = "scipy.fft"
-
-    @staticmethod
-    def __ua_function__(method, args, kwargs):
-        fn = implemented.get(method)
-        if fn is None:
-            return NotImplemented
-        return fn(*args, **kwargs)
+def __ua_function__(method, args, kwargs):
+    fn = globals().get(method.__name__)
+    return (fn(*args, **kwargs) if fn is not None
+            else NotImplemented)
