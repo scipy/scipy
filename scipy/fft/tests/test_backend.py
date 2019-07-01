@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.fft
-from scipy.fft import set_backend, backend
+from scipy.fft import set_backend
 import scipy.fftpack as fftpack
 from  scipy.fft.tests import mock_backend
 
@@ -42,7 +42,7 @@ def test_backend_call(func, np_func, mock):
     answer = np_func(x)
     assert_allclose(func(x), answer, atol=1e-10)
 
-    with backend(mock_backend.MockBackend(), on_missing='raise'):
+    with set_backend(mock_backend.MockBackend(), only=True):
         mock.number_calls = 0
         y = func(x)
         assert_equal(y, mock.return_value)

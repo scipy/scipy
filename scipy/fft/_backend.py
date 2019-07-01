@@ -7,122 +7,137 @@ from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
 import scipy.fftpack as _fftpack
 from . import _pocketfft
 
-class BackendError(RuntimeError):
-    pass
-
-class BackendWarning(UserWarning):
-    pass
-
-'''
-def _wrap_fallback(fname, on_missing):
-    """Wrap fallback function with error reporting according to on_missing"""
-    message = "The current backend does not implement '{}'".format(fname)
-
-    if on_missing == 'fallback':
-        return cfg._fallbacks[fname]
-    elif on_missing == 'warn':
-        def wrap_warn(*args, **kwargs):
-            from warnings import warn
-            warn(message, BackendWarning)
-            return cfg._fallbacks[fname](*args, **kwargs)
-        return wrap_warn
-    elif on_missing == 'raise':
-        def wrap_raise(*args, **kwargs):
-            raise BackendError(message)
-        return wrap_raise
-
-    raise ValueError("Unrecognized on_missing type '{}'".format(on_missing))
-'''
-
-
-
-def set_backend(backend, on_missing='fallback'):
-    """Sets the current fft backend
-
-    Parameters
-    ----------
-
-    backend: string
-        Can either be one of the known backends {'scipy'}, or a
-        module import specification of the form 'module://example.fft'
-    on_missing: {'fallback', 'warn', 'raise'}, optional
-        Behavior when the backend does not provide a given function:
-        - 'fallback': silently use the built-in SciPy function
-        - 'warn': emit a warning, then use SciPy's default
-        - 'raise': raise an error
-
-    Raises
-    ------
-    ImportError: If the specified backend could not be imported
-    ValueError: If an invalid parameter is given
-
-    """
-
-    assert(backend.__ua_domain__ == 'scipy.fft')
-    ua.set_global_backend(backend)
-
-
-def backend(backend, on_missing='fallback'):
-    """Context manager to change the backend within a fixed scope
-
-    Upon entering a ``with`` statement, the current backend is changed. Upon
-    exit, the backend is reset to the state before entering the scope.
-
-    Parameters
-    ---------
-    backend: string
-        Can either be one of the known backends {'scipy'}, or a
-        module import specification of the form 'module://example.fft'
-    on_missing: {'fallback', 'warn', 'raise'}, optional
-        Behavior when the backend does not provide a given function:
-
-    Examples
-    --------
-    >>> with scipy.fft.backend('scipy'):
-    >>>     pass
-
-    """
-    return ua.set_backend(backend)
-
 
 class _ScipyBackend:
+    """
+    The default backend for fft calculations
+    """
     __ua_domain__ = "scipy.fft"
-
-    implemented = {
-        fft: _pocketfft.fft,
-        fft2: _pocketfft.fft2,
-        fftn: _pocketfft.fftn,
-
-        ifft: _pocketfft.ifft,
-        ifft2: _pocketfft.ifft2,
-        ifftn: _pocketfft.ifftn,
-
-        rfft: _pocketfft.rfft,
-        rfft2: _pocketfft.rfft2,
-        rfftn: _pocketfft.rfftn,
-
-        irfft: _pocketfft.irfft,
-        irfft2: _pocketfft.irfft2,
-        irfftn: _pocketfft.irfftn,
-
-        dct: _fftpack.dct,
-        idct: _fftpack.idct,
-        dctn: _fftpack.dctn,
-        idctn: _fftpack.idctn,
-
-        dst: _fftpack.dst,
-        idst: _fftpack.idst,
-        dstn: _fftpack.dstn,
-        idstn: _fftpack.idstn,
-    }
 
 
     @staticmethod
     def __ua_function__(method, args, kwargs):
-        fn = _ScipyBackend.implemented.get(method)
+        fn = (getattr(_pocketfft, method.__name__, None)
+              or getattr(_fftpack, method.__name__, None))
+
         if fn is None:
             return NotImplemented
         return fn(*args, **kwargs)
 
 
-set_backend(_ScipyBackend())
+_named_backends = {
+    'scipy': _ScipyBackend,
+}
+
+def _backend_from_arg(backend):
+    """Maps strings to known backends and validates the backend"""
+
+    if isinstance(backend, str):
+        try:
+            backend = _named_backends[backend]
+        except KeyError:
+            raise ValueError('Unknown backend {}'.format(backend))
+
+
+    if backend.__ua_domain__ != 'scipy.fft':
+        raise ValueError('Backend does not implement "scipy.fft"')
+
+    return backend
+
+
+def set_global_backend(backend):
+    """Sets the global fft backend
+
+    The global backend has higher priority than registered backends, but lower
+    priority than context-specific backends set with `set_backend`.
+
+    Parameters
+    ----------
+
+    backend: {object, 'scipy'}
+
+        The backend to use.
+        Can either be a ``str`` containing the name of a known backend
+        {'scipy'}, or an object that implements the uarray protocol.
+
+    Raises
+    ------
+
+    ValueError: If the backend does not implement ``scipy.fft``
+
+    Notes
+    -----
+
+    This will overwrite the previously set global backend, which by default is
+    the SciPy implementation.
+
+    """
+
+    backend = _backend_from_arg(backend)
+    ua.set_global_backend(backend)
+
+
+def register_backend(backend):
+    """
+    Register a backend for permanent use.
+
+    Registered backends have the lowest priority and will be tried after the
+    global backend.
+
+    Parameters
+    ----------
+
+    backend: {object, 'scipy'}
+
+        The backend to use.
+        Can either be a ``str`` containing the name of a known backend
+        {'scipy'}, or an object that implements the uarray protocol.
+
+    Raises
+    ------
+    ValueError: If the backend does not implement ``scipy.fft``
+
+    """
+    backend = _backend_from_arg(backend)
+    ua.register_backend(backend)
+
+
+def set_backend(backend, coerce=False, only=False):
+    """Context manager to set the backend within a fixed scope.
+
+    Upon entering the ``with`` statement, given backend will be added to the
+    list of available backends with the highest priority. Upon exit, the
+    backend is reset to the state before entering the scope.
+
+    Parameters
+    ---------
+    backend: {object, 'scipy'}
+
+        The backend to use.
+        Can either be a ``str`` containing the name of a known backend
+        {'scipy'}, or an object that implements the uarray protocol.
+
+    coerce: bool, optional
+
+        Whether to allow expensive conversions for the ``x`` parameter. e.g.
+        copying a numpy array to the GPU for a CuPy backend. Implies ``only``.
+
+    only: bool, optional
+
+       If only is ``True`` and this backend returns ``NotImplemented`` then a
+       BackendNotImplemented error will be raised immediately. Ignoring any
+       lower priority backends.
+
+    Examples
+    --------
+    >>> import scipy.fft as fft
+    >>> with fft.set_backend('scipy', only=True):
+    >>>     fft.fft([1])  # Always calls the scipy implementation
+    array([1.+0.j])
+
+    """
+    backend = _backend_from_arg(backend)
+    return ua.set_backend(backend, coerce=coerce, only=only)
+
+
+set_global_backend(_ScipyBackend())

@@ -136,16 +136,15 @@ class FftBackends(Benchmark):
         self.ifft = scipy.fft.ifft
 
         if backend == 'pocketfft':
-            from scipy.fft._backend import _ScipyBackend
-            scipy.fft.set_backend(_ScipyBackend)
+            scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
             from scipy.fft._debug_backends import PyfftwBackend
             import pyfftw
             pyfftw.interfaces.cache.enable()
-            scipy.fft.set_backend(PyfftwBackend)
+            scipy.fft.set_global_backend(PyfftwBackend)
         elif backend == 'numpy':
             from scipy.fft._debug_backends import NumPyBackend
-            scipy.fft.set_backend(NumPyBackend)
+            scipy.fft.set_global_backend(NumPyBackend)
         elif backend == 'direct':
             import scipy.fft._pocketfft
             self.fft = scipy.fft._pocketfft.fft
