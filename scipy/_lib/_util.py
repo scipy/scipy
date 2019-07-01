@@ -178,6 +178,7 @@ def check_random_state(seed):
     by np.random.
     If seed is an int, return a new RandomState instance seeded with seed.
     If seed is already a RandomState instance, return it.
+    If seed is a new-style np.random.Generator, return it.
     Otherwise raise ValueError.
     """
     if seed is None or seed is np.random:
@@ -186,6 +187,12 @@ def check_random_state(seed):
         return np.random.RandomState(seed)
     if isinstance(seed, np.random.RandomState):
         return seed
+    try:
+        # Generator is only available in numpy >= 1.17
+        if isinstance(seed, np.random.Generator):
+            return seed
+    except AttributeError:
+        pass
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 
