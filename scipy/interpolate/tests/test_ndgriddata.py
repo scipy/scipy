@@ -176,7 +176,7 @@ def test_nearest_options():
     assert_allclose(nndi(x), nndi_o(x), atol=1e-14)
 
 
-def test_nearest_nd_interpolator():
+def test_nearest_list_argument():
     nd = np.array([[0, 0, 0, 0, 1, 0, 1],
                    [0, 0, 0, 0, 0, 1, 1],
                    [0, 0, 0, 0, 1, 1, 2]])
