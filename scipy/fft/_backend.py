@@ -116,15 +116,6 @@ class _ScipyBackend:
         idstn: _fftpack.idstn,
     }
 
-    @staticmethod
-    def __ua_convert__(value, type, coerce):
-        import numpy as np
-        if type is np.ndarray:
-            if not coerce:
-                return value
-            return np.asarray(value)
-        return NotImplemented
-
 
     @staticmethod
     def __ua_function__(method, args, kwargs):

@@ -28,12 +28,10 @@ class BackendNotImplementedError(NotImplementedError):
 def create_multimethod(*args, **kwargs):
     """
     Creates a decorator for generating multimethods.
-
     This function creates a decorator that can be used with an argument
     extractor in order to generate a multimethod. Other than for the
     argument extractor, all arguments are passed on to
     :obj:`generate_multimethod`.
-
     See Also
     --------
     generate_multimethod
@@ -54,7 +52,6 @@ def generate_multimethod(
 ):
     """
     Generates a multimethod.
-
     Parameters
     ----------
     argument_extractor : ArgumentExtractorType
@@ -69,29 +66,21 @@ def generate_multimethod(
     default: Optional[Callable], optional
         The default implementation of this multimethod, where ``None`` (the default) specifies
         there is no default implementation.
-
     Examples
     --------
     In this example, ``a`` is to be dispatched over, so we return it, while marking it as an ``int``.
     The trailing comma is needed because the args have to be returned as an iterable.
-
     >>> def override_me(a, b):
     ...   return Dispatchable(a, int),
-
     Next, we define the argument replacer that replaces the dispatchables inside args/kwargs with the
     supplied ones.
-
     >>> def override_replacer(args, kwargs, dispatchables):
     ...     return (dispatchables[0], args[1]), {}
-
     Next, we define the multimethod.
-
     >>> overridden_me = generate_multimethod(
     ...     override_me, override_replacer, "ua_examples"
     ... )
-
     Notice that there's no default implementation, unless you supply one.
-
     >>> overridden_me(1, "a")
     Traceback (most recent call last):
         ...
@@ -101,7 +90,6 @@ def generate_multimethod(
     ... )
     >>> overridden_me2(1, "a")
     (1, 'a')
-
     See Also
     --------
     uarray
@@ -114,18 +102,30 @@ def generate_multimethod(
         dispatchable_args = argument_extractor(*args, **kwargs)
         errors = []
 
-        args = canonicalize_args(args)
+        args = canonicalize_args(args, kwargs)
         result = NotImplemented
 
         for options in _backend_order(domain):
-            res = replace_dispatchables(
-                options.backend, args, kwargs, dispatchable_args, coerce=options.coerce
+            res = (
+                replace_dispatchables(
+                    options.backend,
+                    args,
+                    kwargs,
+                    dispatchable_args,
+                    coerce=options.coerce,
+                )
+                if hasattr(options.backend, "__ua_convert__")
+                else (args, kwargs)
             )
 
             if res is NotImplemented:
                 continue
 
             a, kw = res
+
+            for k, v in kw_defaults.items():
+                if k in kw and kw[k] is v:
+                    del kw[k]
 
             result = options.backend.__ua_function__(inner, a, kw)
 
@@ -160,27 +160,14 @@ def generate_multimethod(
     def replace_dispatchables(
         backend, args, kwargs, dispatchable_args, coerce: Optional[bool] = False
     ):
-        replaced_args: List = []
-        for arg in dispatchable_args:
-            replaced_arg = backend.__ua_convert__(
-                arg.value, arg.type, coerce=coerce and arg.coercible
-            )
+        replaced_args: Iterable = backend.__ua_convert__(dispatchable_args, coerce)
 
-            if replaced_arg is not NotImplemented:
-                replaced_args.append(replaced_arg)
-            else:
-                return NotImplemented
+        if replaced_args is NotImplemented:
+            return NotImplemented
 
-        args, kwargs = argument_replacer(args, kwargs, tuple(replaced_args))
+        return argument_replacer(args, kwargs, tuple(replaced_args))
 
-        kwargs = {k: kwargs[k] for k in opts if k in kwargs}
-        for k, v in kw_defaults.items():
-            if k in kwargs and kwargs[k] is v:
-                del kwargs[k]
-
-        return args, kwargs
-
-    def canonicalize_args(args):
+    def canonicalize_args(args, kwargs):
         if len(args) > len(arg_defaults):
             return args
 
@@ -191,7 +178,8 @@ def generate_multimethod(
             else:
                 break
 
-        return args[:-match] if match > 0 else args
+        args = args[:-match] if match > 0 else args
+        return args
 
     inner._coerce_args = replace_dispatchables  # type: ignore
 
@@ -202,7 +190,6 @@ class _BackendOptions:
     def __init__(self, backend, coerce: bool = False, only: bool = False):
         """
         The backend plus any additonal options associated with it.
-
         Parameters
         ----------
         backend : Backend
@@ -272,12 +259,10 @@ def set_backend(backend, *args, **kwargs):
     """
     A context manager that sets the preferred backend. Uses :obj:`BackendOptions` to create
     the options, and sets the backend with the preferred options.
-
     Parameters
     ----------
     backend
         The backend to set.
-
     See Also
     --------
     BackendOptions: The backend plus options.
@@ -299,17 +284,15 @@ def skip_backend(backend):
     A context manager that allows one to skip a given backend from processing
     entirely. This allows one to use another backend's code in a library that
     is also a consumer of the same backend.
-
     Parameters
     ----------
     backend
         The backend to skip.
-
     See Also
     --------
     set_backend: A context manager that allows setting of backends.
     """
-    skip = _get_skipped_backends(backend.domain)
+    skip = _get_skipped_backends(backend.__ua_domain__)
     new = set(skip.get())
     new.add(backend)
     token = skip.set(new)
@@ -344,15 +327,12 @@ def set_global_backend(backend):
     will be tried in the list of backends automatically, unless the
     ``only`` flag is set on a backend. This will be the first tried
     backend outside the :obj:`set_backend` context manager.
-
     Note that this method is not thread-safe.
-
     .. warning::
         We caution library authors against using this function in
         their code. We do *not* support this use-case. This function
         is meant to be used only by users themselves, or by a reference
         implementation, if one exists.
-
     Parameters
     ----------
     backend
@@ -366,9 +346,7 @@ def register_backend(backend):
     This utility method sets registers backend for permanent use. It
     will be tried in the list of backends automatically, unless the
     ``only`` flag is set on a backend.
-
     Note that this method is not thread-safe.
-
     Parameters
     ----------
     backend
@@ -380,27 +358,21 @@ def register_backend(backend):
 class Dispatchable:
     """
     A utility class which marks an argument with a specific dispatch type.
-
-
     Attributes
     ----------
     value
         The value of the Dispatchable.
-
     type
         The type of the Dispatchable.
-
     Examples
     --------
     >>> x = Dispatchable(1, str)
     >>> x
     <Dispatchable: type=<class 'str'>, value=1>
-
     See Also
     --------
     all_of_type
         Marks all unmarked parameters of a function.
-
     mark_as
         Allows one to create a utility function to mark as a given type.
     """
@@ -409,6 +381,9 @@ class Dispatchable:
         self.value = value
         self.type = dispatch_type
         self.coercible = coercible
+
+    def __getitem__(self, index):
+        return (self.type, self.value)[index]
 
     def __str__(self):
         return (
@@ -421,7 +396,6 @@ class Dispatchable:
 def mark_as(dispatch_type):
     """
     Creates a utility function to mark something as a specific type.
-
     Examples
     --------
     >>> mark_int = mark_as(int)
@@ -434,7 +408,6 @@ def mark_as(dispatch_type):
 def all_of_type(arg_type):
     """
     Marks all unmarked arguments as a given type.
-
     Examples
     --------
     >>> @all_of_type(str)
@@ -458,3 +431,27 @@ def all_of_type(arg_type):
         return inner
 
     return outer
+
+
+def wrap_single_convertor(convert_single):
+    """
+    Wraps a ``__ua_convert__`` defined for a single element to all elements.
+    If any of them return ``NotImplemented``, the operation is assumed to be
+    undefined.
+    Accepts a signature of (value, type, coerce).
+    """
+
+    @functools.wraps(convert_single)
+    def __ua_convert__(dispatchables, coerce):
+        converted = []
+        for d in dispatchables:
+            c = convert_single(d.value, d.type, coerce and d.coercible)
+
+            if c is NotImplemented:
+                return NotImplemented
+
+            converted.append(c)
+
+        return converted
+
+    return __ua_convert__

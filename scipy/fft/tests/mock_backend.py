@@ -72,10 +72,6 @@ class MockBackend:
     __ua_domain__ = "scipy.fft"
 
     @staticmethod
-    def __ua_convert__(value, type, coerce):
-        return value
-
-    @staticmethod
     def __ua_function__(method, args, kwargs):
         fn = implemented.get(method)
         if fn is None:
