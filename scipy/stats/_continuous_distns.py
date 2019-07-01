@@ -150,7 +150,7 @@ class kstwo_gen(rv_continuous):
 
     """
     def _get_support(self, n):
-        return 1.0/n, 1.0
+        return 0.5/n, 1.0
 
     def _pdf(self, x, n):
         return kolmognp(n, x)
