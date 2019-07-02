@@ -2,112 +2,128 @@
 #define _ELLINT_RJ_GENERIC_GUARD
 
 #include <stdlib.h>
+#include <string.h>
 #include "ellint_common.h"
-#include "ellint_poly.h"
-#include "ellint_argcheck.h"
 
-#define ELLINT_RJ_1over3	(0.3333333333333333333333333)
-#define ELLINT_RJ_1over5	(0.2000000000000000000000000)
+
+#ifdef ELLINT_POLY_REAL
+#define NVEC	(3)
+#else
+#define NVEC	(6)
+#endif
 
 
 #define ELLINT_RJ_CALC(VOID)	\
-do { 				\
-    xrm = sqrt(xm);		\
-    yrm = sqrt(ym);		\
-    zrm = sqrt(zm);		\
-    prm = sqrt(pm);		\
-    lam = xrm * (yrm + zrm) + yrm * zrm;		\
-    dm = (prm + xrm) * (prm + yrm) * (prm + zrm);	\
+do { 	\
+    prm = SQRT(pm);	\
+/*    lam = ADD(ADD(MULcc(xrm, yrm), MULcc(zrm, xrm)), MULcc(yrm, zrm)); */\
+    cct1[0] = cct2[1] = SQRT(xm);	\
+    cct1[1] = cct2[2] = SQRT(ym);	\
+    cct1[2] = cct2[0] = SQRT(zm);	\
+    lam = ELLINT_POLY_FCN(dot2)(cct1, cct2, NVEC);	\
+    dm = MULcc(MULcc(ADD(prm, cct1[0]), ADD(prm, cct1[1])), ADD(prm, cct1[2]));\
 } while ( 0 )
 
 #define ELLINT_RJ_UPDT(VOID)	\
-do {				\
-    Am = (Am + lam) * 0.25;	\
-    xm = (xm + lam) * 0.25;	\
-    ym = (ym + lam) * 0.25;	\
-    zm = (zm + lam) * 0.25;	\
-    pm = (pm + lam) * 0.25;	\
-    d4m *= 0.25;		\
-    xxm *= 0.25;		\
-    yym *= 0.25;		\
-    zzm *= 0.25;		\
-    fterm *= 0.25;		\
+do {	\
+    Am = MULcr(ADD(Am, lam), 0.25);	\
+    xm = MULcr(ADD(xm, lam), 0.25);	\
+    ym = MULcr(ADD(ym, lam), 0.25);	\
+    zm = MULcr(ADD(zm, lam), 0.25);	\
+    pm = MULcr(ADD(pm, lam), 0.25);	\
+    xxm = MULcr(xxm, 0.25);	\
+    yym = MULcr(yym, 0.25);	\
+    zzm = MULcr(zzm, 0.25);	\
+    d4m *= 0.25;	\
+    fterm *= 0.25;	\
 } while ( 0 )
 
 
-/* Comparison function based on the ordering of real part */
-static int fcmp(const void * a, const void * b)
+#define ASYMP_ZERO(r)		( ( 0.0 < (r) ) && ( (r) <= 5e-14 ) )
+#define ABS_CLOSE_ZERO(r)	( ( 0.0 < (r) ) && ( (r) <= 1e-10 ) )
+
+
+typedef enum rj_asymp_flag
 {
-    double fdiff;
-    fdiff = (creal( *((const EllInt_Num_t *)a) ) -
-             creal( *((const EllInt_Num_t *)b) ));
-    if ( fdiff < 0.0 )
+    asymp_hugep,	/* x, y, z << p */
+    asymp_tinyp,	/* p << geom. mean of x, y, z */
+    asymp_tinyy,	/* max(x, y) == y << min(z, p) */
+    asymp_hugey,	/* max(x, p) << min(y, z) == y */
+    asymp_tinyx,	/* x << min(y, z, p) == min(y, p) */
+    asymp_hugez,	/* max(x, y, p) == max(y, p) << z */
+    asymp_nothing
+} rj_asymp_t;
+
+
+typedef struct rj_arg_cases
+{
+    bool retry_caupv;	/* should use Cauchy principal value */
+    bool hit_pole;	/* singular */
+    bool maybe_asymp;	/* might be good for an asympt. case */
+} rj_arg_cases_t;
+
+
+/* Comparison function based on the ordering of real part */
+static int ELLINT_POLY_FCN(rcmp)(const void * a, const void * b)
+{
+    if ( (CREAL( *((const EllInt_Num_t *)a) ) <
+          CREAL( *((const EllInt_Num_t *)b) )) )
     {
 	return -1;
-    } else if ( fdiff == 0.0 ) {
-	return 0;
     }
     return 1;
 }
 
 
-/* Prevent division by zero due to underflow in atan(sqrt(z)) / sqrt(z) and
- * square root of negative number in the real context. */
-static inline EllInt_Num_t safe_atan_sqrt_div(EllInt_Num_t z)
-{
-    if ( too_small(creal(z)) && too_small(cimag(z)) )
-    {
-	return (EllInt_Num_t)1.0;
-    }
-#ifdef ELLINT_POLY_COMPLEX
-    EllInt_Num_t s;
-    s = sqrt(z);
-    return atan(s) / s;
-#else
-    double s;
-    if ( z < 0.0 )
-    {
-	s = sqrt(-z);
-	return atanh(s) / s;
-    }
-    s = sqrt(z);
-    return atan(s) / s;
-#endif
-}
-
-
-/* Check whether the input arguments for RJ are out of domain.
- * If "retry" is set, p is real negative and x, y, z are real and non-negative,
- * and we may try to evaluate the Cauchy principal value.
+/* Check whether the input arguments for RJ are out of domain, while set
+ * corresponding flags in the class(ification) variable.
  *
  * NOTE: x, y, z must be in-order by real parts.
  */
-static inline bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
-                                EllInt_Num_t p, bool * restrict retry)
+static bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
+                         EllInt_Num_t p,
+			 rj_arg_cases_t * restrict classify)
 {
     double xr, xi, yr, yi, zr, zi, pr, pi;
-    bool allreal_nonneg_atmost1z;
+    bool xyzreal_nonneg_atmost1z;
 
-    xr = creal(x);
-    xi = cimag(x);
+    xr = CREAL(x);
+    xi = CIMAG(x);
 
-    yr = creal(y);
-    yi = cimag(y);
+    yr = CREAL(y);
+    yi = CIMAG(y);
 
-    zr = creal(z);
-    zi = cimag(z);
+    zr = CREAL(z);
+    zi = CIMAG(z);
 
-    pr = creal(p);
-    pi = cimag(p);
+    pr = CREAL(p);
+    pi = CIMAG(p);
 
-    allreal_nonneg_atmost1z = ( too_small(xi) && too_small(yi) &&
-                                too_small(zi) && (xr >= 0.0) && (yr > 0.0) );
+    if ( (classify->hit_pole = ( too_small(FABS(x)) &&
+                                 too_small(FABS(y)) &&
+				 (!PH_IS_PMPI_Z(z)) &&
+				 !too_small(FABS(p)) )) )
+    {
+	return false;
+    }
     /* "If x, y, z are real and nonnegative, at most one of them is 0, and the
      * fourth variable of RJ is negative, the Cauchy principal value ..." */
-    if ( allreal_nonneg_atmost1z && too_small(pi) && (pr < 0.0) )
+    xyzreal_nonneg_atmost1z = ( too_small(xi) && too_small(yi) &&
+				too_small(zi) && (xr >= 0.0) && (yr > 0.0) );
+    if ( too_small(pi) )
     {
-	*retry = true;
-	return false;
+	if ( (classify->retry_caupv = ( xyzreal_nonneg_atmost1z &&
+	                                (pr < 0.0) )) )
+	{
+	    return false;
+	}
+	/* "Assume x, y, and z are real and nonnegative, at most one of them is
+	 * 0, and p > 0" */
+	if ( (classify->maybe_asymp = ( xyzreal_nonneg_atmost1z &&
+	                                (pr > 0.0) )) )
+	{
+	    return true;
+	}
     }
 
     /* "Let x, y, z have nonnegative real part and at most one of them [1] be
@@ -119,14 +135,13 @@ static inline bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	return true;
     }
 
-    /* "Alternatively, if p != 0 ... " */
-    if ( !( too_small(pr) && too_small(pi) ) )
+    /* "Alternatively, if p != 0 and |ph p| < pi ..." */
+    if ( !( too_small(pr) && too_small(pi) ) && !( PH_IS_PMPI_Z(p) ) )
     {
-	/* "... and |ph p| < pi ..." */
 	/* "... either let x, y, z be real and nonnegative and at most one of
 	 * them be 0, ..." */
 	unsigned char flag = 0u;
-	if (  allreal_nonneg_atmost1z )
+	if (  xyzreal_nonneg_atmost1z )
 	{
 	    flag = 1u;
 	/* "... or else let two of the variables x, y, z be nonzero and
@@ -145,156 +160,483 @@ static inline bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 }
 
 
-int
+#define HORRIBLE_STATUS(s)	( ( (s) == ELLINT_STATUS_NORESULT ) || \
+                                  ( (s) == ELLINT_STATUS_BAD_ARGS ) || \
+				  ( (s) == ELLINT_STATUS_BAD_RERR ) || \
+				  ( (s) == ELLINT_STATUS_OTHER ) )
+#define TROUBLESOME_STATUS(s)	( ( (s) == ELLINT_STATUS_SINGULAR ) || \
+                                  ( (s) == ELLINT_STATUS_UNDERFLOW ) || \
+				  ( (s) == ELLINT_STATUS_OVERFLOW ) || \
+				  ( (s) == ELLINT_STATUS_NITER ) || \
+				  ( (s) == ELLINT_STATUS_PRECLOSS ) )
+
+
+/* Cauchy principal value dispatcher */
+static EllInt_Status_t ellint_RJ_cpv_dispatch(EllInt_Num_t x, EllInt_Num_t y,
+                                              EllInt_Num_t z, EllInt_Num_t p,
+                                              double rerr,
+					      double * restrict res)
+{
+    /* Retry with principal value evaluation, valid for reals. */
+    EllInt_Status_t status, status_tmp;
+    double r, pn, pq, xy, xypq, tmpres;
+    double xct1[4];
+    double xct2[4];
+
+    r = rerr / 3.0;
+    /*
+    xx = CREAL(x);
+    yy = CREAL(y);
+    zz = CREAL(z);
+    pp = CREAL(p);
+    */
+    xct1[0] = CREAL(x);
+    xct1[1] = CREAL(y);
+    xct1[2] = -CREAL(p);
+    xct1[3] = CREAL(z);
+    /* q = -pp; */
+    /* xy = xx * yy; */
+    xy = xct1[0] * xct1[1];
+    xct2[3] = xct1[2] / xct1[3] + 1.0;
+    pn = (fsum2(xct1, 3) - xy / xct1[3]) / xct2[3];
+
+    status = ELLINT_STATUS_SUCCESS;
+
+    status_tmp = fellint_RJ(xct1[0], xct1[1], xct1[3], pn, r, xct2);
+    if ( HORRIBLE_STATUS(status_tmp) )
+    {
+	return status_tmp;
+    } else if ( TROUBLESOME_STATUS(status_tmp) ) {
+	status = status_tmp;
+    }
+
+    status_tmp = fellint_RF(xct1[0], xct1[1], xct1[3], r, xct2 + 1);
+    if ( HORRIBLE_STATUS(status_tmp) )
+    {
+	return status_tmp;
+    } else if ( TROUBLESOME_STATUS(status_tmp) ) {
+	status = status_tmp;
+    }
+
+    pq = pn * xct1[2];
+    xypq = xy + pq;
+    status_tmp = fellint_RC(xypq, pq, r, xct2 + 2);
+    if ( HORRIBLE_STATUS(status_tmp) )
+    {
+	return status_tmp;
+    } else if ( TROUBLESOME_STATUS(status_tmp) ) {
+	status = status_tmp;
+    }
+    xct1[0] = pn / xct1[3] - 1.0;
+    xct1[1] = -3.0 / xct1[3];
+    xct1[2] = 3.0 * sqrt(xy / (xypq * xct1[3]));
+
+    /* tmpres = (pn - zz) * rjv - 3.0 * (rfv - sqrt(xy * zz / xypq) * rcv); */
+    tmpres = fdot2(xct1, xct2, 3);
+    /* tmpres /= q + zz */
+    tmpres /= xct2[3];
+    *res = tmpres;
+
+    return status;
+}
+
+
+static inline rj_asymp_t RJ_asymp_conf( const double * restrict x,
+	const double * restrict y, const double * restrict z,
+	const double * restrict p,
+	double * restrict a, double * restrict b, double * restrict c,
+	double * restrict f, double * restrict g, double * restrict h)
+{
+    double t;
+
+    t = (*z) / (*p);
+    /* this bound is neither sharp enough nor useful */
+    /*
+    if ( ASYMP_ZERO(t) )
+    {
+	*c = ((*x) + (*y) + (*z)) / 3.0;
+	return asymp_hugep;
+    }
+    */
+
+    /* this bound is sharp. RJ in this case behaves with logarithmic
+     * singularity as p -> +0 */
+    if ( ABS_CLOSE_ZERO(*p) ||
+	 ( (fpclassify(*x) != FP_ZERO) && ASYMP_ZERO((*p) / (*x)) ) )
+    {
+	*f = sqrt((*x) * (*y) * (*z));
+	return asymp_tinyp;
+    }
+
+    /* XXX until RJ(0, y, z, p) is implemented, this is useless */
+    /*
+    t = (*x) / fmin((*y), (*p));
+    if ( ( 0.0 < (*x) && (*x) <= 1e-26 ) || ASYMP_ZERO(t) )
+    {
+	*h = sqrt((*y) * (*z));
+	if ( (*h) / (*p) + 0.5 * ((*y) + (*z)) / (*h) <= sqrt((*h) / (*x)) )
+	{
+	    return asymp_tinyx;
+	}
+    }
+    */
+
+    t = (*y) / fmin((*z), (*p));
+    if ( ( 0 < (*y) && (*y) <= 1e-26 ) || ASYMP_ZERO(t) )
+    {
+	/* bound fairly sharp even if p is large */
+	*a = 0.5 * ((*x) + (*y));
+	*g = sqrt((*x) * (*y));
+	if ( ( (*a) / (*z) + (*a) / (*p) ) * fabs( log((*p) / (*a)) ) <= 1.0 )
+	{
+	    return asymp_tinyy;
+	}
+	return asymp_tinyy;
+    }
+
+    if ( (fpclassify(*x) != FP_ZERO) && ASYMP_ZERO(fmax((*z), (*p)) / (*x)) )
+    {
+	/* bound might not be sharp if x + 2p much larger than (yz) ** 2,
+	 * but this is unlikely to be true anyway. */
+	return asymp_hugey;
+    }
+
+    if ( (fpclassify(*z) != FP_ZERO) && ASYMP_ZERO(fmax((*y), (*p)) / (*z)) )
+    {
+	*b = 0.5 * ((*x) + (*y));
+	*h = sqrt((*x) * (*y));
+	/* when bounds are sharp */
+	if ( fabs(log((*z) / ((*b) + (*h)))) <= sqrt((*z)) )
+	{
+	    return asymp_hugez;
+	}
+    }
+
+    return asymp_nothing;
+}
+
+
+/* Prevent division by zero due to underflow in atan(sqrt(z)) / sqrt(z) and
+ * square root of negative number in the real context. */
+static inline EllInt_Num_t
+safe_atan_sqrt_div(EllInt_Num_t z)
+{
+    EllInt_Num_t s;
+
+    if ( too_small(CREAL(z)) && too_small(CIMAG(z)) )
+    {
+	return MKCR(1.0);
+    }
+#ifdef ELLINT_POLY_COMPLEX
+    s = csqrt(z);
+    return DIVcc(catan(s), s);
+#else
+    if ( z < 0.0 )
+    {
+	s = sqrt(-z);
+	return atanh(s) / s;
+    }
+    s = sqrt(z);
+    return atan(s) / s;
+#endif
+}
+
+
+EllInt_Status_t
 ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
                             EllInt_Num_t p,
 	                    double rerr, EllInt_Num_t * restrict res)
 {
-    int status;
-    bool retry;
+    EllInt_Status_t status;
+    rj_arg_cases_t classify;
+    rj_asymp_t cres;
+    unsigned int m;
+    EllInt_Num_t A0, delta;
+    EllInt_Num_t Am, xm, ym, zm, pm;
+    EllInt_Num_t prm, lam, dm;
+    EllInt_Num_t sm, rm;
+    EllInt_Num_t d4m, xxm, yym, zzm;
+    EllInt_Num_t pp, pp2, xyz, e2, e3, e4, e5;
+    EllInt_Num_t tmp, t;
+    double fterm;
+    EllInt_Num_t cct1[6];
+    EllInt_Num_t cct2[6];
 
+    status = ELLINT_STATUS_SUCCESS;
     if ( ELLINT_BAD_RERR(rerr, 1.0e-4) )
     {
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_RERR);
     }
 
     /* Put the symmetric arguments in the order of real parts. */
-    EllInt_Num_t na[3] = {x, y, z};
-    qsort(na, 3, sizeof (EllInt_Num_t), fcmp);
-    x = na[0];
-    y = na[1];
-    z = na[2];
+    cct1[0] = x;
+    cct1[1] = y;
+    cct1[2] = z;
+    qsort(cct1, 3, sizeof (EllInt_Num_t), ELLINT_POLY_FCN(rcmp));
+    x = cct1[0];
+    y = cct1[1];
+    z = cct1[2];
 
-    retry = false;
-    if ( !RJ_good_args(x, y, z, p, &retry) )
+    memset(&classify, 0, sizeof (classify));
+    if ( !RJ_good_args(x, y, z, p, &classify) )
     {
-	if ( retry )
+	if ( classify.retry_caupv )
 	{
 	    /* Retry with principal value evaluation, valid for reals. */
-	    double r, pp;
+	    double tmpres;
 
-	    r = rerr / 3.0;
-
-	    double xx, yy, zz, q, pn, rjv, rfv, rcv, pq, xy, xypq, tmpres;
-	    pp = creal(p);
-	    xx = creal(x);
-	    yy = creal(y);
-	    zz = creal(z);
-
-	    q = -pp;
-	    xy = xx * yy;
-	    pn = (zz * (xx + yy + q) - xy) / (zz + q);
-
-	    status = fellint_RJ(xx, yy, zz, pn, r, &rjv);
-	    if ( status != ELLINT_STATUS_SUCCESS )
+	    status = ellint_RJ_cpv_dispatch(x, y, z, p, rerr, &tmpres);
+	    if ( HORRIBLE_STATUS(status) )
 	    {
-		ELLINT_FAIL_WITH(status);
+		*res = ELLINT_NAN;
+	    } else {
+		*res = MKCR(tmpres);
 	    }
-
-	    status = fellint_RF(xx, yy, zz, r, &rfv);
-	    if ( status != ELLINT_STATUS_SUCCESS )
-	    {
-		ELLINT_FAIL_WITH(status);
-	    }
-
-	    pq = pn * q;
-	    xypq = xy + pq;
-	    status = fellint_RC(xypq, pq, r, &rcv);
-	    if ( status != ELLINT_STATUS_SUCCESS )
-	    {
-		ELLINT_FAIL_WITH(status);
-	    }
-
-	    tmpres = (pn - zz) * rjv - 3.0 * (rfv -
-					      sqrt(xy * zz / xypq) * rcv);
-	    tmpres /= (q + zz);
-
-	    *res = (EllInt_Num_t)tmpres;
-	    return ELLINT_STATUS_SUCCESS;
+	    return status;
+	} else if ( classify.hit_pole ) {
+	    ELLINT_RETURN_WITH(ELLINT_STATUS_SINGULAR, CPINF);
 	} else {
 	    ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
 	}
     }
 
-    unsigned int m;
-    EllInt_Num_t A0, delta, A0mx, A0my, A0mz;
-    EllInt_Num_t Am, xm, ym, zm, pm;
-    EllInt_Num_t xrm, yrm, zrm, prm, lam, dm;
-    EllInt_Num_t sm, rm;
-    EllInt_Num_t d4m, xxm, yym, zzm;
-    EllInt_Num_t sprev;
-    EllInt_Num_t pp, pp2, xyz, e2, e3, e4, e5;
-    EllInt_Num_t tmp, t;
-    double Q, fterm;
+    if ( classify.maybe_asymp )
+    {
+	/* might be dealt with by asymptotic expansion of real-arg RJ */
+	double xx, yy, zz, ppr, a, b, c, f, g, h;
+	double tmpres;
 
-    A0 = (x + y + z + 2.0 * p) / 5.0;
-    delta = (p - x) * (p - y) * (p - z);
-    A0mx = A0 - x;
-    A0my = A0 - y;
-    A0mz = A0 - z;
-    Q = (ELLINT_FMAX4(fabs(A0mx), fabs(A0my), fabs(A0mz), fabs(A0 - p)) /
-         ELLINT_SXRT(rerr * 0.25));
+	ppr = CREAL(p);
+	xx = CREAL(x);
+	yy = CREAL(y);
+	zz = CREAL(z);
+	cres = RJ_asymp_conf(&xx, &yy, &zz, &ppr, &a, &b, &c, &f, &g, &h);
+	switch ( cres )
+	{
+	    case asymp_hugep :
+		{
+		    status = fellint_RF(xx, yy, zz, rerr, &tmpres);
+		    tmpres = 3.0 * (tmpres - 0.5 * M_PI / sqrt(ppr)) / ppr;
+		}
+		break;
+	    case asymp_tinyp :
+		{
+		    double lamt, alpha, beta;
+		    double xct1[6];
+		    double xct2[6];
+		    rerr *= 0.5;
+		    xct1[1] = xct2[0] = sqrt(xx);
+		    xct1[2] = xct2[1] = sqrt(yy);
+		    xct1[0] = xct2[2] = sqrt(zz);
+		    lamt = fdot2(xct1, xct2, 3);
+		    xct2[3] = xct2[4] = xct2[5] = ppr;
+		    alpha = fdot2(xct1, xct2 + 3, 3) + f;
+		    alpha = alpha * alpha;
+		    beta = ppr + lamt;
+		    beta = beta * beta * ppr;
+		    status = fellint_RC(alpha, beta, rerr, xct2);
+		    status = fellint_RJ(xx + lamt, yy + lamt, zz + lamt,
+					ppr + lamt, rerr, xct2 + 1);
+		    xct1[0] = 3.0;
+		    xct1[1] = 2.0;
+		    tmpres = fdot2(xct1, xct2, 2);
+		}
+		break;
+	    case asymp_tinyy :
+		{
+		    double r_est_h, r_est_l, tx;
+		    status = fellint_RC(1.0, ppr / zz, rerr, &tx);
+		    tmpres = (log(8.0 * zz / (a + g)) - 2.0 * tx);
+		    tx = log(2.0 * ppr / (a + g)) / (tmpres * ppr);
+		    r_est_l = tx * g / (1.0 - g / ppr);
+		    r_est_h = tx * a * (1.0 + 0.5 * ppr / zz) / (1.0 - a / ppr);
+		    /* if asymptotic expansion found to violate error bound
+		     * after the fact */
+		    if ( r_est_h - r_est_l >= 2.0 * rerr )
+		    {
+			cres = asymp_nothing;
+			break;
+		    } else {
+			tmpres += r_est_l;
+			tmpres *= 1.5 / (sqrt(zz) * ppr);
+		    }
+		}
+		break;
+	    case asymp_hugey :
+		{
+		    double rr, t1, t2;
+		    rr = rerr / 3.0;
+		    tmpres = 1.0 / sqrt(yy * zz);
+		    status = fellint_RC(xx, ppr, rr, &t1);
+		    status = fellint_RG(0.0, yy, zz, rr, &t2);
+		    tmpres *= (3.0 * t1 - 2.0 * t2 * tmpres);
+		}
+		break;
+	    case asymp_tinyx :
+		{
+		    status = fellint_RJ(0.0, yy, zz, ppr, rerr, &tmpres);
+		    tmpres -= 3.0 * sqrt(xx) / (h * ppr);
+		}
+		break;
+	    case asymp_hugez :
+		{
+		    double tt;
+		    double r_est;
+#if 0
+		    if ( ASYMP_ZERO(xx / fmin(yy, ppr)) )
+		    {
+			/* XXX */
+			status = fellint_RC(ppr, yy, rerr, &tmpres);
+			tmpres *= 3.0 / sqrt(ppr * zz);
+		    } else {
+#endif
+			tt = h + ppr;
+			tt *= tt;
+			status = fellint_RC(tt, 2.0 * (b + h) * ppr,
+			                    rerr, &tmpres);
+			r_est = 0.25 * (0.5 +
+				log1p(2.0 * zz / sqrt(h * ppr))) / (tmpres *
+				zz);
+			/* if asymptotic expansion found to violate error bound
+			 * after the fact */
+			if ( r_est >= rerr )
+			{
+			    cres = asymp_nothing;
+			    break;
+			} else {
+			    tmpres *= 3.0 / sqrt(zz);
+			}
+#if 0
+		    }
+#endif
+		}
+		break;
+	    case asymp_nothing:
+		break;
+	}	/* end of switch (argument classification for asympt.) */
+	if ( cres != asymp_nothing )
+	{
+	    *res = tmpres;
+	    return status;
+	}
+    } 
+
+    /* A0 = DIVcr(ADD(ADD(ADD(x, y), z), MULcr(p, 2.0)), 5.0); */
+    cct1[3] = p;
+    cct1[4] = p;
+    A0 = DIVcr(ELLINT_POLY_FCN(sum2)(cct1, 5), 5.0);
+    delta = MULcc(MULcc(SUB(p, x), SUB(p, y)), SUB(p, z));
+    rerr = ELLINT_OCRT(rerr / 5.0);
+    xxm = SUB(A0, x);
+    yym = SUB(A0, y);
+    zzm = SUB(A0, z);
+    fterm = ELLINT_FMAX4(FABS(xxm), FABS(yym), FABS(zzm),
+			 FABS(SUB(A0, p))) / rerr;
 
     /* m = 0; */
-    fterm = Q;
     Am = A0;
     d4m = 1.0;
     xm = x;
     ym = y;
     zm = z;
     pm = p;
-    xxm = A0mx;
-    yym = A0my;
-    zzm = A0mz;
 
     ELLINT_RJ_CALC();
-    sprev = dm * 0.5;
+    sm = MULcr(dm, 0.5);
 
     /* next */
     ELLINT_RJ_UPDT();
+
     m = 1;
-
-    while ( 1 )
+    while ( fmax(fterm,
+                 5.0 * ELLINT_FMAX4(FABS(Am - xm), FABS(Am - ym),
+		                    FABS(Am - zm), FABS(Am - pm))) >= FABS(Am) )
     {
-        if ( fterm < fabs(Am) )
-	{
-            break;
-	}
-
 	if ( m > ELLINT_MAXITER )
 	{
-	    ELLINT_FAIL_WITH(ELLINT_STATUS_NITER);
+	    status = ELLINT_STATUS_NITER;
+	    break;
 	}
 
-	rm = sprev * (1.0 + sqrt(1.0 + d4m * delta / (sprev * sprev)));
+	rm = MULcc(sm, ADDcr(SQRT(ADDcr(DIVcc(MULcr(delta, d4m),
+				              MULcc(sm, sm)), 1.0)),
+	                        1.0));
 	ELLINT_RJ_CALC();
-	sm = 0.5 * (rm * dm - d4m * d4m * delta) / (dm + rm * d4m);
+	sm = DIVcc(MULcr(SUB(MULcc(rm, dm), MULcr(delta, d4m * d4m)), 0.5),
+	           ADD(dm, MULcr(rm, d4m)));
 
 	/* next */
 	ELLINT_RJ_UPDT();
-	sprev = sm;
 	m += 1;
     }
 
-    xxm /= Am;
-    yym /= Am;
-    zzm /= Am;
-    pp = -0.5 * (xxm + yym + zzm);
-    pp2 = pp * pp;
-    xyz = xxm * yym * zzm;
-    e2 = xxm * yym + zzm * xxm + yym * zzm - 3.0 * pp2;
-    e3 = xyz + 2.0 * pp * (e2 + 2.0 * pp2);
-    e4 = (2.0 * xyz + (e2 + 3.0 * pp2) * pp) * pp;
-    e5 = xyz * pp2;
-    tmp = d4m * pow(sqrt(Am), -3);
-    tmp *= (1.0 + e2 * (ELLINT_RDJ_c02 + e2 * ELLINT_RDJ_c22 +
-                        e3 * ELLINT_RDJ_c23) + e3 * ELLINT_RDJ_c03 +
-	    e4 * ELLINT_RDJ_c04 + e5 * ELLINT_RDJ_c05);
-    t = (d4m * delta) / (sprev * sprev);
-    tmp += 3.0 * safe_atan_sqrt_div(t) / sprev;
+    /* Burn some extra cycles re-balancing Am as the "true" centroid */
+    cct1[0] = xm;
+    cct1[1] = ym;
+    cct1[2] = zm;
+    cct1[3] = pm;
+    cct1[4] = pm;
+    Am = DIVcr(ELLINT_POLY_FCN(sum2)(cct1, 5), 5.0);
+    /* {xx,yy,zz}m /= Am */
+    xxm = DIVcc(xxm, Am);
+    yym = DIVcc(yym, Am);
+    zzm = DIVcc(zzm, Am);
+    /* pp = -0.5 * (xxm + yym + zzm) */
+    cct1[0] = cct2[2] = xxm;
+    cct1[1] = cct2[0] = yym;
+    cct1[2] = cct2[1] = zzm;
+    pp = MULcr(ELLINT_POLY_FCN(sum2)(cct1, 3), -0.5);
+    cct1[3] = cct2[3] = pp;
+    cct1[3] = MULcr(cct1[3], -3.0);
+    /* pp2 = pp * pp */
+    pp2 = MULcc(pp, pp);
+    /* xyz = xxm * yym * zzm */
+    xyz = MULcc(MULcc(xxm, yym), zzm);
+    /* e2 = xxm * yym + zzm * xxm + yym * zzm - pp2 * 3.0 */
+#ifdef ELLINT_POLY_REAL
+    e2 = fdot2(cct1, cct2, 4);
+#else
+    e2 = cdot2(cct1, cct2, 8);
+#endif
+    /* e3 = xyz + 2.0 * pp * (e2 + 2.0 * pp2) */
+    e3 = ADD(xyz,
+             MULcc(MULcr(pp, 2.0),
+                   ADD(e2, MULcr(pp2, 2.0))));
+    /* e4 = (2.0 * xyz + (e2 + 3.0 * pp2) * pp) * pp */
+    e4 = MULcc(ADD(MULcr(xyz, 2.0),
+		   MULcc(ADD(e2,
+                             MULcr(pp2, 3.0)),
+                         pp)),
+               pp);
+    /* e5 = xyz * pp2 */
+    e5 = MULcc(xyz, pp2);
+    /* tmp = d4m * pow(sqrt(Am), -3) */
+    t = SQRT(Am);
+    tmp = MULcc(MULcc(t, t), t);
+    tmp = DIVrc(d4m, tmp);
+    cct1[0] = HORNER(e2, ELLINT_RDJ_C1, 3);
+    cct1[1] = HORNER(e3, ELLINT_RDJ_C2, 2);
+    cct1[2] = HORNER(e2, ELLINT_RDJ_C3, 2);
+    cct1[3] = HORNER(e2, ELLINT_RDJ_C4, 1);
+    cct1[4] = HORNER(e2, ELLINT_RDJ_C5, 1);
+    cct1[5] = MULcr(e3, ELLINT_RDJ_C5[1]);
+
+    cct2[0] = MKCR(1.0);
+    cct2[1] = MKCR(1.0);
+    cct2[2] = e3;
+    cct2[3] = e4;
+    cct2[4] = e5;
+    cct2[5] = e4;
+#ifdef ELLINT_POLY_REAL
+    t = 1.0 + fdot2(cct1, cct2, 6) / ELLINT_RDJ_DENOM;
+#else
+    t = ADDcr(DIVcr(cdot2(cct1, cct2, 12), ELLINT_RDJ_DENOM), 1.0);
+#endif
+    tmp = MULcc(tmp, t);
+    t = DIVcc(MULcr(delta, d4m), MULcc(sm, sm));
+    tmp = ADD(tmp, DIVcc(MULcr(safe_atan_sqrt_div(t), 3.0), sm));
 
     *res = tmp;
-    status = ELLINT_STATUS_SUCCESS;
     return status;
 }
 

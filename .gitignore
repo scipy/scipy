@@ -244,6 +244,9 @@ scipy/special/cython_special.c
 scipy/special/cython_special.h
 scipy/special/cython_special.pxd
 scipy/special/cython_special.pyx
+scipy/special/ellint_carlson/Makefile
+scipy/special/ellint_carlson/tests
+scipy/special/ellint_carlson/tests/*
 scipy/special/specfunmodule.c
 scipy/special/tests/data/*.npz
 scipy/stats/_rank.c

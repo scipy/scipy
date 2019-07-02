@@ -7,7 +7,7 @@
 #include <numpy/npy_math.h>
 
 
-#define SF_RERR		(5e-14)
+#define SF_RERR		(2.5e-14)
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,17 +2,14 @@
 #define _ELLINT_RG_GENERIC_GUARD
 
 #include "ellint_common.h"
-#include "ellint_poly.h"
-#include "ellint_argcheck.h"
-
-#define ELLINT_RG_m1over3	(-0.3333333333333333333333333)
 
 
-int
+EllInt_Status_t
 ELLINT_POLY_FCN(ellint_RG) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	                    double rerr, EllInt_Num_t * restrict res)
 {
-    int status;
+    EllInt_Status_t status;
+    EllInt_Num_t rfv, rdv, tmp;
 
     if ( ELLINT_BAD_RERR(rerr, 1.0e-4) )
     {
@@ -22,40 +19,43 @@ ELLINT_POLY_FCN(ellint_RG) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     /* Select pivot as the last argument to the symmetric functions */
     {
 	double ta1, ta2;
-	ta1 = fabs(x);
-	if ( (ta2 = fabs(y)) < ta1 )
+
+	ta1 = FABS(x);
+	if ( (ta2 = FABS(y)) < ta1 )
 	{
-	    if ( fabs(z) < ta1 )
+	    if ( FABS(z) < ta1 )
 	    {
 		ELLINT_SWAP(x, z);
 	    }
-	} else if ( fabs(z) < ta2 ) {
+	} else if ( FABS(z) < ta2 ) {
 	    ELLINT_SWAP(y, z);
 	}
     }
     /* Special case -- also covers the case of z ~ zero. */
-    if ( too_small(fabs(x)) && too_small(fabs(y)) )
+    if ( too_small(FABS(x)) && too_small(FABS(y)) )
     {
-	*res = (0.5 * sqrt(z));
+	*res = MULcr(SQRT(z), 0.5);
 	return ELLINT_STATUS_SUCCESS;
     }
-
-    EllInt_Num_t rfv, rdv, tmp;
 
     status = ELLINT_POLY_FCN(ellint_RF)(x, y, z, rerr * 0.5, &rfv);
     if ( status != ELLINT_STATUS_SUCCESS )
     {
 	ELLINT_FAIL_WITH(status);
     }
+
     status = ELLINT_POLY_FCN(ellint_RD)(x, y, z, rerr * 0.5, &rdv);
     if ( status != ELLINT_STATUS_SUCCESS )
     {
 	ELLINT_FAIL_WITH(status);
     }
-    tmp = z * rfv;
-    tmp += ELLINT_RG_m1over3 * (z - x) * (z - y) * rdv;
-    tmp += sqrt(x * y / z);
-    tmp *= 0.5;
+
+    tmp = MULcc(z, rfv);
+    tmp = ADD(tmp,
+              DIVcr(MULcc(MULcc(SUB(z, x), SUB(z, y)), rdv),
+		    -3.0));
+    tmp = ADD(tmp, SQRT(DIVcc(MULcc(x, y), z)));
+    tmp = MULcr(tmp, 0.5);
 
     *res = tmp;
     status = ELLINT_STATUS_SUCCESS;

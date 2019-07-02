@@ -1,49 +1,69 @@
 #ifndef _ELLINT_CARLSON_H_INCLUDED
 #define _ELLINT_CARLSON_H_INCLUDED
-#include <complex.h>
 
 
-#define ELLINT_STATUS_SUCCESS	(0)
-#define ELLINT_STATUS_NITER	(4)
-#define ELLINT_STATUS_BAD_ARGS	(7)
-#define ELLINT_STATUS_BAD_RERR	(8)
-#define ELLINT_STATUS_OTHER	(9)
-
-
-#if ( __STDC_VERSION__ < 199901L )
-#define restrict
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 
-extern int fellint_RF(double x, double y, double z, double rerr,
-                      double * restrict res);
+typedef enum ELLINT_RETURN_VALUE
+{
+    ELLINT_STATUS_SUCCESS = 0,
+    ELLINT_STATUS_SINGULAR,
+    ELLINT_STATUS_UNDERFLOW,
+    ELLINT_STATUS_OVERFLOW,
+    ELLINT_STATUS_NITER,
+    ELLINT_STATUS_PRECLOSS,
+    ELLINT_STATUS_NORESULT,
+    ELLINT_STATUS_BAD_ARGS,
+    ELLINT_STATUS_BAD_RERR,
+    ELLINT_STATUS_OTHER,
+    ELLINT_STATUS_UNUSED
+} EllInt_Status_t;
 
-extern int cellint_RF(double complex x, double complex y, double complex z,
-		      double rerr, double complex * restrict res);
 
-extern int fellint_RD(double x, double y, double z, double rerr,
-                      double * restrict res);
+#include "ellint_compat.h"
 
-extern int cellint_RD(double complex x, double complex y, double complex z,
-		      double rerr, double complex * restrict res);
 
-extern int fellint_RJ(double x, double y, double z, double p,
-                      double rerr, double * restrict res);
+extern EllInt_Status_t fellint_RF(double x, double y, double z, double rerr,
+                                  double * restrict res);
 
-extern int cellint_RJ(double complex x, double complex y,
-                      double complex z, double complex p,
-                      double rerr, double complex * restrict res);
+extern EllInt_Status_t cellint_RF(double_complex x, double_complex y,
+				  double_complex z,
+				  double rerr, double_complex * restrict res);
 
-extern int fellint_RC(double x, double y, double rerr, double * restrict res);
+extern EllInt_Status_t fellint_RD(double x, double y, double z, double rerr,
+                                  double * restrict res);
 
-extern int cellint_RC(double complex x, double complex y,
-                      double rerr, double complex * restrict res);
+extern EllInt_Status_t cellint_RD(double_complex x, double_complex y,
+                                  double_complex z,
+				  double rerr, double_complex * restrict res);
 
-extern int fellint_RG(double x, double y, double z, double rerr,
-                      double * restrict res);
+extern EllInt_Status_t fellint_RJ(double x, double y, double z, double p,
+                                  double rerr, double * restrict res);
 
-extern int cellint_RG(double complex x, double complex y, double complex z,
-                      double rerr, double complex * restrict res);
+extern EllInt_Status_t cellint_RJ(double_complex x, double_complex y,
+                                  double_complex z, double_complex p,
+                                  double rerr, double_complex * restrict res);
+
+extern EllInt_Status_t fellint_RC(double x, double y,
+                                  double rerr, double * restrict res);
+
+extern EllInt_Status_t cellint_RC(double_complex x, double_complex y,
+                                  double rerr, double_complex * restrict res);
+
+extern EllInt_Status_t fellint_RG(double x, double y, double z, double rerr,
+                                  double * restrict res);
+
+extern EllInt_Status_t cellint_RG(double_complex x, double_complex y,
+                                  double_complex z,
+				  double rerr, double_complex * restrict res);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif  /* _ELLINT_CARLSON_H_INCLUDED */

@@ -1,21 +1,13 @@
 #ifndef _ELLINT_COMMON_H_INCLUDED
 #define _ELLINT_COMMON_H_INCLUDED
 
-#include <math.h>
-#include <tgmath.h>
 
-#if ( (!defined(NDEBUG)) || (__STDC_VERSION__ < 199901L) )
-#define inline
-#endif
+#include "ellint_poly.h"
+#include "ellint_compat.h"
 
-#if ( __STDC_VERSION__ < 199901L )
-#define restrict
-#endif
 
-#define ELLINT_TOO_SMALL	(1e-11)
 #define ELLINT_MAXITER		(1000)
 
-#define ELLINT_BAD_RERR(rerr, tol) ( ( (rerr) <= 0.0 ) || ( (rerr) >= (tol) ) )
 
 /* Sexatic root of real number */
 #define ELLINT_SXRT(r)	( sqrt(cbrt( (r) )) )
@@ -25,22 +17,52 @@
 #define ELLINT_FMAX3(a, b, c)		( fmax(fmax( (a) , (b) ), (c) ) )
 #define ELLINT_FMAX4(a, b, c, d)	( fmax(fmax( (a) , (b) ), \
 					  fmax( (c), (d) )) )
+#define ELLINT_FMIN4(a, b, c, d)	( fmin(fmin( (a) , (b) ), \
+					  fmin( (c), (d) )) )
+#define ELLINT_FMIN5(a, b, c, d, e)	\
+    ( fmin(ELLINT_FMIN4( (a), (b), (c), (d) ), (e)) )
+
+
+#define CZERO	( MKCR(0.0) )
+#define CPINF	( MKCR(HUGE_VAL) )
+#define CP_I	( MKCMPLX(0.0, 1.0) )
+#define CN_I	( MKCMPLX(0.0, -1.0) )
+
+
 #define ELLINT_FAIL_WITH(code)	\
-do {				\
-    *res = ELLINT_NAN;		\
-    status = (code);		\
-    return status;		\
+do {	\
+    *res = ELLINT_NAN;	\
+    status = ( code );	\
+    return status;	\
 } while ( 0 )
 
 
-#include "ellint_carlson.h"
+#define ELLINT_RETURN_WITH(code, value)	\
+do {	\
+    *res = ( value );	\
+    status = ( code );	\
+    return status;	\
+} while ( 0 )
 
-#define ELLINT_RDJ_c02	(-0.2142857142857142857142857)	/* -3 / 14 */
-#define ELLINT_RDJ_c03	(+0.1666666666666666666666667)	/*  1 / 6  */
-#define ELLINT_RDJ_c22	(+0.1022727272727272727272727)	/*  9 / 88 */
-#define ELLINT_RDJ_c04	(-0.1363636363636363636363636)	/* -3 / 22 */
-#define ELLINT_RDJ_c23	(-0.1730769230769230769230769)	/* -9 / 52 */
-#define ELLINT_RDJ_c05	(+0.1153846153846153846153846)	/*  3 / 26 */
+
+#define ELLINT_SWAP(x, y)	\
+do {				\
+    EllInt_Num_t _swap_tmp;	\
+    _swap_tmp = ( x );		\
+    ( x ) = ( y );		\
+    ( y ) = _swap_tmp;	\
+} while ( 0 )
+
+
+static const double ELLINT_RDJ_C1[4] = {0, -875160, 417690, -255255};
+static const double ELLINT_RDJ_C2[3] = {0, 680680, 306306};
+static const double ELLINT_RDJ_C3[3] = {0, -706860, 675675};
+static const double ELLINT_RDJ_C4[2] = {-556920, 612612};
+static const double ELLINT_RDJ_C5[2] = {471240, -540540};
+#define ELLINT_RDJ_DENOM	(4084080.0)
+
+
+#include "ellint_argcheck.h"
 
 
 #endif  /* _ELLINT_COMMON_H_INCLUDED */
