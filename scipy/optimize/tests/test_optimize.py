@@ -535,6 +535,17 @@ class TestOptimizeSimple(CheckOptimize):
         xs = optimize.fmin_bfgs(f, [10.], disp=False)
         assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
 
+    def test_bfgs_double_evaluations(self):
+        # check bfgs does not evaluate twice in a row at same point
+        def f(x):
+            xp = float(x)
+            assert xp not in seen
+            seen.add(xp)
+            return 10*x**2, 20*x
+
+        seen = set()
+        optimize.minimize(f, -100, method='bfgs', jac=True, tol=1e-7)
+
     def test_l_bfgs_b(self):
         # limited-memory bound-constrained BFGS algorithm
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
