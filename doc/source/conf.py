@@ -104,19 +104,10 @@ show_authors = False
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-# Enusre all our internal links work
+# Ensure all our internal links work
 nitpicky = True
 exclude_patterns = [  # glob-style
-    # these are all included directly in dev/index.rst:
-    'dev/decisions.rst',
-    'dev/deprecations.rst',
-    'dev/distributing.rst',
-    'dev/github.rst',
-    'dev/licensing.rst',
-    'dev/modules.rst',
-    'dev/newfeatures.rst',
-    'dev/releasing.rst',
-    'dev/versioning.rst',
+
 ]
 
 # be strict about warnings in our examples, we should write clean code
@@ -325,6 +316,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
     'matplotlib': ('https://matplotlib.org', None),
+    'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
 
