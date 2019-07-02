@@ -633,13 +633,12 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     a = asarray(a)
-    a = a.astype(float).ravel()
+    a = a.astype(float)
     if limits is None:
-        n = len(a)
-        return a.var() * n / (n - 1.)
+        return a.var(ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
-    return np.ma.var(am, ddof=ddof, axis=axis)
-
+    amnan = am.filled(fill_value=np.nan)
+    return np.nanvar(amnan, ddof=ddof, axis=axis)
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
