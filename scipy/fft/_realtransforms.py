@@ -1,6 +1,6 @@
 import scipy.fftpack as _fftpack
 from ._basic import _dispatch
-from scipy._uarray import Dispatchable
+from scipy._lib.uarray import Dispatchable
 import numpy as np
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']

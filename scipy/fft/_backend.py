@@ -1,4 +1,4 @@
-import scipy._uarray as ua
+import scipy._lib.uarray as ua
 
 from ._basic import (
     fft, ifft, fft2,ifft2, fftn, ifftn,

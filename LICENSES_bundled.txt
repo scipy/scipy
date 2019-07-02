@@ -165,6 +165,6 @@ License: 3-Clause BSD
   For details, see scipy/fft/_pocketfft/LICENSE.md
 
 Name: uarray
-Files: scipy/_uarray/*
+Files: scipy/_lib/uarray/*
 License: 3-Clause BSD
-  For details, see scipy/_uarray/LICENSE
+  For details, see scipy/_lib/uarray/LICENSE
