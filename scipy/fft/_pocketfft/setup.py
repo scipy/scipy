@@ -77,8 +77,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('_pocketfft', parent_package, top_path)
     ext = config.add_extension('pypocketfft',
                                sources=['pypocketfft.cxx'],
-                               depends=['pocketfft_hdronly.h',
-                                        'scipy_features.h'],
+                               depends=['pocketfft_hdronly.h'],
                                include_dirs=include_dirs,
                                language='c++')
     ext._pre_build_hook = pre_build_hook

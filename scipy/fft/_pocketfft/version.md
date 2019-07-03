@@ -13,6 +13,4 @@ SciPy currently vendors [pypocketfft][repo] at:
 
         New interface
 
-With the modifications given in `scipychanges.patch`
-
 repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
