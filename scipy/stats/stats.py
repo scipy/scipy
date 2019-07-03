@@ -2464,7 +2464,12 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
                 'is defined for strictly positive values only.')
-        elif np.less_equal(a, 0).any():
+        a_nan = np.isnan(a)
+        a_nan_any = a_nan.any()
+        # exclude NaN's from negativity check, but
+        # avoid expensive masking for arrays with no NaN
+        if ((a_nan_any and np.less_equal(np.nanmin(a), 0)) or
+              (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
                 'deviation is defined for strictly positive values only.')
@@ -2472,7 +2477,7 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(w)
         else:
             #  Remaining warnings don't need to be exceptions.
-            warnings.warn(w)
+            return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
     except TypeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
