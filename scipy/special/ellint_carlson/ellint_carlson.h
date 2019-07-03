@@ -2,10 +2,18 @@
 #define _ELLINT_CARLSON_H_INCLUDED
 
 
+#undef _BEGIN_DECLS
+#undef _END_DECLS
 #ifdef __cplusplus
-extern "C" {
+#define _BEGIN_DECLS	extern "C" {
+#define _END_DECLS	}
+#else
+#define _BEGIN_DECLS	/* nothing */
+#define _END_DECLS	/* nothing */
 #endif
 
+
+_BEGIN_DECLS
 
 typedef enum ELLINT_RETURN_VALUE
 {
@@ -60,10 +68,7 @@ extern EllInt_Status_t cellint_RG(double_complex x, double_complex y,
                                   double_complex z,
 				  double rerr, double_complex * restrict res);
 
-
-#ifdef __cplusplus
-}
-#endif
+_END_DECLS
 
 
 #endif  /* _ELLINT_CARLSON_H_INCLUDED */

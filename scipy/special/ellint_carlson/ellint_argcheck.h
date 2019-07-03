@@ -23,7 +23,8 @@ static inline bool too_small(double t)
 #define CEQZERO(z)	( (fpclassify(CREAL( (z) )) == FP_ZERO) && \
                           (fpclassify(CIMAG( (z) )) == FP_ZERO) )
 
-#define Z_INFTY(z)	( fpclassify(FABS( (z) )) == FP_INFINITE )
+#define Z_INFTY(z)	( (fpclassify(CREAL( (z) )) == FP_INFINITE) || \
+	                  (fpclassify(CIMAG( (z) )) == FP_INFINITE) )
 
 
 /* principal value of complex phase is NOT +/- pi and not indetermined value */
@@ -59,12 +60,12 @@ static inline bool ph_is_not_pm_pi(EllInt_Num_t z)
 
 
 /* The complex pair (a, b) are both non-zero. */
-#define C_PAIR_NZ(a, b)		( !( too_small(FABS( (a) )) || \
-                                     too_small(FABS( (b) )) ) )
+#define C_PAIR_NZ(a, b)		( !too_small(FABS( (a) )) && \
+                                  !too_small(FABS( (b) )) )
 /* The complex pair (a, b) are both non-zero and have phase less than pi. */
 #define C_PAIR_NZ_NN(a, b)	( C_PAIR_NZ( (a), (b) ) && \
-                                  ( !( PH_IS_PMPI_Z( (a) ) || \
-				       PH_IS_PMPI_Z( (b) ) ) ) )
+                                  ( ph_is_not_pm_pi( (a) ) && \
+				    ph_is_not_pm_pi( (b) )  ) )
 /* At most one in the complex triplet (a, b, c) is zero. */
 #define C_ATMOST_1Z(a, b, c)	( C_PAIR_NZ( (a), (b) ) || \
                                   C_PAIR_NZ( (b), (c) ) || \
@@ -86,7 +87,7 @@ static inline bool ph_is_not_pm_pi(EllInt_Num_t z)
 #define ELLINT_1R_2CONJ(ar, ai, b, c)		\
 ( ( (ar) >= 0.0 ) && ( too_small( (ai) ) ) &&	\
   ( C_PAIR_NZ( (b), (c) ) ) &&			\
-  ( !( PH_IS_PMPI_Z( (b) ) || PH_IS_PMPI_Z( (c) ) ) ) && \
+  ( ph_is_not_pm_pi( (b) ) && ph_is_not_pm_pi( (c) ) ) && \
   ( too_small( FABS(CONJ( (b) ) - (c) ) ) ) )
 
 

@@ -16,6 +16,12 @@ ELLINT_POLY_FCN(ellint_RG) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_RERR);
     }
 
+    if ( (Z_INFTY(x) || Z_INFTY(y) || Z_INFTY(z)) &&
+	 (ph_is_not_pm_pi(x) && ph_is_not_pm_pi(y) && ph_is_not_pm_pi(z)) )
+    {
+	ELLINT_RETURN_WITH(ELLINT_STATUS_SINGULAR, CPINF);
+    }
+
     /* Select pivot as the last argument to the symmetric functions */
     {
 	double ta1, ta2;

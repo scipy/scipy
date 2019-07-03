@@ -2,7 +2,7 @@
 
 npy_double fellint_RC_w(npy_double x, npy_double y)
 {
-    int status;
+    EllInt_Status_t status;
     npy_double wres;
 
     status = fellint_RC(x, y, SF_RERR, &wres);
@@ -13,8 +13,8 @@ npy_double fellint_RC_w(npy_double x, npy_double y)
 
 npy_cdouble cellint_RC_w(npy_cdouble x, npy_cdouble y)
 {
-    int status;
-    double complex res;
+    EllInt_Status_t status;
+    double_complex res;
     npy_cdouble wres;
 
     status = cellint_RC(ELLINT_TO_C(x), ELLINT_TO_C(y), SF_RERR, &res);
@@ -26,7 +26,7 @@ npy_cdouble cellint_RC_w(npy_cdouble x, npy_cdouble y)
 
 npy_double fellint_RD_w(npy_double x, npy_double y, npy_double z)
 {
-    int status;
+    EllInt_Status_t status;
     npy_double wres;
 
     status = fellint_RD(x, y, z, SF_RERR, &wres);
@@ -37,8 +37,8 @@ npy_double fellint_RD_w(npy_double x, npy_double y, npy_double z)
 
 npy_cdouble cellint_RD_w(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 {
-    int status;
-    double complex res;
+    EllInt_Status_t status;
+    double_complex res;
     npy_cdouble wres;
 
     status = cellint_RD(ELLINT_TO_C(x), ELLINT_TO_C(y), ELLINT_TO_C(z),
@@ -51,7 +51,7 @@ npy_cdouble cellint_RD_w(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 
 npy_double fellint_RF_w(npy_double x, npy_double y, npy_double z)
 {
-    int status;
+    EllInt_Status_t status;
     npy_double wres;
 
     status = fellint_RF(x, y, z, SF_RERR, &wres);
@@ -62,8 +62,8 @@ npy_double fellint_RF_w(npy_double x, npy_double y, npy_double z)
 
 npy_cdouble cellint_RF_w(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 {
-    int status;
-    double complex res;
+    EllInt_Status_t status;
+    double_complex res;
     npy_cdouble wres;
 
     status = cellint_RF(ELLINT_TO_C(x), ELLINT_TO_C(y), ELLINT_TO_C(z),
@@ -76,7 +76,7 @@ npy_cdouble cellint_RF_w(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 
 npy_double fellint_RG_w(npy_double x, npy_double y, npy_double z)
 {
-    int status;
+    EllInt_Status_t status;
     npy_double wres;
 
     status = fellint_RG(x, y, z, SF_RERR, &wres);
@@ -87,8 +87,8 @@ npy_double fellint_RG_w(npy_double x, npy_double y, npy_double z)
 
 npy_cdouble cellint_RG_w(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 {
-    int status;
-    double complex res;
+    EllInt_Status_t status;
+    double_complex res;
     npy_cdouble wres;
 
     status = cellint_RG(ELLINT_TO_C(x), ELLINT_TO_C(y), ELLINT_TO_C(z),
@@ -101,7 +101,7 @@ npy_cdouble cellint_RG_w(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 
 npy_double fellint_RJ_w(npy_double x, npy_double y, npy_double z, npy_double p)
 {
-    int status;
+    EllInt_Status_t status;
     npy_double wres;
 
     status = fellint_RJ(x, y, z, p, SF_RERR, &wres);
@@ -113,8 +113,8 @@ npy_double fellint_RJ_w(npy_double x, npy_double y, npy_double z, npy_double p)
 npy_cdouble cellint_RJ_w(npy_cdouble x, npy_cdouble y, npy_cdouble z,
                          npy_cdouble p)
 {
-    int status;
-    double complex res;
+    EllInt_Status_t status;
+    double_complex res;
     npy_cdouble wres;
 
     status = cellint_RJ(ELLINT_TO_C(x), ELLINT_TO_C(y), ELLINT_TO_C(z),

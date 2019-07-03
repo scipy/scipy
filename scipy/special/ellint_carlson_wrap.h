@@ -13,7 +13,22 @@
 extern "C" {
 #endif
 
-#define ELLINT_TO_C(t)	( (double complex)((t).real + (t).imag * I) )
+#ifndef _MSC_VER
+    #ifndef CMPLX
+	#if ( defined(__GNUC__) &&	\
+	      ( __GNUC__ * 10000 + __GNUC_MINOR__ * 100 >= 40700 ) )
+	    #define ELLINT_TO_C(z)	__builtin_complex( (z).real, (z).imag )
+	#else	/* fallback */
+	    #define ELLINT_TO_C(z)	\
+		( (double_complex)((double)( (z).real ) + (double)( (z).imag ) * I) )
+	#endif
+    #else
+	#define ELLINT_TO_C(z)		( CMPLX( (z).real, (z).imag ) )
+    #endif
+#else
+    #define ELLINT_TO_C(z)	( _Cbuild( (z).real, (z).imag ) )
+#endif
+
 #define ELLINT_MAKE_N(t, z)	\
 do { (t).real = creal( (z) ); (t).imag = cimag( (z) ); } while ( 0 )
 

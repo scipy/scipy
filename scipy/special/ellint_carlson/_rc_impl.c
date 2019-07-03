@@ -33,7 +33,7 @@ ELLINT_POLY_FCN(ellint_RC) (EllInt_Num_t x, EllInt_Num_t y,
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_RERR);
     }
 
-    if ( ( too_small(CIMAG(y)) ) && ELLINT_RNEG(y) )
+    if ( too_small(CIMAG(y)) && ELLINT_RNEG(y) )
     {
 	/* Cauchy principal value with negative real y */
 	EllInt_Num_t tmpres;
@@ -45,10 +45,10 @@ ELLINT_POLY_FCN(ellint_RC) (EllInt_Num_t x, EllInt_Num_t y,
 	    *res = MULcc(tmpres, SQRT(DIVcc(x, SUB(x, y))));
 	}
 	return status;
-    } else if ( Z_INFTY(x) && ph_is_not_pm_pi(x) && ( !too_small(FABS(y)) ) ) {
-	ELLINT_RETURN_WITH(ELLINT_STATUS_SUCCESS, CZERO);
-    } else if ( ELLINT_RNEG(x) || ( too_small(FABS(y)) ) ) {
+    } else if ( PH_IS_PMPI_Z(x) || too_small(FABS(y)) ) {
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
+    } else if ( Z_INFTY(x) || Z_INFTY(y) ) {
+	ELLINT_RETURN_WITH(ELLINT_STATUS_SUCCESS, CZERO);
     }
 
     A0 = DIVcr(ADD(x, MULcr(y, 2.0)), 3.0);
@@ -60,7 +60,7 @@ ELLINT_POLY_FCN(ellint_RC) (EllInt_Num_t x, EllInt_Num_t y,
     sm = SUB(y, A0);
 
     m = 0;
-    while ( fmax(5.0 * FABS(SUB(xm, ym)), fterm) >= FABS(Am) )
+    while ( fmax(FABS(SUB(xm, ym)), fterm) >= FABS(Am) )
     {
 	EllInt_Num_t lam;
 

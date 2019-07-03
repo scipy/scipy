@@ -117,9 +117,9 @@ def configuration(parent_package='',top_path=None):
 
     # Cython API
     config.add_data_files('cython_special.pxd')
-    
     cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
-                          "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
+                          "amos_wrappers.c", "cdf_wrappers.c",
+                          "ellint_carlson_wrap.c", "specfun_wrappers.c"]
     cython_special_dep = (headers + ufuncs_src + ufuncs_cxx_src + amos_src
                           + c_misc_src + cephes_src + ellint_carlson_src + mach_src + cdf_src
                           + specfun_src)

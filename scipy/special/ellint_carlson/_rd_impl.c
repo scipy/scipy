@@ -67,8 +67,8 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     m = 0;
 
     while ( fmax(fterm,
-		 5.0 * ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym),
-				    FABS(Am - zm))) >= FABS(Am) )
+		 ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym),
+			      FABS(Am - zm))) >= FABS(Am) )
     {
 	EllInt_Num_t lam;
 

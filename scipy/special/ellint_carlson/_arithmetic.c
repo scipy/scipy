@@ -5,7 +5,10 @@
 #include <stddef.h>
 #include <math.h>
 #include <complex.h>
-#include "ellint_argcheck.h"
+
+/* DBL_EPSILON / 2 == 2^(-53) */
+#define DBL_HALF_EPSILON	(1.1102230246251565404236316680908e-16)
+#define NPOLYNOMIALS		(4)
 
 
 /* Basic algorithms not relying on availability of fma() */
@@ -56,14 +59,14 @@ static inline double_complex csum2(const double_complex * restrict x, size_t n)
 
 static inline void ceft_sum(double_complex x, double_complex y,
 	                    double_complex * restrict s,
-			    double_complex * restrict e)
+			    double * restrict er,
+			    double * restrict ei)
 {
-    double s1, s2, e1, e2;
+    double sr, si;
 
-    feft_sum(creal(x), creal(y), &s1, &e1);
-    feft_sum(cimag(x), cimag(y), &s2, &e2);
-    *s = MKCMPLX(s1, s2);
-    *e = MKCMPLX(e1, e2);
+    feft_sum(creal(x), creal(y), &sr, er);
+    feft_sum(cimag(x), cimag(y), &si, ei);
+    *s = MKCMPLX(sr, si);
 }
 #endif
 
@@ -79,27 +82,29 @@ static inline void feft_prod(double a, double b,
 
 #ifdef ELLINT_POLY_COMPLEX
 static inline void ceft_prod(double_complex x, double_complex y,
-	                     double_complex * restrict p,
-	                     double_complex * restrict e,
-	                     double_complex * restrict f,
-	                     double_complex * restrict g)
+			     double_complex * restrict p,
+                             double buffer_r[3],
+			     double buffer_i[3])
 {
-    double z1, h1, z2, h2, z3, h3, z4, h4, z5, h5, z6, h6;
-    double a = creal(x);
-    double b = cimag(x);
-    double c = creal(y);
-    double d = cimag(y);
+    double a, b, c, d;
+    double z1, z2, z3, z4, z5, z6;
+    /*  p                e    f   g
+     * z5 | buffer_r : [h1, -h2, h5]
+     * z6 | buffer_i : [h3,  h4, h6]
+     */
+    a = creal(x);
+    b = cimag(x);
+    c = creal(y);
+    d = cimag(y);
 
-    feft_prod(a, c, &z1, &h1);
-    feft_prod(b, d, &z2, &h2);
-    feft_prod(a, d, &z3, &h3);
-    feft_prod(b, c, &z4, &h4);
-    feft_sum(z1, -z2, &z5, &h5);
-    feft_sum(z3, z4, &z6, &h6);
+    feft_prod(a, c, &z1, buffer_r);
+    feft_prod(b, d, &z2, buffer_r + 1);
+    feft_prod(a, d, &z3, buffer_i);
+    feft_prod(b, c, &z4, buffer_i + 1);
+    feft_sum(z1, -z2, &z5, buffer_r + 2);
+    feft_sum(z3, z4, &z6, buffer_i + 2);
     *p = MKCMPLX(z5, z6);
-    *e = MKCMPLX(h1, h3);
-    *f = MKCMPLX(-h2, h4);
-    *g = MKCMPLX(h5, h6);
+    buffer_r[1] = -buffer_r[1];
 }
 #endif
 
@@ -132,14 +137,12 @@ static inline void feft_prod(double a, double b,
 #ifdef ELLINT_POLY_COMPLEX
 static inline void ceft_prod(double_complex x, double_complex y,
 	                     double_complex * restrict p,
-	                     double_complex * restrict e,
-	                     double_complex * restrict f,
-	                     double_complex * restrict g)
+	                     double * buffer_r[3],
+	                     double * buffer_i[3])
 {
     double a, b, c, d;
     double a1, a2, b1, b2, c1, c2, d1, d2;
     double z1, z2, z3, z4, z5, z6;
-    double h1, h2, h3, h4, h5, h6;
 
     a = creal(x);
     b = cimag(x);
@@ -153,16 +156,13 @@ static inline void ceft_prod(double_complex x, double_complex y,
     z2 = b * d;
     z3 = a * d;
     z4 = b * c;
-    h1 = a2 * c2 - (((z1 - a1 * c1) - a2 * c1) - a1 * c2);
-    h2 = b2 * d2 - (((z2 - b1 * d1) - b2 * d1) - b1 * d2);
-    h3 = a2 * d2 - (((z3 - a1 * d1) - a2 * d1) - a1 * d2);
-    h4 = b2 * c2 - (((z4 - b1 * c1) - b2 * c1) - b1 * c2);
-    feft_sum(z1, -z2, &z5, &h5);
-    feft_sum(z3, z4, &z6, &h6);
+    buffer_r[0] = a2 * c2 - (((z1 - a1 * c1) - a2 * c1) - a1 * c2);
+    buffer_r[1] = -(b2 * d2 - (((z2 - b1 * d1) - b2 * d1) - b1 * d2));
+    buffer_i[0] = a2 * d2 - (((z3 - a1 * d1) - a2 * d1) - a1 * d2);
+    buffer_i[1] = b2 * c2 - (((z4 - b1 * c1) - b2 * c1) - b1 * c2);
+    feft_sum(z1, -z2, &z5, buffer_r + 2);
+    feft_sum(z3, z4, &z6, buffer_i + 2);
     *p = MKCMPLX(z5, z6);
-    *e = MKCMPLX(h1, h3);
-    *f = MKCMPLX(-h2, h4);
-    *g = MKCMPLX(h5, h6);
 }
 #endif
 
@@ -193,6 +193,7 @@ static inline double fdot2(const double * restrict x,
 }
 
 
+#ifdef ELLINT_POLY_REAL
 static inline double feft_horner(double x, const double * restrict a,
                                  size_t degree, 
 				 double * restrict pp, double * restrict ps)
@@ -238,6 +239,7 @@ static inline double fcomp_horner(double x, const double * restrict a,
 
     return h + c;
 }
+#endif
 
 
 #ifdef ELLINT_POLY_COMPLEX
@@ -259,11 +261,10 @@ static inline double_complex cdot2(const double_complex * restrict x,
 	xx[i] = creal(x[i]);
 	xx[j] = cimag(x[i]);
 
-	yy[i] = creal(y[i]);
+	yy[i] = zz[j] = creal(y[i]);
 	yy[j] = -cimag(y[i]);
 
 	zz[i] = cimag(y[i]);
-	zz[j] = creal(y[i]);
     }
     rr = fdot2(xx, yy, twice_n);
     ii = fdot2(xx, zz, twice_n);
@@ -271,24 +272,26 @@ static inline double_complex cdot2(const double_complex * restrict x,
 }
 
 
-#define NPOLYNOMIALS	(4)
 static inline double_complex ceft_horner(double_complex x,
                                          const double * restrict a,
                                          size_t degree, 
-					 double_complex * * restrict ws)
+					 double * * restrict wsr,
+					 double * * restrict wsi)
 {
     ptrdiff_t i;
     double_complex s;
 
-    s = a[degree];
+    s = MKCR(a[degree]);
     for ( i = (ptrdiff_t)degree - 1; i >= 0; i-- )
     {
-	double_complex * row;
+	double * restrict rowr;
+	double * restrict rowi;
 	double_complex p;
 
-	row = (double_complex *)ws + NPOLYNOMIALS * i;
-	ceft_prod(s, x, &p, row, row + 1, row + 2);
-	ceft_sum(p, MKCR(a[i]), &s, row + 3);
+	rowr = (double * restrict)wsr + NPOLYNOMIALS * i;
+	rowi = (double * restrict)wsi + NPOLYNOMIALS * i;
+	ceft_prod(s, x, &p, rowr, rowi);
+	ceft_sum(p, MKCR(a[i]), &s, rowr + 3, rowi + 3);
     }
     return s;
 }
@@ -313,13 +316,13 @@ static inline void mask_create(maskref_t * mask, bool * restrict mask_buf)
 
 
 static inline void mask_init(maskref_t * mask,
-                             const double_complex * restrict arr,
+                             const double * restrict arr,
                              size_t len_arr)
 {
     size_t i;
     for ( i = 0; i < len_arr; i++ )
     {
-	if ( CEQZERO(arr[i]) )
+	if ( fpclassify(arr[i]) == FP_ZERO )
 	{
 	    (mask->m)[i] = false;
 	} else {
@@ -332,7 +335,7 @@ static inline void mask_init(maskref_t * mask,
 
 static inline double next_power_two(double p)
 {
-    double q = p / DBL_EPSILON;
+    double q = p / DBL_HALF_EPSILON;
     double L = fabs((q + p) - q);
     if ( fpclassify(L) == FP_ZERO )
     {
@@ -343,44 +346,43 @@ static inline double next_power_two(double p)
 }
 
 
-static inline void cextract_scalar(double sigma, double_complex * restrict p,
-                                   double_complex * restrict q)
+static inline void fextract_scalar(double sigma, double * restrict p,
+                                   double * restrict q)
 {
-    *q = ADD(sigma, (*p));
-    *q = SUB((*q), sigma);
-    *p = SUB((*p), (*q));
+    *q = (sigma + (*p)) - sigma;
+    *p -= *q;
 }
 
 
-static inline void cextract_vector(double sigma, size_t lenp,
-				   double_complex * restrict p,
+static inline void fextract_vector(double sigma, size_t lenp,
+				   double * restrict p,
                                    maskref_t * mask,
-				   double_complex * restrict tau)
+				   double * restrict tau)
 {
-    double_complex q;
+    double q;
     size_t i;
 
-    q = CZERO;
-    *tau = CZERO;
+    q = 0.0;
+    *tau = 0.0;
     for ( i = 0; i < lenp; i++ )
     {
 	if ( (mask->m)[i] )
 	{
-	    cextract_scalar(sigma, p + i, &q);
-	    if ( CEQZERO(p[i]) )
+	    fextract_scalar(sigma, p + i, &q);
+	    if ( fpclassify(p[i]) == FP_ZERO )
 	    {
 		(mask->m)[i] = false;
 		(mask->count)--;
 	    }
-	    *tau = ADD((*tau), q);
+	    *tau += q;
 	}
     }
 }
 
 
-static inline double vmax(const double_complex * restrict p, size_t lenp,
+static inline double vmax(const double * restrict p, size_t lenp,
                           const maskref_t * mask,
-			  double (* keyfcn)(double_complex))
+			  double (* keyfcn)(double))
 {
     size_t i;
     double r;
@@ -397,53 +399,55 @@ static inline double vmax(const double_complex * restrict p, size_t lenp,
 }
 
 
-static inline double_complex cacc_sum(double_complex * restrict p, size_t lenp,
-                                      maskref_t * mask)
+static inline double facc_sum(double * restrict p, size_t lenp,
+                              maskref_t * mask)
 {
     double mu;
     double twopM, sigma, phi, factor;
-    double_complex t, tau, tau1, tau2, res;
+    double t, tau, tau1, tau2, res;
 
     if ( (lenp == 0) || (mask->count == 0) )
     {
-	return CZERO;
+	return 0.0;
     }
 
-    mu = vmax(p, lenp, mask, cabs);
+    mu = vmax(p, lenp, mask, fabs);
+
     if ( fpclassify(mu) == FP_ZERO )
     {
-	return CZERO;
+	return 0.0;
     }
 
     twopM = next_power_two((double)(mask->count) + 2.0);
     sigma = twopM * next_power_two(mu);
-    phi = DBL_EPSILON * twopM * 0.5;
+    phi = DBL_HALF_EPSILON * twopM;
     factor = DBL_EPSILON * twopM * twopM;
 
-    t = CZERO;
+    t = 0.0;
     while ( 1 )
     {
 	size_t i;
 
-	cextract_vector(sigma, lenp, p, mask, &tau);
-	tau1 = ADD(t, tau);
-	if ( (cabs(tau1) >= factor * sigma) || ( sigma <= DBL_MIN ) )
+	fextract_vector(sigma, lenp, p, mask, &tau);
+	tau1 = t + tau;
+	if ( (fabs(tau1) >= factor * sigma) || ( sigma <= DBL_MIN ) )
 	{
-	    ceft_sum(t, tau, &tau1, &tau2);
+	    /* Use Dekker's version of "eft_sum" (faster) with tau1 >= t */
+	    tau2 = tau - (tau1 - t);
 
-	    res = CZERO;
+	    res = 0.0;
 	    for ( i = 0; i < lenp; i++ )
 	    {
-		res = ADD(res, p[i]);
+		res += p[i];
 	    }
-	    res = ADD(tau2, tau1);
+	    res += tau2 + tau1;
 
 	    return res;
 	}
 	t = tau1;
-	if ( CEQZERO(t) )
+	if ( fpclassify(t) == FP_ZERO )
 	{
-	    res = cacc_sum(p, lenp, mask);
+	    res = facc_sum(p, lenp, mask);
 	    return res;
 	}
 	sigma *= phi;
@@ -452,26 +456,38 @@ static inline double_complex cacc_sum(double_complex * restrict p, size_t lenp,
 
 
 static inline double_complex chorner_sum_acc(double_complex x, size_t degree,
-                                             double_complex * * restrict ws)
+                                             double * * restrict wsr,
+					     double * * restrict wsi)
 {
     /* Each row of ws is an array with 4 elements, and ws has (degree + 1)
      * rows.
      */
     double_complex v;
-    maskref_t mask;
-    double_complex * row;
+    maskref_t mask_r, mask_i;
+    double * restrict rowr;
+    double * restrict rowi;
     ptrdiff_t i;
-    bool mask_buf[NPOLYNOMIALS];
+    bool mask_buf_r[NPOLYNOMIALS];
+    bool mask_buf_i[NPOLYNOMIALS];
 
-    mask_create(&mask, mask_buf);
-    row = (double_complex *)ws + NPOLYNOMIALS * degree;
-    mask_init(&mask, row, NPOLYNOMIALS);
-    v = cacc_sum(row, NPOLYNOMIALS, &mask);
+    mask_create(&mask_r, mask_buf_r);
+    mask_create(&mask_i, mask_buf_i);
+    rowr = (double * restrict)wsr + NPOLYNOMIALS * degree;
+    rowi = (double * restrict)wsi + NPOLYNOMIALS * degree;
+    mask_init(&mask_r, rowr, NPOLYNOMIALS);
+    mask_init(&mask_i, rowi, NPOLYNOMIALS);
+
+    v = MKCMPLX(facc_sum(rowr, NPOLYNOMIALS, &mask_r),
+                facc_sum(rowi, NPOLYNOMIALS, &mask_i));
+
     for ( i = (ptrdiff_t)degree - 1; i >= 0; i-- )
     {
-	row = (double_complex *)ws + NPOLYNOMIALS * i;
-	mask_init(&mask, row, NPOLYNOMIALS);
-	v = ADD(MULcc(v, x), cacc_sum(row, NPOLYNOMIALS, &mask));
+	rowr = (double * restrict)wsr + NPOLYNOMIALS * i;
+	rowi = (double * restrict)wsi + NPOLYNOMIALS * i;
+	mask_init(&mask_r, rowr, NPOLYNOMIALS);
+	mask_init(&mask_i, rowi, NPOLYNOMIALS);
+	v = ADD(MULcc(v, x), MKCMPLX(facc_sum(rowr, NPOLYNOMIALS, &mask_r),
+	                             facc_sum(rowi, NPOLYNOMIALS, &mask_i)));
     }
     return v;
 }
@@ -482,10 +498,13 @@ static inline double_complex ccomp_horner(double_complex x,
 					  size_t degree)
 {
     double_complex res, c;
-    double_complex ws[degree][NPOLYNOMIALS];
+    double wsr[degree][NPOLYNOMIALS];
+    double wsi[degree][NPOLYNOMIALS];
 
-    res = ceft_horner(x, a, degree, (double_complex * *)ws);
-    c = chorner_sum_acc(x, degree - 1, (double_complex * *)ws);
+    res = ceft_horner(x, a, degree,
+		      (double * * restrict)wsr, (double * * restrict)wsi);
+    c = chorner_sum_acc(x, degree - 1,
+                        (double * * restrict)wsr, (double * * restrict)wsi);
     return ADD(res, c);
 }
 #endif

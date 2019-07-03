@@ -39,7 +39,7 @@ static EllInt_Status_t ELLINT_POLY_FCN(ellint_RF0)(EllInt_Num_t x,
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_RERR);
     }
 
-    rsq = 0.5 * sqrt(rerr);
+    rsq = 2.0 * sqrt(rerr);
 
     xm = SQRT(x);
     ym = SQRT(y);
@@ -128,10 +128,9 @@ ELLINT_POLY_FCN(ellint_RF) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     zm = z;
 
     m = 0;
-    /* while ( fterm >= FABS(Am) ) */
     while ( fmax(fterm,
-                 5.0 * ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym),
-			            FABS(Am - zm))) >= FABS(Am) )
+                 ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym),
+			      FABS(Am - zm))) >= FABS(Am) )
     {
 	EllInt_Num_t lam;
 

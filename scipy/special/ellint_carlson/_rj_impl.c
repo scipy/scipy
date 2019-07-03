@@ -59,6 +59,7 @@ typedef struct rj_arg_cases
 {
     bool retry_caupv;	/* should use Cauchy principal value */
     bool hit_pole;	/* singular */
+    bool good_infinity;	/* the "good" kind of directed infinity */
     bool maybe_asymp;	/* might be good for an asympt. case */
 } rj_arg_cases_t;
 
@@ -101,8 +102,16 @@ static bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 
     if ( (classify->hit_pole = ( too_small(FABS(x)) &&
                                  too_small(FABS(y)) &&
-				 (!PH_IS_PMPI_Z(z)) &&
+				 (ph_is_not_pm_pi(z)) &&
 				 !too_small(FABS(p)) )) )
+    {
+	return false;
+    }
+    if ( (classify->good_infinity = ( (Z_INFTY(x) || Z_INFTY(y) ||
+                                       Z_INFTY(z) || Z_INFTY(p)) &&
+                                      (ph_is_not_pm_pi(x) &&
+				       ph_is_not_pm_pi(y) &&
+				       ph_is_not_pm_pi(z)) )) )
     {
 	return false;
     }
@@ -249,7 +258,9 @@ static inline rj_asymp_t RJ_asymp_conf( const double * restrict x,
 {
     double t;
 
+    /*
     t = (*z) / (*p);
+    */
     /* this bound is neither sharp enough nor useful */
     /*
     if ( ASYMP_ZERO(t) )
@@ -380,6 +391,11 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     memset(&classify, 0, sizeof (classify));
     if ( !RJ_good_args(x, y, z, p, &classify) )
     {
+	if ( classify.good_infinity )
+	{
+	    ELLINT_RETURN_WITH(ELLINT_STATUS_SUCCESS, CZERO);
+	}
+
 	if ( classify.retry_caupv )
 	{
 	    /* Retry with principal value evaluation, valid for reals. */
@@ -421,6 +437,7 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 		break;
 	    case asymp_tinyp :
 		{
+		    EllInt_Status_t status_tmp;
 		    double lamt, alpha, beta;
 		    double xct1[6];
 		    double xct2[6];
@@ -434,9 +451,13 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 		    alpha = alpha * alpha;
 		    beta = ppr + lamt;
 		    beta = beta * beta * ppr;
-		    status = fellint_RC(alpha, beta, rerr, xct2);
+		    status_tmp = fellint_RC(alpha, beta, rerr, xct2);
 		    status = fellint_RJ(xx + lamt, yy + lamt, zz + lamt,
 					ppr + lamt, rerr, xct2 + 1);
+		    if ( status_tmp != ELLINT_STATUS_SUCCESS )
+		    {
+			status = status_tmp;
+		    }
 		    xct1[0] = 3.0;
 		    xct1[1] = 2.0;
 		    tmpres = fdot2(xct1, xct2, 2);
@@ -465,10 +486,15 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	    case asymp_hugey :
 		{
 		    double rr, t1, t2;
+		    EllInt_Status_t status_tmp;
 		    rr = rerr / 3.0;
 		    tmpres = 1.0 / sqrt(yy * zz);
-		    status = fellint_RC(xx, ppr, rr, &t1);
+		    status_tmp = fellint_RC(xx, ppr, rr, &t1);
 		    status = fellint_RG(0.0, yy, zz, rr, &t2);
+		    if ( status_tmp != ELLINT_STATUS_SUCCESS )
+		    {
+			status = status_tmp;
+		    }
 		    tmpres *= (3.0 * t1 - 2.0 * t2 * tmpres);
 		}
 		break;
@@ -549,8 +575,8 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 
     m = 1;
     while ( fmax(fterm,
-                 5.0 * ELLINT_FMAX4(FABS(Am - xm), FABS(Am - ym),
-		                    FABS(Am - zm), FABS(Am - pm))) >= FABS(Am) )
+                 ELLINT_FMAX4(FABS(Am - xm), FABS(Am - ym),
+		              FABS(Am - zm), FABS(Am - pm))) >= FABS(Am) )
     {
 	if ( m > ELLINT_MAXITER )
 	{
