@@ -522,7 +522,7 @@ static inline EllInt_Num_t ELLINT_POLY_FCN(naive_horner)(EllInt_Num_t z,
     r = MKCR(a[degree]);
     for ( i = (ptrdiff_t)degree - 1 ; i >= 0 ; i-- )
     {
-	r = ADD(MULcc(r, z), a[i]);
+	r = ADDcr(MULcc(r, z), a[i]);
     }
 
     return r;

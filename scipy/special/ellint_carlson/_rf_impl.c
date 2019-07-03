@@ -76,7 +76,7 @@ ELLINT_POLY_FCN(ellint_RF) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     EllInt_Num_t A0;
     EllInt_Num_t xm, ym, zm, Am;
     EllInt_Num_t e2, e3, xxm, yym, zzm, s;
-    double fterm;
+    double fterm, aAm;
     EllInt_Num_t cct1[3];
     EllInt_Num_t cct2[3];
 
@@ -86,15 +86,14 @@ ELLINT_POLY_FCN(ellint_RF) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_RERR);
     }
 
-    if ( ( Z_INFTY(x) || Z_INFTY(y) || Z_INFTY(z) ) &&
-         ( ph_is_not_pm_pi(x) && ph_is_not_pm_pi(y) && ph_is_not_pm_pi(z) ) )
+    if ( Z_INFTY(x) || Z_INFTY(y) || Z_INFTY(z) )
     {
-	ELLINT_RETURN_WITH(ELLINT_STATUS_SUCCESS, CZERO);
-    }
-
-    if ( PH_IS_PMPI_Z(x) || PH_IS_PMPI_Z(y) || PH_IS_PMPI_Z(z) )
-    {
-	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
+	if ( ph_is_not_pm_pi(x) && ph_is_not_pm_pi(y) && ph_is_not_pm_pi(z) )
+	{
+	    ELLINT_RETURN_WITH(ELLINT_STATUS_SUCCESS, CZERO);
+	} else {
+	    ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
+	}
     }
 
     if ( !(C_ATMOST_1Z(x, y, z)) )
@@ -128,9 +127,8 @@ ELLINT_POLY_FCN(ellint_RF) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     zm = z;
 
     m = 0;
-    while ( fmax(fterm,
-                 ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym),
-			      FABS(Am - zm))) >= FABS(Am) )
+    while ( (aAm = FABS(Am)) <= fterm ||
+	    aAm <= ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym), FABS(Am - zm)) ) 
     {
 	EllInt_Num_t lam;
 

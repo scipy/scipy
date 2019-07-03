@@ -12,7 +12,7 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     EllInt_Num_t xm, ym, zm, Am;
     EllInt_Num_t adt, tmp, t;
     EllInt_Num_t e2, e3, e4, e5, xxm, yym, zzm, xy, zz2;
-    double fterm, d4m;
+    double fterm, d4m, aAm;
     double adt_r, adt_i, ade_r, ade_i;
     /* Workspaces */
     EllInt_Num_t cct1[6];
@@ -35,7 +35,7 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
     }
 
-    if ( PH_IS_PMPI_Z(x) || PH_IS_PMPI_Z(y) )
+    if ( !(ph_is_not_pm_pi(x) && ph_is_not_pm_pi(y)) )
     {
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
     }
@@ -66,9 +66,8 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     zm = z;
     m = 0;
 
-    while ( fmax(fterm,
-		 ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym),
-			      FABS(Am - zm))) >= FABS(Am) )
+    while ( (aAm = FABS(Am)) <= fterm ||
+	    aAm <= ELLINT_FMAX3(FABS(Am - xm), FABS(Am - ym), FABS(Am - zm)) ) 
     {
 	EllInt_Num_t lam;
 

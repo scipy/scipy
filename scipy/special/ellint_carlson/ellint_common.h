@@ -45,6 +45,17 @@ do {	\
 } while ( 0 )
 
 
+#define HORRIBLE_STATUS(s)	( ( (s) == ELLINT_STATUS_NORESULT ) || \
+                                  ( (s) == ELLINT_STATUS_BAD_ARGS ) || \
+				  ( (s) == ELLINT_STATUS_BAD_RERR ) || \
+				  ( (s) == ELLINT_STATUS_OTHER ) )
+#define TROUBLESOME_STATUS(s)	( ( (s) == ELLINT_STATUS_SINGULAR ) || \
+                                  ( (s) == ELLINT_STATUS_UNDERFLOW ) || \
+				  ( (s) == ELLINT_STATUS_OVERFLOW ) || \
+				  ( (s) == ELLINT_STATUS_NITER ) || \
+				  ( (s) == ELLINT_STATUS_PRECLOSS ) )
+
+
 #define ELLINT_SWAP(x, y)	\
 do {				\
     EllInt_Num_t _swap_tmp;	\

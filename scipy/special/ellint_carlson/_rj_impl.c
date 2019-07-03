@@ -145,7 +145,7 @@ static bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     }
 
     /* "Alternatively, if p != 0 and |ph p| < pi ..." */
-    if ( !( too_small(pr) && too_small(pi) ) && !( PH_IS_PMPI_Z(p) ) )
+    if ( !( too_small(pr) && too_small(pi) ) && ph_is_not_pm_pi(p) )
     {
 	/* "... either let x, y, z be real and nonnegative and at most one of
 	 * them be 0, ..." */
@@ -167,17 +167,6 @@ static bool RJ_good_args(EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     }
     return false;
 }
-
-
-#define HORRIBLE_STATUS(s)	( ( (s) == ELLINT_STATUS_NORESULT ) || \
-                                  ( (s) == ELLINT_STATUS_BAD_ARGS ) || \
-				  ( (s) == ELLINT_STATUS_BAD_RERR ) || \
-				  ( (s) == ELLINT_STATUS_OTHER ) )
-#define TROUBLESOME_STATUS(s)	( ( (s) == ELLINT_STATUS_SINGULAR ) || \
-                                  ( (s) == ELLINT_STATUS_UNDERFLOW ) || \
-				  ( (s) == ELLINT_STATUS_OVERFLOW ) || \
-				  ( (s) == ELLINT_STATUS_NITER ) || \
-				  ( (s) == ELLINT_STATUS_PRECLOSS ) )
 
 
 /* Cauchy principal value dispatcher */
@@ -369,7 +358,7 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     EllInt_Num_t d4m, xxm, yym, zzm;
     EllInt_Num_t pp, pp2, xyz, e2, e3, e4, e5;
     EllInt_Num_t tmp, t;
-    double fterm;
+    double fterm, aAm;
     EllInt_Num_t cct1[6];
     EllInt_Num_t cct2[6];
 
@@ -574,9 +563,9 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     ELLINT_RJ_UPDT();
 
     m = 1;
-    while ( fmax(fterm,
-                 ELLINT_FMAX4(FABS(Am - xm), FABS(Am - ym),
-		              FABS(Am - zm), FABS(Am - pm))) >= FABS(Am) )
+    while ( (aAm = FABS(Am)) <= fterm ||
+	    aAm <= ELLINT_FMAX4(FABS(Am - xm), FABS(Am - ym),
+                                FABS(Am - zm), FABS(Am - pm)) ) 
     {
 	if ( m > ELLINT_MAXITER )
 	{

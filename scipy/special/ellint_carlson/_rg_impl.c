@@ -8,9 +8,10 @@ EllInt_Status_t
 ELLINT_POLY_FCN(ellint_RG) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	                    double rerr, EllInt_Num_t * restrict res)
 {
-    EllInt_Status_t status;
+    EllInt_Status_t status, status_tmp;
     EllInt_Num_t rfv, rdv, tmp;
 
+    status = ELLINT_STATUS_SUCCESS;
     if ( ELLINT_BAD_RERR(rerr, 1.0e-4) )
     {
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_RERR);
@@ -41,17 +42,20 @@ ELLINT_POLY_FCN(ellint_RG) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     if ( too_small(FABS(x)) && too_small(FABS(y)) )
     {
 	*res = MULcr(SQRT(z), 0.5);
-	return ELLINT_STATUS_SUCCESS;
+	return status;
     }
 
-    status = ELLINT_POLY_FCN(ellint_RF)(x, y, z, rerr * 0.5, &rfv);
-    if ( status != ELLINT_STATUS_SUCCESS )
+    status_tmp = ELLINT_POLY_FCN(ellint_RF)(x, y, z, rerr * 0.5, &rfv);
+    if ( HORRIBLE_STATUS(status_tmp) )
     {
-	ELLINT_FAIL_WITH(status);
+	ELLINT_FAIL_WITH(status_tmp);
     }
-
     status = ELLINT_POLY_FCN(ellint_RD)(x, y, z, rerr * 0.5, &rdv);
-    if ( status != ELLINT_STATUS_SUCCESS )
+    if ( status_tmp != ELLINT_STATUS_SUCCESS )
+    {
+	status = status_tmp;
+    }
+    if ( HORRIBLE_STATUS(status) )
     {
 	ELLINT_FAIL_WITH(status);
     }
@@ -64,7 +68,6 @@ ELLINT_POLY_FCN(ellint_RG) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     tmp = MULcr(tmp, 0.5);
 
     *res = tmp;
-    status = ELLINT_STATUS_SUCCESS;
     return status;
 }
 
