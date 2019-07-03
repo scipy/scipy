@@ -4,11 +4,14 @@ pypocketfft version
 
 SciPy currently vendors [pypocketfft][repo] at:
 
-    commit d77cdeb516459c0b5b62f618a96a6ca13b9db0de
+    commit c959e87dd69918fd63ff971fa2eebea99388a43c
+    Merge: 2854018 7791e52
     Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Tue Jun 4 21:21:01 2019 +0200
+    Date:   Mon Jul 1 14:00:20 2019 +0200
 
-        drop GIL when possible
+        Merge branch 'new_interface' into 'master'
+
+        New interface
 
 With the modifications given in `scipychanges.patch`
 
