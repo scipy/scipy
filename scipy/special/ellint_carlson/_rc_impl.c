@@ -39,11 +39,12 @@ ELLINT_POLY_FCN(ellint_RC) (EllInt_Num_t x, EllInt_Num_t y,
 	EllInt_Num_t tmpres;
 
 	status = ELLINT_POLY_FCN(ellint_RC)(SUB(x, y), NEG(y), rerr, &tmpres);
-
-	if ( status == ELLINT_STATUS_SUCCESS )
+	if ( HORRIBLE_STATUS(status) )
 	{
-	    *res = MULcc(tmpres, SQRT(DIVcc(x, SUB(x, y))));
+	    ELLINT_FAIL_WITH(status);
 	}
+
+	*res = MULcc(tmpres, SQRT(DIVcc(x, SUB(x, y))));
 	return status;
     } else if ( PH_IS_PMPI_Z(x) || too_small(FABS(y)) ) {
 	ELLINT_FAIL_WITH(ELLINT_STATUS_BAD_ARGS);
