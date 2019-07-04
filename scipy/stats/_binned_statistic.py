@@ -368,7 +368,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     Parameters
     ----------
     sample : array_like
-        Data to histogram passed as a sequence of D arrays of length N, or
+        Data to histogram passed as a sequence of N arrays of length D, or
         as an (N,D) array.
     values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
@@ -458,6 +458,44 @@ def binned_statistic_dd(sample, values, statistic='mean',
     (bin_edges[D][i-1], bin_edges[D][i]), for each dimension 'D'.
 
     .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import Axes3D
+
+    Take 600 2-D arrays as an example. `binned_statistic_dd` can handle arrays
+    of higher dimension `D`. But a plot of dimension `D+1` is required.
+
+    >>> mu = np.array([0., 1.])
+    >>> Sigma = np.array([[1., -0.5],[-0.5, 1.5]])
+    >>> F = stats.multivariate_normal(mu, Sigma)
+    >>> data = F.rvs(size=600)
+
+    Create bins and count how many arrays falls in each bin:
+
+    >>> N = 60
+    >>> X = np.linspace(-3, 3, N)
+    >>> Y = np.linspace(-3, 4, N)
+    >>> ret = stats.binned_statistic_dd(data, np.arange(600), bins=[X, Y], statistic='count')
+    >>> dz = ret.statistic
+
+    Set the volumn and the location of bars:
+
+    >>> dx = X[1] - X[0]
+    >>> dy = Y[1] - Y[0]
+    >>> X, Y = np.meshgrid(X[:-1]+dx/2, Y[:-1]+dy/2)
+    >>> Z = 0
+
+    >>> dz = dz.ravel()
+    >>> X = X.ravel()
+    >>> Y = Y.ravel()
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111, projection='3d')
+    >>> ax.bar3d(X, Y, Z, dx, dy, dz)
 
     """
     known_stats = ['mean', 'median', 'count', 'sum', 'std','min','max']
