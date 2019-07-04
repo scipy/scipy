@@ -40,7 +40,8 @@ def configuration(parent_package='',top_path=None):
     cephes_src = [join('cephes','*.c')]
     cephes_hdr = [join('cephes', '*.h')]
     ellint_carlson_src = [join('ellint_carlson', 'ellint_*.c')]
-    ellint_carlson_hdr = [join('ellint_carlson', '*.h')]
+    ellint_carlson_hdr = [join('ellint_carlson', '*.h'),
+                          join('ellint_carlson', '_*.c')]
     config.add_library('sc_c_misc',sources=c_misc_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + cephes_src
@@ -51,11 +52,14 @@ def configuration(parent_package='',top_path=None):
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + ['*.h']),
                        macros=define_macros)
-    config.add_library('sc_ellint_carlson',sources=ellint_carlson_src,
+    config.add_library('sc_ellint_carlson', sources=ellint_carlson_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(ellint_carlson_hdr + ['*.h']),
-                       extra_compiler_args=['-O3',
-                                            '-fno-unsafe-math-optimizations'],
+                       extra_compiler_args=(['-O3', '-fno-fast-math',
+                                             '-fno-unsafe-math-optimizations']
+                                            if not
+                                            sys.platform.startswith('win') else
+                                            ['/Ox', '/fp:precise']),
                        macros=define_macros)
 
     # Fortran/C++ libraries
