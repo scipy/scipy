@@ -1454,7 +1454,7 @@ add_newdoc("ellipkinc",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
-add_newdoc("scipy.special", "elliprc",
+add_newdoc("elliprc",
     r"""
     elliprc(x, y)
 
@@ -1501,7 +1501,7 @@ add_newdoc("scipy.special", "elliprc",
            https://doi.org/10.1007/BF02198293
     """)
 
-add_newdoc("scipy.special", "elliprd",
+add_newdoc("elliprd",
     r"""
     elliprd(x, y, z)
 
@@ -1548,7 +1548,7 @@ add_newdoc("scipy.special", "elliprd",
            https://doi.org/10.1007/BF02198293
     """)
 
-add_newdoc("scipy.special", "elliprf",
+add_newdoc("elliprf",
     r"""
     elliprf(x, y, z)
 
@@ -1593,7 +1593,7 @@ add_newdoc("scipy.special", "elliprf",
            https://doi.org/10.1007/BF02198293
     """)
 
-add_newdoc("scipy.special", "elliprg",
+add_newdoc("elliprg",
     r"""
     elliprg(x, y, z)
 
@@ -1641,7 +1641,7 @@ add_newdoc("scipy.special", "elliprg",
            https://dlmf.nist.gov/19.20.ii
     """)
 
-add_newdoc("scipy.special", "elliprj",
+add_newdoc("elliprj",
     r"""
     elliprj(x, y, z, p)
 
@@ -1704,7 +1704,7 @@ add_newdoc("scipy.special", "elliprj",
            https://doi.org/10.1007/978-3-030-04480-0
     """)
 
-add_newdoc("scipy.special", "entr",
+add_newdoc("entr",
     r"""
     entr(x)
 
