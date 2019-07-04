@@ -3,6 +3,7 @@
 
 
 #include <stddef.h>
+#include <string.h>
 #include <math.h>
 #include <complex.h>
 
@@ -320,12 +321,11 @@ static inline void mask_init(maskref_t * mask,
                              size_t len_arr)
 {
     size_t i;
+    memset(mask->m, 0, len_arr * (sizeof (bool)));
     for ( i = 0; i < len_arr; i++ )
     {
-	if ( fpclassify(arr[i]) == FP_ZERO )
+	if ( fpclassify(arr[i]) != FP_ZERO )
 	{
-	    (mask->m)[i] = false;
-	} else {
 	    (mask->count)++;
 	    (mask->m)[i] = true;
 	}
