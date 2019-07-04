@@ -71,6 +71,7 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
 
         int index = -1;
         double lowest = INFINITY;
+        SR[i] = true;
 
         for (int it = 0; it < num_remaining; it++) {
             int j = remaining[it];
@@ -103,7 +104,6 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
             i = row4col[j];
         }
 
-        SR[i] = true;
         SC[j] = true;
         remaining[index] = remaining[--num_remaining];
         remaining.resize(num_remaining);
@@ -152,9 +152,9 @@ solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
             }
         }
 
-        for (int i = 0; i < nc; i++) {
-            if (SC[i]) {
-                v[i] -= minVal - shortestPathCosts[i];
+        for (int j = 0; j < nc; j++) {
+            if (SC[j]) {
+                v[j] -= minVal - shortestPathCosts[j];
             }
         }
 
