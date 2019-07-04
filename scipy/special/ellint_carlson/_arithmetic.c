@@ -138,8 +138,8 @@ static inline void feft_prod(double a, double b,
 #ifdef ELLINT_POLY_COMPLEX
 static inline void ceft_prod(double_complex x, double_complex y,
 	                     double_complex * restrict p,
-	                     double * buffer_r[3],
-	                     double * buffer_i[3])
+	                     double buffer_r[3],
+	                     double buffer_i[3])
 {
     double a, b, c, d;
     double a1, a2, b1, b2, c1, c2, d1, d2;
@@ -472,15 +472,9 @@ static inline double_complex chorner_sum_acc(double_complex x, size_t degree,
 
     mask_create(&mask_r, mask_buf_r);
     mask_create(&mask_i, mask_buf_i);
-    rowr = (double * restrict)wsr + NPOLYNOMIALS * degree;
-    rowi = (double * restrict)wsi + NPOLYNOMIALS * degree;
-    mask_init(&mask_r, rowr, NPOLYNOMIALS);
-    mask_init(&mask_i, rowi, NPOLYNOMIALS);
+    v = CZERO;
 
-    v = MKCMPLX(facc_sum(rowr, NPOLYNOMIALS, &mask_r),
-                facc_sum(rowi, NPOLYNOMIALS, &mask_i));
-
-    for ( i = (ptrdiff_t)degree - 1; i >= 0; i-- )
+    for ( i = (ptrdiff_t)degree; i >= 0; i-- )
     {
 	rowr = (double * restrict)wsr + NPOLYNOMIALS * i;
 	rowi = (double * restrict)wsi + NPOLYNOMIALS * i;

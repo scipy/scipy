@@ -11,8 +11,8 @@
 static inline bool too_small(double t)
 {
     int f;
-    f = fpclassify(t);
-    if ( (f == FP_ZERO) || (f == FP_SUBNORMAL) )
+
+    if ( ((f = fpclassify(t)) == FP_ZERO) || (f == FP_SUBNORMAL) )
     {
 	return true;
     }
