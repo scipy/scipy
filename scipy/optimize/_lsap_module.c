@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static PyObject*
 calculate_assignment(PyObject* self, PyObject* args)
 {
+    PyObject* x = NULL;
     PyObject* obj_cost = NULL;
     if (!PyArg_ParseTuple(args, "O", &obj_cost))
         return NULL;
@@ -42,29 +43,32 @@ calculate_assignment(PyObject* self, PyObject* args)
     PyArrayObject* obj_cont =
       (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
     if (obj_cont == NULL) {
+        PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
         return NULL;
+    }
+
+    double* cost_matrix = (double*)PyArray_DATA(obj_cont);
+    if (cost_matrix == NULL) {
+        PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
+        goto cleanup;
     }
 
     int num_rows = PyArray_DIM(obj_cont, 0);
     int num_cols = PyArray_DIM(obj_cont, 1);
 
-    double* cost_matrix = (double*)PyArray_DATA(obj_cont);
-    if (cost_matrix == NULL) {
-        return NULL;
-    }
-
     npy_intp dim[1] = { num_rows };
-    PyObject* x = PyArray_SimpleNew(1, dim, NPY_INT64);
+    x = PyArray_SimpleNew(1, dim, NPY_INT64);
     int result = solve_rectangular_linear_sum_assignment(
       num_rows, num_cols, cost_matrix, PyArray_DATA((PyArrayObject*)x));
-    Py_DECREF((PyObject*)obj_cont);
     if (result != 0) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
         Py_DECREF(x);
-        return NULL;
-    } else {
-        return x;
+        x = NULL;
     }
+
+cleanup:
+    Py_DECREF((PyObject*)obj_cont);
+    return x;
 }
 
 static PyMethodDef lsap_module_methods[] = {

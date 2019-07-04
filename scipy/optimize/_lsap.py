@@ -1,9 +1,9 @@
-# Wrapper for the Jonker-Volgenant algorithm for solving the rectangular
-# linear sum assignment problem.  The original code was an implementation of
-# the Hungarian algorithm (Kuhn-Munkres) taken from scikit-learn, based on
-# original code by Brian Clapper and adapted to NumPy by Gael Varoquaux.
-# Further improvements by Ben Root, Vlad Niculae, Lars Buitinck,
-# and Peter Larsen.
+# Wrapper for the shortest augmenting path algorithm for solving the
+# rectangular linear sum assignment problem.  The original code was an
+# implementation of the Hungarian algorithm (Kuhn-Munkres) taken from
+# scikit-learn, based on original code by Brian Clapper and adapted to NumPy
+# by Gael Varoquaux. Further improvements by Ben Root, Vlad Niculae, Lars
+# Buitinck, and Peter Larsen.
 #
 # Copyright (c) 2008 Brian M. Clapper <bmc@clapper.org>, Gael Varoquaux
 # Author: Brian M. Clapper, Gael Varoquaux
@@ -35,8 +35,6 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     problem where the cost matrix is rectangular. If it has more rows than
     columns, then not every row needs to be assigned to a column, and vice
     versa.
-
-    The method used is the Jonker-Volgenant algorithm.
 
     Parameters
     ----------
