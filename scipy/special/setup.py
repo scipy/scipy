@@ -55,11 +55,6 @@ def configuration(parent_package='',top_path=None):
     config.add_library('sc_ellint_carlson', sources=ellint_carlson_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(ellint_carlson_hdr + ['*.h']),
-                       extra_compiler_args=(['-O3', '-fno-fast-math',
-                                             '-fno-unsafe-math-optimizations']
-                                            if not
-                                            sys.platform.startswith('win') else
-                                            ['/Ox', '/fp:precise']),
                        macros=define_macros)
 
     # Fortran/C++ libraries
