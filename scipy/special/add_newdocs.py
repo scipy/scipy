@@ -1458,9 +1458,10 @@ add_newdoc("elliprc",
     r"""
     elliprc(x, y)
 
-    Carlson symmetric elliptic integral RC, defined as [1]
+    Symmetric integral RC as a degenerate case related to elliptic integrals,
+    defined as [1]
 
-    .. math:: R_{\mathrm{C}}(x, y) = \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt
+    .. math:: R_{\mathrm{C}}(x, y) = \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt = R_{\mathrm{F}}(x, y, y)
 
     Parameters
     ----------
@@ -1478,7 +1479,7 @@ add_newdoc("elliprc",
     Notes
     -----
     RC is a degenerate case of the symmetric integral RF: RC(x, y) = RF(x, y,
-    y).
+    y). It is an elementary function rather than an elliptic integral.
 
     The code implements Carlson's algorithm based on the duplication theorems
     and series expansion up to the 7th order. [2]
@@ -1524,11 +1525,11 @@ add_newdoc("elliprd",
 
     Notes
     -----
-    RD is a degenerate case of the symmetric integral RJ: RD(x, y, z) = RJ(x,
-    y, z, z).
+    RD is a degenerate case of the elliptic integral RJ: RD(x, y, z) = RJ(x, y,
+    z, z).
 
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 5th order. [2]
+    and series expansion up to the 7th order. [2]
 
     See Also
     --------
@@ -1577,7 +1578,7 @@ add_newdoc("elliprf",
 
     See Also
     --------
-    elliprc : Degenerate symmetric elliptic integral.
+    elliprc : Degenerate symmetric integral.
     elliprd : Symmetric elliptic integral of the second kind.
     elliprg : Completely-symmetric elliptic integral of the second kind.
     elliprj : Symmetric elliptic integral of the third kind.
@@ -1624,7 +1625,7 @@ add_newdoc("elliprg",
 
     See Also
     --------
-    elliprc : Degenerate symmetric elliptic integral.
+    elliprc : Degenerate symmetric integral.
     elliprd : Symmetric elliptic integral of the second kind.
     elliprf : Completely-symmetric elliptic integral of the first kind.
     elliprj : Symmetric elliptic integral of the third kind.
@@ -1670,14 +1671,14 @@ add_newdoc("elliprj",
     Notes
     -----
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 5th order. [2] The algorithm is slightly
+    and series expansion up to the 7th order. [2] The algorithm is slightly
     different from its earlier incarnation in [1] in that the call to
     ``elliprc`` (or ``atan``/``atanh``, see [4]) is no longer needed in the
     inner loop.
 
     See Also
     --------
-    elliprc : Degenerate symmetric elliptic integral.
+    elliprc : Degenerate symmetric integral.
     elliprd : Symmetric elliptic integral of the second kind.
     elliprf : Completely-symmetric elliptic integral of the first kind.
     elliprg : Completely-symmetric elliptic integral of the second kind.
