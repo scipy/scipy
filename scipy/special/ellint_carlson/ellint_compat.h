@@ -159,7 +159,7 @@ typedef _Dcomplex double_complex;
     #define MULcc(x, y)	( _Cmulcc( (x), (y) ) )
     #define MULcr(x, y)	( _Cmulcr( (x), (double)(y) ) )
 
-    #define RECI(z)	( conj( (z) ) / norm( (z) ) )
+    #define RECI(z)	( MULcr( conj( (z) ), 1.0 / norm( (z) ) ) )
     #define DIVcc(x, y)	( _Cmulcc( (x), RECI( (y) ) ) )
     #define DIVcr(x, y)	( _Cmulcr( (x), (1.0 / (double)(y)) ) )
     #define DIVrc(x, y)	( MULcr(RECI( (y) ), (x) ) )

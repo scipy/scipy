@@ -348,10 +348,10 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     EllInt_Num_t Am, xm, ym, zm, pm;
     EllInt_Num_t prm, lam, dm;
     EllInt_Num_t sm, rm;
-    EllInt_Num_t d4m, xxm, yym, zzm;
+    EllInt_Num_t xxm, yym, zzm;
     EllInt_Num_t pp, pp2, xyz, e2, e3, e4, e5;
     EllInt_Num_t tmp, t;
-    double fterm, aAm;
+    double d4m, fterm, aAm;
     EllInt_Num_t cct1[6];
     EllInt_Num_t cct2[6];
 
@@ -557,8 +557,8 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 
     m = 1;
     while ( (aAm = FABS(Am)) <= fterm ||
-	    aAm <= ELLINT_FMAX4(FABS(Am - xm), FABS(Am - ym),
-                                FABS(Am - zm), FABS(Am - pm)) ) 
+	    aAm <= ELLINT_FMAX4(FABS(SUB(Am, xm)), FABS(SUB(Am, ym)),
+                                FABS(SUB(Am, zm)), FABS(SUB(Am, pm))) ) 
     {
 	if ( m > ELLINT_MAXITER )
 	{

@@ -88,7 +88,7 @@ static inline bool ph_is_not_pm_pi(EllInt_Num_t z)
 ( ( (ar) >= 0.0 ) && ( too_small( (ai) ) ) &&	\
   ( C_PAIR_NZ( (b), (c) ) ) &&			\
   ( ph_is_not_pm_pi( (b) ) && ph_is_not_pm_pi( (c) ) ) && \
-  ( too_small( FABS(CONJ( (b) ) - (c) ) ) ) )
+  ( too_small( FABS(SUB(CONJ( (b) ), (c) )) ) ) )
 
 
 #endif  /* _ELLINT_ARGCHECK_H_INCLUDED */
