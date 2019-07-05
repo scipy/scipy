@@ -81,11 +81,7 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	cct1[0] = cct2[2] = SQRT(xm);
 	cct1[1] = cct2[0] = SQRT(ym);
 	cct1[2] = cct2[1] = SQRT(zm);
-#ifdef ELLINT_POLY_REAL
-	lam = fdot2(cct1, cct2, 3);
-#else
-	lam = cdot2(cct1, cct2, 6);
-#endif
+	lam = ELLINT_POLY_FCN(dot2)(cct1, cct2, 3);
 	{
 	    double ts, te;
 
@@ -145,11 +141,8 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     cct2[3] = e4;
     cct2[4] = e5;
     cct2[5] = e4;
-#ifdef ELLINT_POLY_REAL
-    t = 1.0 + fdot2(cct1, cct2, 6) / ELLINT_RDJ_DENOM;
-#else
-    t = ADDcr(DIVcr(cdot2(cct1, cct2, 12), ELLINT_RDJ_DENOM), 1.0);
-#endif
+    t = ADDcr(DIVcr(ELLINT_POLY_FCN(dot2)(cct1, cct2, 6), ELLINT_RDJ_DENOM),
+              1.0);
     tmp = MULcc(tmp, t);
     tmp = ADD(tmp, MULcc(adt, 3.0));
 

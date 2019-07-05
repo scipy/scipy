@@ -7,11 +7,18 @@
 
 
 #if ( __STDC_VERSION__ >= 199901L )
-#include <stdbool.h>
+    #define ELLINT_HAS_C99	(1)
 #else
-#define bool		unsigned char
-#define true		( (bool)1 )
-#define false		( (bool)0 )
+    #define ELLINT_HAS_C99	(0)
+#endif
+
+
+#if ( ELLINT_HAS_C99 )
+    #include <stdbool.h>
+#else
+    #define bool		unsigned char
+    #define true		( (bool)1 )
+    #define false		( (bool)0 )
 #endif
 
 
@@ -21,15 +28,15 @@
 typedef double complex	double_complex;
 
 
-#if ( __STDC_VERSION__ < 199901L )
-#ifdef __GNUC__
-#define restrict	__restrict__
-#define inline		__inline__
-#else
-#define restrict
-#define inline
-#endif
-#define complex		_Complex
+#if ( !(ELLINT_HAS_C99) )
+    #ifdef __GNUC__
+	#define restrict	__restrict__
+	#define inline		__inline__
+    #else
+	#define restrict	/* nothing */
+	#define inline		/* nothing */
+    #endif
+    #define complex		_Complex
 #endif
 
 
@@ -49,11 +56,11 @@ typedef double complex	double_complex;
     #define EllInt_Num_t	double_complex
     /* CMPLX macro is a C99 feature, circumvent it to conform to C89 if that is
      * the C standard being used */
-    #if ( ( __STDC_VERSION__ < 199901L ) || ( !defined(CMPLX) ) )
+    #ifndef CMPLX
 	#if ( defined(__GNUC__) &&	\
 	      ( __GNUC__ * 10000 + __GNUC_MINOR__ * 100 >= 40700 ) )
 	    #define MKCMPLX(r, i)	__builtin_complex( (r), (i) )
-	#else	/* fallback */
+	#else	/* fallback, will choke on non-regular floats such as nan */
 	    #define MKCMPLX(r, i)	\
 		( (double_complex)((double)(r) + (double)(i) * I) )
 	#endif

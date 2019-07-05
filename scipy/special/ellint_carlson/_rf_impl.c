@@ -142,11 +142,7 @@ ELLINT_POLY_FCN(ellint_RF) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	cct1[0] = cct2[2] = SQRT(xm);
 	cct1[1] = cct2[0] = SQRT(ym);
 	cct1[2] = cct2[1] = SQRT(zm);
-#ifdef ELLINT_POLY_REAL
-	lam = fdot2(cct1, cct2, 3);
-#else
-	lam = cdot2(cct1, cct2, 6);
-#endif
+	lam = ELLINT_POLY_FCN(dot2)(cct1, cct2, 3);
         Am = MULcr(ADD(Am, lam), 0.25);
         xm = MULcr(ADD(xm, lam), 0.25);
         ym = MULcr(ADD(ym, lam), 0.25);

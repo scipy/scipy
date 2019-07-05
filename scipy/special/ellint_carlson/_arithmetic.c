@@ -6,10 +6,18 @@
 #include <string.h>
 #include <math.h>
 #include <complex.h>
+#include "ellint_compat.h"
 
 /* DBL_EPSILON / 2 == 2^(-53) */
 #define DBL_HALF_EPSILON	(1.1102230246251565404236316680908e-16)
 #define NPOLYNOMIALS		(4)
+
+
+#if ( !(ELLINT_HAS_C99) )
+    /* Maximum polynomial degree, used to calculate internal workspace buffer
+     * size. NOTE: Will cause buffer overflow if breached. */
+    #define ELLINT_MAX_DEGREE	(16)
+#endif
 
 
 /* Basic algorithms not relying on availability of fma() */
@@ -24,6 +32,17 @@ static inline void feft_sum(double a, double b,
 }
 
 
+/* accumulator version of fsum2, accumulate sum in acc and correction in corr */
+static inline void fsum2_acc(double summand,
+                             double * restrict acc, double * restrict corr)
+{
+    double tmp_s, tmp_e;
+    feft_sum(summand, (*acc), &tmp_s, &tmp_e);
+    *acc = tmp_s;
+    *corr += tmp_e;
+}
+
+
 static inline double fsum2(const double * restrict x, size_t n)
 {
     size_t i;
@@ -33,11 +52,7 @@ static inline double fsum2(const double * restrict x, size_t n)
     s = 0.0;
     for ( i = 1; i < n; i++ )
     {
-	double t, q;
-
-	feft_sum(p, x[i], &t, &q);
-	p = t;
-	s += q;
+	fsum2_acc(x[i], &p, &s);
     }
     return p + s;
 }
@@ -47,14 +62,17 @@ static inline double fsum2(const double * restrict x, size_t n)
 static inline double_complex csum2(const double_complex * restrict x, size_t n)
 {
     size_t i;
-    double rr[n];
-    double ii[n];
-    for ( i = 0; i < n; i++ )
+    double sr, er, si, ei;
+
+    sr = creal(x[0]);
+    si = cimag(x[0]);
+    er = ei = 0.0;
+    for ( i = 1; i < n; i++ )
     {
-	rr[i] = creal(x[i]);
-	ii[i] = cimag(x[i]);
+	fsum2_acc(creal(x[i]), &sr, &er);
+	fsum2_acc(cimag(x[i]), &si, &ei);
     }
-    return MKCMPLX(fsum2(rr, n), fsum2(ii, n));
+    return MKCMPLX(sr + er, si + ei);
 }
 
 
@@ -176,19 +194,29 @@ static inline void ceft_prod(double_complex x, double_complex y,
  *      floating point arithmetic.
  *      2008-07-07, Proc 8th Conf Real Numbers and Computers, pp. 133--146
  */
+static inline void fdot2_acc(double x, double y,
+                             double * restrict acc, double * restrict corr)
+{
+    double h, t;
+    double r, q;
+
+    feft_prod(x, y, &h, &r);
+    feft_sum((*acc), h, &t, &q);
+    *acc = t;
+    *corr += q + r;
+}
+
+
 static inline double fdot2(const double * restrict x,
                            const double * restrict y, size_t n)
 {
     size_t i;
-    double p, s, h, r, t, q;
+    double p, s;
 
     feft_prod(x[0], y[0], &p, &s);
     for ( i = 1; i < n; i++ )
     {
-	feft_prod(x[i], y[i], &h, &r);
-	feft_sum(p, h, &t, &q);
-	p = t;
-	s += q + r;
+	fdot2_acc(x[i], y[i], &p, &s);
     }
     return p + s;
 }
@@ -213,8 +241,9 @@ static inline double feft_horner(double x, const double * restrict a,
 }
 
 
-static inline double fhorner_sum(double x, const double * restrict p,
-				 const double * restrict q, size_t degree)
+static inline double fhorner_sum(double x,  size_t degree,
+                                 const double * restrict p,
+                                 const double * restrict q)
 {
     ptrdiff_t i;
     double r = p[degree] + q[degree];
@@ -232,11 +261,16 @@ static inline double fcomp_horner(double x, const double * restrict a,
                                   size_t degree)
 {
     double c, h;
+#if ( ELLINT_HAS_C99 )
     double pp[degree];
     double ps[degree];
+#else
+    double pp[ELLINT_MAX_DEGREE];
+    double ps[ELLINT_MAX_DEGREE];
+#endif
 
     h = feft_horner(x, a, degree, pp, ps);
-    c = fhorner_sum(x, pp, ps, degree - 1);
+    c = fhorner_sum(x, degree - 1, pp, ps);
 
     return h + c;
 }
@@ -246,30 +280,28 @@ static inline double fcomp_horner(double x, const double * restrict a,
 #ifdef ELLINT_POLY_COMPLEX
 static inline double_complex cdot2(const double_complex * restrict x,
 	                           const double_complex * restrict y,
-                                   size_t twice_n)
+                                   size_t n)
 {
-    size_t i, j, n;
-    double xx[twice_n];
-    double yy[twice_n];
-    double zz[twice_n];
-    double rr, ii;
+    size_t i;
+    double rres, re, ires, ie;
 
-    n = twice_n / 2;
+    rres = re = ires = ie = 0.0;
     for ( i = 0; i < n; i++ )
     {
-	j = n + i;
+	double a, b, c, d;
 
-	xx[i] = creal(x[i]);
-	xx[j] = cimag(x[i]);
+	a = creal(x[i]);
+	b = creal(y[i]);
+	c = cimag(x[i]);
+	d = cimag(y[i]);
 
-	yy[i] = zz[j] = creal(y[i]);
-	yy[j] = -cimag(y[i]);
-
-	zz[i] = cimag(y[i]);
+	fdot2_acc(a, b, &rres, &re);
+	fdot2_acc(c, -d, &rres, &re);
+	fdot2_acc(a, d, &ires, &ie);
+	fdot2_acc(b, c, &ires, &ie);
     }
-    rr = fdot2(xx, yy, twice_n);
-    ii = fdot2(xx, zz, twice_n);
-    return MKCMPLX(rr, ii);
+
+    return MKCMPLX(rres + re, ires + ie);
 }
 
 
@@ -492,8 +524,13 @@ static inline double_complex ccomp_horner(double_complex x,
 					  size_t degree)
 {
     double_complex res, c;
+#if ( ELLINT_HAS_C99 )
     double wsr[degree][NPOLYNOMIALS];
     double wsi[degree][NPOLYNOMIALS];
+#else
+    double wsr[ELLINT_MAX_DEGREE][NPOLYNOMIALS];
+    double wsi[ELLINT_MAX_DEGREE][NPOLYNOMIALS];
+#endif
 
     res = ceft_horner(x, a, degree,
 		      (double * * restrict)wsr, (double * * restrict)wsi);

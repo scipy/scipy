@@ -6,13 +6,6 @@
 #include "ellint_common.h"
 
 
-#ifdef ELLINT_POLY_REAL
-#define NVEC	(3)
-#else
-#define NVEC	(6)
-#endif
-
-
 #define ELLINT_RJ_CALC(VOID)	\
 do { 	\
     prm = SQRT(pm);	\
@@ -20,7 +13,7 @@ do { 	\
     cct1[0] = cct2[1] = SQRT(xm);	\
     cct1[1] = cct2[2] = SQRT(ym);	\
     cct1[2] = cct2[0] = SQRT(zm);	\
-    lam = ELLINT_POLY_FCN(dot2)(cct1, cct2, NVEC);	\
+    lam = ELLINT_POLY_FCN(dot2)(cct1, cct2, 3);	\
     dm = MULcc(MULcc(ADD(prm, cct1[0]), ADD(prm, cct1[1])), ADD(prm, cct1[2]));\
 } while ( 0 )
 
@@ -608,11 +601,7 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     /* xyz = xxm * yym * zzm */
     xyz = MULcc(MULcc(xxm, yym), zzm);
     /* e2 = xxm * yym + zzm * xxm + yym * zzm - pp2 * 3.0 */
-#ifdef ELLINT_POLY_REAL
-    e2 = fdot2(cct1, cct2, 4);
-#else
-    e2 = cdot2(cct1, cct2, 8);
-#endif
+    e2 = ELLINT_POLY_FCN(dot2)(cct1, cct2, 4);
     /* e3 = xyz + 2.0 * pp * (e2 + 2.0 * pp2) */
     e3 = ADD(xyz,
              MULcc(MULcr(pp, 2.0),
@@ -642,11 +631,8 @@ ELLINT_POLY_FCN(ellint_RJ) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     cct2[3] = e4;
     cct2[4] = e5;
     cct2[5] = e4;
-#ifdef ELLINT_POLY_REAL
-    t = 1.0 + fdot2(cct1, cct2, 6) / ELLINT_RDJ_DENOM;
-#else
-    t = ADDcr(DIVcr(cdot2(cct1, cct2, 12), ELLINT_RDJ_DENOM), 1.0);
-#endif
+    t = ADDcr(DIVcr(ELLINT_POLY_FCN(dot2)(cct1, cct2, 6), ELLINT_RDJ_DENOM),
+              1.0);
     tmp = MULcc(tmp, t);
     t = DIVcc(MULcr(delta, d4m), MULcc(sm, sm));
     tmp = ADD(tmp, DIVcc(MULcr(safe_atan_sqrt_div(t), 3.0), sm));
