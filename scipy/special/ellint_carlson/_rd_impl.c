@@ -13,7 +13,10 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     EllInt_Num_t adt, tmp, t;
     EllInt_Num_t e2, e3, e4, e5, xxm, yym, zzm, xy, zz2;
     double fterm, d4m, aAm;
-    double adt_r, adt_i, ade_r, ade_i;
+    double adt_r, ade_r;
+#ifdef ELLINT_POLY_COMPLEX
+    double adt_i, ade_i;
+#endif
     /* Workspaces */
     EllInt_Num_t cct1[6];
     EllInt_Num_t cct2[6];
@@ -45,7 +48,6 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	ELLINT_RETURN_WITH(ELLINT_STATUS_SINGULAR, CPINF);
     }
 
-    ade_r = ade_i = 0.0;
     /* A0 = DIVcr(ADD(ADD(x, y), MULcr(z, 3.0)), 5.0); */
     cct1[0] = x;
     cct1[1] = y;
@@ -59,8 +61,10 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
     fterm = ELLINT_FMAX3(FABS(xxm), FABS(yym), FABS(SUB(A0, z))) / rerr;
     Am = A0;
     d4m = 1.0;
-    adt_r = 0.0;
-    adt_i = 0.0;
+    adt_r = ade_r = 0.0;
+#ifdef ELLINT_POLY_COMPLEX
+    adt_i = ade_i = 0.0;
+#endif
     xm = x;
     ym = y;
     zm = z;
@@ -82,17 +86,12 @@ ELLINT_POLY_FCN(ellint_RD) (EllInt_Num_t x, EllInt_Num_t y, EllInt_Num_t z,
 	cct1[1] = cct2[0] = SQRT(ym);
 	cct1[2] = cct2[1] = SQRT(zm);
 	lam = ELLINT_POLY_FCN(dot2)(cct1, cct2, 3);
-	{
-	    double ts, te;
 
-	    tmp = DIVrc(d4m, MULcc(cct1[2], ADD(zm, lam)));
-	    feft_sum(CREAL(tmp), adt_r, &ts, &te);
-	    adt_r = ts;
-	    ade_r += te;
-	    feft_sum(CIMAG(tmp), adt_i, &ts, &te);
-	    adt_i = ts;
-	    ade_i += te;
-	}
+	tmp = DIVrc(d4m, MULcc(cct1[2], ADD(zm, lam)));
+	fsum2_acc(CREAL(tmp), &adt_r, &ade_r);
+#ifdef ELLINT_POLY_COMPLEX
+	fsum2_acc(CIMAG(tmp), &adt_i, &ade_i);
+#endif
 
         Am = MULcr(ADD(Am, lam), 0.25);
         xm = MULcr(ADD(xm, lam), 0.25);

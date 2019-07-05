@@ -1,6 +1,20 @@
 #ifndef _ARITHMETIC_GENERIC_GUARD
 #define _ARITHMETIC_GENERIC_GUARD
 
+/* Routines for accurate floating-point summation, dot-product, and polynomial
+ * evaluation.
+ *
+ * Ref:
+ *
+ * S. Gaillat, V. Ménissier-Morain: Compensated Horner scheme in complex
+ *      floating point arithmetic.
+ *      2008-07-07, Proc 8th Conf Real Numbers and Computers, pp. 133--146
+ *
+ * S. Gaillat, V. Ménissier-Morain: Accurate summation, dot product and
+ *      polynomial evaluation in complex floating point arithmetic.
+ *      2012-03-30, Information and Computation, vol. 216 pp. 57--71
+ *      https://doi.org/10.1016/j.ic.2011.09.003
+ */
 
 #include <stddef.h>
 #include <string.h>
@@ -190,15 +204,10 @@ static inline void ceft_prod(double_complex x, double_complex y,
 
 
 /* Common algorithms utilizing ?eft_prod */
-/* Ref: Gaillat, Ménissier-Morain: Compensated Horner scheme in complex
- *      floating point arithmetic.
- *      2008-07-07, Proc 8th Conf Real Numbers and Computers, pp. 133--146
- */
 static inline void fdot2_acc(double x, double y,
                              double * restrict acc, double * restrict corr)
 {
-    double h, t;
-    double r, q;
+    double h, t, q, r;
 
     feft_prod(x, y, &h, &r);
     feft_sum((*acc), h, &t, &q);
@@ -224,7 +233,7 @@ static inline double fdot2(const double * restrict x,
 
 #ifdef ELLINT_POLY_REAL
 static inline double feft_horner(double x, const double * restrict a,
-                                 size_t degree, 
+                                 size_t degree,
 				 double * restrict pp, double * restrict ps)
 {
     ptrdiff_t i;
@@ -307,7 +316,7 @@ static inline double_complex cdot2(const double_complex * restrict x,
 
 static inline double_complex ceft_horner(double_complex x,
                                          const double * restrict a,
-                                         size_t degree, 
+                                         size_t degree,
 					 double * * restrict wsr,
 					 double * * restrict wsi)
 {
@@ -330,7 +339,9 @@ static inline double_complex ceft_horner(double_complex x,
 }
 
 
-/* Ref: Rump, Ogita, Oishi: Accurate Floating-Point Summation.
+/* Ref:
+ *
+ * S. M. Rump, T. Ogita, S. Oishi: Accurate Floating-Point Summation.
  *      2005-11-13, Technical Report 05.1, Faculty Information Communication
  *      Sci, Hamburg Univ Technol
  */
@@ -464,7 +475,7 @@ static inline double facc_sum(double * restrict p, size_t lenp,
 	tau1 = t + tau;
 	if ( (fabs(tau1) >= factor * sigma) || ( sigma <= DBL_MIN ) )
 	{
-	    /* Use Dekker's version of "eft_sum" (faster) with tau1 >= t */
+	    /* Use Dekker's version of "eft_sum" */
 	    tau2 = tau - (tau1 - t);
 
 	    res = 0.0;
@@ -561,7 +572,7 @@ static inline EllInt_Num_t ELLINT_POLY_FCN(naive_horner)(EllInt_Num_t z,
 #endif
 
 
-#if ( __STDC_VERSION__ >= 199901L )	/* fma() supported by standard */
+#if ( ELLINT_HAS_C99 )			/* fma() supported by standard */
 #define HORNER	(ELLINT_POLY_FCN(comp_horner))
 #else					/* fma() not supported by standard */
 /*
