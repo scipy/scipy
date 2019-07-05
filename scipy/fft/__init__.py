@@ -55,8 +55,9 @@ Helper functions
 from __future__ import division, print_function, absolute_import
 
 from ._basic import (
-    fft, ifft, fft2,ifft2, fftn, ifftn,
-    rfft, irfft, rfft2, irfft2, rfftn, irfftn)
+    fft, ifft, fft2, ifft2, fftn, ifftn,
+    rfft, irfft, rfft2, irfft2, rfftn, irfftn,
+    hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
 from ._helper import next_fast_len
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
@@ -64,6 +65,7 @@ from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
     'rfft', 'irfft', 'rfft2', 'irfft2', 'rfftn', 'irfftn',
+    'hfft', 'ihfft', 'hfft2', 'ihfft2', 'hfftn', 'ihfftn',
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
     'next_fast_len',
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']

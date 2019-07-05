@@ -388,6 +388,14 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     return _pocketfft.irfft(x, n, axis, norm, overwrite_x)
 
 
+def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+    return _pocketfft.hfft(x, n, axis, norm, overwrite_x)
+
+
+def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+    return _pocketfft.ihfft(x, n, axis, norm, overwrite_x)
+
+
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional discrete Fourier Transform.
@@ -1012,3 +1020,19 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
 
     return _pocketfft.irfft2(x, s, axes, norm, overwrite_x)
+
+
+def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+    return _pocketfft.hfftn(x, s, axes, norm, overwrite_x)
+
+
+def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+    return _pocketfft.hfft2(x, s, axes, norm, overwrite_x)
+
+
+def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+    return _pocketfft.ihfftn(x, s, axes, norm, overwrite_x)
+
+
+def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+    return _pocketfft.ihfft2(x, s, axes, norm, overwrite_x)

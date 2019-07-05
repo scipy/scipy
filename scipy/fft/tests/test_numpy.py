@@ -118,7 +118,6 @@ class TestFFT1D(object):
         assert_array_almost_equal(
             x, fft.irfftn(fft.rfftn(x, norm="ortho"), norm="ortho"))
 
-    @pytest.mark.skip(reason="hfft not currently implemented")
     def test_hfft(self):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
@@ -127,7 +126,6 @@ class TestFFT1D(object):
         assert_array_almost_equal(fft.hfft(x_herm) / np.sqrt(30),
                                   fft.hfft(x_herm, norm="ortho"))
 
-    @pytest.mark.skip(reason="ihfft not currently implemented")
     def test_ihfft(self):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
