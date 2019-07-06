@@ -7,8 +7,9 @@ def _x_replacer(args, kwargs, dispatchables):
     """
     if len(args) > 0:
         return (dispatchables[0],) + args[1:], kwargs
-    kwargs['x'] = dispatchables[0]
-    return args, kwargs
+    kw = kwargs.copy()
+    kw['x'] = dispatchables[0]
+    return args, kw
 
 
 def _dispatch(func):
