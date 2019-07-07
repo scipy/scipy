@@ -402,6 +402,16 @@ class TestGeom(object):
         # this should not underflow
         assert_allclose(stats.geom.ppf(1e-20, 1e-20), 1.0, atol=1e-14)
 
+    def test_int_overflow(self):
+        # gh-9313: int overflow for expremely small p
+        np.random.seed(1367)
+        rv = stats.geom(np.exp(-25)).rvs(size=5)
+        assert np.all(rv > 0)
+
+        np.random.seed(1234)
+        assert np.all(stats.geom(np.exp(-25)).rvs(size=5) > 0)
+        assert np.all(stats.geom(np.exp(-30)).rvs(size=5) > 0)
+
 
 class TestPlanck(object):
     def setup_method(self):
