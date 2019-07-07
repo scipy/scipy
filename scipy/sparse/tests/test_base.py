@@ -660,7 +660,7 @@ class _TestCommon(object):
 
     def test_round(self):
         decimal = 1
-        A = matrix([[-1.35, 0.56],[17.25, -5.98]],'d')
+        A = matrix([[-1.35, 0.56], [17.25, -5.98]], 'd')
         assert_equal(np.around(A, decimals=decimal),
                      round(self.spmatrix(A), ndigits=decimal).todense())
 
