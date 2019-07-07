@@ -3258,6 +3258,14 @@ def test_ncx2_tails_pdf():
     assert_(np.isneginf(logval).all())
 
 
+def test_ncx2_zero_nc():
+    # gh-5441
+    # ncx2 with nc=0 is identical to chi2
+    result = stats.ncx2.cdf(1, nc=0, df=10)
+    expected = stats.chi2.cdf(1, df=10)
+    assert_equal(result, expected)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
