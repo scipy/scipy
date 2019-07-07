@@ -791,7 +791,7 @@ class TestCurveFit(object):
                                      xdata=xdata,
                                      ydata=0,
                                      method=method)
-            assert_array_equal(pcov0, pcov1)
+            assert_allclose(pcov0, pcov1, rtol=1e-12)
 
 
 class TestFixedPoint(object):
