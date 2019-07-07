@@ -6,8 +6,9 @@ import numpy as np
 import pytest
 from numpy.random import random
 from numpy.testing import (
-        assert_array_almost_equal, assert_array_equal, assert_raises,
+        assert_array_almost_equal, assert_array_equal
         )
+from pytest import raises as assert_raises
 import scipy.fft as fft
 
 def fft1(x):
