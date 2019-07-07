@@ -84,7 +84,7 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 
 #. Again rename the file ``anaconda3/lib/libgfortran.so`` to ``anaconda3/lib/libgfortran.so_backup``. This file provides an incorrect Fortran complier; renaming it forces the system to find the Fortran compiler included with ``gcc`` instead. *Note: this needs to be repeated whenever you create a new virtual environment in which you want to build SciPy.*
 
-#. Enter ``conda install cython numpy matplotlib pytest spyder``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
+#. Enter ``conda install cython numpy matplotlib pytest spyder pybind11``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
 
 #. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the full path of the SciPy root directory. |br| This instructs ``conda`` to add the root SciPy directory to the |PYTHONPATH|_ environment variable whenever our ``scipydev`` virtual environment is activated. That way, when we ``import`` SciPy code, the code is imported from our development version of SciPy.
 
