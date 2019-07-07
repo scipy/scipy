@@ -349,7 +349,7 @@ class TestUtilities(object):
 
         # Check that there are not too many invalid simplices
         bad_count = np.isnan(tri.transform[:,0,0]).sum()
-        assert_(bad_count < 21, bad_count)
+        assert_(bad_count < 23, bad_count)
 
         # Check the transforms
         self._check_barycentric_transforms(tri)
@@ -837,31 +837,31 @@ class TestVoronoi:
         5 10 1
         -10.101 -10.101
            0.5    0.5
-           1.5    0.5
            0.5    1.5
+           1.5    0.5
            1.5    1.5
         2 0 1
-        3 3 0 1
-        2 0 3
         3 2 0 1
-        4 4 3 1 2
-        3 4 0 3
         2 0 2
+        3 3 0 1
+        4 1 2 4 3
         3 4 0 2
+        2 0 3
+        3 4 0 3
         2 0 4
         0
         12
         4 0 3 0 1
         4 0 1 0 1
-        4 1 4 1 3
-        4 1 2 0 3
-        4 2 5 0 3
-        4 3 4 1 2
-        4 3 6 0 2
-        4 4 5 3 4
-        4 4 7 2 4
+        4 1 4 1 2
+        4 1 2 0 2
+        4 2 5 0 2
+        4 3 4 1 3
+        4 3 6 0 3
+        4 4 5 2 4
+        4 4 7 3 4
         4 5 8 0 4
-        4 6 7 0 2
+        4 6 7 0 3
         4 7 8 0 4
         """
         self._compare_qvoronoi(points, output)
@@ -935,15 +935,15 @@ class TestVoronoi:
         -10.101 -10.101
         0.6000000000000001    0.5
            0.5 0.6000000000000001
-        3 0 1 2
+        3 0 2 1
         2 0 1
         2 0 2
         0
-        3 0 1 2
+        3 0 2 1
         5
         4 0 2 0 2
-        4 0 1 0 1
         4 0 4 1 2
+        4 0 1 0 1
         4 1 4 0 1
         4 2 4 0 2
         """
@@ -1042,11 +1042,11 @@ class Test_HalfspaceIntersection(object):
                                [0.0, 1.0, -1.0]])
         feasible_point = np.array([0.5, 0.5])
 
-        points = np.array([[0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]])
+        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
 
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 
-        assert_allclose(points, hull.intersections)
+        assert_allclose(hull.intersections, points)
 
     def test_self_dual_polytope_intersection(self):
         fname = os.path.join(os.path.dirname(__file__), 'data',
