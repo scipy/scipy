@@ -471,7 +471,8 @@ def setup_package():
         build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
-    build_requires += ['pybind11>=2.2.4']
+    install_requires = build_requires
+    setup_requires = build_requires + ['pybind11>=2.2.4']
 
     metadata = dict(
         name='scipy',
@@ -491,8 +492,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=build_requires,
-        install_requires=build_requires,
+        setup_requires=setup_requires,
+        install_requires=install_requires,
         python_requires='>=3.5',
     )
 
