@@ -2559,35 +2559,35 @@ class Voronoi(_QhullUser):
     The Voronoi vertices:
 
     >>> vor.vertices
-    array([[ 0.5,  0.5],
-           [ 1.5,  0.5],
-           [ 0.5,  1.5],
-           [ 1.5,  1.5]])
+    array([[0.5, 0.5],
+           [0.5, 1.5],
+           [1.5, 0.5],
+           [1.5, 1.5]])
 
     There is a single finite Voronoi region, and four finite Voronoi
     ridges:
 
     >>> vor.regions
-    [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [3, 2, 0, 1], [2, -1, 0], [3, -1, 1]]
+    [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [0, 1, 3, 2], [2, -1, 0], [3, -1, 1]]
     >>> vor.ridge_vertices
-    [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [0, 2], [1, 3]]
+    [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [1, 3], [0, 2]]
 
     The ridges are perpendicular between lines drawn between the following
     input points:
 
     >>> vor.ridge_points
-    array([[0, 1],
-           [0, 3],
-           [6, 3],
-           [6, 7],
-           [3, 4],
-           [5, 8],
-           [5, 2],
-           [5, 4],
-           [8, 7],
+    array([[0, 3],
+           [0, 1],
+           [2, 5],
            [2, 1],
-           [4, 1],
-           [4, 7]], dtype=int32)
+           [1, 4],
+           [7, 8],
+           [7, 6],
+           [7, 4],
+           [8, 5],
+           [6, 3],
+           [4, 5],
+           [4, 3]], dtype=int32)
 
     """
     def __init__(self, points, furthest_site=False, incremental=False,
