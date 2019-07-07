@@ -162,9 +162,6 @@ cdef extern from "qhull_src/src/libqhull_r.h":
     setT *qh_pointvertex(qhT *) nogil
     realT *qh_readpoints(qhT *, int* num, int *dim, boolT* ismalloc) nogil
     void qh_zero(qhT *, void *errfile) nogil
-    int qh_new_qhull(qhT *, int dim, int numpoints, realT *points,
-                     boolT ismalloc, char* qhull_cmd, void *outfile,
-                     void *errfile, coordT* feaspoint) nogil
     int qh_pointid(qhT *, pointT *point) nogil
     vertexT *qh_nearvertex(qhT *, facetT *facet, pointT *point, double *dist) nogil
     boolT qh_addpoint(qhT *, pointT *furthest, facetT *facet, boolT checkdist) nogil
@@ -172,6 +169,11 @@ cdef extern from "qhull_src/src/libqhull_r.h":
                              realT *bestdist, boolT *isoutside) nogil
     void qh_setdelaunay(qhT *, int dim, int count, pointT *points) nogil
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
+
+cdef extern from "qhull_misc.h":
+    int qh_new_qhull_scipy(qhT *, int dim, int numpoints, realT *points,
+                           boolT ismalloc, char* qhull_cmd, void *outfile,
+                           void *errfile, coordT* feaspoint) nogil
 
 cdef extern from "qhull_src/src/io_r.h":
     ctypedef enum qh_RIDGE:
@@ -343,9 +345,9 @@ cdef class _Qhull:
                 coord = <coordT*>interior_point.data
             else:
                 coord = NULL
-            exitcode = qh_new_qhull(self._qh, self.ndim, self.numpoints,
-                                    <realT*>points.data, 0,
-                                    options_c, NULL, self._messages.handle, coord)
+            exitcode = qh_new_qhull_scipy(self._qh, self.ndim, self.numpoints,
+                                          <realT*>points.data, 0,
+                                          options_c, NULL, self._messages.handle, coord)
 
         if exitcode != 0:
             msg = self._messages.get()
