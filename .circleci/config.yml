@@ -35,8 +35,6 @@ jobs:
             sudo apt-get update
             sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
 
-      # Sphinx 2.1.0+ is stricter about warnings, so until we fix all of those, use 2.0.1
-      # so that we can keep nitpicky (-n) + warnings-as-errors (-W) modes
       - run:
           name: setup Python venv
           command: |
@@ -44,7 +42,7 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib "Sphinx<2.1"
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
             pip install pybind11
 
       - run:
