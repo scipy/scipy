@@ -3258,12 +3258,24 @@ def test_ncx2_tails_pdf():
     assert_(np.isneginf(logval).all())
 
 
-def test_ncx2_zero_nc():
+@pytest.mark.parametrize('method, expected', [
+    ('cdf', np.array([1.72115630e-04, 2.74102033e-05])),
+    ('pdf', np.array([0.00078975, 0.00013013])),
+    ('logpdf', np.array([-7.14378973, -8.94700192]))
+])
+def test_ncx2_zero_nc(method, expected):
     # gh-5441
     # ncx2 with nc=0 is identical to chi2
-    result = stats.ncx2.cdf(1, nc=0, df=10)
-    expected = stats.chi2.cdf(1, df=10)
-    assert_equal(result, expected)
+    result = getattr(stats.ncx2, method)(1, nc=[0, 4], df=10)
+    assert_allclose(result, expected, rtol=1e-3, atol=0)
+
+
+def test_ncx2_zero_nc_rvs():
+    # gh-5441
+    # ncx2 with nc=0 is identical to chi2
+    result = stats.ncx2.rvs(df=10, nc=[0,4], random_state=1)
+    expected = np.array([18.25726558,  8.24331569])
+    assert_allclose(result, expected, rtol=1e-3, atol=0)
 
 
 def test_foldnorm_zero():
