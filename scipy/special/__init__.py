@@ -6,8 +6,7 @@ Special functions (:mod:`scipy.special`)
 .. currentmodule:: scipy.special
 
 Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules. Exceptions are
-noted.
+broadcasting and automatic array-looping rules.
 
 .. seealso::
 
@@ -43,8 +42,8 @@ Airy functions
 
    airy     -- Airy functions and their derivatives.
    airye    -- Exponentially scaled Airy functions and their derivatives.
-   ai_zeros -- [+]Compute `nt` zeros and values of the Airy function Ai and its derivative.
-   bi_zeros -- [+]Compute `nt` zeros and values of the Airy function Bi and its derivative.
+   ai_zeros -- Compute `nt` zeros and values of the Airy function Ai and its derivative.
+   bi_zeros -- Compute `nt` zeros and values of the Airy function Bi and its derivative.
    itairy   -- Integrals of Airy functions
 
 
@@ -87,7 +86,7 @@ The following is not an universal function:
 .. autosummary::
    :toctree: generated/
 
-   lmbda -- [+]Jahnke-Emden Lambda function, Lambdav(x).
+   lmbda -- Jahnke-Emden Lambda function, Lambdav(x).
 
 Zeros of Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -97,15 +96,15 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   jnjnp_zeros -- [+]Compute zeros of integer-order Bessel functions Jn and Jn'.
-   jnyn_zeros  -- [+]Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
-   jn_zeros    -- [+]Compute zeros of integer-order Bessel function Jn(x).
-   jnp_zeros   -- [+]Compute zeros of integer-order Bessel function derivative Jn'(x).
-   yn_zeros    -- [+]Compute zeros of integer-order Bessel function Yn(x).
-   ynp_zeros   -- [+]Compute zeros of integer-order Bessel function derivative Yn'(x).
-   y0_zeros    -- [+]Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
-   y1_zeros    -- [+]Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
-   y1p_zeros   -- [+]Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
+   jnjnp_zeros -- Compute zeros of integer-order Bessel functions Jn and Jn'.
+   jnyn_zeros  -- Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
+   jn_zeros    -- Compute zeros of integer-order Bessel function Jn(x).
+   jnp_zeros   -- Compute zeros of integer-order Bessel function derivative Jn'(x).
+   yn_zeros    -- Compute zeros of integer-order Bessel function Yn(x).
+   ynp_zeros   -- Compute zeros of integer-order Bessel function derivative Yn'(x).
+   y0_zeros    -- Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
+   y1_zeros    -- Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
+   y1p_zeros   -- Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
 
 Faster versions of common Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -136,7 +135,7 @@ Integrals of Bessel Functions
    it2j0y0    -- Integrals related to Bessel functions of order 0
    iti0k0     -- Integrals of modified Bessel functions of order 0
    it2i0k0    -- Integrals related to modified Bessel functions of order 0
-   besselpoly -- [+]Weighted integral of a Bessel function.
+   besselpoly -- Weighted integral of a Bessel function.
 
 Derivatives of Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -170,8 +169,8 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   riccati_jn -- [+]Compute Ricatti-Bessel function of the first kind and its derivative.
-   riccati_yn -- [+]Compute Ricatti-Bessel function of the second kind and its derivative.
+   riccati_jn -- Compute Ricatti-Bessel function of the first kind and its derivative.
+   riccati_yn -- Compute Ricatti-Bessel function of the second kind and its derivative.
 
 Struve Functions
 ----------------
@@ -323,9 +322,9 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   erf_zeros      -- [+]Compute nt complex zeros of error function erf(z).
-   fresnelc_zeros -- [+]Compute nt complex zeros of cosine Fresnel integral C(z).
-   fresnels_zeros -- [+]Compute nt complex zeros of sine Fresnel integral S(z).
+   erf_zeros      -- Compute nt complex zeros of error function erf(z).
+   fresnelc_zeros -- Compute nt complex zeros of cosine Fresnel integral C(z).
+   fresnels_zeros -- Compute nt complex zeros of sine Fresnel integral S(z).
 
 Legendre Functions
 ------------------
@@ -341,11 +340,11 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- [+]Associated Legendre function of the first kind for complex arguments.
-   lpn   -- [+]Legendre function of the first kind.
-   lqn   -- [+]Legendre function of the second kind.
-   lpmn  -- [+]Sequence of associated Legendre functions of the first kind.
-   lqmn  -- [+]Sequence of associated Legendre functions of the second kind.
+   clpmn -- Associated Legendre function of the first kind for complex arguments.
+   lpn   -- Legendre function of the first kind.
+   lqn   -- Legendre function of the second kind.
+   lpmn  -- Sequence of associated Legendre functions of the first kind.
+   lqmn  -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal Harmonics
 ---------------------
@@ -416,21 +415,21 @@ arithmetic, and lose information of the original orthogonal polynomial.
 .. autosummary::
    :toctree: generated/
 
-   legendre    -- [+]Legendre polynomial.
-   chebyt      -- [+]Chebyshev polynomial of the first kind.
-   chebyu      -- [+]Chebyshev polynomial of the second kind.
-   chebyc      -- [+]Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
-   chebys      -- [+]Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
-   jacobi      -- [+]Jacobi polynomial.
-   laguerre    -- [+]Laguerre polynomial.
-   genlaguerre -- [+]Generalized (associated) Laguerre polynomial.
-   hermite     -- [+]Physicist's Hermite polynomial.
-   hermitenorm -- [+]Normalized (probabilist's) Hermite polynomial.
-   gegenbauer  -- [+]Gegenbauer (ultraspherical) polynomial.
-   sh_legendre -- [+]Shifted Legendre polynomial.
-   sh_chebyt   -- [+]Shifted Chebyshev polynomial of the first kind.
-   sh_chebyu   -- [+]Shifted Chebyshev polynomial of the second kind.
-   sh_jacobi   -- [+]Shifted Jacobi polynomial.
+   legendre    -- Legendre polynomial.
+   chebyt      -- Chebyshev polynomial of the first kind.
+   chebyu      -- Chebyshev polynomial of the second kind.
+   chebyc      -- Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
+   chebys      -- Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
+   jacobi      -- Jacobi polynomial.
+   laguerre    -- Laguerre polynomial.
+   genlaguerre -- Generalized (associated) Laguerre polynomial.
+   hermite     -- Physicist's Hermite polynomial.
+   hermitenorm -- Normalized (probabilist's) Hermite polynomial.
+   gegenbauer  -- Gegenbauer (ultraspherical) polynomial.
+   sh_legendre -- Shifted Legendre polynomial.
+   sh_chebyt   -- Shifted Chebyshev polynomial of the first kind.
+   sh_chebyu   -- Shifted Chebyshev polynomial of the second kind.
+   sh_jacobi   -- Shifted Jacobi polynomial.
 
 .. warning::
 
@@ -466,9 +465,9 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   pbdv_seq -- [+]Parabolic cylinder functions Dv(x) and derivatives.
-   pbvv_seq -- [+]Parabolic cylinder functions Vv(x) and derivatives.
-   pbdn_seq -- [+]Parabolic cylinder functions Dn(z) and derivatives.
+   pbdv_seq -- Parabolic cylinder functions Dv(x) and derivatives.
+   pbvv_seq -- Parabolic cylinder functions Vv(x) and derivatives.
+   pbdn_seq -- Parabolic cylinder functions Dn(z) and derivatives.
 
 Mathieu and Related Functions
 -----------------------------
@@ -484,8 +483,8 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   mathieu_even_coef -- [+]Fourier coefficients for even Mathieu and modified Mathieu functions.
-   mathieu_odd_coef  -- [+]Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 
@@ -535,7 +534,7 @@ Kelvin Functions
    :toctree: generated/
 
    kelvin       -- Kelvin functions as complex numbers
-   kelvin_zeros -- [+]Compute nt zeros of all Kelvin functions.
+   kelvin_zeros -- Compute nt zeros of all Kelvin functions.
    ber          -- Kelvin function ber.
    bei          -- Kelvin function bei
    berp         -- Derivative of the Kelvin function `ber`
@@ -550,14 +549,14 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   ber_zeros  -- [+]Compute nt zeros of the Kelvin function ber(x).
-   bei_zeros  -- [+]Compute nt zeros of the Kelvin function bei(x).
-   berp_zeros -- [+]Compute nt zeros of the Kelvin function ber'(x).
-   beip_zeros -- [+]Compute nt zeros of the Kelvin function bei'(x).
-   ker_zeros  -- [+]Compute nt zeros of the Kelvin function ker(x).
-   kei_zeros  -- [+]Compute nt zeros of the Kelvin function kei(x).
-   kerp_zeros -- [+]Compute nt zeros of the Kelvin function ker'(x).
-   keip_zeros -- [+]Compute nt zeros of the Kelvin function kei'(x).
+   ber_zeros  -- Compute nt zeros of the Kelvin function ber(x).
+   bei_zeros  -- Compute nt zeros of the Kelvin function bei(x).
+   berp_zeros -- Compute nt zeros of the Kelvin function ber'(x).
+   beip_zeros -- Compute nt zeros of the Kelvin function bei'(x).
+   ker_zeros  -- Compute nt zeros of the Kelvin function ker(x).
+   kei_zeros  -- Compute nt zeros of the Kelvin function kei(x).
+   kerp_zeros -- Compute nt zeros of the Kelvin function ker'(x).
+   keip_zeros -- Compute nt zeros of the Kelvin function kei'(x).
 
 Combinatorics
 -------------
@@ -565,8 +564,8 @@ Combinatorics
 .. autosummary::
    :toctree: generated/
 
-   comb -- [+]The number of combinations of N things taken k at a time.
-   perm -- [+]Permutations of N things taken k at a time, i.e., k-permutations of N.
+   comb -- The number of combinations of N things taken k at a time.
+   perm -- Permutations of N things taken k at a time, i.e., k-permutations of N.
 
 Lambert W and Related Functions
 -------------------------------
@@ -593,7 +592,7 @@ Other Special Functions
    expi       -- Exponential integral Ei
    factorial  -- The factorial of a number or array of numbers.
    factorial2 -- Double factorial.
-   factorialk -- [+]Multifactorial of n of order k, n(!!...!).
+   factorialk -- Multifactorial of n of order k, n(!!...!).
    shichi     -- Hyperbolic sine and cosine integrals.
    sici       -- Sine and cosine integrals.
    softmax    -- Softmax function.
@@ -624,10 +623,6 @@ Convenience Functions
    logsumexp -- Compute the log of the sum of exponentials of input elements.
    exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc      -- Return the sinc function.
-
-.. [+] in the description indicates a function which is not a universal
-.. function and does not follow broadcasting and automatic
-.. array-looping rules.
 
 """
 
