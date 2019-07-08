@@ -334,7 +334,6 @@ Constrained multivariate methods:
    fmin_tnc - Truncated Newton code.
    fmin_cobyla - Constrained optimization by linear approximation.
    fmin_slsqp - Minimization using sequential least-squares programming.
-   differential_evolution - stochastic minimization using differential evolution.
 
 Univariate (scalar) minimization methods:
 
