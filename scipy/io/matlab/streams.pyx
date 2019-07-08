@@ -46,7 +46,9 @@ if HAS_PYCCSTRINGIO:
     PycString_IMPORT
 
 
-DEF BLOCK_SIZE = 131072
+DEF _BLOCK_SIZE = 131072
+
+BLOCK_SIZE = _BLOCK_SIZE  # public
 
 cdef class GenericStream:
 
@@ -63,17 +65,20 @@ cdef class GenericStream:
     def read(self, n_bytes):
         return self.fobj.read(n_bytes)
 
+    cpdef int all_data_read(self) except *:
+        return 1
+
     cdef int read_into(self, void *buf, size_t n) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`
         """
         cdef char *p
         cdef size_t read_size, count
 
-        # Read data to buf in BLOCK_SIZE blocks
+        # Read data to buf in _BLOCK_SIZE blocks
         count = 0
         p = <char*>buf
         while count < n:
-            read_size = min(n - count, BLOCK_SIZE)
+            read_size = min(n - count, _BLOCK_SIZE)
             data = self.fobj.read(read_size)
             read_size = len(data)
             if read_size == 0:
@@ -146,7 +151,7 @@ cdef class ZlibInputStream(GenericStream):
         if self._buffer_position < self._buffer_size:
             return
 
-        read_size = min(BLOCK_SIZE, self._max_length - self._read_bytes)
+        read_size = min(_BLOCK_SIZE, self._max_length - self._read_bytes)
 
         block = self.fobj.read(read_size)
         self._read_bytes += len(block)
@@ -199,7 +204,10 @@ cdef class ZlibInputStream(GenericStream):
         cdef void *p
         return self.read_string(n_bytes, &p)
 
-    cpdef int all_data_read(self):
+    cpdef int all_data_read(self) except *:
+        if self._read_bytes < self._max_length:
+            # we might still have checksum bytes to read
+            self._fill_buffer()
         return (self._max_length == self._read_bytes) and \
                (self._buffer_size == self._buffer_position)
 
