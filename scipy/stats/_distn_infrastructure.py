@@ -983,19 +983,13 @@ class rv_generic(object):
         if rndm is not None:
             self._random_state = random_state_saved
 
-        # Cast to numpy.int64(vals is overflow) or int if discrete
+        # Cast to integer if discrete (careful w/ int32 overflow)
         if discrete:
-            if np.isscalar(vals):
-                if vals > np.iinfo(np.int32).max:
-                    dtype = np.int64
-                else:
-                    dtype = int
+            dtyp = np.int64 if np.any(vals > np.iinfo(np.int32).max) else int
+            if size == ():
+                vals = dtyp(vals)
             else:
-                if vals[np.where(vals > np.iinfo(np.int32).max)].size:
-                    dtype = np.int64
-                else:
-                    dtype = int
-            vals = vals.astype(dtype)
+                vals = vals.astype(dtyp)
 
         return vals
 
