@@ -4357,7 +4357,7 @@ Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True):
-    """
+    r"""
     T-test for means of two independent samples from descriptive statistics.
 
     This is a two-sided test for the null hypothesis that two independent
