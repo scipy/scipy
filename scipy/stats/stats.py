@@ -4433,12 +4433,12 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
 
     Suppose we instead have binary data and would like to apply a t-test to
-    compare the proportion of 1s in two independent groups:
+    compare the proportion of 1s in two independent groups::
 
-                     Number of   Sample      Sample
-               Size    ones       Mean      Variance
-    Sample 1   150      30        0.2         0.16
-    Sample 2   200      45        0.225       0.174375
+                          Number of    Sample     Sample
+                    Size    ones        Mean     Variance
+        Sample 1    150      30         0.2        0.16
+        Sample 2    200      45         0.225      0.174375
 
     The sample mean $\hat{p}$ is the proportion of ones in the sample and the
     variance for a binary observation is estimated by $\hat{p}(1-\hat{p})$.
