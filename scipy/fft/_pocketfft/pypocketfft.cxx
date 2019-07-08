@@ -54,7 +54,7 @@ stride_t copy_strides(const py::array &arr)
 
 shape_t makeaxes(const py::array &in, const py::object &axes)
   {
-  if (axes.is(None))
+  if (axes.is_none())
     {
     shape_t res(size_t(in.ndim()));
     for (size_t i=0; i<res.size(); ++i)
@@ -104,7 +104,7 @@ template<typename T> T norm_fct(int inorm, const shape_t &shape,
 template<typename T> py::array_t<T> prepare_output(py::object &out_,
   shape_t &dims)
   {
-  if (out_.is(None)) return py::array_t<T>(dims);
+  if (out_.is_none()) return py::array_t<T>(dims);
   auto tmp = out_.cast<py::array_t<T>>();
   if (!tmp.is(out_)) // a new object was created during casting
     throw runtime_error("unexpected data type for output array");
