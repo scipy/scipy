@@ -2,11 +2,12 @@ from __future__ import division, absolute_import, print_function
 
 import queue
 import threading
+import multiprocessing
 import numpy as np
 import pytest
 from numpy.random import random
 from numpy.testing import (
-        assert_array_almost_equal, assert_array_equal
+        assert_array_almost_equal, assert_array_equal, assert_allclose
         )
 from pytest import raises as assert_raises
 import scipy.fft as fft
@@ -250,6 +251,17 @@ class TestFFTThreadSafe(object):
     def test_irfft(self):
         a = np.ones(self.input_shape) * 1+0j
         self._test_mtsame(fft.irfft, a)
+
+
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
+def test_multiprocess(func):
+    # Test that fft still works after fork (gh-10422)
+    with multiprocessing.Pool(2) as p:
+        res = p.map(func, [np.ones(100) for _ in range(4)])
+
+    expect = func(np.ones(100))
+    for x in res:
+        assert_allclose(x, expect)
 
 
 class TestIRFFTN(object):

@@ -28,12 +28,12 @@ namespace py = pybind11;
 using ldbl_t = typename std::conditional<
   sizeof(long double)==sizeof(double), double, long double>::type;
 
-auto c64 = py::dtype("complex64");
-auto c128 = py::dtype("complex128");
-auto clong = py::dtype("longcomplex");
-auto f32 = py::dtype("float32");
-auto f64 = py::dtype("float64");
-auto flong = py::dtype("longfloat");
+using c64 = std::complex<float>;
+using c128 = std::complex<double>;
+using clong = std::complex<ldbl_t>;
+using f32 = float;
+using f64 = double;
+using flong = ldbl_t;
 auto None = py::none();
 
 shape_t copy_shape(const py::array &arr)
@@ -54,7 +54,7 @@ stride_t copy_strides(const py::array &arr)
 
 shape_t makeaxes(const py::array &in, const py::object &axes)
   {
-  if (axes.is(None))
+  if (axes.is_none())
     {
     shape_t res(size_t(in.ndim()));
     for (size_t i=0; i<res.size(); ++i)
@@ -77,10 +77,9 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
 
 #define DISPATCH(arr, T1, T2, T3, func, args) \
   { \
-  auto dtype = arr.dtype(); \
-  if (dtype.is(T1)) return func<double> args; \
-  if (dtype.is(T2)) return func<float> args; \
-  if (dtype.is(T3)) return func<ldbl_t> args; \
+  if (py::isinstance<py::array_t<T1>>(arr)) return func<double> args; \
+  if (py::isinstance<py::array_t<T2>>(arr)) return func<float> args;  \
+  if (py::isinstance<py::array_t<T3>>(arr)) return func<ldbl_t> args; \
   throw runtime_error("unsupported data type"); \
   }
 
@@ -105,7 +104,7 @@ template<typename T> T norm_fct(int inorm, const shape_t &shape,
 template<typename T> py::array_t<T> prepare_output(py::object &out_,
   shape_t &dims)
   {
-  if (out_.is(None)) return py::array_t<T>(dims);
+  if (out_.is_none()) return py::array_t<T>(dims);
   auto tmp = out_.cast<py::array_t<T>>();
   if (!tmp.is(out_)) // a new object was created during casting
     throw runtime_error("unexpected data type for output array");
