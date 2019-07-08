@@ -392,6 +392,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
     spectrum.
+
     Parameters
     ----------
     x : array_like
@@ -461,6 +462,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the inverse FFT of a signal that has Hermitian symmetry.
+
     Parameters
     ----------
     x : array_like

@@ -23,6 +23,12 @@ Fast Fourier Transforms (FFTs)
    irfft2 - Inverse of rfft2
    rfftn - n-dimensional FFT of real sequence
    irfftn - Inverse of rfftn
+   hfft - FFT of a Hermitian sequence (real spectrum)
+   ihfft - Inverse of hfft
+   hfft2 - Two dimensional FFT of a Hermitian sequence
+   ihfft2 - Inverse of hfft2
+   hfftn - n-dimensional FFT of a Hermitian sequence
+   ihfftn - Inverse of hfftn
 
 Discrete Sin and Cosine Transforms (DST and DCT)
 ================================================
