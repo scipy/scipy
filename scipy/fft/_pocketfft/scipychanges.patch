@@ -1,5 +1,5 @@
 diff --git a/scipy/fft/_pocketfft/pypocketfft.cxx b/scipy/fft/_pocketfft/pypocketfft.cxx
-index cf2a4246c..11b668583 100644
+index cf2a4246c..ab7172fbc 100644
 --- a/scipy/fft/_pocketfft/pypocketfft.cxx
 +++ b/scipy/fft/_pocketfft/pypocketfft.cxx
 @@ -28,12 +28,12 @@ namespace py = pybind11;
@@ -21,10 +21,11 @@ index cf2a4246c..11b668583 100644
  auto None = py::none();
 
  shape_t copy_shape(const py::array &arr)
-@@ -78,9 +78,9 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
+@@ -77,10 +77,9 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
+
  #define DISPATCH(arr, T1, T2, T3, func, args) \
    { \
-   auto dtype = arr.dtype(); \
+-  auto dtype = arr.dtype(); \
 -  if (dtype.is(T1)) return func<double> args; \
 -  if (dtype.is(T2)) return func<float> args; \
 -  if (dtype.is(T3)) return func<ldbl_t> args; \

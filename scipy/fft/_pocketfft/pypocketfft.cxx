@@ -77,7 +77,6 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
 
 #define DISPATCH(arr, T1, T2, T3, func, args) \
   { \
-  auto dtype = arr.dtype(); \
   if (py::isinstance<py::array_t<T1>>(arr)) return func<double> args; \
   if (py::isinstance<py::array_t<T2>>(arr)) return func<float> args;  \
   if (py::isinstance<py::array_t<T3>>(arr)) return func<ldbl_t> args; \
