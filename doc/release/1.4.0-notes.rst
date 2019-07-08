@@ -82,6 +82,11 @@ Support for NumPy functions exposed via the root SciPy namespace is deprecated
 and will be removed in 2.0.0. For example, if you use ``scipy.rand`` or
 ``scipy.diag``, you should change your code to directly use
 :func:`numpy.random.rand` or :func:`numpy.diag`, respectively.
+They remain available in the currently continuing Scipy 1.x release series.
+
+The exception to this rule is using ``scipy.fft`` as a function --
+:mod:`scipy.fft` is now meant to be used only as a module, so the ability to
+call ``scipy.fft(...)`` will be removed in SciPy 1.5.0.
 
 Backwards incompatible changes
 ==============================

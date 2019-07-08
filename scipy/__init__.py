@@ -72,31 +72,30 @@ import numpy as _num
 linalg = None
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.{0} instead')
-for _key in dir(_num):
-    if not _key.startswith('_'):
-        _fun = getattr(_num, _key)
-        if callable(_fun):
-            _fun = _deprecated(_msg.format(_key))(_fun)
-        globals()[_key] = _fun
+for _key in _num.__all__:
+    _fun = getattr(_num, _key)
+    if callable(_fun):
+        _fun = _deprecated(_msg.format(_key))(_fun)
+    globals()[_key] = _fun
 from numpy.random import rand, randn
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.random.{0} instead')
 rand = _deprecated(_msg.format('rand'))(rand)
 randn = _deprecated(_msg.format('randn'))(randn)
 from numpy.fft import fft, ifft
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.fft.{0} instead')
-fft = _deprecated(_msg.format('fft'))(fft)
-ifft = _deprecated(_msg.format('ifft'))(ifft)
+# fft is especially problematic, so we deprecate it with a shorter window
+fft = _deprecated('Using scipy.fft as a function is deprecated and will be '
+                  'removed in SciPy 1.5.0, use scipy.fft.fft instead.')(fft)
+ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
+                   '2.0.0, use scipy.fft.ifft instead')(ifft)
 import numpy.lib.scimath as _sci
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.lib.scimath.{0} instead')
-for _key in dir(_sci):
-    if not _key.startswith('_'):
-        _fun = getattr(_sci, _key)
-        if callable(_fun):
-            _fun = _deprecated(_msg.format(_key))(_fun)
-        globals()[_key] = _fun
+for _key in _sci.__all__:
+    _fun = getattr(_sci, _key)
+    if callable(_fun):
+        _fun = _deprecated(_msg.format(_key))(_fun)
+    globals()[_key] = _fun
 
 # Allow distributors to run custom init code
 from . import _distributor_init

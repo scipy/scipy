@@ -129,7 +129,11 @@ def test_numpy_deprecation(key):
     else:
         arg = 2
     func = getattr(scipy, key)
-    with deprecated_call(match=r'scipy\.%s is deprecated.*2\.0\.0' % key):
+    if key == 'fft':
+        match = r'scipy\.fft.*deprecated.*1.5.0.*'
+    else:
+        match = r'scipy\.%s is deprecated.*2\.0\.0' % key
+    with deprecated_call(match=match):
         func(arg)  # deprecated
     if key in ('rand', 'randn'):
         root = np.random
