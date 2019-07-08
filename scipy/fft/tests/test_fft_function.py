@@ -19,13 +19,18 @@ def test_fft_function():
 
     # Callable after scipy.fft is imported
     import scipy.fft
-    with pytest.warns(None):
-        y = scipy.ifft(scipy.fft(x))
+    assert_allclose(X, scipy.fft.fft(x))
+    with pytest.deprecated_call(match=r'1\.5\.0'):
+        X = scipy.fft(x)
+    assert_allclose(X, scipy.fft.fft(x))
+    with pytest.deprecated_call(match=r'2\.0\.0'):
+        y = scipy.ifft(X)
     assert_allclose(y, x)
-    assert_allclose(scipy.fft(x), scipy.fft.fft(x))
 
-    # Callable when imported as
+    # Callable when imported using from
     from scipy import fft
-    with pytest.warns(None):
-        y = scipy.ifft(fft(x))
+    with pytest.deprecated_call(match=r'1\.5\.0'):
+        X = fft(x)
+    with pytest.deprecated_call(match=r'2\.0\.0'):
+        y = scipy.ifft(X)
     assert_allclose(y, x)

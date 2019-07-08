@@ -109,8 +109,8 @@ import sys
 class _FFTModule(sys.modules[__name__].__class__):
     @staticmethod
     def __call__(*args, **kwargs):
-        import numpy as np
-        return np.fft.fft(*args, **kwargs)
+        from scipy import _dep_fft
+        return _dep_fft(*args, **kwargs)
 
 
 import os

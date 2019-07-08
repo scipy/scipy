@@ -86,6 +86,7 @@ from numpy.fft import fft, ifft
 # fft is especially problematic, so we deprecate it with a shorter window
 fft = _deprecated('Using scipy.fft as a function is deprecated and will be '
                   'removed in SciPy 1.5.0, use scipy.fft.fft instead.')(fft)
+_dep_fft = fft  # for wrapping in scipy.fft.__call__
 ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
                    '2.0.0, use scipy.fft.ifft instead')(ifft)
 import numpy.lib.scimath as _sci
