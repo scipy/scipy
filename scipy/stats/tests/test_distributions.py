@@ -3259,23 +3259,29 @@ def test_ncx2_tails_pdf():
 
 
 @pytest.mark.parametrize('method, expected', [
-    ('cdf', np.array([1.72115630e-04, 2.74102033e-05])),
-    ('pdf', np.array([0.00078975, 0.00013013])),
-    ('logpdf', np.array([-7.14378973, -8.94700192]))
+    ('cdf', np.array([2.497951336e-09, 3.437288941e-10])),
+    ('pdf', np.array([1.238579980e-07, 1.710041145e-08])),
+    ('logpdf', np.array([-15.90413011, -17.88416331]))
 ])
 def test_ncx2_zero_nc(method, expected):
     # gh-5441
     # ncx2 with nc=0 is identical to chi2
-    result = getattr(stats.ncx2, method)(1, nc=[0, 4], df=10)
-    assert_allclose(result, expected, rtol=1e-3, atol=0)
+    # Comparison to R (v3.5.1)
+    # > options(digits=10)
+    # > pchisq(0.1, df=10, ncp=c(0,4))
+    # > dchisq(0.1, df=10, ncp=c(0,4))
+    # > dchisq(0.1, df=10, ncp=c(0,4), log=TRUE)
+
+    result = getattr(stats.ncx2, method)(0.1, nc=[0, 4], df=10)
+    assert_allclose(result, expected, atol=1e-15)
 
 
 def test_ncx2_zero_nc_rvs():
     # gh-5441
     # ncx2 with nc=0 is identical to chi2
-    result = stats.ncx2.rvs(df=10, nc=[0,4], random_state=1)
-    expected = np.array([18.25726558,  8.24331569])
-    assert_allclose(result, expected, rtol=1e-3, atol=0)
+    result = stats.ncx2.rvs(df=10, nc=0, random_state=1)
+    expected = stats.chi2.rvs(df=10, random_state=1)
+    assert_allclose(result, expected, atol=1e-15)
 
 
 def test_foldnorm_zero():
