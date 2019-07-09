@@ -7,7 +7,6 @@ class _MockFunction:
         self.return_value = return_value
         self.last_args = ([], {})
 
-
     def __call__(self, *args, **kwargs):
         self.number_calls += 1
         self.last_args = (args, kwargs)

@@ -150,7 +150,6 @@ class FftBackends(Benchmark):
             self.fft = scipy.fft._pocketfft.fft
             self.ifft = scipy.fft._pocketfft.ifft
 
-
     def time_fft(self, size, cmplx, module):
         self.fft(self.x)
 

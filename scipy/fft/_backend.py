@@ -14,7 +14,6 @@ class _ScipyBackend:
     """
     __ua_domain__ = "scipy.fft"
 
-
     @staticmethod
     def __ua_function__(method, args, kwargs):
         fn = (getattr(_pocketfft, method.__name__, None)
@@ -37,7 +36,6 @@ def _backend_from_arg(backend):
             backend = _named_backends[backend]
         except KeyError:
             raise ValueError('Unknown backend {}'.format(backend))
-
 
     if backend.__ua_domain__ != 'scipy.fft':
         raise ValueError('Backend does not implement "scipy.fft"')
