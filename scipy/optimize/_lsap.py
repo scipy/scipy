@@ -102,4 +102,4 @@ def linear_sum_assignment(cost_matrix, maximize=False):
         return (b[indices], a[indices])
     else:
         b = _lsap_module.calculate_assignment(cost_matrix)
-        return (a, b)
+        return (a, b) 
