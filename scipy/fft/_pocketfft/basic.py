@@ -112,12 +112,12 @@ ifft = functools.partial(c2c, False)
 ifft.__name__ = 'ifft'
 
 
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def r2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Discrete Fourier transform of a real sequence.
     """
     tmp = _asfarray(x)
-    norm = _normalization(norm, True)
+    norm = _normalization(norm, forward)
 
     if not np.isrealobj(tmp):
         raise TypeError("x must be a real sequence")
@@ -129,15 +129,21 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
                          .format(tmp.shape[axis]))
 
     # Note: overwrite_x is not utilised
-    return pfft.r2c(tmp, (axis,), True, norm, None, _default_workers)
+    return pfft.r2c(tmp, (axis,), forward, norm, None, _default_workers)
 
 
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+rfft = functools.partial(r2c, True)
+rfft.__name__ = 'rfft'
+ihfft = functools.partial(r2c, False)
+ihfft.__name__ = 'ihfft'
+
+
+def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return inverse discrete Fourier transform of real sequence x.
     """
     tmp = _asfarray(x)
-    norm = _normalization(norm, False)
+    norm = _normalization(norm, forward)
 
     # TODO: Optimize for hermitian and real?
     if np.isrealobj(tmp):
@@ -153,7 +159,13 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         tmp, _ = _fix_shape_1d(tmp, (n//2) + 1, axis)
 
     # Note: overwrite_x is not utilised
-    return pfft.c2r(tmp, (axis,), n, False, norm, None, _default_workers)
+    return pfft.c2r(tmp, (axis,), n, forward, norm, None, _default_workers)
+
+
+hfft = functools.partial(c2r, True)
+hfft.__name__ = 'hfft'
+irfft = functools.partial(c2r, False)
+irfft.__name__ = 'irfft'
 
 
 def fft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
@@ -184,6 +196,20 @@ def irfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
     return irfftn(x, shape, axes, norm, overwrite_x)
 
 
+def hfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+    """
+    2-D discrete Fourier transform of a Hermitian sequence
+    """
+    return hfftn(x, shape, axes, norm, overwrite_x)
+
+
+def ihfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+    """
+    2-D discrete inverse Fourier transform of a Hermitian sequence
+    """
+    return ihfftn(x, shape, axes, norm, overwrite_x)
+
+
 def c2cn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional discrete Fourier transform.
@@ -210,7 +236,7 @@ fftn.__name__ = 'fftn'
 ifftn = functools.partial(c2cn, False)
 ifftn.__name__ = 'ifftn'
 
-def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
+def r2cn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Return multi-dimensional discrete Fourier transform of real input"""
     tmp = _asfarray(x)
 
@@ -219,15 +245,22 @@ def rfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
 
     shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     tmp, _ = _fix_shape(tmp, shape, axes)
-    norm = _normalization(norm, True)
+    norm = _normalization(norm, forward)
 
     if len(axes) == 0:
         raise ValueError("at least 1 axis must be transformed")
 
     # Note: overwrite_x is not utilised
-    return pfft.r2c(tmp, axes, True, norm, None, _default_workers)
+    return pfft.r2c(tmp, axes, forward, norm, None, _default_workers)
 
-def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
+
+rfftn = functools.partial(r2cn, True)
+rfftn.__name__ = 'rfftn'
+ihfftn = functools.partial(r2cn, False)
+ihfftn.__name__ = 'ihfftn'
+
+
+def c2rn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
     """Multi-dimensional inverse discrete fourier transform with real output"""
     tmp = _asfarray(x)
 
@@ -244,7 +277,7 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     if noshape:
         shape[-1] = (x.shape[axes[-1]] - 1) * 2
 
-    norm = _normalization(norm, False)
+    norm = _normalization(norm, forward)
 
     # Last axis utilises hermitian symmetry
     lastsize = shape[-1]
@@ -253,4 +286,10 @@ def irfftn(x, shape=None, axes=None, norm=None, overwrite_x=False):
     tmp, _ = _fix_shape(tmp, shape, axes)
 
     # Note: overwrite_x is not utilised
-    return pfft.c2r(tmp, axes, lastsize, False, norm, None, _default_workers)
+    return pfft.c2r(tmp, axes, lastsize, forward, norm, None, _default_workers)
+
+
+hfftn = functools.partial(c2rn, True)
+hfftn.__name__ = 'hfftn'
+irfftn = functools.partial(c2rn, False)
+irfftn.__name__ = 'irfftn'
