@@ -848,7 +848,7 @@ PyGetSetDef Function_getset[] =
 
 PyTypeObject FunctionType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  "uarray._Function",              /* tp_name */
+  "scipy._lib.uarray._Function",   /* tp_name */
   sizeof(Function),                /* tp_basicsize */
   0,                               /* tp_itemsize */
   (destructor)Function::dealloc,   /* tp_dealloc */
@@ -897,7 +897,7 @@ PyMethodDef SetBackendContext_Methods[] = {
 
 PyTypeObject SetBackendContextType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  "uarray._SetBackendContext",             /* tp_name */
+  "scipy._lib.uarray._SetBackendContext",  /* tp_name */
   sizeof(SetBackendContext),               /* tp_basicsize */
   0,                                       /* tp_itemsize */
   (destructor)SetBackendContext::dealloc,  /* tp_dealloc */
@@ -945,7 +945,7 @@ PyMethodDef SkipBackendContext_Methods[] = {
 
 PyTypeObject SkipBackendContextType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  "uarray._SkipBackendContext",             /* tp_name */
+  "scipy._lib.uarray._SkipBackendContext",  /* tp_name */
   sizeof(SkipBackendContext),               /* tp_basicsize */
   0,                                        /* tp_itemsize */
   (destructor)SkipBackendContext::dealloc,  /* tp_dealloc */
