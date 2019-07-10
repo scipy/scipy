@@ -1333,6 +1333,13 @@ class TestYeojohnson(object):
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
 
+    def test_integer_input_data(self):
+        x = np.arange(100)
+        y = np.arange(100).astype(np.float64)
+        xt, _ = stats.yeojohnson(x)
+        yt, _ = stats.yeojohnson(y)
+        assert_allclose(xt, yt, rtol=1e-12)
+
 
 class TestYeojohnsonNormmax(object):
     def setup_method(self):
