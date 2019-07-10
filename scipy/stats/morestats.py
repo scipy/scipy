@@ -1329,7 +1329,7 @@ def yeojohnson(x, lmbda=None):
 
     """
 
-    x = np.asarray(x)
+    x = np.asarray(x, dtype=np.float64)
     if x.size == 0:
         return x
 
