@@ -20,26 +20,26 @@ from scipy.spatial import cKDTree
 __all__ = ['SphericalVoronoi']
 
 
-def calc_circumcenters(tetrahedrons):
-    """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
+def calc_circumcenters(tets):
+    """ Calculates the cirumcenters of the circumspheres of tetrahedra.
     An implementation based on
     http://mathworld.wolfram.com/Circumsphere.html
     This function is not used int he SphericalVoronoi class but is kept for
     backwards compatibility.
     Parameters
     ----------
-    tetrahedrons : an array of shape (N, 4, 3)
-        consisting of N tetrahedrons defined by 4 points in 3D
+    tets : an array of shape (N, 4, 3)
+        consisting of N tets defined by 4 points in 3D
     Returns
     ----------
     circumcenters : an array of shape (N, 3)
-        consisting of the N circumcenters of the tetrahedrons in 3D
+        consisting of the N circumcenters of the tets in 3D
     """
 
-    num = tetrahedrons.shape[0]
-    a = np.concatenate((tetrahedrons, np.ones((num, 4, 1))), axis=2)
+    num = tets.shape[0]
+    a = np.concatenate((tets, np.ones((num, 4, 1))), axis=2)
 
-    sums = np.sum(tetrahedrons ** 2, axis=2)
+    sums = np.sum(tets ** 2, axis=2)
     d = np.concatenate((sums[:, :, np.newaxis], a), axis=2)
 
     dx = np.delete(d, 1, axis=2)

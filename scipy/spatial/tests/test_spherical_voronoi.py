@@ -13,7 +13,7 @@ from scipy.spatial import _spherical_voronoi as spherical_voronoi
 class TestCircumcenters(object):
 
     def test_circumcenters(self):
-        tetrahedrons = np.array([
+        tets = np.array([
             [[1, 2, 3],
              [-1.1, -2.1, -3.1],
              [-1.2, 2.2, 3.2],
@@ -24,7 +24,7 @@ class TestCircumcenters(object):
              [-10.3, -20.3, 30.3]]
         ])
 
-        result = spherical_voronoi.calc_circumcenters(tetrahedrons)
+        result = spherical_voronoi.calc_circumcenters(tets)
 
         expected = [
             [-0.5680861153262529, -0.133279590288315, 0.1843323216995444],
@@ -59,6 +59,29 @@ class TestProjectToSphere(object):
         projected = spherical_voronoi.project_to_sphere(translated, center,
                                                         radius)
         assert_array_almost_equal(translated, projected)
+
+
+class TestSphericalCircumcenters(object):
+
+    def test_circumcenters(self):
+        tets = np.array([
+            np.eye(3),
+            [[1, 0, 0],
+             [0, 1 / np.sqrt(2), 1 / np.sqrt(2)],
+             [0, 0, 1]]
+        ])
+
+        radius = 1.
+        center = np.zeros(3)
+        result = spherical_voronoi._calc_spherical_circumcenters(tets, center, radius)
+        print(result)
+
+        expected = [
+            [1 / np.sqrt(3), 1 / np.sqrt(3), 1 / np.sqrt(3)],
+            [0.6785983445458471, 0.2810846377148203, 0.6785983445458471]
+        ]
+
+        assert_array_almost_equal(result, expected)
 
 
 class TestSphericalVoronoi(object):
