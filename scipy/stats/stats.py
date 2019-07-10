@@ -1180,6 +1180,41 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     >>> from scipy.stats import kurtosis
     >>> kurtosis([1, 2, 3, 4, 5])
     -1.3
+
+    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In the following example, the kurtosis is close to zero, becuase it was
+    calculated from the dataset, not from the continuous distribution.
+
+    >>> from scipy.stats import norm
+    >>> data = norm.rvs(size=1000)
+    >>> kurtosis(data)
+
+    The distribution with a higher kurtosis has a heavier tail.
+    The zero valued kurtosis of the normal distribution in Fisher's definition
+    can serve as a reference point.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import scipy.stats as stats
+    >>> from scipy.stats import kurtosis
+
+    >>> x = np.linspace(-5, 5, 100)
+    >>> ax = plt.subplot()
+    >>> method = ['cauchy', 'norm', 'uniform']
+
+    >>> for i, mth in enumerate(method):
+    >>>     if mth == 'uniform':
+    >>>         dist = getattr(stats, mth)(loc=-2, scale=4)
+    >>>     else:
+    >>>         dist = getattr(stats, mth)
+    >>>     data = dist.rvs(size=1000)
+    >>>     kur = kurtosis(data, fisher=True)
+    >>>     y = dist.pdf(x)
+    >>>     ax.plot(x, y, label="{}, {}".format(mth, round(kur, 3)))
+    >>>     ax.legend()
+
+    The Cauchy distribution has a heavier tail than the normal distribution.
+    The uniform distribution has no tail at all.
+
     """
     a, axis = _chk_asarray(a, axis)
 
