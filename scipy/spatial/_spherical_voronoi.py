@@ -36,7 +36,7 @@ def calc_circumcenters(tets):
     """ Calculates the cirumcenters of the circumspheres of tetrahedra.
     An implementation based on
     http://mathworld.wolfram.com/Circumsphere.html
-    This function is not used int the SphericalVoronoi class but is kept for
+    This function is not used in the SphericalVoronoi class but is kept for
     backwards compatibility.
     Parameters
     ----------
@@ -71,7 +71,7 @@ def calc_circumcenters(tets):
 def project_to_sphere(points, center, radius):
     """
     Projects the elements of points onto the sphere defined by center and
-    radius.  This function is not used int the SphericalVoronoi class but is
+    radius.  This function is not used in the SphericalVoronoi class but is
     kept for backwards compatibility.
     Parameters
     ----------
