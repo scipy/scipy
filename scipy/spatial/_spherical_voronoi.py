@@ -20,6 +20,18 @@ from scipy.spatial import cKDTree
 __all__ = ['SphericalVoronoi']
 
 
+def sphere_check(points, radius, center):
+    """ Determines distance of generators from theoretical sphere
+    surface.
+
+    """
+    actual_squared_radii = (((points[..., 0] - center[0]) ** 2) +
+                            ((points[..., 1] - center[1]) ** 2) +
+                            ((points[..., 2] - center[2]) ** 2))
+    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
+    return abs(max_discrepancy)
+
+
 def calc_circumcenters(tets):
     """ Calculates the cirumcenters of the circumspheres of tetrahedra.
     An implementation based on
@@ -75,18 +87,6 @@ def project_to_sphere(points, center, radius):
 
     lengths = scipy.spatial.distance.cdist(points, np.array([center]))
     return (points - center) / lengths * radius + center
-
-
-def sphere_check(points, radius, center):
-    """ Determines distance of generators from theoretical sphere
-    surface.
-
-    """
-    actual_squared_radii = (((points[..., 0] - center[0]) ** 2) +
-                            ((points[..., 1] - center[1]) ** 2) +
-                            ((points[..., 2] - center[2]) ** 2))
-    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
-    return abs(max_discrepancy)
 
 
 def _calc_spherical_circumcenters(tets, center, radius):
