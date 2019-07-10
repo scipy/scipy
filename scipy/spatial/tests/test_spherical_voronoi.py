@@ -164,3 +164,4 @@ class TestSphericalVoronoi(object):
         with assert_raises(ValueError):
             sv = spherical_voronoi.SphericalVoronoi(self.points,
                                                     center=[0.1,0,0])
+

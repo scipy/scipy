@@ -5,8 +5,8 @@ Spherical Voronoi Code
 
 """
 #
-# Copyright (C)  Tyler Reddy, Ross Hemsley, Edd Edmondson,
-#                Nikolai Nowaczyk, Joe Pitt-Francis, 2015.
+# Copyright (C)  Tyler Reddy, Ross Hemsley, Edd Edmondson, Nikolai Nowaczyk,
+#                Joe Pitt-Francis, Peter Larsen, 2019.
 #
 # Distributed under the same BSD license as SciPy.
 #
@@ -15,39 +15,25 @@ import numpy as np
 import scipy
 import itertools
 from . import _voronoi
-from scipy.spatial.distance import pdist
+from scipy.spatial import cKDTree
 
 __all__ = ['SphericalVoronoi']
 
 
-def sphere_check(points, radius, center):
-    """ Determines distance of generators from theoretical sphere
-    surface.
-
-    """
-    actual_squared_radii = (((points[..., 0] - center[0]) ** 2) +
-                            ((points[..., 1] - center[1]) ** 2) +
-                            ((points[..., 2] - center[2]) ** 2))
-    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
-    return abs(max_discrepancy)
-
-
 def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
-
     An implementation based on
     http://mathworld.wolfram.com/Circumsphere.html
-
+    This function is not used int he SphericalVoronoi class but is kept for
+    backwards compatibility.
     Parameters
     ----------
     tetrahedrons : an array of shape (N, 4, 3)
         consisting of N tetrahedrons defined by 4 points in 3D
-
     Returns
     ----------
     circumcenters : an array of shape (N, 3)
         consisting of the N circumcenters of the tetrahedrons in 3D
-
     """
 
     num = tetrahedrons.shape[0]
@@ -66,15 +52,15 @@ def calc_circumcenters(tetrahedrons):
     a = np.linalg.det(a)
 
     nominator = np.vstack((dx, dy, dz))
-    denominator = 2 * a
+    denominator = 2*a
     return (nominator / denominator).T
 
 
 def project_to_sphere(points, center, radius):
     """
-    Projects the elements of points onto the sphere defined
-    by center and radius.
-
+    Projects the elements of points onto the sphere defined by center and
+    radius.  This function is not used int the SphericalVoronoi class but is
+    kept for backwards compatibility.
     Parameters
     ----------
     points : array of floats of shape (npoints, ndim)
@@ -83,13 +69,63 @@ def project_to_sphere(points, center, radius):
             the center of the sphere to project on
     radius : float
             the radius of the sphere to project on
-
     returns: array of floats of shape (npoints, ndim)
             the points projected onto the sphere
     """
 
     lengths = scipy.spatial.distance.cdist(points, np.array([center]))
     return (points - center) / lengths * radius + center
+
+def sphere_check(points, radius, center):
+    """ Determines distance of generators from theoretical sphere
+    surface.
+
+    """
+    actual_squared_radii = (((points[..., 0] - center[0]) ** 2) +
+                            ((points[..., 1] - center[1]) ** 2) +
+                            ((points[..., 2] - center[2]) ** 2))
+    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
+    return abs(max_discrepancy)
+
+
+def _calc_spherical_circumcenters(tets, center, radius):
+    """ Calculates the cirumcenters of the circumspheres of spherical
+    tetrahedra.
+
+    Implements the generalized cross-product method for hyperspherical
+    circumcenters [Larsen].
+
+    Parameters
+    ----------
+    tets : an array of shape (N, 3, 3)
+        consisting of N tets defined by 3 points in 3D
+    center : array of floats of shape (ndim,)
+            the center of the sphere to project on
+    radius : float
+            the radius of the sphere to project on
+
+    Returns
+    ----------
+    circumcenters : an array of shape (N, 3)
+        consisting of the N circumcenters of the tets in 3D
+
+    """
+
+    # calculate a circumcenter on a sphere of radius 1 centered at the origin
+    n = len(tets)
+    u = tets[:, 1] - tets[:, 0]
+    v = tets[:, 2] - tets[:, 0]
+    p = np.cross(u, v)
+    p /= np.linalg.norm(p, axis=1).reshape((n, 1))
+
+    # select the closest circumcenter
+    # (each simplex has two antipodally opposite circumcenters)
+    dots = np.einsum('ij,ij->i', p, tets[:, 0] - center)
+    signs = 2 * (dots > 0) - 1
+    p *= signs.reshape((n, 1))
+
+    # place circumcenters in original sphere setting
+    return p * radius + center
 
 
 class SphericalVoronoi:
@@ -138,22 +174,12 @@ class SphericalVoronoi:
     The spherical Voronoi diagram algorithm proceeds as follows. The Convex
     Hull of the input points (generators) is calculated, and is equivalent to
     their Delaunay triangulation on the surface of the sphere [Caroli]_.
-    A 3D Delaunay tetrahedralization is obtained by including the origin of
-    the coordinate system as the fourth vertex of each simplex of the Convex
-    Hull. The circumcenters of all tetrahedra in the system are calculated and
-    projected to the surface of the sphere, producing the Voronoi vertices.
-    The Delaunay tetrahedralization neighbour information is then used to
-    order the Voronoi region vertices around each generator. The latter
-    approach is substantially less sensitive to floating point issues than
-    angle-based methods of Voronoi region vertex sorting.
-
-    The surface area of spherical polygons is calculated by decomposing them
-    into triangles and using L'Huilier's Theorem to calculate the spherical
-    excess of each triangle [Weisstein]_. The sum of the spherical excesses is
-    multiplied by the square of the sphere radius to obtain the surface area
-    of the spherical polygon. For nearly-degenerate spherical polygons an area
-    of approximately 0 is returned by default, rather than attempting the
-    unstable calculation.
+    The circumcenters of all tetrahedra in the system are calculated using the
+    generalized cross-product method [Larsen]_, producing the Voronoi vertices.
+    The neighbour information of the Convex Hull is then used to order the
+    Voronoi region vertices around each generator. The latter approach is
+    substantially less sensitive to floating point issues than angle-based
+    methods of Voronoi region vertex sorting.
 
     Empirical assessment of spherical Voronoi algorithm performance suggests
     quadratic time complexity (loglinear is optimal, but algorithms are more
@@ -165,8 +191,11 @@ class SphericalVoronoi:
     ----------
     .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of
                 points on or close to a sphere. Research Report RR-7004, 2009.
-    .. [Weisstein] "L'Huilier's Theorem." From MathWorld -- A Wolfram Web
-                Resource. http://mathworld.wolfram.com/LHuiliersTheorem.html
+    .. [Larsen] P M Larsen and S Schmidt.  Improved orientation sampling for
+                indexing diffraction patterns of polycrystalline materials.
+                J. Appl. Cryst. (2017). 50, 1571-1582
+                https://doi.org/10.1107/S1600576717012882
+                https://arxiv.org/abs/1707.09045
 
     See Also
     --------
@@ -230,7 +259,7 @@ class SphericalVoronoi:
         else:
             self.radius = 1
 
-        if pdist(self.points).min() <= threshold * self.radius:
+        if len(cKDTree(self.points).query_pairs(threshold * self.radius)) > 0:
             raise ValueError("Duplicate generators present.")
 
         max_discrepancy = sphere_check(self.points,
@@ -253,32 +282,16 @@ class SphericalVoronoi:
         Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
         """
 
-        # perform 3D Delaunay triangulation on data set
-        # (here ConvexHull can also be used, and is faster)
+        # get convex hull of data set
         self._tri = scipy.spatial.ConvexHull(self.points)
 
-        # add the center to each of the simplices in tri to get the same
-        # tetrahedrons we'd have gotten from Delaunay tetrahedralization
-        # tetrahedrons will have shape: (2N-4, 4, 3)
-        tetrahedrons = self._tri.points[self._tri.simplices]
-        tetrahedrons = np.insert(
-            tetrahedrons,
-            3,
-            np.array([self.center]),
-            axis=1
-        )
+        # get spherical tetrahedra
+        # tetrahedra will have shape: (2N-4, 3, 3)
+        tets = self._tri.points[self._tri.simplices]
 
-        # produce circumcenters of tetrahedrons from 3D Delaunay
+        # calculate circumcenters of tetrahedra from convex hull
         # circumcenters will have shape: (2N-4, 3)
-        circumcenters = calc_circumcenters(tetrahedrons)
-
-        # project tetrahedron circumcenters to the surface of the sphere
-        # self.vertices will have shape: (2N-4, 3)
-        self.vertices = project_to_sphere(
-            circumcenters,
-            self.center,
-            self.radius
-        )
+        self.vertices = _calc_spherical_circumcenters(tets, self.center, self.radius)
 
         # calculate regions from triangulation
         # simplex_indices will have shape: (2N-4,)
@@ -296,8 +309,7 @@ class SphericalVoronoi:
                                                 array_associations[..., 0]))]
         array_associations = array_associations.astype(np.intp)
 
-        # group by generator indices to produce
-        # unsorted regions in nested list
+        # group by generator indices to produce unsorted regions in nested list
         groups = [list(list(zip(*list(g)))[1])
                   for k, g in itertools.groupby(array_associations,
                                                 lambda t: t[0])]
