@@ -45,7 +45,7 @@ def calc_circumcenters(tets):
     Returns
     ----------
     circumcenters : an array of shape (N, 3)
-        consisting of the N circumcenters of the tets in 3D
+        consisting of the N circumcenters of the tetrahedra in 3D
     """
 
     num = tets.shape[0]
