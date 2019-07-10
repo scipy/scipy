@@ -19,16 +19,18 @@ from scipy.spatial.distance import pdist
 
 __all__ = ['SphericalVoronoi']
 
+
 def sphere_check(points, radius, center):
     """ Determines distance of generators from theoretical sphere
     surface.
 
     """
-    actual_squared_radii = (((points[...,0] - center[0]) ** 2) +
-                            ((points[...,1] - center[1]) ** 2) +
-                            ((points[...,2] - center[2]) ** 2))
+    actual_squared_radii = (((points[..., 0] - center[0]) ** 2) +
+                            ((points[..., 1] - center[1]) ** 2) +
+                            ((points[..., 2] - center[2]) ** 2))
     max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
     return abs(max_discrepancy)
+
 
 def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
@@ -64,7 +66,7 @@ def calc_circumcenters(tetrahedrons):
     a = np.linalg.det(a)
 
     nominator = np.vstack((dx, dy, dz))
-    denominator = 2*a
+    denominator = 2 * a
     return (nominator / denominator).T
 
 
@@ -290,8 +292,8 @@ class SphericalVoronoi:
         # array_associations will have shape: (6N-12, 2)
         array_associations = np.dstack((point_indices, tri_indices))[0]
         array_associations = array_associations[np.lexsort((
-                                                array_associations[...,1],
-                                                array_associations[...,0]))]
+                                                array_associations[..., 1],
+                                                array_associations[..., 0]))]
         array_associations = array_associations.astype(np.intp)
 
         # group by generator indices to produce
