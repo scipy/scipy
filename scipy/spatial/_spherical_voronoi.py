@@ -41,7 +41,7 @@ def calc_circumcenters(tets):
     Parameters
     ----------
     tets : an array of shape (N, 4, 3)
-        consisting of N tets defined by 4 points in 3D
+        consisting of N tetrahedra defined by 4 points in 3D
     Returns
     ----------
     circumcenters : an array of shape (N, 3)
@@ -99,7 +99,7 @@ def _calc_spherical_circumcenters(tets, center, radius):
     Parameters
     ----------
     tets : an array of shape (N, 3, 3)
-        consisting of N tets defined by 3 points in 3D
+        consisting of N tetrahedra defined by 3 points in 3D
     center : array of floats of shape (ndim,)
             the center of the sphere to project on
     radius : float
@@ -108,7 +108,7 @@ def _calc_spherical_circumcenters(tets, center, radius):
     Returns
     ----------
     circumcenters : an array of shape (N, 3)
-        consisting of the N circumcenters of the tets in 3D
+        consisting of the N circumcenters of the tetrahedra in 3D
 
     """
 
