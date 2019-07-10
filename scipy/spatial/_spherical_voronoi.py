@@ -52,7 +52,7 @@ def calc_circumcenters(tets):
     a = np.linalg.det(a)
 
     nominator = np.vstack((dx, dy, dz))
-    denominator = 2*a
+    denominator = 2 * a
     return (nominator / denominator).T
 
 
@@ -75,6 +75,7 @@ def project_to_sphere(points, center, radius):
 
     lengths = scipy.spatial.distance.cdist(points, np.array([center]))
     return (points - center) / lengths * radius + center
+
 
 def sphere_check(points, radius, center):
     """ Determines distance of generators from theoretical sphere
@@ -291,14 +292,15 @@ class SphericalVoronoi:
 
         # calculate circumcenters of tetrahedra from convex hull
         # circumcenters will have shape: (2N-4, 3)
-        self.vertices = _calc_spherical_circumcenters(tets, self.center, self.radius)
+        self.vertices = _calc_spherical_circumcenters(tets, self.center,
+                                                      self.radius)
 
         # calculate regions from triangulation
         # simplex_indices will have shape: (2N-4,)
         simplex_indices = np.arange(self._tri.simplices.shape[0])
         # tri_indices will have shape: (6N-12,)
         tri_indices = np.column_stack([simplex_indices, simplex_indices,
-            simplex_indices]).ravel()
+                                       simplex_indices]).ravel()
         # point_indices will have shape: (6N-12,)
         point_indices = self._tri.simplices.ravel()
 
