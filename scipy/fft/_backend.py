@@ -1,9 +1,4 @@
 import scipy._lib.uarray as ua
-
-from ._basic import (
-    fft, ifft, fft2,ifft2, fftn, ifftn,
-    rfft, irfft, rfft2, irfft2, rfftn, irfftn)
-from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
 import scipy.fftpack as _fftpack
 from . import _pocketfft
 
@@ -138,4 +133,34 @@ def set_backend(backend, coerce=False, only=False):
     return ua.set_backend(backend, coerce=coerce, only=only)
 
 
-set_global_backend(_ScipyBackend())
+def skip_backend(backend):
+    """Context manager to skip a backend within a fixed scope.
+
+    Within the context of a ``with`` statement, the given backend will not be
+    called. This covers backends registered both locally and globally. Upon
+    exit, the backend will again be considered.
+
+    Parameters
+    ----------
+    backend: {object, 'scipy'}
+
+        The backend to skip.
+        Can either be a ``str`` containing the name of a known backend
+        {'scipy'}, or an object that implements the uarray protocol.
+
+    Examples
+    --------
+    >>> import scipy.fft as fft
+    >>> fft.fft([1])  # Calls default scipy backend
+    array([1.+0.j])
+    >>> with fft.skip_backend('scipy'):  # We expicitly skip the scipy backend
+    ...     fft.fft([1])                 # leaving no implementation available
+    Traceback (most recent call last):
+        ...
+    BackendNotImplementedError: No selected backends had an implementation ...
+    """
+    backend = _backend_from_arg(backend)
+    return ua.skip_backend(backend)
+
+
+set_global_backend('scipy')

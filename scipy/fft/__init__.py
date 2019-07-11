@@ -63,6 +63,7 @@ Backend control
    :toctree: generated/
 
    set_backend - Context manager to set the backend within a fixed scope
+   skip_backend - Context manager to skip a backend within a fixed scope
    set_global_backend - Sets the global fft backend
    register_backend - Register a backend for permanent use
 
@@ -76,7 +77,8 @@ from ._basic import (
     hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
 from ._helper import next_fast_len
-from ._backend import set_backend, set_global_backend, register_backend
+from ._backend import (set_backend, skip_backend, set_global_backend,
+                       register_backend)
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 
 __all__ = [
@@ -86,7 +88,7 @@ __all__ = [
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
     'next_fast_len',
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
-    'set_backend', 'set_global_backend', 'register_backend']
+    'set_backend', 'skip_backend', 'set_global_backend', 'register_backend']
 
 from numpy.dual import register_func
 for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
