@@ -38,8 +38,8 @@
  * ERROR MESSAGES:
  *
  *   message         condition    value returned
- * ndtri domain       x <= 0        -NPY_INFINITY
- * ndtri domain       x >= 1         NPY_INFINITY
+ * ndtri domain       x < 0        NPY_NAN
+ * ndtri domain       x > 1        NPY_NAN
  *
  */
 
