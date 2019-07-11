@@ -108,7 +108,7 @@ def set_backend(backend, coerce=False, only=False):
     backend is reset to the state before entering the scope.
 
     Parameters
-    ---------
+    ----------
     backend: {object, 'scipy'}
 
         The backend to use.

@@ -56,6 +56,16 @@ Helper functions
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
 
+Backend control
+===============
+
+.. autosummary::
+   :toctree: generated/
+
+   set_backend - Context manager to set the backend within a fixed scope
+   set_global_backend - Sets the global fft backend
+   register_backend - Register a backend for permanent use
+
 """
 
 from __future__ import division, print_function, absolute_import
