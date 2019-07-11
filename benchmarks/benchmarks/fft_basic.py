@@ -155,3 +155,45 @@ class FftBackends(Benchmark):
 
     def time_ifft(self, size, cmplx, module):
         self.ifft(self.x)
+
+
+class FftnBackends(Benchmark):
+    params = [
+        ["100x100", "313x100", "1000x100", "256x256", "512x512"],
+        ['real', 'cmplx'],
+        ['pocketfft', 'pyfftw', 'numpy', 'direct']
+    ]
+    param_names = ['size', 'type', 'backend']
+
+    def setup(self, size, cmplx, backend):
+        import scipy.fft
+        size = list(map(int, size.split("x")))
+
+        if cmplx == 'cmplx':
+            self.x = random(size).astype(double)+random(size).astype(double)*1j
+        else:
+            self.x = random(size).astype(double)
+
+        self.fftn = scipy.fft.fftn
+        self.ifftn = scipy.fft.ifftn
+
+        if backend == 'pocketfft':
+            scipy.fft.set_global_backend('scipy')
+        elif backend == 'pyfftw':
+            from scipy.fft._debug_backends import PyfftwBackend
+            import pyfftw
+            pyfftw.interfaces.cache.enable()
+            scipy.fft.set_global_backend(PyfftwBackend)
+        elif backend == 'numpy':
+            from scipy.fft._debug_backends import NumPyBackend
+            scipy.fft.set_global_backend(NumPyBackend)
+        elif backend == 'direct':
+            import scipy.fft._pocketfft
+            self.fftn = scipy.fft._pocketfft.fftn
+            self.ifftn = scipy.fft._pocketfft.ifftn
+
+    def time_fft(self, size, cmplx, module):
+        self.fftn(self.x)
+
+    def time_ifft(self, size, cmplx, module):
+        self.ifftn(self.x)
