@@ -29,6 +29,14 @@ irfft = _MockFunction(np.random.random(10))
 irfft2 = _MockFunction(np.random.random(10))
 irfftn = _MockFunction(np.random.random(10))
 
+hfft = _MockFunction(np.random.random(10))
+hfft2 = _MockFunction(np.random.random(10))
+hfftn = _MockFunction(np.random.random(10))
+
+ihfft = _MockFunction(np.random.random(10))
+ihfft2 = _MockFunction(np.random.random(10))
+ihfftn = _MockFunction(np.random.random(10))
+
 dct = _MockFunction(np.random.random(10))
 idct = _MockFunction(np.random.random(10))
 dctn = _MockFunction(np.random.random(10))
