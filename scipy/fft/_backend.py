@@ -46,7 +46,6 @@ def set_global_backend(backend):
 
     Parameters
     ----------
-
     backend: {object, 'scipy'}
 
         The backend to use.
@@ -55,12 +54,10 @@ def set_global_backend(backend):
 
     Raises
     ------
-
     ValueError: If the backend does not implement ``scipy.fft``
 
     Notes
     -----
-
     This will overwrite the previously set global backend, which by default is
     the SciPy implementation.
 
@@ -79,7 +76,6 @@ def register_backend(backend):
 
     Parameters
     ----------
-
     backend: {object, 'scipy'}
 
         The backend to use.
@@ -98,8 +94,8 @@ def register_backend(backend):
 def set_backend(backend, coerce=False, only=False):
     """Context manager to set the backend within a fixed scope.
 
-    Upon entering the ``with`` statement, given backend will be added to the
-    list of available backends with the highest priority. Upon exit, the
+    Upon entering the ``with`` statement, the given backend will be added to
+    the list of available backends with the highest priority. Upon exit, the
     backend is reset to the state before entering the scope.
 
     Parameters
@@ -125,7 +121,7 @@ def set_backend(backend, coerce=False, only=False):
     --------
     >>> import scipy.fft as fft
     >>> with fft.set_backend('scipy', only=True):
-    >>>     fft.fft([1])  # Always calls the scipy implementation
+    ...     fft.fft([1])  # Always calls the scipy implementation
     array([1.+0.j])
 
     """

@@ -1119,7 +1119,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     >>> import scipy.fft
     >>> x = np.zeros((3, 2, 2))
     >>> x[0, 0, 0] = 3 * 2 * 2
-    >>> scipy.fft.irfftn(a)
+    >>> scipy.fft.irfftn(x)
     array([[[1.,  1.],
             [1.,  1.]],
            [[1.,  1.],
