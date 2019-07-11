@@ -168,21 +168,6 @@ class kstwo_gen(rv_continuous):
     def _isf(self, q, n):
         return kolmogni(n, q, cdf=False)
 
-    # ENH: Enhance efficiency of some stats.kstwo basic operations.
-    #
-    # Change kstwo's momtype from the default (1, uses ppf) to 0 (uses the pdf) to
-    # compute moments.
-    # Lower n from 100 to n=10 in the test case in _distr_params.py.
-    # Added kolmogni in _ksstats.py to calculate the ppf/isf for kstwo.
-    # If a distribution is excluded from the basic entropy calculation in
-    # test_continuous_basic.py, also exclude it from the private_entropy, vec_entropy
-    # and entropy_vect_scale entropy calculations
-    # Add test_isf_of_sf and test_isf_of_sf_sqrtn methods to TestKSTwo.
-    # Keep CDFs and SFs away from 1 when doing round-trip cdf/ppf sf/isf tests.
-    # All this reduces the computation time in in the kstwo tests by a factor of ~10
-    # Fixed a general bug in rv_continuous._ppf_single: If self.a is 0, it incorrectly
-    # used -10 as the left-hand endpoint of the serach interval.
-
 
 # Use the pdf, (not the ppf) to compute moments
 kstwo = kstwo_gen(momtype=0, a=0.0, b=1.0, name='kstwo')
