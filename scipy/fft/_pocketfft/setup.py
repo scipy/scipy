@@ -13,7 +13,7 @@ def try_compile(compiler, code=None, flags=[], ext='.cpp'):
             f.write(code)
 
         try:
-            compiler.compile([fname], extra_postargs=flags)
+            compiler.compile([fname], output_dir=temp_dir, extra_postargs=flags)
         except CompileError:
             return False
     return True
