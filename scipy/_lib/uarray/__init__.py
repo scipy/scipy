@@ -109,5 +109,23 @@ up to ``__ua_function__``, but putting things back into arrays after conversion 
 possible.
 """
 
-from ._backend import *
-from ._backend import _Function
+
+# Prefer an installed version of uarray if available
+try:
+    import uarray as _uarray
+except ImportError:
+    _has_uarray = False
+else:
+    from scipy._lib._pep440 import Version
+
+    _has_uarray = Version(_uarray.__version__) >= Version("0.5")
+    del _uarray
+
+if _has_uarray:
+    from uarray import *
+    from uarray import _Function
+else:
+    from ._backend import *
+    from ._backend import _Function
+
+del _has_uarray
