@@ -59,11 +59,10 @@ def cases_test_cont_fit():
 def test_cont_fit(distname, arg):
     if distname in failing_fits:
         # Skip failing fits unless overridden
-        xfail = True
         try:
             xfail = not int(os.environ['SCIPY_XFAIL'])
-        except:
-            pass
+        except Exception:
+            xfail = True
         if xfail:
             msg = "Fitting %s doesn't work reliably yet" % distname
             msg += " [Set environment variable SCIPY_XFAIL=1 to run this test nevertheless.]"

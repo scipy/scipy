@@ -12,7 +12,7 @@ from scipy.special import betainc
 from. common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
-                           check_private_entropy,
+                           check_private_entropy, check_entropy_vect_scale,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
@@ -35,11 +35,10 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
-# Last four of these fail all around. Need to be checked
+# Last three of these fail all around. Need to be checked
 distcont_extra = [
     ['betaprime', (100, 86)],
     ['fatiguelife', (5,)],
-    ['mielke', (4.6420495492121487, 0.59707419545516938)],
     ['invweibull', (0.58847112119264788,)],
     # burr: sample mean test fails still for c<1
     ['burr', (0.94839838075366045, 4.3820284068855795)],
@@ -48,9 +47,9 @@ distcont_extra = [
 ]
 
 
-distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
-            'vonmises', 'vonmises_line', 'mielke', 'semicircular',
-            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
+distslow = ['kappa4', 'rdist', 'gausshyper', 'recipinvgauss', 'genexpon',
+            'vonmises', 'vonmises_line', 'cosine', 'invweibull',
+            'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
 
@@ -109,8 +108,10 @@ def test_cont_basic(distname, arg):
         check_sf_isf(distfn, arg, distname)
         check_pdf(distfn, arg, distname)
         check_pdf_logpdf(distfn, arg, distname)
+        check_pdf_logpdf_at_endpoints(distfn, arg, distname)
         check_cdf_logcdf(distfn, arg, distname)
         check_sf_logsf(distfn, arg, distname)
+        check_ppf_broadcast(distfn, arg, distname)
 
         alpha = 0.01
         if distname == 'rv_histogram_instance':
@@ -135,7 +136,7 @@ def test_cont_basic(distname, arg):
         check_pickling(distfn, arg)
 
         # Entropy
-        if distname not in ['ksone', 'kstwobign']:
+        if distname not in ['kstwobign']:
             check_entropy(distfn, arg, distname)
 
         if distfn.numargs == 0:
@@ -144,6 +145,12 @@ def test_cont_basic(distname, arg):
         if (distfn.__class__._entropy != stats.rv_continuous._entropy
                 and distname != 'vonmises'):
             check_private_entropy(distfn, arg, stats.rv_continuous)
+
+        with suppress_warnings() as sup:
+            sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+            sup.filter(IntegrationWarning, "Extremely bad integrand")
+            sup.filter(RuntimeWarning, "invalid value")
+            check_entropy_vect_scale(distfn, arg)
 
         check_edge_support(distfn, arg)
 
@@ -165,8 +172,8 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises', 'ksone'])
-    fail_higher = set(['vonmises', 'ksone', 'ncf'])
+    fail_normalization = set(['vonmises'])
+    fail_higher = set(['vonmises', 'ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -232,7 +239,8 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['betaprime', 'dgamma', 'exponnorm', 'norminvgauss',
-                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm']
+                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm',
+                          'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
@@ -279,6 +287,83 @@ def test_rvs_gh2069_regression():
     assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
                      [[1], [2]], (4,))
 
+def test_nomodify_gh9900_regression():
+    # Regression test for gh-9990
+    # Prior to gh-9990, calls to stats.truncnorm._cdf() use what ever was
+    # set inside the stats.truncnorm instance during stats.truncnorm.cdf().
+    # This could cause issues wth multi-threaded code.
+    # Since then, the calls to cdf() are not permitted to modify the global
+    # stats.truncnorm instance.
+    tn = stats.truncnorm
+    # Use the right-half truncated normal
+    # Check that the cdf and _cdf return the same result.
+    npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)
+
+    # Now use the left-half truncated normal
+    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)
+    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)
+
+    # Check that the right-half truncated normal _cdf hasn't changed
+    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)  # NOT 1.6826894921370859
+    npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
+
+    # Check that the left-half truncated normal _cdf hasn't changed
+    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
+    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+
+
+def test_broadcast_gh9990_regression():
+    # Regression test for gh-9990
+    # The x-value 7 only lies within the support of 4 of the supplied
+    # distributions.  Prior to 9990, one array passed to
+    # stats.reciprocal._cdf would have 4 elements, but an array
+    # previously stored by stats.reciprocal_argcheck() would have 6, leading
+    # to a broadcast error.
+    a = np.array([1, 2, 3, 4, 5, 6])
+    b = np.array([8, 16, 1, 32, 1, 48])
+    ans = [stats.reciprocal.cdf(7, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(7, a, b), ans)
+
+    ans = [stats.reciprocal.cdf(1, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(1, a, b), ans)
+
+    ans = [stats.reciprocal.cdf(_a, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(a, a, b), ans)
+
+    ans = [stats.reciprocal.cdf(_b, _a, _b) for _a, _b in zip(a,b)]
+    npt.assert_array_almost_equal(stats.reciprocal.cdf(b, a, b), ans)
+
+def test_broadcast_gh7933_regression():
+    # Check broadcast works
+    stats.truncnorm.logpdf(
+        np.array([3.0, 2.0, 1.0]),
+        a=(1.5 - np.array([6.0, 5.0, 4.0])) / 3.0,
+        b=np.inf,
+        loc=np.array([6.0, 5.0, 4.0]),
+        scale=3.0
+    )
+
+def test_gh2002_regression():
+    # Add a check that broadcast works in situations where only some
+    # x-values are compatible with some of the shape arguments.
+    x = np.r_[-2:2:101j]
+    a = np.r_[-np.ones(50), np.ones(51)]
+    expected = [stats.truncnorm.pdf(_x, _a, np.inf) for _x, _a in zip(x, a)]
+    ans = stats.truncnorm.pdf(x, a, np.inf)
+    npt.assert_array_almost_equal(ans, expected)
+
+def test_gh1320_regression():
+    # Check that the first example from gh-1320 now works.
+    c = 2.62
+    stats.genextreme.ppf(0.5, np.array([[c], [c + 0.5]]))
+    # The other examples in gh-1320 appear to have stopped working
+    # some time ago.
+    # ans = stats.genextreme.moment(2, np.array([c, c + 0.5]))
+    # expected = np.array([25.50105963, 115.11191437])
+    # stats.genextreme.moment(5, np.array([[c], [c + 0.5]]))
+    # stats.genextreme.moment(5, np.array([c, c + 0.5]))
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
@@ -353,18 +438,47 @@ def check_pdf_logpdf(distfn, args, msg):
     # compares pdf at several points with the log of the pdf
     points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     pdf = distfn.pdf(vals, *args)
     logpdf = distfn.logpdf(vals, *args)
-    pdf = pdf[pdf != 0]
+    pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
     logpdf = logpdf[np.isfinite(logpdf)]
     msg += " - logpdf-log(pdf) relationship"
     npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
 
 
+def check_pdf_logpdf_at_endpoints(distfn, args, msg):
+    # compares pdf with the log of the pdf at the (finite) end points
+    points = np.array([0, 1])
+    vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
+    with suppress_warnings() as sup:
+        # Several distributions incur divide by zero or encounter invalid values when computing
+        # the pdf or logpdf at the endpoints.
+        suppress_messsages = [
+            "divide by zero encountered in true_divide",  # multiple distributions
+            "divide by zero encountered in log",  # multiple distributions
+            "divide by zero encountered in power",  # gengamma
+            "invalid value encountered in add",  # genextreme
+            "invalid value encountered in subtract",  # gengamma
+            "invalid value encountered in multiply"  # recipinvgauss
+            ]
+        for msg in suppress_messsages:
+            sup.filter(category=RuntimeWarning, message=msg)
+
+        pdf = distfn.pdf(vals, *args)
+        logpdf = distfn.logpdf(vals, *args)
+        pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
+        logpdf = logpdf[np.isfinite(logpdf)]
+        msg += " - logpdf-log(pdf) relationship"
+        npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+
+
 def check_sf_logsf(distfn, args, msg):
     # compares sf at several points with the log of the sf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     sf = distfn.sf(vals, *args)
     logsf = distfn.logsf(vals, *args)
     sf = sf[sf != 0]
@@ -375,14 +489,28 @@ def check_sf_logsf(distfn, args, msg):
 
 def check_cdf_logcdf(distfn, args, msg):
     # compares cdf at several points with the log of the cdf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     cdf = distfn.cdf(vals, *args)
     logcdf = distfn.logcdf(vals, *args)
     cdf = cdf[cdf != 0]
     logcdf = logcdf[np.isfinite(logcdf)]
     msg += " - logcdf-log(cdf) relationship"
     npt.assert_almost_equal(np.log(cdf), logcdf, decimal=7, err_msg=msg)
+
+
+def check_ppf_broadcast(distfn, arg, msg):
+    # compares ppf for multiple argsets.
+    num_repeats = 5
+    args = [] * num_repeats
+    if arg:
+        args = [np.array([_] * num_repeats) for _ in arg]
+
+    median = distfn.ppf(0.5, *arg)
+    medians = distfn.ppf(0.5, *args)
+    msg += " - ppf multiple"
+    npt.assert_almost_equal(medians, [median] * num_repeats, decimal=7, err_msg=msg)
 
 
 def check_distribution_rvs(dist, args, alpha, rvs):

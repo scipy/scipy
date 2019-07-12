@@ -52,8 +52,6 @@ extern double gdtri(double a, double b, double y);
 
 extern double hyp2f1(double a, double b, double c, double x);
 extern double hyperg(double a, double b, double x);
-extern double hyp2f0(double a, double b, double x, int type, double *err);
-extern double onef2(double a, double b, double c, double x, double *err);
 extern double threef0(double a, double b, double c, double x, double *err);
 
 extern double i0(double x);
@@ -129,10 +127,16 @@ extern double yn(int n, double x);
 extern double zeta(double x, double q);
 extern double zetac(double x);
 
-extern double smirnov(int n, double e);
+extern double smirnov(int n, double d);
 extern double smirnovi(int n, double p);
+extern double smirnovp(int n, double d);
+extern double smirnovc(int n, double d);
+extern double smirnovci(int n, double p);
 extern double kolmogorov(double x);
 extern double kolmogi(double p);
+extern double kolmogp(double x);
+extern double kolmogc(double x);
+extern double kolmogci(double p);
 
 extern double lanczos_sum_expg_scaled(double x);
 

@@ -176,9 +176,10 @@ class Upfirdn1D(Benchmark):
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512, 2048]:
-                    h = np.random.randn(nfilt)
-                    x = np.random.randn(n)
-                    pairs.append((h, x))
+                h = np.random.randn(nfilt)
+                x = np.random.randn(n)
+                pairs.append((h, x))
+
         self.pairs = pairs
 
     def time_upfirdn1d(self, up, down):
@@ -200,11 +201,23 @@ class Upfirdn2D(Benchmark):
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512]:
-                    h = np.random.randn(nfilt)
-                    x = np.random.randn(n, n)
-                    pairs.append((h, x))
+                h = np.random.randn(nfilt)
+                x = np.random.randn(n, n)
+                pairs.append((h, x))
+
         self.pairs = pairs
 
     def time_upfirdn2d(self, up, down, axis):
         for h, x in self.pairs:
             signal.upfirdn(h, x, up=up, down=down, axis=axis)
+
+
+class FIRLS(Benchmark):
+    param_names = ['n', 'edges']
+    params = [
+        [21, 101, 1001, 2001],
+        [(0.1, 0.9), (0.01, 0.99)],
+        ]
+
+    def time_firls(self, n, edges):
+        signal.firls(n, (0,) + edges + (1,), [1, 1, 0, 0])

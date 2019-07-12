@@ -310,7 +310,7 @@ def splev(x, tck, der=0, ext=0):
         of the spline. (Also see Notes.)
     der : int, optional
         The order of derivative of the spline to compute (must be less than
-        or equal to k).
+        or equal to k, the degree of the spline).
     ext : int, optional
         Controls the value returned for elements of ``x`` not in the
         interval defined by the knot sequence.

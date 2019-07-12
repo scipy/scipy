@@ -7,6 +7,7 @@ from pytest import raises as assert_raises
 import numpy as np
 
 from scipy.optimize import linear_sum_assignment
+from scipy.sparse.sputils import matrix
 
 
 def test_linear_sum_assignment():
@@ -59,7 +60,7 @@ def test_linear_sum_assignment_input_validation():
     assert_array_equal(linear_sum_assignment(C),
                        linear_sum_assignment(np.asarray(C)))
     assert_array_equal(linear_sum_assignment(C),
-                       linear_sum_assignment(np.matrix(C)))
+                       linear_sum_assignment(matrix(C)))
 
     I = np.identity(3)
     assert_array_equal(linear_sum_assignment(I.astype(np.bool)),

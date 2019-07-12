@@ -16,8 +16,7 @@ import os
 import sys
 
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
-                   ones, ascontiguousarray, vstack, savetxt, fromfile,
-                   fromstring, can_cast)
+                   ones, can_cast)
 from numpy.compat import asbytes, asstr
 
 from scipy._lib.six import string_types
@@ -245,6 +244,10 @@ class MMFile (object):
 
             # skip comments
             while line.startswith(b'%'):
+                line = stream.readline()
+
+            # skip empty lines
+            while not line.strip():
                 line = stream.readline()
 
             line = line.split()
@@ -513,7 +516,7 @@ class MMFile (object):
                     i += 1
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%'):
+                if not line or line.startswith(b'%') or not line.strip():
                     continue
                 if is_integer:
                     aij = int(line)
@@ -558,7 +561,7 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%'):
+                if not line or line.startswith(b'%') or not line.strip():
                     continue
                 l = line.split()
                 i, j = map(int, l[:2])
@@ -605,7 +608,7 @@ class MMFile (object):
 
             entry_number = 0
             for line in stream:
-                if not line or line.startswith(b'%'):
+                if not line or line.startswith(b'%') or not line.strip():
                     continue
 
                 if entry_number+1 > entries:

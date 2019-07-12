@@ -86,7 +86,7 @@
 /* Sources
  * [1] "The Digital Library of Mathematical Functions", dlmf.nist.gov
  * [2] Maddock et. al., "Incomplete Gamma Functions",
- *     http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+ *     https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
  */
 
 /* Scipy changes:
@@ -120,7 +120,6 @@ static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
 
 static double igamc_continued_fraction(double, double);
-static double igam_leading_factor(double, double);
 static double igam_series(double, double);
 static double igamc_series(double, double);
 static double asymptotic_series(double, double, int);

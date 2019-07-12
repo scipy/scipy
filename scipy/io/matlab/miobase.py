@@ -19,7 +19,7 @@ if sys.version_info[0] >= 3:
 else:
     byteord = ord
 
-from scipy.misc import doccer
+from scipy._lib import doccer
 
 from . import byteordercodes as boc
 
@@ -411,5 +411,5 @@ def arr_to_chars(arr):
     if not np.any(empties):
         return arr
     arr = arr.copy()
-    arr[empties] = ' '
+    arr[tuple(empties)] = ' '
     return arr

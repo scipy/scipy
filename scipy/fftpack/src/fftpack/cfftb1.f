@@ -1,5 +1,8 @@
       SUBROUTINE CFFTB1 (N,C,CH,WA,IFAC)
-      DIMENSION       CH(*)      ,C(*)       ,WA(*)      ,IFAC(*)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, IDL1, IDO, IDOT, IP, IW, IX2, IX3, IX4
+      INTEGER :: K1, L1, L2, N2, NA, NAC, NF
+      REAL :: C(*), CH(*), WA(*)
       NF = IFAC(2)
       NA = 0
       L1 = 1
@@ -60,8 +63,9 @@
       RETURN
       END
       SUBROUTINE PASSB2 (IDO,L1,CC,CH,WA1)
-      DIMENSION       CC(IDO,2,L1)           ,CH(IDO,L1,2)           ,
-     1                WA1(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      REAL :: CC(IDO,2,L1), CH(IDO,L1,2), WA1(*), TI2, TR2
       IF (IDO .GT. 2) GO TO 102
       DO 101 K=1,L1
          CH(1,K,1) = CC(1,1,K)+CC(1,2,K)
@@ -83,8 +87,10 @@
       RETURN
       END
       SUBROUTINE PASSB3 (IDO,L1,CC,CH,WA1,WA2)
-      DIMENSION       CC(IDO,3,L1)           ,CH(IDO,L1,3)           ,
-     1                WA1(*)     ,WA2(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      REAL :: CC(IDO,3,L1), CH(IDO,L1,3), WA1(*), WA2(*), CI2, CI3, CR2
+      REAL :: CR3, DI2, DI3, DR2, DR3, TAUI, TAUR, TI2, TR2
       DATA TAUR,TAUI /-.5,.866025403784439/
       IF (IDO .NE. 2) GO TO 102
       DO 101 K=1,L1
@@ -125,8 +131,11 @@
       RETURN
       END
       SUBROUTINE PASSB4 (IDO,L1,CC,CH,WA1,WA2,WA3)
-      DIMENSION       CC(IDO,4,L1)           ,CH(IDO,L1,4)           ,
-     1                WA1(*)     ,WA2(*)     ,WA3(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      REAL :: CC(IDO,4,L1), CH(IDO,L1,4), WA1(*), WA2(*), WA3(*), CI2
+      REAL :: CI3, CI4, CR2, CR3, CR4, TI1, TI2, TI3, TI4, TR1, TR2
+      REAL :: TR3, TR4
       IF (IDO .NE. 2) GO TO 102
       DO 101 K=1,L1
          TI1 = CC(2,1,K)-CC(2,3,K)
@@ -176,8 +185,12 @@
       RETURN
       END
       SUBROUTINE PASSB5 (IDO,L1,CC,CH,WA1,WA2,WA3,WA4)
-      DIMENSION       CC(IDO,5,L1)           ,CH(IDO,L1,5)           ,
-     1                WA1(*)     ,WA2(*)     ,WA3(*)     ,WA4(*)
+      IMPLICIT NONE
+      INTEGER :: IDO, L1, I, K
+      REAL :: CC(IDO,5,L1), CH(IDO,L1,5), WA1(*), WA2(*), WA3(*)
+      REAL :: WA4(*), CI2, CI3, CI4, CI5, CR2, CR3, CR4, CR5, DI2, DI3
+      REAL :: DI4, DI5, DR2, DR3, DR4, DR5, TI11, TI12, TI2, TI3, TI4
+      REAL :: TI5, TR11, TR12, TR2, TR3, TR4, TR5
       DATA TR11,TI11,TR12,TI12 /.309016994374947,.951056516295154,
      1-.809016994374947,.587785252292473/
       IF (IDO .NE. 2) GO TO 102
@@ -251,9 +264,11 @@
       RETURN
       END
       SUBROUTINE PASSB (NAC,IDO,IP,L1,IDL1,CC,C1,C2,CH,CH2,WA)
-      DIMENSION       CH(IDO,L1,IP)          ,CC(IDO,IP,L1)          ,
-     1                C1(IDO,L1,IP)          ,WA(*)      ,C2(IDL1,IP),
-     2                CH2(IDL1,IP)
+      IMPLICIT NONE
+      INTEGER :: NAC, IDO, IP, L1, IDL1, I, IDIJ, IDJ, IDL, IDLJ, IDOT
+      INTEGER :: IDP, IK, INC, IPP2, IPPH, J, JC, K, L, LC, NT
+      REAL :: CC(IDO,IP,L1), C1(IDO,L1,IP), C2(IDL1,IP), CH(IDO,L1,IP)
+      REAL :: CH2(IDL1,IP), WA(*), WAI, WAR
       IDOT = IDO/2
       NT = IP*IDL1
       IPP2 = IP+2

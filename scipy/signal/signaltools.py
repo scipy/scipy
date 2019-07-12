@@ -13,11 +13,12 @@ from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
+from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
-                   product, r_, ravel, real_if_close, reshape,
+                   prod, r_, ravel, real_if_close, reshape,
                    roots, sort, take, transpose, unique, where, zeros,
                    zeros_like)
 import numpy as np
@@ -247,7 +248,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
             # zero pad input
             in1zpadded = np.zeros(ps, in1.dtype)
-            sc = [slice(0, i) for i in in1.shape]
+            sc = tuple(slice(0, i) for i in in1.shape)
             in1zpadded[sc] = in1.copy()
 
             if mode == 'full':
@@ -278,7 +279,7 @@ def _centered(arr, newshape):
     return arr[tuple(myslice)]
 
 
-def fftconvolve(in1, in2, mode="full"):
+def fftconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using FFT.
 
     Convolve `in1` and `in2` using the fast Fourier transform method, with
@@ -310,6 +311,11 @@ def fftconvolve(in1, in2, mode="full"):
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
+           axis : tuple, optional
+    axes : int or array_like of ints or None, optional
+        Axes over which to compute the convolution.
+        The default is over all axes.
+
 
     Returns
     -------
@@ -360,19 +366,37 @@ def fftconvolve(in1, in2, mode="full"):
     """
     in1 = asarray(in1)
     in2 = asarray(in2)
+    noaxes = axes is None
 
     if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
-    elif not in1.ndim == in2.ndim:
+    elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
         return array([])
 
+    _, axes = _init_nd_shape_and_axes_sorted(in1, shape=None, axes=axes)
+
+    if not noaxes and not axes.size:
+        raise ValueError("when provided, axes cannot be empty")
+
+    if noaxes:
+        other_axes = array([], dtype=np.intc)
+    else:
+        other_axes = np.setdiff1d(np.arange(in1.ndim), axes)
+
     s1 = array(in1.shape)
     s2 = array(in2.shape)
-    complex_result = (np.issubdtype(in1.dtype, np.complexfloating) or
-                      np.issubdtype(in2.dtype, np.complexfloating))
-    shape = s1 + s2 - 1
+
+    if not np.all((s1[other_axes] == s2[other_axes])
+                  | (s1[other_axes] == 1) | (s2[other_axes] == 1)):
+        raise ValueError("incompatible shapes for in1 and in2:"
+                         " {0} and {1}".format(in1.shape, in2.shape))
+
+    complex_result = (np.issubdtype(in1.dtype, np.complexfloating)
+                      or np.issubdtype(in2.dtype, np.complexfloating))
+    shape = np.maximum(s1, s2)
+    shape[axes] = s1[axes] + s2[axes] - 1
 
     # Check that input sizes are compatible with 'valid' mode
     if _inputs_swap_needed(mode, s1, s2):
@@ -380,15 +404,15 @@ def fftconvolve(in1, in2, mode="full"):
         in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.helper.next_fast_len(int(d)) for d in shape]
-    fslice = tuple([slice(0, int(sz)) for sz in shape])
+    fshape = [fftpack.helper.next_fast_len(d) for d in shape[axes]]
+    fslice = tuple([slice(sz) for sz in shape])
     # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
     # sure we only call rfftn/irfftn from one thread at a time.
     if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
         try:
-            sp1 = np.fft.rfftn(in1, fshape)
-            sp2 = np.fft.rfftn(in2, fshape)
-            ret = (np.fft.irfftn(sp1 * sp2, fshape)[fslice].copy())
+            sp1 = np.fft.rfftn(in1, fshape, axes=axes)
+            sp2 = np.fft.rfftn(in2, fshape, axes=axes)
+            ret = np.fft.irfftn(sp1 * sp2, fshape, axes=axes)[fslice].copy()
         finally:
             if not _rfft_mt_safe:
                 _rfft_lock.release()
@@ -397,9 +421,9 @@ def fftconvolve(in1, in2, mode="full"):
         # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
         # is already in use by another thread).  In either case, use the
         # (threadsafe but slower) SciPy complex-FFT routines instead.
-        sp1 = fftpack.fftn(in1, fshape)
-        sp2 = fftpack.fftn(in2, fshape)
-        ret = fftpack.ifftn(sp1 * sp2)[fslice].copy()
+        sp1 = fftpack.fftn(in1, fshape, axes=axes)
+        sp2 = fftpack.fftn(in2, fshape, axes=axes)
+        ret = fftpack.ifftn(sp1 * sp2, axes=axes)[fslice].copy()
         if not complex_result:
             ret = ret.real
 
@@ -408,10 +432,12 @@ def fftconvolve(in1, in2, mode="full"):
     elif mode == "same":
         return _centered(ret, s1)
     elif mode == "valid":
-        return _centered(ret, s1 - s2 + 1)
+        shape_valid = shape.copy()
+        shape_valid[axes] = s1[axes] - s2[axes] + 1
+        return _centered(ret, shape_valid)
     else:
-        raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+        raise ValueError("acceptable mode flags are 'valid',"
+                         " 'same', or 'full'")
 
 
 def _numeric_arrays(arrays, kinds='buifc'):
@@ -487,15 +513,15 @@ def _reverse_and_conj(x):
     """
     Reverse array `x` in all dimensions and perform the complex conjugate
     """
-    reverse = [slice(None, None, -1)] * x.ndim
+    reverse = (slice(None, None, -1),) * x.ndim
     return x[reverse].conj()
 
 
 def _np_conv_ok(volume, kernel, mode):
     """
     See if numpy supports convolution of `volume` and `kernel` (i.e. both are
-    1D ndarrays and of the appropriate shape).  Numpy's 'same' mode uses the
-    size of the larger input, while Scipy's uses the size of the first input.
+    1D ndarrays and of the appropriate shape).  NumPy's 'same' mode uses the
+    size of the larger input, while SciPy's uses the size of the first input.
 
     Invalid mode strings will return False and be caught by the calling func.
     """
@@ -856,7 +882,7 @@ def medfilt(volume, kernel_size=None):
     Perform a median filter on an N-dimensional array.
 
     Apply a median filter to the input array using a local window-size
-    given by `kernel_size`.
+    given by `kernel_size`. The array will automatically be zero-padded.
 
     Parameters
     ----------
@@ -874,6 +900,14 @@ def medfilt(volume, kernel_size=None):
         An array the same size as input containing the median filtered
         result.
 
+    See also
+    --------
+    scipy.ndimage.median_filter
+
+    Notes
+    -------
+    The more general function `scipy.ndimage.median_filter` has a more
+    efficient implementation of a median filter and therefore runs much faster.
     """
     volume = atleast_1d(volume)
     if kernel_size is None:
@@ -888,7 +922,7 @@ def medfilt(volume, kernel_size=None):
 
     domain = ones(kernel_size)
 
-    numels = product(kernel_size, axis=0)
+    numels = prod(kernel_size, axis=0)
     order = numels // 2
     return sigtools._order_filterND(volume, domain, order)
 
@@ -926,11 +960,11 @@ def wiener(im, mysize=None, noise=None):
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, ones(mysize), 'same') / product(mysize, axis=0)
+    lMean = correlate(im, ones(mysize), 'same') / prod(mysize, axis=0)
 
     # Estimate the local variance
     lVar = (correlate(im ** 2, ones(mysize), 'same') /
-            product(mysize, axis=0) - lMean ** 2)
+            prod(mysize, axis=0) - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -1133,7 +1167,8 @@ def medfilt2d(input, kernel_size=3):
     Median filter a 2-dimensional array.
 
     Apply a median filter to the `input` array using a local window-size
-    given by `kernel_size` (must be odd).
+    given by `kernel_size` (must be odd). The array is zero-padded
+    automatically.
 
     Parameters
     ----------
@@ -1152,6 +1187,14 @@ def medfilt2d(input, kernel_size=3):
         An array the same size as input containing the median filtered
         result.
 
+    See also
+    --------
+    scipy.ndimage.median_filter
+
+    Notes
+    -------
+    The more general function `scipy.ndimage.median_filter` has a more
+    efficient implementation of a median filter and therefore runs much faster.
     """
     image = asarray(input)
     if kernel_size is None:
@@ -1175,6 +1218,10 @@ def lfilter(b, a, x, axis=-1, zi=None):
     fundamental data types (including Object type).  The filter is a direct
     form II transposed implementation of the standard difference equation
     (see Notes).
+
+    The function `sosfilt` (and filter design using ``output='sos'``) should be
+    preferred over `lfilter` for most filtering tasks, as second-order sections
+    have fewer numerical problems.
 
     Parameters
     ----------
@@ -1338,16 +1385,16 @@ def lfilter(b, a, x, axis=-1, zi=None):
         ind = out_full.ndim * [slice(None)]
         if zi is not None:
             ind[axis] = slice(zi.shape[axis])
-            out_full[ind] += zi
+            out_full[tuple(ind)] += zi
 
         ind[axis] = slice(out_full.shape[axis] - len(b) + 1)
-        out = out_full[ind]
+        out = out_full[tuple(ind)]
 
         if zi is None:
             return out
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
-            zf = out_full[ind]
+            zf = out_full[tuple(ind)]
             return out, zf
     else:
         if zi is None:
@@ -1563,7 +1610,7 @@ def hilbert(x, N=None, axis=-1):
     References
     ----------
     .. [1] Wikipedia, "Analytic signal".
-           http://en.wikipedia.org/wiki/Analytic_signal
+           https://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
     .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
            Processing, Third Edition, 2009. Chapter 12.
@@ -1590,7 +1637,7 @@ def hilbert(x, N=None, axis=-1):
     if x.ndim > 1:
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
-        h = h[ind]
+        h = h[tuple(ind)]
     x = fftpack.ifft(Xf * h, axis=axis)
     return x
 
@@ -1614,7 +1661,7 @@ def hilbert2(x, N=None):
     References
     ----------
     .. [1] Wikipedia, "Analytic signal",
-        http://en.wikipedia.org/wiki/Analytic_signal
+        https://en.wikipedia.org/wiki/Analytic_signal
 
     """
     x = atleast_2d(x)
@@ -2220,20 +2267,20 @@ def resample(x, num, t=None, axis=0, window=None):
     N = int(np.minimum(num, Nx))
     Y = zeros(newshape, 'D')
     sl[axis] = slice(0, (N + 1) // 2)
-    Y[sl] = X[sl]
+    Y[tuple(sl)] = X[tuple(sl)]
     sl[axis] = slice(-(N - 1) // 2, None)
-    Y[sl] = X[sl]
+    Y[tuple(sl)] = X[tuple(sl)]
 
     if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
         if N < Nx:  # if downsampling
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
-            Y[sl] += X[sl]  # add the component of X at N/2
+            Y[tuple(sl)] += X[tuple(sl)]  # add the component of X at N/2
         elif N < num:  # if upsampling
             sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
-            Y[sl] /= 2  # halve the component at -N/2
-            temp = Y[sl]
+            Y[tuple(sl)] /= 2  # halve the component at -N/2
+            temp = Y[tuple(sl)]
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
-            Y[sl] = temp  # set that equal to the component at -N/2
+            Y[tuple(sl)] = temp  # set that equal to the component at -N/2
 
     y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
@@ -2341,7 +2388,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
         raise ValueError('up and down must be >= 1')
 
     # Determine our up and down factors
-    # Use a rational approimation to save computation time on really long
+    # Use a rational approximation to save computation time on really long
     # signals
     g_ = gcd(up, down)
     up //= g_
@@ -2373,14 +2420,15 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
+    h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
+                        np.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
-    return y[keep]
+    return y[tuple(keep)]
 
 
 def vectorstrength(events, period):
@@ -2461,7 +2509,7 @@ def vectorstrength(events, period):
     return strength, phase
 
 
-def detrend(data, axis=-1, type='linear', bp=0):
+def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     """
     Remove linear trend along axis from data.
 
@@ -2481,6 +2529,8 @@ def detrend(data, axis=-1, type='linear', bp=0):
         A sequence of break points. If given, an individual linear fit is
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`.
+    overwrite_data : bool, optional
+        If True, perform in place detrending and avoid a copy. Default is False
 
     Returns
     -------
@@ -2523,7 +2573,8 @@ def detrend(data, axis=-1, type='linear', bp=0):
         newdims = r_[axis, 0:axis, axis + 1:rnk]
         newdata = reshape(transpose(data, tuple(newdims)),
                           (N, _prod(dshape) // N))
-        newdata = newdata.copy()  # make sure we have a copy
+        if not overwrite_data:
+            newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
         # Find leastsq fit and remove it for each piece
@@ -2941,6 +2992,10 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     The function provides options for handling the edges of the signal.
 
+    The function `sosfiltfilt` (and filter design using ``output='sos'``)
+    should be preferred over `filtfilt` for most filtering tasks, as
+    second-order sections have fewer numerical problems.
+
     Parameters
     ----------
     b : (N,) array_like
@@ -3145,7 +3200,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be at least "
+        raise ValueError("The length of the input vector x must be greater than "
                          "padlen, which is %d." % edge)
 
     if padtype is not None and edge > 0:
@@ -3460,4 +3515,4 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             y = lfilter(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
-    return y[sl]
+    return y[tuple(sl)]

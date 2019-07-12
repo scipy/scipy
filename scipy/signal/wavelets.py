@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.dual import eig
 from scipy.special import comb
-from scipy import linspace, pi, exp
 from scipy.signal import convolve
 
 __all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'cwt']
@@ -245,18 +244,18 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     The fundamental frequency of this wavelet in Hz is given
     by ``f = 2*s*w*r / M`` where `r` is the sampling rate.
-    
+
     Note: This function was created before `cwt` and is not compatible
     with it.
 
     """
-    x = linspace(-s * 2 * pi, s * 2 * pi, M)
-    output = exp(1j * w * x)
+    x = np.linspace(-s * 2 * np.pi, s * 2 * np.pi, M)
+    output = np.exp(1j * w * x)
 
     if complete:
-        output -= exp(-0.5 * (w**2))
+        output -= np.exp(-0.5 * (w**2))
 
-    output *= exp(-0.5 * (x**2)) * pi**(-0.25)
+    output *= np.exp(-0.5 * (x**2)) * np.pi**(-0.25)
 
     return output
 

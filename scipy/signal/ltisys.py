@@ -1294,7 +1294,7 @@ class StateSpace(LinearTimeInvariant):
 
     """
 
-    # Override Numpy binary operations and ufuncs
+    # Override NumPy binary operations and ufuncs
     __array_priority__ = 100.0
     __array_ufunc__ = None
 
@@ -2100,6 +2100,16 @@ def impulse(system, X0=None, T=None, N=None):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    Examples
+    --------
+    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+
+    >>> from scipy import signal
+    >>> system = ([1.0], [1.0, 2.0, 1.0])
+    >>> t, y = signal.impulse2(system)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, y)
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2163,7 +2173,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     See Also
     --------
-    impulse, lsim2, integrate.odeint
+    impulse, lsim2, scipy.integrate.odeint
 
     Notes
     -----
@@ -2251,6 +2261,18 @@ def step(system, X0=None, T=None, N=None):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> lti = signal.lti([1.0], [1.0, 1.0])
+    >>> t, y = signal.step(lti)
+    >>> plt.plot(t, y)
+    >>> plt.xlabel('Time [s]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Step response for 1. Order Lowpass')
+    >>> plt.grid()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2319,6 +2341,19 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     .. versionadded:: 0.8.0
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> lti = signal.lti([1.0], [1.0, 1.0])
+    >>> t, y = signal.step2(lti)
+    >>> plt.plot(t, y)
+    >>> plt.xlabel('Time [s]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Step response for 1. Order Lowpass')
+    >>> plt.grid()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2488,7 +2523,7 @@ def freqresp(system, w=None, n=10000):
 
 
 # This class will be used by place_poles to return its results
-# see http://code.activestate.com/recipes/52308/
+# see https://code.activestate.com/recipes/52308/
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -2570,7 +2605,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     Algorithm "KNV0" Kautsky et Al. Robust pole
     assignment in linear state feedback, Int journal of Control
     1985, vol 41 p 1129->1155
-    http://la.epfl.ch/files/content/sites/la/files/
+    https://la.epfl.ch/files/content/sites/la/files/
         users/105941/public/KautskyNicholsDooren
 
     """
@@ -2732,7 +2767,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     """
     Algorithm "YT" Tits, Yang. Globally Convergent
     Algorithms for Robust Pole Assignment by State Feedback
-    http://drum.lib.umd.edu/handle/1903/5598
+    https://hdl.handle.net/1903/5598
     The poles P have to be sorted accordingly to section 6.2 page 20
 
     """
@@ -2970,7 +3005,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     when ``abs(det(X))`` is used as a robustness indicator.
 
     [2]_ is available as a technical report on the following URL:
-    http://drum.lib.umd.edu/handle/1903/5598
+    https://hdl.handle.net/1903/5598
 
     References
     ----------
@@ -3379,6 +3414,18 @@ def dimpulse(system, x0=None, t=None, n=None):
     --------
     impulse, dstep, dlsim, cont2discrete
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> butter = signal.dlti(*signal.butter(3, 0.5))
+    >>> t, y = signal.dimpulse(butter, n=25)
+    >>> plt.step(t, np.squeeze(y))
+    >>> plt.grid()
+    >>> plt.xlabel('n [samples]')
+    >>> plt.ylabel('Amplitude')
+
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, dlti):
@@ -3453,6 +3500,17 @@ def dstep(system, x0=None, t=None, n=None):
     --------
     step, dimpulse, dlsim, cont2discrete
 
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> butter = signal.dlti(*signal.butter(3, 0.5))
+    >>> t, y = signal.dstep(butter, n=25)
+    >>> plt.step(t, np.squeeze(y))
+    >>> plt.grid()
+    >>> plt.xlabel('n [samples]')
+    >>> plt.ylabel('Amplitude')
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, dlti):

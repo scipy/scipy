@@ -1,15 +1,15 @@
 #include "distance_base.h"
-#include "_c99compat.h"
+
 
 struct PlainDist1D {
-    static inline const npy_float64 side_distance_from_min_max(
-        const ckdtree * tree, const npy_float64 x,
-        const npy_float64 min,
-        const npy_float64 max,
-        const npy_intp k
+    static inline const double side_distance_from_min_max(
+        const ckdtree * tree, const double x,
+        const double min,
+        const double max,
+        const ckdtree_intp_t k
         )
     {
-        npy_float64 s, t;
+        double s, t;
         s = 0;
         t = x - max;
         if (t > s) {
@@ -23,23 +23,23 @@ struct PlainDist1D {
     static inline void
     interval_interval(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
-                        const npy_intp k,
-                        npy_float64 *min, npy_float64 *max)
+                        const ckdtree_intp_t k,
+                        double *min, double *max)
     {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        *min = dmax(0, dmax(rect1.mins()[k] - rect2.maxes()[k],
+        *min = ckdtree_fmax(0., fmax(rect1.mins()[k] - rect2.maxes()[k],
                               rect2.mins()[k] - rect1.maxes()[k]));
-        *max = dmax(rect1.maxes()[k] - rect2.mins()[k],
+        *max = ckdtree_fmax(rect1.maxes()[k] - rect2.mins()[k],
                               rect2.maxes()[k] - rect1.mins()[k]);
     }
 
-    static inline npy_float64
+    static inline double
     point_point(const ckdtree * tree,
-               const npy_float64 *x, const npy_float64 *y,
-                 const npy_intp k) {
-        return dabs(x[k] - y[k]);
+               const double *x, const double *y,
+                 const ckdtree_intp_t k) {
+        return ckdtree_fabs(x[k] - y[k]);
     }
 };
 
@@ -48,12 +48,46 @@ typedef BaseMinkowskiDistPinf<PlainDist1D> MinkowskiDistPinf;
 typedef BaseMinkowskiDistP1<PlainDist1D> MinkowskiDistP1;
 typedef BaseMinkowskiDistP2<PlainDist1D> NonOptimizedMinkowskiDistP2;
 
+/*
+ * Measuring distances
+ * ===================
+ */
+inline double
+sqeuclidean_distance_double(const double *u, const double *v, ckdtree_intp_t n)
+{
+    double s;
+    ckdtree_intp_t i;
+    // manually unrolled loop, might be vectorized
+    double acc[4] = {0., 0., 0., 0.};
+    for (i = 0; i < n/4; i += 4) {
+        double _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
+        double _v[4] = {v[i], v[i + 1], v[i + 2], v[i + 3]};
+        double diff[4] = {_u[0] - _v[0],
+                               _u[1] - _v[1],
+                               _u[2] - _v[2],
+                               _u[3] - _v[3]};
+        acc[0] += diff[0] * diff[0];
+        acc[1] += diff[1] * diff[1];
+        acc[2] += diff[2] * diff[2];
+        acc[3] += diff[3] * diff[3];
+    }
+    s = acc[0] + acc[1] + acc[2] + acc[3];
+    if (i < n) {
+        for(; i<n; ++i) {
+            double d = u[i] - v[i];
+            s += d * d;
+        }
+    }
+    return s;
+}
+
+
 struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {
-    static inline npy_float64
+    static inline double
     point_point_p(const ckdtree * tree,
-               const npy_float64 *x, const npy_float64 *y,
-               const npy_float64 p, const npy_intp k,
-               const npy_float64 upperbound)
+               const double *x, const double *y,
+               const double p, const ckdtree_intp_t k,
+               const double upperbound)
     {
         return sqeuclidean_distance_double(x, y, k);
     }
@@ -61,9 +95,9 @@ struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {
 
 struct BoxDist1D {
     static inline void _interval_interval_1d (
-        npy_float64 min, npy_float64 max,
-        npy_float64 *realmin, npy_float64 *realmax,
-        const npy_float64 full, const npy_float64 half
+        double min, double max,
+        double *realmin, double *realmax,
+        const double full, const double half
     )
     {
         /* Minimum and maximum distance of two intervals in a periodic box
@@ -83,13 +117,13 @@ struct BoxDist1D {
          *
          * We will fix the convention later.
          * */
-        if (NPY_UNLIKELY(full <= 0)) {
+        if (CKDTREE_UNLIKELY(full <= 0)) {
             /* A non-periodic dimension */
             /* \/     */
             if(max <= 0 || min >= 0) {
                 /* do not pass though 0 */
-                min = dabs(min);
-                max = dabs(max);
+                min = ckdtree_fabs(min);
+                max = ckdtree_fabs(max);
                 if(min < max) {
                     *realmin = min;
                     *realmax = max;
@@ -98,9 +132,9 @@ struct BoxDist1D {
                     *realmax = min;
                 }
             } else {
-                min = dabs(min);
-                max = dabs(max);
-                *realmax = fmax(max, min);
+                min = ckdtree_fabs(min);
+                max = ckdtree_fabs(max);
+                *realmax = ckdtree_fmax(max, min);
                 *realmin = 0;
             }
             /* done with non-periodic dimension */
@@ -108,8 +142,8 @@ struct BoxDist1D {
         }
         if(max <= 0 || min >= 0) {
             /* do not pass through 0 */
-            min = dabs(min);
-            max = dabs(max);
+            min = ckdtree_fabs(min);
+            max = ckdtree_fabs(max);
             if(min > max) {
                 double t = min;
                 min = max;
@@ -126,7 +160,7 @@ struct BoxDist1D {
             } else {
                 /* min below, max above */
                 *realmax = half;
-                *realmin = dmin(min, full - max);
+                *realmin = ckdtree_fmin(min, full - max);
             }
         } else {
             /* pass though 0 */
@@ -140,8 +174,8 @@ struct BoxDist1D {
     static inline void
     interval_interval(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
-                        const npy_intp k,
-                        npy_float64 *min, npy_float64 *max)
+                        const ckdtree_intp_t k,
+                        double *min, double *max)
     {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
@@ -151,39 +185,39 @@ struct BoxDist1D {
                     tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
     }
 
-    static inline npy_float64
+    static inline double
     point_point(const ckdtree * tree,
-               const npy_float64 *x, const npy_float64 *y,
-               const npy_intp k)
+               const double *x, const double *y,
+               const ckdtree_intp_t k)
     {
-        npy_float64 r1;
+        double r1;
         r1 = wrap_distance(x[k] - y[k], tree->raw_boxsize_data[k + tree->m], tree->raw_boxsize_data[k]);
-        r1 = dabs(r1);
+        r1 = ckdtree_fabs(r1);
         return r1;
     }
 
-    static inline const npy_float64
-    wrap_position(const npy_float64 x, const npy_float64 boxsize)
+    static inline const double
+    wrap_position(const double x, const double boxsize)
     {
         if (boxsize <= 0) return x;
-        const npy_float64 r = std::floor(x / boxsize);
-        npy_float64 x1 = x - r * boxsize;
+        const double r = std::floor(x / boxsize);
+        double x1 = x - r * boxsize;
         /* ensure result is within the box. */
         while(x1 >= boxsize) x1 -= boxsize;
         while(x1 < 0) x1 += boxsize;
         return x1;
     }
 
-    static inline const npy_float64 side_distance_from_min_max(
-        const ckdtree * tree, const npy_float64 x,
-        const npy_float64 min,
-        const npy_float64 max,
-        const npy_intp k
+    static inline const double side_distance_from_min_max(
+        const ckdtree * tree, const double x,
+        const double min,
+        const double max,
+        const ckdtree_intp_t k
         )
     {
-        npy_float64 s, t, tmin, tmax;
-        npy_float64 fb = tree->raw_boxsize_data[k];
-        npy_float64 hb = tree->raw_boxsize_data[k + tree->m];
+        double s, t, tmin, tmax;
+        double fb = tree->raw_boxsize_data[k];
+        double hb = tree->raw_boxsize_data[k + tree->m];
 
         if (fb <= 0) {
             /* non-periodic dimension */
@@ -196,14 +230,14 @@ struct BoxDist1D {
         tmax = x - max;
         tmin = x - min;
         /* is the test point in this range */
-        if(NPY_LIKELY(tmax < 0 && tmin > 0)) {
+        if(CKDTREE_LIKELY(tmax < 0 && tmin > 0)) {
             /* yes. min distance is 0 */
             return 0;
         }
 
         /* no */
-        tmax = dabs(tmax);
-        tmin = dabs(tmin);
+        tmax = ckdtree_fabs(tmax);
+        tmin = ckdtree_fabs(tmin);
 
         /* make tmin the closer edge */
         if(tmin > tmax) { t = tmin; tmin = tmax; tmax = t; }
@@ -224,15 +258,15 @@ struct BoxDist1D {
     }
 
     private:
-    static inline npy_float64
-    wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
+    static inline double
+    wrap_distance(const double x, const double hb, const double fb)
     {
-        npy_float64 x1;
-        if (NPY_UNLIKELY(x < -hb)) x1 = fb + x;
-        else if (NPY_UNLIKELY(x > hb)) x1 = x - fb;
+        double x1;
+        if (CKDTREE_UNLIKELY(x < -hb)) x1 = fb + x;
+        else if (CKDTREE_UNLIKELY(x > hb)) x1 = x - fb;
         else x1 = x;
     #if 0
-        printf("dabs_b x : %g x1 %g\n", x, x1);
+        printf("ckdtree_fabs_b x : %g x1 %g\n", x, x1);
     #endif
         return x1;
     }

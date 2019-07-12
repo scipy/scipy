@@ -28,6 +28,10 @@ def nnls(A, b, maxiter=None):
     rnorm : float
         The residual, ``|| Ax-b ||_2``.
 
+    See Also
+    --------
+    lsq_linear : Linear least squares with bounds on the variables
+
     Notes
     -----
     The FORTRAN code was published in the book below. The algorithm
@@ -37,6 +41,19 @@ def nnls(A, b, maxiter=None):
     References
     ----------
     Lawson C., Hanson R.J., (1987) Solving Least Squares Problems, SIAM
+
+     Examples
+    --------
+    >>> from scipy.optimize import nnls
+    ...
+    >>> A = np.array([[1, 0], [1, 0], [0, 1]])
+    >>> b = np.array([2, 1, 1])
+    >>> nnls(A, b)
+    (array([1.5, 1. ]), 0.7071067811865475)
+
+    >>> b = np.array([-1, -1, -1])
+    >>> nnls(A, b)
+    (array([0., 0.]), 1.7320508075688772)
 
     """
 

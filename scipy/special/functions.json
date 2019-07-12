@@ -651,30 +651,12 @@
             "hyp1f1_wrap": "ddd->d"
         }
     },
-    "hyp1f2": {
-        "cephes.h": {
-            "onef2": "dddd*d->d"
-        }
-    },
-    "hyp2f0": {
-        "_legacy.pxd": {
-            "hyp2f0_unsafe": "dddd*d->d"
-        },
-        "cephes.h": {
-            "hyp2f0": "dddi*d->d"
-        }
-    },
     "hyp2f1": {
         "cephes.h": {
             "hyp2f1": "dddd->d"
         },
         "specfun_wrappers.h": {
             "chyp2f1_wrap": "dddD->D"
-        }
-    },
-    "hyp3f0": {
-        "cephes.h": {
-            "threef0": "dddd*d->d"
         }
     },
     "hyperu": {
@@ -846,9 +828,24 @@
             "cbesk_wrap_real_int": "id->d"
         }
     },
+    "_kolmogc": {
+        "cephes.h": {
+            "kolmogc": "d->d"
+        }
+    },
+    "_kolmogci": {
+        "cephes.h": {
+            "kolmogci": "d->d"
+        }
+    },
     "kolmogi": {
         "cephes.h": {
             "kolmogi": "d->d"
+        }
+    },
+    "_kolmogp": {
+        "cephes.h": {
+            "kolmogp": "d->d"
         }
     },
     "kolmogorov": {
@@ -1246,12 +1243,36 @@
             "smirnov": "id->d"
         }
     },
+    "_smirnovc": {
+        "_legacy.pxd": {
+            "smirnovc_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovc": "id->d"
+        }
+    },
+    "_smirnovci": {
+        "_legacy.pxd": {
+            "smirnovci_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovci": "id->d"
+        }
+    },
     "smirnovi": {
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
         "cephes.h": {
             "smirnovi": "id->d"
+        }
+    },
+    "_smirnovp": {
+        "_legacy.pxd": {
+            "smirnovp_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovp": "id->d"
         }
     },
     "spence": {

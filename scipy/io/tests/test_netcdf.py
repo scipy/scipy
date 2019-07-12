@@ -134,7 +134,7 @@ def test_read_write_files():
             check_simple(f)
             assert_equal(f.variables['app_var'][:], 42)
 
-    except:
+    except:  # noqa: E722
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
         raise

@@ -38,7 +38,14 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_flapack',
                          sources=sources,
-                         depends=['flapack_user.pyf.src'],
+                         depends=['flapack_gen.pyf.src',
+                                  'flapack_gen_banded.pyf.src',
+                                  'flapack_gen_tri.pyf.src',
+                                  'flapack_pos_def.pyf.src',
+                                  'flapack_pos_def_tri.pyf.src',
+                                  'flapack_sym_herm.pyf.src',
+                                  'flapack_other.pyf.src',
+                                  'flapack_user.pyf.src'],
                          extra_info=lapack_opt
                          )
 

@@ -1,0 +1,1632 @@
+! Signatures for f2py-wrappers of FORTRAN LAPACK Other Auxillary and Computational functions.
+!
+
+subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
+
+    callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alphar,alphai,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
+    callprotoargument int*,int*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,int*,int*
+
+    integer intent(hide) :: ijob=4
+    integer intent(hide),check(wantq==0||wantq==1) :: wantq=1
+    integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
+    logical intent(in),dimension(n) :: select
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2> intent(in,out,copy),dimension(lda,n) :: a
+    integer intent(hide),depend(a) :: lda=shape(a,0)
+    <ftype2> intent(in,out,copy),dimension(ldb,n) :: b
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    <ftype2> intent(out),dimension(n) :: alphar
+    <ftype2> intent(out),dimension(n) :: alphai
+    <ftype2> intent(out),dimension(n) :: beta
+    <ftype2> intent(in,out,copy),dimension(ldq,n) :: q
+    integer intent(hide),depend(q) :: ldq=shape(q,0)
+    <ftype2> intent(in,out,copy),dimension(ldz,n) :: z
+    integer intent(hide),depend(z) :: ldz=shape(z,0)
+    integer intent(out) :: m
+    <ftype2> intent(out) :: pl
+    <ftype2> intent(out) :: pr
+    <ftype2> intent(out),dimension(2) :: dif
+    <ftype2> intent(out),dimension(MAX(lwork,1)) :: work
+    integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= MAX(4*n+16,2*m*(n-m))) :: lwork=max(MAX(4*n+16,2*m*(n-m)),1)
+    integer intent(out),dimension(MAX(1,liwork)) :: iwork
+    integer optional,intent(in),depend(n),check(liwork == -1 || liwork >= n+6) :: liwork=n+6
+    integer intent(out) :: info
+
+end subroutine <prefix2>tgsen
+
+subroutine <prefix2c>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
+    callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alpha,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
+    callprotoargument int*,int*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,int*,int*,int*
+
+    integer intent(hide) :: ijob=4
+    integer intent(hide),check(wantq==0||wantq==1) :: wantq=1
+    integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
+    logical intent(in),dimension(n) :: select
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2c> intent(in,out,copy),dimension(lda,n) :: a
+    integer intent(hide),depend(a) :: lda=shape(a,0)
+    <ftype2c> intent(in,out,copy),dimension(ldb,n) :: b
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    <ftype2c> intent(out),dimension(n) :: alpha
+    <ftype2c> intent(out),dimension(n) :: beta
+    <ftype2c> intent(in,out,copy),dimension(ldq,n) :: q
+    integer intent(hide),depend(q) :: ldq=shape(q,0)
+    <ftype2c> intent(in,out,copy),dimension(ldz,n) :: z
+    integer intent(hide),depend(z) :: ldz=shape(z,0)
+    integer intent(out) :: m
+    <ftype2> intent(out) :: pl
+    <ftype2> intent(out) :: pr
+    <ftype2> intent(out),dimension(2) :: dif
+    <ftype2c> intent(out),dimension(MAX(lwork,1)) :: work
+    integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= 2*m*(n-m)) :: lwork=max(2*m*(n-m),1)
+    integer intent(out),dimension(MAX(1,liwork)):: iwork
+    integer optional,intent(in),depend(n),check(liwork == -1 || liwork>=n+2) :: liwork=n+2
+    integer intent(out) :: info
+end subroutine <prefix2c>tgsen
+
+subroutine <prefix2>pbtrf(lower,n,kd,ab,ldab,info)
+    ! Compute Cholesky decomposition of banded symmetric positive definite
+    ! matrix:
+    ! A = U^T * U, C = U if lower = 0
+    ! A = L * L^T, C = L if lower = 1
+    ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,ab,&ldab,&info);
+    callprotoargument char*,int*,int*,<ctype2>*,int*,int*
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    <ftype2> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+    integer intent(out) :: info
+
+end subroutine <prefix2>pbtrf
+
+subroutine <prefix2c>pbtrf(lower,n,kd,ab,ldab,info)
+    ! Compute Cholesky decomposition of banded symmetric positive definite
+    ! matrix:
+    ! A = U^H * U, C = U if lower = 0
+    ! A = L * L^H, C = L if lower = 1
+    ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,ab,&ldab,&info);
+    callprotoargument char*,int*,int*,<ctype2c>*,int*,int*
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    <ftype2c> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+    integer intent(out) :: info
+
+end subroutine <prefix2c>pbtrf
+
+subroutine <prefix2>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
+
+    ! Solve a system of linear equations A*X = B with a symmetric
+    ! positive definite band matrix A using the Cholesky factorization.
+    ! AB is the triangular factur U or L from the Cholesky factorization
+    ! previously computed with *PBTRF.
+    ! A = U^T * U, AB = U if lower = 0
+    ! A = L * L^T, AB = L if lower = 1
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
+    callprotoargument char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: nrhs=shape(b,1)
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    <ftype2> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+    <ftype2> dimension(ldab,n),intent(in) :: ab
+    integer intent(out) :: info
+
+end subroutine <tchar=s,d>pbtrs
+
+subroutine <prefix2c>pbtrs(lower, n, kd, nrhs, ab, ldab, b, ldb, info)
+    ! Solve a system of linear equations A*X = B with a symmetric
+    ! positive definite band matrix A using the Cholesky factorization.
+    ! AB is the triangular factur U or L from the Cholesky factorization
+    ! previously computed with *PBTRF.
+    ! A = U^T * U, AB = U if lower = 0
+    ! A = L * L^T, AB = L if lower = 1
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
+    callprotoargument char*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: nrhs=shape(b,1)
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    <ftype2c> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+    <ftype2c> dimension(ldab,n),intent(in) :: ab
+    integer intent(out) :: info
+
+end subroutine <prefix2c>pbtrs
+
+subroutine <prefix>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
+
+    ! Solve a system of linear equations A*X = B with a triangular
+    ! matrix A.
+
+    callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,&nrhs,a,&lda,b,&ldb,&info);
+    callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+    integer optional,intent(in),check(unitdiag==0||unitdiag==1) :: unitdiag = 0
+    integer optional,check(shape(a,0)==lda),depend(a) :: lda=shape(a,0)
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: nrhs=shape(b,1)
+
+    <ftype> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+    <ftype> dimension(lda,n),intent(in) :: a
+    integer intent(out) :: info
+
+end subroutine <prefix>trtrs
+
+subroutine <prefix2>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
+    !
+    ! Computes the solution to a real system of linear equations
+    ! A * X = B,
+    !  where A is an N-by-N symmetric positive definite band matrix and X
+    !  and B are N-by-NRHS matrices.
+    !
+    !  The Cholesky decomposition is used to factor A as
+    !     A = U**T * U,  if lower=1, or
+    !     A = L * L**T,  if lower=0
+    !  where U is an upper triangular band matrix, and L is a lower
+    !  triangular band matrix, with the same number of superdiagonals or
+    !  subdiagonals as A.  The factored form of A is then used to solve the
+    !  system of equations A * X = B.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
+    callprotoargument char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: nrhs=shape(b,1)
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    <ftype2> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+    <ftype2> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+    integer intent(out) :: info
+
+end subroutine <prefix2>pbsv
+
+subroutine <prefix2c>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
+    ! Computes the solution to a real system of linear equations
+    ! A * X = B,
+    !  where A is an N-by-N Hermitian positive definite band matrix and X
+    !  and B are N-by-NRHS matrices.
+    !
+    !  The Cholesky decomposition is used to factor A as
+    !     A = U**H * U,  if lower=1, or
+    !     A = L * L**H,  if lower=0
+    !  where U is an upper triangular band matrix, and L is a lower
+    !  triangular band matrix, with the same number of superdiagonals or
+    !  subdiagonals as A.  The factored form of A is then used to solve the
+    !  system of equations A * X = B.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info);
+    callprotoargument char*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: nrhs=shape(b,1)
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    <ftype2c> dimension(ldb, nrhs),intent(in,out,copy,out=x) :: b
+    <ftype2c> dimension(ldab,n),intent(in,out,copy,out=c) :: ab
+    integer intent(out) :: info
+
+end subroutine <prefix2c>pbsv
+
+subroutine <prefix2>orghr(n,lo,hi,a,tau,work,lwork,info)
+    !
+    ! q,info = orghr(a,tau,lo=0,hi=n-1,lwork=n,overwrite_a=0)
+    ! Compute orthogonal matrix Q for Hessenberg reduction from the matrix
+    ! that was computed by gehrd
+    !
+    callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
+    integer intent(in),optional :: lo = 0
+    integer intent(in),optional,depend(n) :: hi = n-1
+    <ftype2> dimension(n-1),intent(in),depend(n) :: tau
+    <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+    integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = max(hi-lo,1)
+    integer intent(out) :: info
+
+end subroutine <prefix2>orghr
+
+subroutine <prefix2>orghr_lwork(n,lo,hi,a,tau,work,lwork,info)
+    ! LWORK computation ofr orghr
+    fortranname <prefix2>orghr
+    callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*
+    integer intent(in) :: n
+    <ftype2> intent(hide) :: a
+    integer intent(in), optional :: lo = 0
+    integer intent(in), optional, depend(n) :: hi = n-1
+    <ftype2> intent(hide) :: tau
+    <ftype2> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+
+end subroutine <prefix2>orghr_lwork
+
+subroutine <prefix2c>unghr(n,lo,hi,a,tau,work,lwork,info)
+    ! q,info = orghr(a,tau,lo=0,hi=n-1,lwork=n,overwrite_a=0)
+    ! Compute orthogonal matrix Q for Hessenberg reduction from the matrix
+    ! that was computed by gehrd
+    !
+    callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2c> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
+    integer intent(in),optional :: lo = 0
+    integer intent(in),optional,depend(n) :: hi = n-1
+    <ftype2c> dimension(n-1),intent(in),depend(n) :: tau
+    <ftype2c> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+    integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = max(hi-lo,1)
+    integer intent(out) :: info
+
+end subroutine <prefix2c>unghr
+
+subroutine <prefix2c>unghr_lwork(n,lo,hi,a,tau,work,lwork,info)
+    ! LWORK computation for orghr
+    fortranname <prefix2c>unghr
+    callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
+    integer intent(in) :: n
+    <ftype2c> intent(hide) :: a
+    integer intent(in), optional :: lo = 0
+    integer intent(in), optional, depend(n) :: hi = n-1
+    <ftype2c> intent(hide) :: tau
+    <ftype2c> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+
+end subroutine <prefix2c>unghr_lwork
+
+subroutine <prefix2>orgqr(m,n,k,a,tau,work,lwork,info)
+    ! q,work,info = orgqr(a,lwork=3*n,overwrite_a=0)
+    ! Generates an M-by-N real matrix Q with orthonormal columns,
+    ! which is defined as the first N columns of a product of K elementary
+    ! reflectors of order M (e.g. output of geqrf)
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(tau):: k = shape(tau,0)
+    <ftype2> dimension(m,n),intent(in,out,copy,out=q) :: a
+    <ftype2> dimension(k),intent(in) :: tau
+
+    integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*n,1)
+    <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>orgqr
+
+subroutine <prefix2c>ungqr(m,n,k,a,tau,work,lwork,info)
+    ! q,work,info = ungqr(a,lwork=3*n,overwrite_a=0)
+    ! Generates an M-by-N complex matrix Q with unitary columns,
+    ! which is defined as the first N columns of a product of K elementary
+    ! reflectors of order M (e.g. output of geqrf)
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(tau):: k = shape(tau,0)
+    <ftype2c> dimension(m,n),intent(in,out,copy,out=q) :: a
+    <ftype2c> dimension(k),intent(in) :: tau
+
+    integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*n,1)
+    <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2c>ungqr
+
+subroutine <prefix2>ormqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
+    ! cq,work,info = ormqr(side,trans,a,tau,c,lwork)
+    ! multiplies the real matrix C with the real orthogonal matrix Q,
+    ! which is defined as the first N columns of a product of K elementary
+    ! reflectors of order M (e.g. output of geqrf)
+
+    threadsafe
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    character intent(in),check(*side=='L'||*side=='R'):: side
+    character intent(in),check(*trans=='N'||*trans=='T'):: trans
+    integer intent(hide),depend(c):: m = shape(c,0)
+    integer intent(hide),depend(c):: n = shape(c,1)
+    integer intent(hide),depend(a):: k = shape(a,1)
+    <ftype2> dimension(lda,k),intent(in):: a
+    integer intent(hide),depend(a):: lda = shape(a, 0)
+    <ftype2> dimension(k),intent(in):: tau
+    <ftype2> dimension(ldc,n),intent(in,out,copy,out=cq):: c
+    integer intent(hide),depend(c):: ldc = shape(c, 0)
+    <ftype2> dimension(MAX(lwork,1)),intent(out):: work
+    integer intent(in):: lwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>ormqr
+
+subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
+    ! cq,work,info = unmqr(side,trans,a,tau,c,lwork)
+    ! multiplies the complex matrix C with the complex unitary matrix Q,
+    ! which is defined as the first N columns of a product of K elementary
+    ! reflectors of order M (e.g. output of geqrf)
+
+    threadsafe
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,int*
+
+    character intent(in),check(*side=='L'||*side=='R'):: side
+    character intent(in),check(*trans=='N'||*trans=='C'):: trans
+    integer intent(hide),depend(c):: m = shape(c,0)
+    integer intent(hide),depend(c):: n = shape(c,1)
+    integer intent(hide),depend(a):: k = shape(a,1)
+    <ftype2c> dimension(lda,k),intent(in):: a
+    integer intent(hide),depend(a):: lda = shape(a, 0)
+    <ftype2c> dimension(k),intent(in):: tau
+    <ftype2c> dimension(ldc,n),intent(in,out,copy,out=cq):: c
+    integer intent(hide),depend(c):: ldc = shape(c, 0)
+    <ftype2c> dimension(MAX(lwork,1)),intent(out):: work
+    integer intent(in):: lwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>unmqr
+
+subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
+    ! a,t,info = geqrt(nb,a,[overwrite_a=0])
+    !
+    ! Computes a QR factorization with block size nb of a general matrix A,
+    ! using the compact WY representation for Q. T stores the upper triangular
+    ! block reflectors.
+
+    callstatement (*f2py_func)(&m,&n,&nb,a,&lda,t,&ldt,work,&info)
+    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(in),depend(m,n),check(MIN(m,n)>=nb&&nb>=1):: nb
+    <ftype> dimension(m,n),intent(in,out,copy):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> dimension(nb,MIN(m,n)),intent(out):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension(nb,n),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>geqrt
+
+subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
+    ! c,info = gemqrt(side,trans,v,t,c,[overwrite_c=0])
+    !
+    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+    ! elementary reflectors stored in matrix V and the upper triangular block
+    ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
+    ! matrices), or its adjoint (for complex matrices) from the left or right.
+
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(hide),depend(c):: m = shape(c,0)
+    integer intent(hide),depend(c):: n = shape(c,1)
+    integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
+    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
+    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
+    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
+    <ftype> dimension(nb,k),intent(in):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension(m,n),intent(in,out,copy):: c
+    integer intent(hide),depend(c):: ldc = MAX(1,shape(c,0))
+    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>gemqrt
+
+subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
+    ! a,b,t,info = tpqrt(l,nb,a,b,[overwrite_a=0,overwrite_b=0])
+    !
+    ! Computes a QR factorization with block size nb of a triangular-pentagonal
+    ! matrix consisting of square upper triangular matrix A and pentagonal
+    ! matrix B, in the compact WY representation. L is the order of the
+    ! trapezoidal part of matrix B. T stores the upper triangular block
+    ! reflectors.
+
+    callstatement (*f2py_func)(&m,&n,&l,&nb,a,&lda,b,&ldb,t,&ldt,work,&info)
+    callprotoargument int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    integer intent(hide),depend(b):: m = shape(b,0)
+    integer intent(hide),depend(b):: n = shape(b,1)
+    integer intent(in),depend(m,n),check(MIN(m,n)>=l&&l>=0):: l
+    integer intent(in),depend(n),check(n>=nb&&nb>=1):: nb
+    <ftype> dimension(n,n),intent(in,out,copy):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> dimension(m,n),intent(in,out,copy):: b
+    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
+    <ftype> dimension(nb,n),intent(out):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension(nb,n),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>tpqrt
+
+subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,info)
+    ! a,b,info = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
+    !
+    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+    ! elementary reflectors stored in the pentagonal matrix V and the upper
+    ! triangular block reflectors in matrix T. L is the order of the trapezoidal
+    ! part of matrix V. Matrix C consists of blocks A and B, and may be
+    ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
+    ! complex matrices) from the left or right.
+
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(hide),depend(b):: m = shape(b,0)
+    integer intent(hide),depend(b):: n = shape(b,1)
+    integer intent(hide),depend(t):: k = shape(t,1)
+    integer intent(in),depend(k),check(k>=l&&l>=0):: l
+    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
+    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
+    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
+    <ftype> dimension(nb,k),intent(in):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension((side[0]=='L'?k:m),(side[0]=='L'?n:k)),intent(in,out,copy):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> dimension(m,n),intent(in,out,copy):: b
+    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
+    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>tpmqrt
+
+subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,lwork,info)
+    !
+    ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
+    !
+    !                 SIDE = 'L'     SIDE = 'R'
+    ! TRANS = 'N':      Q * C          C * Q
+    ! TRANS = 'C':      Q**H * C       C * Q**H
+    !
+    ! where Q is a complex unitary matrix defined as the product of k
+    ! elementary reflectors
+    !
+    !       Q = H(1) H(2) . . . H(k)
+    !
+    ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
+    ! if SIDE = 'R'.
+    !
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,a,&lda,tau,c,&ldc,work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(hide),depend(c),check(m>=0):: m=shape(c,0)
+    integer intent(hide),depend(c),check(n>=0):: n=shape(c,1)
+    integer intent(hide),depend(a):: k=shape(a,0)
+    integer intent(hide),depend(a):: l=shape(a,1)-shape(a,0)
+    <ftype> dimension(k,nt),intent(in),check(shape(a,1)>=shape(a,0)):: a
+    integer intent(hide),depend(a,side,n,m),check((*side=='L'?m:n)==nt):: nt=shape(a,1)
+    integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
+    <ftype> dimension(k),depend(k),check(rank(tau)==1),intent(in):: tau
+    <ftype> dimension(m,n),intent(in,out,copy,out=cq):: c
+    integer intent(hide),depend(c):: ldc = MAX(shape(c,0),1)
+    <ftype> dimension(lwork),depend(lwork),intent(hide,cache):: work
+    integer optional,intent(in),depend(side,m,n),check(lwork>=(*side=='L'?n:m)||lwork==-1):: lwork=MAX((side[0]=='L'?n:m),1)
+    integer intent(out):: info
+
+end subroutine <prefix><or,or,un,un>mrz
+
+subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,work,lwork,info)
+    !
+    ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
+    !
+    !                 SIDE = 'L'     SIDE = 'R'
+    ! TRANS = 'N':      Q * C          C * Q
+    ! TRANS = 'C':      Q**H * C       C * Q**H
+    !
+    ! where Q is a complex unitary matrix defined as the product of k
+    ! elementary reflectors
+    !
+    !       Q = H(1) H(2) . . . H(k)
+    !
+    ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
+    ! if SIDE = 'R'.
+    !
+    fortranname <prefix><or,or,un,un>mrz
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&a,&lda,&tau,&c,&ldc,&work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(in):: m
+    integer intent(in):: n
+    integer intent(hide),depend(side,m,n):: k=(*side=='L'?m:n)
+    integer intent(hide):: l
+    <ftype> intent(hide):: a
+    integer intent(hide),depend(k):: lda=k
+    <ftype> intent(hide):: c
+    integer intent(hide),depend(m):: ldc=m
+    <ftype> intent(hide):: tau
+    <ftype> intent(out):: work
+    integer intent(hide):: lwork=-1
+    integer intent(out):: info
+
+end subroutine <prefix><or,or,un,un>mrz_lwork
+
+subroutine <prefix2>orgrq(m,n,k,a,tau,work,lwork,info)
+    ! q,work,info = orgrq(a,lwork=3*n,overwrite_a=0)
+    ! Generates an M-by-N real matrix Q with orthonormal columns,
+    ! which is defined as the first N columns of a product of K elementary
+    ! reflectors of order M (e.g. output of gerqf)
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(tau):: k = shape(tau,0)
+    <ftype2> dimension(m,n),intent(in,out,copy,out=q) :: a
+    <ftype2> dimension(k),intent(in) :: tau
+
+    integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=max(3*m,1)
+    <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>orgrq
+
+subroutine <prefix2c>ungrq(m,n,k,a,tau,work,lwork,info)
+    ! q,work,info = ungrq(a,lwork=3*n,overwrite_a=0)
+    ! Generates an M-by-N complex matrix Q with unitary columns,
+    ! which is defined as the first N columns of a product of K elementary
+    ! reflectors of order M (e.g. output of gerqf)
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,&k,a,&m,tau,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(tau):: k = shape(tau,0)
+    <ftype2c> dimension(m,n),intent(in,out,copy,out=q) :: a
+    <ftype2c> dimension(k),intent(in) :: tau
+
+    integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=max(3*m,1)
+    <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2c>ungrq
+
+subroutine <prefix>trtri(n,c,info,lower,unitdiag)
+
+    ! inv_c,info = trtri(c,lower=0,unitdiag=1,overwrite_c=0)
+    ! Compute C inverse C^-1 where
+    ! C = U if lower = 0
+    ! C = L if lower = 1
+    ! C is non-unit triangular matrix if unitdiag = 0
+    ! C is unit triangular matrix if unitdiag = 1
+
+    callstatement (*f2py_func)((lower?"L":"U"),(unitdiag?"U":"N"),&n,c,&n,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*,int*
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(unitdiag==0||unitdiag==1) :: unitdiag = 0
+
+    integer depend(c),intent(hide):: n = shape(c,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=inv_c) :: c
+    check(shape(c,0)==shape(c,1)) :: c
+    integer intent(out) :: info
+
+end subroutine <prefix>trtri
+
+subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale, info)
+    ! x,scale,info = trsyl(trana='N', tranb='N', isgn, a, b, c)
+    !
+    ! Solves the real Sylvester matrix equation:
+    !
+    !    op(A)*X + X*op(B) = scale*C or op(A)*X - X*op(B) = scale*C
+    !
+    ! where A and B are both quasi-triangular matrices.  A and B must be in
+    ! Schur canonical form.  op(A) and op(B) are specified via trana and tranb
+    ! respectively, and may take the forms 'N' (no transpose), 'T' (transpose),
+    ! or 'C' (conjugate transpose, where applicable) to indicate the operation
+    ! to be performed.  The value of isgn (1 or -1) specifies the sign of the
+    ! X*op(B) term in the equation.
+    !
+    ! Upon exit, x contains the solution, scale represnets scale factor, set
+    ! <= 1 to avoid overflow in the solution, and info contains the exit
+    ! status:
+    !
+    !      0: success
+    !      < 0: if info = -i, the i-th argument had an illegal value
+    !      1: A and B have common or very close eigenvalues; perturbed values
+    !         were used to solve the equation
+
+    callstatement (*f2py_func)(trana,tranb,&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
+    callprotoargument char*,char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,int*
+
+    character optional,intent(in),check(*trana=='N'||*trana=='T'||*trana=='C'):: trana='N'
+    character optional,intent(in),check(*tranb=='N'||*tranb=='T'||*tranb=='C'):: tranb='N'
+
+    integer optional,intent(in),check(isgn==1||isgn==-1)::isgn=1
+
+    integer depend(a),intent(hide):: m = shape(a,0)
+    integer depend(b),intent(hide):: n = shape(b,0)
+
+    <ftype> dimension(m,m),intent(in) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+    integer depend(a),intent(hide):: lda = shape(a,0)
+
+    <ftype> dimension(n,n),intent(in) :: b
+    check(shape(b,0)==shape(b,1)) :: b
+    integer depend(b),intent(hide):: ldb = shape(b,0)
+
+    <ftype> dimension(m,n),intent(in,out,copy,out=x) :: c
+    integer depend(c),intent(hide):: ldc = shape(c,0)
+
+    <ftypereal> intent(out) :: scale
+
+    integer intent(out) :: info
+
+end subroutine <prefix>trsyl
+
+subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork,lrwork,iwork,liwork,info)
+    ! in :Band:zubevd.f
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
+    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*,int*
+
+    ! Remark: if ab is fortran contigous on input
+    !         and overwrite_ab=1  ab will be overwritten.
+    <ftype2c> dimension(ldab,n), intent(in, overwrite) :: ab
+
+    integer optional,intent(in):: compute_v = 1
+    check( compute_v==1||compute_v==0) compute_v
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    ! case n=0 is omitted in calculaton of lwork, lrwork, liwork
+    ! so we forbid it
+    check( n>0 ) n
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+
+    <ftype2> dimension(n),intent(out),depend(n) :: w
+
+    ! For compute_v=1 z is used and contains the eigenvectors
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2c> dimension(ldz,ldz),intent(out),depend(ldz) :: z
+
+    integer intent(hide),depend(n) :: lwork=max((compute_v?2*n*n:n),1)
+    <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
+    integer intent(out)::info
+
+    integer optional, check(lrwork>=(compute_v?1+5*n+2*n*n:n)),depend(n) :: lrwork=(compute_v?1+5*n+2*n*n:n)
+
+    <ftype2> intent(hide),dimension(lrwork),depend(lrwork) :: rwork
+
+    ! documentation says liwork >=2+5*n, but that crashes, +1 helps
+    integer optional, check(liwork>=(compute_v?3+5*n:1)),depend(n) :: liwork=(compute_v?3+5*n:1)
+    integer intent(hide),dimension(liwork),depend(liwork) :: iwork
+
+end subroutine <prefix2c>hbevd
+
+subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,abstol,w,z,m,mmax,ldz,work,rwork,iwork,ifail,info) ! in :Band:dsbevx.f
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),(lower?"L":"U"),&n,&kd,ab,&ldab,q,&ldq,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,rwork,iwork,ifail,&info)
+    callprotoargument char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,<ctype2>*,int*,int*,int*
+
+    integer optional,intent(in):: compute_v = 1
+    check(compute_v==1||compute_v==0) compute_v
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+
+    integer optional,intent(in):: range = 0
+    check(range==2||range==1||range==0) range
+
+    ! Remark: if ab is fortran contigous on input
+    !         and overwrite_ab=1  ab will be overwritten.
+    <ftype2c> dimension(ldab,n),intent(in, overwrite) :: ab
+
+    ! FIXME: do we need to make q available for outside usage ???
+    !        If so: how to make this optional
+    !*  Q       (output) DOUBLE PRECISION array, dimension (LDQ, N)
+    !*          If JOBZ = 'V', the N-by-N orthogonal matrix used in the
+    !*                         reduction to tridiagonal form.
+    !*          If JOBZ = 'N', the array Q is not referenced.
+    integer intent(hide),depend(n,compute_v) :: ldq=(compute_v?n:1)
+    <ftype2c> dimension(ldq,ldq),intent(hide),depend(ldq) :: q
+
+    <ftype2> :: vl
+    <ftype2> :: vu
+    integer,check((il\>=1 && il\<=n)),depend(n) :: il
+    integer,check((iu\>=1 && iu\<=n && iu\>=il)),depend(n,il) :: iu
+
+    ! Remark, we don't use python indexing here, because
+    !  if someone uses ?sbevx directly,
+    !  he should expect Fortran style indexing.
+    !integer,check((il\>=0 && il\<n)),depend(n) :: il+1
+    !integer,check((iu\>=0 && iu\<n && iu\>=il)),depend(n,il) :: iu+1
+
+    ! Remark:
+    ! Eigenvalues will be computed most accurately when ABSTOL is
+    ! set to twice the underflow threshold 2*DLAMCH('S'), not zero.
+    !
+    ! The easiest is to wrap DLAMCH (done below)
+    ! and let the user provide the value.
+    <ftype2> optional,intent(in):: abstol=0.0
+
+    <ftype2> dimension(n),intent(out),depend(n) :: w
+
+    <ftype2c> dimension(ldz,mmax),depend(ldz,mmax),intent(out) :: z
+    integer intent(hide),depend(n,compute_v) :: ldz=(compute_v?n:1)
+
+    ! We use the mmax parameter to fix the size of z
+    ! (only if eigenvalues are requested)
+    ! Otherwise we would allocate a (possibly) huge
+    ! region of memory for the eigenvectors, even
+    ! in cases where only a few are requested.
+    ! If RANGE = 'V' (range=1) we a priori don't know the
+    ! number of eigenvalues in the interval in advance.
+    ! As default we use the maximum value
+    ! but the user should use an appropriate mmax.
+    integer intent(in),depend(n,iu,il,compute_v,range) :: mmax=(compute_v?(range==2?(iu-il+1):n):1)
+    integer intent(out) :: m
+
+    <ftype2c> dimension(n),depend(n),intent(hide) :: work
+    <ftype2> dimension(7*n),depend(n),intent(hide) :: rwork
+    integer dimension(5*n),depend(n),intent(hide) :: iwork
+    integer dimension((compute_v?n:1)),depend(n,compute_v),intent(out) :: ifail
+    integer intent(out):: info
+
+end subroutine <prefix2c>hbevx
+
+subroutine <prefix>gglse(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
+    ! Solves the linear equality-constrained least squares (LSE)
+    ! problem:
+    !
+    !         minimize || c - A*x ||_2   subject to   B*x = d
+    !
+    ! where A is an M-by-N matrix, B is a P-by-N matrix, c is a given
+    ! M-vector, and d is a given P-vector. It is assumed that
+    ! P <= N <= M+P, and
+    !
+    !          rank(B) = P and  rank( (A) ) = N.
+    !                               ( (B) )
+    !
+    ! These conditions ensure that the LSE problem has a unique solution,
+    ! which is obtained using a generalized RQ factorization of the
+    ! matrices (B, A) given by
+    !
+    !    B = (0 R)*Q,   A = Z*T*Q.
+
+    callstatement (*f2py_func)(&m,&n,&p,a,&lda,b,&ldb,c,d,x,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(hide),depend(a),check(m>=0) :: m = shape(a,0)
+    integer intent(hide),depend(a),check(n>=0) :: n = shape(a,1)
+    integer intent(out) :: info
+
+    <ftype> dimension(m,n),intent(in,out,copy,out=t) :: a
+    integer intent(hide),depend(a) :: lda = MAX(shape(a,0),1)
+    <ftype> dimension(p,n),depend(n),intent(in,out,copy,out=r) :: b
+    integer intent(hide),depend(b) :: ldb = MAX(shape(b,0),1)
+    integer intent(hide),depend(b,m,n),check((p>=n-m)&&(p>=0)) :: p = shape(b,0)
+
+    <ftype> dimension(m),depend(m),intent(in,out,copy,out=res) :: c
+    <ftype> dimension(p),depend(p),intent(in,copy) :: d
+    <ftype> dimension(n),depend(n),intent(out) :: x
+
+    integer optional,intent(in),depend(p,m,n),check((lwork==-1)||(lwork>=1)) :: lwork = max(m+n+p,1)
+    <ftype> intent(hide),dimension(lwork),depend(lwork) :: work
+
+end subroutine <prefix>gglse
+
+
+subroutine <prefix>gglse_lwork(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
+    !
+    ! lwork routine for ?gglse
+    !
+    fortranname <prefix>gglse
+    callstatement (*f2py_func)(&m,&n,&p,&a,&lda,&b,&ldb,&c,&d,&x,&work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(in),check(m>=0) :: m
+    integer intent(in),check(n>=0) :: n
+    integer intent(in),depend(m,n),check((p>=n-m)&&(p>=0)&&p<=n) :: p
+    integer intent(out) :: info
+    <ftype> intent(out) :: work
+
+    <ftype> intent(hide) :: a
+    integer intent(hide),depend(m) :: lda = max(1,m)
+    <ftype> intent(hide) :: b
+    integer intent(hide),depend(p) :: ldb = max(1,p)
+    <ftype> intent(hide) :: c
+    <ftype> intent(hide) :: d
+    <ftype> intent(hide) :: x
+    integer intent(hide) :: lwork = -1
+
+end subroutine <prefix>gglse_lwork
+
+subroutine <prefix2>sbev(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,info)
+    ! in :Band:dsbev.f
+    ! principally <s,d>sbevd does the same, and are recommended for use.
+    ! (see man dsbevd)
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&info)
+
+    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*
+
+    ! Remark: if ab is fortran contigous on input
+    !         and overwrite_ab=1  ab will be overwritten.
+    <ftype2> dimension(ldab,n), intent(in,overwrite) :: ab
+
+    integer optional,intent(in):: compute_v = 1
+    check(compute_v==1||compute_v==0) compute_v
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+
+    <ftype2> dimension(n),intent(out),depend(n) :: w
+
+    ! For compute_v=1 z is used and contains the eigenvectors
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2> dimension(ldz,ldz),intent(out),depend(ldz) :: z
+
+    <ftype2> dimension(MAX(1,3*n-1)),intent(hide),depend(n) :: work
+    integer intent(out)::info
+
+end subroutine <prefix2>sbev
+
+subroutine <prefix2>sbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,iwork,liwork,info)
+    ! in :Band:dsbevd.f
+    callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&lwork,iwork,&liwork,&info)
+    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*,int*
+
+    ! Remark: if ab is fortran contigous on input
+    !         and overwrite_ab=1  ab will be overwritten.
+    <ftype2> dimension(ldab,n), intent(in, overwrite) :: ab
+
+    integer optional,intent(in):: compute_v = 1
+    check( compute_v==1||compute_v==0) compute_v
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+
+    <ftype2> dimension(n),intent(out),depend(n) :: w
+    <ftype2> dimension(ldz,ldz),intent(out),depend(ldz) :: z
+
+    ! For compute_v=1 z is used and contains the eigenvectors
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2> dimension(ldz,ldz),depend(ldz) :: z
+
+    integer intent(hide),depend(n) :: lwork=max((compute_v?1+5*n+2*n*n:2*n),1)
+    <ftype2> dimension(lwork),intent(hide),depend(lwork) :: work
+    integer intent(out)::info
+
+    integer optional,check(liwork>=(compute_v?3+5*n:1)),depend(n) :: liwork=(compute_v?3+5*n:1)
+    integer intent(hide),dimension(liwork),depend(liwork) :: iwork
+
+end subroutine <prefix2>sbevd
+
+subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,abstol,w,z,m,mmax,ldz,work,iwork,ifail,info) ! in :Band:dsbevx.f
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),(lower?"L":"U"),&n,&kd,ab,&ldab,q,&ldq,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,iwork,ifail,&info)
+    callprotoargument char*,char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*, int*,int*,int*
+
+    integer optional,intent(in):: compute_v = 1
+    check(compute_v==1||compute_v==0) compute_v
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    integer intent(hide),depend(ab) :: n=shape(ab,1)
+    integer intent(hide),depend(ab) :: kd=shape(ab,0)-1
+
+    integer optional,intent(in):: range = 0
+    check(range==2||range==1||range==0) range
+
+
+    ! Remark: if ab is fortran contigous on input
+    !         and overwrite_ab=1  ab will be overwritten.
+    <ftype2> dimension(ldab,n),intent(in, overwrite) :: ab
+
+
+    ! FIXME: do we need to make q available for outside usage ???
+    !        If so: how to make this optional
+    !*  Q       (output) DOUBLE PRECISION array, dimension (LDQ, N)
+    !*          If JOBZ = 'V', the N-by-N orthogonal matrix used in the
+    !*                         reduction to tridiagonal form.
+    !*          If JOBZ = 'N', the array Q is not referenced.
+    integer intent(hide),depend(n,compute_v) :: ldq=(compute_v?n:1)
+    <ftype2> dimension(ldq,ldq),intent(hide),depend(ldq) :: q
+
+
+    <ftype2> :: vl
+    <ftype2> :: vu
+    integer,check((il\>=1 && il\<=n)),depend(n) :: il
+    integer,check((iu\>=1 && iu\<=n && iu\>=il)),depend(n,il) :: iu
+
+    ! Remark, we don't use python indexing here, because
+    !  if someone uses ?sbevx directly,
+    !  he should expect Fortran style indexing.
+    !integer,check((il\>=0 && il\<n)),depend(n) :: il+1
+    !integer,check((iu\>=0 && iu\<n && iu\>=il)),depend(n,il) :: iu+1
+
+    ! Remark:
+    ! Eigenvalues will be computed most accurately when ABSTOL is
+    ! set to twice the underflow threshold 2*DLAMCH('S'), not zero.
+    !
+    ! The easiest is to wrap DLAMCH (done below)
+    ! and let the user provide the value.
+    <ftype2> optional,intent(in):: abstol=0.0
+
+    <ftype2> dimension(n),intent(out),depend(n) :: w
+
+    <ftype2> dimension(ldz,mmax),depend(ldz,mmax),intent(out) :: z
+    integer intent(hide),depend(n,compute_v) :: ldz=(compute_v?n:1)
+
+    ! We use the mmax parameter to fix the size of z
+    ! (only if eigenvalues are requested)
+    ! Otherwise we would allocate a (possibly) huge
+    ! region of memory for the eigenvectors, even
+    ! in cases where only a few are requested.
+    ! If RANGE = 'V' (range=1) we a priori don't know the
+    ! number of eigenvalues in the interval in advance.
+    ! As default we use the maximum value
+    ! but the user should use an appropriate mmax.
+    integer intent(in),depend(n,iu,il,compute_v,range) :: mmax=(compute_v?(range==2?(iu-il+1):n):1)
+    integer intent(out) :: m
+
+    <ftype2> dimension(7*n),depend(n),intent(hide) :: work
+    integer dimension(5*n),depend(n),intent(hide) :: iwork
+    integer dimension((compute_v?n:1)),depend(n,compute_v),intent(out) :: ifail
+    integer intent(out):: info
+
+end subroutine <prefix2>sbevx
+
+subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,w,iblock,isplit,info)
+    ! computes all or selected eigenvalues of a real, symmetric tridiagonal
+    ! matrix.
+
+    callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
+    callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,int*
+
+    <ftype2> dimension(n),intent(in) :: d
+    <ftype2> dimension(n-1),depend(n),intent(in) :: e
+    <ftype2> intent(in) :: vl
+    <ftype2> intent(in) :: vu
+    character intent(in) :: order
+    integer intent(in) :: il
+    integer intent(in) :: iu
+    <ftype2> intent(in) :: tol
+    integer intent(in) :: range
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    <ftype2> dimension(4*n),depend(n),intent(hide) :: work
+    integer dimension(3*n),depend(n),intent(hide) :: iwork
+    integer intent(out) :: m
+    integer intent(hide) :: nsplit
+    <ftype2> dimension(n),depend(n),intent(out) :: w
+    integer dimension(n),depend(n),intent(out) :: iblock
+    integer dimension(n),depend(n),intent(out) :: isplit
+    integer intent(out) :: info
+
+end subroutine <prefix2>stebz
+
+subroutine <prefix2>sterf(d,e,n,info)
+    ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
+
+    callstatement (*f2py_func)(&n,d,e,&info)
+    callprotoargument int*,<ctype2>*,<ctype2>*,int*
+
+    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    <ftype2> dimension(n-1),depend(n),intent(in,copy) :: e
+    integer depend(d),intent(hide) :: n = shape(d,0)
+    integer intent(out) :: info
+
+end subroutine <prefix2>sterf
+
+subroutine <prefix2>stein(d,e,w,iblock,isplit,m,n,z,ldz,work,iwork,ifail,info)
+    ! computes eigenvectors corresponding to eigenvalues of a real, symmetric
+    ! tridiagonal matrix.
+
+    callstatement (*f2py_func)(&n,d,e,&m,w,iblock,isplit,z,&ldz,work,iwork,ifail,&info)
+    callprotoargument int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+    <ftype2> dimension(n),intent(in) :: d
+    <ftype2> dimension(n-1),depend(n),intent(in) :: e
+    <ftype2> dimension(m),intent(in) :: w
+    integer depend(w),intent(hide) :: m = shape(w,0)
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    integer dimension(n),depend(n),intent(in) :: iblock
+    integer dimension(n),depend(n),intent(in) :: isplit
+    <ftype2> dimension(ldz,m),intent(out) :: z
+    integer depend(n),intent(hide) :: ldz = n
+    <ftype2> dimension(5*n),intent(hide) :: work
+    integer dimension(n),intent(hide) :: iwork
+    integer dimension(m),depend(m),intent(hide) :: ifail
+    integer intent(out) :: info
+
+end subroutine <prefix2>stein
+
+subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
+    ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,work,&lwork,iwork,&liwork,&info)
+    callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*,<ctype2>*,int*,int*,int*,int*
+
+    <ftype2> dimension(n),intent(in,copy) :: d
+    <ftype2> dimension(n),intent(in) :: e
+    integer intent(in) :: range
+    <ftype2> intent(in) :: vl
+    <ftype2> intent(in) :: vu
+    integer intent(in) :: il
+    integer intent(in) :: iu
+    integer optional,intent(in) :: compute_v = 1
+    integer intent(hide),depend(d),check(n>0) :: n = shape(d,0)
+    integer intent(out) :: m
+    <ftype2> dimension(n),depend(n),intent(out) :: w
+    <ftype2> dimension(n,n),depend(n),intent(out) :: z
+    integer depend(n),intent(hide) :: ldz = (compute_v?n:1)  ! could be made more efficient for index queries
+    integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
+    integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
+    integer intent(hide) :: tryrac = 1
+    integer depend(n),optional,intent(in),check(lwork>=(compute_v?18*n:12*n)) :: lwork = max((compute_v?18*n:12*n),1)
+    <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
+    integer depend(n),optional,intent(in),check(liwork>=(compute_v?10*n:8*n)) :: liwork = (compute_v?10*n:8*n)
+    integer dimension(liwork),depend(liwork),intent(hide) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>stemr
+
+subroutine <prefix2>stemr_lwork(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
+    ! LWORK=-1, LIWORK=-1 call for STEMR
+
+    fortranname <prefix2c>stemr
+    callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,&work,&lwork,&iwork,&liwork,&info)
+    callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*,<ctype2>*,int*,int*,int*,int*
+
+    <ftype2> dimension(n),intent(in,copy) :: d
+    <ftype2> dimension(n),intent(in,copy) :: e
+    integer intent(in) :: range
+    <ftype2> intent(in) :: vl
+    <ftype2> intent(in) :: vu
+    integer intent(in) :: il
+    integer intent(in) :: iu
+    integer optional,intent(in) :: compute_v = 1
+    integer intent(hide),depend(d),check(n>0) :: n = shape(d,0)
+    integer intent(hide) :: m
+    <ftype2> dimension(n),depend(n),intent(hide) :: w
+    <ftype2> dimension(n,n),depend(n),intent(hide) :: z
+    integer depend(n),intent(hide) :: ldz = (compute_v?n:1)  ! could be made more efficient for index queries
+    integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
+    integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
+    integer intent(hide) :: tryrac = 1
+    integer depend(n),intent(hide) :: lwork = -1
+    <ftype2> intent(out) :: work
+    integer intent(hide) :: liwork = -1
+    integer intent(out) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix2>stemr_lwork
+
+subroutine <prefix2>stev(d,e,compute_v,n,z,ldz,work,info)
+    ! computes all eigenvalues, and, optionally eigvectors of a real,
+    ! symmetric tridiagonal matrix.
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),&n,d,e,z,&ldz,work,&info)
+    callprotoargument char*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*
+
+    integer optional,intent(in):: compute_v = 1
+    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    <ftype2> depend(n),dimension(MAX(n-1,1)),intent(in,copy) :: e
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2> dimension(ldz,(compute_v?n:1)),intent(out),depend(n,ldz) :: z
+    <ftype2> dimension((compute_v?MAX(1,2*n-2):1)),depend(n),intent(hide) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>stev
+
+subroutine <prefix><s,s,h,h>frk(transr,uplo,trans,n,k,nt,ka,alpha,a,lda,beta,c)
+    !
+    ! (S/D)SFRK - (C/Z)HFRK performs one of the Sym/Hermitian rank--k operations
+    !
+    !    C := alpha*A*A**H + beta*C,  or C := alpha*A**H*A + beta*C
+    !
+    ! where alpha and beta are real scalars, C is an n--by--n Sym/Hermitian
+    ! matrix and A is an n--by--k matrix in the first case and a k--by--n
+    ! matrix in the second case.
+
+    callstatement (*f2py_func)(transr,uplo,trans,&n,&k,&alpha,a,&lda,&beta,c)
+    callprotoargument char*,char*,char*,int*,int*,<ctypereal>*,<ctype>*,int*,<ctypereal>*,<ctype>*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(in), check(n>=0):: n
+    integer intent(in), check(k>=0):: k
+    <ftypereal> intent(in):: alpha
+    <ftypereal> intent(in):: beta
+    <ftype> dimension(lda,ka),intent(in):: a
+    integer intent(hide),depend(a,trans,n,k),check(ka==(*trans=='N'?k:n)):: ka=shape(a,1)
+    integer intent(hide),depend(trans,a,n,k):: lda = MAX((*trans=='N'?n:k),1)
+    <ftype> dimension(nt),intent(in,out,copy,out=cout):: c
+    integer intent(hide),depend(c),check(nt==(n*(n+1)/2)):: nt=shape(c,0)
+
+end subroutine <prefix><s,s,h,h>frk
+
+subroutine <prefix>tpttf(transr,uplo,n,nt,ap,arf,info)
+    !
+    ! copies a triangular matrix from the standard packed format (TP) to the
+    ! rectangular full packed format (TF).
+    !
+
+    callstatement (*f2py_func)(transr,uplo,&n,ap,arf,&info)
+    callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: ap
+    integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
+    <ftype> dimension(nt),intent(out),depend(nt):: arf
+    integer intent(out):: info
+
+end subroutine <prefix>tpttf
+
+subroutine <prefix>tpttr(uplo,n,nt,ap,a,lda,info)
+    !
+    ! TPTTR copies a triangular matrix from the standard packed format (TP)
+    ! to the standard full format (TR).
+    !
+
+    callstatement (*f2py_func)(uplo,&n,ap,a,&lda,&info)
+    callprotoargument char*,int*,<ctype>*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: ap
+    integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
+    <ftype> dimension(n,n),intent(out),depend(n):: a
+    integer intent(hide),depend(n):: lda=MAX(n,1)
+    integer intent(out):: info
+
+end subroutine <prefix>tpttr
+
+subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
+    !
+    ! copies a triangular matrix from the standard packed format (TP) to the
+    ! rectangular full packed format (TF).
+    !
+
+    callstatement (*f2py_func)(transr,uplo,&n,arf,ap,&info)
+    callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: arf
+    integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
+    <ftype> dimension(nt),intent(out),depend(nt):: ap
+    integer intent(out):: info
+
+end subroutine <prefix>tfttp
+
+subroutine <prefix>tfttr(transr,uplo,n,nt,arf,a,lda,info)
+    !
+    ! TFTTR copies a triangular matrix from the rectangular full packed
+    ! format (TF) to the standard full format (TR).
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,arf,a,&lda,&info)
+    callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: arf
+    integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
+    <ftype> dimension(lda,n),depend(lda,n),intent(out):: a
+    integer intent(hide),depend(n):: lda = MAX(n,1)
+    integer intent(out):: info
+
+end subroutine <prefix>tfttr
+
+subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
+    !
+    ! TRTTF copies a triangular matrix A from standard full format (TR)
+    ! to rectangular full packed format (TF).
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,a,&lda,arf,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
+    <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
+    <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: arf
+    integer intent(out):: info
+
+end subroutine <prefix>trttf
+
+subroutine <prefix>trttp(uplo,n,a,lda,ap,info)
+    !
+    ! TRTTP copies a triangular matrix from the standard full format (TR) to
+    ! the standard packed format (TP).
+    !
+    callstatement (*f2py_func)(uplo,&n,a,&lda,ap,&info)
+    callprotoargument char*,int*,<ctype>*,int*,<ctype>*,int*
+
+    character optional, intent(int),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
+    <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
+    <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: ap
+    integer intent(out):: info
+
+end subroutine <prefix>trttp
+
+subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
+    !
+    ! Level 3 BLAS like routine for A in RFP Format.
+    !
+    ! TFSM  solves the matrix equation
+    !
+    !        op( A )*X = alpha*B  or  X*op( A ) = alpha*B
+    !
+    ! where alpha is a scalar, X and B are m by n matrices, A is a unit, or
+    ! non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
+    !
+    !    op( A ) = A   or   op( A ) = A**H.
+    !
+    ! A is in Rectangular Full Packed (RFP) Format. The matrix X is overwritten on B.
+    !
+
+    callstatement (*f2py_func)(transr,side,uplo,trans,diag,&m,&n,&alpha,a,b,&ldb)
+    callprotoargument char*,char*,char*,char*,char*,int*,int*,<ctype>*,<ctype>*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    character optional,intent(in),check(*diag=='U'||*diag=='N'):: diag = 'N'
+    integer intent(hide),depend(b):: m=shape(b,0)
+    integer intent(hide),depend(b):: n=shape(b,1)
+    <ftype> intent(in):: alpha
+    <ftype> dimension(nt),intent(in):: a
+    integer intent(hide),depend(a,m,n,side),check(*side=='L'?nt==(m*(m+1)/2):nt==(n*(n+1)/2)):: nt=shape(a,0)
+    <ftype> dimension(m,n),intent(in,out,copy,out=x):: b
+    integer intent(hide),depend(b):: ldb=MAX(shape(b,0),1)
+
+end subroutine <prefix>tfsm
+
+subroutine <prefix>pftrf(transr,uplo,n,nt,a,info)
+    !
+    ! Computes the Cholesky factorization of a complex Hermitian positive definite matrix A.
+    ! The factorization has the form
+    !
+    !    A = U**H * U,  if UPLO = 'U', or   A = L  * L**H,  if UPLO = 'L',
+    !
+    ! where U is an upper triangular matrix and L is lower triangular.
+    ! This is the block version of the algorithm, calling Level 3 BLAS.
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,a,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in,out,copy,out=achol):: a
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
+    integer intent(out):: info
+
+end subroutine <prefix>pftrf
+
+subroutine <prefix>pftri(transr,uplo,n,nt,a,info)
+    !
+    ! Computes the inverse of a real/complex Sym/Hermitian positive definite
+    ! matrix A using the Cholesky factorization A = U**H*U or A = L*L**H
+    ! computed by ?PFTRF.
+    !
+
+    callstatement (*f2py_func)(transr,uplo,&n,a,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in,out,copy,out=ainv):: a
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
+    integer intent(out):: info
+
+end subroutine <prefix>pftri
+
+subroutine <prefix>pftrs(transr,uplo,n,nhrs,nt,a,b,ldb,info)
+    !
+    ! ?PFTRS solves a system of linear equations A*X = B with a Sym/Hermitian
+    ! positive definite matrix A using the Cholesky factorization
+    ! A = U**H*U or A = L*L**H computed by ?PFTRF.
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,&nhrs,a,b,&ldb,&info)
+    callprotoargument char*,char*,int*,int*,<ctype>*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: a
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
+    <ftype> dimension(ldb, nhrs),intent(in,out,copy,out=x),depend(n),check(shape(b,0)>=n):: b
+    integer intent(hide),depend(b):: nhrs = shape(b,1)
+    integer intent(hide),depend(b):: ldb = MAX(shape(b,0),1)
+    integer intent(out):: info
+
+end subroutine<prefix>pftrs
+
+subroutine <prefix>tzrzf(m,n,a,lda,tau,work,lwork,info)
+    ! TZRZF reduces the M-by-N ( M<=N ) complex upper trapezoidal matrix A
+    ! to upper triangular form by means of unitary transformations.
+    !
+    ! The upper trapezoidal matrix A is factored as
+    !
+    !    A = ( R  0 ) * Z,
+    !
+    ! where Z is an N-by-N unitary matrix and R is an M-by-M upper
+    ! triangular matrix.
+    !
+    callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(hide),depend(a):: m=shape(a,0)
+    integer intent(hide),depend(a):: n=shape(a,1)
+    integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=rz),check(shape(a,1)>=shape(a,0)):: a
+    <ftype> dimension(m),intent(out),depend(m):: tau
+    <ftype> dimension(MAX(lwork,1)),depend(lwork),intent(hide,cache):: work
+    integer optional, intent(in),depend(m),check(lwork>=m):: lwork = MAX(m,1)
+    integer intent(out):: info
+
+end subroutine<prefix>tzrzf
+
+subroutine <prefix>tzrzf_lwork(m,n,a,lda,tau,work,lwork,info)
+    ! lwork computation for tzrzf
+    fortranname <prefix>tzrzf
+    callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(in):: m
+    integer intent(in):: n
+    integer intent(hide),depend(m):: lda=MAX(m,1)
+    <ftype> intent(hide) :: a
+    <ftype> intent(hide) :: tau
+    integer intent(hide) :: lwork = -1
+    <ftype> intent(out) :: work
+    integer intent(out) :: info
+
+end subroutine<prefix>tzrzf_lwork
+
+subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
+	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
+   	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
+
+	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info); }
+    callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, int*
+
+	integer intent(hide),depend(d):: n = shape(d,0)
+	integer intent(in),depend(d),check(i>=0 && i<=(shape(d,0)-1)):: i
+
+	<ftype2> dimension(n),intent(in)           :: d
+	<ftype2> dimension(n),intent(in),depend(n) :: z
+
+	<ftype2> intent(out) :: sigma
+	<ftype2> dimension(n),intent(out),depend(n) :: delta
+	<ftype2> intent(in),optional:: rho = 1.0
+
+	<ftype2> dimension(n),intent(out),depend(n) :: work
+	integer intent(out) :: info
+
+end subroutine <prefix2>lasd4
+
+subroutine <prefix>lauum(n,c,info,lower)
+    ! a,info = lauum(c,lower=0,overwrite_c=0)
+    ! Compute product
+    ! U^T * U, C = U if lower = 0
+    ! L * L^T, C = L if lower = 1
+    ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,c,&n,&info)
+    callprotoargument char*,int*,<ctype>*,int*,int*
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+    integer depend(c),intent(hide):: n = shape(c,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=a) :: c
+    check(shape(c,0)==shape(c,1)) :: c
+    integer intent(out) :: info
+
+end subroutine <prefix>lauum
+
+subroutine <prefix>laswp(n,a,nrows,k1,k2,piv,off,inc,m,npiv)
+    ! a = laswp(a,piv,k1=0,k2=len(piv)-1,off=0,inc=1,overwrite_a=0)
+    ! Perform row interchanges on the matrix A for each of row k1 through k2
+    !
+    ! piv pivots rows.
+
+    callstatement {int i;m=len(piv);for(i=0;i<m;++piv[i++]);++k1;++k2; (*f2py_func)(&n,a,&nrows,&k1,&k2,piv+off,&inc); for(i=0;i<m;--piv[i++]);}
+    callprotoargument int*,<ctype>*,int*,int*,int*,int*,int*
+
+    integer depend(a),intent(hide):: nrows = shape(a,0)
+    integer depend(a),intent(hide):: n = shape(a,1)
+    <ftype> dimension(nrows,n),intent(in,out,copy) :: a
+    integer dimension(npiv),intent(in) :: piv
+    integer intent(hide),depend(piv,nrows),check(npiv<=nrows) :: npiv = len(piv)
+    !XXX: how to check that all elements in piv are < n?
+
+    integer optional,intent(in),check(0<=k1) :: k1 = 0
+    integer optional,intent(in),depend(k1,npiv,off),check(k1<=k2 && k2<npiv-off) :: k2 = npiv-1
+
+    integer optional, intent(in),check(inc>0||inc<0) :: inc = 1
+    integer optional,intent(in),depend(npiv),check(off>=0 && off<len(piv)) :: off=0
+    integer intent(hide),depend(npiv,inc,off),check(npiv-off>(m-1)*abs(inc)) :: m = (len(piv)-off)/abs(inc)
+
+end subroutine <prefix>laswp
+
+! dlamch = dlamch(cmach)
+!
+! determine double precision machine parameters
+!  CMACH   (input) CHARACTER*1
+!          Specifies the value to be returned by DLAMCH:
+!          = 'E' or 'e',   DLAMCH := eps
+!          = 'S' or 's ,   DLAMCH := sfmin
+!          = 'B' or 'b',   DLAMCH := base
+!          = 'P' or 'p',   DLAMCH := eps*base
+!          = 'N' or 'n',   DLAMCH := t
+!          = 'R' or 'r',   DLAMCH := rnd
+!          = 'M' or 'm',   DLAMCH := emin
+!          = 'U' or 'u',   DLAMCH := rmin
+!          = 'L' or 'l',   DLAMCH := emax
+!          = 'O' or 'o',   DLAMCH := rmax
+!
+!          where
+!
+!          eps   = relative machine precision
+!          sfmin = safe minimum, such that 1/sfmin does not overflow
+!          base  = base of the machine
+!          prec  = eps*base
+!          t     = number of (base) digits in the mantissa
+!          rnd   = 1.0 when rounding occurs in addition, 0.0 otherwise
+!          emin  = minimum exponent before (gradual) underflow
+!          rmin  = underflow threshold - base**(emin-1)
+!          emax  = largest exponent before overflow
+!          rmax  = overflow threshold  - (base**emax)*(1-eps)
+function dlamch(cmach)
+    character :: cmach
+    double precision intent(out):: dlamch
+end function dlamch
+
+function slamch(cmach)
+    character :: cmach
+    real intent(out):: slamch
+end function slamch
+
+function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
+    ! the one norm, or the Frobenius norm, or the  infinity norm, or the
+    ! element of largest absolute value of a real matrix A.
+    <ftype2> <prefix2>lange, n2
+    callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&lda,work)
+    callprotoargument <ctype2>*,char*,int*,int*,<ctype2>*,int*,<ctype2>*
+
+    character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
+    integer intent(hide),depend(a,n) :: m = shape(a,0)
+    integer intent(hide),depend(m) :: lda = max(1,m)
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    <ftype2> dimension(m,n),intent(in) :: a
+    <ftype2> dimension(m+1),intent(cache,hide) :: work
+end function <prefix2>lange
+
+function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
+    ! the one norm, or the Frobenius norm, or the  infinity norm, or the
+    ! element of largest absolute value of a complex matrix A.
+    <ftype2> <prefix2c>lange, n2
+    callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&lda,work)
+    callprotoargument <ctype2>*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*
+
+    character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
+    integer intent(hide),depend(a,n) :: m = shape(a,0)
+    integer intent(hide),depend(m) :: lda = max(1,m)
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    <ftype2c> dimension(m,n),intent(in) :: a
+    <ftype2> dimension(m+1),intent(cache,hide) :: work
+end function <prefix2c>lange
+
+subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
+    integer intent(in), check(n>=1) :: n
+    <ftype> intent(in,out) :: alpha
+    <ftype> intent(in,copy,out), dimension(lx) :: x
+    integer intent(in), check(incx>0||incx<0) :: incx = 1
+    <ftype> intent(out) :: tau
+    integer intent(hide),depend(x,n,incx),check(lx > (n-2)*incx) :: lx = len(x)
+end subroutine <prefix>larfg
+
+subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
+    character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
+    integer intent(in,hide), depend(c) :: m = shape(c,0)
+    integer intent(in,hide), depend(c) :: n = shape(c,1)
+    <ftype> intent(in),dimension((side[0]=='L'?(1 + (m-1)*abs(incv)):(1 + (n-1)*abs(incv)))),depend(n,m,side,incv) :: v
+    integer intent(in), check(incv>0||incv<0) :: incv = 1
+    <ftype> intent(in) :: tau
+    <ftype> dimension(m,n), intent(in,copy,out) :: c
+    integer intent(in,hide) :: ldc = max(1,shape(c,0))
+    ! FIXME: work should not have been an input argument but kept here for backwards compatibility!
+    <ftype> intent(in),dimension(lwork),depend(side,m,n) :: work
+    integer intent(hide),depend(work),check(lwork >= (side[0]=='L'?n:m)) :: lwork = len(work)
+end subroutine <prefix>larf
+
+subroutine <prefix>lartg(f,g,cs,sn,r)
+    <ftype> intent(in) :: f
+    <ftype> intent(in) :: g
+    <real,double precision,\0,\1> intent(out) :: cs
+    <ftype> intent(out) :: sn
+    <ftype> intent(out) :: r
+end subroutine <prefix>lartg
+
+subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s,lx,ly)
+    callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
+    callprotoargument int*,<ctype2c>*,int*,<ctype2c>*,int*,<float,double>*,<ctype2c>*
+    <ftype2c> dimension(lx),intent(in,out,copy) :: x
+    <ftype2c> dimension(ly),intent(in,out,copy) :: y
+    integer intent(hide),depend(x) :: lx = len(x)
+    integer intent(hide),depend(y) :: ly = len(y)
+    <real,double precision> intent(in) :: c
+    <ftype2c> intent(in) :: s
+    integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+    integer optional, intent(in), check(incy>0||incy<0) :: incy = 1
+    integer optional, intent(in), depend(lx), check(offx>=0 && offx<lx) :: offx=0
+    integer optional, intent(in), depend(ly), check(offy>=0 && offy<ly) :: offy=0
+    integer optional, intent(in), depend(lx,incx,offx,ly,incy,offy) :: n = (lx-1-offx)/abs(incx)+1
+    check(lx-offx>(n-1)*abs(incx)) :: n
+    check(ly-offy>(n-1)*abs(incy)) :: n
+end subroutine <prefix2c>rot
+
+subroutine ilaver(major, minor, patch)
+    integer intent(out) :: major
+    integer intent(out) :: minor
+    integer intent(out) :: patch
+end subroutine ilaver

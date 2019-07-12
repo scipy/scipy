@@ -3,7 +3,7 @@
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
 
-.. module:: scipy.stats
+.. currentmodule:: scipy.stats
 
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
@@ -159,12 +159,14 @@ Discrete distributions
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
+   yulesimon         -- Yule-Simon
 
-Statistical functions
-=====================
+An overview of statistical functions is given below.
+Several of these functions have a similar version in
+`scipy.stats.mstats` which work for masked arrays.
 
-Several of these functions have a similar version in scipy.stats.mstats
-which work for masked arrays.
+Summary statistics
+==================
 
 .. autosummary::
    :toctree: generated/
@@ -173,12 +175,9 @@ which work for masked arrays.
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
    kurtosis          -- Fisher or Pearson kurtosis
-   kurtosistest      --
    mode              -- Modal value
    moment            -- Central moment
-   normaltest        --
    skew              -- Skewness
-   skewtest          --
    kstat             --
    kstatvar          --
    tmean             -- Truncated arithmetic mean
@@ -190,6 +189,16 @@ which work for masked arrays.
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
+   gstd              -- Geometric Standard Deviation
+   iqr
+   sem
+   bayes_mvs
+   mvsdist
+   entropy
+   median_absolute_deviation
+
+Frequency statistics
+====================
 
 .. autosummary::
    :toctree: generated/
@@ -207,23 +216,8 @@ which work for masked arrays.
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
-.. autosummary::
-   :toctree: generated/
-
-   obrientransform
-   bayes_mvs
-   mvsdist
-   sem
-   zmap
-   zscore
-   iqr
-
-.. autosummary::
-   :toctree: generated/
-
-   sigmaclip
-   trimboth
-   trim1
+Correlation functions
+=====================
 
 .. autosummary::
    :toctree: generated/
@@ -235,7 +229,11 @@ which work for masked arrays.
    kendalltau
    weightedtau
    linregress
+   siegelslopes
    theilslopes
+
+Statistical tests
+=================
 
 .. autosummary::
    :toctree: generated/
@@ -248,6 +246,7 @@ which work for masked arrays.
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    tiecorrect
    rankdata
@@ -272,6 +271,12 @@ which work for masked arrays.
    fligner
    median_test
    mood
+   skewtest
+   kurtosistest
+   normaltest
+
+Transformations
+===============
 
 .. autosummary::
    :toctree: generated/
@@ -279,14 +284,32 @@ which work for masked arrays.
    boxcox
    boxcox_normmax
    boxcox_llf
+   yeojohnson
+   yeojohnson_normmax
+   yeojohnson_llf
+   obrientransform
+   sigmaclip
+   trimboth
+   trim1
+   zmap
+   zscore
 
-   entropy
+Statistical distances
+=====================
 
 .. autosummary::
    :toctree: generated/
 
    wasserstein_distance
    energy_distance
+
+Random variate generation
+=========================
+
+.. autosummary::
+   :toctree: generated/
+
+   rvs_ratio_uniforms
 
 Circular statistical functions
 ==============================
@@ -319,6 +342,7 @@ Plot-tests
    ppcc_plot
    probplot
    boxcox_normplot
+   yeojohnson_normplot
 
 
 Masked statistics functions
@@ -329,13 +353,22 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/
 
    gaussian_kde
+
+Warnings used in :mod:`scipy.stats`
+===================================
+
+.. autosummary::
+   :toctree: generated/
+
+   PearsonRConstantInputWarning
+   PearsonRNearConstantInputWarning
 
 For many more stat related functions install the software R and the
 interface package rpy.

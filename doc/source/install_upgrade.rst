@@ -1,3 +1,5 @@
+.. _installing-upgrading:
+
 Installing and upgrading
 ========================
 

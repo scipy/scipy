@@ -181,7 +181,7 @@ class BSpline(object):
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super(BSpline, self).__init__()
 
-        self.k = int(k)
+        self.k = operator.index(k)
         self.c = np.asarray(c)
         self.t = np.ascontiguousarray(t, dtype=np.float64)
 
@@ -206,8 +206,6 @@ class BSpline(object):
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
-        if int(k) != k:
-            raise ValueError("Spline order must be integer.")
         if self.t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
@@ -510,7 +508,7 @@ class BSpline(object):
                 # (cf _fitpack_impl.splint).
                 t, c, k = self.tck
                 integral, wrk = _dierckx._splint(t, c, k, a, b)
-                return integral * sign 
+                return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
@@ -606,6 +604,19 @@ def _convert_string_aliases(deriv, target_shape):
     return deriv
 
 
+def _process_deriv_spec(deriv):
+    if deriv is not None:
+        try:
+            ords, vals = zip(*deriv)
+        except TypeError:
+            msg = ("Derivatives, `bc_type`, should be specified as a pair of "
+                   "iterables of pairs of (order, value).")
+            raise ValueError(msg)
+    else:
+        ords, vals = [], []
+    return np.atleast_1d(ords, vals)
+
+
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Compute the (coefficients of) interpolating B-spline.
@@ -635,9 +646,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
-           equivalent to ``bc_type=((1, 0.0), (1, 0.0))``.
+           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
-          equivalent to ``bc_type=((2, 0.0), (2, 0.0))``.
+          equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
         * ``"not-a-knot"`` (default): The first and second segments are the same
           polynomial. This is equivalent to having ``bc_type=None``.
 
@@ -726,7 +737,17 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     elif isinstance(bc_type, string_types):
         deriv_l, deriv_r = bc_type, bc_type
     else:
-        deriv_l, deriv_r = bc_type
+        try:
+            deriv_l, deriv_r = bc_type
+        except TypeError:
+            raise ValueError("Unknown boundary condition: %s" % bc_type)
+
+    y = np.asarray(y)
+
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
 
     # special-case k=0 right away
     if k == 0:
@@ -736,6 +757,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
@@ -746,12 +768,13 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
-    k = int(k)
+    k = operator.index(k)
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -770,7 +793,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     t = _as_float_array(t, check_finite)
 
-    axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
@@ -789,19 +811,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
-    if deriv_l is not None:
-        deriv_l_ords, deriv_l_vals = zip(*deriv_l)
-    else:
-        deriv_l_ords, deriv_l_vals = [], []
-    deriv_l_ords, deriv_l_vals = np.atleast_1d(deriv_l_ords, deriv_l_vals)
+    deriv_l_ords, deriv_l_vals = _process_deriv_spec(deriv_l)
     nleft = deriv_l_ords.shape[0]
 
     deriv_r = _convert_string_aliases(deriv_r, y.shape[1:])
-    if deriv_r is not None:
-        deriv_r_ords, deriv_r_vals = zip(*deriv_r)
-    else:
-        deriv_r_ords, deriv_r_vals = [], []
-    deriv_r_ords, deriv_r_vals = np.atleast_1d(deriv_r_ords, deriv_r_vals)
+    deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
@@ -809,7 +823,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     nt = t.size - k - 1
 
     if nt - n != nleft + nright:
-        raise ValueError("number of derivatives at boundaries.")
+        raise ValueError("The number of derivatives at boundaries does not "
+                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
 
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
@@ -958,9 +973,13 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         w = _as_float_array(w, check_finite)
     else:
         w = np.ones_like(x)
-    k = int(k)
+    k = operator.index(k)
 
-    axis = axis % y.ndim
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
+
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):

@@ -334,15 +334,6 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
         callback->user_data = NULL;
         callback->signature = NULL;
     }
-    else if (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-             PyCallable_Check(PyTuple_GET_ITEM(callback_obj, 0))) {
-        /* Python callable in LowLevelCallable */
-        callback->py_function = PyTuple_GET_ITEM(callback_obj, 0);
-        Py_INCREF(callback->py_function);
-        callback->c_function = NULL;
-        callback->user_data = NULL;
-        callback->signature = NULL;
-    }
     else if (capsule != NULL ||
              (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
               PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {

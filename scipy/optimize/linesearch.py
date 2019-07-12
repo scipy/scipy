@@ -115,17 +115,18 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     ----------
     phi : callable phi(alpha)
         Function at point `alpha`
-    derphi : callable dphi(alpha)
-        Derivative `d phi(alpha)/ds`. Returns a scalar.
-
+    derphi : callable phi'(alpha)
+        Objective function derivative. Returns a scalar.
     phi0 : float, optional
-        Value of `f` at 0
+        Value of phi at 0
     old_phi0 : float, optional
-        Value of `f` at the previous point
+        Value of phi at previous point
     derphi0 : float, optional
-        Value `derphi` at 0
-    c1, c2 : float, optional
-        Wolfe parameters
+        Value derphi at 0
+    c1 : float, optional
+        Parameter for Armijo condition rule.
+    c2 : float, optional
+        Parameter for curvature condition rule.
     amax, amin : float, optional
         Maximum and minimum step size
     xtol : float, optional
@@ -321,7 +322,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     return alpha_star, fc[0], gc[0], phi_star, old_fval, derphi_star
 
 
-def scalar_search_wolfe2(phi, derphi=None, phi0=None,
+def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
                          extra_condition=None, maxiter=10):
@@ -331,16 +332,16 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     Parameters
     ----------
-    phi : callable f(x)
+    phi : callable phi(alpha)
         Objective scalar function.
-    derphi : callable f'(x), optional
-        Objective function derivative (can be None)
+    derphi : callable phi'(alpha)
+        Objective function derivative. Returns a scalar.
     phi0 : float, optional
-        Value of phi at s=0
+        Value of phi at 0
     old_phi0 : float, optional
         Value of phi at previous point
     derphi0 : float, optional
-        Value of derphi at s=0
+        Value of derphi at 0
     c1 : float, optional
         Parameter for Armijo condition rule.
     c2 : float, optional
@@ -383,7 +384,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if phi0 is None:
         phi0 = phi(0.)
 
-    if derphi0 is None and derphi is not None:
+    if derphi0 is None:
         derphi0 = derphi(0.)
 
     alpha0 = 0
@@ -394,6 +395,9 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     if alpha1 < 0:
         alpha1 = 1.0
+
+    if amax is not None:
+        alpha1 = min(alpha1, amax)
 
     phi_a1 = phi(alpha1)
     #derphi_a1 = derphi(alpha1)  evaluated below

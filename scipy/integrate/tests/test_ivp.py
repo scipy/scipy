@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, assert_no_warnings)
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
@@ -296,6 +297,30 @@ def test_integration_const_jac():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
 
 
+@pytest.mark.slow
+@pytest.mark.parametrize('method', ['Radau', 'BDF', 'LSODA'])
+def test_integration_stiff(method):
+    rtol = 1e-6
+    atol = 1e-6
+    y0 = [1e4, 0, 0]
+    tspan = [0, 1e8]
+
+    def fun_robertson(t, state):
+        x, y, z = state
+        return [
+            -0.04 * x + 1e4 * y * z,
+            0.04 * x - 1e4 * y * z - 3e7 * y * y,
+            3e7 * y * y,
+        ]
+
+    res = solve_ivp(fun_robertson, tspan, y0, rtol=rtol,
+                    atol=atol, method=method)
+
+    # If the stiff mode is not activated correctly, these numbers will be much bigger
+    assert res.nfev < 5000
+    assert res.njev < 200
+
+
 def test_events():
     def event_rational_1(t, y):
         return y[0] - y[1] ** 0.7
@@ -456,6 +481,45 @@ def test_max_step():
                 assert_raises(RuntimeError, solver.step)
 
 
+def test_first_step():
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [1/3, 2/9]
+    first_step = 0.1
+    for method in [RK23, RK45, Radau, BDF, LSODA]:
+        for t_span in ([5, 9], [5, 1]):
+            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
+                            max_step=0.5, atol=atol, method=method,
+                            dense_output=True, first_step=first_step)
+
+            assert_equal(res.t[0], t_span[0])
+            assert_equal(res.t[-1], t_span[-1])
+            assert_allclose(first_step, np.abs(res.t[1] - 5))
+            assert_(res.t_events is None)
+            assert_(res.success)
+            assert_equal(res.status, 0)
+
+            y_true = sol_rational(res.t)
+            e = compute_error(res.y, y_true, rtol, atol)
+            assert_(np.all(e < 5))
+
+            tc = np.linspace(*t_span)
+            yc_true = sol_rational(tc)
+            yc = res.sol(tc)
+
+            e = compute_error(yc, yc_true, rtol, atol)
+            assert_(np.all(e < 5))
+
+            # See comment in test_integration.
+            if method is not LSODA:
+                assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
+                          t_span[1], first_step=-1)
+            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
+                          t_span[1], first_step=5)
+    
+
 def test_t_eval():
     rtol = 1e-3
     atol = 1e-6
@@ -516,6 +580,33 @@ def test_t_eval():
     t_eval = [4, 6]
     assert_raises(ValueError, solve_ivp, fun_rational, [5, 9], y0,
                   rtol=rtol, atol=atol, t_eval=t_eval)
+
+
+def test_t_eval_dense_output():
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [1/3, 2/9]
+    t_span = [5, 9]
+    t_eval = np.linspace(t_span[0], t_span[1], 10)
+    res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
+                    t_eval=t_eval)
+    res_d = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
+                      t_eval=t_eval, dense_output=True)
+    assert_equal(res.t, t_eval)
+    assert_(res.t_events is None)
+    assert_(res.success)
+    assert_equal(res.status, 0)
+
+    assert_equal(res.t, res_d.t)
+    assert_equal(res.y, res_d.y)
+    assert_(res_d.t_events is None)
+    assert_(res_d.success)
+    assert_equal(res_d.status, 0)
+
+    # if t and y are equal only test values for one case
+    y_true = sol_rational(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert_(np.all(e < 5))
 
 
 def test_no_integration():
@@ -725,3 +816,85 @@ def test_num_jac_sparse():
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
 
+
+def test_args():
+
+    # sys3 is actually two decoupled systems. (x, y) form a
+    # linear oscillator, while z is a nonlinear first order
+    # system with equilibria at z=0 and z=1.  If k > 0, z=1
+    # is stable and z=0 is unstable.
+
+    def sys3(t, w, omega, k, zfinal):
+        x, y, z = w
+        return [-omega*y, omega*x, k*z*(1 - z)]
+
+    def sys3_jac(t, w, omega, k, zfinal):
+        x, y, z = w
+        J = np.array([[0, -omega, 0],
+                      [omega, 0, 0],
+                      [0, 0, k*(1 - 2*z)]])
+        return J
+
+    def sys3_x0decreasing(t, w, omega, k, zfinal):
+        x, y, z = w
+        return x
+
+    def sys3_y0increasing(t, w, omega, k, zfinal):
+        x, y, z = w
+        return y
+
+    def sys3_zfinal(t, w, omega, k, zfinal):
+        x, y, z = w
+        return z - zfinal
+
+    # Set the event flags for the event functions.
+    sys3_x0decreasing.direction = -1
+    sys3_y0increasing.direction = 1
+    sys3_zfinal.terminal = True
+
+    omega = 2
+    k = 4
+
+    tfinal = 5
+    zfinal = 0.99
+    # Find z0 such that when z(0) = z0, z(tfinal) = zfinal.
+    # The condition z(tfinal) = zfinal is the terminal event.
+    z0 = np.exp(-k*tfinal)/((1 - zfinal)/zfinal + np.exp(-k*tfinal))
+
+    w0 = [0, -1, z0]
+
+    # Provide the jac argument and use the Radau method to ensure that the use
+    # of the Jacobian function is exercised.
+    # If event handling is working, the solution will stop at tfinal, not tend.
+    tend = 2*tfinal
+    sol = solve_ivp(sys3, [0, tend], w0,
+                    events=[sys3_x0decreasing, sys3_y0increasing, sys3_zfinal],
+                    dense_output=True, args=(omega, k, zfinal),
+                    method='Radau', jac=sys3_jac,
+                    rtol=1e-10, atol=1e-13)
+
+    # Check that we got the expected events at the expected times.
+    x0events_t = sol.t_events[0]
+    y0events_t = sol.t_events[1]
+    zfinalevents_t = sol.t_events[2]
+    assert_allclose(x0events_t, [0.5*np.pi, 1.5*np.pi])
+    assert_allclose(y0events_t, [0.25*np.pi, 1.25*np.pi])
+    assert_allclose(zfinalevents_t, [tfinal])
+
+    # Check that the solution agrees with the known exact solution.
+    t = np.linspace(0, zfinalevents_t[0], 250)
+    w = sol.sol(t)
+    assert_allclose(w[0], np.sin(omega*t), rtol=1e-9, atol=1e-12)
+    assert_allclose(w[1], -np.cos(omega*t), rtol=1e-9, atol=1e-12)
+    assert_allclose(w[2], 1/(((1 - z0)/z0)*np.exp(-k*t) + 1),
+                    rtol=1e-9, atol=1e-12)
+
+    # Check that the state variables have the expected values at the events.
+    x0events = sol.sol(x0events_t)
+    y0events = sol.sol(y0events_t)
+    zfinalevents = sol.sol(zfinalevents_t)
+    assert_allclose(x0events[0], np.zeros_like(x0events[0]), atol=5e-14)
+    assert_allclose(x0events[1], np.ones_like(x0events[1]))
+    assert_allclose(y0events[0], np.ones_like(y0events[0]))
+    assert_allclose(y0events[1], np.zeros_like(y0events[1]), atol=5e-14)
+    assert_allclose(zfinalevents[2], [zfinal])

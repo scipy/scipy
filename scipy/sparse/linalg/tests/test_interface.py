@@ -7,13 +7,14 @@ from functools import partial
 from itertools import product
 import operator
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
 
 import numpy as np
 import scipy.sparse as sparse
 
 from scipy.sparse.linalg import interface
+from scipy.sparse.sputils import matrix
 
 
 # Only test matmul operator (A @ B) when available (Python 3.5+)
@@ -57,9 +58,9 @@ class TestLinearOperator(object):
             assert_equal(A.dot(np.array([1,2,3])), [14,32])
             assert_equal(A.dot(np.array([[1],[2],[3]])), [[14],[32]])
 
-            assert_equal(A.matvec(np.matrix([[1],[2],[3]])), [[14],[32]])
-            assert_equal(A * np.matrix([[1],[2],[3]]), [[14],[32]])
-            assert_equal(A.dot(np.matrix([[1],[2],[3]])), [[14],[32]])
+            assert_equal(A.matvec(matrix([[1],[2],[3]])), [[14],[32]])
+            assert_equal(A * matrix([[1],[2],[3]]), [[14],[32]])
+            assert_equal(A.dot(matrix([[1],[2],[3]])), [[14],[32]])
 
             assert_equal((2*A)*[1,1,1], [12,30])
             assert_equal((2*A).rmatvec([1,1]), [10, 14, 18])
@@ -91,9 +92,9 @@ class TestLinearOperator(object):
             assert_(isinstance(A.dot(np.array([1,2,3])), np.ndarray))
             assert_(isinstance(A.dot(np.array([[1],[2],[3]])), np.ndarray))
 
-            assert_(isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray))
-            assert_(isinstance(A * np.matrix([[1],[2],[3]]), np.ndarray))
-            assert_(isinstance(A.dot(np.matrix([[1],[2],[3]])), np.ndarray))
+            assert_(isinstance(A.matvec(matrix([[1],[2],[3]])), np.ndarray))
+            assert_(isinstance(A * matrix([[1],[2],[3]]), np.ndarray))
+            assert_(isinstance(A.dot(matrix([[1],[2],[3]])), np.ndarray))
 
             assert_(isinstance(2*A, interface._ScaledLinearOperator))
             assert_(isinstance(2j*A, interface._ScaledLinearOperator))
@@ -167,7 +168,7 @@ class TestAsLinearOperator(object):
         self.cases = []
 
         def make_cases(dtype):
-            self.cases.append(np.matrix([[1,2,3],[4,5,6]], dtype=dtype))
+            self.cases.append(matrix([[1,2,3],[4,5,6]], dtype=dtype))
             self.cases.append(np.array([[1,2,3],[4,5,6]], dtype=dtype))
             self.cases.append(sparse.csr_matrix([[1,2,3],[4,5,6]], dtype=dtype))
 
@@ -302,7 +303,8 @@ def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
 
-    assert_raises(TypeError, Empty)
+    with warns(RuntimeWarning, match="should implement at least"):
+        assert_raises(TypeError, Empty)
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
@@ -352,3 +354,15 @@ def test_no_double_init():
     # operator dtype)
     A = interface.LinearOperator((2, 2), matvec=matvec)
     assert_equal(call_count[0], 1)
+
+def test_adjoint_conjugate():
+    X = np.array([[1j]])
+    A = interface.aslinearoperator(X)
+
+    B = 1j * A
+    Y = 1j * X
+
+    v = np.array([1])
+
+    assert_equal(B.dot(v), Y.dot(v))
+    assert_equal(B.H.dot(v), Y.T.conj().dot(v))

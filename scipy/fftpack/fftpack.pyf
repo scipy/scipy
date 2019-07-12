@@ -196,6 +196,17 @@ python module _fftpack
          integer optional,intent(c,in) :: normalize = 0
        end subroutine ddct3
 
+       subroutine ddct4(x,n,howmany,normalize)
+         ! y = ddct4(x[,n,normalize,overwrite_x])
+         intent(c) ddct4
+         real*8 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine ddct4
+
        subroutine dct1(x,n,howmany,normalize)
          ! y = dct1(x[,n,normalize,overwrite_x])
          intent(c) dct1
@@ -229,6 +240,17 @@ python module _fftpack
          integer optional,intent(c,in) :: normalize = 0
        end subroutine dct3
 
+       subroutine dct4(x,n,howmany,normalize)
+         ! y = dct4(x[,n,normalize,overwrite_x])
+         intent(c) dct4
+         real*4 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine dct4
+
        subroutine destroy_ddct2_cache()
          intent(c) destroy_ddct2_cache
        end subroutine destroy_ddct2_cache
@@ -237,6 +259,10 @@ python module _fftpack
          intent(c) destroy_ddct1_cache
        end subroutine destroy_ddct1_cache
 
+       subroutine destroy_ddct4_cache()
+         intent(c) destroy_ddct4_cache
+       end subroutine destroy_ddct4_cache
+
        subroutine destroy_dct2_cache()
          intent(c) destroy_dct2_cache
        end subroutine destroy_dct2_cache
@@ -244,6 +270,10 @@ python module _fftpack
        subroutine destroy_dct1_cache()
          intent(c) destroy_dct1_cache
        end subroutine destroy_dct1_cache
+
+       subroutine destroy_dct4_cache()
+         intent(c) destroy_dct4_cache
+       end subroutine destroy_dct4_cache
 
        subroutine ddst1(x,n,howmany,normalize)
          ! y = ddst1(x[,n,normalize,overwrite_x])
@@ -278,6 +308,17 @@ python module _fftpack
          integer optional,intent(c,in) :: normalize = 0
        end subroutine ddst3
 
+       subroutine ddst4(x,n,howmany,normalize)
+         ! y = ddst4(x[,n,normalize,overwrite_x])
+         intent(c) ddst4
+         real*8 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine ddst4
+
        subroutine dst1(x,n,howmany,normalize)
          ! y = dst1(x[,n,normalize,overwrite_x])
          intent(c) dst1
@@ -311,6 +352,17 @@ python module _fftpack
          integer optional,intent(c,in) :: normalize = 0
        end subroutine dst3
 
+       subroutine dst4(x,n,howmany,normalize)
+         ! y = dst4(x[,n,normalize,overwrite_x])
+         intent(c) dst4
+         real*4 intent(c,in,out,copy,out=y) :: x(*)
+         integer optional,depend(x),intent(c,in) :: n=size(x)
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n),intent(c,hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional,intent(c,in) :: normalize = 0
+       end subroutine dst4
+
        subroutine destroy_ddst2_cache()
          intent(c) destroy_ddst2_cache
        end subroutine destroy_ddst2_cache
@@ -327,7 +379,7 @@ python module _fftpack
          intent(c) destroy_dst1_cache
        end subroutine destroy_dst1_cache
 
-    end interface 
+    end interface
 end python module _fftpack
 
 ! See http://cens.ioc.ee/projects/f2py2e/

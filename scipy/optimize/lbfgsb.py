@@ -38,7 +38,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
-from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
+from .optimize import (MemoizeJac, OptimizeResult,
                        _check_unknown_options, wrap_function,
                        _approx_fprime_helper)
 from scipy.sparse.linalg import LinearOperator

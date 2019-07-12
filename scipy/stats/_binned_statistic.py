@@ -39,6 +39,8 @@ def binned_statistic(x, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
           * 'count' : compute the count of points within each bin.  This is
@@ -213,6 +215,8 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
           * 'count' : compute the count of points within each bin.  This is
@@ -368,9 +372,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         as an (N,D) array.
     values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
-        the same shape as `x`, or a list of sequences - each with the same
-        shape as `x`.  If `values` is such a list, the statistic will be
-        computed on each independently.
+        the same shape as `sample`, or a list of sequences - each with the
+        same shape as `sample`.  If `values` is such a list, the statistic
+        will be computed on each independently.
     statistic : string or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
@@ -384,6 +388,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
             referenced.
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'min' : compute the minimum of values for points within each bin.
             Empty bins will be represented by NaN.
           * 'max' : compute the maximum of values for point within each bin.
@@ -556,11 +562,10 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in xrange(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
-            flatsum2 = np.bincount(binnumbers, values[vv] ** 2)
-            result[vv, a] = np.sqrt(flatsum2[a] / flatcount[a] -
-                                    (flatsum[a] / flatcount[a]) ** 2)
+        for i in np.unique(binnumbers):
+            for vv in xrange(Vdim):
+                #NOTE: take std dev by bin, np.std() is 2-pass and stable
+                result[vv, i] = np.std(values[vv, binnumbers == i])
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
@@ -592,7 +597,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             sup.filter(RuntimeWarning)
             try:
                 null = statistic([])
-            except:
+            except Exception:
                 null = np.nan
         result.fill(null)
         for i in np.unique(binnumbers):
@@ -603,7 +608,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     result = result.reshape(np.append(Vdim, nbin))
 
     # Remove outliers (indices 0 and -1 for each bin-dimension).
-    core = [slice(None)] + Ndim * [slice(1, -1)]
+    core = tuple([slice(None)] + Ndim * [slice(1, -1)])
     result = result[core]
 
     # Unravel binnumbers into an ndarray, each row the bins for each dimension

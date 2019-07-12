@@ -1,0 +1,15 @@
+! Signatures for f2py-wrappers of FORTRAN LAPACK General Tridiagonal Matrix functions.
+!
+
+subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
+    callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
+    callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
+    <ftype> dimension(n), intent(in,out,copy) :: d
+    <ftype> dimension(n-1), intent(in,out,copy), depend(n) :: du
+    <ftype> dimension(n,nrhs), intent(in,out,copy,out=x), depend(n), check(shape(b,0)==n) :: b
+    integer intent(out) :: info
+
+end subroutine <prefix>gtsv

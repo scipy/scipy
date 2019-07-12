@@ -14,8 +14,11 @@ def configuration(parent_package='', top_path=None):
 
     config.add_data_dir('tests')
 
+    # spatial.transform
+    config.add_subpackage('transform')
+
     # qhull
-    qhull_src = list(glob.glob(join(dirname(__file__), 'qhull',
+    qhull_src = sorted(glob.glob(join(dirname(__file__), 'qhull_src',
                                     'src', '*.c')))
 
     inc_dirs = [get_python_inc()]
@@ -27,14 +30,12 @@ def configuration(parent_package='', top_path=None):
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src,
+                         sources=['qhull.c', 'qhull_misc.c'] + qhull_src,
                          **cfg)
 
     # cKDTree
     ckdtree_src = ['query.cxx',
                    'build.cxx',
-                   'globals.cxx',
-                   'cpp_exc.cxx',
                    'query_pairs.cxx',
                    'count_neighbors.cxx',
                    'query_ball_point.cxx',
@@ -44,10 +45,7 @@ def configuration(parent_package='', top_path=None):
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
     ckdtree_headers = ['ckdtree_decl.h',
-                       'ckdtree_methods.h',
                        'coo_entries.h',
-                       'cpp_exc.h',
-                       'cpp_utils.h',
                        'distance_base.h',
                        'distance.h',
                        'ordered_pair.h',
@@ -75,7 +73,7 @@ def configuration(parent_package='', top_path=None):
                          sources=['_hausdorff.c'])
 
     # Add license files
-    config.add_data_files('qhull/COPYING.txt')
+    config.add_data_files('qhull_src/COPYING.txt')
 
     return config
 

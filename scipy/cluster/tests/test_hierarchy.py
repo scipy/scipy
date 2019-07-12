@@ -64,7 +64,7 @@ try:
     # before importing pyplot
     import matplotlib.pyplot as plt
     have_matplotlib = True
-except:
+except Exception:
     have_matplotlib = False
 
 
@@ -327,11 +327,11 @@ class TestIsIsomorphic(object):
         # nonisomorphic.)
         for nc in [2, 3, 5]:
             self.help_is_isomorphic_randperm(1000, nc, True, 5)
-            
+
     def test_is_isomorphic_7(self):
         # Regression test for gh-6271
         assert_(not is_isomorphic([1, 2, 3], [1, 1, 1]))
-    
+
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
             a = np.int_(np.random.rand(nobs) * nclusters)

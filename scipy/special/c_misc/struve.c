@@ -46,7 +46,7 @@
  * References
  * ----------
  * [1] NIST Digital Library of Mathematical Functions
- *     http://dlmf.nist.gov/11
+ *     https://dlmf.nist.gov/11
  */
 
 /*
@@ -209,7 +209,7 @@ static double struve_hl(double v, double z, int is_h)
 
 /*
  * Power series for Struve H and L
- * http://dlmf.nist.gov/11.2.1
+ * https://dlmf.nist.gov/11.2.1
  *
  * Starts to converge roughly at |n| > |z|
  */
@@ -288,7 +288,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
 
 /*
  * Bessel series
- * http://dlmf.nist.gov/11.4.19
+ * https://dlmf.nist.gov/11.4.19
  */
 double struve_bessel_series(double v, double z, int is_h, double *err)
 {
@@ -335,7 +335,7 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
 
 /*
  * Large-z expansion for Struve H and L
- * http://dlmf.nist.gov/11.6.1
+ * https://dlmf.nist.gov/11.6.1
  */
 double struve_asymp_large_z(double v, double z, int is_h, double *err)
 {

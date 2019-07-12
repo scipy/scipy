@@ -40,6 +40,28 @@ GEN_CACHE(@pref@dct2,(int n)
       ,free(caches_@pref@dct2[id].wsave);
       ,10)
 
+void @pref@dct4init(int n, @type@ *wsave)
+{
+    @type@ *C;
+    int i;
+    const double PI_2 = 1.57079632679489661923;
+    F_FUNC(@pref@cosqi,@PREF@COSQI)(&n,wsave);
+    /* store extra constants at end of array */
+    C = &wsave[3*n+15];
+    for (i=0; i<n; i++) {
+        C[i] = cos(PI_2*(i+0.5)/n);
+    }
+}
+
+GEN_CACHE(@pref@dct4,(int n)
+      ,@type@* wsave;
+      ,(caches_@pref@dct4[i].n==n)
+      ,caches_@pref@dct4[id].wsave = malloc(sizeof(@type@)*(4*n+15));
+       @pref@dct4init(n,caches_@pref@dct4[id].wsave);
+      ,free(caches_@pref@dct4[id].wsave);
+      ,10)
+
+
 void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
 {
     int i;
@@ -48,31 +70,35 @@ void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
 
     wsave = caches_@pref@dct1[get_cache_id_@pref@dct1(n)].wsave;
 
+
     for (i = 0; i < howmany; ++i, ptr += n) {
+        if (normalize==DCT_NORMALIZE_ORTHONORMAL) {
+            const @type@ m0 = sqrt(2.0);
+            ptr[0]   *= m0;
+            ptr[n-1] *= m0;
+        }
+
         F_FUNC(@pref@cost, @PREF@COST)(&n, ptr, wsave);
     }
 
     switch (normalize) {
         case DCT_NORMALIZE_NO:
             break;
-#if 0
         case DCT_NORMALIZE_ORTHONORMAL:
-        {
-            @type@ n1, n2;
-
-            ptr = inout;
-            n1 = sqrt(0.5 / (n-1));
-            n2 = sqrt(1. / (n-1));
-            for (i = 0; i < howmany; ++i, ptr+=n) {
+            {
+                @type@ m0 = 0.5*sqrt(1. / (n-1));
+                @type@ m = 0.5*sqrt(2. / (n-1));
                 int j;
-                ptr[0] *= n1;
-                for (j = 1; j < n-1; ++j) {
-                    ptr[j] *= n2;
+                ptr = inout;
+                for (i = 0; i < howmany; ++i, ptr += n) {
+                    ptr[0] *= m0;
+                    for (j=1; j<n-1; j++) {
+                        ptr[j] *= m;
+                    }
+                    ptr[n-1] *= m0;
                 }
             }
             break;
-        }
-#endif
         default:
             fprintf(stderr, "dct1: normalize not yet supported=%d\n",
                     normalize);
@@ -160,4 +186,48 @@ void @pref@dct3(@type@ * inout, int n, int howmany, int normalize)
     }
 
 }
+
+/*
+DCT-IV from DCT-II, based on:
+S.C. Chan, K.L. Ho, Direct methods for computing discrete sinusoidal transforms,
+IEE Proceedings F, Volume 137, Issue 6, 1990
+*/
+void @pref@dct4(@type@ * inout, int n, int howmany, int normalize)
+{
+    int i, j;
+    @type@ *ptr = inout;
+    @type@ *wsave = NULL;
+    @type@ m;
+    @type@ *C;
+
+    wsave = caches_@pref@dct4[get_cache_id_@pref@dct4(n)].wsave;
+    C = &wsave[3*n+15];
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        for (j=0; j<n; j++) {
+            ptr[j] *= C[j];
+        }
+        F_FUNC(@pref@cosqb, @PREF@COSQB)(&n, ptr, wsave);
+        ptr[0] *= 0.5;
+        for (j=1; j<n; j++) {
+            ptr[j] -= ptr[j-1];
+        }
+    }
+
+    switch (normalize) {
+        case DCT_NORMALIZE_NO:
+            break;
+        case DCT_NORMALIZE_ORTHONORMAL:
+            ptr = inout;
+            m = 0.5*sqrt(2./n);
+            for (i = 0; i < n * howmany; ++i) {
+                ptr[i] *= m;
+            }
+            break;
+        default:
+            fprintf(stderr, "dct4: normalize not yet supported=%d\n",
+                    normalize);
+            break;
+    }
+}
+
 /**end repeat**/

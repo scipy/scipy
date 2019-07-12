@@ -1,3 +1,5 @@
+:orphan:
+
 .. _governance-people:
 
 Current steering council and institutional partners

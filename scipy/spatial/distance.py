@@ -1,5 +1,4 @@
 """
-=====================================================
 Distance computations (:mod:`scipy.spatial.distance`)
 =====================================================
 
@@ -45,6 +44,7 @@ functions. Use ``pdist`` for this purpose.
    correlation      -- the Correlation distance.
    cosine           -- the Cosine distance.
    euclidean        -- the Euclidean distance.
+   jensenshannon    -- the Jensen-Shannon distance.
    mahalanobis      -- the Mahalanobis distance.
    minkowski        -- the Minkowski distance.
    seuclidean       -- the normalized Euclidean distance.
@@ -90,6 +90,7 @@ __all__ = [
     'is_valid_dm',
     'is_valid_y',
     'jaccard',
+    'jensenshannon',
     'kulsinski',
     'mahalanobis',
     'matching',
@@ -121,6 +122,7 @@ from scipy._lib._util import _asarray_validated
 from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
+from ..special import rel_entr
 
 
 def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
@@ -132,9 +134,10 @@ def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
 
     if (callable(metric) and metric not in [
             braycurtis, canberra, chebyshev, cityblock, correlation, cosine,
-            dice, euclidean, hamming, jaccard, kulsinski, mahalanobis,
-            matching, minkowski, rogerstanimoto, russellrao, seuclidean,
-            sokalmichener, sokalsneath, sqeuclidean, yule, wminkowski]):
+            dice, euclidean, hamming, jaccard, jensenshannon, kulsinski,
+            mahalanobis, matching, minkowski, rogerstanimoto, russellrao,
+            seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule,
+            wminkowski]):
         raise TypeError('When using a custom metric arguments must be passed'
                         'as keyword (i.e., ARGNAME=ARGVALUE)')
 
@@ -256,6 +259,16 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_name, **kwargs):
     return XA, XB, typ, kwargs
 
 
+def _validate_hamming_kwargs(X, m, n, **kwargs):
+    w = kwargs.get('w', np.ones((n,), dtype='double'))
+
+    if w.ndim != 1 or w.shape[0] != n:
+        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+
+    kwargs['w'] = _validate_weights(w)
+    return kwargs
+
+
 def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
     VI = kwargs.pop('VI', None)
     if VI is None:
@@ -338,7 +351,7 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
     if w is None:
         raise ValueError('weighted minkowski requires a weight '
                          'vector `w` to be given.')
-    kwargs['w'] = _convert_to_double(w)
+    kwargs['w'] = _validate_weights(w)
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     return kwargs
@@ -357,8 +370,8 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `np.random.RandomState` seed. Default is 0, a random shuffling of
-        u and v that guarantees reproducibility.
+        Local `numpy.random.RandomState` seed. Default is 0, a random
+        shuffling of u and v that guarantees reproducibility.
 
     Returns
     -------
@@ -370,6 +383,12 @@ def directed_hausdorff(u, v, seed=0):
 
     index_2 : int
         index of point contributing to Hausdorff pair in `v`
+
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `u` and `v` do not have
+        the same number of columns.
 
     Notes
     -----
@@ -431,6 +450,9 @@ def directed_hausdorff(u, v, seed=0):
     """
     u = np.asarray(u, dtype=np.float64, order='c')
     v = np.asarray(v, dtype=np.float64, order='c')
+    if u.shape[1] != v.shape[1]:
+        raise ValueError('u and v need to have the same '
+                         'number of columns')
     result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
 
@@ -829,6 +851,22 @@ def jaccard(u, v, w=None):
     jaccard : double
         The Jaccard distance between vectors `u` and `v`.
 
+    Notes
+    -----
+    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
+    between the items in the vectors the returned distance is 0. See the
+    Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
+
+    .. versionchanged:: 1.2.0
+        Previously, when `u` and `v` lead to a `0/0` division, the function
+        would return NaN. This was changed to return 0 instead.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Jaccard_index
+    .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
+       distance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -844,14 +882,16 @@ def jaccard(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+
     nonzero = np.bitwise_or(u != 0, v != 0)
     unequal_nonzero = np.bitwise_and((u != v), nonzero)
     if w is not None:
         w = _validate_weights(w)
         nonzero = w * nonzero
         unequal_nonzero = w * unequal_nonzero
-    dist = np.double(unequal_nonzero.sum()) / np.double(nonzero.sum())
-    return dist
+    a = np.double(unequal_nonzero.sum())
+    b = np.double(nonzero.sum())
+    return (a / b) if b != 0 else 0
 
 
 def kulsinski(u, v, w=None):
@@ -1196,6 +1236,66 @@ def canberra(u, v, w=None):
     return d
 
 
+def jensenshannon(p, q, base=None):
+    """
+    Compute the Jensen-Shannon distance (metric) between
+    two 1-D probability arrays. This is the square root
+    of the Jensen-Shannon divergence.
+
+    The Jensen-Shannon distance between two probability
+    vectors `p` and `q` is defined as,
+
+    .. math::
+
+       \\sqrt{\\frac{D(p \\parallel m) + D(q \\parallel m)}{2}}
+
+    where :math:`m` is the pointwise mean of :math:`p` and :math:`q`
+    and :math:`D` is the Kullback-Leibler divergence.
+
+    This routine will normalize `p` and `q` if they don't sum to 1.0.
+
+    Parameters
+    ----------
+    p : (N,) array_like
+        left probability vector
+    q : (N,) array_like
+        right probability vector
+    base : double, optional
+        the base of the logarithm used to compute the output
+        if not given, then the routine uses the default base of
+        scipy.stats.entropy.
+
+    Returns
+    -------
+    js : double
+        The Jensen-Shannon distance between `p` and `q`
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
+    1.0
+    >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
+    0.46450140402245893
+    >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+    0.0
+
+    """
+    p = np.asarray(p)
+    q = np.asarray(q)
+    p = p / np.sum(p, axis=0)
+    q = q / np.sum(q, axis=0)
+    m = (p + q) / 2.0
+    left = rel_entr(p, m)
+    right = rel_entr(q, m)
+    js = np.sum(left, axis=0) + np.sum(right, axis=0)
+    if base is not None:
+        js /= np.log(base)
+    return np.sqrt(js / 2.0)
+
+
 def yule(u, v, w=None):
     """
     Compute the Yule dissimilarity between two boolean 1-D arrays.
@@ -1240,6 +1340,7 @@ def yule(u, v, w=None):
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * ntf * nft / np.array(ntt * nff + ntf * nft))
+
 
 @np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
                       "use spatial.distance.hamming instead.")
@@ -1562,7 +1663,7 @@ _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
 #  'types': [list of supported types],  # X (pdist) and XA (cdist) are used to
 #                                       # choose the type. if there is no match
 #                                       # the first type is used. Default double
-#}
+# }
 MetricInfo = namedtuple("MetricInfo", 'aka types validator ')
 MetricInfo.__new__.__defaults__ = (['double'], None)
 
@@ -1576,9 +1677,12 @@ _METRICS = {
     'dice': MetricInfo(aka=['dice'], types=['bool']),
     'euclidean': MetricInfo(aka=['euclidean', 'euclid', 'eu', 'e']),
     'hamming': MetricInfo(aka=['matching', 'hamming', 'hamm', 'ha', 'h'],
-                          types=['double', 'bool']),
+                          types=['double', 'bool'],
+                          validator=_validate_hamming_kwargs),
     'jaccard': MetricInfo(aka=['jaccard', 'jacc', 'ja', 'j'],
                           types=['double', 'bool']),
+    'jensenshannon': MetricInfo(aka=['jensenshannon', 'js'],
+                                types=['double']),
     'kulsinski': MetricInfo(aka=['kulsinski'], types=['bool']),
     'mahalanobis': MetricInfo(aka=['mahalanobis', 'mahal', 'mah'],
                               validator=_validate_mahalanobis_kwargs),
@@ -1594,7 +1698,7 @@ _METRICS = {
     'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm'],
                              validator=_validate_wminkowski_kwargs),
     'yule': MetricInfo(aka=['yule'], types=['bool']),
-    }
+}
 
 
 _METRIC_ALIAS = dict((alias, name)
@@ -1604,6 +1708,29 @@ _METRIC_ALIAS = dict((alias, name)
 _METRICS_NAMES = list(_METRICS.keys())
 
 _TEST_METRICS = {'test_' + name: globals()[name] for name in _METRICS.keys()}
+
+
+def _select_weighted_metric(mstr, kwargs, out):
+    kwargs = dict(kwargs)
+
+    if "w" in kwargs and kwargs["w"] is None:
+        # w=None is the same as omitting it
+        kwargs.pop("w")
+
+    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka + _METRICS['hamming'].aka:
+        # These support weights
+        pass
+    elif "w" in kwargs:
+        if (mstr in _METRICS['seuclidean'].aka or
+                mstr in _METRICS['mahalanobis'].aka):
+            raise ValueError("metric %s incompatible with weights" % mstr)
+
+        # XXX: C-versions do not support weights
+        # need to use python version for weighting
+        kwargs['out'] = out
+        mstr = "test_%s" % mstr
+
+    return mstr, kwargs
 
 
 def pdist(X, metric='euclidean', *args, **kwargs):
@@ -1621,7 +1748,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+        'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
     *args : tuple. Deprecated.
@@ -1885,17 +2012,24 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         dm = out
 
     # compute blacklist for deprecated kwargs
-    if(metric in _METRICS['minkowski'].aka or
-       metric in _METRICS['wminkowski'].aka or
-       metric in ['test_minkowski', 'test_wminkowski'] or
-       metric in [minkowski, wminkowski]):
+    if(metric in _METRICS['jensenshannon'].aka
+       or metric == 'test_jensenshannon' or metric == jensenshannon):
+        kwargs_blacklist = ["p", "w", "V", "VI"]
+
+    elif(metric in _METRICS['minkowski'].aka
+         or metric in _METRICS['wminkowski'].aka
+         or metric in ['test_minkowski', 'test_wminkowski']
+         or metric in [minkowski, wminkowski]):
         kwargs_blacklist = ["V", "VI"]
+
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
         kwargs_blacklist = ["p", "w", "VI"]
-    elif(metric in _METRICS['mahalanobis'].aka or
-         metric == 'test_mahalanobis' or metric == mahalanobis):
+
+    elif(metric in _METRICS['mahalanobis'].aka
+         or metric == 'test_mahalanobis' or metric == mahalanobis):
         kwargs_blacklist = ["p", "w", "V"]
+
     else:
         kwargs_blacklist = ["p", "V", "VI"]
 
@@ -1918,14 +2052,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        # NOTE: C-version still does not support weights
-        if "w" in kwargs and not mstr.startswith("test_"):
-            if(mstr in _METRICS['seuclidean'].aka or
-               mstr in _METRICS['mahalanobis'].aka):
-                raise ValueError("metric %s incompatible with weights" % mstr)
-            # need to use python version for weighting
-            kwargs['out'] = out
-            mstr = "test_%s" % mstr
+        mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
 
@@ -2014,7 +2141,7 @@ def squareform(X, force="no", checks=True):
       :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
       diagonal elements are zero.
 
-    In Scipy 0.19.0, ``squareform`` stopped casting all input types to
+    In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
 
     """
@@ -2301,9 +2428,9 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     metric : str or callable, optional
         The distance metric to use.  If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
-        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
-        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
-        'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
+        'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+        'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
         'wminkowski', 'yule'.
     *args : tuple. Deprecated.
         Additional arguments should be passed as keyword arguments
@@ -2641,14 +2768,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        # NOTE: C-version still does not support weights
-        if "w" in kwargs and not mstr.startswith("test_"):
-            if(mstr in _METRICS['seuclidean'].aka or
-               mstr in _METRICS['mahalanobis'].aka):
-                raise ValueError("metric %s incompatible with weights" % mstr)
-            # need to use python version for weighting
-            kwargs['out'] = out
-            mstr = "test_%s" % mstr
+        mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
         if metric_name is not None:

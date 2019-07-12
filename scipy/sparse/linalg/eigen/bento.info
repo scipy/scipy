@@ -1,4 +1,0 @@
-Recurse: arpack
-
-Library:
-    Packages: arpack, lobpcg

@@ -66,16 +66,14 @@ distcont = [
     ['laplace', ()],
     ['levy', ()],
     ['levy_l', ()],
-    ['levy_stable', (0.35667405469844993,
-                     -0.67450531578494011)],  # NotImplementedError
-    #           rvs not tested
+    ['levy_stable', (1.8, -0.5)],
     ['loggamma', (0.41411931826052117,)],
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
     ['lognorm', (0.95368226960575331,)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
-    ['mielke', (10.4, 3.6)],
+    ['mielke', (10.4, 4.6)],
     ['moyal', ()],
     ['nakagami', (4.9673794866666237,)],
     ['ncf', (27, 27, 0.41578441799226107)],
@@ -127,5 +125,6 @@ distdiscrete = [
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
-    ['zipf', (6.5,)]
+    ['zipf', (6.5,)],
+    ['yulesimon',(11.0,)]
 ]

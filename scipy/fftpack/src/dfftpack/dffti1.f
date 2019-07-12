@@ -1,6 +1,8 @@
       SUBROUTINE DFFTI1 (N,WA,IFAC)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       WA(*)      ,IFAC(*)    ,NTRYH(4)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, IB, IDO, II, IP, IPM, IS, J, K1, L1, L2
+      INTEGER :: LD, NF, NFM1, NL, NQ, NR, NTRY, NTRYH(4)
+      DOUBLE PRECISION :: WA(*), ARG, ARGH, ARGLD, FI, TPI
       DATA NTRYH(1),NTRYH(2),NTRYH(3),NTRYH(4)/4,2,3,5/
       NL = N
       NF = 0
