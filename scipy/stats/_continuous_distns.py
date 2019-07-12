@@ -1549,6 +1549,10 @@ class exponweib_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    weibull_min, numpy.random.weibull
+
     Notes
     -----
     The probability density function for `exponweib` is:
@@ -1569,11 +1573,8 @@ class exponweib_gen(rv_continuous):
 
     * :math:`a` is the exponentiation parameter,
       with the special case :math:`a=1` corresponding to the usual
-      (non-exponentiated) Weibull distribution.
-    * :math:`c` is the shape parameter of the usual Weibull law
-      (often named :math:`k`, but named :math:`a` in `numpy.random.weibull`).
-      Special values are :math:`c=1` and :math:`c=2` where Weibull distribution
-      reduces to the `expon` and `rayleigh` distributions respectively.
+      (non-exponentiated) Weibull distribution `weibull_min`.
+    * :math:`c` is the shape parameter of the non-exponentiated Weibull law.
 
     %(after_notes)s
 
@@ -1920,11 +1921,14 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
+    The Weibull Minimum Extreme Value distribution, from extreme value theory,
+    is also often simply called the Weibull distribution.
+
     %(before_notes)s
 
     See Also
     --------
-    weibull_max
+    weibull_max, numpy.random.weibull, exponweib
 
     Notes
     -----
@@ -1937,8 +1941,15 @@ class weibull_min_gen(rv_continuous):
     for :math:`x >= 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
+    (named :math:`k` in Wikipedia article and :math:`a` in `numpy.random.weibull`)
+    Special shape values are :math:`c=1` and :math:`c=2` where Weibull distribution
+    reduces to the `expon` and `rayleigh` distributions respectively.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Weibull_distribution
 
     %(example)s
 
