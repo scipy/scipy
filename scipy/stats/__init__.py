@@ -231,6 +231,7 @@ Correlation functions
    linregress
    siegelslopes
    theilslopes
+   mgc
 
 Statistical tests
 =================
