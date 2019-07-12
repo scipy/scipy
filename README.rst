@@ -1,6 +1,10 @@
 SciPy
 =====
 
+.. image:: https://badges.gitter.im/scipy/scipy.svg
+   :alt: Join the chat at https://gitter.im/scipy/scipy
+   :target: https://gitter.im/scipy/scipy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 .. image:: https://img.shields.io/travis/scipy/scipy/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/scipy/scipy/
 
