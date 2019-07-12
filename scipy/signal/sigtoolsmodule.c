@@ -912,19 +912,23 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
 	mode_dep = malloc(bytes_in_array);
+	if (mode_dep == NULL) goto fail;
 	for (k = 0; k < PyArray_NDIM(ap1); k++) { 
 	  mode_dep[k] = -((PyArray_DIMS(ap2)[k]-1) >> 1);
 	}	
 
 	b_ind = (npy_intp *)malloc(bytes_in_array);  /* loop variables */
+	if (b_ind == NULL) goto fail;
 	memset(b_ind,0,bytes_in_array);
 	a_ind = (npy_intp *)malloc(bytes_in_array);
 	ret_ind = (npy_intp *)malloc(bytes_in_array);
+	if (a_ind == NULL || ret_ind == NULL) goto fail;
 	memset(ret_ind,0,bytes_in_array);
 	temp_ind = (npy_intp *)malloc(bytes_in_array);
 	check_ind = (npy_intp*)malloc(bytes_in_array);
 	offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp));
 	offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp));
+	if (temp_ind == NULL || check_ind == NULL || offsets == NULL || offsets2 == NULL) goto fail;
 	offset1 = compute_offsets(offsets, offsets2, PyArray_DIMS(ap1),
                                   PyArray_DIMS(ap2), PyArray_DIMS(ret),
                                   mode_dep, PyArray_NDIM(ap1));
@@ -1094,6 +1098,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     }
 
     aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
+    if (aout_dimens == NULL) goto fail;
     switch(mode & OUTSIZE_MASK) {
     case VALID:
 	for (i = 0; i < PyArray_NDIM(ain1); i++) { 
