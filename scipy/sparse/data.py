@@ -363,7 +363,7 @@ class _minmax_mixin(object):
         Return the maximum of the matrix or maximum along an axis, ignoring any
         NaNs. This takes all elements into account, not just the non-zero ones.
 
-        .. versionadded:: 1.2.0
+        .. versionadded:: 1.4.0
 
         Parameters
         ----------
@@ -400,7 +400,7 @@ class _minmax_mixin(object):
         NaNs. This takes all elements into account, not just the non-zero
         ones.
 
-        .. versionadded:: 1.2.0
+        .. versionadded:: 1.4.0
 
         Parameters
         ----------
