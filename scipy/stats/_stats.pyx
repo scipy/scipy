@@ -7,8 +7,10 @@ cimport numpy as np
 from numpy.math cimport PI
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
+import warnings
 import numpy as np
 import scipy.stats, scipy.special
+from scipy.spatial.distance import pdist, squareform
 
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
@@ -300,3 +302,268 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     tau = ((tot - (v + u - t)) - 2. * exchanges_weight[0]
            ) / np.sqrt(tot - u) / np.sqrt(tot - v)
     return min(1., max(-1., tau))
+
+
+# FROM MGCPY: https://github.com/neurodata/mgcpy
+
+# Distance transforms used for MGC and Dcorr
+cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
+    r"""
+    Equivalent to scipy.stats.rankdata(x, "dense"), but faster!
+
+    Parameters
+    ----------
+    x : ndarray
+        Any data matrix.
+
+    Returns
+    -------
+    ndarray
+        Dense ranked ``x``.
+    """
+    u, v = np.unique(x, return_inverse=True)
+    return v + 1
+
+
+cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
+    r"""
+    Sorts the entries within each column in ascending order
+
+    For ties, the "minimum" ranking is used, e.g. if there are
+    repeating distance entries, The order is like 1,2,2,3,3,4,...
+
+    Parameters
+    ----------
+    distx : ndarray
+        A symmetric distance matrix.
+
+    Returns
+    -------
+    ndarray
+        Column-wise ranked matrix of ``distx``.
+    """
+    # faster than np.apply_along_axis
+    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in
+                      range(distx.shape[0])])
+
+
+cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
+                              str global_corr="mgc", is_ranked=True):
+    r"""
+    Appropriately transform distance matrices by centering them, based on the
+    specified global correlation to build on.
+
+    Parameters
+    ----------
+    distx : ndarray
+        A symmetric distance matrix.
+    global_corr: {'mgc', 'rank'}, optional
+        Specifies which global correlation to build up-on. Defaults to 'mgc'.
+    is_ranked: bool, optional
+        Specifies whether ranking within a column is computed or not. Defaults
+        to True.
+
+    Returns
+    -------
+    cent_distx : ndarray
+        A :math:`n \times n` centered distance matrix.
+    rank_distx : ndarray
+        A :math:`n \times n` column-ranked distance matrix.
+    """
+    cdef int n = distx.shape[0]
+    cdef np.ndarray rank_distx = np.zeros((<object> distx).shape)
+
+    if is_ranked:
+        rank_distx = _rank_distance_matrix(distx)
+
+    if global_corr == "rank":
+        distx = rank_distx.astype(np.float)
+
+    # 'mgc' distance transform (col-wise mean) - default
+    cdef np.ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)),
+                                            n).reshape(-1, n).T
+    cdef np.ndarray cent_distx = distx - exp_distx
+
+    return cent_distx, rank_distx
+
+
+cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
+                                 np.ndarray[np.float_t, ndim=2] disty,
+                                 str global_corr="mgc", is_ranked=True):
+    r"""
+    Transforms the distance matrices appropriately, with column-wise ranking if
+    needed.
+
+    Parameters
+    ----------
+    distx, disty : ndarray
+        Distance matrices with the same number of samples.
+    global_corr: {'mgc', 'rank'}, optional
+        Specifies which global correlation to build up-on. Defaults to 'mgc'.
+    is_ranked: bool, optional
+        Specifies whether ranking within a column is computed or not. If,
+        `global_corr = "rank"`, then ranking is performed regardless of the
+        value if `is_ranked`. Defaults to True. Defaults to True.
+
+    Returns
+    -------
+    transform_dist : dict
+        Contains the following keys:
+            - cent_distx : ndarray
+                A :math:`n \times n` centered `distx`.
+            - cent_disty : ndarray
+                A :math:`n \times n` centered `disty`.
+            - rank_distx : ndarray
+                A :math:`n \times n` column-ranked centered `distx`.
+            - rank_disty : ndarray
+                A :math:`n \times n` column-ranked centered `disty`.
+    """
+
+    if global_corr == "rank":
+        is_ranked = True
+
+    cent_distx, rank_distx = _center_distance_matrix(distx, global_corr,
+                                                     is_ranked)
+    cent_disty, rank_disty = _center_distance_matrix(disty, global_corr,
+                                                     is_ranked)
+
+    transform_dist = {"cent_distx": cent_distx, "cent_disty": cent_disty,
+                      "rank_distx": rank_distx, "rank_disty": rank_disty}
+
+    return transform_dist
+
+
+# MGC specific functions
+cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
+                        np.ndarray[np.float_t, ndim=2] disty,
+                        np.ndarray[np.int_t, ndim=2] rank_distx,
+                        np.ndarray[np.int_t, ndim=2] rank_disty):
+    r"""
+    Computes all local covariances simultaneously in ``O(n^2)``.
+
+    Parameters
+    ----------
+    distx, disty : ndarray
+        Distance matrices with the same number of samples.
+    rank_distx, rank_disty : ndarray
+        Column-wise ranked matrix of the distance matrices
+
+    Returns
+    -------
+    cov_xy : ndarray
+        Matrix of all local covariances, :math:`n \times n`
+    """
+
+    # convert float32 numpy array to int, as it will be used as array indices [0 to n-1]
+    rank_distx = rank_distx.astype(np.int) - 1
+    rank_disty = rank_disty.astype(np.int) - 1
+
+    cdef int n = distx.shape[0]
+    cdef int nx = np.max(rank_distx) + 1
+    cdef int ny = np.max(rank_disty) + 1
+    cdef np.ndarray cov_xy = np.zeros((nx, ny), dtype=np.float)
+    cdef np.ndarray expectx = np.zeros(nx, dtype=np.float)
+    cdef np.ndarray expecty = np.zeros(ny, dtype=np.float)
+
+    # summing up the the element-wise product of A and B based on the ranks,
+    # yields the local family of covariances
+    cdef float a, b
+    cdef int i, j, k, l
+    for i in range(n):
+        for j in range(n):
+            a = distx[i, j]
+            b = disty[i, j]
+            k = rank_distx[i, j]
+            l = rank_disty[i, j]
+
+            cov_xy[k, l] += a * b
+
+            expectx[k] += a
+            expecty[l] += b
+
+    cov_xy[:, 0] = np.cumsum(cov_xy[:, 0])
+    expectx = np.cumsum(expectx)
+
+    cov_xy[0, :] = np.cumsum(cov_xy[0, :])
+    expecty = np.cumsum(expecty)
+
+    for k in range(nx - 1):
+        for l in range(ny - 1):
+            cov_xy[k+1, l+1] += (cov_xy[k+1, l] + cov_xy[k, l+1]
+                                 - cov_xy[k, l])
+
+    # centering the covariances
+    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T)
+                        / n**2)  # caveat when porting from R (reshape)
+
+    return cov_xy
+
+
+cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
+                          np.ndarray[np.float_t, ndim=2] disty,
+                          global_corr="mgc"):
+        r"""
+        Computes all the local correlation coefficients in ``O(n^2 log n)``
+
+        Parameters
+        ----------
+        distx, disty : ndarray
+            Distance matrices with the same number of samples.
+        global_corr: {'mgc', 'rank'}, optional
+            Specifies which global correlation to build up-on. Defaults to
+            'mgc'.
+
+        Returns
+        -------
+        corr_mat : ndarray
+            Local correlations within :math:`[-1, 1]`
+        local_varx : ndarray
+            All local variances of `x`
+        local_vary : ndarray
+            All local variances of `y`
+        """
+        transformed = _transform_distance_matrix(distx, disty,
+                                                 global_corr)
+
+        # compute all local covariances
+        cdef np.ndarray cov_mat = _local_covariance(
+            transformed["cent_distx"],
+            transformed["cent_disty"].T,
+            transformed["rank_distx"],
+            transformed["rank_disty"].T)
+
+        # compute local variances for data A
+        cdef np.ndarray local_varx = _local_covariance(
+            transformed["cent_distx"],
+            transformed["cent_distx"].T,
+            transformed["rank_distx"],
+            transformed["rank_distx"].T)
+        local_varx = local_varx.diagonal()
+
+        # compute local variances for data B
+        cdef np.ndarray local_vary = _local_covariance(
+            transformed["cent_disty"],
+            transformed["cent_disty"].T,
+            transformed["rank_disty"],
+            transformed["rank_disty"].T)
+        local_vary = local_vary.diagonal()
+
+        warnings.filterwarnings("ignore")
+
+        # normalizing the covariances yields the local family of correlations
+
+        # 2 caveats when porting from R (np.sqrt and reshape)
+        corr_mat = cov_mat / \
+            np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
+        # avoid computational issues that may cause a few local correlations
+        # to be negligebly larger than 1
+        corr_mat[corr_mat > 1] = 1
+
+        warnings.filterwarnings("default")
+
+        # set any local correlation to 0 if any corresponding local variance is
+        # less than or equal to 0
+        corr_mat[local_varx <= 0, :] = 0
+        corr_mat[:, local_vary <= 0] = 0
+
+        return corr_mat, local_varx, local_vary
