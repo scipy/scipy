@@ -1416,7 +1416,6 @@ def test_discontiguous():
     assert_array_equal(d1, d2)
     assert_array_equal(i1, i2)
 
-
 @pytest.mark.parametrize("balanced_tree, compact_nodes",
     [(True, False),
      (True, True),
