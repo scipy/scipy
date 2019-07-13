@@ -544,8 +544,12 @@ cdef class cKDTree:
             if ((self.data < 0)[:, periodic_mask]).any():
                 raise ValueError("Negative input data are outside of the periodic box.")
 
-        self.maxes = np.ascontiguousarray(np.amax(self.data,axis=0), dtype=np.float64)
-        self.mins = np.ascontiguousarray(np.amin(self.data,axis=0), dtype=np.float64)
+        self.maxes = np.ascontiguousarray(
+            np.amax(self.data, axis=0) if self.n > 0 else np.zeros(self.m),
+            dtype=np.float64)
+        self.mins = np.ascontiguousarray(
+            np.amin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
+            dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
 
         self._pre_init()
