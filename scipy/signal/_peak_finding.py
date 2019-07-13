@@ -1279,7 +1279,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
-    widths = np.asarray(widths)
+    widths = np.array(widths, copy=False, ndmin=1)
 
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])
@@ -1288,8 +1288,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if wavelet is None:
         wavelet = ricker
 
-    widths = np.array(widths, copy=False, ndmin=1)
-    cwt_dat = cwt(vector, wavelet, widths, window_size=window_size)
+
+    cwt_dat = cwt(vector, wavelet, widths)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    window_size=window_size, min_snr=min_snr,
