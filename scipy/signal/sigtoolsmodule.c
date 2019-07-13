@@ -1015,6 +1015,15 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 fail:
 	if (zptr) PyDataMem_FREE(zptr);
+	if (sort_buffer) free(sort_buffer);
+	if (mode_dep) free(mode_dep);
+	if (b_ind) free(b_ind);
+	if (a_ind) free(a_ind);
+	if (ret_ind) free(ret_ind);
+	if (temp_ind) free(temp_ind);
+	if (check_ind) free(check_ind);
+	if (offsets) free(offsets);
+	if (offsets2) free(offsets2);
 	Py_XDECREF(ap1);
 	Py_XDECREF(ap2);
 	Py_XDECREF(ret);
