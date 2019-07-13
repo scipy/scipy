@@ -822,3 +822,40 @@ class TestFindPeaksCwt(object):
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
+
+    def test_find_peaks_with_different_width_dtypes(self):
+        """
+        Verify that the `width` argument
+        in `find_peaks_cwt` can take numbers
+        and iterables.
+        """
+        xs = np.arange(0, np.pi, 0.05)
+        test_data = np.sin(xs)
+        widths = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        found_locs = find_peaks_cwt(test_data, widths)
+        np.testing.assert_equal(found_locs, [32])
+
+        widths = (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        found_locs = find_peaks_cwt(test_data, widths)
+        np.testing.assert_equal(found_locs, [32])
+
+        noise_amp = 1.0
+        num_points = 100
+        np.random.seed(181819141)
+        test_data = (np.random.rand(num_points) - 0.5) * (2 * noise_amp)
+        widths = [x for x in range(10, 50)]
+        found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
+        np.testing.assert_equal(len(found_locs), 0)
+
+        sigmas = [5.0, 3.0, 10.0, 20.0, 10.0, 50.0]
+        num_points = 500
+        test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
+        widths = [x / 10.0 for x in range(1, int(10 * max(sigmas)), 10)]
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=0,
+                                    min_length=None)
+        np.testing.assert_array_equal(found_locs, act_locs,
+                             "Found maximum locations did not equal those expected")
+
+
+if __name__ == "__main__":
+    run_module_suite()
