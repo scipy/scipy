@@ -2,9 +2,9 @@
 
 .. _quickstart-ubuntu:
 
-====================================================
-Development Environment Quickstart Guide (Ubuntu 16)
-====================================================
+=========================================================
+Development Environment Quickstart Guide (Ubuntu/Windows)
+=========================================================
 
 This quickstart guide will cover:
 
@@ -14,7 +14,8 @@ This quickstart guide will cover:
 * performing an in-place build of SciPy; and
 * creating a virtual environment that adds this development version of SciPy to the Python path
 
-in Ubuntu.
+in Ubuntu 16.04. *Users running Windows can follow these
+instructions after setting up* `Windows Subsystem for Linux`_ *or an Amazon EC2 instance with Ubuntu 16.04 LTS.*
 
 .. note::
 
@@ -112,6 +113,8 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 .. _Anaconda FAQ: https://docs.anaconda.com/anaconda/user-guide/faq/
 
 .. _Homebrew on Linux: https://docs.brew.sh/Homebrew-on-Linux
+
+.. _Windows Subsystem for Linux: https://docs.microsoft.com/en-us/windows/wsl/install-win10
 
 .. |PYTHONPATH| replace:: ``PYTHONPATH``
 .. _PYTHONPATH: https://docs.python.org/3/using/cmdline.html#environment-variables
