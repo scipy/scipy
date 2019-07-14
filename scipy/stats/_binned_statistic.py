@@ -473,7 +473,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     >>> F = stats.multivariate_normal(mu, Sigma)
     >>> data = F.rvs(size=600)
 
-    Create bins and count how many arrays falls in each bin:
+    Create bins and count how many arrays fall in each bin:
 
     >>> N = 60
     >>> X = np.linspace(-3, 3, N)
@@ -481,7 +481,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     >>> ret = stats.binned_statistic_dd(data, np.arange(600), bins=[X, Y], statistic='count')
     >>> dz = ret.statistic
 
-    Set the volumn and the location of bars:
+    Set the volume and the location of bars:
 
     >>> dx = X[1] - X[0]
     >>> dy = Y[1] - Y[0]
