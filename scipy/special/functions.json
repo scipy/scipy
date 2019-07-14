@@ -339,6 +339,11 @@
             "ellpk": "d->d"
         }
     },
+    "ellipk": {
+	"_ellipk.pxd": {
+	    "ellipk": "d->d"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"

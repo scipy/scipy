@@ -81,6 +81,7 @@ PARAMS = [
     (special.ellipj, cython_special._ellipj_pywrap, ('dd',), None),
     (special.ellipkinc, cython_special.ellipkinc, ('dd',), None),
     (special.ellipkm1, cython_special.ellipkm1, ('d',), None),
+    (special.ellipk, cython_special.ellipk, ('d',), None),
     (special.entr, cython_special.entr, ('d',), None),
     (special.erf, cython_special.erf, ('d', 'D'), None),
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
