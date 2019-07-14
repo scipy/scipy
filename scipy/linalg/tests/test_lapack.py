@@ -703,6 +703,9 @@ class TestHetrd(object):
             # query lwork
             lwork, info = hetrd_lwork(n)
             assert_equal(info, 0)
+            # lwork returns complex which segfaults hetrd call below
+            # use the safe and recommended option
+            lwork = _compute_lwork(hetrd_lwork, n)
 
             # check lower=1 behavior (shouldn't do much since the matrix is
             # upper triangular)
