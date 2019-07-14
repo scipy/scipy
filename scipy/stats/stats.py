@@ -6097,7 +6097,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             "distribution should be 't' or 'normal'")
 
     if alternative == "greater":
-        p = p
+        pass
     elif alternative == "less":
         p = 1 - p
     elif alternative == "two-sided":
