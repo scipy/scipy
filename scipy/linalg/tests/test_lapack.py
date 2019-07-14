@@ -700,10 +700,11 @@ class TestHetrd(object):
                 )
             np.fill_diagonal(A, np.real(np.diag(A)))
 
-            # query lwork
-            lwork, info = hetrd_lwork(n)
-            assert_equal(info, 0)
-            # lwork returns complex which segfaults hetrd call below
+            # test query lwork
+            for x in [0, 1]:
+                _, info = hetrd_lwork(n, lower=x)
+                assert_equal(info, 0)
+            # lwork returns complex which segfaults hetrd call (gh-10388)
             # use the safe and recommended option
             lwork = _compute_lwork(hetrd_lwork, n)
 
