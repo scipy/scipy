@@ -2611,8 +2611,8 @@ def entropy(pk, qk=None, base=None):
     S : float
         The calculated entropy.
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> from scipy.stats import entropy
 
