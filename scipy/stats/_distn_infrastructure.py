@@ -2611,6 +2611,20 @@ def entropy(pk, qk=None, base=None):
     S : float
         The calculated entropy.
 
+    Example
+    -------
+
+    >>> from scipy.stats import entropy
+
+    Bernoulli trial with different p:
+
+    >>> entropy([1/2, 1/2], base=2) # The outcome of a fair coin is the most uncertain
+    >>> entropy([9/10, 1/10], base=2) # The outcome of a biased coin is less uncertain
+
+    Relative entropy:
+
+    >>> entropy([1,2, 1/2], qk=[2/3, 1/3])
+
     """
     pk = asarray(pk)
     pk = 1.0*pk / np.sum(pk, axis=0)
