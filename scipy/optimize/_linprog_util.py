@@ -1065,6 +1065,7 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
 
     # add slack variables
     A2 = vstack([eye(A_ub.shape[0]), zeros((A_eq.shape[0], A_ub.shape[0]))])
+
     A = hstack([A1, A2])
 
     # lower bound: substitute xi = xi' + lb
@@ -1113,8 +1114,7 @@ def _display_summary(message, status, fun, iteration):
     print("         Iterations: {0:d}".format(iteration))
 
 
-def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-               complete=False, undo=[], tol=1e-8, copy=False):
+def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1173,6 +1173,7 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     # we need these modified values to undo the variable substitutions
     # in retrospect, perhaps this could have been simplified if the "undo"
     # variable also contained information for undoing variable substitutions
+    c, A_ub, b_ub, A_eq, b_eq, bounds, undo = postsolve_args
 
     n_x = len(c)
 
@@ -1329,9 +1330,8 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     return status, message
 
 
-def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-                 complete=False, undo=[], status=0, message="", tol=1e-8,
-                 iteration=None, disp=False):
+def _postprocess(x, postsolve_args, complete=False, status=0, message="",
+                 tol=1e-8, iteration=None, disp=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1405,8 +1405,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     """
 
     x, fun, slack, con, lb, ub = _postsolve(
-        x, c, A_ub, b_ub, A_eq, b_eq,
-        bounds, complete, undo, tol
+        x, postsolve_args, complete, tol
     )
 
     status, message = _check_result(

@@ -30,7 +30,7 @@ from .optimize import OptimizeResult
 
 
 def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
-               _T_o=[], disp=False):
+               postsolve_args=[], disp=False):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -57,9 +57,9 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
 
     # solve auxiliary problem
     phase_one_n = n
-    x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter,
-                                          tol, maxupdate, mast, pivot,
-                                          0, callback, _T_o, disp, phase_one_n)
+    x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter, tol,
+                                          maxupdate, mast, pivot, 0, callback,
+                                          postsolve_args, disp, phase_one_n)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -308,7 +308,7 @@ def _display_iter(phase, iteration, slack, con, fun):
 
 
 def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
-               callback=None, _T_o=[], disp=False, phase_one_n=None):
+               callback=None, postsolve_args=[], disp=False, phase_one_n=None):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -340,7 +340,8 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
             else:
                 phase = 2
                 x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve, *_T_o,
+            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve,
+                                                    postsolve_args,
                                                     tol=tol, copy=True)
 
             if callback is not None:
@@ -399,8 +400,8 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
 
 
 def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
-                maxupdate=10, mast=False, pivot="mrc", _T_o=[], disp=False,
-                **unknown_options):
+                maxupdate=10, mast=False, pivot="mrc", postsolve_args=[],
+                disp=False, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
     revised simplex algorithm.::
@@ -533,23 +534,17 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
                 "solution. "
                 ]
 
-    # _T_o contains information for postsolve needed for callback function
-    # callback function also needs `complete` argument
-    # I add `complete = False` here for convenience
-    _T_o = list(_T_o)
-    _T_o.insert(-1, False)
-
     if A.size == 0:  # address test_unbounded_below_no_presolve_corrected
         return np.zeros(c.shape), 5, messages[5], 0
 
     x, basis, A, b, residual, status, iteration = (
-        _phase_one(A, b, x0, maxiter, tol, maxupdate,
-                   mast, pivot, callback, _T_o, disp))
+        _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback,
+                   postsolve_args, disp))
 
     if status == 0:
-        x, basis, status, iteration = _phase_two(c, A, x, basis,
-                                                 maxiter, tol, maxupdate,
-                                                 mast, pivot, iteration,
-                                                 callback, _T_o, disp)
+        x, basis, status, iteration = _phase_two(c, A, x, basis, maxiter, tol,
+                                                 maxupdate, mast, pivot,
+                                                 iteration, callback,
+                                                 postsolve_args, disp)
 
     return x, status, messages[status].format(residual, tol), iteration

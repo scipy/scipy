@@ -567,7 +567,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
 
 
 def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
-            sym_pos, cholesky, pc, ip, permc_spec, callback, _T_o):
+            sym_pos, cholesky, pc, ip, permc_spec, callback, postsolve_args):
     r"""
     Solve a linear programming problem in standard form:
 
@@ -724,7 +724,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
+        x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
                                                 tol=tol)
         res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                               'con': con, 'nit': iteration, 'phase': 1,
@@ -805,7 +805,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con, _, _ = _postsolve(x/tau, *_T_o,
+            x_o, fun, slack, con, _, _ = _postsolve(x/tau, postsolve_args,
                                                     tol=tol)
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,
@@ -841,7 +841,7 @@ def _linprog_ip(
         A=None,
         b=None,
         callback=None,
-        _T_o=[],
+        postsolve_args=[],
         alpha0=.99995,
         beta=0.1,
         maxiter=1000,
@@ -1146,6 +1146,6 @@ def _linprog_ip(
                                             maxiter, disp, tol, sparse,
                                             lstsq, sym_pos, cholesky,
                                             pc, ip, permc_spec, callback,
-                                            _T_o)
+                                            postsolve_args)
 
     return x, status, message, iteration

@@ -230,7 +230,8 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
-                   callback=None, tol=1e-9, nit0=0, bland=False, _T_o=None):
+                   callback=None, tol=1e-9, nit0=0, bland=False,
+                   postsolve_args=[]):
     """
     Solve a linear programming problem in "standard form" using the Simplex
     Method. Linear Programming is intended to solve the following problem form:
@@ -401,9 +402,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
             solution[:] = 0
             solution[basis[:n]] = T[:n, -1]
             x = solution[:m]
-            c, A_ub, b_ub, A_eq, b_eq, bounds, undo = _T_o
             x, fun, slack, con, _, _ = _postsolve(
-                x, c, A_ub, b_ub, A_eq, b_eq, bounds, undo=undo, tol=tol
+                x, postsolve_args, tol=tol
             )
             res = OptimizeResult({
                 'x': x,
@@ -431,7 +431,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
 
 
 def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
-                     tol=1e-9, bland=False, _T_o=None, **unknown_options):
+                     tol=1e-9, bland=False, postsolve_args=[],
+                     **unknown_options):
     """
     Minimize a linear objective function subject to linear equality and
     non-negativity constraints using the two phase simplex method.
@@ -610,7 +611,8 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     T = np.vstack((row_constraints, row_objective, row_pseudo_objective))
 
     nit1, status = _solve_simplex(T, n, basis, phase=1, callback=callback,
-                                  maxiter=maxiter, tol=tol, bland=bland, _T_o=_T_o)
+                                  maxiter=maxiter, tol=tol, bland=bland,
+                                  postsolve_args=postsolve_args)
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
     nit2 = nit1
@@ -636,7 +638,8 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         # Phase 2
         nit2, status = _solve_simplex(T, n, basis, maxiter=maxiter,
                                       phase=2, callback=callback, tol=tol,
-                                      nit0=nit1, bland=bland, _T_o=_T_o)
+                                      nit0=nit1, bland=bland,
+                                      postsolve_args=postsolve_args)
 
     solution = np.zeros(n + m)
     solution[basis[:n]] = T[:n, -1]
