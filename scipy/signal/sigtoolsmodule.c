@@ -842,14 +842,14 @@ CompareFunction compare_functions[] = \
 
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
-	npy_intp *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
-	npy_uintp *offsets, offset1;
-	npy_intp *offsets2;
+	npy_intp *a_ind=NULL, *b_ind=NULL, *temp_ind=NULL, *mode_dep=NULL, *check_ind=NULL;
+	npy_uintp *offsets=NULL, *offsets2=NULL;
+	npy_uintp offset1;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
 	int is1, os;
-	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer;
-	npy_intp *ret_ind;
+	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer=NULL;
+	npy_intp *ret_ind=NULL;
 	CompareFunction compare_func;
 	char *zptr=NULL;
 	PyArray_CopySwapFunc *copyswap;
@@ -1015,15 +1015,15 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 fail:
 	if (zptr) PyDataMem_FREE(zptr);
-	if (sort_buffer) free(sort_buffer);
-	if (mode_dep) free(mode_dep);
-	if (b_ind) free(b_ind);
-	if (a_ind) free(a_ind);
-	if (ret_ind) free(ret_ind);
-	if (temp_ind) free(temp_ind);
-	if (check_ind) free(check_ind);
-	if (offsets) free(offsets);
-	if (offsets2) free(offsets2);
+	free(sort_buffer);
+	free(mode_dep);
+	free(b_ind);
+	free(a_ind);
+	free(ret_ind);
+	free(temp_ind);
+	free(check_ind);
+    free(offsets);
+	free(offsets2);
 	Py_XDECREF(ap1);
 	Py_XDECREF(ap2);
 	Py_XDECREF(ret);
