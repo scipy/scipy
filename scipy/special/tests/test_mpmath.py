@@ -121,7 +121,7 @@ def test_hyperu_around_0():
             dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
     dataset = np.array(dataset)
 
-    FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-14).check()
+    FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-13).check()
 
 # ------------------------------------------------------------------------------
 # hyp2f1
