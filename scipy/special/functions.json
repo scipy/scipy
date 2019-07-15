@@ -665,8 +665,8 @@
         }
     },
     "hyperu": {
-        "specfun_wrappers.h": {
-            "hypU_wrap": "ddd->d"
+        "_hypergeometric.pxd": {
+            "hyperu": "ddd->d"
         }
     },
     "i0": {

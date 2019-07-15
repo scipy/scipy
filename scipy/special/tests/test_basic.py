@@ -479,9 +479,6 @@ class TestCephes(object):
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
 
-    def test_hyperu(self):
-        assert_equal(cephes.hyperu(0,1,1),1.0)
-
     def test_i0(self):
         assert_equal(cephes.i0(0),1.0)
 
