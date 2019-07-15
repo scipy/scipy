@@ -3,7 +3,7 @@ multiple different backends
 
 This should be imported, rather than `_uarray` so that an installed version can
 be used instead if available. This means that users can call
-`uarray.set_backend` directly insteas off going through SciPy.
+`uarray.set_backend` directly instead of going through SciPy.
 
 """
 

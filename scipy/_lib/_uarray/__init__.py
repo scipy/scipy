@@ -111,7 +111,5 @@ possible.
 
 from ._backend import *
 from ._backend import _Function
-from ._version import get_versions  # type: ignore
 
-__version__ = get_versions()["version"]
-del get_versions
+__version__ = 'v0.4+336.g4c712ad.scipy'
