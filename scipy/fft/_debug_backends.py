@@ -6,7 +6,7 @@ except ImportError:
 
 class NumPyBackend:
     """Backend that uses numpy.fft"""
-    __ua_domain__ = "scipy.fft"
+    __ua_domain__ = "numpy.scipy.fft"
 
     @staticmethod
     def __ua_function__(method, args, kwargs):
@@ -18,7 +18,7 @@ class NumPyBackend:
 
 
 class PyfftwBackend:
-    __ua_domain__ = 'scipy.fft'
+    __ua_domain__ = 'numpy.scipy.fft'
 
     @staticmethod
     def __ua_function__(method, args, kwargs):
@@ -31,7 +31,7 @@ class PyfftwBackend:
 
 class EchoBackend:
     """Backend that just prints the __ua_function__ arguements"""
-    __ua_domain__ = "scipy.fft"
+    __ua_domain__ = "numpy.scipy.fft"
 
     @staticmethod
     def __ua_function__(method, args, kwargs):

@@ -48,7 +48,7 @@ dstn = _MockFunction(np.random.random(10))
 idstn = _MockFunction(np.random.random(10))
 
 
-__ua_domain__ = "scipy.fft"
+__ua_domain__ = "numpy.scipy.fft"
 
 
 def __ua_function__(method, args, kwargs):

@@ -6,8 +6,15 @@ from . import _pocketfft
 class _ScipyBackend:
     """
     The default backend for fft calculations
+
+    Notes
+    -----
+    We use the domain `numpy.scipy` because in the future `uarray` will treat
+    the domain as a heirarchy where `numpy.scipy` may call into a `numpy`
+    backend.
+
     """
-    __ua_domain__ = "scipy.fft"
+    __ua_domain__ = "numpy.scipy.fft"
 
     @staticmethod
     def __ua_function__(method, args, kwargs):
@@ -32,8 +39,8 @@ def _backend_from_arg(backend):
         except KeyError:
             raise ValueError('Unknown backend {}'.format(backend))
 
-    if backend.__ua_domain__ != 'scipy.fft':
-        raise ValueError('Backend does not implement "scipy.fft"')
+    if backend.__ua_domain__ != 'numpy.scipy.fft':
+        raise ValueError('Backend does not implement "numpy.scipy.fft"')
 
     return backend
 
@@ -54,7 +61,7 @@ def set_global_backend(backend):
 
     Raises
     ------
-    ValueError: If the backend does not implement ``scipy.fft``
+    ValueError: If the backend does not implement ``numpy.scipy.fft``
 
     Notes
     -----
@@ -84,7 +91,7 @@ def register_backend(backend):
 
     Raises
     ------
-    ValueError: If the backend does not implement ``scipy.fft``
+    ValueError: If the backend does not implement ``numpy.scipy.fft``
 
     """
     backend = _backend_from_arg(backend)

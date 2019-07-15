@@ -16,7 +16,7 @@ def _dispatch(func):
     """
     Function annotation that creates a uarray multimethod from the function
     """
-    return generate_multimethod(func, _x_replacer, domain="scipy.fft")
+    return generate_multimethod(func, _x_replacer, domain="numpy.scipy.fft")
 
 
 @_dispatch
