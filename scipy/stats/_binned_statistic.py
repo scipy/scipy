@@ -465,36 +465,40 @@ def binned_statistic_dd(sample, values, statistic='mean',
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
 
-    Take 600 2-D arrays as an example. `binned_statistic_dd` can handle arrays
-    of higher dimension `D`. But a plot of dimension `D+1` is required.
+    Take an array of 600 (x, y) coordinates as an example.
+    `binned_statistic_dd` can handle arrays of higher dimension `D`. But a plot
+    of dimension `D+1` is required.
 
     >>> mu = np.array([0., 1.])
-    >>> Sigma = np.array([[1., -0.5],[-0.5, 1.5]])
-    >>> F = stats.multivariate_normal(mu, Sigma)
-    >>> data = F.rvs(size=600)
+    >>> sigma = np.array([[1., -0.5],[-0.5, 1.5]])
+    >>> multinormal = stats.multivariate_normal(mu, sigma)
+    >>> data = multinormal.rvs(size=600)
+    >>> data.shape
+    (600, 2)
 
     Create bins and count how many arrays fall in each bin:
 
     >>> N = 60
-    >>> X = np.linspace(-3, 3, N)
-    >>> Y = np.linspace(-3, 4, N)
-    >>> ret = stats.binned_statistic_dd(data, np.arange(600), bins=[X, Y], statistic='count')
-    >>> dz = ret.statistic
+    >>> x = np.linspace(-3, 3, N)
+    >>> y = np.linspace(-3, 4, N)
+    >>> ret = stats.binned_statistic_dd(data, np.arange(600), bins=[x, y],
+    ...                                 statistic='count')
+    >>> bincounts = ret.statistic
 
     Set the volume and the location of bars:
 
-    >>> dx = X[1] - X[0]
-    >>> dy = Y[1] - Y[0]
-    >>> X, Y = np.meshgrid(X[:-1]+dx/2, Y[:-1]+dy/2)
-    >>> Z = 0
+    >>> dx = x[1] - x[0]
+    >>> dy = y[1] - y[0]
+    >>> x, y = np.meshgrid(x[:-1]+dx/2, y[:-1]+dy/2)
+    >>> z = 0
 
-    >>> dz = dz.ravel()
-    >>> X = X.ravel()
-    >>> Y = Y.ravel()
+    >>> bincounts = bincounts.ravel()
+    >>> x = x.ravel()
+    >>> y = y.ravel()
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111, projection='3d')
-    >>> ax.bar3d(X, Y, Z, dx, dy, dz)
+    >>> ax.bar3d(x, y, z, dx, dy, bincounts)
 
     """
     known_stats = ['mean', 'median', 'count', 'sum', 'std','min','max']
