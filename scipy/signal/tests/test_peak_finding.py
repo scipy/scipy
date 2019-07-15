@@ -855,7 +855,3 @@ class TestFindPeaksCwt(object):
                                     min_length=None)
         np.testing.assert_array_equal(found_locs, act_locs,
                              "Found maximum locations did not equal those expected")
-
-
-if __name__ == "__main__":
-    run_module_suite()
