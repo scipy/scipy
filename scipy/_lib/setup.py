@@ -43,7 +43,7 @@ def configuration(parent_package='',top_path=None):
                          depends=depends,
                          include_dirs=[include_dir])
 
-    config.add_subpackage('uarray')
+    config.add_subpackage('_uarray')
 
     return config
 

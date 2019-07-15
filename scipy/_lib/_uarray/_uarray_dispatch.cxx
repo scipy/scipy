@@ -51,11 +51,6 @@ public:
       std::swap(other.obj_, obj_);
     }
 
-  friend void swap(py_ref & a, py_ref & b) noexcept
-    {
-      a.swap(b);
-    }
-
   explicit operator bool () const { return obj_ != nullptr; }
 
   operator PyObject* () const { return get(); }
@@ -83,13 +78,6 @@ py_ref py_make_tuple(Ts... args)
   return py_ref::steal(PyTuple_Pack(sizeof...(args), py_obj{args}...));
 }
 
-struct global_backends
-{
-  py_ref global;
-  std::vector<py_ref> registered;
-};
-
-
 struct backend_options
 {
   py_ref backend;
@@ -101,6 +89,12 @@ struct backend_options
               && coerce == other.coerce
               && only == other.only);
     }
+};
+
+struct global_backends
+{
+  backend_options global;
+  std::vector<py_ref> registered;
 };
 
 struct local_backends
@@ -190,7 +184,7 @@ std::string backend_to_domain_string(PyObject * backend)
  * This must be installed in a python atexit handler. This prevents Py_DECREF
  * being called after the interpreter has already shudown.
  */
-PyObject * clear_all_globals(PyObject * /*self*/, PyObject * /*args*/)
+PyObject * clear_all_globals(PyObject * /* self */, PyObject * /* args */)
 {
   global_domain_map.clear();
   BackendNotImplementedError.reset();
@@ -199,24 +193,34 @@ PyObject * clear_all_globals(PyObject * /*self*/, PyObject * /*args*/)
 }
 
 
-PyObject * set_global_backend(PyObject * /*self*/, PyObject * args)
+PyObject * set_global_backend(PyObject * /* self */, PyObject * args)
 {
   PyObject * backend;
-  if (!PyArg_ParseTuple(args, "O", &backend))
+  int only = false, coerce = false;
+  if (!PyArg_ParseTuple(args, "O|pp",
+    &backend,
+    &coerce,
+    &only))
     return nullptr;
 
   auto domain = backend_to_domain_string(backend);
   if (domain.empty())
     return nullptr;
 
-  global_domain_map[domain].global = py_ref::ref(backend);
+  backend_options options;
+  options.backend = py_ref::ref(backend);
+  options.coerce = coerce;
+  options.only = only;
+
+  global_domain_map[domain].global = options;
   Py_RETURN_NONE;
 }
 
-PyObject * register_backend(PyObject * /*self*/, PyObject * args)
+PyObject * register_backend(PyObject * /* self */, PyObject * args)
 {
   PyObject * backend;
-  if (!PyArg_ParseTuple(args, "O", &backend))
+  if (!PyArg_ParseTuple(args, "O", 
+    &backend))
     return nullptr;
 
   auto domain = backend_to_domain_string(backend);
@@ -224,6 +228,48 @@ PyObject * register_backend(PyObject * /*self*/, PyObject * args)
     return nullptr;
 
   global_domain_map[domain].registered.push_back(py_ref::ref(backend));
+  Py_RETURN_NONE;
+}
+
+void clear_single(const std::string& domain, bool registered, bool global)
+{
+  auto domain_globals = global_domain_map.find(domain);
+  if (domain_globals == global_domain_map.end())
+    return;
+
+  if (registered && global)
+    {
+      global_domain_map.erase(domain_globals);
+      return;
+    }
+  
+  if (registered)
+  {
+    domain_globals->second.registered.clear();
+  }
+
+  if (global)
+  {
+    domain_globals->second.global.backend.reset();
+  }
+}
+
+PyObject * clear_backends(PyObject * /* self */, PyObject * args)
+{
+  PyObject* domain = nullptr;
+  int registered = true, global = false;
+  if (!PyArg_ParseTuple(args, "O|pp", 
+    &domain, &registered, &global))
+    return nullptr;
+
+  if (domain == Py_None && registered && global)
+  {
+    global_domain_map.clear();
+    Py_RETURN_NONE;
+  }
+
+  auto domain_str = domain_to_string(domain);
+  clear_single(domain_str, registered, global);
   Py_RETURN_NONE;
 }
 
@@ -304,15 +350,15 @@ struct SetBackendContext
     {
       static const char * kwlist[] = {"backend", "coerce", "only", nullptr};
       PyObject * backend = nullptr;
-      PyObject * coerce = nullptr;
-      PyObject * only = nullptr;
+      int coerce = false;
+      int only = false;
 
       if (!PyArg_ParseTupleAndKeywords(
             args, kwargs,
-            "O|O!O!", (char**)kwlist,
+            "O|pp", (char**)kwlist,
             &backend,
-            &PyBool_Type, &coerce,
-            &PyBool_Type, &only))
+            &coerce,
+            &only))
         return -1;
 
 
@@ -321,8 +367,8 @@ struct SetBackendContext
         return -1;
       backend_options opt;
       opt.backend = py_ref::ref(backend);
-      opt.coerce = (coerce == Py_True);
-      opt.only = (only == Py_True);
+      opt.coerce = coerce;
+      opt.only = only;
 
       try
       {
@@ -338,7 +384,7 @@ struct SetBackendContext
       return 0;
     }
 
-  static PyObject * enter__(SetBackendContext * self, PyObject * /*args*/)
+  static PyObject * enter__(SetBackendContext * self, PyObject * /* args */)
     {
       if (!self->ctx_.enter())
         return nullptr;
@@ -407,7 +453,7 @@ struct SkipBackendContext
       return 0;
     }
 
-  static PyObject * enter__(SkipBackendContext * self, PyObject * /*args*/)
+  static PyObject * enter__(SkipBackendContext * self, PyObject * /* args */)
     {
       if (!self->ctx_.enter())
         return nullptr;
@@ -467,12 +513,15 @@ LoopReturn for_each_backend(const std::string & domain_key, Callback call)
       return ret;
   }
 
-  auto & globals = global_domain_map[domain_key];
-
-  if (globals.global && !should_skip(globals.global))
+  auto& globals = global_domain_map[domain_key];
+  auto& global_options = globals.global;
+  if (global_options.backend && !should_skip(global_options.backend))
   {
-    ret = call(globals.global.get(), false);
+    ret = call(global_options.backend.get(), global_options.coerce);
     if (ret != LoopReturn::Continue)
+      return ret;
+
+    if (global_options.only || global_options.coerce)
       return ret;
   }
 
@@ -848,7 +897,7 @@ PyGetSetDef Function_getset[] =
 
 PyTypeObject FunctionType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  "scipy._lib.uarray._Function",   /* tp_name */
+  "uarray._Function",              /* tp_name */
   sizeof(Function),                /* tp_basicsize */
   0,                               /* tp_itemsize */
   (destructor)Function::dealloc,   /* tp_dealloc */
@@ -890,14 +939,14 @@ PyTypeObject FunctionType = {
 
 
 PyMethodDef SetBackendContext_Methods[] = {
-  {"__enter__", (binaryfunc)SetBackendContext::enter__, METH_NOARGS, nullptr},
-  {"__exit__", (binaryfunc)SetBackendContext::exit__, METH_VARARGS, nullptr},
+  {"__enter__", (PyCFunction)SetBackendContext::enter__, METH_NOARGS, nullptr},
+  {"__exit__", (PyCFunction)SetBackendContext::exit__, METH_VARARGS, nullptr},
   {NULL}  /* Sentinel */
 };
 
 PyTypeObject SetBackendContextType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  "scipy._lib.uarray._SetBackendContext",  /* tp_name */
+  "uarray._SetBackendContext",             /* tp_name */
   sizeof(SetBackendContext),               /* tp_basicsize */
   0,                                       /* tp_itemsize */
   (destructor)SetBackendContext::dealloc,  /* tp_dealloc */
@@ -938,14 +987,14 @@ PyTypeObject SetBackendContextType = {
 
 
 PyMethodDef SkipBackendContext_Methods[] = {
-  {"__enter__", (binaryfunc)SkipBackendContext::enter__, METH_NOARGS, nullptr},
-  {"__exit__", (binaryfunc)SkipBackendContext::exit__, METH_VARARGS, nullptr},
+  {"__enter__", (PyCFunction)SkipBackendContext::enter__, METH_NOARGS, nullptr},
+  {"__exit__", (PyCFunction)SkipBackendContext::exit__, METH_VARARGS, nullptr},
   {NULL}  /* Sentinel */
 };
 
 PyTypeObject SkipBackendContextType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  "scipy._lib.uarray._SkipBackendContext",  /* tp_name */
+  "uarray._SkipBackendContext",             /* tp_name */
   sizeof(SkipBackendContext),               /* tp_basicsize */
   0,                                        /* tp_itemsize */
   (destructor)SkipBackendContext::dealloc,  /* tp_dealloc */
@@ -985,18 +1034,12 @@ PyTypeObject SkipBackendContextType = {
 };
 
 
-PyObject * dummy(PyObject * /*self*/, PyObject * args)
-{
-  Py_RETURN_NONE;
-}
-
-
 PyMethodDef method_defs[] =
 {
   {"set_global_backend", set_global_backend, METH_VARARGS, nullptr},
   {"register_backend", register_backend, METH_VARARGS, nullptr},
   {"clear_all_globals", clear_all_globals, METH_NOARGS, nullptr},
-  {"dummy", dummy, METH_VARARGS, nullptr},
+  {"clear_backends", clear_backends, METH_VARARGS, nullptr},
   {NULL} /* Sentinel */
 };
 

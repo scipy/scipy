@@ -157,22 +157,25 @@ def generate_multimethod(
     return functools.update_wrapper(ua_func, argument_extractor)
 
 
-def set_backend(backend, *args, **kwargs):
+def set_backend(backend, coerce=False, only=False):
     """
-    A context manager that sets the preferred backend. Uses :obj:`BackendOptions` to create
-    the options, and sets the backend with the preferred options.
+    A context manager that sets the preferred backend.
 
     Parameters
     ----------
     backend
         The backend to set.
+    coerce
+        Whether or not to coerce to a specific backend's types. Implies ``only``.
+    only
+        Whether or not this should be the last backend to try.
 
     See Also
     --------
-    BackendOptions: The backend plus options.
     skip_backend: A context manager that allows skipping of backends.
+    set_global_backend: Set a single, global backend for a domain.
     """
-    return _SetBackendContext(backend, *args, **kwargs)
+    return _SetBackendContext(backend, coerce, only)
 
 
 def skip_backend(backend):
@@ -189,6 +192,7 @@ def skip_backend(backend):
     See Also
     --------
     set_backend: A context manager that allows setting of backends.
+    set_global_backend: Set a single, global backend for a domain.
     """
     return _SkipBackendContext(backend)
 
@@ -211,7 +215,7 @@ def get_defaults(f):
     return kw_defaults, tuple(arg_defaults), opts
 
 
-def set_global_backend(backend):
+def set_global_backend(backend, coerce=False, only=False):
     """
     This utility method replaces the default backend for permanent use. It
     will be tried in the list of backends automatically, unless the
@@ -230,8 +234,13 @@ def set_global_backend(backend):
     ----------
     backend
         The backend to register.
+
+    See Also
+    --------
+    set_backend: A context manager that allows setting of backends.
+    skip_backend: A context manager that allows skipping of backends.
     """
-    _uarray.set_global_backend(backend)
+    _uarray.set_global_backend(backend, coerce, only)
 
 
 def register_backend(backend):
@@ -248,6 +257,37 @@ def register_backend(backend):
         The backend to register.
     """
     _uarray.register_backend(backend)
+
+
+def clear_backends(domain, registered=True, globals=False):
+    """
+    This utility method clears registered backends.
+
+    .. warning::
+        We caution library authors against using this function in
+        their code. We do *not* support this use-case. This function
+        is meant to be used only by users themselves.
+    
+    .. warning::
+        Do NOT use this method inside a multimethod call, or the
+        program is likely to crash.
+
+    Parameters
+    ----------
+    domain : Optional[str]
+        The domain for which to de-register backends. ``None`` means
+        de-register for all domains.
+    registered : bool
+        Whether or not to clear registered backends. See :obj:`register_backend`.
+    globals : bool
+        Whether or not to clear global backends. See :obj:`set_global_backend`.
+    
+    See Also
+    --------
+    register_backend : Register a backend globally.
+    set_global_backend : Set a global backend.
+    """
+    _uarray.clear_backends(domain, registered, globals)
 
 
 class Dispatchable:
@@ -287,10 +327,8 @@ class Dispatchable:
         return (self.type, self.value)[index]
 
     def __str__(self):
-        return (
-            "<{0}: type={1!r}, value={2!r}>".format(
-                type(self).__name__, self.type, self.value
-            )
+        return "<{0}: type={1!r}, value={2!r}>".format(
+            type(self).__name__, self.type, self.value
         )
 
     __repr__ = __str__

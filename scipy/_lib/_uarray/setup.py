@@ -24,13 +24,12 @@ def pre_build_hook(build_ext, ext):
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
 
-    config = Configuration('uarray', parent_package, top_path)
+    config = Configuration('_uarray', parent_package, top_path)
     config.add_data_files('LICENSE')
     ext = config.add_extension('_uarray',
                                sources=['_uarray_dispatch.cxx'],
                                language='c++')
     ext._pre_build_hook = pre_build_hook
-    config.add_data_dir('tests')
     return config
 
 
