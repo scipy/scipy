@@ -625,6 +625,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                                        sizeof(npy_intp));
             if (!temp->coordinates) {
                 PyErr_NoMemory();
+                free(temp);
                 goto exit;
             }
             for (kk = 0; kk < PyArray_NDIM(input); kk++) {
