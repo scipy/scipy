@@ -292,8 +292,8 @@ class FuncData(object):
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff.max())
-                msg.append("Max |rdiff|: %g" % rdiff.max())
+                msg.append("Max |adiff|: %g" % diff[bad_j].max())
+                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:
