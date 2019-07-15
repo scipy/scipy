@@ -23,6 +23,7 @@ Development environment
 - :ref:`building` may have some helpful hints if you need to deviate from the guides above
 - :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
 
+
 .. _editing-scipy:
 
 Editing SciPy
