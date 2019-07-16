@@ -2,6 +2,7 @@ import numpy as np
 import scipy.fft
 from scipy.fft import set_backend
 from scipy.fft import _pocketfft
+from scipy.fft import _realtransforms as rt
 import scipy.fftpack as fftpack
 from scipy.fft.tests import mock_backend
 
@@ -21,8 +22,8 @@ np_funcs = (np.fft.fft, np.fft.fft2, np.fft.fftn,
             np.fft.irfft, np.fft.irfft2, np.fft.irfftn,
             np.fft.hfft, _pocketfft.hfft2, _pocketfft.hfftn,  # np has no hfftn
             np.fft.ihfft, _pocketfft.ihfft2, _pocketfft.ihfftn,
-            fftpack.dct, fftpack.idct, fftpack.dctn, fftpack.idctn,
-            fftpack.dst, fftpack.idst, fftpack.dstn, fftpack.idstn)
+            fftpack.dct, rt._idct, fftpack.dctn, rt._idctn,
+            fftpack.dst, rt._idst, fftpack.dstn, rt._idstn)
 
 funcs = (scipy.fft.fft, scipy.fft.fft2, scipy.fft.fftn,
          scipy.fft.ifft, scipy.fft.ifft2, scipy.fft.ifftn,
