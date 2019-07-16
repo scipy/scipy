@@ -28,7 +28,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm):
     pad = [(0, 0)] * 2
     pad[axis] = (0, 4)
 
-    y2 = np.pad(y, pad)
+    y2 = np.pad(y, pad, mode='edge')
     z2 = backward(y2, type, n, axis, norm)
     assert_allclose(z2, x)
 
@@ -71,7 +71,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm):
         for a in axes:
             pad[a] = (0, 4)
 
-    y2 = np.pad(y, pad)
+    y2 = np.pad(y, pad, mode='edge')
     z2 = backward(y2, type, shape, axes, norm)
     assert_allclose(z2, x)
 
