@@ -351,35 +351,51 @@ factor `2N`. The orthonormalized DCT-III is exactly the inverse of the
 orthonormalized DCT- II. The function :func:`idct` performs the mappings between
 the DCT and IDCT types, as well as performing the correct normalization.
 
-The example below shows the relation between DCT and IDCT for different types
-and normalizations.
+The following example shows the relation between DCT and IDCT for different
+types and normalizations.
 
 >>> from scipy.fft import dct, idct
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
+
+The DCT-II and DCT-III are each others inverses, so for an orthonormal transform
+we return back to the original signal.
+
 >>> dct(dct(x, type=2, norm='ortho'), type=3, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*N = 10
+
+Doing the same under default normalization however, we pick up an extra scaling
+factor of :math:`2N=10` since the forward transform is unnormalized.
+
 >>> dct(dct(x, type=2), type=3)
 array([ 10.,  20.,  10., -10.,  15.])
->>>  # no scaling factor
+
+For this reason, we should use the function `idct` using the same type for both,
+giving a correctly normalized result.
+
+>>> # Normalized inverse: no scaling factor
 >>> idct(dct(x, type=2), type=2)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
+Analogous results can be seen for the DCT-I which is its own inverse up to a
+factor of :math:`2(N-1)`
+
 >>> dct(dct(x, type=1, norm='ortho'), type=1, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*(N-1) = 8
+>>> # Unnormalized round-trip via DCT-I: scaling factor 2*(N-1) = 8
 >>> dct(dct(x, type=1), type=1)
 array([ 8. ,  16.,  8. , -8. ,  12.])
->>>  # no scaling factor
+>>> # Normalized inverse: no scaling factor
 >>> idct(dct(x, type=1), type=1)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
+And for the DCT-IV which is also its own inverse up to a factor of :math:`2N`
+
 >>> dct(dct(x, type=4, norm='ortho'), type=4, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*N = 10
+>>> # Unnormalized round-trip via DCT-IV: scaling factor 2*N = 10
 >>> dct(dct(x, type=4), type=4)
 array([ 10.,  20.,  10., -10.,  15.])
->>>  # no scaling factor
+>>> # Normalized inverse: no scaling factor
 >>> idct(dct(x, type=4), type=4)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
@@ -475,19 +491,32 @@ DST and IDST
 ____________
 
 
-The example below shows the relation between DST and IDST for different types
-and normalizations.
+The following example below shows the relation between DST and IDST for
+different types and normalizations.
 
 >>> from scipy.fft import dst, idst
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
+
+The DST-II and DST-III are each others inverses, so for an orthonormal transform
+we return back to the original signal.
+
 >>> dst(dst(x, type=2, norm='ortho'), type=3, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*N = 10
+
+Doing the same under default normalization however, we pick up an extra scaling
+factor of :math:`2N=10` since the forward transform is unnormalized.
+
 >>> dst(dst(x, type=2), type=3)
 array([ 10.,  20.,  10., -10.,  15.])
->>>  # no scaling factor
+
+For this reason, we should use the function `idst` using the same type for both,
+giving a correctly normalized result.
+
 >>> idst(dst(x, type=2), type=2)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+Analogous results can be seen for the DST-I which is its own inverse up to a
+factor of :math:`2(N-1)`
 
 >>> dst(dst(x, type=1, norm='ortho'), type=1, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
@@ -497,6 +526,8 @@ array([ 12.,  24.,  12., -12.,  18.])
 >>>  # no scaling factor
 >>> idst(dst(x, type=1), type=1)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+And for the DST-IV which is also its own inverse up to a factor of :math:`2N`
 
 >>> dst(dst(x, type=4, norm='ortho'), type=4, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
