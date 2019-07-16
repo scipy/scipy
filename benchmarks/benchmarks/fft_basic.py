@@ -15,6 +15,25 @@ except ImportError:
 
 from .common import Benchmark
 
+try:
+    import pyfftw.interfaces.numpy_fft as pyfftw_fft
+    import pyfftw
+    pyfftw.interfaces.cache.enable()
+except ImportError:
+    pyfftw_fft = {}
+
+class PyfftwBackend:
+    """Backend for pyfftw"""
+    __ua_domain__ = 'numpy.scipy.fft'
+
+    @staticmethod
+    def __ua_function__(method, args, kwargs):
+        kwargs.pop('overwrite_x', None)
+
+        fn = getattr(pyfftw_fft, method.__name__, None)
+        return (NotImplemented if fn is None
+                else fn(*args, **kwargs))
+
 
 def random(size):
     return rand(*size)
@@ -138,9 +157,6 @@ class FftBackends(Benchmark):
         if backend == 'pocketfft':
             scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
-            from scipy.fft._debug_backends import PyfftwBackend
-            import pyfftw
-            pyfftw.interfaces.cache.enable()
             scipy.fft.set_global_backend(PyfftwBackend)
         elif backend == 'numpy':
             from scipy.fft._debug_backends import NumPyBackend
@@ -180,9 +196,6 @@ class FftnBackends(Benchmark):
         if backend == 'pocketfft':
             scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
-            from scipy.fft._debug_backends import PyfftwBackend
-            import pyfftw
-            pyfftw.interfaces.cache.enable()
             scipy.fft.set_global_backend(PyfftwBackend)
         elif backend == 'numpy':
             from scipy.fft._debug_backends import NumPyBackend

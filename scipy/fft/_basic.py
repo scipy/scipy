@@ -1,6 +1,7 @@
 from scipy._lib.uarray import generate_multimethod, Dispatchable
 import numpy as np
 
+
 def _x_replacer(args, kwargs, dispatchables):
     """
     uarray argument replacer to replace the transform input array (``x``)
