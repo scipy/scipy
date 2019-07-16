@@ -286,7 +286,7 @@ Type I DCT
 __________
 
 SciPy uses the following definition of the unnormalized DCT-I
-(``norm='None'``):
+(``norm=None``):
 
 .. math::
 
@@ -294,14 +294,13 @@ SciPy uses the following definition of the unnormalized DCT-I
     \cos\left(\frac{\pi nk}{N-1}\right),
     \qquad 0 \le k < N.
 
-Only ``None`` is supported as normalization mode for DCT-I. Note also that the
-DCT-I is only supported for input size > 1
+Note that the DCT-I is only supported for input size > 1
 
 Type II DCT
 ___________
 
 SciPy uses the following definition of the unnormalized DCT-II
-(``norm='None'``):
+(``norm=None``):
 
 .. math::
 
@@ -328,7 +327,7 @@ Type III DCT
 ____________
 
 SciPy uses the following definition of the unnormalized DCT-III
-(``norm='None'``):
+(``norm=None``):
 
 .. math::
 
@@ -347,9 +346,10 @@ DCT and IDCT
 ____________
 
 
-The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up to
-a factor `2N`. The orthonormalized DCT-III is exactly the inverse of the orthonormalized DCT-
-II. The function :func:`idct` performs the mappings between the DCT and IDCT types.
+The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up to a
+factor `2N`. The orthonormalized DCT-III is exactly the inverse of the
+orthonormalized DCT- II. The function :func:`idct` performs the mappings between
+the DCT and IDCT types, as well as performing the correct normalization.
 
 The example below shows the relation between DCT and IDCT for different types
 and normalizations.
@@ -357,22 +357,31 @@ and normalizations.
 >>> from scipy.fft import dct, idct
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> dct(dct(x, type=2, norm='ortho'), type=3, norm='ortho')
-[1.0, 2.0, 1.0, -1.0, 1.5]
->>>  # scaling factor 2*N = 10
->>> idct(dct(x, type=2), type=2)
-array([ 10.,  20.,  10., -10.,  15.])
->>>  # no scaling factor
->>> idct(dct(x, type=2, norm='ortho'), type=2, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
->>> idct(dct(x, type=3), type=3)
+>>> dct(dct(x, type=2), type=3)
 array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
->>> idct(dct(x, type=3, norm='ortho'), type=3, norm='ortho')
+>>> idct(dct(x, type=2), type=2)
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+>>> dct(dct(x, type=1, norm='ortho'), type=1, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*(N-1) = 8
+>>> dct(dct(x, type=1), type=1)
+array([ 8. ,  16.,  8. , -8. ,  12.])
+>>>  # no scaling factor
 >>> idct(dct(x, type=1), type=1)
-array([  8.,  16.,   8.,  -8.,  12.])
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+>>> dct(dct(x, type=4, norm='ortho'), type=4, norm='ortho')
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+>>>  # scaling factor 2*N = 10
+>>> dct(dct(x, type=4), type=4)
+array([ 10.,  20.,  10., -10.,  15.])
+>>>  # no scaling factor
+>>> idct(dct(x, type=4), type=4)
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
 Example
 _______
@@ -429,22 +438,21 @@ Type I DST
 __________
 
 DST-I assumes the input is odd around n=-1 and n=N. SciPy uses the following
-definition of the unnormalized DST-I (``norm='None'``):
+definition of the unnormalized DST-I (``norm=None``):
 
 .. math::
 
     y[k] = 2\sum_{n=0}^{N-1} x[n]  \sin\left( \pi {(n+1) (k+1)}\over{N+1}
     \right), \qquad 0 \le k < N.
 
-Only ``None`` is supported as normalization mode for DST-I. Note also that the
-DST-I is only supported for input size > 1. The (unnormalized) DST-I is its
-own inverse, up to a factor `2(N+1)`.
+Note also that the DST-I is only supported for input size > 1. The
+(unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
 
 Type II DST
 ___________
 
 DST-II assumes the input is odd around n=-1/2 and even around n=N. SciPy uses
-the following definition of the unnormalized DST-II (``norm='None'``):
+the following definition of the unnormalized DST-II (``norm=None``):
 
 .. math::
 
@@ -455,7 +463,7 @@ Type III DST
 ____________
 
 DST-III assumes the input is odd around n=-1 and even around n=N-1. SciPy uses
-the following definition of the unnormalized DST-III (``norm='None'``):
+the following definition of the unnormalized DST-III (``norm=None``):
 
 .. math::
 
@@ -472,22 +480,32 @@ and normalizations.
 
 >>> from scipy.fft import dst, idst
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
+>>> dst(dst(x, type=2, norm='ortho'), type=3, norm='ortho')
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
+>>> dst(dst(x, type=2), type=3)
+array([ 10.,  20.,  10., -10.,  15.])
+>>>  # no scaling factor
 >>> idst(dst(x, type=2), type=2)
-array([ 10.,  20.,  10., -10.,  15.])
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+>>> dst(dst(x, type=1, norm='ortho'), type=1, norm='ortho')
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+>>>  # scaling factor 2*(N+1) = 12
+>>> dst(dst(x, type=1), type=1)
+array([ 12.,  24.,  12., -12.,  18.])
 >>>  # no scaling factor
->>> idst(dst(x, type=2, norm='ortho'), type=2, norm='ortho')
+>>> idst(dst(x, type=1), type=1)
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+>>> dst(dst(x, type=4, norm='ortho'), type=4, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
->>> idst(dst(x, type=3), type=3)
+>>> dst(dst(x, type=4), type=4)
 array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
->>> idst(dst(x, type=3, norm='ortho'), type=3, norm='ortho')
+>>> idst(dst(x, type=4), type=4)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*(N+1) = 8
->>> idst(dst(x, type=1), type=1)
-array([ 12.,  24.,  12., -12.,  18.])
-
 
 References
 ----------
