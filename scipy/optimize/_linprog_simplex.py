@@ -231,7 +231,7 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                    callback=None, tol=1e-9, nit0=0, bland=False,
-                   postsolve_args=[]):
+                   postsolve_args=()):
     """
     Solve a linear programming problem in "standard form" using the Simplex
     Method. Linear Programming is intended to solve the following problem form:
@@ -322,6 +322,9 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the the solution of the original problem.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -431,7 +434,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
 
 
 def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
-                     tol=1e-9, bland=False, postsolve_args=[],
+                     tol=1e-9, bland=False, postsolve_args=(),
                      **unknown_options):
     """
     Minimize a linear objective function subject to linear equality and
@@ -492,6 +495,9 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the the solution of the original problem.
 
     Options
     -------

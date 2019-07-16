@@ -30,7 +30,7 @@ from .optimize import OptimizeResult
 
 
 def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
-               postsolve_args=[], disp=False):
+               postsolve_args=(), disp=False):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -57,9 +57,11 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
 
     # solve auxiliary problem
     phase_one_n = n
+    iter_k = 0
     x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter, tol,
-                                          maxupdate, mast, pivot, 0, callback,
-                                          postsolve_args, disp, phase_one_n)
+                                          maxupdate, mast, pivot, iter_k,
+                                          callback, postsolve_args, disp,
+                                          phase_one_n)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -308,7 +310,7 @@ def _display_iter(phase, iteration, slack, con, fun):
 
 
 def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
-               callback=None, postsolve_args=[], disp=False, phase_one_n=None):
+               callback=None, postsolve_args=(), disp=False, phase_one_n=None):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -399,8 +401,8 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
     return x, b, status, iteration
 
 
-def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
-                maxupdate=10, mast=False, pivot="mrc", postsolve_args=[],
+def _linprog_rs(c, c0, A, b, x0=None, callback=None, postsolve_args=(),
+                maxiter=5000, tol=1e-12, maxupdate=10, mast=False, pivot="mrc",
                 disp=False, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
@@ -457,6 +459,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the the solution to the original problem.
 
     Options
     -------

@@ -1126,27 +1126,33 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     ----------
     x : 1D array
         Solution vector to the standard-form problem.
-    c : 1D array
-        Original coefficients of the linear objective function to be minimized.
-    A_ub : 2D array, optional
-        2D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1D array, optional
-        1D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2D array, optional
-        2D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1D array, optional
-        1D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence of tuples
-        Bounds, as modified in presolve
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the the solution to the original problem, including:
+
+        c : 1D array
+            Original coefficients of the linear objective function to be
+            minimized.
+        A_ub : 2D array, optional
+            2D array such that ``A_ub @ x`` gives the values of the upper-bound
+            inequality constraints at ``x``.
+        b_ub : 1D array, optional
+            1D array of values representing the upper-bound of each inequality
+            constraint (row) in ``A_ub``.
+        A_eq : 2D array, optional
+            2D array such that ``A_eq @ x`` gives the values of the equality
+            constraints at ``x``.
+        b_eq : 1D array, optional
+            1D array of values representing the RHS of each equality constraint
+            (row) in ``A_eq``.
+        bounds : sequence of tuples
+            Bounds, as modified in presolve
+        undo: list of tuples
+            (`index`, `value`) pairs that record the original index and fixed value
+            for each variable removed from the problem
+
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
     tol : float
         Termination tolerance; see [1]_ Section 4.5.
 

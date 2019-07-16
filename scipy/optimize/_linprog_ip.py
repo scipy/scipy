@@ -676,6 +676,9 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the the solution to the original problem.
 
     Returns
     -------
@@ -841,7 +844,7 @@ def _linprog_ip(
         A=None,
         b=None,
         callback=None,
-        postsolve_args=[],
+        postsolve_args=(),
         alpha0=.99995,
         beta=0.1,
         maxiter=1000,
@@ -883,6 +886,11 @@ def _linprog_ip(
     b : 1D array
         1D array of values representing the right hand side of each equality
         constraint (row) in ``A``.
+    callback : callable, optional
+        Callback function to be executed once per iteration.
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the the solution to the original problem.
 
     Options
     -------
