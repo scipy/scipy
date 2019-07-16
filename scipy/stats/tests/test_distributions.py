@@ -250,7 +250,7 @@ class TestGenInvGauss(object):
     @pytest.mark.slow
     def test_rvs_without_mode_shift(self):
         # ratio_unif w/o mode shift
-        gig = stats.geninvgauss(0.9, 1.5)
+        gig = stats.geninvgauss(0.9, 0.75)
         _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
         assert_equal(p > 0.05, True)
 

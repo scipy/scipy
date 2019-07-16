@@ -26,7 +26,6 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     rv_continuous, _skew, valarray,
                                     _get_fixed_fit_value, _check_shape)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
-from ._rvs_sampling import rvs_ratio_uniforms
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
 # powers, and `np.float_power` is a new replacement.
@@ -3500,9 +3499,9 @@ class geninvgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, p, b) = 1 / (2 K_p(b)) * (x^{p-1} \exp(-0.5 * b * (x + 1/x)))
+        f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, and the parameters `p, b` satisfy `b`> 0` ([1]_).
+    where `x > 0`, and the parameters `p, b` satisfy `b > 0` ([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
@@ -3530,9 +3529,20 @@ class geninvgauss_gen(rv_continuous):
         return (p == p) & (b > 0)
 
     def _logpdf(self, x, p, b):
-        c = -np.log(2*sc.kv(p, b))
+        # kve instead of kv works better for large values of b
+        # warn if kve produces infinite values and replace by nan
+        # otherwise c = -inf and the results are often incorrect
+        z = sc.kve(p, b)
+        z_inf = np.isinf(z)
+        if z_inf.any():
+            msg = ("Infinite values encountered in scipy.special.kve(p, b). "
+                   "Values replaced by NaN to avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+            z[z_inf] = np.nan
+        c = -np.log(2) - np.log(z) + b
         return _lazywhere(x > 0, (x, p, b, c),
-                          lambda x, p, b, c: c + (p-1)*np.log(x) - b*(x+1/x)/2,
+                          lambda x, p, b, c:
+                              c + (p - 1)*np.log(x) - b*(x + 1/x)/2,
                           -np.inf)
 
     def _pdf(self, x, p, b):
@@ -3542,7 +3552,7 @@ class geninvgauss_gen(rv_continuous):
     def _logquasipdf(self, x, p, b):
         # log of the quasi-density (w/o normalizing constant) used in _rvs
         return _lazywhere(x > 0, (x, p, b),
-                          lambda x, p, b: (p-1)*np.log(x) - b*(x+1/x)/2,
+                          lambda x, p, b: (p - 1)*np.log(x) - b*(x + 1/x)/2,
                           -np.inf)
 
     def _rvs(self, p, b):
@@ -3760,7 +3770,19 @@ class geninvgauss_gen(rv_continuous):
             return (np.sqrt((1 - p)**2 + b**2) - (1 - p)) / b
 
     def _munp(self, n, p, b):
-        return sc.kv(p + n, b) / sc.kv(p, b)
+        num = sc.kve(p + n, b)
+        denom = sc.kve(p, b)
+        inf_vals = np.isinf(num) | np.isinf(denom)
+        if inf_vals.any():
+            msg = ("Infinite values encountered in the moment calculation "
+                   "involving scipy.special.kve. Values replaced by NaN to "
+                   "avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+            m = np.full_like(num, np.nan, dtype=np.double)
+            m[~inf_vals] = num[~inf_vals] / denom[~inf_vals]
+        else:
+            m = num / denom
+        return m
 
 
 geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")

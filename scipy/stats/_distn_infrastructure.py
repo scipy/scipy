@@ -12,6 +12,7 @@ import keyword
 import re
 import types
 import warnings
+from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
@@ -36,7 +37,6 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
-from itertools import zip_longest
 
 if PY2:
     instancemethod = types.MethodType
