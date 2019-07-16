@@ -81,7 +81,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     --------
     >>> from scipy.fft import dctn, idctn
     >>> y = np.random.randn(16, 16)
-    >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
+    >>> np.allclose(y, idctn(dctn(y)))
     True
 
     """
@@ -134,7 +134,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     --------
     >>> from scipy.fft import dctn, idctn
     >>> y = np.random.randn(16, 16)
-    >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
+    >>> np.allclose(y, idctn(dctn(y)))
     True
 
     """
@@ -194,7 +194,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     --------
     >>> from scipy.fft import dstn, idstn
     >>> y = np.random.randn(16, 16)
-    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
+    >>> np.allclose(y, idstn(dstn(y)))
     True
 
     """
@@ -247,7 +247,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     --------
     >>> from scipy.fft import dstn, idstn
     >>> y = np.random.randn(16, 16)
-    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
+    >>> np.allclose(y, idstn(dstn(y)))
     True
 
     """
@@ -298,6 +298,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
     MATLAB ``dct(x)``.
 
+    For ``norm=None``, there is no scaling on `dct` and the `idct` is scaled by
+    ``1/N`` where ``N`` is the "logical" size of the DCT. For ``norm='ortho'``
+    both directions are scaled by the same factor ``1/sqrt(N)``.
+
     There are theoretically 8 types of the DCT, only the first 4 types are
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
@@ -321,9 +325,6 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         f = \begin{cases}
          \frac{1}{2}\sqrt{\frac{1}{N-1}} & \text{if }k=0\text{ or }N-1, \\
          \frac{1}{2}\sqrt{\frac{2}{N-1}} & \text{otherwise} \end{cases}
-
-    .. versionadded:: 1.2.0
-       Orthonormalization in DCT-I.
 
     .. note::
        The DCT-I is only supported for input size > 1.
@@ -380,9 +381,6 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     .. math::
 
         f = \frac{1}{\sqrt{2N}}
-
-    .. versionadded:: 1.2.0
-       Support for DCT-IV.
 
     References
     ----------
@@ -446,11 +444,11 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     For a single dimension array `x`, ``idct(x, norm='ortho')`` is equal to
     MATLAB ``idct(x)``.
 
-    'The' IDCT is the IDCT of type 2, which is the same as DCT of type 3.
+    'The' IDCT is the IDCT-II, which is the same as the normalized DCT-III.
 
-    IDCT of type 1 is the DCT of type 1, IDCT of type 2 is the DCT of type
-    3, and IDCT of type 3 is the DCT of type 2. IDCT of type 4 is the DCT
-    of type 4. For the definition of these types, see `dct`.
+    The IDCT is equivalent to a normal DCT except for the normalization and
+    type. DCT type 1 and 4 are their own inverse and DCTs 2 and 3 are each
+    other's inverses.
 
     Examples
     --------
@@ -461,7 +459,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     >>> from scipy.fft import ifft, idct
     >>> ifft(np.array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
     array([  4.,   3.,   5.,  10.,   5.,   3.])
-    >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1) / 6
+    >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1)
     array([  4.,   3.,   5.,  10.])
 
     """
@@ -510,6 +508,11 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Notes
     -----
     For a single dimension array ``x``.
+
+    For ``norm=None``, there is no scaling on the `dst` and the `idst` is
+    scaled by ``1/N`` where ``N`` is the "logical" size of the DST. For
+    ``norm='ortho'`` both directions are scaled by the same factor
+    ``1/sqrt(N)``.
 
     There are theoretically 8 types of the DST for different combinations of
     even/odd boundary conditions and boundary off sets [1]_, only the first
@@ -561,8 +564,6 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     to a factor `2N`. The orthonormalized DST-III is exactly the inverse of the
     orthonormalized DST-II.
 
-    .. versionadded:: 0.11.0
-
     **Type IV**
 
     There are several definitions of the DST-IV, we use the following (for
@@ -575,9 +576,6 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     The (unnormalized) DST-IV is its own inverse, up to a factor `2N`. The
     orthonormalized DST-IV is exactly its own inverse.
-
-    .. versionadded:: 1.2.0
-       Support for DST-IV.
 
     References
     ----------
@@ -622,13 +620,12 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     Notes
     -----
-    'The' IDST is the IDST of type 2, which is the same as DST of type 3.
 
-    IDST of type 1 is the DST of type 1, IDST of type 2 is the DST of type
-    3, and IDST of type 3 is the DST of type 2. For the definition of these
-    types, see `dst`.
+    'The' IDST is the IDST-II, which is the same as the normalized DST-III.
 
-    .. versionadded:: 0.11.0
+    The IDST is equivalent to a normal DST except for the normalization and
+    type. DST type 1 and 4 are their own inverse and DSTs 2 and 3 are each
+    other's inverses.
 
     """
     return (Dispatchable(x, np.ndarray),)
