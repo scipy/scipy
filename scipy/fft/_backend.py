@@ -114,10 +114,6 @@ def set_backend(backend, coerce=False, only=False):
        BackendNotImplemented error will be raised immediately. Ignoring any
        lower priority backends.
 
-    Returns
-    -------
-    out : context manager
-
     Examples
     --------
     >>> import scipy.fft as fft
@@ -142,10 +138,6 @@ def skip_backend(backend):
         The backend to skip.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'}, or an object that implements the uarray protocol.
-
-    Returns
-    -------
-    out: context manager
 
     Examples
     --------
