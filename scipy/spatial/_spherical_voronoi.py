@@ -15,7 +15,7 @@ import numpy as np
 import scipy
 import itertools
 from . import _voronoi
-from scipy.spatial.distance import pdist
+from scipy.spatial import cKDTree
 
 __all__ = ['SphericalVoronoi']
 
@@ -228,7 +228,7 @@ class SphericalVoronoi:
         else:
             self.radius = 1
 
-        if pdist(self.points).min() <= threshold * self.radius:
+        if cKDTree(self.points).query_pairs(threshold * self.radius):
             raise ValueError("Duplicate generators present.")
 
         max_discrepancy = sphere_check(self.points,
