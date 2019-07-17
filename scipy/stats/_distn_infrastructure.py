@@ -1350,6 +1350,23 @@ class rv_generic(object):
         return _a * scale + loc, _b * scale + loc
 
 
+def _get_fixed_fit_value(kwds, names):
+    """
+    Given names such as `['f0', 'fa', 'fix_a']`, check that there is
+    at most one non-None value in `kwds` associaed with those names.
+    Return that value, or None if none of the names occur in `kwds`.
+    As a side effect, all occurrences of those names in `kwds` are
+    removed.
+    """
+    vals = [(name, kwds.pop(name)) for name in names if name in kwds]
+    if len(vals) > 1:
+        repeated = [name for name, val in vals]
+        raise ValueError("fit method got multiple keyword arguments to "
+                         "specify the same fixed parameter: " +
+                         ', '.join(repeated))
+    return vals[0][1] if vals else None
+
+
 ##  continuous random variables: implement maybe later
 ##
 ##  hf  --- Hazard Function (PDF / SF)
@@ -2102,22 +2119,23 @@ class rv_continuous(rv_generic):
         loc, scale = self._fit_loc_scale_support(data, *args)
         return args + (loc, scale)
 
-    # Return the (possibly reduced) function to optimize in order to find MLE
-    #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
-        # First of all, convert fshapes params to fnum: eg for stats.beta,
-        # shapes='a, b'. To fix `a`, can specify either `f1` or `fa`.
-        # Convert the latter into the former.
+        """
+        Return the (possibly reduced) function to optimize in order to find MLE
+        estimates for the .fit method.
+        """
+        # Convert fixed shape parameters to the standard numeric form: e.g. for
+        # stats.beta, shapes='a, b'. To fix `a`, the caller can give a value
+        # for `f0`, `fa` or 'fix_a'.  The following converts the latter two
+        # into the first (numeric) form.
         if self.shapes:
             shapes = self.shapes.replace(',', ' ').split()
             for j, s in enumerate(shapes):
-                val = kwds.pop('f' + s, None) or kwds.pop('fix_' + s, None)
+                key = 'f' + str(j)
+                names = [key, 'f' + s, 'fix_' + s]
+                val = _get_fixed_fit_value(kwds, names)
                 if val is not None:
-                    key = 'f%d' % j
-                    if key in kwds:
-                        raise ValueError("Duplicate entry for %s." % key)
-                    else:
-                        kwds[key] = val
+                    kwds[key] = val
 
         args = list(args)
         Nargs = len(args)
