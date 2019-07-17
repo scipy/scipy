@@ -174,6 +174,7 @@ class FuncData(object):
 
     def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = True
 
         if self.knownfailure:
             pytest.xfail(reason=self.knownfailure)
