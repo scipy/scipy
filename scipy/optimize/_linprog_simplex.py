@@ -229,9 +229,9 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
         warn(message, OptimizeWarning, stacklevel=5)
 
 
-def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
-                   callback=None, tol=1e-9, nit0=0, bland=False,
-                   postsolve_args=()):
+def _solve_simplex(T, n, basis, callback, postsolve_args,
+                   maxiter=1000, tol=1e-9, phase=2, bland=False, nit0=0,
+                   ):
     """
     Solve a linear programming problem in "standard form" using the Simplex
     Method. Linear Programming is intended to solve the following problem form:
@@ -279,13 +279,6 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
         Basis is modified in place by _solve_simplex
-    maxiter : int
-        The maximum number of iterations to perform before aborting the
-        optimization.
-    phase : int
-        The phase of the optimization being executed. In phase 1 a basic
-        feasible solution is sought and the T has an additional row
-        representing an alternate objective function.
     callback : callable, optional
         If a callback function is provided, it will be called within each
         iteration of the algorithm. The callback must accept a
@@ -324,18 +317,25 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                 A string descriptor of the exit status of the optimization.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
-        problem into the the solution of the original problem.
+        problem into the solution to the original problem.
+    maxiter : int
+        The maximum number of iterations to perform before aborting the
+        optimization.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
         enough to positive to serve as an optimal solution.
-    nit0 : int
-        The initial iteration number used to keep an accurate iteration total
-        in a two-phase problem.
+    phase : int
+        The phase of the optimization being executed. In phase 1 a basic
+        feasible solution is sought and the T has an additional row
+        representing an alternate objective function.
     bland : bool
         If True, choose pivots using Bland's rule [3]_. In problems which
         fail to converge due to cycling, using Bland's rule can provide
         convergence at the expense of a less optimal path about the simplex.
+    nit0 : int
+        The initial iteration number used to keep an accurate iteration total
+        in a two-phase problem.
 
     Returns
     -------
@@ -353,6 +353,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
 
     """
     nit = nit0
+    status = 0
+    message = ''
     complete = False
 
     if phase == 1:
@@ -433,8 +435,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     return nit, status
 
 
-def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
-                     tol=1e-9, bland=False, postsolve_args=(),
+def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
+                     maxiter=1000, tol=1e-9, disp=False, bland=False,
                      **unknown_options):
     """
     Minimize a linear objective function subject to linear equality and
@@ -497,7 +499,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                 A string descriptor of the exit status of the optimization.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
-        problem into the the solution of the original problem.
+        problem into the solution to the original problem.
 
     Options
     -------
@@ -616,9 +618,11 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     row_pseudo_objective[av] = 0
     T = np.vstack((row_constraints, row_objective, row_pseudo_objective))
 
-    nit1, status = _solve_simplex(T, n, basis, phase=1, callback=callback,
-                                  maxiter=maxiter, tol=tol, bland=bland,
-                                  postsolve_args=postsolve_args)
+    nit1, status = _solve_simplex(T, n, basis, callback=callback,
+                                  postsolve_args=postsolve_args,
+                                  maxiter=maxiter, tol=tol, phase=1,
+                                  bland=bland
+                                  )
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
     nit2 = nit1
@@ -642,10 +646,11 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
 
     if status == 0:
         # Phase 2
-        nit2, status = _solve_simplex(T, n, basis, maxiter=maxiter,
-                                      phase=2, callback=callback, tol=tol,
-                                      nit0=nit1, bland=bland,
-                                      postsolve_args=postsolve_args)
+        nit2, status = _solve_simplex(T, n, basis, callback=callback,
+                                      postsolve_args=postsolve_args,
+                                      maxiter=maxiter, tol=tol, phase=2,
+                                      bland=bland, nit0=nit1
+                                      )
 
     solution = np.zeros(n + m)
     solution[basis[:n]] = T[:n, -1]

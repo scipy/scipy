@@ -29,8 +29,8 @@ from ._linprog_util import _postsolve
 from .optimize import OptimizeResult
 
 
-def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
-               postsolve_args=(), disp=False):
+def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
+               maxupdate, mast, pivot):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -58,10 +58,11 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     # solve auxiliary problem
     phase_one_n = n
     iter_k = 0
-    x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter, tol,
-                                          maxupdate, mast, pivot, iter_k,
-                                          callback, postsolve_args, disp,
-                                          phase_one_n)
+    x, basis, status, iter_k = _phase_two(c, A, x, basis, callback,
+                                          postsolve_args,
+                                          maxiter, tol, disp,
+                                          maxupdate, mast, pivot,
+                                          iter_k, phase_one_n)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -309,8 +310,8 @@ def _display_iter(phase, iteration, slack, con, fun):
     print(fmt.format(phase, iteration, slack, np.linalg.norm(con), fun))
 
 
-def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
-               callback=None, postsolve_args=(), disp=False, phase_one_n=None):
+def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
+               maxupdate, mast, pivot, iteration=0, phase_one_n=None):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -401,9 +402,10 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
     return x, b, status, iteration
 
 
-def _linprog_rs(c, c0, A, b, x0=None, callback=None, postsolve_args=(),
-                maxiter=5000, tol=1e-12, maxupdate=10, mast=False, pivot="mrc",
-                disp=False, **unknown_options):
+def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
+                maxiter=5000, tol=1e-12, disp=False,
+                maxupdate=10, mast=False, pivot="mrc",
+                **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
     revised simplex algorithm.::
@@ -461,7 +463,7 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, postsolve_args=(),
                 A string descriptor of the exit status of the optimization.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
-        problem into the the solution to the original problem.
+        problem into the solution to the original problem.
 
     Options
     -------
@@ -471,6 +473,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, postsolve_args=(),
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
         enough to positive to serve as an optimal solution.
+    disp : bool
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration.
     maxupdate : int
         The maximum number of updates performed on the LU factorization.
         After this many updates is reached, the basis matrix is factorized
@@ -488,9 +493,6 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, postsolve_args=(),
     pivot : "mrc" or "bland"
         Pivot rule: Minimum Reduced Cost (default) or Bland's rule. Choose
         Bland's rule if iteration limit is reached and cycling is suspected.
-    disp : bool
-        Set to ``True`` if indicators of optimization status are to be printed
-        to the console each iteration.
     unkown_options : dict
         Optional arguments not used by this particular solver. If
         `unknown_options` is non-empty a warning is issued listing all
@@ -543,13 +545,14 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, postsolve_args=(),
         return np.zeros(c.shape), 5, messages[5], 0
 
     x, basis, A, b, residual, status, iteration = (
-        _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback,
-                   postsolve_args, disp))
+        _phase_one(A, b, x0, callback, postsolve_args,
+                   maxiter, tol, disp, maxupdate, mast, pivot))
 
     if status == 0:
-        x, basis, status, iteration = _phase_two(c, A, x, basis, maxiter, tol,
+        x, basis, status, iteration = _phase_two(c, A, x, basis, callback,
+                                                 postsolve_args,
+                                                 maxiter, tol, disp,
                                                  maxupdate, mast, pivot,
-                                                 iteration, callback,
-                                                 postsolve_args, disp)
+                                                 iteration)
 
     return x, status, messages[status].format(residual, tol), iteration

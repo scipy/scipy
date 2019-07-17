@@ -678,7 +678,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
                 A string descriptor of the exit status of the optimization.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
-        problem into the the solution to the original problem.
+        problem into the solution to the original problem.
 
     Returns
     -------
@@ -840,16 +840,16 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
 def _linprog_ip(
         c,
-        c0=0,
-        A=None,
-        b=None,
-        callback=None,
-        postsolve_args=(),
+        c0,
+        A,
+        b,
+        callback,
+        postsolve_args,
+        maxiter=1000,
+        tol=1e-8,
+        disp=False,
         alpha0=.99995,
         beta=0.1,
-        maxiter=1000,
-        disp=False,
-        tol=1e-8,
         sparse=False,
         lstsq=False,
         sym_pos=True,
@@ -890,18 +890,18 @@ def _linprog_ip(
         Callback function to be executed once per iteration.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
-        problem into the the solution to the original problem.
+        problem into the solution to the original problem.
 
     Options
     -------
     maxiter : int (default = 1000)
         The maximum number of iterations of the algorithm.
-    disp : bool (default = False)
-        Set to ``True`` if indicators of optimization status are to be printed
-        to the console each iteration.
     tol : float (default = 1e-8)
         Termination tolerance to be used for all termination criteria;
         see [4]_ Section 4.5.
+    disp : bool (default = False)
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
         direction; see :math:`\beta_{3}` of [4]_ Table 8.1.

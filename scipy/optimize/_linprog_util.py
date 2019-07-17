@@ -1128,7 +1128,7 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
         Solution vector to the standard-form problem.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
-        problem into the the solution to the original problem, including:
+        problem into the solution to the original problem, including:
 
         c : 1D array
             Original coefficients of the linear objective function to be
