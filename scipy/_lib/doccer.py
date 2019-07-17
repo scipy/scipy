@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 
 __all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',
-           'filldoc', 'unindent_dict', 'unindent_string']
+           'filldoc', 'unindent_dict', 'unindent_string', 'doc_replace']
 
 
 def docformat(docstring, docdict=None):
@@ -248,3 +248,27 @@ def unindent_string(docstring):
     if icount == 0:
         return docstring
     return '\n'.join([line[icount:] for line in lines])
+
+
+def doc_replace(obj, oldval, newval):
+    """Decorator to take the docstring from obj, with oldval replaced by newval
+
+    Equivalent to ``func.__doc__ = obj.__doc__.replace(oldval, newval)``
+
+    Parameters
+    ----------
+    obj: object
+        The object to take the docstring from
+    oldval: string
+        The string to replace from the original docstring
+    newval: string
+        The string to replace ``oldval`` with.
+    """
+    # __doc__ may be None for optimized python (-OO)
+    doc = (obj.__doc__ or '').replace(oldval, newval)
+
+    def inner(func):
+        func.__doc__ = doc
+        return func
+
+    return inner
