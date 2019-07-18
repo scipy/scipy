@@ -84,9 +84,12 @@ rand = _deprecated(_msg.format('rand'))(rand)
 randn = _deprecated(_msg.format('randn'))(randn)
 from numpy.fft import fft, ifft
 # fft is especially problematic, so we deprecate it with a shorter window
-fft = _deprecated('Using scipy.fft as a function is deprecated and will be '
-                  'removed in SciPy 1.5.0, use scipy.fft.fft instead.')(fft)
-_dep_fft = fft  # for wrapping in scipy.fft.__call__
+fft_msg = ('Using scipy.fft as a function is deprecated and will be '
+           'removed in SciPy 1.5.0, use scipy.fft.fft instead.')
+# for wrapping in scipy.fft.__call__, so the stacklevel is one off from the
+# usual (2)
+_dep_fft = _deprecated(fft_msg, stacklevel=3)(fft)
+fft = _deprecated(fft_msg)(fft)
 ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
                    '2.0.0, use scipy.fft.ifft instead')(ifft)
 import numpy.lib.scimath as _sci
