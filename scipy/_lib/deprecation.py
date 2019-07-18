@@ -9,7 +9,7 @@ def _deprecated(msg):
     def wrap(fun):
         @functools.wraps(fun)
         def call(*args, **kwargs):
-            warnings.warn(msg, category=DeprecationWarning)
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
             return fun(*args, **kwargs)
         call.__doc__ = msg
         return call

@@ -1,6 +1,8 @@
 from __future__ import division, print_function, absolute_import
+
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
+import os
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
@@ -133,8 +135,10 @@ def test_numpy_deprecation(key):
         match = r'scipy\.fft.*deprecated.*1.5.0.*'
     else:
         match = r'scipy\.%s is deprecated.*2\.0\.0' % key
-    with deprecated_call(match=match):
+    with deprecated_call(match=match) as dep:
         func(arg)  # deprecated
+    fname = os.path.splitext(os.path.basename(dep.list[0].filename))[0]
+    assert fname == 'test__util'
     if key in ('rand', 'randn'):
         root = np.random
     elif key in ('fft', 'ifft'):
