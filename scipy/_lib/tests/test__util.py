@@ -137,8 +137,10 @@ def test_numpy_deprecation(key):
         match = r'scipy\.%s is deprecated.*2\.0\.0' % key
     with deprecated_call(match=match) as dep:
         func(arg)  # deprecated
-    fname = os.path.splitext(os.path.basename(dep.list[0].filename))[0]
-    assert fname == 'test__util'
+    # in case we catch more than one dep warning
+    fnames = [os.path.splitext(d.filename)[0] for d in dep.list]
+    basenames = [os.path.basename(fname) for fname in fnames]
+    assert 'test__util' in basenames
     if key in ('rand', 'randn'):
         root = np.random
     elif key in ('fft', 'ifft'):
