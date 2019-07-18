@@ -1,10 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-
-from distutils.version import LooseVersion
-
 import functools
+import operator
+from distutils.version import LooseVersion
 
 import numpy as np
 from numpy.testing import assert_
@@ -174,6 +173,9 @@ class FuncData(object):
 
     def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = operator.methodcaller(
+            'errisinstance', AssertionError
+        )
 
         if self.knownfailure:
             pytest.xfail(reason=self.knownfailure)
