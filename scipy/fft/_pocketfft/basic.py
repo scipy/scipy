@@ -6,11 +6,13 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import functools
 from scipy.fft._pocketfft import pypocketfft as pfft
-from scipy.fftpack.helper import _init_nd_shape_and_axes
+from scipy.fftpack.helper import (_init_nd_shape_and_axes_impl
+                                  as _init_nd_shape_and_axes)
 
 
 # TODO: Build with OpenMp and add configuration support
 _default_workers = 1
+
 
 def _asfarray(x):
     """
