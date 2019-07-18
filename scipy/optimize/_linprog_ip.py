@@ -119,25 +119,9 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
     return solve
 
 
-def _get_delta(
-        A,
-        b,
-        c,
-        x,
-        y,
-        z,
-        tau,
-        kappa,
-        gamma,
-        eta,
-        sparse=False,
-        lstsq=False,
-        sym_pos=True,
-        cholesky=True,
-        pc=True,
-        ip=False,
-        permc_spec='MMD_AT_PLUS_A'
-        ):
+def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
+               lstsq=False, sym_pos=True, cholesky=True, pc=True, ip=False,
+               permc_spec='MMD_AT_PLUS_A'):
     """
     Given standard form problem defined by ``A``, ``b``, and ``c``;
     current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``;
@@ -838,26 +822,10 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     return x_hat, status, message, iteration
 
 
-def _linprog_ip(
-        c,
-        c0,
-        A,
-        b,
-        callback,
-        postsolve_args,
-        maxiter=1000,
-        tol=1e-8,
-        disp=False,
-        alpha0=.99995,
-        beta=0.1,
-        sparse=False,
-        lstsq=False,
-        sym_pos=True,
-        cholesky=None,
-        pc=True,
-        ip=False,
-        permc_spec='MMD_AT_PLUS_A',
-        **unknown_options):
+def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
+                disp=False, alpha0=.99995, beta=0.1, sparse=False, lstsq=False,
+                sym_pos=True, cholesky=None, pc=True, ip=False,
+                permc_spec='MMD_AT_PLUS_A', **unknown_options):
     r"""
     Minimize a linear objective function subject to linear
     equality and non-negativity constraints using the interior point method
