@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
+import pytest
 from numpy.testing import (assert_equal, assert_allclose, assert_,
                            assert_almost_equal, assert_array_almost_equal)
 from pytest import raises as assert_raises
@@ -261,10 +262,16 @@ class TestSmokeTests(object):
 
 class TestSplrep(object):
     def test_task_argument(self):
-        x, y  = range(5), range(5, 10)
-        # must call splrep twice to cache values
+        x, y = range(5), range(5, 10)
         tck1 = splrep(x, y, task=0)
-        tck2 = splrep(x, y, task=1) # check if runnable
+        with pytest.raises(ValueError):
+            tck2 = splrep(x, y, task=1)
+
+    def test_cache_argument(self):
+        x, y = range(5), range(5, 10)
+        splrep_cache = {}
+        tck1 = splrep(x, y, task=0, cache=splrep_cache)
+        tck2 = splrep(x, y, task=1, cache=splrep_cache)
 
 
 class TestSplev(object):

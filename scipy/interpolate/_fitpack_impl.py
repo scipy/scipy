@@ -316,7 +316,7 @@ _curfit_cache = {'t': array([], float), 'wrk': array([], float),
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
-           full_output=0, per=0, quiet=1, ext_cache=None):
+           full_output=0, per=0, quiet=1, cache=None):
     # or cache=None? Also, _curfit_cache is used elsewhere
     """
     Find the B-spline representation of 1-D curve.
@@ -443,10 +443,11 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     """
     # cache appears to be optional mostly
     # no-op on the cache if task doesn't require
-    if ext_cache is None or task <= 0:
+    if task == 1 and cache is None:
+        raise ValueError("Must call splrep with cache argument for task=1")
+    if task <= 0 and cache is None:
         cache = {}
-    else:
-        cache = ext_cache
+
     x, y = map(atleast_1d, [x, y])
     m = len(x)
     if w is None:

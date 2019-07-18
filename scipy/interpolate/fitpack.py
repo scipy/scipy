@@ -159,7 +159,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
-           full_output=0, per=0, quiet=1):
+           full_output=0, per=0, quiet=1, cache=None):
     """
     Find the B-spline representation of 1-D curve.
 
@@ -286,7 +286,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     >>> plt.show()
 
     """
-    res = _impl.splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet)
+    res = _impl.splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet, cache)
     return res
 
 
