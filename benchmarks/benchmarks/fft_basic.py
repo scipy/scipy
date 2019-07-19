@@ -10,8 +10,10 @@ import scipy.fftpack
 import numpy.fft
 try:
     import scipy.fft as scipy_fft
+    has_scipy_fft = True
 except ImportError:
     scipy_fft = {}
+    has_scipy_fft = False
 
 from .common import Benchmark
 
@@ -19,8 +21,10 @@ try:
     import pyfftw.interfaces.numpy_fft as pyfftw_fft
     import pyfftw
     pyfftw.interfaces.cache.enable()
+    has_pyfftw = True
 except ImportError:
     pyfftw_fft = {}
+    has_pyfftw = False
 
 class PyfftwBackend:
     """Backend for pyfftw"""
@@ -59,11 +63,17 @@ def direct_idft(x):
     return y
 
 
-module_map = {
-    'scipy.fftpack': scipy.fftpack,
-    'scipy.fft': scipy_fft,
-    'numpy.fft': numpy.fft
-}
+def get_module(mod_name):
+    module_map = {
+        'scipy.fftpack': scipy.fftpack,
+        'scipy.fft': scipy_fft,
+        'numpy.fft': numpy.fft
+    }
+
+    if not has_scipy_fft and mod_name == 'scipy.fft':
+        raise NotImplementedError
+
+    return module_map[mod_name]
 
 
 class Fft(Benchmark):
@@ -80,7 +90,7 @@ class Fft(Benchmark):
         else:
             self.x = random([size]).astype(double)
 
-        module = module_map[module]
+        module = get_module(module)
         self.fft = getattr(module, 'fft')
         self.ifft = getattr(module, 'ifft')
 
@@ -101,7 +111,7 @@ class RFft(Benchmark):
     def setup(self, size, module):
         self.x = random([size]).astype(double)
 
-        module = module_map[module]
+        module = get_module(module)
         self.rfft = getattr(module, 'rfft')
         self.irfft = getattr(module, 'irfft')
 
@@ -130,7 +140,7 @@ class Fftn(Benchmark):
         else:
             self.x = random(size).astype(cdouble)+random(size).astype(cdouble)*1j
 
-        self.fftn = getattr(module_map[module], 'fftn')
+        self.fftn = getattr(get_module(module), 'fftn')
 
     def time_fftn(self, size, cmplx, module):
         self.fftn(self.x)
@@ -157,6 +167,8 @@ class FftBackends(Benchmark):
         if backend == 'pocketfft':
             scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
+            if not has_pyfftw:
+                raise NotImplementedError
             scipy.fft.set_global_backend(PyfftwBackend)
         elif backend == 'numpy':
             from scipy.fft._debug_backends import NumPyBackend
@@ -196,6 +208,8 @@ class FftnBackends(Benchmark):
         if backend == 'pocketfft':
             scipy.fft.set_global_backend('scipy')
         elif backend == 'pyfftw':
+            if not has_pyfftw:
+                raise NotImplementedError
             scipy.fft.set_global_backend(PyfftwBackend)
         elif backend == 'numpy':
             from scipy.fft._debug_backends import NumPyBackend
