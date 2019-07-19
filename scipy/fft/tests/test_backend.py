@@ -22,8 +22,8 @@ np_funcs = (np.fft.fft, np.fft.fft2, np.fft.fftn,
             np.fft.irfft, np.fft.irfft2, np.fft.irfftn,
             np.fft.hfft, _pocketfft.hfft2, _pocketfft.hfftn,  # np has no hfftn
             np.fft.ihfft, _pocketfft.ihfft2, _pocketfft.ihfftn,
-            fftpack.dct, rt._idct, fftpack.dctn, rt._idctn,
-            fftpack.dst, rt._idst, fftpack.dstn, rt._idstn)
+            _pocketfft.dct, _pocketfft.idct, _pocketfft.dctn, _pocketfft.idctn,
+            _pocketfft.dst, _pocketfft.idst, _pocketfft.dstn, _pocketfft.idstn)
 
 funcs = (scipy.fft.fft, scipy.fft.fft2, scipy.fft.fftn,
          scipy.fft.ifft, scipy.fft.ifft2, scipy.fft.ifftn,
