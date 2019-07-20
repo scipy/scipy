@@ -1009,14 +1009,8 @@ class LinprogCommonTests(object):
                        "Solving system with option 'sym_pos'")
             sup.filter(RuntimeWarning, "invalid value encountered")
             sup.filter(LinAlgWarning)
-            if self.options.get("bland"):
-                o = {key: self.options[key] for key in self.options}
-                o['tol'] = 1e-8
-                res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
-                              method=self.method, options=o)
-            else:
-                res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
-                              method=self.method, options=self.options)
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=self.options)
         _assert_success(res, desired_fun=-106.63507541835018)
 
     def test_bug_6139(self):
@@ -1342,7 +1336,6 @@ class LinprogCommonTests(object):
                 1.07374182e+09]
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
             sup.filter(OptimizeWarning, "Solving system with option...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
