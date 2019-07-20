@@ -133,18 +133,28 @@ class RealTransforms1D(Benchmark):
     param_names = ['size', 'type', 'module']
 
     def setup(self, size, type, module):
-        self.x = random([size]).astype(double)
-
-        module = module_map[module]
+        module = get_module(module)
         self.dct = getattr(module, 'dct')
         self.dst = getattr(module, 'dst')
         self.type = {'I':1, 'II':2, 'III':3, 'IV':4}[type]
+
+        # The "logical" transform size should be smooth, which for dct/dst
+        # type 1 is offset by -1/+1 respectively
+
+        if self.type == 1:
+            size += 1
+
+        self.x = random([size]).astype(double)
+
+        if self.type == 1:
+            self.x_dst = self.x[:-2].copy()
 
     def time_dct(self, size, type, module):
         self.dct(self.x, self.type)
 
     def time_dst(self, size, type, module):
-        self.dst(self.x, self.type)
+        x = self.x if self.type != 1 else self.x_dst
+        self.dst(x, self.type)
 
 
 class Fftn(Benchmark):
@@ -178,18 +188,27 @@ class RealTransformsND(Benchmark):
     param_names = ['size', 'type', 'module']
 
     def setup(self, size, type, module):
-        size = list(map(int, size.split('x')))
-        self.x = random(size).astype(double)
-
-        self.dctn = getattr(module_map[module], 'dctn')
-        self.dstn = getattr(module_map[module], 'dstn')
+        self.dctn = getattr(get_module(module), 'dctn')
+        self.dstn = getattr(get_module(module), 'dstn')
         self.type = {'I':1, 'II':2, 'III':3, 'IV':4}[type]
+
+        # The "logical" transform size should be smooth, which for dct/dst
+        # type 1 is offset by -1/+1 respectively
+
+        size = list(map(int, size.split('x')))
+        if self.type == 1:
+            size = (s + 1 for s in size)
+
+        self.x = random(size).astype(double)
+        if self.type == 1:
+            self.x_dst = self.x[:-2,:-2].copy()
 
     def time_dctn(self, size, type, module):
         self.dctn(self.x, self.type)
 
     def time_dstn(self, size, type, module):
-        self.dstn(self.x, self.type)
+        x = self.x if self.type != 1 else self.x_dst
+        self.dstn(x, self.type)
 
 
 class FftBackends(Benchmark):
