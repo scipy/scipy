@@ -1310,10 +1310,6 @@ class LinprogCommonTests(object):
         Test for linprog docstring problem
         'disp'=True caused revised simplex failure
         """
-        c = np.zeros(1)
-        A_ub = np.array([[1]])
-        b_ub = np.array([-2])
-        bounds = (None, None)
         c = [-1, 4]
         A_ub = [[-3, 1], [1, 2]]
         b_ub = [6, 4]
@@ -1323,6 +1319,34 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_success(res, desired_x=[10, -3], desired_fun=-22)
+
+    def test_bug_10466(self):
+        """
+        Test that autoscale fixes poorly-scaled problem
+        """
+        c = [-8., -0., -8., -0., -8., -0., -0., -0., -0., -0., -0., -0., -0.]
+        A_eq = [[1., 1., 0., 0., 0., 0.,  0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 1., 1., 0., 0.,  0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 0., 1., 1.,  0., 0., 0., 0., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., -1., 0., 0., 0., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0.,  0., 1., 0., 0., 0., 0., 0.],
+                [1., 0., 0., 0., 0., 0.,  0., 0., 1., 0., 0., 0., 0.],
+                [1., 0., 0., 0., 0., 0.,  0., 0., 0., 1., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0.,  0., 0., 0., 0., 1., 0., 0.],
+                [0., 0., 1., 0., 1., 0.,  0., 0., 0., 0., 0., 1., 0.],
+                [0., 0., 1., 0., 1., 0.,  0., 0., 0., 0., 0., 0., 1.]]
+
+        b_eq = [3.14572800e+08, 4.19430400e+08, 5.24288000e+08,
+                1.00663296e+09, 1.07374182e+09, 1.07374182e+09,
+                1.07374182e+09, 1.07374182e+09, 1.07374182e+09,
+                1.07374182e+09]
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            sup.filter(OptimizeWarning, "Solving system with option...")
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=self.options)
+        assert_allclose(res.fun, -8589934560)
 
 #########################
 # Method-specific Tests #
