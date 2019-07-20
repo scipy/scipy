@@ -5,11 +5,11 @@ Method agnostic utility functions for linear progamming
 import numpy as np
 import scipy.sparse as sps
 from warnings import warn
+import warnings
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
     )
-
 
 def _check_sparse_inputs(options, A_ub, A_eq):
     """
@@ -1086,6 +1086,71 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     return A, b, c, c0, x0
 
 
+def _autoscale(A, b, c, x0):
+    """
+    Scales the problem according to ___
+    """
+    m, n = A.shape
+
+#    with warnings.catch_warnings():
+#    warnings.simplefilter("ignore")
+    C = 1
+    R = 1
+
+    if A.size > 0:
+        if sps.issparse(A):
+            R = np.max(np.abs(A), axis=1).toarray().flatten()
+            R[R == 0] = 1
+            b = b/R
+            R = sps.diags(1/R)
+            A = R*A
+
+            C = np.max(np.abs(A), axis=0).toarray().flatten()
+            C[C == 0] = 1
+            c = c/C
+            C = sps.diags(1/C)
+            A = A*C
+
+        else:
+            R = np.max(np.abs(A), axis=1)  # problematic with sparse arrays
+            R[R == 0] = 1  # no good when array is sparse
+            R = 1/R
+            A = A*R.reshape(m, 1)
+            b = b*R
+
+            C = np.max(np.abs(A), axis=0)
+            C[C == 0] = 1
+            C = 1/C
+            A = A*C
+            c = c*C
+
+    b_scale = 1
+    if b.size > 0:
+        b_scale = np.max(np.abs(b))
+    if b_scale == 0:
+        b_scale = 1.
+    b = b/b_scale
+
+    if x0 is not None:
+        x0 = x0/b_scale*(1/C)
+    return A, b, c, x0, R, C, b_scale
+
+
+def _unscale(x, C, b_scale):
+    """
+    Scales the problem according to ___
+    """
+
+    try:
+        n = len(C)
+        # fails if sparse or scalar; that's OK.
+        # this is only needed for original simplex (never sparse)
+    except TypeError as e:
+        n = len(x)
+
+    return x[:n]*b_scale*C
+
+
 def _display_summary(message, status, fun, iteration):
     """
     Print the termination summary of the linear program
@@ -1179,7 +1244,8 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # we need these modified values to undo the variable substitutions
     # in retrospect, perhaps this could have been simplified if the "undo"
     # variable also contained information for undoing variable substitutions
-    c, A_ub, b_ub, A_eq, b_eq, bounds, undo = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, undo, R, C, b_scale = postsolve_args
+    x = _unscale(x, C, b_scale)
 
     n_x = len(c)
 

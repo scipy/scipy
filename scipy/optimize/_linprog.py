@@ -25,7 +25,7 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
-    _parse_linprog, _presolve, _get_Abc, _postprocess
+    _parse_linprog, _presolve, _get_Abc, _postprocess, _autoscale, _unscale
     )
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -516,11 +516,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, x0, undo, complete, status,
             message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol)
 
-    postsolve_args = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
+    postsolve_args = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo, 1, 1, 1)
 
     if not complete:
         A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
                                    b_eq, bounds, x0, undo)
+        if solver_options.pop('autoscale', True):
+            A, b, c, x0, R, C, b_scale = _autoscale(A, b, c, x0)
+            postsolve_args = postsolve_args[:-3] + (R, C, b_scale)
 
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
