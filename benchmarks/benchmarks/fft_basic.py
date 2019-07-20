@@ -124,6 +124,29 @@ class RFft(Benchmark):
         self.irfft(self.y)
 
 
+class RealTransforms1D(Benchmark):
+    params = [
+        [75, 100, 135, 256, 313, 512, 675, 1024, 2025, 2048],
+        ['I', 'II', 'III', 'IV'],
+        ['scipy.fftpack', 'scipy.fft']
+    ]
+    param_names = ['size', 'type', 'module']
+
+    def setup(self, size, type, module):
+        self.x = random([size]).astype(double)
+
+        module = module_map[module]
+        self.dct = getattr(module, 'dct')
+        self.dst = getattr(module, 'dst')
+        self.type = {'I':1, 'II':2, 'III':3, 'IV':4}[type]
+
+    def time_dct(self, size, type, module):
+        self.dct(self.x, self.type)
+
+    def time_dst(self, size, type, module):
+        self.dst(self.x, self.type)
+
+
 class Fftn(Benchmark):
     params = [
         ["100x100", "313x100", "1000x100", "256x256", "512x512"],
@@ -144,6 +167,29 @@ class Fftn(Benchmark):
 
     def time_fftn(self, size, cmplx, module):
         self.fftn(self.x)
+
+
+class RealTransformsND(Benchmark):
+    params = [
+        ['75x75', '100x100', '135x135', '313x363', '1000x100', '256x256'],
+        ['I', 'II', 'III', 'IV'],
+        ['scipy.fftpack', 'scipy.fft']
+    ]
+    param_names = ['size', 'type', 'module']
+
+    def setup(self, size, type, module):
+        size = list(map(int, size.split('x')))
+        self.x = random(size).astype(double)
+
+        self.dctn = getattr(module_map[module], 'dctn')
+        self.dstn = getattr(module_map[module], 'dstn')
+        self.type = {'I':1, 'II':2, 'III':3, 'IV':4}[type]
+
+    def time_dctn(self, size, type, module):
+        self.dctn(self.x, self.type)
+
+    def time_dstn(self, size, type, module):
+        self.dstn(self.x, self.type)
 
 
 class FftBackends(Benchmark):
