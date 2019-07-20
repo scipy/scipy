@@ -1029,9 +1029,8 @@ class LinprogCommonTests(object):
         b_ub = -np.array([10000000.])
         bounds = (None, None)
 
-        o = {key: self.options[key] for key in self.options}
-#        if "autoscale" in self.options and self.options["autoscale"]:
-        o["tol"] = 1e-10  # autoscale requires different tolerance
+        o = {"tol": 1e-10}
+        o.update(self.options)
 
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=o)
@@ -1340,6 +1339,7 @@ class LinprogCommonTests(object):
             if has_umfpack:
                 sup.filter(UmfpackWarning)
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
+            sup.filter(RuntimeWarning, "divide by zero encountered...")
             sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
