@@ -1310,7 +1310,7 @@ class LinprogCommonTests(object):
         o = {"disp": True}
         o.update(self.options)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
-                      method=self.method, options=o)
+                      method=self.method, options=self.options)
         _assert_success(res, desired_x=[10, -3], desired_fun=-22)
 
     def test_bug_10466(self):
@@ -1340,6 +1340,7 @@ class LinprogCommonTests(object):
                 sup.filter(UmfpackWarning)
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             sup.filter(RuntimeWarning, "divide by zero encountered...")
+            sup.filter(RuntimeWarning, "overflow encountered...")
             sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
