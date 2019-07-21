@@ -10,8 +10,33 @@ compared to 1.3.0.
 Authors
 =======
 
+* Peter Bell
+* Carlos Ramos Carreño +
+* Ralf Gommers
+* David Hagen
+* Antony Lee
+* Ayappan P
+* Tyler Reddy
+* Pauli Virtanen
+
+A total of 8 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
 Issues closed for 1.3.1
 -----------------------
 
+* `#9901 <https://github.com/scipy/scipy/issues/9901>`__: lsoda fails to detect stiff problem when called from solve_ivp
+* `#10206 <https://github.com/scipy/scipy/issues/10206>`__: sparse matrices indexing with scipy 1.3
+* `#10232 <https://github.com/scipy/scipy/issues/10232>`__: Exception in loadarff with quoted nominal attributes in scipy...
+* `#10398 <https://github.com/scipy/scipy/issues/10398>`__: Scipy 1.3.0 build broken in AIX
+
 Pull requests for 1.3.1
 -----------------------
+
+* `#10196 <https://github.com/scipy/scipy/pull/10196>`__: Fewer checks on xdata for curve_fit.
+* `#10207 <https://github.com/scipy/scipy/pull/10207>`__: BUG: Compressed matrix indexing should return a scalar
+* `#10233 <https://github.com/scipy/scipy/pull/10233>`__: Fix for ARFF reader regression (#10232)
+* `#10309 <https://github.com/scipy/scipy/pull/10309>`__: BUG: Pass jac=None directly to lsoda
+* `#10379 <https://github.com/scipy/scipy/pull/10379>`__: BUG: sparse: set writeability to be forward-compatible with numpy>=1.17
+* `#10431 <https://github.com/scipy/scipy/pull/10431>`__: Update numpy version for AIX
