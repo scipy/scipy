@@ -58,12 +58,12 @@ matrix:
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
     # so we must install python3.5-dbg using apt.
-    - python: 3.5
-      dist: xenial # Requirex Xenial(ubunu 18.04) as python-dbg uses py3.5
+    - language: generic
+      dist: xenial  # Requires Xenial(ubunu 18.04) as python-dbg uses py3.5
       env:
+        - USE_DEBUG=python3.5-dbg
         - TESTMODE=fast
         - NUMPYSPEC="--upgrade numpy"
-        - USE_DEBUG=1
       addons:
         apt:
           packages:
@@ -166,14 +166,13 @@ before_install:
   - mkdir builds
   - cd builds
   - |
-    if [ "${USE_DEBUG}" == "1" ];
-    then
+    if [ -n "${USE_DEBUG}" ]; then
         # Work in our own virtualenv to isolate from travis-ci packages.
-        travis_retry pip install -U virtualenv
-        virtualenv --python=python3-dbg venv
+        virtualenv --python=$USE_DEBUG venv
         source venv/bin/activate
     fi
-  - python -V
+  - python -V -V
+  - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
   - travis_retry pip install --upgrade pip setuptools wheel
   - travis_retry pip install cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
