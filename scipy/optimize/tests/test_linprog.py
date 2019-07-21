@@ -1341,6 +1341,7 @@ class LinprogCommonTests(object):
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             sup.filter(RuntimeWarning, "divide by zero encountered...")
             sup.filter(RuntimeWarning, "overflow encountered...")
+            sup.filter(RuntimeWarning, "invalid value encountered...")
             sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
