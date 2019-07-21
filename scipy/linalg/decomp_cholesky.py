@@ -13,7 +13,7 @@ __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-              check_finite=True):
+              check_finite=True, potrf = None):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a) if check_finite else asarray(a)
@@ -33,7 +33,8 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         return a1.copy(), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    potrf, = get_lapack_funcs(('potrf',), (a1,))
+    if potrf is None:
+        potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
         raise LinAlgError("%d-th leading minor of the array is not positive "
@@ -44,7 +45,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     return c, lower
 
 
-def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
+def cholesky(a, lower=False, overwrite_a=False, check_finite=True, potrf = None):
     """
     Compute the Cholesky decomposition of a matrix.
 
@@ -88,8 +89,9 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     """
     c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                         check_finite=check_finite)
+                         check_finite=check_finite, potrf=potrf)
     return c
+
 
 
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
