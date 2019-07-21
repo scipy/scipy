@@ -57,8 +57,8 @@ matrix:
         - NUMPYSPEC="numpy==1.15.4"
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
-    # so we must install python3-dbg using apt.
-    - language: generic
+    # so we must install python3.5-dbg using apt.
+    - python: 3.5
       dist: xenial # Requirex Xenial(ubunu 18.04) as python-dbg uses py3.5
       env:
         - TESTMODE=fast
@@ -68,8 +68,8 @@ matrix:
         apt:
           packages:
             - *common_packages
-            - python3-dbg
-            - python3-dev
+            - python3.5-dbg
+            - python3.5-dev
     - python: 3.6
       env:
         - TESTMODE=fast
