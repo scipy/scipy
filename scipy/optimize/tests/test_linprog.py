@@ -1317,7 +1317,7 @@ class LinprogCommonTests(object):
         o = {"disp": True}
         o.update(self.options)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
-                      method=self.method, options=self.options)
+                      method=self.method, options=o)
         _assert_success(res, desired_x=[10, -3], desired_fun=-22)
 
 #########################
