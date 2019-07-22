@@ -1086,6 +1086,12 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     return A, b, c, c0, x0
 
 
+def _round_to_power_of_two(x):
+    """
+    Round elements of the array to the nearest power of two.
+    """
+    return 2**np.round(np.log2(x))
+
 def _autoscale(A, b, c, x0):
     """
     Scales the problem according to ___
@@ -1101,12 +1107,14 @@ def _autoscale(A, b, c, x0):
         if sps.issparse(A):
             R = np.max(np.abs(A), axis=1).toarray().flatten()
             R[R == 0] = 1
+            R = _round_to_power_of_two(R)
             b = b/R
             R = sps.diags(1/R)
             A = R*A
 
             C = np.max(np.abs(A), axis=0).toarray().flatten()
             C[C == 0] = 1
+            C = _round_to_power_of_two(C)
             c = c/C
             C = sps.diags(1/C)
             A = A*C
@@ -1114,13 +1122,13 @@ def _autoscale(A, b, c, x0):
         else:
             R = np.max(np.abs(A), axis=1)  # problematic with sparse arrays
             R[R == 0] = 1  # no good when array is sparse
-            R = 1/R
+            R = 1/_round_to_power_of_two(R)
             A = A*R.reshape(m, 1)
             b = b*R
 
             C = np.max(np.abs(A), axis=0)
             C[C == 0] = 1
-            C = 1/C
+            C = 1/_round_to_power_of_two(C)
             A = A*C
             c = c*C
 

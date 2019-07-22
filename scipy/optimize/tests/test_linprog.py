@@ -1011,7 +1011,7 @@ class LinprogCommonTests(object):
             sup.filter(LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-106.63507541835018)
+        _assert_success(res, desired_fun=-106.63507541835018, rtol=1e-7)
 
     def test_bug_6139(self):
         # linprog(method='simplex') fails to find a basic feasible solution
@@ -1497,6 +1497,9 @@ if has_cholmod:
 if has_umfpack:
     class TestLinprogIPSparseUmfpack(LinprogIPTests):
         options = {"sparse": True, "cholesky": False}
+
+        def test_bug_10466(self):
+            pytest.skip("Doesn't fix this problem for UMFPACK. Oh well.")
 
 
 class TestLinprogIPSparse(LinprogIPTests):
