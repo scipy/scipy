@@ -311,13 +311,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         return tcku
 
 
-_curfit_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], intc)}
-
-
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
            full_output=0, per=0, quiet=1, cache=None):
-    # or cache=None? Also, _curfit_cache is used elsewhere
     """
     Find the B-spline representation of 1-D curve.
 
@@ -375,6 +370,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         Non-zero to suppress messages.
         This parameter is deprecated; use standard Python warning filters
         instead.
+    cache : dict, optional
+        Stores the results of a previous call of splrep for the same data, to
+        be used when task==1 after a previous call with task==0 or task==-1.
 
     Returns
     -------
@@ -441,12 +439,11 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     >>> plt.show()
 
     """
-    # cache appears to be optional mostly
-    # no-op on the cache if task doesn't require
     if task == 1 and cache is None:
         raise ValueError("Must call splrep with cache argument for task=1")
     if task <= 0 and cache is None:
-        cache = {}
+        cache = {'t': array([], float), 'wrk': array([], float),
+                 'iwrk': array([], intc)}
 
     x, y = map(atleast_1d, [x, y])
     m = len(x)
@@ -806,7 +803,7 @@ _surfit_cache = {'tx': array([], float), 'ty': array([], float),
 
 def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
              kx=3, ky=3, task=0, s=None, eps=1e-16, tx=None, ty=None,
-             full_output=0, nxest=None, nyest=None, quiet=1):
+             full_output=0, nxest=None, nyest=None, quiet=1, cache=None):
     """
     Find a bivariate B-spline representation of a surface.
 
@@ -857,6 +854,9 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         Non-zero to suppress printing of messages.
         This parameter is deprecated; use standard Python warning filters
         instead.
+    cache : dict, optional
+        Stores the results of a previous call of bisplrep for the same data, to
+        be used when task==1 after a previous call with task==0 or task==-1.
 
     Returns
     -------
@@ -893,6 +893,11 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
        Numerical Analysis, Oxford University Press, 1993.
 
     """
+    if task == 1 and cache is None:
+        raise ValueError("Must call splrep with cache argument for task=1")
+    if task <= 0 and cache is None:
+        cache = {'t': array([], float), 'wrk': array([], float),
+                 'iwrk': array([], intc)}
     x, y, z = map(ravel, [x, y, z])  # ensure 1-d arrays.
     m = len(x)
     if not (m == len(y) == len(z)):
@@ -963,9 +968,9 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     tx, ty, c, o = _fitpack._surfit(x, y, z, w, xb, xe, yb, ye, kx, ky,
                                     task, s, eps, tx, ty, nxest, nyest,
                                     wrk, lwrk1, lwrk2)
-    _curfit_cache['tx'] = tx
-    _curfit_cache['ty'] = ty
-    _curfit_cache['wrk'] = o['wrk']
+    cache['tx'] = tx
+    cache['ty'] = ty
+    cache['wrk'] = o['wrk']
     ier, fp = o['ier'], o['fp']
     tck = [tx, ty, c, kx, ky]
 
