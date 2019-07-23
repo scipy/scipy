@@ -306,7 +306,11 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
-# Distance transforms used for MGC and Dcorr
+##============================================##
+## Distance transforms used for MGC and Dcorr ##
+##============================================##
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
     r"""
     Equivalent to scipy.stats.rankdata(x, "dense"), but faster!
@@ -325,6 +329,8 @@ cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
     return v + 1
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
     r"""
     Sorts the entries within each column in ascending order
@@ -347,6 +353,8 @@ cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
                       range(distx.shape[0])])
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
                               str global_corr="mgc", is_ranked=True):
     r"""
@@ -382,11 +390,20 @@ cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
     # 'mgc' distance transform (col-wise mean) - default
     cdef np.ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)),
                                             n).reshape(-1, n).T
+
+    # center the distance matrix
     cdef np.ndarray cent_distx = distx - exp_distx
+
+    # the diagonal entries are excluded for unbiased and mgc centering, but not
+    # excluded for biased and mantel(simple) centering.
+    if global_corr != "mantel" and global_corr != "biased":
+        np.fill_diagonal(cent_distx, 0)
 
     return cent_distx, rank_distx
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
                                  np.ndarray[np.float_t, ndim=2] disty,
                                  str global_corr="mgc", is_ranked=True):
@@ -433,7 +450,12 @@ cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
     return transform_dist
 
 
-# MGC specific functions
+##========================##
+## MGC specific functions ##
+##========================##
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
                         np.ndarray[np.float_t, ndim=2] disty,
                         np.ndarray[np.int_t, ndim=2] rank_distx,
@@ -493,12 +515,14 @@ cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
                                  - cov_xy[k, l])
 
     # centering the covariances
-    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T)
-                        / n**2)  # caveat when porting from R (reshape)
+    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) /
+                        n**2)  # caveat when porting from R (reshape)
 
     return cov_xy
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
                           np.ndarray[np.float_t, ndim=2] disty,
                           global_corr="mgc"):
