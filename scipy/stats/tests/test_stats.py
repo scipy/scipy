@@ -13,7 +13,7 @@ import sys
 import warnings
 from collections import namedtuple
 
-from numpy.testing import (assert_, assert_equal,
+from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns)
@@ -5079,3 +5079,153 @@ class TestEppsSingleton(object):
         res = stats.epps_singleton_2samp(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+
+class TestMGCErrorWarnings(object):
+    """ Tests errors and warnings derived from MGC.
+    """
+    def test_error_exists(self):
+        # raises error when inputs do not exist
+        x = np.arange(20)
+        y = None
+        stat, pvalue, mgc_dict = stats.mgc(x, y)
+        assert_equal(stat, np.nan)
+        assert_equal(pvalue, np.nan)
+        assert_equal(mgc_dict, np.nan)
+
+        x = None
+        y = np.arange(20)
+        stat, pvalue, mgc_dict = stats.mgc(x, y)
+        assert_equal(stat, np.nan)
+        assert_equal(pvalue, np.nan)
+        assert_equal(mgc_dict, np.nan)
+
+    def test_error_shape(self):
+        # raises error if number of samples different (n)
+        x = np.arange(20)
+        y = np.arange(40)
+        assert_raises(ValueError, stats.mgc, x, y)
+
+    def test_error_lowsamples(self):
+        # raises error if samples are low (< 3)
+        x = np.arange(3)
+        y = np.arange(3)
+        assert_raises(ValueError, stats.mgc, x, y)
+
+    def test_error_nans(self):
+        # raises error if inputs contain NaNs
+        x = np.arange(20, dtype=float)
+        x[0] = np.nan
+        assert_raises(ValueError, stats.mgc, x, x)
+
+        y = np.arange(20)
+        assert_raises(ValueError, stats.mgc, x, y)
+
+    def test_error_wrongdisttype(self):
+        # raises error if compute_distance is not a function
+        x = np.arange(20)
+        compute_distance = 0
+        assert_raises(ValueError, stats.mgc, x, x,
+                      compute_distance=compute_distance)
+
+    def test_errorwarn_reps(self):
+        # raises error if reps is negative
+        x = np.arange(20)
+        reps = -1
+        assert_raises(ValueError, stats.mgc, x, x, reps=reps)
+
+        # raises error if reps is not an integer
+        reps = '1'
+        assert_raises(ValueError, stats.mgc, x, x, reps=reps)
+
+        # raises error if reps is None type
+        reps = None
+        assert_raises(ValueError, stats.mgc, x, x, reps=reps)
+
+        # raises warning when reps is less than 1000
+        reps = 100
+        assert_warns(RuntimeWarning, stats.mgc, x, x, reps=reps)
+
+
+class TestMGCStat(object):
+    @dec.slow
+    def test_mgc_oned_linear(self):
+        # mgcpy.benchmarks.simulations - linear_sim(50, 1, noise=0.5)
+        reps = 1000
+        x = np.array([0.09762701, 0.43037873, 0.20552675, 0.08976637,
+                      -0.1526904, 0.29178823, -0.12482558, 0.783546,
+                      0.92732552, -0.23311696, 0.58345008, 0.05778984,
+                      0.13608912, 0.85119328, -0.85792788, -0.8257414,
+                      -0.95956321, 0.66523969, 0.5563135, 0.7400243,
+                      0.95723668, 0.59831713, -0.07704128, 0.56105835,
+                      -0.76345115, 0.27984204, -0.71329343, 0.88933783,
+                      0.04369664, -0.17067612, -0.47088878, 0.54846738,
+                      -0.08769934, 0.1368679, -0.9624204, 0.23527099,
+                      0.22419145, 0.23386799, 0.88749616, 0.3636406,
+                      -0.2809842, -0.12593609, 0.39526239, -0.87954906,
+                      0.33353343, 0.34127574, -0.57923488, -0.7421474,
+                      -0.3691433, -0.27257846])
+        y = np.array([-0.75550809, 1.40576643, -0.04929934, -0.12927078,
+                      -0.77908808, 0.6805334, -0.9317745, 0.67717586,
+                      0.47959224, -0.03966571, 0.32804751, -0.53252625,
+                      0.12199801, 1.06535921, -0.82466927, -0.67450545,
+                      -1.27672425, 0.48386911, 0.22008328, 0.56024772,
+                      0.55066354, -0.26482417, 0.0116718, 0.36016788,
+                      -1.57855032, 0.51123317, -1.16694261, 0.91531053,
+                      0.40824192, -0.10618466, 0.09881157, -0.06894553,
+                      0.11347149, -0.20553715, -1.39781897, -0.05415384,
+                      0.06841518, 0.26195066, 0.30492124, 0.81405384,
+                      -0.04815298, -0.89405794, 1.13938849, 0.06839553,
+                      0.92292322, 0.25131332, -1.11461119, -0.21492154,
+                      -0.57073177, 0.33864408])
+
+        # verify stat is 1 and p-value is 1/reps when calculating x and x
+        stat, pvalue, _ = stats.mgc(x, x, reps=reps)
+        assert_approx_equal(stat, 1, significant=2)
+        assert_approx_equal(pvalue, 1/reps, significant=2)
+
+        # verify stat and pvalue against mgcpy implementation
+        stat, pvalue, _ = stats.mgc(x, y, reps=reps)
+        assert_approx_equal(stat, 0.498, significant=2)
+        assert_approx_equal(pvalue, 1/reps, significant=2)
+
+    @dec.slow
+    def test_mgc_oned_nonlinear(self):
+        # mgcpy.benchmarks.simulations - spiral_sim(50, 1, noise=0.5)
+        reps = 1000
+        x = np.array([-0.915363905, 2.134736725, 1.591825890, -0.947720469,
+                      -0.629203447, 0.157367412, -3.009624669, 0.342083914,
+                      0.126834696, 2.009228424, 0.137638139, -4.168139174,
+                      1.854371040, 1.696600346, -2.454855196, 1.770009913,
+                      -0.080973938, 1.985722698, 0.671279564, 1.521294941,
+                      -0.905490998, -1.043388333, 0.006493876, 4.007326886,
+                      1.755316427, -0.905436337, 0.497332481, 0.819071238,
+                      3.561837453, 3.713293152, 0.487967353, 1.233385955,
+                      -2.985033861, 0.146394829, -2.231330093, -0.138580101,
+                      -2.390685794, -2.798259311, 0.647199716, -0.626705094,
+                      -0.254107788, 2.017131291, -2.871050739, -0.369874190,
+                      0.198565130, 2.021387946, -2.877629992, -1.855015175,
+                      -0.201316471, 3.886001079])
+        y = np.array([0.12441532, -2.63498763, 2.18349959, -0.58779997,
+                      -1.58602656, 0.35894756, -0.73954299, 1.76585591,
+                      -0.35002851, 0.48618590, 0.95628300, 1.99038991,
+                      1.92277498, 1.34861841,  1.42509605,  0.65982368,
+                      -1.56731299, -0.17000082, 1.81187432, -0.73726241,
+                      0.44491111, 0.19177688, 2.28190181, 0.45509215,
+                      -0.16777206, 0.06918430, -1.49570722, 2.23337087,
+                      -1.01335025, -0.60394315, -0.56653502, -3.12571299,
+                      -1.56146565, 0.52487563, 2.35561329, -1.79300788,
+                      -2.40650123, 0.53680541, 2.04171052, 0.09821259,
+                      -0.42712911, 0.52453433, -1.44426759, -2.22697039,
+                      1.26906442, -0.13549404, 0.36776719, -2.44674330,
+                      1.34647206, 2.14525574])
+
+        # verify stat is 1 and p-value is 1/reps when calculating x and x
+        stat, pvalue, _ = stats.mgc(x, x)
+        assert_approx_equal(stat, 1, significant=2)
+        assert_approx_equal(pvalue, 1/reps, significant=2)
+
+        # verify stat and pvalue against mgcpy implementation
+        stat, pvalue, _ = stats.mgc(x, y)
+        assert_approx_equal(stat, -0.018, significant=2)
+        assert_approx_equal(pvalue, 0.721, significant=2)
