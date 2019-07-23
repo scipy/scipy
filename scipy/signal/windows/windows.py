@@ -6,7 +6,7 @@ import operator
 import warnings
 
 import numpy as np
-from scipy import fftpack, linalg, special
+from scipy import linalg, special, fft as sp_fft
 from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
@@ -87,7 +87,7 @@ def general_cosine(M, a, sym=True):
     the sidelobe level in red:
 
     >>> from scipy.signal.windows import general_cosine
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = general_cosine(1000, HFT90D, sym=False)
@@ -145,7 +145,7 @@ def boxcar(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.boxcar(51)
@@ -202,7 +202,7 @@ def triang(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.triang(51)
@@ -267,7 +267,7 @@ def parzen(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.parzen(51)
@@ -326,7 +326,7 @@ def bohman(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.bohman(51)
@@ -417,7 +417,7 @@ def blackman(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.blackman(51)
@@ -478,7 +478,7 @@ def nuttall(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.nuttall(51)
@@ -525,7 +525,7 @@ def blackmanharris(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.blackmanharris(51)
@@ -586,7 +586,7 @@ def flattop(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.flattop(51)
@@ -676,7 +676,7 @@ def bartlett(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.bartlett(51)
@@ -765,7 +765,7 @@ def hann(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.hann(51)
@@ -832,7 +832,7 @@ def tukey(M, alpha=0.5, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.tukey(51)
@@ -902,7 +902,7 @@ def barthann(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.barthann(51)
@@ -982,7 +982,7 @@ def general_hamming(M, alpha, sym=True):
     plot these different windows.
 
     >>> from scipy.signal.windows import general_hamming
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> fig1, spatial_plot = plt.subplots()
@@ -1074,7 +1074,7 @@ def hamming(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.hamming(51)
@@ -1183,7 +1183,7 @@ def kaiser(M, beta, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.kaiser(51, beta=14)
@@ -1248,7 +1248,7 @@ def gaussian(M, std, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.gaussian(51, std=7)
@@ -1318,7 +1318,7 @@ def general_gaussian(M, p, sig, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.general_gaussian(51, p=1.5, sig=7)
@@ -1415,7 +1415,7 @@ def chebwin(M, at, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.chebwin(51, at=100)
@@ -1462,13 +1462,13 @@ def chebwin(M, at, sym=True):
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
-        w = np.real(fftpack.fft(p))
+        w = np.real(sp_fft.fft(p))
         n = (M + 1) // 2
         w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
-        w = np.real(fftpack.fft(p))
+        w = np.real(sp_fft.fft(p))
         n = M // 2 + 1
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
     w = w / max(w)
@@ -1522,7 +1522,7 @@ def slepian(M, width, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.slepian(51, width=0.3)
@@ -1592,7 +1592,7 @@ def cosine(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = signal.cosine(51)
@@ -1665,7 +1665,7 @@ def exponential(M, center=None, tau=1., sym=True):
     Plot the symmetric window and its frequency response:
 
     >>> from scipy import signal
-    >>> from scipy.fftpack import fft, fftshift
+    >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> M = 51
@@ -1957,7 +1957,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
             if norm == 'approximate':
                 correction = M**2 / float(M**2 + NW)
             else:
-                s = np.fft.rfft(windows[0])
+                s = sp_fft.rfft(windows[0])
                 shift = -(1 - 1./M) * np.arange(1, M//2 + 1)
                 s[1:] *= 2 * np.exp(-1j * np.pi * shift)
                 correction = M / s.real.sum()
@@ -1973,9 +1973,9 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
 def _fftautocorr(x):
     """Compute the autocorrelation of a real array and crop the result."""
     N = x.shape[-1]
-    use_N = fftpack.next_fast_len(2*N-1)
-    x_fft = np.fft.rfft(x, use_N, axis=-1)
-    cxy = np.fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
+    use_N = sp_fft.next_fast_len(2*N-1)
+    x_fft = sp_fft.rfft(x, use_N, axis=-1)
+    cxy = sp_fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
     # Or equivalently (but in most cases slower):
     # cxy = np.array([np.convolve(xx, yy[::-1], mode='full')
     #                 for xx, yy in zip(x, x)])[:, N-1:2*N-1]
@@ -2033,7 +2033,7 @@ def get_window(window, Nx, fftbins=True):
     fftbins : bool, optional
         If True (default), create a "periodic" window, ready to use with
         `ifftshift` and be multiplied by the result of an FFT (see also
-        `fftpack.fftfreq`).
+        :func:`~scipy.fft.fftfreq`).
         If False, create a "symmetric" window, for use in filter design.
 
     Returns

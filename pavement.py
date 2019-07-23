@@ -684,8 +684,9 @@ SHA256
 """)
         ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
 
-    # Sign release
-    cmd = ['gpg', '--clearsign', '--armor']
+    # Sign release; on some platforms gpg2 may actually
+    # be named gpg
+    cmd = ['gpg2', '--clearsign', '--armor']
     if hasattr(options, 'gpg_key'):
         cmd += ['--default-key', options.gpg_key]
     cmd += ['--output', str(target), str(tmp_target)]

@@ -1,4 +1,5 @@
 import scipy.fftpack as _fftpack
+from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted  # noqa: F401
 
 
 def next_fast_len(target, dtype=None):
@@ -9,8 +10,8 @@ def next_fast_len(target, dtype=None):
     input length. Thus, the transforms are fastest when using composites of the
     prime factors handled by the fft implementation. If there are efficient
     functions for all radices <= `n` then the result is the smallest number `x`
-    >= ``target`` with only prime factors < `n`. (These are also known as
-    `n`-smooth numbers, regular numbers, or Hamming numbers.)
+    >= ``target`` with only prime factors < `n`. (Also known as `n`-smooth
+    numbers)
 
     Parameters
     ----------

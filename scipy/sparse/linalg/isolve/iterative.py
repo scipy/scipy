@@ -416,7 +416,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
 
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None):
+          restrt=None, atol=None, callback_type=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -469,7 +469,15 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         error tolerance.  By default, no preconditioner is used.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(rk), where rk is the current residual vector.
+        as `callback(args)`, where `args` are selected by `callback_type`.
+    callback_type : {'x', 'pr_norm', 'legacy'}, optional
+        Callback function argument requested:
+          - ``x``: current iterate (ndarray), called on every restart
+          - ``pr_norm``: relative (preconditioned) residual norm (float),
+            called on every inner iteration
+          - ``legacy`` (default): same as ``pr_norm``, but also changes the
+            meaning of 'maxiter' to count inner iterations instead of restart
+            cycles.
     restrt : int, optional
         DEPRECATED - use `restart` instead.
 
@@ -508,6 +516,25 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     elif restart is not None:
         raise ValueError("Cannot specify both restart and restrt keywords. "
                          "Preferably use 'restart' only.")
+
+    if callback is not None and callback_type is None:
+        # Warn about 'callback_type' semantic changes.
+        # Probably should be removed only in far future, Scipy 2.0 or so.
+        warnings.warn("scipy.sparse.linalg.gmres called without specifying `callback_type`. "
+                      "The default value will be changed in a future release. "
+                      "For compatibility, specify a value for `callback_type` explicitly, e.g., "
+                      "``{name}(..., callback_type='pr_norm')``, or to retain the old behavior "
+                      "``{name}(..., callback_type='legacy')``",
+                      category=DeprecationWarning, stacklevel=3)
+
+    if callback_type is None:
+        callback_type = 'legacy'
+
+    if callback_type not in ('x', 'pr_norm', 'legacy'):
+        raise ValueError("Unknown callback_type: {!r}".format(callback_type))
+
+    if callback is None:
+        callback_type = 'none'
 
     A, M, x, b,postprocess = make_system(A, M, x0, b)
 
@@ -554,14 +581,19 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     resid_ready = False
     iter_num = 1
     while True:
+        olditer = iter_
         x, iter_, presid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, restrt, work, work2, iter_, presid, info, ndx1, ndx2, ijob, ptol)
+        if callback_type == 'x' and iter_ != olditer:
+            callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):  # gmres success, update last residual
-            if resid_ready and callback is not None:
-                callback(presid / bnrm2)
-                resid_ready = False
+            if callback_type in ('pr_norm', 'legacy'):
+                if resid_ready:
+                    callback(presid / bnrm2)
+            elif callback_type == 'x':
+                callback(x)
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -575,8 +607,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         elif (ijob == 3):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
-            if resid_ready and callback is not None:
-                callback(presid / bnrm2)
+            if resid_ready:
+                if callback_type in ('pr_norm', 'legacy'):
+                    callback(presid / bnrm2)
                 resid_ready = False
                 iter_num = iter_num+1
 
@@ -601,9 +634,11 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         old_ijob = ijob
         ijob = 2
 
-        if iter_num > maxiter:
-            info = maxiter
-            break
+        if callback_type == 'legacy':
+            # Legacy behavior
+            if iter_num > maxiter:
+                info = maxiter
+                break
 
     if info >= 0 and not (resid <= atol):
         # info isn't set appropriately otherwise

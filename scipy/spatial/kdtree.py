@@ -38,6 +38,15 @@ def minkowski_distance_p(x, y, p=2):
     """
     x = np.asarray(x)
     y = np.asarray(y)
+
+    # Find smallest common datatype with float64 (return type of this function) - addresses #10262.
+    # Don't just cast to float64 for complex input case.
+    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), 'float64')
+
+    # Make sure x and y are numpy arrays of correct datatype.
+    x = x.astype(common_datatype)
+    y = y.astype(common_datatype)
+
     if p == np.inf:
         return np.amax(np.abs(y-x), axis=-1)
     elif p == 1:

@@ -159,7 +159,7 @@ c     Initialization block.
       if (task(1:5) .eq. 'START') then
 
 c        Check the input arguments for errors.
-
+         
          if (stp .lt. stpmin) task = 'ERROR: STP .LT. STPMIN'
          if (stp .gt. stpmax) task = 'ERROR: STP .GT. STPMAX'
          if (g .ge. zero) task = 'ERROR: INITIAL G .GE. ZERO'

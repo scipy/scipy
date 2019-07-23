@@ -633,13 +633,12 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     a = asarray(a)
-    a = a.astype(float).ravel()
+    a = a.astype(float)
     if limits is None:
-        n = len(a)
-        return a.var() * n / (n - 1.)
+        return a.var(ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
-    return np.ma.var(am, ddof=ddof, axis=axis)
-
+    amnan = am.filled(fill_value=np.nan)
+    return np.nanvar(amnan, ddof=ddof, axis=axis)
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
@@ -2465,7 +2464,12 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
                 'is defined for strictly positive values only.')
-        elif np.less_equal(a, 0).any():
+        a_nan = np.isnan(a)
+        a_nan_any = a_nan.any()
+        # exclude NaN's from negativity check, but
+        # avoid expensive masking for arrays with no NaN
+        if ((a_nan_any and np.less_equal(np.nanmin(a), 0)) or
+              (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
                 'deviation is defined for strictly positive values only.')
@@ -2473,7 +2477,7 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(w)
         else:
             #  Remaining warnings don't need to be exceptions.
-            warnings.warn(w)
+            return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
     except TypeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
@@ -3339,7 +3343,7 @@ def pearsonr(x, y):
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
-    to abs(r).  In terms of the object `dist` shown above, the p-value
+    to abs(r).  In terms of the object ``dist`` shown above, the p-value
     for a given r and length n can be computed as::
 
         p = 2*dist.cdf(-abs(r))
@@ -4353,7 +4357,7 @@ Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True):
-    """
+    r"""
     T-test for means of two independent samples from descriptive statistics.
 
     This is a two-sided test for the null hypothesis that two independent
@@ -4427,6 +4431,30 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> from scipy.stats import ttest_ind
     >>> ttest_ind(a, b)
     Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
+
+    Suppose we instead have binary data and would like to apply a t-test to
+    compare the proportion of 1s in two independent groups::
+
+                          Number of    Sample     Sample
+                    Size    ones        Mean     Variance
+        Sample 1    150      30         0.2        0.16
+        Sample 2    200      45         0.225      0.174375
+
+    The sample mean :math:`\hat{p}` is the proportion of ones in the sample 
+    and the variance for a binary observation is estimated by 
+    :math:`\hat{p}(1-\hat{p})`.
+
+    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
+    ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
+    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
+
+    For comparison, we could compute the t statistic and p-value using
+    arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.
+
+    >>> group1 = np.array([1]*30 + [0]*(150-30))
+    >>> group2 = np.array([1]*45 + [0]*(200-45))
+    >>> ttest_ind(group1, group2)
+    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
     if equal_var:
@@ -6069,7 +6097,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             "distribution should be 't' or 'normal'")
 
     if alternative == "greater":
-        p = p
+        pass
     elif alternative == "less":
         p = 1 - p
     elif alternative == "two-sided":

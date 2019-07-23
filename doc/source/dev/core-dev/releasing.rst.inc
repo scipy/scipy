@@ -71,7 +71,10 @@ Tagging a release
 First ensure that you have set up GPG correctly.  See
 https://github.com/scipy/scipy/issues/4919 for a discussion of signing release
 tags, and https://keyring.debian.org/creating-key.html for instructions on
-creating a GPG key if you do not have one.
+creating a GPG key if you do not have one. Note that on some platforms
+it may be more suitable to use ``gpg2`` instead of ``gpg`` so that
+passwords may be stored by ``gpg-agent`` as discussed in
+https://github.com/scipy/scipy/issues/10189.
 
 To make your key more readily identifiable as you, consider sending your key
 to public keyservers, with a command such as::
@@ -88,7 +91,9 @@ Then edit ``setup.py`` to get the correct version number (set
 <version-number>``.  Don't push this commit to the SciPy repo yet.
 
 Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
-the tag is signed).  Continue with building release artifacts (next section).
+the tag is signed). If ``gpg2`` is preferred, then
+``git config --global gpg.program gpg2`` may be appropriate. Continue with
+building release artifacts (next section).
 Only push the release commit to the scipy repo once you have built the
 sdists and docs successfully.  Then continue with building wheels.  Only push
 the release tag to the repo once all wheels have been built successfully on
@@ -171,6 +176,9 @@ Upload first the wheels and then the sdist::
 
   twine upload -s REPO_ROOT/release/installers/*.whl
   twine upload -s REPO_ROOT/release/installers/scipy-1.x.y.tar.gz
+
+If ``gpg2`` is preferred, then the above commands may also include
+``--sign-with gpg2``
 
 **Github Releases:**
 

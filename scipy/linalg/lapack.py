@@ -597,6 +597,26 @@ All functions
    cunmqr
    zunmqr
 
+   sgeqrt
+   dgeqrt
+   cgeqrt
+   zgeqrt
+
+   sgemqrt
+   dgemqrt
+   cgemqrt
+   zgemqrt
+
+   stpqrt
+   dtpqrt
+   ctpqrt
+   ztpqrt
+
+   stpmqrt
+   dtpmqrt
+   ctpmqrt
+   ztpmqrt
+
    cunmrz
    zunmrz
 
