@@ -4233,6 +4233,54 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
+def _calc_p_value(x, y, stat, ind_test, compute_distance, reps=1000):
+    r"""
+    Helper function that calculates the p-value. See below for uses.
+
+    Parameters
+    ----------
+    x, y : array_like
+        `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
+        matrices.
+    stat : float
+        The sample MGC test statistic within :math:`[-1, 1]`.
+    ind_test : callable
+        The independence test statistic calculation function used.
+    compute_distance : callable
+        A function that computes the distance or similarity among the samples
+        within each data matrix. Set to ``None`` if `x` and `y` are already
+        distance.
+    reps : int, optional
+        The number of replications used to estimate the null when using the
+        permutation test. The default is 1000 repelications.
+
+    Returns
+    -------
+    stat : float
+        The sample test p-value.
+    """
+    # generate null distribution and p-value
+    pvalue = 0
+    null_dist = np.zeros(reps)
+    for i in range(reps):
+        # randomly permute one of the data matrices
+        permy = np.random.permutation(y)
+
+        # calculate permuted stats and MGC map
+        perm_stat, _ = ind_test(x, permy, compute_distance)
+        null_dist[i] = perm_stat
+
+        # calculate p-value
+        pvalue += ((perm_stat >= stat) * (1/reps))
+
+    # correct for a p_value of 0. This is because, with bootstrapping
+    # permutations, a value of 0 is not valid
+    if pvalue == 0:
+        pvalue = 1 / reps
+
+    return pvalue, null_dist
+
+
 def EUCLIDEAN_DISTANCE(x): return squareform(pdist(x, metric='euclidean'))
 
 
@@ -4404,12 +4452,12 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
 
     # check if compute_distance_matrix if a callable()
     if not callable(compute_distance):
-        raise ValueError("compute_distance must be a function.")
+        raise ValueError("Compute_distance must be a function.")
 
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
     # warning)
     if reps is None or not np.issubdtype(type(reps), np.int64) or reps < 0:
-        raise ValueError("Number of reps must be and integer greater than 0.")
+        raise ValueError("Number of reps must be an integer greater than 0.")
     elif reps < 1000:
         msg = ("The number of replications is low (under 1000), and p-value "
                "calculations may be unreliable. Use the p-value result, with "
@@ -4421,30 +4469,12 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     stat_mgc_map = stat_dict["stat_mgc_map"]
     opt_scale = stat_dict["opt_scale"]
 
-    # generate null distribution and p-value
-    mgc_map = np.zeros(stat_mgc_map.shape)
-    pvalue = 0
-    null_dist = np.zeros(reps)
-    for i in range(reps):
-        # randomly permute one of the data matrices
-        permy = np.random.permutation(y)
-
-        # calculate permuted stats and MGC map
-        perm_stat, perm_stat_dict = _mgc_stat(x, permy, compute_distance)
-        null_dist[i] = perm_stat
-        perm_mgc_map = perm_stat_dict["stat_mgc_map"]
-
-        # calculate p-value
-        pvalue += ((perm_stat >= stat) * (1/reps))
-        mgc_map += ((perm_mgc_map >= stat_mgc_map) * (1/reps))
-
-    # correct for a p_value of 0. This is because, with bootstrapping
-    # permutations, a value of 0 is not valid
-    if pvalue == 0:
-        pvalue = 1 / reps
+    # calculate permutation MGC p-value
+    pvalue, null_dist = _calc_p_value(x, y, stat, _mgc_stat, compute_distance,
+                                      reps=1000)
 
     # save all stats (other than stat/p-value) in dictionary
-    mgc_dict = {"mgc_map": mgc_map,
+    mgc_dict = {"mgc_map": stat_mgc_map,
                 "opt_scale": opt_scale,
                 "null_dist": null_dist}
 
@@ -4457,8 +4487,9 @@ def _mgc_stat(x, y, compute_distance):
 
     Parameters
     ----------
-    distx, disty : array_like
-        `x` and `y` are be :math:`n \times n` distance or similarity matrices.
+    x, y : array_like
+        `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
+        matrices.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to ``None`` if `x` and `y` are already
