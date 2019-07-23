@@ -2163,6 +2163,257 @@ add_newdoc("ellipkinc",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
+add_newdoc("elliprc",
+    r"""
+    elliprc(x, y)
+
+    Symmetric integral RC as a degenerate case related to elliptic integrals,
+    defined as [1]
+
+    .. math:: R_{\mathrm{C}}(x, y) = \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt = R_{\mathrm{F}}(x, y, y)
+
+    Parameters
+    ----------
+    x, y : array_like
+        Real or complex input parameters. ``x`` can be any number in the
+        complex plane cut along the negative real axis. ``y`` must be non-zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If ``y`` is real and negative, the Cauchy
+        principal value is returned. If both of ``x`` and ``y`` are real, the
+        return value is real. Otherwise, the return value may be complex.
+
+    Notes
+    -----
+    RC is a degenerate case of the symmetric integral RF: RC(x, y) = RF(x, y,
+    y). It is an elementary function rather than an elliptic integral.
+
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2]
+
+    See Also
+    --------
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E6
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    """)
+
+add_newdoc("elliprd",
+    r"""
+    elliprd(x, y, z)
+
+    Carlson symmetric elliptic integral RD, defined as [1]
+
+    .. math:: R_{\mathrm{D}}(x, y, z) = \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2} dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. ``x`` or ``y`` can be any number in
+        the complex plane cut along the negative real axis, but at most one of
+        them can be zero, while ``z`` must be non-zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of ``x``, ``y``, and ``z`` are real, the
+        return value is real. Otherwise, the return value may be complex.
+
+    Notes
+    -----
+    RD is a degenerate case of the elliptic integral RJ: RD(x, y, z) = RJ(x, y,
+    z, z).
+
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2]
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric elliptic integral.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E5
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    """)
+
+add_newdoc("elliprf",
+    r"""
+    elliprf(x, y, z)
+
+    Carlson symmetric elliptic integral RF, defined as [1]
+
+    .. math:: R_{\mathrm{F}}(x, y, z) = \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. ``x``, ``y``, or ``z`` can be any
+        number in the complex plane cut along the negative real axis, but at
+        most one of them can be zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of ``x``, ``y``, and ``z`` are real, the
+        return value is real. Otherwise, the return value may be complex.
+
+    Notes
+    -----
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2] (Cf.:
+    https://dlmf.nist.gov/19.36.i)
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E1
+    .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    """)
+
+add_newdoc("elliprg",
+    r"""
+    elliprg(x, y, z)
+
+    Carlson symmetric elliptic integral RG, defined as [1]
+
+    .. math:: R_{\mathrm{G}}(x, y, z) = \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t dt
+
+    Parameters
+    ----------
+    x, y, z : array_like
+        Real or complex input parameters. ``x``, ``y``, or ``z`` can be any
+        number in the complex plane cut along the negative real axis.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of ``x``, ``y``, and ``z`` are real, the
+        return value is real. Otherwise, the return value may be complex.
+
+    Notes
+    -----
+    The implementation uses the relation [1]
+
+    .. math:: 2 R_{\mathrm{G}}(x, y, z) = z R_{\mathrm{F}}(x, y, z) - \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) + \sqrt{\frac{x y}{z}}
+
+    and the symmetry of ``(x, y, z)`` when at least one non-zero parameter can
+    be chosen as the pivot. Other special cases are dealt with following [2].
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprj : Symmetric elliptic integral of the third kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.16.E1
+           https://dlmf.nist.gov/19.20.ii
+    """)
+
+add_newdoc("elliprj",
+    r"""
+    elliprj(x, y, z, p)
+
+    Carlson symmetric elliptic integral RJ, defined as [1]
+
+    .. math:: R_{\mathrm{J}}(x, y, z, p) = \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} (t + p)^{-1} dt
+
+    Parameters
+    ----------
+    x, y, z, p : array_like
+        Real or complex input parameters. ``x``, ``y``, or ``z`` can be any
+        number in the complex plane cut along the negative real axis, but at
+        most one of them can be zero. ``p`` must be non-zero.
+
+    Returns
+    -------
+    R : ndarray
+        Value of the integral. If all of ``x``, ``y``, ``z``, and ``p`` are
+        real, the return value is real. Otherwise, the return value may be
+        complex.
+
+        If ``p`` is real and negative, while ``x``, ``y``, and ``z`` are real,
+        non-negative, and at most one of them is zero, the Cauchy principal
+        value is returned. [1][3]
+
+    Notes
+    -----
+    The code implements Carlson's algorithm based on the duplication theorems
+    and series expansion up to the 7th order. [2] The algorithm is slightly
+    different from its earlier incarnation in [1] in that the call to
+    ``elliprc`` (or ``atan``/``atanh``, see [4]) is no longer needed in the
+    inner loop.
+
+    See Also
+    --------
+    elliprc : Degenerate symmetric integral.
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
+
+    References
+    ----------
+    .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           https://arxiv.org/abs/math/9409227
+           https://doi.org/10.1007/BF02198293
+    .. [2] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
+           Integrands with the Square Root of Two Quadratic Factors," J.
+           Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
+           https://doi.org/10.1016/S0377-0427(00)00282-X
+    .. [3] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.20.iii
+    .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
+           Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
+           Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
+           Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
+           Switzerland: Springer Nature Switzerland)
+           https://arxiv.org/abs/1806.06725
+           https://doi.org/10.1007/978-3-030-04480-0
+    """)
+
 add_newdoc("entr",
     r"""
     entr(x)

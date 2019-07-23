@@ -34,6 +34,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipk
+from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -1578,6 +1579,120 @@ class TestEllip(object):
         # this bug also appears at phi + n * pi for at least small n
         f1 = special.ellipeinc(phi + pi, mvals)
         assert_array_almost_equal_nulp(f1, np.full_like(f1, 3.3471442287390509), 4)
+
+
+class TestEllipCarlson(object):
+    def test_elliprc(self):
+        assert_allclose(elliprc(1, 1), 1)
+        assert elliprc(1, inf) == 0.0
+        assert isnan(elliprc(1, 0))
+        assert elliprc(1, complex(0, inf)) == 0.0
+        args = array([[0.0, 0.25],
+                      [2.25, 2.0],
+                      [0.0, 1.0j],
+                      [-1.0j, 1.0j],
+                      [0.25, -2.0],
+                      [1.0j, -1.0]])
+        expected_results = array([np.pi,
+                                  np.log(2.0),
+                                  1.1107207345396 * (1.0-1.0j),
+                                  1.2260849569072-0.34471136988768j,
+                                  np.log(2.0) / 3.0,
+                                  0.77778596920447+0.19832484993429j])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprc(*arr), expected_results[i])
+
+    def test_elliprd(self):
+        assert_allclose(elliprd(1, 1, 1), 1)
+        assert_allclose(elliprd(0, 2, 1) / 3.0, 0.59907011736779610371)
+        assert elliprd(1, 1, inf) == 0.0
+        assert isnan(elliprd(1, 0, 0))
+        args = array([[0.0, 2.0, 1.0],
+                      [2.0, 3.0, 4.0],
+                      [1.0j, -1.0j, 2.0],
+                      [0.0, 1.0j, -1.0j],
+                      [0.0, -1.0+1.0j, 1.0j],
+                      [-2.0-1.0j, -1.0j, -1.0+1.0j]])
+        expected_results = array([1.7972103521034,
+                                  0.16510527294261,
+                                  0.65933854154220,
+                                  1.2708196271910+2.7811120159521j,
+                                  -1.8577235439239-0.96193450888839j,
+                                  1.8249027393704-1.2218475784827j])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprd(*arr), expected_results[i])
+
+    def test_elliprf(self):
+        assert_allclose(elliprf(1, 1, 1), 1)
+        assert_allclose(elliprf(0, 1, 2), 1.31102877714605990523)
+        assert elliprf(1, inf, 1) == 0.0
+        assert np.isinf(elliprf(0, 1, 0))
+        assert isnan(elliprf(1, 1, -1))
+        assert elliprf(complex(inf), 0, 1) == 0.0
+        args = array([[1.0, 2.0, 0.0],
+                      [1.0j, -1.0j, 0.0],
+                      [0.5, 1.0, 0.0],
+                      [-1.0+1.0j, 1.0j, 0.0],
+                      [2.0, 3.0, 4.0],
+                      [1.0j, -1.0j, 2.0],
+                      [-1.0+1.0j, 1.0j, 1.0-1.0j]])
+        expected_results = array([1.3110287771461,
+                                  1.8540746773014,
+                                  1.8540746773014,
+                                  0.79612586584234-1.2138566698365j,
+                                  0.58408284167715,
+                                  1.0441445654064,
+                                  0.93912050218619-0.53296252018635j])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprf(*arr), expected_results[i])
+
+    def test_elliprg(self):
+        assert_allclose(elliprg(1, 1, 1), 1)
+        assert_allclose(elliprg(0, 0, 1), 0.5)
+        assert_allclose(elliprg(0, 0, 0), 0)
+        assert np.isinf(elliprg(1, inf, 1))
+        assert np.isinf(elliprg(complex(inf), 1, 1))
+        args = array([[0.0, 16.0, 16.0],
+                      [2.0, 3.0, 4.0],
+                      [0.0, 1.0j, -1.0j],
+                      [-1.0+1.0j, 1.0j, 0.0],
+                      [-1.0j, -1.0+1.0j, 1.0j],
+                      [0.0, 0.0796, 4.0]])
+        expected_results = array([np.pi,
+                                  1.7255030280692,
+                                  0.42360654239699,
+                                  0.44660591677018+0.70768352357515j,
+                                  0.36023392184473+0.40348623401722j,
+                                  1.0284758090288])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprg(*arr), expected_results[i])
+
+    def test_elliprj(self):
+        assert_allclose(elliprj(1, 1, 1, 1), 1)
+        assert elliprj(1, 1, inf, 1) == 0.0
+        assert isnan(elliprj(1, 0, 0, 0))
+        assert isnan(elliprj(-1, 1, 1, 1))
+        assert elliprj(1, 1, 1, inf) == 0.0
+        args = array([[0.0, 1.0, 2.0, 3.0],
+                      [2.0, 3.0, 4.0, 5.0],
+                      [2.0, 3.0, 4.0, -1.0+1.0j],
+                      [1.0j, -1.0j, 0.0, 2.0],
+                      [-1.0+1.0j, -1.0-1.0j, 1.0, 2.0],
+                      [1.0j, -1.0j, 0.0, 1.0-1.0j],
+                      [-1.0+1.0j, -1.0-1.0j, 1.0, -3.0+1.0j],
+                      [2.0, 3.0, 4.0, -0.5],    # Cauchy principal value
+                      [2.0, 3.0, 4.0, -5.0]])   # Cauchy principal value
+        expected_results = array([0.77688623778582,
+                                  0.14297579667157,
+                                  0.13613945827771-0.38207561624427j,
+                                  1.6490011662711,
+                                  0.94148358841220,
+                                  1.8260115229009+1.2290661908643j,
+                                  -0.61127970812028-1.0684038390007j,
+                                  0.24723819703052,    # Cauchy principal value
+                                  -0.12711230042964])  # Caucny principal value
+        for i, arr in enumerate(args):
+            assert_allclose(elliprj(*arr), expected_results[i])
 
 
 class TestErf(object):

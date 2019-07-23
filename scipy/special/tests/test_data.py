@@ -12,6 +12,7 @@ from scipy.special import (
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
+    elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
@@ -459,6 +460,14 @@ BOOST_TESTS = [
         # ellint_pi2_data_ipp/ellint_pi2_data.txt
         # ellint_pi3_data_ipp/ellint_pi3_data.txt
         # ellint_pi3_large_data_ipp/ellint_pi3_large_data.txt
+        data(elliprc, 'ellint_rc_data_ipp-ellint_rc_data', (0, 1), 2,
+             rtol=1e-14),
+        data(elliprd, 'ellint_rd_data_ipp-ellint_rd_data', (0, 1, 2), 3,
+             rtol=1e-14),
+        data(elliprf, 'ellint_rf_data_ipp-ellint_rf_data', (0, 1, 2), 3,
+             rtol=1e-14),
+        data(elliprj, 'ellint_rj_data_ipp-ellint_rj_data', (0, 1, 2, 3), 4,
+             rtol=1e-14, atol=1e-19),
         # ellint_rc_data_ipp/ellint_rc_data.txt
         # ellint_rd_0xy_ipp/ellint_rd_0xy.txt
         # ellint_rd_0yy_ipp/ellint_rd_0yy.txt

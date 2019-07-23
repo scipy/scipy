@@ -356,6 +356,34 @@
     "_factorial": {
 	"_factorial.pxd": {
 	    "_factorial": "d->d"
+    "elliprc": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RC": "dd->d",
+	    "cellint_RC": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RD": "ddd->d",
+	    "cellint_RD": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RF": "ddd->d",
+	    "cellint_RF": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RG": "ddd->d",
+	    "cellint_RG": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RJ": "dddd->d",
+	    "cellint_RJ": "DDDD->D"
 	}
     },
     "entr": {
