@@ -5228,4 +5228,4 @@ class TestMGCStat(object):
         # verify stat and pvalue against mgcpy implementation
         stat, pvalue, _ = stats.mgc(x, y)
         assert_approx_equal(stat, -0.018, significant=2)
-        assert_approx_equal(pvalue, 0.721, significant=2)
+        assert_approx_equal(pvalue, 0.708, significant=2)
