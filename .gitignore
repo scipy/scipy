@@ -264,9 +264,9 @@ scipy/special/cython_special.pxd
 scipy/special/cython_special.pyx
 scipy/special/specfunmodule.c
 scipy/special/tests/data/*.npz
-scipy/special/ellint_carlson_cpp/Makefile
-scipy/special/ellint_carlson_cpp/cellint.*
-scipy/special/ellint_carlson_cpp/tests
+scipy/special/ellint_carlson_cpp_lite/Makefile
+scipy/special/ellint_carlson_cpp_lite/cellint.*
+scipy/special/ellint_carlson_cpp_lite/tests
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
