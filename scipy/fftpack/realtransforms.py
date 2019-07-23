@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
-import numpy as np
 from scipy.fft import _pocketfft
 
 _inverse_typemap = {1: 1, 2: 3, 3: 2, 4: 4}

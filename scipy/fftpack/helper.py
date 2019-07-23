@@ -1,8 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
 import operator
-from numpy import (arange, array, asarray, atleast_1d, intc, integer,
-                   isscalar, issubdtype, take, unique, where)
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 from scipy.fft._helper import _next_regular_len
 import numpy as np
@@ -49,7 +47,7 @@ def rfftfreq(n, d=1.0):
         raise ValueError("n = %s is not valid. "
                          "n must be a nonnegative integer." % n)
 
-    return (arange(1, n + 1, dtype=int) // 2) / float(n * d)
+    return (np.arange(1, n + 1, dtype=int) // 2) / float(n * d)
 
 
 def next_fast_len(target):
