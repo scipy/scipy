@@ -1,4 +1,4 @@
-import scipy.fftpack as fftpack
+from scipy.fft._pocketfft.pypocketfft import r2r_fftpack
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -32,19 +32,19 @@ def convolve(inout, omega, swap_real_imag=False, overwrite_x=False):
     y : rank-1 array('d') with bounds (n) and x storage
     """
     cdef:
-        np.ndarray[np.float64_t, ndim=1] x_arr, w_arr, X_arr
+        np.ndarray[np.float64_t, ndim=1] X_arr, w_arr
         double [:] w, X
         double c
         size_t n, i
 
-    x_arr = np.asarray(inout, np.float64)
+    X = X_arr = np.array(inout, np.float64, copy=not overwrite_x)
     w = w_arr = np.asarray(omega, np.float64)
-    n = x_arr.shape[0]
-    if x_arr.ndim != 1 or w.ndim != 1 or w.shape[0] != n:
+    n = X_arr.shape[0]
+    if X_arr.ndim != 1 or w.ndim != 1 or w.shape[0] != n:
         raise ValueError(
             "inout and omega must be 1-dimensional arrays of the same length")
 
-    X = X_arr = fftpack.rfft(x_arr, overwrite_x=overwrite_x)
+    r2r_fftpack(X_arr, None, True, True, out=X_arr)
 
     if swap_real_imag:
         # Swap packed real and imag components
@@ -62,7 +62,8 @@ def convolve(inout, omega, swap_real_imag=False, overwrite_x=False):
     else:
         X_arr *= w_arr
 
-    return fftpack.irfft(X_arr, overwrite_x=True) * n
+    r2r_fftpack(X_arr, None, False, False, out=X_arr)
+    return X_arr
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -87,22 +88,22 @@ def convolve_z(inout, omega_real, omega_imag, overwrite_x=False):
     y : rank-1 array('d') with bounds (n) and x storage
     """
     cdef:
-        np.ndarray[np.float64_t, ndim=1] x_arr, X_arr
+        np.ndarray[np.float64_t, ndim=1] X_arr
         double [:] wr, wi, X
         size_t n, i
         double c
 
-    x_arr = np.asarray(inout, np.float64)
+    X = X_arr = np.array(inout, np.float64, copy=not overwrite_x)
     wr = np.asarray(omega_real, np.float64)
     wi = np.asarray(omega_imag, np.float64)
 
-    n = x_arr.shape[0]
-    if (x_arr.ndim != 1 or wr.ndim != 1 or wr.shape[0] != n
+    n = X_arr.shape[0]
+    if (X_arr.ndim != 1 or wr.ndim != 1 or wr.shape[0] != n
         or wi.ndim != 1 or wi.shape[0] != n):
         raise ValueError(
             "inout and omega must be 1-dimensional arrays of the same length")
 
-    X = X_arr = fftpack.rfft(x_arr, overwrite_x=overwrite_x)
+    r2r_fftpack(X_arr, None, True, True, out=X_arr)
 
     X[0] *= wr[0] + wi[0]
     if (n % 2) == 0:
@@ -113,7 +114,8 @@ def convolve_z(inout, omega_real, omega_imag, overwrite_x=False):
         X[i] = X[i] * wr[i] + X[i + 1] * wi[i + 1]
         X[i + 1] = c
 
-    return fftpack.irfft(X_arr, overwrite_x=True) * n
+    r2r_fftpack(X_arr, None, False, False, out=X_arr)
+    return X_arr
 
 
 @cython.boundscheck(False)
