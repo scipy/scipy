@@ -15,10 +15,6 @@ from . import convolve
 
 from scipy.fftpack.basic import _datacopied
 
-import atexit
-atexit.register(convolve.destroy_convolve_cache)
-del atexit
-
 
 _cache = {}
 

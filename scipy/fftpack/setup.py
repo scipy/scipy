@@ -27,11 +27,7 @@ def configuration(parent_package='',top_path=None):
         include_dirs=['src'],
         depends=(dfftpack_src + fftpack_src))
 
-    config.add_extension('convolve',
-        sources=['convolve.pyf','src/convolve.c'],
-        libraries=['dfftpack'],
-        depends=dfftpack_src,
-    )
+    config.add_extension('convolve', sources=['convolve.c'])
     return config
 
 
