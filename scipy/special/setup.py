@@ -103,8 +103,8 @@ def configuration(parent_package='',top_path=None):
                       'ellint_carlson_wrap.cxx',
                       '_faddeeva.cxx', 'Faddeeva.cc',
                       '_wright.cxx', 'wright.cc']
-    ufuncs_cxx_dep = (headers + ufuncs_cxx_src + cephes_src + ["sf_error.c"]
-                      + ['*.hh', join('ellint_carlson_cpp_lite', '*.hh')])
+    ufuncs_cxx_dep = (headers + ufuncs_cxx_src + cephes_src + ["sf_error.c"] +
+                      ['*.hh', join('ellint_carlson_cpp_lite', '*.hh')])
     ext_cxx = config.add_extension('_ufuncs_cxx',
                                    sources=ufuncs_cxx_src,
                                    depends=ufuncs_cxx_dep,

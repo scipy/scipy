@@ -5,6 +5,10 @@
 
 #include "sf_error.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const char *sf_error_messages[] = {
     "no error",
     "singularity",
@@ -158,3 +162,7 @@ void sf_error_check_fpe(const char *func_name)
         sf_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
     }
 }
+
+#ifdef __cplusplus
+}
+#endif
