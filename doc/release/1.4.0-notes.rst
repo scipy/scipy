@@ -70,6 +70,12 @@ lambda expressions for them.
 `scipy.stats` improvements
 --------------------------
 
+`scipy.stats.mgc` added
+-----------------------
+
+The function `scipy.stats.mgc` is introduced as an independence test that
+operates on high dimensional nonlinear data.
+
 Deprecated features
 ===================
 
