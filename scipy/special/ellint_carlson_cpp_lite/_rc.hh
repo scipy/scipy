@@ -12,9 +12,9 @@
 
 namespace ellint_carlson {
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rc(const T& x, const T& y, const TR& rerr, T& res)
+rc(const T& x, const T& y, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
 
@@ -46,7 +46,7 @@ rc(const T& x, const T& y, const TR& rerr, T& res)
     }
 
     T Am = (x + (RT)2.0 * y) / (RT)3.0;
-    RT fterm = std::abs(Am - x) / arithmetic::ocrt((TR)3.0 * rerr);
+    RT fterm = std::abs(Am - x) / arithmetic::ocrt(3.0 * rerr);
 
     T xm = x;
     T ym = y;

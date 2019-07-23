@@ -13,9 +13,9 @@
 
 namespace ellint_carlson {
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rd(const T& x, const T& y, const T& z, const TR& rerr, T& res)
+rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
 

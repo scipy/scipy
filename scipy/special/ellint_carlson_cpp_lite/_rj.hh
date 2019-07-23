@@ -16,23 +16,23 @@
 /* Forward declaration */
 namespace ellint_carlson
 {
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rj(const T& x, const T& y, const T& z, const T& p, const TR& rerr, T& res);
+rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res);
 
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rc(const T& x, const T& y, const TR& rerr, T& res);
+rc(const T& x, const T& y, const double& rerr, T& res);
 
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rg(const T& x, const T& y, const T& z, const TR& rerr, T& res);
+rg(const T& x, const T& y, const T& z, const double& rerr, T& res);
 }
 
 
-#define ELLINT_RJ_CALC(VOID)	\
+#define ELLINT_RJ_CALC()	\
 do { 	\
     prm = std::sqrt(pm);	\
     cct1[0] = cct2[1] = std::sqrt(xm);	\
@@ -42,7 +42,7 @@ do { 	\
     dm = (prm + cct1[0]) * (prm + cct1[1]) * (prm + cct1[2]);\
 } while ( 0 )
 
-#define ELLINT_RJ_UPDT(VOID)	\
+#define ELLINT_RJ_UPDT()	\
 do {	\
     Am = (Am + lam) * (RT)0.25;	\
     xm = (xm + lam) * (RT)0.25;	\
@@ -203,17 +203,17 @@ good_args(const T& x, const T& y, const T& z, const T& p,
 
 
 /* Cauchy principal value dispatcher */
-template<typename T, typename Tres, typename TR>
+template<typename T, typename Tres>
 static ExitStatus
-rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p, const TR& rerr,
-                Tres& res)
+rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
+		const double& rerr, Tres& res)
 {
     /* Retry with principal value evaluation, valid for reals. */
     ExitStatus status, status_tmp;
     T xct1[4] = {x, y, -p, z};
     T xct2[4];
 
-    TR r = rerr / (TR)3.0;
+    double r = rerr / 3.0;
     T xy = xct1[0] * xct1[1];
     xct2[3] = xct1[2] / xct1[3] + (T)1.0;
     T pn = (arithmetic::nsum2(xct1, 3) - xy / xct1[3]) / xct2[3];
@@ -379,9 +379,9 @@ safe_atan_sqrt_div(T x)
 
 }  /* namespace ellint_carlson::rjimpl */
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rj(const T& x, const T& y, const T& z, const T& p, const TR& rerr, T& res)
+rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
 
@@ -465,7 +465,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const TR& rerr, T& res)
 		RT xct1[3];
 		RT xct2[3];
 		RT xct3[3];
-		TR r = rerr * (TR)0.5;
+		double r = rerr * 0.5;
 		xct1[1] = xct2[0] = std::sqrt(xr);
 		xct1[2] = xct2[1] = std::sqrt(yr);
 		xct1[0] = xct2[2] = std::sqrt(zr);
@@ -491,7 +491,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const TR& rerr, T& res)
 	    {
 		ExitStatus status_tmp;
 		RT t1, t2;
-		TR r = rerr / (TR)3.0;
+		double r = rerr / 3.0;
 		tmpres = (RT)1.0 / std::sqrt(yr * zr);
 		status_tmp = rc(xr, pr, r, t1);
 		status = rg((RT)0.0, yr, zr, r, t2);
@@ -571,7 +571,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const TR& rerr, T& res)
     T yym = Am - ym;
     T zzm = Am - zm;
     RT fterm = std::max({std::abs(xxm), std::abs(yym), std::abs(zzm),
-			 std::abs(Am - p)}) / arithmetic::ocrt(rerr / (TR)5.0);
+			 std::abs(Am - p)}) / arithmetic::ocrt(rerr / 5.0);
 
     /* m = 0; */
     RT d4m = 1.0;

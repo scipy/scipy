@@ -93,7 +93,7 @@ namespace ellint_carlson
 	unused
     };
 
-    inline constexpr bool
+    inline static constexpr bool
     is_horrible(ExitStatus n)
     {
 	return ( ( n == ExitStatus::no_result ) ||
@@ -102,7 +102,7 @@ namespace ellint_carlson
 		 ( n == ExitStatus::other ) );
     }
 
-    inline constexpr bool
+    inline static constexpr bool
     is_troublesome(ExitStatus n)
     {
 	return ( !(( n == ExitStatus::success ) || is_horrible(n)) );

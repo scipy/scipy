@@ -47,39 +47,31 @@ namespace ellint_carlson { namespace typing
 
     template<typename T>
     using decplx_t = typename decplx<T>::type;
-    /* Arithmetic promotion into the most compatible (largest) floating
-     * point type, but retaining the numeric domain (i.e. no over-promotion
-     * to complex from the real domain) whenever possible. If all types are
-     * real, the resulting type is real. Otherwise (with mixed
-     * real-and-complex or complex types), the resulting type is complex.
-     */
-    namespace promote2impl
+
+
+    template<typename T, typename U>
+    struct pm_impl {};
+
+    template<typename T>
+    struct pm_impl<T, T>
     {
-	/* Basic building blocks. */
-	/* Calculate the real, or the *underlying* real, arithmetic
-	 * (floating-point) type of two-type promotion. */
-	template<typename T0, typename T1>
-	using RFPromote2 =
-	    decltype(decplx_t<T0>() + decplx_t<T1>());
+	typedef T type;
+    };
 
-	/* Complexify the result of the real-promotion. */
-	template<typename T0, typename T1>
-	using CFPromote2 =
-	    decltype(std::complex< RFPromote2<T0, T1> >());
+    template<typename T>
+    struct pm_impl< T, std::complex<T> >
+    {
+	typedef std::complex<T> type;
+    };
 
+    template<typename T>
+    struct pm_impl< std::complex<T>, T >
+    {
+	typedef std::complex<T> type;
+    };
 
-	/* Compute whether we should possibly do the real -> complex domain
-	 * upgrade (which should only happen when one of the operands is
-	 * already a complex type). */
-	template<typename T0, typename T1>
-	using Promote2 =
-	    typename std::conditional< is_complex<T0>::value ||
-	                               is_complex<T1>::value,
-			               CFPromote2<T0, T1>,
-				       RFPromote2<T0, T1> >::type;
-    }  /* namespace promote2impl */
-    template<typename T0, typename T1>
-    using Promote = promote2impl::Promote2<T0, T1>;
+    template<typename T, typename U>
+    using Promote = typename pm_impl<T, U>::type;
 
 
     /* Buffer holding the correction terms for multiplication.  For real
@@ -136,28 +128,23 @@ namespace ellint_carlson { namespace typing
 
     /* Constants for different sizes of floating-point number.  The struct
      * simply retrieves the information from the scope of the specialisation
-     * std::numeric_limit<T>. For compatibility with c++11, these are
-     * implemented as constexpr functions, because c++11 does not support
-     * variable templates. */
+     * std::numeric_limit<T>. */
     template<typename T>
-    constexpr
-    typename std::enable_if<std::is_floating_point<T>::value, T>::type
+    constexpr real_only<T, T>
     nan()
     {
 	return std::numeric_limits<T>::quiet_NaN();
     }
 
     template<typename T>
-    constexpr
-    typename std::enable_if<std::is_floating_point<T>::value, T>::type
+    constexpr real_only<T, T>
     huge()
     {
 	return std::numeric_limits<T>::infinity();
     }
 
     template<typename T>
-    constexpr
-    typename std::enable_if<std::is_floating_point<T>::value, T>::type
+    constexpr real_only<T, T>
     half_epsilon()
     {
 	return std::numeric_limits<T>::epsilon() / (T)2.0;
@@ -166,8 +153,7 @@ namespace ellint_carlson { namespace typing
     /* Complexified specialisation, with the complex NaN and infinity as
      * return values. */
     template<typename T>
-    constexpr
-    typename std::enable_if<is_complex<T>::value, T>::type
+    constexpr cplx_only<T, T>
     nan()
     {
 	typedef decplx_t<T> RT;
@@ -175,8 +161,7 @@ namespace ellint_carlson { namespace typing
     }
 
     template<typename T>
-    constexpr
-    typename std::enable_if<is_complex<T>::value, T>::type
+    constexpr cplx_only<T, T>
     huge()
     {
 	typedef decplx_t<T> RT;

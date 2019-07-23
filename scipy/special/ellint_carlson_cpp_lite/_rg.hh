@@ -13,9 +13,9 @@
 
 namespace ellint_carlson {
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rg(const T& x, const T& y, const T& z, const TR& rerr, T& res)
+rg(const T& x, const T& y, const T& z, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
 
@@ -46,13 +46,13 @@ rg(const T& x, const T& y, const T& z, const TR& rerr, T& res)
     }
 
     T rfv, rdv;
-    ExitStatus status_tmp = rf(cct[0], cct[1], cct[2], rerr * (TR)0.5, rfv);
+    ExitStatus status_tmp = rf(cct[0], cct[1], cct[2], rerr * 0.5, rfv);
     if ( is_horrible(status_tmp) )
     {
 	res = typing::nan<T>();
 	return status_tmp;
     }
-    status = rd(cct[0], cct[1], cct[2], rerr * (TR)0.5, rdv);
+    status = rd(cct[0], cct[1], cct[2], rerr * 0.5, rdv);
     if ( status_tmp != ExitStatus::success )
     {
 	status = status_tmp;

@@ -149,46 +149,42 @@ namespace ellint_carlson { namespace arithmetic
 
     /* Dot-product of at most first n elements, for real floating type only
      * (based on what we see by peeking "begin"). */
-    template<typename IterableA, typename IterableB>
+    template<typename Iterable>
     inline auto
-    ndot2(const IterableA& x, const IterableB& y, std::size_t n)
+    ndot2(const Iterable& x, const Iterable& y, std::size_t n)
     -> typename std::enable_if<
-	std::is_floating_point<JUST_ELEM(std::begin(x))>::value &&
-	std::is_floating_point<JUST_ELEM(std::begin(y))>::value,
-	typing::Promote<JUST_ELEM(std::begin(x)), JUST_ELEM(std::begin(y))>
-	>::type
+	std::is_floating_point<JUST_ELEM(std::begin(x))>::value,
+	JUST_ELEM(std::begin(x)) >::type
     {
 	auto itx = std::begin(x);
 	auto ity = std::begin(y);
-	typedef typing::Promote<JUST_ELEM(itx), JUST_ELEM(ity)> RT;
+	typedef JUST_ELEM(itx) RT;
 	RT p(0.0), s(0.0);
 
 	for ( std::size_t i = 0;
 	      ( (itx != std::end(x)) && (ity != std::end(y)) && (i < n) );
 	      ++itx, ++ity, ++i )
 	{
-	    fdot2_acc(RT(*itx), RT(*ity), p, s);
+	    fdot2_acc((RT)(*itx), (RT)(*ity), p, s);
 	}
 
 	return p + s;
     }
 
 
-    /* Dot-product, but for possibly-complex types. */
-    template<typename IterableA, typename IterableB>
+    /* Dot-product, but for complex types. */
+    template<typename Iterable>
     inline auto
-    ndot2(const IterableA& x, const IterableB& y, std::size_t n)
+    ndot2(const Iterable& x, const Iterable& y, std::size_t n)
     -> typename std::enable_if<
-	typing::is_complex<JUST_ELEM(std::begin(x))>::value ||
 	typing::is_complex<JUST_ELEM(std::begin(y))>::value,
-	typing::Promote<JUST_ELEM(std::begin(x)), JUST_ELEM(std::begin(y))>
-	>::type
+	JUST_ELEM(std::begin(x)) >::type
     {
 	auto itx = std::begin(x);
-	auto ity = std::begin(y);
-	typedef
-	    typename typing::promote2impl::RFPromote2<JUST_ELEM(itx),
-	                                              JUST_ELEM(ity)> RT;
+	auto ity = std::begin(y); 
+	typedef JUST_ELEM(itx) CT;
+	typedef typing::decplx_t<CT> RT;
+
 	RT pr, pi, cr, ci;
 
 	pr = pi = cr = ci = (RT)0.0;
@@ -207,13 +203,13 @@ namespace ellint_carlson { namespace arithmetic
 	    fdot2_acc(b, c, pi, ci);
 	}
 
-	return std::complex<RT>{pr + cr, pi + ci};
+	return CT{pr + cr, pi + ci};
     }
 
     /* Convenient wrapper for dot-product */
-    template<typename FPT0, typename FPT1, std::size_t M, std::size_t N>
-    inline typing::Promote<FPT0, FPT1>
-    dot2(const FPT0(& x)[M], const FPT1(& y)[N])
+    template<typename FPT, std::size_t M, std::size_t N>
+    inline FPT
+    dot2(const FPT(& x)[M], const FPT(& y)[N])
     {
 	constexpr std::size_t len = (M <= N ? M : N);
 	return ndot2(x, y, len);

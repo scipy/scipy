@@ -14,9 +14,9 @@
 
 namespace ellint_carlson {
 
-template<typename T, typename TR>
+template<typename T>
 static ExitStatus
-rf0(const T& x, const T& y, const TR& rerr, T& res)
+rf0(const T& x, const T& y, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
 
@@ -27,7 +27,7 @@ rf0(const T& x, const T& y, const TR& rerr, T& res)
 	return ExitStatus::bad_rerr;
     }
 
-    TR rsq = (TR)2.0 * std::sqrt(rerr);
+    double rsq = 2.0 * std::sqrt(rerr);
 
     T xm = std::sqrt(x);
     T ym = std::sqrt(y);
@@ -54,9 +54,9 @@ rf0(const T& x, const T& y, const TR& rerr, T& res)
 }
 
 
-template<typename T, typename TR>
+template<typename T>
 ExitStatus
-rf(const T& x, const T& y, const T& z, const TR& rerr, T& res)
+rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
 
@@ -109,7 +109,7 @@ rf(const T& x, const T& y, const T& z, const TR& rerr, T& res)
     T xxm = Am - xm;
     T yym = Am - ym;
     RT fterm = std::abs(std::max({xxm, yym, Am - zm}, util::abscmp<T>)) /
-               arithmetic::ocrt(rerr * (TR)3.0);
+               arithmetic::ocrt(3.0 * rerr);
     unsigned int m = 0;
     RT aAm;
     while ( (aAm = std::abs(Am)) <= fterm ||
