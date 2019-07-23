@@ -2,21 +2,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-__usage__ = """
-Build fftpack:
-  python setup_fftpack.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.fftpack.test()'
-Run tests if fftpack is not installed:
-  python tests/test_basic.py
-"""
-
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 from scipy.fftpack import ifft, fft, fftn, ifftn, rfft, irfft, fft2
-from scipy.fftpack import _fftpack as fftpack
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
                    swapaxes, double, cdouble)
@@ -159,16 +149,6 @@ class _TestFFTBase(object):
         assert_array_almost_equal(y[0],direct_dft(x1))
         assert_array_almost_equal(y[1],direct_dft(x2))
 
-    def test_djbfft(self):
-        for i in range(2,14):
-            n = 2**i
-            x = list(range(n))
-            y = fftpack.zfft(x)
-            y2 = numpy.fft.fft(x)
-            assert_array_almost_equal(y,y2)
-            y = fftpack.zrfft(x)
-            assert_array_almost_equal(y,y2)
-
     def test_invalid_sizes(self):
         assert_raises(ValueError, fft, [])
         assert_raises(ValueError, fft, [[1,1],[2,2]], -5)
@@ -233,16 +213,6 @@ class _TestIFFTBase(object):
         x = np.array([1,2,3,4,5], dtype=self.rdt)
         assert_equal(y.dtype, self.cdt)
         assert_array_almost_equal(ifft(x),direct_idft(x))
-
-    def test_djbfft(self):
-        for i in range(2,14):
-            n = 2**i
-            x = list(range(n))
-            y = fftpack.zfft(x,direction=-1)
-            y2 = numpy.fft.ifft(x)
-            assert_array_almost_equal(y,y2)
-            y = fftpack.zrfft(x,direction=-1)
-            assert_array_almost_equal(y,y2)
 
     def test_random_complex(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
@@ -315,21 +285,6 @@ class _TestRFFTBase(object):
             assert_array_almost_equal(y,y1)
             assert_equal(y.dtype, self.rdt)
 
-    def test_djbfft(self):
-        from numpy.fft import fft as numpy_fft
-        for i in range(2,14):
-            n = 2**i
-            x = list(range(n))
-            y2 = numpy_fft(x)
-            y1 = zeros((n,),dtype=double)
-            y1[0] = y2[0].real
-            y1[-1] = y2[n//2].real
-            for k in range(1, n//2):
-                y1[2*k-1] = y2[k].real
-                y1[2*k] = y2[k].imag
-            y = fftpack.drfft(x)
-            assert_array_almost_equal(y,y1)
-
     def test_invalid_sizes(self):
         assert_raises(ValueError, rfft, [])
         assert_raises(ValueError, rfft, [[1,1],[2,2]], -5)
@@ -389,21 +344,6 @@ class _TestIRFFTBase(object):
 
         _test(x1, x1_1)
         _test(x2, x2_1)
-
-    def test_djbfft(self):
-        from numpy.fft import ifft as numpy_ifft
-        for i in range(2,14):
-            n = 2**i
-            x = list(range(n))
-            x1 = zeros((n,),dtype=cdouble)
-            x1[0] = x[0]
-            for k in range(1, n//2):
-                x1[k] = x[2*k-1]+1j*x[2*k]
-                x1[n-k] = x[2*k-1]-1j*x[2*k]
-            x1[n//2] = x[-1]
-            y1 = numpy_ifft(x1)
-            y = fftpack.drfft(x,direction=-1)
-            assert_array_almost_equal(y,y1)
 
     def test_random_real(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
