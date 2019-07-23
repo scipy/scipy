@@ -296,3 +296,31 @@ hfftn = functools.partial(c2rn, True)
 hfftn.__name__ = 'hfftn'
 irfftn = functools.partial(c2rn, False)
 irfftn.__name__ = 'irfftn'
+
+
+def r2r_fftpack(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
+    """FFT of a real sequence, returning fftpack half complex format"""
+    tmp = _asfarray(x)
+    overwrite_x = overwrite_x or _datacopied(tmp, x)
+    norm = _normalization(norm, forward)
+
+    if tmp.dtype.kind == 'c':
+        raise ValueError('x must be a real sequence')
+
+    if n is not None:
+        tmp, copied = _fix_shape_1d(tmp, n, axis)
+        overwrite_x = overwrite_x or copied
+    elif tmp.shape[axis] < 1:
+        raise ValueError("invalid number of data points ({0}) specified"
+                         .format(tmp.shape[axis]))
+
+    out = (tmp if overwrite_x else None)
+
+    return pfft.r2r_fftpack(tmp, (axis,), forward, forward, norm, out,
+                            _default_workers)
+
+
+rfft_fftpack = functools.partial(r2r_fftpack, True)
+rfft_fftpack.__name__ = 'rfft_fftpack'
+irfft_fftpack = functools.partial(r2r_fftpack, False)
+irfft_fftpack.__name__ = 'irfft_fftpack'

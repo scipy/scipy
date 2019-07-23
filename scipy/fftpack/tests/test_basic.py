@@ -800,42 +800,6 @@ class TestIfftn(object):
             ifftn([[1, 1], [2, 2]], (4, -3))
 
 
-class TestLongDoubleFailure(object):
-    def setup_method(self):
-        np.random.seed(1234)
-
-    def test_complex(self):
-        if np.dtype(np.longcomplex).itemsize == np.dtype(complex).itemsize:
-            # longdouble == double; so fft is supported
-            return
-
-        x = np.random.randn(10).astype(np.longdouble) + \
-                1j * np.random.randn(10).astype(np.longdouble)
-
-        for f in [fft, ifft]:
-            try:
-                f(x)
-                raise AssertionError("Type {0} not supported but does not fail" %
-                                     np.longcomplex)
-            except ValueError:
-                pass
-
-    def test_real(self):
-        if np.dtype(np.longdouble).itemsize == np.dtype(np.double).itemsize:
-            # longdouble == double; so fft is supported
-            return
-
-        x = np.random.randn(10).astype(np.longcomplex)
-
-        for f in [fft, ifft]:
-            try:
-                f(x)
-                raise AssertionError("Type %r not supported but does not fail" %
-                                     np.longcomplex)
-            except ValueError:
-                pass
-
-
 class FakeArray(object):
     def __init__(self, data):
         self._data = data
@@ -857,14 +821,14 @@ class TestOverwrite(object):
     dtypes = real_dtypes + [np.complex64, np.complex128]
     fftsizes = [8, 16, 32]
 
-    def _check(self, x, routine, fftsize, axis, overwrite_x, should_overwrite):
+    def _check(self, x, routine, fftsize, axis, overwrite_x):
         x2 = x.copy()
         for fake in [lambda x: x, FakeArray, FakeArray2]:
             routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
 
             sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
                 routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
-            if not should_overwrite:
+            if not overwrite_x:
                 assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 
     def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes,
@@ -876,15 +840,8 @@ class TestOverwrite(object):
             data = np.random.randn(*shape)
         data = data.astype(dtype)
 
-        should_overwrite = (overwrite_x
-                            and dtype in overwritable_dtypes
-                            and fftsize <= shape[axis]
-                            and (len(shape) == 1 or
-                                 (axis % len(shape) == len(shape)-1
-                                  and fftsize == shape[axis])))
         self._check(data, routine, fftsize, axis,
-                    overwrite_x=overwrite_x,
-                    should_overwrite=should_overwrite)
+                    overwrite_x=overwrite_x)
 
     @pytest.mark.parametrize('dtype', dtypes)
     @pytest.mark.parametrize('fftsize', fftsizes)
@@ -935,19 +892,11 @@ class TestOverwrite(object):
             part_shape = tuple(np.take(shape, axes))
 
         for fftshape in fftshape_iter(part_shape):
-            should_overwrite = (overwrite_x
-                                and data.ndim == 1
-                                and np.all([x < y for x, y in zip(fftshape,
-                                                                  part_shape)])
-                                and dtype in overwritable_dtypes)
             self._check(data, routine, fftshape, axes,
-                        overwrite_x=overwrite_x,
-                        should_overwrite=should_overwrite)
+                        overwrite_x=overwrite_x)
             if data.ndim > 1:
-                # check fortran order: it never overwrites
                 self._check(data.T, routine, fftshape, axes,
-                            overwrite_x=overwrite_x,
-                            should_overwrite=False)
+                            overwrite_x=overwrite_x)
 
     @pytest.mark.parametrize('dtype', dtypes)
     @pytest.mark.parametrize('overwrite_x', [True, False])
