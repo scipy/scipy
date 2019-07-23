@@ -4347,6 +4347,8 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     MGC requires at least 5 samples to run with nominal results. It is also
     robust enough to handle multidimensional arrays.
 
+    .. versionadded:: 1.4.0
+
     References
     ----------
     .. [1] Vogelstein, J. T., Bridgeford, E. W., Wang, Q., Priebe, C. E.,
