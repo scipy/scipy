@@ -13,7 +13,7 @@ __all__ = ['diff',
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
 from . import convolve
 
-from scipy.fftpack.basic import _datacopied
+from scipy.fft._pocketfft.helper import _datacopied
 
 
 _cache = {}
