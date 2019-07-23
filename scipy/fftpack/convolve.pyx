@@ -3,6 +3,9 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+__all__ = ['destroy_convolve_cache', 'convolve', 'convolve_z',
+           'init_convolution_kernel']
+
 
 def destroy_convolve_cache():
     pass  # We don't cache anything, needed for compatibility
