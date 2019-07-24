@@ -4233,7 +4233,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
-def _calc_p_value(x, y, stat, ind_test, compute_distance, reps=1000):
+def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
     r"""
     Helper function that calculates the p-value. See below for uses.
 
@@ -4274,27 +4274,28 @@ def _calc_p_value(x, y, stat, ind_test, compute_distance, reps=1000):
         pvalue += ((perm_stat >= stat) * (1/reps))
 
     # correct for a p_value of 0. This is because, with bootstrapping
-    # permutations, a value of 0 is not valid
+    # permutations, a value of 0 is incorrect
     if pvalue == 0:
         pvalue = 1 / reps
 
     return pvalue, null_dist
 
 
-def EUCLIDEAN_DISTANCE(x): return squareform(pdist(x, metric='euclidean'))
+def _euclidean_dist(x):
+    return squareform(pdist(x, metric='euclidean'))
 
 
 MGCResult = namedtuple('MGCResult', ('correlation', 'pvalue', 'mgcdict'))
 
 
-def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
+def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
     r"""
     Computes the MGC test statistic, a high dimensional measure of independence
     between arbitrary data matrices.
 
     Building upon the ideas of nearest neighbor methods and distance-based
     statistical methods, MGC achieves higher statistical power compared with
-    comparable distance based statistics while also providing a map th dat
+    comparable distance based statistics while also providing a map that
     characterizes the latent geometry of the relationship [1]_.
     Characterizations of this implementation in particular have been
     benchmarked extensively [2]_.
@@ -4310,7 +4311,7 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to ``None`` if `x` and `y` are already
-        distance. The default uses the euclidean norm metric.
+        distance matrices. The default uses the euclidean norm metric.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 repelications.
@@ -4324,6 +4325,7 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     mgc_dict : dict
         Contains additional useful additional returns containing the following
         keys:
+
             - mgc_map : ndarray
                 A 2D representation of the latent geometry of the relationship.
             - opt_scale : (int, int)
@@ -4392,8 +4394,8 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     statistic, under the null, at least as extreme as the observed test
     statistic.
 
-    MGC requires at least 5 samples to run with nominal results. It is also
-    robust enough to handle multidimensional arrays.
+    MGC requires at least 5 samples to run with reliable results. It can also
+    handle multidimensional arrays.
 
     .. versionadded:: 1.4.0
 
@@ -4421,13 +4423,9 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     ...               2.00149312, 1.35857623, -0.06729464, 0.16168344,
     ...               -0.61048226, 0.41711113])
     >>> stat, pvalue, _ = mgc(x, y)
-    >>> round(stat, 3), round(pvalue, 3)
+    >>> round(stat, 3), round(pvalue, 2)
     (0.439, 0.03)
     """
-    if x is None or y is None:
-        # return NaN if arrays are empty
-        return MGCResult(np.nan, np.nan, np.nan)
-
     # check for NaNs
     _contains_nan(x, nan_policy='raise')
     _contains_nan(y, nan_policy='raise')
@@ -4451,12 +4449,12 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     y = np.asarray(y).astype(np.float64)
 
     # check if compute_distance_matrix if a callable()
-    if not callable(compute_distance):
+    if not callable(compute_distance) and compute_distance is not None:
         raise ValueError("Compute_distance must be a function.")
 
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
     # warning)
-    if reps is None or not np.issubdtype(type(reps), np.int64) or reps < 0:
+    if not reps or not np.issubdtype(type(reps), np.int64) or reps < 0:
         raise ValueError("Number of reps must be an integer greater than 0.")
     elif reps < 1000:
         msg = ("The number of replications is low (under 1000), and p-value "
@@ -4470,8 +4468,8 @@ def mgc(x, y, compute_distance=EUCLIDEAN_DISTANCE, reps=1000):
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _calc_p_value(x, y, stat, _mgc_stat, compute_distance,
-                                      reps=1000)
+    pvalue, null_dist = _perm_test(x, y, stat, _mgc_stat, compute_distance,
+                                   reps=reps)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,

@@ -313,7 +313,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 @cython.boundscheck(False)
 cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
     r"""
-    Equivalent to scipy.stats.rankdata(x, "dense"), but faster!
+    Similar to scipy.stats.rankdata(x, "dense"), but faster!
 
     Parameters
     ----------

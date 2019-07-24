@@ -5090,22 +5090,6 @@ class TestMGCErrorWarnings(object):
     """ Tests errors and warnings derived from MGC.
     """
 
-    def test_error_exists(self):
-        # raises error when inputs do not exist
-        x = np.arange(20)
-        y = None
-        stat, pvalue, mgc_dict = stats.mgc(x, y)
-        assert_equal(stat, np.nan)
-        assert_equal(pvalue, np.nan)
-        assert_equal(mgc_dict, np.nan)
-
-        x = None
-        y = np.arange(20)
-        stat, pvalue, mgc_dict = stats.mgc(x, y)
-        assert_equal(stat, np.nan)
-        assert_equal(pvalue, np.nan)
-        assert_equal(mgc_dict, np.nan)
-
     def test_error_shape(self):
         # raises error if number of samples different (n)
         x = np.arange(20)
@@ -5145,7 +5129,7 @@ class TestMGCErrorWarnings(object):
         assert_raises(ValueError, stats.mgc, x, x, reps=reps)
 
         # raises error if reps is None type
-        reps = None
+        reps = ()
         assert_raises(ValueError, stats.mgc, x, x, reps=reps)
 
         # raises warning when reps is less than 1000
