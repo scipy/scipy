@@ -47,7 +47,7 @@ namespace ellint_carlson { namespace argcheck
     inline typing::cplx_only<T, bool>
     ph_good(const T& z)
     {
-	typedef decltype(z.real()) RT;
+	typedef typing::decplx_t<T> RT;
 	switch ( std::fpclassify(z.imag()) )
 	{
 	    case FP_NORMAL :

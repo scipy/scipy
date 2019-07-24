@@ -70,17 +70,16 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	return ExitStatus::bad_rerr;
     }
 
-    if ( argcheck::isinf(x) || argcheck::isinf(y) || argcheck::isinf(z) )
+    if ( argcheck::ph_good(x) && argcheck::ph_good(y) && argcheck::ph_good(z) )
     {
-	if ( argcheck::ph_good(x) && argcheck::ph_good(y) &&
-             argcheck::ph_good(z) )
+	if ( argcheck::isinf(x) || argcheck::isinf(y) || argcheck::isinf(z) )
 	{
 	    res = T(0.0);
 	    return ExitStatus::success;
-	} else {
-	    res = typing::nan<T>();
-	    return ExitStatus::bad_args;
 	}
+    } else {
+	res = typing::nan<T>();
+	return ExitStatus::bad_args;
     }
 
     cct1[0] = T(x);
