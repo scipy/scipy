@@ -14,13 +14,17 @@ except ImportError as e:
 
 
 def cxx_pre_build_hook(build_ext, ext):
-    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    from scipy._build_utils.compiler_helper import (get_cxx_std_flag,
+                                                    try_add_flag)
     cc = build_ext._cxx_compiler
     args = ext.extra_compile_args
 
     std_flag = get_cxx_std_flag(cc)
     if std_flag is not None:
         args.append(std_flag)
+    if sys.platform == 'darwin':
+        args.append('-mmacosx-version-min=10.7')
+        try_add_flag(args, cc, '-stdlib=libc++')
 
 
 def configuration(parent_package='',top_path=None):
@@ -82,14 +86,6 @@ def configuration(parent_package='',top_path=None):
                          depends=specfun_src,
                          define_macros=[],
                          libraries=['sc_specfun'])
-
-    # Extension _sf_error
-    config.add_extension("_sf_error",
-                         sources=sf_error_src,
-                         depends=sf_error_hdr,
-                         libraries=["sf_error"],
-                         include_dirs=[curdir] + inc_dirs,
-                         define_macros=define_macros,)
 
     # Extension _ufuncs
     headers = ['*.h', join('cephes', '*.h')]
