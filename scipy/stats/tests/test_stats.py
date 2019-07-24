@@ -175,6 +175,7 @@ class TestCorrPearsonr(object):
         other variables.  The same should go for SPEARMAN correlations, if
         your program has them.
     """
+
     def test_pXX(self):
         y = stats.pearsonr(X,X)
         r = y[0]
@@ -420,6 +421,7 @@ class TestFisherExact(object):
     > phyper(18999, 99000, 110000, 39000, lower.tail = FALSE)
     [1] 1.701815e-09
     """
+
     def test_basic(self):
         fisher_exact = stats.fisher_exact
 
@@ -545,6 +547,7 @@ class TestCorrSpearmanr(object):
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
     """
+
     def test_scalar(self):
         y = stats.spearmanr(4., 2.)
         assert_(np.isnan(y).all())
@@ -1821,6 +1824,7 @@ class _numpy_version_warn_context_mgr(object):
     This manager does not apply for cases where the old code returns
     different values.
     """
+
     def __init__(self, min_numpy_version, warning_type, num_warnings):
         if NumpyVersion(np.__version__) < min_numpy_version:
             self.numpy_is_old = True
@@ -4927,6 +4931,7 @@ class TestBrunnerMunzel(object):
 class TestRatioUniforms(object):
     """ Tests for rvs_ratio_uniforms.
     """
+
     def test_rv_generation(self):
         # use KS test to check distribution of rvs
         # normal distribution
@@ -5084,6 +5089,7 @@ class TestEppsSingleton(object):
 class TestMGCErrorWarnings(object):
     """ Tests errors and warnings derived from MGC.
     """
+
     def test_error_exists(self):
         # raises error when inputs do not exist
         x = np.arange(20)
@@ -5209,7 +5215,7 @@ class TestMGCStat(object):
         y = np.array([0.12441532, -2.63498763, 2.18349959, -0.58779997,
                       -1.58602656, 0.35894756, -0.73954299, 1.76585591,
                       -0.35002851, 0.48618590, 0.95628300, 1.99038991,
-                      1.92277498, 1.34861841,  1.42509605,  0.65982368,
+                      1.92277498, 1.34861841, 1.42509605, 0.65982368,
                       -1.56731299, -0.17000082, 1.81187432, -0.73726241,
                       0.44491111, 0.19177688, 2.28190181, 0.45509215,
                       -0.16777206, 0.06918430, -1.49570722, 2.23337087,

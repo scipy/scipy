@@ -4552,7 +4552,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
 
     # parametric threshold, based on a threshold is estimated based on the
     # normal distribution approximation
-    per_sig = 1 - (0.02 / samp_size) # Percentile to consider as significant
+    per_sig = 1 - (0.02 / samp_size)  # Percentile to consider as significant
     threshold = samp_size * (samp_size - 3)/4 - 1/2  # Beta approximation
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
