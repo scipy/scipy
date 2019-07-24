@@ -373,6 +373,10 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     if not noaxes and not axes.size:
         raise ValueError("when provided, axes cannot be empty")
 
+    # Axes of length 1 can rely on broadcasting rules for multipy, no fft needed
+    axes = np.array([a for a in axes
+                     if in1.shape[a] != 1 and in2.shape[a] != 1], axes.dtype)
+
     if noaxes:
         other_axes = array([], dtype=np.intc)
     else:
@@ -396,16 +400,19 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
-    # Speed up FFT by padding to optimal size
-    fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
-    fslice = tuple([slice(sz) for sz in shape])
-    if not complex_result:
-        fft, ifft = sp_fft.rfftn, sp_fft.irfftn
+    if axes.size:
+        # Speed up FFT by padding to optimal size
+        fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
+        fslice = tuple([slice(sz) for sz in shape])
+        if not complex_result:
+            fft, ifft = sp_fft.rfftn, sp_fft.irfftn
+        else:
+            fft, ifft = sp_fft.fftn, sp_fft.ifftn
+        sp1 = fft(in1, fshape, axes=axes)
+        sp2 = fft(in2, fshape, axes=axes)
+        ret = ifft(sp1 * sp2, fshape, axes=axes)[fslice].copy()
     else:
-        fft, ifft = sp_fft.fftn, sp_fft.ifftn
-    sp1 = fft(in1, fshape, axes=axes)
-    sp2 = fft(in2, fshape, axes=axes)
-    ret = ifft(sp1 * sp2, fshape, axes=axes)[fslice].copy()
+        ret = in1 * in2
 
     if mode == "full":
         return ret
