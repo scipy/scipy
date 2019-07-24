@@ -218,20 +218,34 @@ def c2cn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
     Return multidimensional discrete Fourier transform.
     """
     tmp = _asfarray(x)
-
-    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
+
+    noshape = shape is None
+    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
 
     if len(axes) == 0:
         return x
 
-    tmp, copied = _fix_shape(tmp, shape, axes)
-    overwrite_x = overwrite_x or copied
+    if not noshape:
+        nonzero_slice = [slice(s) for s in tmp.shape]
+        tmp, copied = _fix_shape(tmp, shape, axes)
+        overwrite_x = overwrite_x or copied
 
     norm = _normalization(norm, forward)
     out = (tmp if overwrite_x and tmp.dtype.kind == 'c' else None)
 
-    return pfft.c2c(tmp, axes, forward, norm, out, _default_workers)
+    if noshape or len(axes) == 1:  # Fast path
+        return pfft.c2c(tmp, axes, forward, norm, out, _default_workers)
+
+    if out is None:
+        out = np.zeros_like(tmp, np.result_type(tmp, np.complex64))
+
+    for a in axes:
+        nonzero_slice[a] = slice(None)
+        pfft.c2c(tmp[tuple(nonzero_slice)], (a,), forward, norm,
+                 out[tuple(nonzero_slice)], _default_workers)
+        tmp = out
+    return out
 
 
 fftn = functools.partial(c2cn, True)
