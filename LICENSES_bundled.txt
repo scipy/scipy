@@ -163,3 +163,8 @@ Name: pypocketfft
 Files: scipy/fft/_pocketfft/[pocketfft.h, pypocketfft.cxx]
 License: 3-Clause BSD
   For details, see scipy/fft/_pocketfft/LICENSE.md
+
+Name: uarray
+Files: scipy/_lib/uarray/*
+License: 3-Clause BSD
+  For details, see scipy/_lib/uarray/LICENSE

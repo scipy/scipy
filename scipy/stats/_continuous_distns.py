@@ -5204,19 +5204,25 @@ class ncx2_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, df, nc):
+        return (df > 0) & (nc >= 0)
+
     def _rvs(self, df, nc):
         return self._random_state.noncentral_chisquare(df, nc, self._size)
 
     def _logpdf(self, x, df, nc):
-        return _ncx2_log_pdf(x, df, nc)
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf, f2=chi2.logpdf)
 
     def _pdf(self, x, df, nc):
         # ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
         #                       * I[(df-2)/2](sqrt(nc*x))
-        return _ncx2_pdf(x, df, nc)
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_pdf, f2=chi2.pdf)
 
     def _cdf(self, x, df, nc):
-        return _ncx2_cdf(x, df, nc)
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_cdf, f2=chi2.cdf)
 
     def _ppf(self, q, df, nc):
         return sc.chndtrix(q, df, nc)

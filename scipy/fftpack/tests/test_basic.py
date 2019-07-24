@@ -748,12 +748,12 @@ class TestFftn(object):
     def test_invalid_sizes(self):
         with assert_raises(ValueError,
                            match="invalid number of data points"
-                           r" \(\[1 0\]\) specified"):
+                           r" \(\[1, 0\]\) specified"):
             fftn([[]])
 
         with assert_raises(ValueError,
                            match="invalid number of data points"
-                           r" \(\[ 4 -3\]\) specified"):
+                           r" \(\[4, -3\]\) specified"):
             fftn([[1, 1], [2, 2]], (4, -3))
 
 
@@ -791,12 +791,12 @@ class TestIfftn(object):
     def test_invalid_sizes(self):
         with assert_raises(ValueError,
                            match="invalid number of data points"
-                           r" \(\[1 0\]\) specified"):
+                           r" \(\[1, 0\]\) specified"):
             ifftn([[]])
 
         with assert_raises(ValueError,
                            match="invalid number of data points"
-                           r" \(\[ 4 -3\]\) specified"):
+                           r" \(\[4, -3\]\) specified"):
             ifftn([[1, 1], [2, 2]], (4, -3))
 
 

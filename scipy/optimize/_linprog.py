@@ -516,28 +516,35 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, x0, undo, complete, status,
             message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol)
 
+    postsolve_args = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
+
     if not complete:
         A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
                                    b_eq, bounds, x0, undo)
-        T_o = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
+
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
-                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback,
+                postsolve_args=postsolve_args, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
-                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback,
+                postsolve_args=postsolve_args, **solver_options)
         elif meth == 'revised simplex':
             x, status, message, iteration = _linprog_rs(
-                c, c0=c0, A=A, b=b, x0=x0, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, x0=x0, callback=callback,
+                postsolve_args=postsolve_args, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc...
     # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
-    x, fun, slack, con, status, message = _postprocess(
-        x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds,
-        complete, undo, status, message, tol, iteration, disp)
+
+    x, fun, slack, con, status, message = _postprocess(x, postsolve_args,
+                                                       complete, status,
+                                                       message, tol,
+                                                       iteration, disp)
 
     sol = {
         'x': x,
