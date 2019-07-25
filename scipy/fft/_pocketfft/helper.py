@@ -1,4 +1,6 @@
 import numpy as np
+from collections.abc import Iterable
+import operator
 
 
 # TODO: Build with OpenMp and add configuration support
@@ -13,15 +15,14 @@ def _init_nd_shape_and_axes(x, shape, axes):
     if noaxes:
         axes = range(x.ndim)
     else:
-        axes = np.atleast_1d(axes)
+        if not isinstance(axes, Iterable):
+            axes = (axes,)
 
-        if axes.size == 0:
-            axes = axes.astype(np.intc)
-
-        if not axes.ndim == 1:
-            raise ValueError("when given, axes values must be a scalar or vector")
-        if not np.issubdtype(axes.dtype, np.integer):
-            raise ValueError("when given, axes values must be integers")
+        try:
+            axes = [operator.index(a) for a in axes]
+        except TypeError as e:
+            raise ValueError("when given, axes values must be a scalar "
+                             "or iterable of integers") from e
 
         axes = [a + x.ndim if a < 0 else a for a in axes]
 
@@ -31,15 +32,15 @@ def _init_nd_shape_and_axes(x, shape, axes):
             raise ValueError("all axes must be unique")
 
     if not noshape:
-        shape = np.atleast_1d(shape)
+        if not isinstance(shape, Iterable):
+            shape = (shape,)
 
-        if shape.size == 0:
-            shape = shape.astype(np.intc)
+        try:
+            shape = [operator.index(s) for s in shape]
+        except TypeError as e:
+            raise ValueError("when given, shape values must be a scalar "
+                             "or iterable of integers") from e
 
-        if shape.ndim != 1:
-            raise ValueError("when given, shape values must be a scalar or vector")
-        if not np.issubdtype(shape.dtype, np.integer):
-            raise ValueError("when given, shape values must be integers")
         if len(axes) != len(shape):
             raise ValueError("when given, axes and shape arguments"
                              " have to be of the same length")

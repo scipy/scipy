@@ -373,13 +373,13 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
 
     if not noaxes:
-        if not axes.size:
+        if not len(axes):
             raise ValueError("when provided, axes cannot be empty")
 
     # Axes of length 1 can rely on broadcasting rules for multipy, no fft needed
     axes = [a for a in axes if in1.shape[a] != 1 and in2.shape[a] != 1]
 
-    if not all(s1[a] == s2[a] | s1[a] == 1 | s2[a] ==1
+    if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] ==1
                for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
                          " {0} and {1}".format(in1.shape, in2.shape))

@@ -4,7 +4,6 @@ import operator
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 from scipy.fft._helper import _next_regular_len
 import numpy as np
-
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
 
 

@@ -1,7 +1,6 @@
 from . import _pocketfft
 from ._pocketfft import helper as _helper
 from bisect import bisect_left
-import numpy as np
 
 
 def _next_regular_len(target):

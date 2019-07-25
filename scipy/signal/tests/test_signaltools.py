@@ -787,11 +787,12 @@ class TestFFTConvolve(object):
 
         with assert_raises(ValueError,
                            match="when given, axes values must be a scalar"
-                           " or vector"):
+                           " or iterable of integers"):
             fftconvolve([1], [2], axes=[[1, 2], [3, 4]])
 
         with assert_raises(ValueError,
-                           match="when given, axes values must be integers"):
+                           match="when given, axes values must be a scalar"
+                           " or iterable of integers"):
             fftconvolve([1], [2], axes=[1., 2., 3., 4.])
 
         with assert_raises(ValueError,
