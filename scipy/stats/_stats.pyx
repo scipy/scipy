@@ -319,8 +319,7 @@ cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
 @cython.boundscheck(False)
 cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
     # faster than np.apply_along_axis
-    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in
-                      range(distx.shape[0])])
+    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in range(distx.shape[0])])
 
 
 @cython.wraparound(False)
@@ -337,8 +336,7 @@ cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
         distx = rank_distx.astype(np.float)
 
     # 'mgc' distance transform (col-wise mean) - default
-    cdef np.ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)),
-                                            n).reshape(-1, n).T
+    cdef np.ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T
 
     # center the distance matrix
     cdef np.ndarray cent_distx = distx - exp_distx
@@ -360,10 +358,8 @@ cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
     if global_corr == "rank":
         is_ranked = True
 
-    cent_distx, rank_distx = _center_distance_matrix(distx, global_corr,
-                                                     is_ranked)
-    cent_disty, rank_disty = _center_distance_matrix(disty, global_corr,
-                                                     is_ranked)
+    cent_distx, rank_distx = _center_distance_matrix(distx, global_corr, is_ranked)
+    cent_disty, rank_disty = _center_distance_matrix(disty, global_corr, is_ranked)
 
     transform_dist = {"cent_distx": cent_distx, "cent_disty": cent_disty,
                       "rank_distx": rank_distx, "rank_disty": rank_disty}
@@ -416,12 +412,10 @@ cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
 
     for k in range(nx - 1):
         for l in range(ny - 1):
-            cov_xy[k+1, l+1] += (cov_xy[k+1, l] + cov_xy[k, l+1]
-                                 - cov_xy[k, l])
+            cov_xy[k+1, l+1] += (cov_xy[k+1, l] + cov_xy[k, l+1] - cov_xy[k, l])
 
     # centering the covariances
-    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) /
-                        n**2)  # caveat when porting from R (reshape)
+    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) / n**2)  # caveat when porting from R (reshape)
 
     return cov_xy
 
@@ -431,8 +425,7 @@ cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
 cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
                           np.ndarray[np.float_t, ndim=2] disty,
                           global_corr="mgc"):
-    transformed = _transform_distance_matrix(distx, disty,
-                                                global_corr)
+    transformed = _transform_distance_matrix(distx, disty, global_corr)
 
     # compute all local covariances
     cdef np.ndarray cov_mat = _local_covariance(
@@ -462,8 +455,7 @@ cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
     # normalizing the covariances yields the local family of correlations
 
     # 2 caveats when porting from R (np.sqrt and reshape)
-    corr_mat = cov_mat / \
-        np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
+    corr_mat = cov_mat / np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
     # avoid computational issues that may cause a few local correlations
     # to be negligebly larger than 1
     corr_mat[corr_mat > 1] = 1
