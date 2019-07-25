@@ -4509,9 +4509,7 @@ def _mgc_stat(x, y, compute_distance):
     disty = compute_distance(y)
 
     # calculate MGC map and optimal scale
-    warnings.filterwarnings("ignore")
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')[0]
-    warnings.filterwarnings("default")
 
     m, n = stat_mgc_map.shape
     if m == 1 or n == 1:

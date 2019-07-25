@@ -7,6 +7,7 @@ cimport numpy as np
 from numpy.math cimport PI
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
+import warnings
 import numpy as np
 import scipy.stats, scipy.special
 
@@ -447,11 +448,14 @@ cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
 
     # normalizing the covariances yields the local family of correlations
 
+    warnings.filterwarnings("ignore")
     # 2 caveats when porting from R (np.sqrt and reshape)
     corr_mat = cov_mat / np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
     # avoid computational issues that may cause a few local correlations
     # to be negligebly larger than 1
     corr_mat[corr_mat > 1] = 1
+
+    warnings.filterwarnings("default")
 
     # set any local correlation to 0 if any corresponding local variance is
     # less than or equal to 0
