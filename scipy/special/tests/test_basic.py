@@ -1606,7 +1606,10 @@ class TestEllipCarlson(object):
         assert_allclose(elliprd(1, 1, 1), 1)
         assert_allclose(elliprd(0, 2, 1) / 3.0, 0.59907011736779610371)
         assert elliprd(1, 1, inf) == 0.0
-        assert isnan(elliprd(1, 0, 0))
+        assert np.isinf(elliprd(1, 1, 0))
+        assert np.isinf(elliprd(1, 1, complex(0, 0)))
+        assert np.isinf(elliprd(0, 1, complex(0, 0)))
+        assert isnan(elliprd(1, 1, -np.finfo(np.double).tiny / 2.0))
         assert isnan(elliprd(1, 1, complex(-1, 0)))
         args = array([[0.0, 2.0, 1.0],
                       [2.0, 3.0, 4.0],

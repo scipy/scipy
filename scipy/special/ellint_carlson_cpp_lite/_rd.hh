@@ -23,18 +23,25 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     T cct2[6];
 
     ExitStatus status = ExitStatus::success;
+#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
     if ( argcheck::invalid_rerr(rerr, 1.0e-4) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_rerr;
     }
+#endif
 
-    if ( argcheck::too_small(z) ||
-         !( argcheck::ph_good(x) && argcheck::ph_good(y) &&
+    if ( !( argcheck::ph_good(x) && argcheck::ph_good(y) &&
             argcheck::ph_good(z) ) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_args;
+    }
+
+    if ( argcheck::too_small(z) )
+    {
+	res = typing::huge<T>();
+	return ExitStatus::singular;
     }
 
     if ( argcheck::isinf(x) || argcheck::isinf(y) || argcheck::isinf(z) )
