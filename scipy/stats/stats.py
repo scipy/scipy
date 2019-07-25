@@ -663,9 +663,12 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
 
     Returns
     -------
@@ -721,9 +724,12 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
 
     Returns
     -------
@@ -1007,9 +1013,12 @@ def variation(a, axis=0, nan_policy='propagate'):
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
 
     Returns
     -------
@@ -1059,9 +1068,12 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
 
     Returns
     -------
@@ -1159,9 +1171,12 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
 
     Returns
     -------
@@ -2210,9 +2225,12 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         for bias in limited samples relative to the population estimate
         of variance. Defaults to 1.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
 
     Returns
     -------
@@ -2532,9 +2550,12 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         depend on the input array, `x`, the `axis` argument, and the
         `keepdims` flag.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        returns nan, 'raise' throws an error, 'omit' performs the
-        calculations ignoring nan values. Default is 'propagate'.
+        - 'propagate' returns nan for 1-D array. For 2-D array, if
+           nan is present at `m, n`, nan is returned in the result ndarray
+           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'raise' throws an error
+        - 'omit' performs the calculations ignoring nan values
+        Default is 'propagate'.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}, optional
         Specifies the interpolation method to use when the percentile
         boundaries lie between two data points `i` and `j`:
