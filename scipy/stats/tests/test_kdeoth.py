@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from scipy import stats
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_,
-    assert_array_almost_equal, assert_array_almost_equal_nulp)
+    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -227,8 +227,7 @@ class _kde_subclass3(stats.gaussian_kde):
 
     def _compute_covariance(self):
         self.inv_cov = np.linalg.inv(self.covariance)
-        self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance)) \
-                                   * self.n
+        self._norm_factor = np.sqrt(np.linalg.det(2 * np.pi * self.covariance))
 
 
 class _kde_subclass4(stats.gaussian_kde):
@@ -362,7 +361,32 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(logpdf, logpdf2, decimal=12)
 
     # There are more points than data
-    gkde = stats.gaussian_kde(xs)
+    gkde = stats.gaussian_kde(xs, weights=np.random.rand(len(xs)))
     pdf = np.log(gkde.evaluate(xn))
     pdf2 = gkde.logpdf(xn)
     assert_almost_equal(pdf, pdf2, decimal=12)
+
+
+def test_weights_intact():
+    # regression test for gh-9709: weights are not modified
+    np.random.seed(12345)
+    vals = np.random.lognormal(size=100)
+    weights = np.random.choice([1.0, 10.0, 100], size=vals.size)
+    orig_weights = weights.copy()
+
+    stats.gaussian_kde(np.log10(vals), weights=weights)
+    assert_allclose(weights, orig_weights, atol=1e-14, rtol=1e-14)
+
+
+def test_weights_integer():
+    # integer weights are OK, cf gh-9709 (comment)
+    np.random.seed(12345)
+    values = [0.2, 13.5, 21.0, 75.0, 99.0]
+    weights = [1, 2, 4, 8, 16]  # a list of integers
+    pdf_i = stats.gaussian_kde(values, weights=weights)
+    pdf_f = stats.gaussian_kde(values, weights=np.float64(weights))
+
+    xn = [0.3, 11, 88]
+    assert_allclose(pdf_i.evaluate(xn),
+                    pdf_f.evaluate(xn), atol=1e-14, rtol=1e-14)
+

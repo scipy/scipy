@@ -401,6 +401,116 @@ subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
 
 end subroutine <prefix2c>unmqr
 
+subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
+    ! a,t,info = geqrt(nb,a,[overwrite_a=0])
+    !
+    ! Computes a QR factorization with block size nb of a general matrix A,
+    ! using the compact WY representation for Q. T stores the upper triangular
+    ! block reflectors.
+
+    callstatement (*f2py_func)(&m,&n,&nb,a,&lda,t,&ldt,work,&info)
+    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(in),depend(m,n),check(MIN(m,n)>=nb&&nb>=1):: nb
+    <ftype> dimension(m,n),intent(in,out,copy):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> dimension(nb,MIN(m,n)),intent(out):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension(nb,n),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>geqrt
+
+subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
+    ! c,info = gemqrt(side,trans,v,t,c,[overwrite_c=0])
+    !
+    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+    ! elementary reflectors stored in matrix V and the upper triangular block
+    ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
+    ! matrices), or its adjoint (for complex matrices) from the left or right.
+
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(hide),depend(c):: m = shape(c,0)
+    integer intent(hide),depend(c):: n = shape(c,1)
+    integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
+    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
+    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
+    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
+    <ftype> dimension(nb,k),intent(in):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension(m,n),intent(in,out,copy):: c
+    integer intent(hide),depend(c):: ldc = MAX(1,shape(c,0))
+    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>gemqrt
+
+subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
+    ! a,b,t,info = tpqrt(l,nb,a,b,[overwrite_a=0,overwrite_b=0])
+    !
+    ! Computes a QR factorization with block size nb of a triangular-pentagonal
+    ! matrix consisting of square upper triangular matrix A and pentagonal
+    ! matrix B, in the compact WY representation. L is the order of the
+    ! trapezoidal part of matrix B. T stores the upper triangular block
+    ! reflectors.
+
+    callstatement (*f2py_func)(&m,&n,&l,&nb,a,&lda,b,&ldb,t,&ldt,work,&info)
+    callprotoargument int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    integer intent(hide),depend(b):: m = shape(b,0)
+    integer intent(hide),depend(b):: n = shape(b,1)
+    integer intent(in),depend(m,n),check(MIN(m,n)>=l&&l>=0):: l
+    integer intent(in),depend(n),check(n>=nb&&nb>=1):: nb
+    <ftype> dimension(n,n),intent(in,out,copy):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> dimension(m,n),intent(in,out,copy):: b
+    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
+    <ftype> dimension(nb,n),intent(out):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension(nb,n),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>tpqrt
+
+subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,info)
+    ! a,b,info = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
+    !
+    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+    ! elementary reflectors stored in the pentagonal matrix V and the upper
+    ! triangular block reflectors in matrix T. L is the order of the trapezoidal
+    ! part of matrix V. Matrix C consists of blocks A and B, and may be
+    ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
+    ! complex matrices) from the left or right.
+
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(hide),depend(b):: m = shape(b,0)
+    integer intent(hide),depend(b):: n = shape(b,1)
+    integer intent(hide),depend(t):: k = shape(t,1)
+    integer intent(in),depend(k),check(k>=l&&l>=0):: l
+    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
+    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
+    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
+    <ftype> dimension(nb,k),intent(in):: t
+    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+    <ftype> dimension((side[0]=='L'?k:m),(side[0]=='L'?n:k)),intent(in,out,copy):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> dimension(m,n),intent(in,out,copy):: b
+    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
+    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
+    integer intent(out):: info
+
+end subroutine <prefix>tpmqrt
+
 subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,lwork,info)
     !
     ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
@@ -419,7 +529,7 @@ subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,l
     !
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,a,&lda,tau,c,&ldc,work,&lwork,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,int*
-    
+
     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
     integer intent(hide),depend(c),check(m>=0):: m=shape(c,0)
@@ -457,7 +567,7 @@ subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,wor
     fortranname <prefix><or,or,un,un>mrz
     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&a,&lda,&tau,&c,&ldc,&work,&lwork,&info)
     callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,int*
-    
+
     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
     integer intent(in):: m
@@ -472,7 +582,7 @@ subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,wor
     <ftype> intent(out):: work
     integer intent(hide):: lwork=-1
     integer intent(out):: info
-    
+
 end subroutine <prefix><or,or,un,un>mrz_lwork
 
 subroutine <prefix2>orgrq(m,n,k,a,tau,work,lwork,info)
@@ -1060,7 +1170,7 @@ subroutine <prefix><s,s,h,h>frk(transr,uplo,trans,n,k,nt,ka,alpha,a,lda,beta,c)
     ! (S/D)SFRK - (C/Z)HFRK performs one of the Sym/Hermitian rank--k operations
     !
     !    C := alpha*A*A**H + beta*C,  or C := alpha*A**H*A + beta*C
-    ! 
+    !
     ! where alpha and beta are real scalars, C is an n--by--n Sym/Hermitian
     ! matrix and A is an n--by--k matrix in the first case and a k--by--n
     ! matrix in the second case.
@@ -1088,7 +1198,7 @@ subroutine <prefix>tpttf(transr,uplo,n,nt,ap,arf,info)
     ! copies a triangular matrix from the standard packed format (TP) to the
     ! rectangular full packed format (TF).
     !
-    
+
     callstatement (*f2py_func)(transr,uplo,&n,ap,arf,&info)
     callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*
 
@@ -1107,7 +1217,7 @@ subroutine <prefix>tpttr(uplo,n,nt,ap,a,lda,info)
     ! TPTTR copies a triangular matrix from the standard packed format (TP)
     ! to the standard full format (TR).
     !
-    
+
     callstatement (*f2py_func)(uplo,&n,ap,a,&lda,&info)
     callprotoargument char*,int*,<ctype>*,<ctype>*,int*,int*
 
@@ -1126,7 +1236,7 @@ subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
     ! copies a triangular matrix from the standard packed format (TP) to the
     ! rectangular full packed format (TF).
     !
-    
+
     callstatement (*f2py_func)(transr,uplo,&n,arf,ap,&info)
     callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*
 
@@ -1143,7 +1253,7 @@ end subroutine <prefix>tfttp
 subroutine <prefix>tfttr(transr,uplo,n,nt,arf,a,lda,info)
     !
     ! TFTTR copies a triangular matrix from the rectangular full packed
-    ! format (TF) to the standard full format (TR). 
+    ! format (TF) to the standard full format (TR).
     !
     callstatement (*f2py_func)(transr,uplo,&n,arf,a,&lda,&info)
     callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*,int*
@@ -1166,7 +1276,7 @@ subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
     !
     callstatement (*f2py_func)(transr,uplo,&n,a,&lda,arf,&info)
     callprotoargument char*,char*,int*,<ctype>*,int*,<ctype>*,int*
-    
+
     character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
     integer intent(hide),depend(a):: n = shape(a,1)
@@ -1180,11 +1290,11 @@ end subroutine <prefix>trttf
 subroutine <prefix>trttp(uplo,n,a,lda,ap,info)
     !
     ! TRTTP copies a triangular matrix from the standard full format (TR) to
-    ! the standard packed format (TP). 
+    ! the standard packed format (TP).
     !
     callstatement (*f2py_func)(uplo,&n,a,&lda,ap,&info)
     callprotoargument char*,int*,<ctype>*,int*,<ctype>*,int*
-    
+
     character optional, intent(int),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
     integer intent(hide),depend(a):: n = shape(a,1)
     integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
@@ -1245,7 +1355,7 @@ subroutine <prefix>pftrf(transr,uplo,n,nt,a,info)
     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
     integer intent(in), check(n>=0):: n
     <ftype> dimension(nt),intent(in,out,copy,out=achol):: a
-    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)    
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
     integer intent(out):: info
 
 end subroutine <prefix>pftrf
@@ -1264,7 +1374,7 @@ subroutine <prefix>pftri(transr,uplo,n,nt,a,info)
     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
     integer intent(in), check(n>=0):: n
     <ftype> dimension(nt),intent(in,out,copy,out=ainv):: a
-    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)  
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
     integer intent(out):: info
 
 end subroutine <prefix>pftri
@@ -1303,7 +1413,7 @@ subroutine <prefix>tzrzf(m,n,a,lda,tau,work,lwork,info)
     !
     callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
     callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
-    
+
     integer intent(hide),depend(a):: m=shape(a,0)
     integer intent(hide),depend(a):: n=shape(a,1)
     integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
@@ -1312,7 +1422,7 @@ subroutine <prefix>tzrzf(m,n,a,lda,tau,work,lwork,info)
     <ftype> dimension(MAX(lwork,1)),depend(lwork),intent(hide,cache):: work
     integer optional, intent(in),depend(m),check(lwork>=m):: lwork = MAX(m,1)
     integer intent(out):: info
-    
+
 end subroutine<prefix>tzrzf
 
 subroutine <prefix>tzrzf_lwork(m,n,a,lda,tau,work,lwork,info)

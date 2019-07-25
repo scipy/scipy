@@ -1,9 +1,11 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
+import timeit
+from concurrent.futures import ThreadPoolExecutor, wait
 
 try:
-    from scipy.signal import lfilter, firwin, decimate
+    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
 except ImportError:
     pass
 
@@ -45,3 +47,26 @@ class Lfilter(Benchmark):
 
     def time_lfilter(self, n_samples, numtaps):
         lfilter(self.coeff, 1.0, self.sig)
+
+class ParallelSosfilt(Benchmark):
+    timeout = 100
+    timer = timeit.default_timer
+
+    param_names = ['n_samples', 'threads']
+    params = [
+        [1e3, 10e3],
+        [1, 2, 4]
+    ]
+
+    def setup(self, n_samples, threads):
+        self.filt = butter(8, 8e-6, "lowpass", output="sos")
+        self.data = np.arange(int(n_samples) * 3000).reshape(int(n_samples), 3000)
+        self.chunks = np.array_split(self.data, threads)
+
+    def time_sosfilt(self, n_samples, threads):
+        pool = ThreadPoolExecutor(max_workers=threads)
+        futures = []
+        for i in range(threads):
+            futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
+
+        wait(futures)

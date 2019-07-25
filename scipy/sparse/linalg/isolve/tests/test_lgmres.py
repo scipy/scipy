@@ -95,8 +95,8 @@ class TestLGMRES(object):
     def test_arnoldi(self):
         np.random.rand(1234)
 
-        A = eye(10000) + rand(10000, 10000, density=1e-4)
-        b = np.random.rand(10000)
+        A = eye(2000) + rand(2000, 2000, density=5e-4)
+        b = np.random.rand(2000)
 
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:
@@ -108,7 +108,7 @@ class TestLGMRES(object):
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
-        assert_(np.linalg.norm(A.dot(x0) - b) > 1e-3)
+        assert_(np.linalg.norm(A.dot(x0) - b) > 4e-4)
 
         assert_allclose(x0, x1)
 

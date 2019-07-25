@@ -1079,7 +1079,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Least-squares solution.  Return shape matches shape of `b`.
     residues : (K,) ndarray or float
         Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
-        ``rank(A) == n`` (returns a scalar if b is 1-D). Otherwise a
+        ``ndim(A) == n`` (returns a scalar if b is 1-D). Otherwise a
         (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
@@ -1097,7 +1097,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     See Also
     --------
-    optimize.nnls : linear least squares with non-negativity constraint
+    scipy.optimize.nnls : linear least squares with non-negativity constraint
 
     Notes
     -----
@@ -1256,9 +1256,16 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
-        Cutoff for 'small' singular values in the least-squares solver.
-        Singular values smaller than ``rcond * largest_singular_value``
-        are considered zero.
+        Cutoff factor for 'small' singular values. In `lstsq`, 
+        singular values less than ``cond*largest_singular_value`` will be
+        considered as zero. If both are omitted, the default value
+        ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the
+        corresponding machine precision value of the datatype of ``a``.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just `eps` without the
+            factor ``max(M, N)``.
+
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
@@ -1291,8 +1298,12 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     a = _asarray_validated(a, check_finite=check_finite)
     b = np.identity(a.shape[0], dtype=a.dtype)
+
     if rcond is not None:
         cond = rcond
+
+    if cond is None:
+        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
 
     x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
 
@@ -1315,12 +1326,17 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float or None
-        Cutoff for 'small' singular values.
-        Singular values smaller than ``rcond*largest_singular_value``
-        are considered zero.
-        If None or -1, suitable machine precision is used.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered as zero. If both are omitted, the default value
+        ``max(M,N)*largest_singular_value*eps`` is used where ``eps`` is the
+        machine precision value of the datatype of ``a``.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
+
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1331,7 +1347,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.  Returned if `return_rank` is True.
 
     Raises
     ------
@@ -1356,10 +1372,9 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         cond = rcond
     if cond in [None, -1]:
         t = u.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
+        cond = np.max(s) * max(a.shape) * np.finfo(t).eps
 
-    rank = np.sum(s > cond * np.max(s))
+    rank = np.sum(s > cond)
 
     u = u[:, :rank]
     u /= s[:rank]
@@ -1385,16 +1400,20 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
     cond, rcond : float or None
-        Cutoff for 'small' eigenvalues.
-        Singular values smaller than rcond * largest_eigenvalue are considered
-        zero.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered as zero. If both are omitted, the default
+        ``max(M,N)*largest_eigenvalue*eps`` is used where ``eps`` is the
+        machine precision value of the datatype of ``a``.
 
-        If None or -1, suitable machine precision is used.
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
+
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of a. (Default: lower)
+        triangle of `a`. (Default: lower)
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1405,7 +1424,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     B : (N, N) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.  Returned if `return_rank` is True.
 
     Raises
     ------
@@ -1431,11 +1450,10 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         cond = rcond
     if cond in [None, -1]:
         t = u.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
+        cond = np.max(np.abs(s)) * max(a.shape) * np.finfo(t).eps
 
     # For Hermitian matrices, singular values equal abs(eigenvalues)
-    above_cutoff = (abs(s) > cond * np.max(abs(s)))
+    above_cutoff = (abs(s) > cond)
     psigma_diag = 1.0 / s[above_cutoff]
     u = u[:, above_cutoff]
 

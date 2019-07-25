@@ -39,6 +39,8 @@ def binned_statistic(x, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
           * 'count' : compute the count of points within each bin.  This is
@@ -213,6 +215,8 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
           * 'count' : compute the count of points within each bin.  This is
@@ -364,7 +368,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     Parameters
     ----------
     sample : array_like
-        Data to histogram passed as a sequence of D arrays of length N, or
+        Data to histogram passed as a sequence of N arrays of length D, or
         as an (N,D) array.
     values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
@@ -384,6 +388,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
             referenced.
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
+          * 'std' : compute the standard deviation within each bin. This 
+            is implicitly calculated with ddof=0.
           * 'min' : compute the minimum of values for points within each bin.
             Empty bins will be represented by NaN.
           * 'max' : compute the maximum of values for point within each bin.
@@ -452,6 +458,47 @@ def binned_statistic_dd(sample, values, statistic='mean',
     (bin_edges[D][i-1], bin_edges[D][i]), for each dimension 'D'.
 
     .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import Axes3D
+
+    Take an array of 600 (x, y) coordinates as an example.
+    `binned_statistic_dd` can handle arrays of higher dimension `D`. But a plot
+    of dimension `D+1` is required.
+
+    >>> mu = np.array([0., 1.])
+    >>> sigma = np.array([[1., -0.5],[-0.5, 1.5]])
+    >>> multinormal = stats.multivariate_normal(mu, sigma)
+    >>> data = multinormal.rvs(size=600)
+    >>> data.shape
+    (600, 2)
+
+    Create bins and count how many arrays fall in each bin:
+
+    >>> N = 60
+    >>> x = np.linspace(-3, 3, N)
+    >>> y = np.linspace(-3, 4, N)
+    >>> ret = stats.binned_statistic_dd(data, np.arange(600), bins=[x, y],
+    ...                                 statistic='count')
+    >>> bincounts = ret.statistic
+
+    Set the volume and the location of bars:
+
+    >>> dx = x[1] - x[0]
+    >>> dy = y[1] - y[0]
+    >>> x, y = np.meshgrid(x[:-1]+dx/2, y[:-1]+dy/2)
+    >>> z = 0
+
+    >>> bincounts = bincounts.ravel()
+    >>> x = x.ravel()
+    >>> y = y.ravel()
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111, projection='3d')
+    >>> ax.bar3d(x, y, z, dx, dy, bincounts)
 
     """
     known_stats = ['mean', 'median', 'count', 'sum', 'std','min','max']
@@ -556,11 +603,10 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in xrange(Vdim):
-            flatsum = np.bincount(binnumbers, values[vv])
-            flatsum2 = np.bincount(binnumbers, values[vv] ** 2)
-            result[vv, a] = np.sqrt(flatsum2[a] / flatcount[a] -
-                                    (flatsum[a] / flatcount[a]) ** 2)
+        for i in np.unique(binnumbers):
+            for vv in xrange(Vdim):
+                #NOTE: take std dev by bin, np.std() is 2-pass and stable
+                result[vv, i] = np.std(values[vv, binnumbers == i])
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)

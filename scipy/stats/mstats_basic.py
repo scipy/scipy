@@ -56,15 +56,6 @@ from ._stats_mstats_common import (
         )
 
 
-genmissingvaldoc = """
-
-    Notes
-    -----
-    Missing values are considered pair-wise: if a value is missing in x,
-    the corresponding value in y is masked.
-    """
-
-
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
     a = ma.asanyarray(a)
@@ -835,10 +826,6 @@ def linregress(x, y=None):
         slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
-
-
-if stats_linregress.__doc__:
-    linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
 
 
 def theilslopes(y, x=None, alpha=0.95):
@@ -2889,7 +2876,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     ny = len(y)
     if nx == 0 or ny == 0:
         return BrunnerMunzelResult(np.nan, np.nan)
-    nc = nx + ny
     rankc = rankdata(np.concatenate((x,y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
@@ -2904,9 +2890,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     Sx /= nx - 1
     Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
     Sy /= ny - 1
-
-    sigmax = Sx / np.power(nc - nx, 2.0)
-    sigmay = Sx / np.power(nc - ny, 2.0)
 
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
     wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
@@ -2924,7 +2907,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
             "distribution should be 't' or 'normal'")
 
     if alternative == "greater":
-        p = p
+        pass
     elif alternative == "less":
         p = 1 - p
     elif alternative == "two-sided":

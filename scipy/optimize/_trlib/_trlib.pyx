@@ -1,6 +1,6 @@
 from scipy.optimize._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
 import numpy as np
-cimport ctrlib
+from . cimport ctrlib
 cimport libc.stdio
 cimport numpy as np
 

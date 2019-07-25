@@ -4,7 +4,7 @@ import sys
 import threading
 
 import numpy as np
-from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
+from numpy import array, finfo, arange, eye, all, unique, ones, dot
 import numpy.random as random
 from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
@@ -215,9 +215,9 @@ class TestLinsolve(object):
                 assert_(norm(b - Asp*x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
-        Adense = matrix([[0., 1., 1.],
-                         [1., 0., 1.],
-                         [0., 0., 1.]])
+        Adense = array([[0., 1., 1.],
+                        [1., 0., 1.],
+                        [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
@@ -227,9 +227,9 @@ class TestLinsolve(object):
         assert_array_almost_equal(x, x2)
 
     def test_bmatrix_smoketest(self):
-        Adense = matrix([[0., 1., 1.],
-                         [1., 0., 1.],
-                         [0., 0., 1.]])
+        Adense = array([[0., 1., 1.],
+                        [1., 0., 1.],
+                        [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3, 4)

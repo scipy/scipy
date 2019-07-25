@@ -37,7 +37,8 @@ def check_normalization(distfn, args, distname):
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    normalization_cdf = distfn.cdf(distfn.b, *args)
+    _a, _b = distfn.support(*args)
+    normalization_cdf = distfn.cdf(_b, *args)
     npt.assert_allclose(normalization_cdf, 1.0)
 
 
@@ -120,9 +121,9 @@ def check_entropy_vect_scale(distfn, arg):
 
 def check_edge_support(distfn, args):
     # Make sure that x=self.a and self.b are handled correctly.
-    x = [distfn.a, distfn.b]
+    x = distfn.support(*args)
     if isinstance(distfn, stats.rv_discrete):
-        x = [distfn.a - 1, distfn.b]
+        x = x[0]-1, x[1]
 
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
     npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
@@ -222,7 +223,8 @@ def check_meth_dtype(distfn, arg, meths):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        x = x[(distfn.a < x) & (x < distfn.b)]
+        _a, _b = distfn.support(*arg)
+        x = x[(_a < x) & (x < _b)]
         for meth in meths:
             val = meth(x, *arg)
             npt.assert_(val.dtype == np.float_)
@@ -251,7 +253,8 @@ def check_cmplx_deriv(distfn, arg):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        x = x[(distfn.a < x) & (x < distfn.b)]
+        _a, _b = distfn.support(*arg)
+        x = x[(_a < x) & (x < _b)]
 
         pdf, cdf, sf = distfn.pdf(x, *arg), distfn.cdf(x, *arg), distfn.sf(x, *arg)
         assert_allclose(deriv(distfn.cdf, x, *arg), pdf, rtol=1e-5)

@@ -62,7 +62,7 @@ class OdrError(Exception):
     """
     Exception indicating an error in fitting.
 
-    This is raised by `scipy.odr` if an error occurs during fitting.
+    This is raised by `~scipy.odr.odr` if an error occurs during fitting.
     """
     pass
 
@@ -72,7 +72,7 @@ class OdrStop(Exception):
     Exception stopping fitting.
 
     You can raise this exception in your objective function to tell
-    `scipy.odr` to stop fitting.
+    `~scipy.odr.odr` to stop fitting.
     """
     pass
 
@@ -482,8 +482,8 @@ class Model(object):
         If the input data is multi-dimensional, then `x` is a rank-2 array;
         i.e., ``x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n)``.
         In all cases, it has the same shape as the input data array passed to
-        `odr`. `m` is the dimensionality of the input data, `n` is the number
-        of observations.
+        `~scipy.odr.odr`. `m` is the dimensionality of the input data,
+        `n` is the number of observations.
     `y`
         if the response variable is single-dimensional, then `y` is a
         rank-1 array, i.e., ``y = array([2, 4, ...]); y.shape = (n,)``.
@@ -586,8 +586,8 @@ class Output(object):
     Notes
     -----
     Takes one argument for initialization, the return value from the
-    function `odr`. The attributes listed as "optional" above are only
-    present if `odr` was run with ``full_output=1``.
+    function `~scipy.odr.odr`. The attributes listed as "optional" above are
+    only present if `~scipy.odr.odr` was run with ``full_output=1``.
 
     """
 

@@ -35,7 +35,7 @@
  *     Usp. Mat. Nauk, 1944. http://mi.mathnet.ru/umn8798
  * [2] Birnbaum, Z. W. and Tingey, Fred H.
  *     "One-Sided Confidence Contours for Probability Distribution Functions",
- *     Ann. Math. Statist. 1951.  http://dx.doi.org/10.1214/aoms/1177729550
+ *     Ann. Math. Statist. 1951.  https://doi.org/10.1214/aoms/1177729550
  * [3] Dwass, Meyer, "The Distribution of a Generalized $\mathrm{D}^+_n$ Statistic",
  *     Ann. Math. Statist., 1959.  https://doi.org/10.1214/aoms/1177706085
  * [4] van Mulbregt, Paul, "Computing the Cumulative Distribution Function and Quantiles of the One-sided Kolmogorov-Smirnov Statistic"

@@ -13,6 +13,8 @@ import sys
 import json
 import collections
 import argparse
+import datetime
+import time
 
 from urllib.request import urlopen, Request, HTTPError
 
@@ -49,9 +51,11 @@ def main():
 
         for issue in items:
             msg = u"* `#{0} <{1}>`__: {2}"
-            title = re.sub(u"\s+", u" ", issue.title.strip())
+            # sanitize whitespace, `, and *
+            title = re.sub(u"\\s+", u" ", issue.title.strip())
+            title = title.replace(u'`', u'\\`').replace(u'*', u'\\*')
             if len(title) > 60:
-                remainder = re.sub(u"\s.*$", u"...", title[60:])
+                remainder = re.sub(u"\\s.*$", u"...", title[60:])
                 if len(remainder) > 20:
                     remainder = title[:80] + u"..."
                 else:
@@ -62,7 +66,7 @@ def main():
 
     msg = u"Issues closed for {0}".format(args.milestone)
     print_list(msg, issues)
-    
+
     msg = u"Pull requests for {0}".format(args.milestone)
     print_list(msg, prs)
 

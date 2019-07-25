@@ -100,6 +100,10 @@ csr_sort_indices    v iI*I*T
 csr_eliminate_zeros v ii*I*I*T
 csr_sum_duplicates  v ii*I*I*T
 get_csr_submatrix   v iiIITiiii*V*V*W
+csr_row_index       v iIIIT*I*T
+csr_row_slice       v iiiIIT*I*T
+csr_column_index1   v iIiiII*I*I
+csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
 csr_sample_offsets  i iiIIiII*I

@@ -271,22 +271,31 @@ class Test_vectorization_compiled:
         assert_(np.all(~np.isfinite(d[:,:,-s:])))
         assert_(np.all(i[:,:,-s:] == self.kdtree.n))
 
-
 class ball_consistency:
+    tol = 0.0
+
     def distance(self, a, b, p):
-        return minkowski_distance(a, b, p)
+        return minkowski_distance(a * 1.0, b * 1.0, p)
 
     def test_in_ball(self):
-        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
-        for i in l:
-            assert_(self.distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
+        x = np.atleast_2d(self.x)
+        d = np.broadcast_to(self.d, x.shape[:-1])
+        l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
+        for i, ind in enumerate(l):
+            dist = self.distance(self.data[ind], x[i],self.p) - d[i]*(1.+self.eps)
+            norm = self.distance(self.data[ind], x[i],self.p) + d[i]*(1.+self.eps)
+            assert_array_equal(dist < self.tol * norm, True)
 
     def test_found_all(self):
-        c = np.ones(self.T.n,dtype=bool)
-        l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
-        c[l] = False
-        assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
-
+        x = np.atleast_2d(self.x)
+        d = np.broadcast_to(self.d, x.shape[:-1])
+        l = self.T.query_ball_point(x, self.d, p=self.p, eps=self.eps)
+        for i, ind in enumerate(l):
+            c = np.ones(self.T.n, dtype=bool)
+            c[ind] = False
+            dist = self.distance(self.data[c], x[i],self.p) - d[i]/(1.+self.eps)
+            norm = self.distance(self.data[c], x[i],self.p) + d[i]/(1.+self.eps)
+            assert_array_equal(dist > -self.tol * norm, True)
 
 class Test_random_ball(ball_consistency):
 
@@ -347,6 +356,22 @@ class Test_random_ball_compiled_periodic(ball_consistency):
         l = self.T.query_ball_point(self.x - 1.0, self.d, p=self.p, eps=self.eps)
         c[l] = False
         assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
+
+class Test_random_ball_compiled_largep_issue9890(ball_consistency):
+
+    # allow some roundoff errors due to numerical issues
+    tol = 1e-13
+
+    def setup_method(self):
+        n = 1000
+        m = 2
+        np.random.seed(123)
+        self.data = np.random.randint(100, 1000, size=(n, m))
+        self.T = cKDTree(self.data)
+        self.x = self.data
+        self.p = 100
+        self.eps = 0
+        self.d = 10
 
 class Test_random_ball_approx(Test_random_ball):
 
@@ -1335,6 +1360,62 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
 
+def test_query_ball_point_vector_r():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = np.random.uniform(0, 0.3, size=len(query))
+
+    rvector = tree.query_ball_point(query, d)
+    rscalar = [tree.query_ball_point(qi, di) for qi, di in zip(query, d)]
+    for a, b in zip(rvector, rscalar):
+        assert_array_equal(sorted(a), sorted(b))
+
+def test_query_ball_point_length():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    query = np.random.normal(size=(100, 3))
+    tree = cKDTree(data)
+    d = 0.3
+
+    length = tree.query_ball_point(query, d, return_length=True)
+    length2 = [len(ind) for ind in tree.query_ball_point(query, d, return_length=False)]
+    length3 = [len(tree.query_ball_point(qi, d)) for qi in query]
+    length4 = [tree.query_ball_point(qi, d, return_length=True) for qi in query]
+    assert_array_equal(length, length2)
+    assert_array_equal(length, length3)
+    assert_array_equal(length, length4)
+
+@pytest.mark.parametrize("balanced_tree, compact_nodes",
+    [(True, False),
+     (True, True),
+     (False, False),
+     (False, True)])
+def test_cdktree_empty_input(balanced_tree, compact_nodes):
+    # https://github.com/scipy/scipy/issues/5040
+    np.random.seed(1234)
+    empty_v3 = np.empty(shape=(0, 3))
+    query_v3 = np.ones(shape=(1, 3))
+    query_v2 = np.ones(shape=(2, 3))
+
+    tree = cKDTree(empty_v3, balanced_tree=balanced_tree, compact_nodes=compact_nodes)
+    length = tree.query_ball_point(query_v3, 0.3, return_length=True)
+    assert length == 0
+
+    dd, ii = tree.query(query_v2, 2)
+    assert ii.shape == (2, 2)
+    assert dd.shape == (2, 2)
+    assert np.isinf(dd).all()
+
+    N = tree.count_neighbors(tree, [0, 1])
+    assert_array_equal(N, [0, 0])
+
+    M = tree.sparse_distance_matrix(tree, 0.3)
+    assert M.shape == (0, 0)
+
 class Test_sorted_query_ball_point(object):
 
     def setup_method(self):
@@ -1345,6 +1426,10 @@ class Test_sorted_query_ball_point(object):
     def test_return_sorted_True(self):
         idxs_list = self.ckdt.query_ball_point(self.x, 1., return_sorted=True)
         for idxs in idxs_list:
+            assert_array_equal(idxs, sorted(idxs))
+
+        for xi in self.x:
+            idxs = self.ckdt.query_ball_point(xi, 1., return_sorted=True)
             assert_array_equal(idxs, sorted(idxs))
 
     def test_return_sorted_None(self):

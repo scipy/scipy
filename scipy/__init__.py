@@ -18,7 +18,8 @@ Using any of these subpackages requires an explicit import.  For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
@@ -108,9 +109,9 @@ else:
 
     from scipy.version import version as __version__
     from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.8.2':
+    if _NumpyVersion(__numpy_version__) < '1.13.3':
         import warnings
-        warnings.warn("Numpy 1.8.2 or above is recommended for this version of "
+        warnings.warn("Numpy 1.13.3 or above is required for this version of "
                       "scipy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
@@ -121,3 +122,7 @@ else:
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
     del PytestTester
+
+    # This makes "from scipy import fft" return scipy.fft, not np.fft
+    del fft
+    from . import fft

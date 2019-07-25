@@ -35,9 +35,6 @@
 #define gdtri cephes_gdtri
 #define hyp2f1 cephes_hyp2f1
 #define hyperg cephes_hyperg
-#define hyp2f0 cephes_hyp2f0
-#define onef2 cephes_onef2
-#define threef0 cephes_threef0
 #define i0 cephes_i0
 #define i0e cephes_i0e
 #define i1 cephes_i1

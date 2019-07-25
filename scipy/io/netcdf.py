@@ -810,7 +810,7 @@ class netcdf_file(object):
 
 class netcdf_variable(object):
     """
-    A data object for the `netcdf` module.
+    A data object for netcdf files.
 
     `netcdf_variable` objects are constructed by calling the method
     `netcdf_file.createVariable` on the `netcdf_file` object. `netcdf_variable`

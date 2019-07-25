@@ -64,7 +64,7 @@ cdef class MessageStream:
             try:
                 stdio.rewind(self.handle)
                 nread = stdio.fread(buf, 1, pos, self.handle)
-                if nread != pos:
+                if nread != <size_t>pos:
                     raise IOError("failed to read messages from buffer")
 
                 obj = PyBytes_FromStringAndSize(buf, nread)

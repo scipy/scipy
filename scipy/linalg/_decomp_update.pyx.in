@@ -268,6 +268,12 @@ cdef bint blas_t_less_than(blas_t x, blas_t y) nogil:
     else:
         return x.real < y.real
 
+cdef bint blas_t_less_equal(blas_t x, blas_t y) nogil:
+    if blas_t is float or blas_t is double:
+        return x <= y
+    else:
+        return x.real <= y.real
+
 cdef int to_lwork(blas_t a, blas_t b) nogil:
     cdef int ai, bi
     if blas_t is float or blas_t is double:
@@ -1133,7 +1139,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
 
     wpnorm = nrm2(m, u, us[0])
 
-    if blas_t_less_than(wpnorm, wnorm*inv_root2): # u lies in span(q)
+    if blas_t_less_equal(wpnorm, wnorm*inv_root2): # u lies in span(q)
         scal(m, 0, u, us[0])
         axpy(n, 1, s, 1, s+n, 1)
         scal(n, unorm, s, 1)

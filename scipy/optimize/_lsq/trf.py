@@ -358,18 +358,17 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             correction = 0.5 * np.dot(step_h * diag_h, step_h)
 
             Delta_new, ratio = update_tr_radius(
-                Delta, actual_reduction - correction, predicted_reduction,
-                step_h_norm, step_h_norm > 0.95 * Delta
-            )
-            alpha *= Delta / Delta_new
-            Delta = Delta_new
+                Delta, actual_reduction, predicted_reduction,
+                step_h_norm, step_h_norm > 0.95 * Delta)
 
             step_norm = norm(step)
             termination_status = check_termination(
                 actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
-
             if termination_status is not None:
                 break
+
+            alpha *= Delta / Delta_new
+            Delta = Delta_new
 
         if actual_reduction > 0:
             x = x_new
@@ -523,15 +522,15 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
             Delta_new, ratio = update_tr_radius(
                 Delta, actual_reduction, predicted_reduction,
                 step_h_norm, step_h_norm > 0.95 * Delta)
-            alpha *= Delta / Delta_new
-            Delta = Delta_new
 
             step_norm = norm(step)
             termination_status = check_termination(
                 actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
-
             if termination_status is not None:
                 break
+
+            alpha *= Delta / Delta_new
+            Delta = Delta_new
 
         if actual_reduction > 0:
             x = x_new

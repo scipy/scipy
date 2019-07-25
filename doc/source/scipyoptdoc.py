@@ -27,6 +27,7 @@ import sphinx
 import inspect
 import collections
 import textwrap
+import warnings
 
 if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
@@ -35,6 +36,7 @@ from numpydoc.numpydoc import mangle_docstrings
 from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
+from scipy._lib._util import getargspec_no_self
 
 
 if sys.version_info[0] >= 3:
@@ -82,12 +84,12 @@ def wrap_mangling_directive(base_directive):
             # Interface function
             name = self.arguments[0].strip()
             obj = _import_object(name)
-            args, varargs, keywords, defaults = inspect.getargspec(obj)
+            args, varargs, keywords, defaults = getargspec_no_self(obj)
 
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            impl_args, impl_varargs, impl_keywords, impl_defaults = inspect.getargspec(impl_obj)
+            impl_args, impl_varargs, impl_keywords, impl_defaults = getargspec_no_self(impl_obj)
 
             # Format signature taking implementation into account
             args = list(args)
@@ -123,26 +125,33 @@ def wrap_mangling_directive(base_directive):
                                                         'callback', 'method', 'options'):
                     remove_arg(arg)
 
-            signature = inspect.formatargspec(args, varargs, keywords, defaults)
+            # XXX deprecation that we should fix someday using Signature (?)
+            with warnings.catch_warnings(record=True):
+                warnings.simplefilter('ignore')
+                signature = inspect.formatargspec(
+                    args, varargs, keywords, defaults)
 
             # Produce output
             self.options['noindex'] = True
             self.arguments[0] = name + signature
             lines = textwrap.dedent(pydoc.getdoc(impl_obj)).splitlines()
+            # Change "Options" to "Other Parameters", run numpydoc, reset
             new_lines = []
             for line in lines:
                 if line.strip() == 'Options':
-                    new_lines.append("Other Parameters")
+                    line = "Other Parameters"
                 elif line.strip() == "-"*len('Options'):
-                    new_lines.append("-"*len("Other Parameters"))
-                else:
-                    new_lines.append(line)
-            mangle_docstrings(env.app, 'function', name, None, None, new_lines)
+                    line = "-"*len("Other Parameters")
+                new_lines.append(line)
+            # use impl_name instead of name here to avoid duplicate refs
+            mangle_docstrings(env.app, 'function', impl_name,
+                              None, None, new_lines)
             lines = new_lines
             new_lines = []
             for line in lines:
                 if line.strip() == ':Other Parameters:':
                     new_lines.extend((BLURB % (name,)).splitlines())
+                    new_lines.append('\n')
                     new_lines.append(':Options:')
                 else:
                     new_lines.append(line)

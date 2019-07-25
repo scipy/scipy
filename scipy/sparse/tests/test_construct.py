@@ -3,17 +3,16 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import array, matrix
+from numpy import array
 from numpy.testing import (assert_equal, assert_,
         assert_array_equal, assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
 
-from scipy.sparse import csr_matrix, coo_matrix
-
-from scipy.sparse import construct
+from scipy.sparse import csr_matrix, coo_matrix, construct
 from scipy.sparse.construct import rand as sprand
+from scipy.sparse.sputils import matrix
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 

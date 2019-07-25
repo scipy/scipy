@@ -392,9 +392,8 @@ def dispatch_on(*dispatch_args):
             An utility to introspect the dispatch algorithm
             """
             check(types)
-            lst = []
-            for anc in itertools.product(*ancestors(*types)):
-                lst.append(tuple(a.__name__ for a in anc))
+            lst = [tuple(a.__name__ for a in anc)
+                   for anc in itertools.product(*ancestors(*types))]
             return lst
 
         def _dispatch(dispatch_args, *args, **kw):

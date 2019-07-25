@@ -24,6 +24,8 @@ This release requires Python 2.4-2.7 or 3.1-3.2 and NumPy 1.5.1 or greater.
 New features
 ============
 
+.. currentmodule:: scipy.sparse.csgraph
+
 Sparse Graph Submodule
 ----------------------
 The new submodule :mod:`scipy.sparse.csgraph` implements a number of efficient
@@ -62,6 +64,8 @@ following improvements were made:
 
 Unified interfaces to minimizers
 ````````````````````````````````
+
+.. currentmodule:: scipy.optimize
 
 Two new functions ``scipy.optimize.minimize`` and
 ``scipy.optimize.minimize_scalar`` were added to provide a common interface
@@ -155,7 +159,7 @@ Binned statistics (``scipy.stats``)
 
 The stats module has gained functions to do binned statistics, which are a
 generalization of histograms, in 1-D, 2-D and multiple dimensions:
-``scipy.stats.binned_statistic``, ``scipy.stats.binned_statistic_2d`` and 
+``scipy.stats.binned_statistic``, ``scipy.stats.binned_statistic_2d`` and
 ``scipy.stats.binned_statistic_dd``.
 
 

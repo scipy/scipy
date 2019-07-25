@@ -12,7 +12,25 @@ except ImportError:
 from .common import Benchmark
 
 
+class Resample(Benchmark):
+
+    # Some slow (prime), some fast (in radix)
+    param_names = ['N', 'num']
+    params = [[977, 9973, 2 ** 14, 2 ** 16]] * 2
+
+    def setup(self, N, num):
+        x = np.linspace(0, 10, N, endpoint=False)
+        self.y = np.cos(-x**2/6.0)
+
+    def time_complex(self, N, num):
+        signal.resample(self.y + 0j, num)
+
+    def time_real(self, N, num):
+        signal.resample(self.y, num)
+
+
 class CalculateWindowedFFT(Benchmark):
+
     def setup(self):
         np.random.seed(5678)
         # Create some long arrays for computation
@@ -142,6 +160,7 @@ class Convolve(Benchmark):
 
 
 class LTI(Benchmark):
+
     def setup(self):
         self.system = signal.lti(1.0, [1, 0, 1])
         self.t = np.arange(0, 100, 0.5)
@@ -176,9 +195,10 @@ class Upfirdn1D(Benchmark):
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512, 2048]:
-                    h = np.random.randn(nfilt)
-                    x = np.random.randn(n)
-                    pairs.append((h, x))
+                h = np.random.randn(nfilt)
+                x = np.random.randn(n)
+                pairs.append((h, x))
+
         self.pairs = pairs
 
     def time_upfirdn1d(self, up, down):
@@ -200,11 +220,23 @@ class Upfirdn2D(Benchmark):
         pairs = []
         for nfilt in [8, ]:
             for n in [32, 128, 512]:
-                    h = np.random.randn(nfilt)
-                    x = np.random.randn(n, n)
-                    pairs.append((h, x))
+                h = np.random.randn(nfilt)
+                x = np.random.randn(n, n)
+                pairs.append((h, x))
+
         self.pairs = pairs
 
     def time_upfirdn2d(self, up, down, axis):
         for h, x in self.pairs:
             signal.upfirdn(h, x, up=up, down=down, axis=axis)
+
+
+class FIRLS(Benchmark):
+    param_names = ['n', 'edges']
+    params = [
+        [21, 101, 1001, 2001],
+        [(0.1, 0.9), (0.01, 0.99)],
+        ]
+
+    def time_firls(self, n, edges):
+        signal.firls(n, (0,) + edges + (1,), [1, 1, 0, 0])

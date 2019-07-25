@@ -225,7 +225,7 @@ not be used. Attempting to build with the MSYS2 Python will not work correctly.*
 .. code:: shell
 
     /c/Users/<user name>/AppData/Local/Programs/Python/Python36/python.exe \
-         -m pip install numpy>=1.14.0 cython pytest pytest-xdist pytest-faulthandler
+         -m pip install numpy>=1.14.0 cython pytest pytest-xdist
 
 Please note that this is a simpler procedure than what is used for the official binaries.
 **Your binaries will only work with the latest NumPy (v1.14.0dev and higher)**. For

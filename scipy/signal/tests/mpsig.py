@@ -78,9 +78,7 @@ def _butter_analog_poles(n):
     scipy.signal.butter(n, 1, analog=True, output='zpk'), but mpmath is used,
     and only the poles are returned.
     """
-    poles = []
-    for k in range(-n+1, n, 2):
-        poles.append(-mpmath.exp(1j*mpmath.pi*k/(2*n)))
+    poles = [-mpmath.exp(1j*mpmath.pi*k/(2*n)) for k in range(-n+1, n, 2)]
     return poles
 
 

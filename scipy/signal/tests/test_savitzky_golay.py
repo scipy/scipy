@@ -137,6 +137,19 @@ def test_sg_coeffs_deriv():
         assert_allclose(coeffs2.dot(x), d2x[pos], atol=1e-10)
 
 
+def test_sg_coeffs_deriv_gt_polyorder():
+    """
+    If deriv > polyorder, the coefficients should be all 0.
+    This is a regression test for a bug where, e.g.,
+        savgol_coeffs(5, polyorder=1, deriv=2)
+    raised an error.
+    """
+    coeffs = savgol_coeffs(5, polyorder=1, deriv=2)
+    assert_array_equal(coeffs, np.zeros(5))
+    coeffs = savgol_coeffs(7, polyorder=4, deriv=6)
+    assert_array_equal(coeffs, np.zeros(7))
+
+
 def test_sg_coeffs_large():
     # Test that for large values of window_length and polyorder the array of
     # coefficients returned is symmetric. The aim is to ensure that

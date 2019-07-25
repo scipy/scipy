@@ -54,7 +54,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         Data array of the matrix
     indices
@@ -542,15 +542,16 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     def eliminate_zeros(self):
         """Remove zero elements in-place."""
+
+        if not self.nnz:
+            return  # nothing to do
+
         R,C = self.blocksize
         M,N = self.shape
 
         mask = (self.data != 0).reshape(-1,R*C).sum(axis=1)  # nonzero blocks
 
         nonzero_blocks = mask.nonzero()[0]
-
-        if len(nonzero_blocks) == 0:
-            return  # nothing to do
 
         self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
 

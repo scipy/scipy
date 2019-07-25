@@ -24,7 +24,7 @@ from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients)
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
@@ -213,7 +213,7 @@ class TestConvolve(_TestConvolve):
                 kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
                 # atol is default for np.allclose
-                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
+                kwargs = {'rtol': 1e-3, 'atol': 1e-3}
             else:
                 # defaults for np.allclose (different from assert_allclose)
                 kwargs = {'rtol': 1e-5, 'atol': 1e-8}
@@ -699,9 +699,10 @@ class TestFFTConvolve(object):
                                       [-4, -1],
                                       [-1, -4]])
     def test_random_data_multidim_axes(self, axes):
+        a_shape, b_shape = (123, 22), (132, 11)
         np.random.seed(1234)
-        a = np.random.rand(123, 222) + 1j * np.random.rand(123, 222)
-        b = np.random.rand(132, 111) + 1j * np.random.rand(132, 111)
+        a = np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape)
+        b = np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape)
         expected = convolve2d(a, b, 'full')
 
         a = a[:, :, None, None, None]
@@ -718,7 +719,7 @@ class TestFFTConvolve(object):
         expected = np.tile(expected, [2, 1, 3, 4, 1])
 
         out = fftconvolve(a, b, 'full', axes=axes)
-        assert_(np.allclose(out, expected, rtol=1e-10))
+        assert_allclose(out, expected, rtol=1e-10, atol=1e-10)
 
     @pytest.mark.slow
     @pytest.mark.parametrize(
@@ -883,21 +884,35 @@ class TestResample(object):
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
-        sig2 = np.tile(np.arange(160), (2,1))
+        sig2 = np.tile(np.arange(160), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert_(win.shape == (160,))
 
-    def test_fft(self):
-        # Test FFT-based resampling
-        self._test_data(method='fft')
+    @pytest.mark.parametrize('window', (None, 'hamming'))
+    @pytest.mark.parametrize('N', (20, 19))
+    @pytest.mark.parametrize('num', (100, 101, 10, 11))
+    def test_rfft(self, N, num, window):
+        # Make sure the speed up using rfft gives the same result as the normal
+        # way using fft
+        x = np.linspace(0, 10, N, endpoint=False)
+        y = np.cos(-x**2/6.0)
+        assert_allclose(signal.resample(y, num, window=window),
+                        signal.resample(y + 0j, num, window=window).real)
 
-    def test_polyphase(self):
-        # Test polyphase resampling
-        self._test_data(method='polyphase')
+        y = np.array([np.cos(-x**2/6.0), np.sin(-x**2/6.0)])
+        y_complex = y + 0j
+        assert_allclose(
+            signal.resample(y, num, axis=1, window=window),
+            signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
 
-    def test_polyphase_extfilter(self):
-        # Test external specification of downsampling filter
-        self._test_data(method='polyphase', ext=True)
+    @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('dtype', ('float', 'complex'))
+    def test_dc(self, nx, ny, dtype):
+        x = np.array([1] * nx, dtype)
+        y = signal.resample(x, ny)
+        assert_allclose(y, [1] * ny)
 
     def test_mutable_window(self):
         # Test that a mutable window is not modified
@@ -910,11 +925,16 @@ class TestResample(object):
     def test_output_float32(self):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
-        h = np.array([1,1,1], dtype=np.float32)
+        h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h)
         assert_(y.dtype == np.float32)
 
-    def _test_data(self, method, ext=False):
+    @pytest.mark.parametrize('method, ext', [
+        ('fft', False),
+        ('polyphase', False),
+        ('polyphase', True),
+    ])
+    def test_resample_methods(self, method, ext):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -1060,6 +1080,7 @@ class TestOrderFilt(object):
 
 
 class _TestLinearFilter(object):
+
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
         return self.convert_dtype(x)
@@ -1487,6 +1508,8 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
     assert_raises(TypeError, lfilter, [1.0], [None], [1.0, 2.0, 3.0])
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
+    with assert_raises(ValueError, match='common type'):
+        lfilter([1.], [1., 1.], ['a', 'b', 'c'])
 
 
 def test_lfilter_notimplemented_input():
@@ -2270,6 +2293,7 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(object):
+
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
@@ -2652,3 +2676,17 @@ class TestDeconvolve(object):
         recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
+
+
+class TestDetrend(object):
+
+    def test_basic(self):
+        detrended = detrend(array([1, 2, 3]))
+        detrended_exact = array([0, 0, 0])
+        assert_array_almost_equal(detrended, detrended_exact)
+
+    def test_copy(self):
+        x = array([1, 1.2, 1.5, 1.6, 2.4])
+        copy_array = detrend(x, overwrite_data=False)
+        inplace = detrend(x, overwrite_data=True)
+        assert_array_almost_equal(copy_array, inplace)

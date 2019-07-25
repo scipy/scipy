@@ -178,23 +178,23 @@ class Rotation(object):
     This class provides an interface to initialize from and represent rotations
     with:
 
-        - Quaternions
-        - Direction Cosine Matrices
-        - Rotation Vectors
-        - Euler angles
+    - Quaternions
+    - Direction Cosine Matrices
+    - Rotation Vectors
+    - Euler angles
 
     The following operations on rotations are supported:
 
-        - Application on vectors
-        - Rotation Composition
-        - Rotation Inversion
-        - Rotation Indexing
+    - Application on vectors
+    - Rotation Composition
+    - Rotation Inversion
+    - Rotation Indexing
 
     Indexing within a rotation is supported since multiple rotation transforms
     can be stored within a single `Rotation` instance.
 
-    To create `Rotation` objects use `from_...` classmethods, `__init__` is not
-    supposed to be used directly.
+    To create `Rotation` objects use ``from_...`` methods (see examples below).
+    ``Rotation(...)`` is not supposed to be instantiated directly.
 
     Methods
     -------
@@ -212,6 +212,15 @@ class Rotation(object):
     inv
     __getitem__
     random
+    match_vectors
+
+    See Also
+    --------
+    Slerp
+
+    Notes
+    -----
+    .. versionadded: 1.2.0
 
     Examples
     --------
@@ -268,7 +277,7 @@ class Rotation(object):
     >>> r.as_euler('zyx', degrees=True)
     array([90.,  0.,  0.])
 
-    The `from_euler` function is quite flexible in the range of input formats
+    The ``from_euler`` method is quite flexible in the range of input formats
     it supports. Here we initialize a single rotation about a single axis:
 
     >>> r = R.from_euler('z', 90, degrees=True)
@@ -287,7 +296,7 @@ class Rotation(object):
 
     It is also possible to initialize multiple rotations in a single instance
     using any of the `from_...` functions. Here we initialize a stack of 3
-    rotations using the `from_euler` function:
+    rotations using the ``from_euler`` method:
 
     >>> r = R.from_euler('zyx', [
     ... [90, 0, 0],
@@ -327,7 +336,7 @@ class Rotation(object):
     array([[0.        , 0.38268343, 0.        , 0.92387953],
            [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
 
-    Multiple rotations can be composed using the `*` operator:
+    Multiple rotations can be composed using the ``*`` operator:
 
     >>> r1 = R.from_euler('z', 90, degrees=True)
     >>> r2 = R.from_rotvec([np.pi/4, 0, 0])
@@ -403,10 +412,10 @@ class Rotation(object):
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion in scalar-last
             (x, y, z, w) format.
-        normalized : boolean, optional
-            If `False`, input quaternions are normalized to unit norm before
-            being stored. If `True`, quaternions are assumed to already have
-            unit norm and are stored as given. Default is `False`.
+        normalized : bool, optional
+            If False, input quaternions are normalized to unit norm before
+            being stored. If True, quaternions are assumed to already have
+            unit norm and are stored as given. Default is False.
 
         Returns
         -------
@@ -415,8 +424,7 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] `Quaternions and Spatial Rotation
-               <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`_
+        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
 
         Examples
         --------
@@ -476,7 +484,7 @@ class Rotation(object):
         Parameters
         ----------
         dcm : array_like, shape (N, 3, 3) or (3, 3)
-            A single matrix or a stack of matrices, where `dcm[i]` is the i-th
+            A single matrix or a stack of matrices, where ``dcm[i]`` is the i-th
             matrix.
 
         Returns
@@ -487,10 +495,10 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] `Direction Cosine Matrix
-                <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
-        .. [2] F. Landis Markley, `Unit Quaternion from Rotation Matrix
-               <https://arc.aiaa.org/doi/abs/10.2514/1.31730>`_
+        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+        .. [2] F. Landis Markley, "Unit Quaternion from Rotation Matrix",
+               Journal of guidance, control, and dynamics vol. 31.2, pp.
+               440-442, 2008.
 
         Examples
         --------
@@ -621,8 +629,7 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] `Rotation Vectors
-                <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector>`_
+        .. [1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector
 
         Examples
         --------
@@ -714,21 +721,21 @@ class Rotation(object):
             (`degrees` is True).
             For a single character `seq`, `angles` can be:
 
-                - a single value
-                - array_like with shape (N,), where each `angle[i]`
-                  corresponds to a single rotation
-                - array_like with shape (N, 1), where each `angle[i, 0]`
-                  corresponds to a single rotation
+            - a single value
+            - array_like with shape (N,), where each `angle[i]`
+              corresponds to a single rotation
+            - array_like with shape (N, 1), where each `angle[i, 0]`
+              corresponds to a single rotation
 
             For 2- and 3-character wide `seq`, `angles` can be:
 
-                - array_like with shape (W,) where `W` is the width of
-                  `seq`, which corresponds to a single rotation with `W` axes
-                - array_like with shape (N, W) where each `angle[i]`
-                  corresponds to a sequence of Euler angles describing a single
-                  rotation
+            - array_like with shape (W,) where `W` is the width of
+              `seq`, which corresponds to a single rotation with `W` axes
+            - array_like with shape (N, W) where each `angle[i]`
+              corresponds to a sequence of Euler angles describing a single
+              rotation
 
-        degrees : boolean, optional
+        degrees : bool, optional
             If True, then the given angles are assumed to be in degrees.
             Default is False.
 
@@ -740,8 +747,7 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] `Euler angle definitions
-                <https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations>`_
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
 
         Examples
         --------
@@ -826,8 +832,8 @@ class Rotation(object):
             if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
                 raise ValueError("Expected `angles` to be at most "
                                  "2-dimensional with width equal to number "
-                                 "of axes specified, got {} for shape").format(
-                                 angles.shape)
+                                 "of axes specified, got {} for shape".format(
+                                 angles.shape))
 
             if angles.ndim == 1:
                 # (1, num_axes)
@@ -848,8 +854,9 @@ class Rotation(object):
 
         Rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
-        two-to-one, i.e. quaternions `q` and `-q`, where `-q` simply reverses
-        the sign of each component, represent the same spatial rotation.
+        two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
+        reverses the sign of each component, represent the same spatial
+        rotation.
 
         Returns
         -------
@@ -858,8 +865,7 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] `Quaternions and Spatial Rotation
-               <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`_
+        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
 
         Examples
         --------
@@ -902,13 +908,12 @@ class Rotation(object):
 
         Returns
         -------
-        dcm : `numpy.ndarray`, shape (3, 3) or (N, 3, 3)
+        dcm : ndarray, shape (3, 3) or (N, 3, 3)
             Shape depends on shape of inputs used for initialization.
 
         References
         ----------
-        .. [1] `Direction Cosine Matrix
-                <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
+        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
 
         Examples
         --------
@@ -994,13 +999,12 @@ class Rotation(object):
 
         Returns
         -------
-        rotvec : `numpy.ndarray`, shape (3,) or (N, 3)
+        rotvec : ndarray, shape (3,) or (N, 3)
             Shape depends on shape of inputs used for initialization.
 
         References
         ----------
-        .. [1] `Rotation Vectors
-                <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector>`_
+        .. [1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector
 
         Examples
         --------
@@ -1085,28 +1089,25 @@ class Rotation(object):
 
         Returns
         -------
-        angles : `numpy.ndarray`, shape (3,) or (N, 3)
+        angles : ndarray, shape (3,) or (N, 3)
             Shape depends on shape of inputs used to initialize object.
-
             The returned angles are in the range:
 
-                - First angle belongs to [-180, 180] degrees (both inclusive)
-                - Third angle belongs to [-180, 180] degrees (both inclusive)
-                - Second angle belongs to:
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to:
 
-                    - [-90, 90] degrees if all axes are different (like xyz)
-                    - [0, 180] degrees if first and third axes are the same
-                      (like zxz)
+                - [-90, 90] degrees if all axes are different (like xyz)
+                - [0, 180] degrees if first and third axes are the same
+                  (like zxz)
 
         References
         ----------
-        .. [1] `Euler angle definitions
-                <https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations>`_
-        .. [2] Malcolm D. Shuster, F. Landis Markley
-                `General Formula for Euler Angles
-                <https://arc.aiaa.org/doi/abs/10.2514/1.16622>`_
-        .. [3] `Gimbal lock
-                <https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics>`_
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [2] Malcolm D. Shuster, F. Landis Markley, "General formula for
+               extraction the Euler angles", Journal of guidance, control, and
+               dynamics, vol. 29.1, pp. 215-221. 2006
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         Examples
         --------
@@ -1177,7 +1178,7 @@ class Rotation(object):
               expressed in the original frame before and after the rotation.
 
         In terms of DCMs, this application is the same as
-        `self.as_dcm().dot(vectors)`.
+        ``self.as_dcm().dot(vectors)``.
 
         Parameters
         ----------
@@ -1188,20 +1189,20 @@ class Rotation(object):
             broadcasting rules: either one of them equals unity or they both
             equal each other.
         inverse : boolean, optional
-            If `inverse` is `True` then the inverse of the rotation(s) is
-            applied to the input vectors. Default is `False`.
+            If True then the inverse of the rotation(s) is applied to the input
+            vectors. Default is False.
 
         Returns
         -------
-        rotated_vectors : `numpy.ndarray`, shape (3,) or (N, 3)
+        rotated_vectors : ndarray, shape (3,) or (N, 3)
             Result of applying rotation on input vectors.
             Shape depends on the following cases:
 
                 - If object contains a single rotation (as opposed to a stack
                   with a single rotation) and a single vector is specified with
-                  shape `(3,)`, then `output` has shape `(3,)`.
-                - In all other cases, `output` has shape `(N, 3)`, where `N` is
-                  either the number of rotations or vectors.
+                  shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
+                - In all other cases, `rotated_vectors` has shape ``(N, 3)``,
+                  where ``N`` is either the number of rotations or vectors.
 
         Examples
         --------
@@ -1325,8 +1326,8 @@ class Rotation(object):
         ----------
         other : `Rotation` instance
             Object containing the rotaions to be composed with this one. Note
-            that rotation compositions are not commutative, so `p * q` is
-            different from `q * p`.
+            that rotation compositions are not commutative, so ``p * q`` is
+            different from ``q * p``.
 
         Returns
         -------
@@ -1334,12 +1335,12 @@ class Rotation(object):
             This function supports composition of multiple rotations at a time.
             The following cases are possible:
 
-            - Either `p` or `q` contains a single rotation. In this case
-              `output` contains the result of composing each rotation in the
-              other object with the single rotation.
-            - Both `p` and `q` contain `N` rotations. In this case each
-              rotation `p[i]` is composed with the corresponding rotation
-              `q[i]` and `output` contains `N` rotations.
+            - Either ``p`` or ``q`` contains a single rotation. In this case
+              `composition` contains the result of composing each rotation in
+              the other object with the single rotation.
+            - Both ``p`` and ``q`` contain ``N`` rotations. In this case each
+              rotation ``p[i]`` is composed with the corresponding rotation
+              ``q[i]`` and `output` contains ``N`` rotations.
 
         Examples
         --------
@@ -1485,8 +1486,8 @@ class Rotation(object):
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
         random_state : int, RandomState instance or None, optional
-            Accepts an `int` as a seed for the random generator or a
-            RandomState object. If None (default), uses global `np.random`
+            Accepts an integer as a seed for the random generator or a
+            RandomState object. If None (default), uses global `numpy.random`
             random state.
 
         Returns
@@ -1553,7 +1554,7 @@ class Rotation(object):
             Weights describing the relative importance of the vectors in
             `a`. If None (default), then all values in `weights` are assumed to
             be equal.
-        normalized : boolean, optional
+        normalized : bool, optional
             If True, assume input vectors `a` and `b` to have unit norm. If
             False, normalize `a` and `b` before estimating rotation. Default
             is False.
@@ -1562,7 +1563,7 @@ class Rotation(object):
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
-        sensitivity_matrix : `numpy.ndarray`, shape (3, 3)
+        sensitivity_matrix : ndarray, shape (3, 3)
             Scaled covariance of the attitude errors expressed as the small
             rotation vector of frame A. Multiply with harmonic mean [3]_ of
             variance in each observation to get true covariance matrix. The
@@ -1578,7 +1579,7 @@ class Rotation(object):
                 "Attitude determination using vector observations and the
                 Singular Value Decomposition", Journal of Astronautical
                 Sciences, Vol. 38, No.3, 1988, pp. 245-258.
-        .. [3] `Harmonic Mean <https://en.wikipedia.org/wiki/Harmonic_mean>`_
+        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
 
         """
         a = np.asarray(a)
@@ -1653,10 +1654,17 @@ class Slerp(object):
     -------
     __call__
 
+    See Also
+    --------
+    Rotation
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
+
     References
     ----------
-    .. [1] `Quaternion Slerp
-            <https://en.wikipedia.org/wiki/Slerp#Quaternion_Slerp>`_
+    .. [1] https://en.wikipedia.org/wiki/Slerp#Quaternion_Slerp
 
     Examples
     --------

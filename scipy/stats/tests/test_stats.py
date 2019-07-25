@@ -16,7 +16,7 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_allclose)
+                           assert_allclose, assert_warns)
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
@@ -31,6 +31,7 @@ from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
 from scipy.special import kv
+from scipy.sparse.sputils import matrix
 from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -75,6 +76,31 @@ class TestTrimmedStats(object):
 
         y = stats.tvar(X, limits=None)
         assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+
+        x_2d = arange(63, dtype=float64).reshape((9, 7))
+        y = stats.tvar(x_2d, axis=None)
+        assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
+
+        y = stats.tvar(x_2d, axis=0)
+        assert_array_almost_equal(y[0], np.full((1, 7), 367.50000000), decimal=8)
+
+        y = stats.tvar(x_2d, axis=1)
+        assert_array_almost_equal(y[0], np.full((1, 9), 4.66666667), decimal=8)
+
+        y = stats.tvar(x_2d[3, :])
+        assert_approx_equal(y, 4.666666666666667, significant=self.dprec)
+
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
+
+            # Limiting some values along one axis
+            y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
+            assert_approx_equal(y[0], 2.5, significant=self.dprec)
+
+            # Limiting all values along one axis
+            y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
+            assert_approx_equal(y[0], 4.666666666666667, significant=self.dprec)
+            assert_equal(y[1], np.nan)
 
     def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
@@ -254,19 +280,23 @@ class TestCorrPearsonr(object):
         r = y[0]
         assert_approx_equal(r,1.0)
 
-    def test_r_exactly_pos1(self):
+    def test_r_almost_exactly_pos1(self):
         a = arange(3.0)
-        b = a
-        r, prob = stats.pearsonr(a,b)
-        assert_equal(r, 1.0)
-        assert_equal(prob, 0.0)
+        r, prob = stats.pearsonr(a, a)
 
-    def test_r_exactly_neg1(self):
+        assert_allclose(r, 1.0, atol=1e-15)
+        # With n = len(a) = 3, the error in prob grows like the
+        # square root of the error in r.
+        assert_allclose(prob, 0.0, atol=np.sqrt(2*np.spacing(1.0)))
+
+    def test_r_almost_exactly_neg1(self):
         a = arange(3.0)
-        b = -a
-        r, prob = stats.pearsonr(a,b)
-        assert_equal(r, -1.0)
-        assert_equal(prob, 0.0)
+        r, prob = stats.pearsonr(a, -a)
+
+        assert_allclose(r, -1.0, atol=1e-15)
+        # With n = len(a) = 3, the error in prob grows like the
+        # square root of the error in r.
+        assert_allclose(prob, 0.0, atol=np.sqrt(2*np.spacing(1.0)))
 
     def test_basic(self):
         # A basic test, with a correlation coefficient
@@ -275,7 +305,106 @@ class TestCorrPearsonr(object):
         b = array([0, 0, 3])
         r, prob = stats.pearsonr(a, b)
         assert_approx_equal(r, np.sqrt(3)/2)
-        assert_approx_equal(prob, 1.0/3)
+        assert_approx_equal(prob, 1/3)
+
+    def test_constant_input(self):
+        # Zero variance input
+        # See https://github.com/scipy/scipy/issues/3728
+        with assert_warns(stats.PearsonRConstantInputWarning):
+            r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_near_constant_input(self):
+        # Near constant input (but not constant):
+        x = [2, 2, 2 + np.spacing(2)]
+        y = [3, 3, 3 + 6*np.spacing(3)]
+        with assert_warns(stats.PearsonRNearConstantInputWarning):
+            # r and p are garbage, so don't bother checking them in this case.
+            # (The exact value of r would be 1.)
+            r, p = stats.pearsonr(x, y)
+
+    def test_very_small_input_values(self):
+        # Very small values in an input.  A naive implementation will
+        # suffer from underflow.
+        # See https://github.com/scipy/scipy/issues/9353
+        x = [0.004434375, 0.004756007, 0.003911996, 0.0038005, 0.003409971]
+        y = [2.48e-188, 7.41e-181, 4.09e-208, 2.08e-223, 2.66e-245]
+        r, p = stats.pearsonr(x,y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.7272930540750450)
+        assert_allclose(p, 0.1637805429533202)
+
+    def test_very_large_input_values(self):
+        # Very large values in an input.  A naive implementation will
+        # suffer from overflow.
+        # See https://github.com/scipy/scipy/issues/8980
+        x = 1e90*np.array([0, 0, 0, 1, 1, 1, 1])
+        y = 1e90*np.arange(7)
+
+        r, p = stats.pearsonr(x, y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.8660254037844386)
+        assert_allclose(p, 0.011724811003954638)
+
+    def test_extremely_large_input_values(self):
+        # Extremely large values in x and y.  These values would cause the
+        # product sigma_x * sigma_y to overflow if the two factors were
+        # computed independently.
+        x = np.array([2.3e200, 4.5e200, 6.7e200, 8e200])
+        y = np.array([1.2e199, 5.5e200, 3.3e201, 1.0e200])
+        r, p = stats.pearsonr(x, y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.351312332103289)
+        assert_allclose(p, 0.648687667896711)
+
+    def test_length_two_pos1(self):
+        # Inputs with length 2.
+        # See https://github.com/scipy/scipy/issues/7730
+        r, p = stats.pearsonr([1, 2], [3, 5])
+        assert_equal(r, 1)
+        assert_equal(p, 1)
+
+    def test_length_two_neg2(self):
+        # Inputs with length 2.
+        # See https://github.com/scipy/scipy/issues/7730
+        r, p = stats.pearsonr([2, 1], [3, 5])
+        assert_equal(r, -1)
+        assert_equal(p, 1)
+
+    def test_more_basic_examples(self):
+        x = [1, 2, 3, 4]
+        y = [0, 1, 0.5, 1]
+        r, p = stats.pearsonr(x, y)
+
+        # The expected values were computed using mpmath with 80 digits
+        # of precision.
+        assert_allclose(r, 0.674199862463242)
+        assert_allclose(p, 0.325800137536758)
+
+        x = [1, 2, 3]
+        y = [5, -4, -13]
+        r, p = stats.pearsonr(x, y)
+
+        # The expected r and p are exact.
+        assert_allclose(r, -1.0)
+        assert_allclose(p, 0.0, atol=1e-7)
+
+    def test_unequal_lengths(self):
+        x = [1, 2, 3]
+        y = [4, 5]
+        assert_raises(ValueError, stats.pearsonr, x, y)
+
+    def test_len1(self):
+        x = [1]
+        y = [2]
+        assert_raises(ValueError, stats.pearsonr, x, y)
 
 
 class TestFisherExact(object):
@@ -977,6 +1106,20 @@ def test_weightedtau():
     assert_approx_equal(tau, -0.56694968153682723)
 
 
+def test_kendall_tau_large():
+    n = 172.
+    x = np.arange(n)
+    y = np.arange(n)
+    _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+    y[-1], y[-2] = y[-2], y[-1]
+    _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+    y[-3], y[-4] = y[-4], y[-3]
+    _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+
+
 def test_weightedtau_vs_quadratic():
     # Trivial quadratic implementation, all parameters mandatory
     def wkq(x, y, rank, weigher, add):
@@ -1231,93 +1374,6 @@ def test_relfreq():
     assert_array_almost_equal(relfreqs, relfreqs2)
 
 
-class TestGMean(object):
-
-    def test_1D_list(self):
-        a = (1,2,3,4)
-        actual = stats.gmean(a)
-        desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(actual, desired,decimal=14)
-
-        desired1 = stats.gmean(a,axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
-
-    def test_1D_array(self):
-        a = array((1,2,3,4), float32)
-        actual = stats.gmean(a)
-        desired = power(1*2*3*4,1./4.)
-        assert_almost_equal(actual, desired, decimal=7)
-
-        desired1 = stats.gmean(a,axis=-1)
-        assert_almost_equal(actual, desired1, decimal=7)
-
-    def test_2D_array_default(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-        actual = stats.gmean(a)
-        desired = array((1,2,3,4))
-        assert_array_almost_equal(actual, desired, decimal=14)
-
-        desired1 = stats.gmean(a,axis=0)
-        assert_array_almost_equal(actual, desired1, decimal=14)
-
-    def test_2D_array_dim1(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-        actual = stats.gmean(a, axis=1)
-        v = power(1*2*3*4,1./4.)
-        desired = array((v,v,v))
-        assert_array_almost_equal(actual, desired, decimal=14)
-
-    def test_large_values(self):
-        a = array([1e100, 1e200, 1e300])
-        actual = stats.gmean(a)
-        assert_approx_equal(actual, 1e200, significant=13)
-
-
-class TestHMean(object):
-    def test_1D_list(self):
-        a = (1,2,3,4)
-        actual = stats.hmean(a)
-        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        assert_almost_equal(actual, desired, decimal=14)
-
-        desired1 = stats.hmean(array(a),axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
-
-    def test_1D_array(self):
-        a = array((1,2,3,4), float64)
-        actual = stats.hmean(a)
-        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        assert_almost_equal(actual, desired, decimal=14)
-
-        desired1 = stats.hmean(a,axis=-1)
-        assert_almost_equal(actual, desired1, decimal=14)
-
-    def test_2D_array_default(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-        actual = stats.hmean(a)
-        desired = array((1.,2.,3.,4.))
-        assert_array_almost_equal(actual, desired, decimal=14)
-
-        actual1 = stats.hmean(a,axis=0)
-        assert_array_almost_equal(actual1, desired, decimal=14)
-
-    def test_2D_array_dim1(self):
-        a = array(((1,2,3,4),
-                   (1,2,3,4),
-                   (1,2,3,4)))
-
-        v = 4. / (1./1 + 1./2 + 1./3 + 1./4)
-        desired1 = array((v,v,v))
-        actual1 = stats.hmean(a, axis=1)
-        assert_array_almost_equal(actual1, desired1, decimal=14)
-
-
 class TestScoreatpercentile(object):
     def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
@@ -1517,12 +1573,7 @@ class TestMode(object):
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
-
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, ".*checked for nan values")
-            vals = stats.mode(data1)
-            assert_equal(len(r), 1)
-
+        vals = stats.mode(data1)
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
@@ -1530,10 +1581,7 @@ class TestMode(object):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
         arr[:] = objects
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, ".*checked for nan values")
-            vals = stats.mode(arr)
-            assert_equal(len(r), 1)
+        vals = stats.mode(arr)
         assert_equal(vals[0][0], 10)
         assert_equal(vals[1][0], 2)
 
@@ -1561,10 +1609,7 @@ class TestMode(object):
         arr[:] = points
         assert_(len(set(points)) == 4)
         assert_equal(np.unique(arr).shape, (4,))
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning, ".*checked for nan values")
-            vals = stats.mode(arr)
-            assert_equal(len(r), 1)
+        vals = stats.mode(arr)
 
         assert_equal(vals[0][0], Point(2))
         assert_equal(vals[1][0], 4)
@@ -1597,6 +1642,20 @@ class TestMode(object):
     def test_smallest_equal(self, data):
         result = stats.mode(data, nan_policy='omit')
         assert_equal(result[0][0], 1)
+
+    def test_obj_arrays_ndim(self):
+        # regression test for gh-9645: `mode` fails for object arrays w/ndim > 1
+        data = [['Oxidation'], ['Oxidation'], ['Polymerization'], ['Reduction']]
+        ar = np.array(data, dtype=object)
+        m = stats.mode(ar, axis=0)
+        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
+        assert np.all(m.count == 2) and m.count.shape == (1, 1)
+
+        data1 = data + [[np.nan]]
+        ar1 = np.array(data1, dtype=object)
+        m = stats.mode(ar1, axis=0)
+        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
+        assert np.all(m.count == 2) and m.count.shape == (1, 1)
 
 
 class TestVariability(object):
@@ -1712,10 +1771,50 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    def test_mad(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, 28.95])
+        assert_almost_equal(stats.median_absolute_deviation(dat, axis=None), 0.526323)
+
+        dat = dat.reshape(6, 4)
+        mad = stats.median_absolute_deviation(dat, axis=0)
+        mad_expected = np.asarray([0.644931, 0.7413, 0.66717, 0.59304])
+        assert_array_almost_equal(mad, mad_expected)
+
+    def test_mad_empty(self):
+        dat = []
+        mad = stats.median_absolute_deviation(dat)
+        assert_equal(mad, np.nan)
+
+    def test_mad_nan_propagate(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        mad = stats.median_absolute_deviation(dat, nan_policy='propagate')
+        assert_equal(mad, np.nan)
+
+    def test_mad_nan_raise(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        with assert_raises(ValueError):
+            stats.median_absolute_deviation(dat, nan_policy='raise')
+
+    def test_mad_nan_omit(self):
+        dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
+                3.7, 3.7,3.77, 5.28, np.nan])
+
+        mad = stats.median_absolute_deviation(dat, nan_policy='omit')
+        assert_almost_equal(mad, 0.504084)
+
 
 class _numpy_version_warn_context_mgr(object):
     """
-    A simple context maneger class to avoid retyping the same code for
+    A simple context manager class to avoid retyping the same code for
     different versions of numpy when the only difference is that older
     versions raise warnings.
 
@@ -2070,7 +2169,9 @@ class TestIQR(object):
                                     np.array([2, np.nan, 2]) / 1.3489795)
                 assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
                              [1, np.nan, 1])
-                _check_warnings(w, RuntimeWarning, 6)
+                # Since NumPy 1.17.0.dev, warnings are no longer emitted by
+                # np.percentile with nans, so we don't check the number of
+                # warnings here. See https://github.com/numpy/numpy/pull/12679.
 
         if numpy_version < '1.9.0a':
             with warnings.catch_warnings(record=True) as w:
@@ -2796,8 +2897,6 @@ def test_friedmanchisquare():
 
 
 def test_kstest():
-    # from numpy.testing import assert_almost_equal
-
     # comparing with values from R
     x = np.linspace(-1,1,9)
     D,p = stats.kstest(x,'norm')
@@ -2831,37 +2930,182 @@ def test_kstest():
     # missing: no test that uses *args
 
 
-def test_ks_2samp():
-    # exact small sample solution
-    data1 = np.array([1.0,2.0])
-    data2 = np.array([1.0,2.0,3.0])
-    assert_almost_equal(np.array(stats.ks_2samp(data1+0.01,data2)),
-                np.array((0.33333333333333337, 0.99062316386915694)))
-    assert_almost_equal(np.array(stats.ks_2samp(data1-0.01,data2)),
-                np.array((0.66666666666666674, 0.42490954988801982)))
-    # these can also be verified graphically
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,100)+2+0.1)),
-        np.array((0.030000000000000027, 0.99999999996005062)))
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,100)+2-0.1)),
-        np.array((0.020000000000000018, 0.99999999999999933)))
-    # these are just regression tests
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,110)+20.1)),
-        np.array((0.21090909090909091, 0.015880386730710221)))
-    assert_almost_equal(
-        np.array(stats.ks_2samp(np.linspace(1,100,100),
-                              np.linspace(1,100,110)+20-0.1)),
-        np.array((0.20818181818181825, 0.017981441789762638)))
+class TestKSTwoSamples(object):
+    def _testOne(self, x1, x2, alternative, expected_statistic, expected_prob, mode='auto'):
+        result = stats.ks_2samp(x1, x2, alternative, mode=mode)
+        expected = np.array([expected_statistic, expected_prob])
+        assert_array_almost_equal(np.array(result), expected)
 
-    # test for namedtuple attribute results
-    attributes = ('statistic', 'pvalue')
-    res = stats.ks_2samp(data1 - 0.01, data2)
-    check_named_results(res, attributes)
+    def testSmall(self):
+        self._testOne([0], [1], 'two-sided', 1.0/1, 1.0)
+        self._testOne([0], [1], 'greater', 1.0/1, 0.5)
+        self._testOne([0], [1], 'less', 0.0/1, 1.0)
+        self._testOne([1], [0], 'two-sided', 1.0/1, 1.0)
+        self._testOne([1], [0], 'greater', 0.0/1, 1.0)
+        self._testOne([1], [0], 'less', 1.0/1, 0.5)
+
+    def testTwoVsThree(self):
+        data1 = np.array([1.0, 2.0])
+        data1p = data1 + 0.01
+        data1m = data1 - 0.01
+        data2 = np.array([1.0, 2.0, 3.0])
+        self._testOne(data1p, data2, 'two-sided', 1.0 / 3, 1.0)
+        self._testOne(data1p, data2, 'greater', 1.0 / 3, 0.7)
+        self._testOne(data1p, data2, 'less', 1.0 / 3, 0.7)
+        self._testOne(data1m, data2, 'two-sided', 2.0 / 3, 0.6)
+        self._testOne(data1m, data2, 'greater', 2.0 / 3, 0.3)
+        self._testOne(data1m, data2, 'less', 0, 1.0)
+
+    def testTwoVsFour(self):
+        data1 = np.array([1.0, 2.0])
+        data1p = data1 + 0.01
+        data1m = data1 - 0.01
+        data2 = np.array([1.0, 2.0, 3.0, 4.0])
+        self._testOne(data1p, data2, 'two-sided', 2.0 / 4, 14.0/15)
+        self._testOne(data1p, data2, 'greater', 2.0 / 4, 8.0/15)
+        self._testOne(data1p, data2, 'less', 1.0 / 4, 12.0/15)
+
+        self._testOne(data1m, data2, 'two-sided', 3.0 / 4, 6.0/15)
+        self._testOne(data1m, data2, 'greater', 3.0 / 4, 3.0/15)
+        self._testOne(data1m, data2, 'less', 0, 1.0)
+
+    def test100_100(self):
+        x100 = np.linspace(1, 100, 100)
+        x100_2_p1 = x100 + 2 + 0.1
+        x100_2_m1 = x100 + 2 - 0.1
+        self._testOne(x100, x100_2_p1, 'two-sided', 3.0 / 100, 0.9999999999962055)
+        self._testOne(x100, x100_2_p1, 'greater', 3.0 / 100, 0.9143290114276248)
+        self._testOne(x100, x100_2_p1, 'less', 0, 1.0)
+        self._testOne(x100, x100_2_m1, 'two-sided', 2.0 / 100, 1.0)
+        self._testOne(x100, x100_2_m1, 'greater', 2.0 / 100, 0.960978450786184)
+        self._testOne(x100, x100_2_m1, 'less', 0, 1.0)
+
+    def test100_110(self):
+        x100 = np.linspace(1, 100, 100)
+        x110 = np.linspace(1, 100, 110)
+        x110_20_p1 = x110 + 20 + 0.1
+        x110_20_m1 = x110 + 20 - 0.1
+        # 100, 110
+        self._testOne(x100, x110_20_p1, 'two-sided', 232.0 / 1100, 0.015739183865607353)
+        self._testOne(x100, x110_20_p1, 'greater', 232.0 / 1100, 0.007869594319053203)
+        self._testOne(x100, x110_20_p1, 'less', 0, 1)
+        self._testOne(x100, x110_20_m1, 'two-sided', 229.0 / 1100, 0.017803803861026313)
+        self._testOne(x100, x110_20_m1, 'greater', 229.0 / 1100, 0.008901905958245056)
+        self._testOne(x100, x110_20_m1, 'less', 0.0, 1.0)
+
+    def testRepeatedValues(self):
+        x2233 = np.array([2] * 3 + [3] * 4 + [5] * 5 + [6] * 4, dtype=int)
+        x3344 = x2233 + 1
+        x2356 = np.array([2] * 3 + [3] * 4 + [5] * 10 + [6] * 4, dtype=int)
+        x3467 = np.array([3] * 10 + [4] * 2 + [6] * 10 + [7] * 4, dtype=int)
+        self._testOne(x2233, x3344, 'two-sided', 5.0/16, 0.4262934613454952)
+        self._testOne(x2233, x3344, 'greater', 5.0/16, 0.21465428276573786)
+        self._testOne(x2233, x3344, 'less', 0.0/16, 1.0)
+        self._testOne(x2356, x3467, 'two-sided', 190.0/21/26, 0.0919245790168125)
+        self._testOne(x2356, x3467, 'greater', 190.0/21/26, 0.0459633806858544)
+        self._testOne(x2356, x3467, 'less', 70.0/21/26, 0.6121593130022775)
+
+    def testEqualSizes(self):
+        data2 = np.array([1.0, 2.0, 3.0])
+        self._testOne(data2, data2+1, 'two-sided', 1.0/3, 1.0)
+        self._testOne(data2, data2+1, 'greater', 1.0/3, 0.75)
+        self._testOne(data2, data2+1, 'less', 0.0/3, 1.)
+        self._testOne(data2, data2+0.5, 'two-sided', 1.0/3, 1.0)
+        self._testOne(data2, data2+0.5, 'greater', 1.0/3, 0.75)
+        self._testOne(data2, data2+0.5, 'less', 0.0/3, 1.)
+        self._testOne(data2, data2-0.5, 'two-sided', 1.0/3, 1.0)
+        self._testOne(data2, data2-0.5, 'greater', 0.0/3, 1.0)
+        self._testOne(data2, data2-0.5, 'less', 1.0/3, 0.75)
+
+    def testMiddlingBoth(self):
+        # 500, 600
+        n1, n2 = 500, 600
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 200, n2)
+        self._testOne(x, y, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='auto')
+        self._testOne(x, y, 'two-sided', 2000.0 / n1 / n2, 1.0, mode='asymp')
+        self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
+        self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
+            self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
+            _check_warnings(w, RuntimeWarning, 1)
+
+    def testMediumBoth(self):
+        # 1000, 1100
+        n1, n2 = 1000, 1100
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 200, n2)
+        self._testOne(x, y, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='asymp')
+        self._testOne(x, y, 'two-sided', 6600.0 / n1 / n2, 1.0, mode='auto')
+        self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='asymp')
+        self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
+            self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
+            _check_warnings(w, RuntimeWarning, 1)
+
+    def testLarge(self):
+        # 10000, 110
+        n1, n2 = 10000, 110
+        lcm = n1*11.0
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 100, n2)
+        self._testOne(x, y, 'two-sided', 55275.0 / lcm, 4.2188474935755949e-15)
+        self._testOne(x, y, 'greater', 561.0 / lcm, 0.99115454582047591)
+        self._testOne(x, y, 'less', 55275.0 / lcm, 3.1317328311518713e-26)
+
+    @pytest.mark.slow
+    def testLargeBoth(self):
+        # 10000, 11000
+        n1, n2 = 10000, 11000
+        lcm = n1*11.0
+        delta = 1.0/n1/n2/2/2
+        x = np.linspace(1, 200, n1) - delta
+        y = np.linspace(2, 200, n2)
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='asymp')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 1.0, mode='exact')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='auto')
+        self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
+        self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation overflowed. Switching to mode=asymp")
+            self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
+            self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
+
+    def testNamedAtributes(self):
+        # test for namedtuple attribute results
+        attributes = ('statistic', 'pvalue')
+        res = stats.ks_2samp([1, 2], [3])
+        check_named_results(res, attributes)
+
+    def test_some_code_paths(self):
+        # Check that some code paths are executed
+        from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
+
+        _compute_prob_inside_method(1, 1, 1, 1)
+        _count_paths_outside_method(1000, 1, 1, 1001)
+
+        assert_raises(FloatingPointError, _count_paths_outside_method, 1100, 1099, 1, 1)
+        assert_raises(FloatingPointError, _count_paths_outside_method, 2000, 1000, 1, 1)
+
+    def test_argument_checking(self):
+        # Check that an empty array causes a ValueError
+        assert_raises(ValueError, stats.ks_2samp, [], [1])
+        assert_raises(ValueError, stats.ks_2samp, [1], [])
+        assert_raises(ValueError, stats.ks_2samp, [], [])
 
 
 def test_ttest_rel():
@@ -3646,198 +3890,258 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-class HarMeanTestCase:
-    def test_1dlist(self):
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
+    # Note this doesn't test when axis is not specified
+    x = stats.gmean(array_like, axis=axis, dtype=dtype)
+    assert_allclose(x, desired, rtol=rtol)
+    assert_equal(x.dtype, dtype)
+
+def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
+    x = stats.hmean(array_like, axis=axis, dtype=dtype)
+    assert_allclose(x, desired, rtol=rtol)
+    assert_equal(x.dtype, dtype)
+
+
+class TestHarMean(object):
+    def test_1d_list(self):
         #  Test a 1d list
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        b = 34.1417152147
-        self.do(a, b)
+        desired = 34.1417152147
+        check_equal_hmean(a, desired)
 
-    def test_1darray(self):
+        a = [1, 2, 3, 4]
+        desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
+        check_equal_hmean(a, desired)
+
+    def test_1d_array(self):
         #  Test a 1d array
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        b = 34.1417152147
-        self.do(a, b)
-
-    def test_1dma(self):
-        #  Test a 1d masked array
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        b = 34.1417152147
-        self.do(a, b)
-
-    def test_1dmavalue(self):
-        #  Test a 1d masked array with a masked value
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-                      mask=[0,0,0,0,0,0,0,0,0,1])
-        b = 31.8137186141
-        self.do(a, b)
+        desired = 34.1417152147
+        check_equal_hmean(a, desired)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2dlist(self):
+    def test_2d_list(self):
         #  Test a 2d list
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 38.6696271841
-        self.do(a, b)
+        desired = 38.6696271841
+        check_equal_hmean(a, desired)
 
-    def test_2darray(self):
+    def test_2d_array(self):
         #  Test a 2d array
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 38.6696271841
-        self.do(np.array(a), b)
+        desired = 38.6696271841
+        check_equal_hmean(np.array(a), desired)
 
-    def test_2dma(self):
-        #  Test a 2d masked array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 38.6696271841
-        self.do(np.ma.array(a), b)
-
-    def test_2daxis0(self):
+    def test_2d_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
-        self.do(a, b, axis=0)
+        desired = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
+        check_equal_hmean(a, desired, axis=0)
 
-    def test_2daxis1(self):
+    def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([19.2, 63.03939962, 103.80078637])
-        self.do(a, b, axis=1)
+        desired = np.array([19.2, 63.03939962, 103.80078637])
+        check_equal_hmean(a, desired, axis=1)
 
-    def test_2dmatrixdaxis0(self):
+    def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        self.do(np.matrix(a), b, axis=0)
+        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
+        check_equal_hmean(matrix(a), desired, axis=0)
 
-    def test_2dmatrixaxis1(self):
+    def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
-        self.do(np.matrix(a), b, axis=1)
+        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
+        check_equal_hmean(matrix(a), desired, axis=1)
 
 
-class TestHarMean(HarMeanTestCase):
-    def do(self, a, b, axis=None, dtype=None):
-        x = stats.hmean(a, axis=axis, dtype=dtype)
-        assert_almost_equal(b, x)
-        assert_equal(x.dtype, dtype)
-
-
-class GeoMeanTestCase:
-    def test_1dlist(self):
+class TestGeoMean(object):
+    def test_1d_list(self):
         #  Test a 1d list
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        b = 45.2872868812
-        self.do(a, b)
+        desired = 45.2872868812
+        check_equal_gmean(a, desired)
 
-    def test_1darray(self):
+        a = [1, 2, 3, 4]
+        desired = power(1 * 2 * 3 * 4, 1. / 4.)
+        check_equal_gmean(a, desired, rtol=1e-14)
+
+    def test_1d_array(self):
         #  Test a 1d array
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        b = 45.2872868812
-        self.do(a, b)
+        desired = 45.2872868812
+        check_equal_gmean(a, desired)
 
-    def test_1dma(self):
-        #  Test a 1d masked array
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-        b = 45.2872868812
-        self.do(a, b)
-
-    def test_1dmavalue(self):
-        #  Test a 1d masked array with a masked value
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
-        b = 41.4716627439
-        self.do(a, b)
+        a = array([1, 2, 3, 4], float32)
+        desired = power(1 * 2 * 3 * 4, 1. / 4.)
+        check_equal_gmean(a, desired, dtype=float32)
 
     # Note the next tests use axis=None as default, not axis=0
-    def test_2dlist(self):
+    def test_2d_list(self):
         #  Test a 2d list
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 52.8885199
-        self.do(a, b)
+        desired = 52.8885199
+        check_equal_gmean(a, desired)
 
-    def test_2darray(self):
+    def test_2d_array(self):
         #  Test a 2d array
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 52.8885199
-        self.do(np.array(a), b)
+        desired = 52.8885199
+        check_equal_gmean(array(a), desired)
 
-    def test_2dma(self):
-        #  Test a 2d masked array
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = 52.8885199
-        self.do(np.ma.array(a), b)
-
-    def test_2daxis0(self):
+    def test_2d_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
-        self.do(a, b, axis=0)
+        desired = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
+        check_equal_gmean(a, desired, axis=0)
 
-    def test_2daxis1(self):
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        desired = array([1, 2, 3, 4])
+        check_equal_gmean(a, desired, axis=0, rtol=1e-14)
+
+    def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([22.13363839, 64.02171746, 104.40086817])
-        self.do(a, b, axis=1)
+        desired = np.array([22.13363839, 64.02171746, 104.40086817])
+        check_equal_gmean(a, desired, axis=1)
 
-    def test_2dmatrixdaxis0(self):
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        v = power(1 * 2 * 3 * 4, 1. / 4.)
+        desired = array([v, v, v])
+        check_equal_gmean(a, desired, axis=1, rtol=1e-14)
+
+    def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        self.do(np.matrix(a), b, axis=0)
+        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
+        check_equal_gmean(matrix(a), desired, axis=0)
 
-    def test_2dmatrixaxis1(self):
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        desired = matrix([1, 2, 3, 4])
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
+
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        desired = matrix(stats.gmean(a, axis=0))
+        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
+
+    def test_2d_matrix_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        self.do(np.matrix(a), b, axis=1)
+        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
+        check_equal_gmean(matrix(a), desired, axis=1)
 
-    def test_1dlist0(self):
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        v = power(1 * 2 * 3 * 4, 1. / 4.)
+        desired = matrix([[v], [v], [v]])
+        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
+
+    def test_large_values(self):
+        a = array([1e100, 1e200, 1e300])
+        desired = 1e200
+        check_equal_gmean(a, desired, rtol=1e-13)
+
+    def test_1d_list0(self):
         #  Test a 1d list with zero element
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
-        b = 0.0  # due to exp(-inf)=0
+        desired = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
-            self.do(a, b)
+            check_equal_gmean(a, desired)
         finally:
             np.seterr(**olderr)
 
-    def test_1darray0(self):
+    def test_1d_array0(self):
         #  Test a 1d array with zero element
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        b = 0.0  # due to exp(-inf)=0
+        desired = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
-            self.do(a, b)
-        finally:
-            np.seterr(**olderr)
-
-    def test_1dma0(self):
-        #  Test a 1d masked array with zero element
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        b = 41.4716627439
-        olderr = np.seterr(all='ignore')
-        try:
-            self.do(a, b)
-        finally:
-            np.seterr(**olderr)
-
-    def test_1dmainf(self):
-        #  Test a 1d masked array with negative element
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
-        b = 41.4716627439
-        olderr = np.seterr(all='ignore')
-        try:
-            self.do(a, b)
+            check_equal_gmean(a, desired)
         finally:
             np.seterr(**olderr)
 
 
-class TestGeoMean(GeoMeanTestCase):
-    def do(self, a, b, axis=None, dtype=None):
-        # Note this doesn't test when axis is not specified
-        x = stats.gmean(a, axis=axis, dtype=dtype)
-        assert_almost_equal(b, x)
-        assert_equal(x.dtype, dtype)
+class TestGeometricStandardDeviation(object):
+    # must add 1 as `gstd` is only defined for positive values
+    array_1d = np.arange(2 * 3 * 4) + 1
+    gstd_array_1d = 2.294407613602
+    array_3d = array_1d.reshape(2, 3, 4)
+
+    def test_1d_array(self):
+        gstd_actual = stats.gstd(self.array_1d)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
+
+    def test_1d_numeric_array_like_input(self):
+        gstd_actual = stats.gstd(tuple(self.array_1d))
+        assert_allclose(gstd_actual, self.gstd_array_1d)
+
+    def test_raises_value_error_non_array_like_input(self):
+        with pytest.raises(ValueError, match='Invalid array input'):
+            stats.gstd('This should fail as it can not be cast to an array.')
+
+    def test_raises_value_error_zero_entry(self):
+        with pytest.raises(ValueError, match='Non positive value'):
+            stats.gstd(np.append(self.array_1d, [0]))
+
+    def test_raises_value_error_negative_entry(self):
+        with pytest.raises(ValueError, match='Non positive value'):
+            stats.gstd(np.append(self.array_1d, [-1]))
+
+    def test_raises_value_error_inf_entry(self):
+        with pytest.raises(ValueError, match='Infinite value'):
+            stats.gstd(np.append(self.array_1d, [np.inf]))
+
+    def test_propogates_nan_values(self):
+        a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
+        gstd_actual = stats.gstd(a, axis=1)
+        assert_allclose(gstd_actual, np.array([4, np.nan]))
+
+    def test_ddof_equal_to_number_of_observations(self):
+        with pytest.raises(ValueError, match='Degrees of freedom <= 0'):
+            stats.gstd(self.array_1d, ddof=self.array_1d.size)
+
+    def test_3d_array(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=None)
+        assert_allclose(gstd_actual, self.gstd_array_1d)
+
+    def test_3d_array_axis_type_tuple(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=(1,2))
+        assert_allclose(gstd_actual, [2.12939215, 1.22120169])
+
+    def test_3d_array_axis_0(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=0)
+        gstd_desired = np.array([
+            [6.1330555493918, 3.958900210120, 3.1206598248344, 2.6651441426902],
+            [2.3758135028411, 2.174581428192, 2.0260062829505, 1.9115518327308],
+            [1.8205343606803, 1.746342404566, 1.6846557065742, 1.6325269194382]
+        ])
+        assert_allclose(gstd_actual, gstd_desired)
+
+    def test_3d_array_axis_1(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=1)
+        gstd_desired = np.array([
+            [3.118993630946, 2.275985934063, 1.933995977619, 1.742896469724],
+            [1.271693593916, 1.254158641801, 1.238774141609, 1.225164057869]
+        ])
+        assert_allclose(gstd_actual, gstd_desired)
+
+    def test_3d_array_axis_2(self):
+        gstd_actual = stats.gstd(self.array_3d, axis=2)
+        gstd_desired = np.array([
+            [1.8242475707664, 1.2243686572447, 1.1318311657788],
+            [1.0934830582351, 1.0724479791887, 1.0591498540749]
+        ])
+        assert_allclose(gstd_actual, gstd_desired)
+
+    def test_masked_3d_array(self):
+        ma = np.ma.masked_where(self.array_3d > 16, self.array_3d)
+        gstd_actual = stats.gstd(ma, axis=2)
+        gstd_desired = stats.gstd(self.array_3d, axis=2)
+        mask = [[0, 0, 0], [0, 1, 1]]
+        assert_allclose(gstd_actual, gstd_desired)
+        assert_equal(gstd_actual.mask, mask)
 
 
 def test_binomtest():
@@ -4249,6 +4553,25 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
+
+    def test_pearson(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='pearson')
+        assert_approx_equal(p, 0.97787, significant=4)
+
+    def test_tippett(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='tippett')
+        assert_approx_equal(p, 0.970299, significant=4)
+
+    def test_mudholkar_george(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
+        assert_approx_equal(p, 3.7191571041915e-07, significant=4)
+
+    def test_mudholkar_george_equal_fisher_minus_pearson(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
+        Z_f, p_f = stats.combine_pvalues([.01, .2, .3], method='fisher')
+        Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
+        # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
+        assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
 
 class TestCdfDistanceValidation(object):
@@ -4700,3 +5023,59 @@ class TestRatioUniforms(object):
 
         assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
                      True)
+
+
+class TestEppsSingleton(object):
+    def test_statistic_1(self):
+        # first example in Goerg & Kaiser, also in original paper of
+        # Epps & Singleton. Note: values do not match exactly, the
+        # value of the interquartile range varies depending on how
+        # quantiles are computed
+        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35, 2.69, 0.46, -0.94, -0.37, 12.07])
+        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71, 4.29, 5.00, 7.74, 8.38, 8.60])
+        w, p = stats.epps_singleton_2samp(x, y)
+        assert_almost_equal(w, 15.14, decimal=1)
+        assert_almost_equal(p, 0.00442, decimal=3)
+
+    def test_statistic_2(self):
+        # second example in Goerg & Kaiser, again not a perfect match
+        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
+                      10, 10, 10))
+        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
+                      5, 8, 10))
+        w, p = stats.epps_singleton_2samp(x, y)
+        assert_allclose(w, 8.900, atol=0.001)
+        assert_almost_equal(p, 0.06364, decimal=3)
+
+    def test_epps_singleton_array_like(self):
+        np.random.seed(1234)
+        x, y = np.arange(30), np.arange(28)
+
+        w1, p1 = stats.epps_singleton_2samp(list(x), list(y))
+        w2, p2 = stats.epps_singleton_2samp(tuple(x), tuple(y))
+        w3, p3 = stats.epps_singleton_2samp(x, y)
+
+        assert_(w1 == w2 == w3)
+        assert_(p1 == p2 == p3)
+
+    def test_epps_singleton_size(self):
+        # raise error if less than 5 elements
+        x, y = (1, 2, 3, 4), np.arange(10)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+
+    def test_epps_singleton_nonfinite(self):
+        # raise error if there are non-finite values
+        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
+
+    def test_epps_singleton_1d_input(self):
+        x = np.arange(100).reshape(-1, 1)
+        assert_raises(ValueError, stats.epps_singleton_2samp, x, x)
+
+    def test_names(self):
+        x, y = np.arange(20), np.arange(30)
+        res = stats.epps_singleton_2samp(x, y)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)

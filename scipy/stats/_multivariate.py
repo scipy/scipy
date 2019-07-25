@@ -7,7 +7,7 @@ import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
 import scipy.linalg
-from scipy.misc import doccer
+from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
@@ -3388,13 +3388,13 @@ class special_ortho_group_gen(multi_rv_generic):
         D = np.empty((dim,))
         for n in range(dim-1):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt((x*x).sum())
+            x[0] += D[n]*np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = (np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
-            mat = np.eye(dim)
-            mat[n:, n:] = Hx
-            H = np.dot(H, mat)
+            H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
         D[-1] = (-1)**(dim-1)*D[:-1].prod()
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H = (D*H.T).T
@@ -3527,14 +3527,14 @@ class ortho_group_gen(multi_rv_generic):
         H = np.eye(dim)
         for n in range(dim):
             x = random_state.normal(size=(dim-n,))
+            norm2 = np.dot(x, x)
+            x0 = x[0].item()
             # random sign, 50/50, but chosen carefully to avoid roundoff error
             D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D*np.sqrt((x*x).sum())
+            x[0] += D * np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
             # Householder transformation
-            Hx = -D*(np.eye(dim-n) - 2.*np.outer(x, x)/(x*x).sum())
-            mat = np.eye(dim)
-            mat[n:, n:] = Hx
-            H = np.dot(H, mat)
+            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
         return H
 
 

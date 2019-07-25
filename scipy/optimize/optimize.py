@@ -66,7 +66,7 @@ class MemoizeJac(object):
         return fg[0]
 
     def derivative(self, x, *args):
-        if self.jac is not None and numpy.alltrue(x == self.x):
+        if self.jac is not None and numpy.all(x == self.x):
             return self.jac
         else:
             self(x, *args)
@@ -184,7 +184,7 @@ def rosen(x):
     See Also
     --------
     rosen_der, rosen_hess, rosen_hess_prod
-    
+
     Examples
     --------
     >>> from scipy.optimize import rosen
@@ -216,14 +216,14 @@ def rosen_der(x):
     See Also
     --------
     rosen, rosen_hess, rosen_hess_prod
-    
+
     Examples
     --------
     >>> from scipy.optimize import rosen_der
     >>> X = 0.1 * np.arange(9)
     >>> rosen_der(X)
     array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
-    
+
     """
     x = asarray(x)
     xm = x[1:-1]
@@ -254,7 +254,7 @@ def rosen_hess(x):
     See Also
     --------
     rosen, rosen_der, rosen_hess_prod
-    
+
     Examples
     --------
     >>> from scipy.optimize import rosen_hess
@@ -264,7 +264,7 @@ def rosen_hess(x):
            [  0., 134., -40.,   0.],
            [  0., -40., 130., -80.],
            [  0.,   0., -80., 200.]])
-           
+
     """
     x = atleast_1d(x)
     H = numpy.diag(-400 * x[:-1], 1) - numpy.diag(400 * x[:-1], -1)
@@ -296,15 +296,15 @@ def rosen_hess_prod(x, p):
     See Also
     --------
     rosen, rosen_der, rosen_hess
-    
+
     Examples
     --------
     >>> from scipy.optimize import rosen_hess_prod
     >>> X = 0.1 * np.arange(9)
-    >>> p = 0.5 * np.arange(9) 
+    >>> p = 0.5 * np.arange(9)
     >>> rosen_hess_prod(X, p)
     array([  -0.,   27.,  -10.,  -95., -192., -265., -278., -195., -180.])
-    
+
     """
     x = atleast_1d(x)
     Hp = numpy.zeros(len(x), dtype=x.dtype)
@@ -693,7 +693,15 @@ def _approx_fprime_helper(xk, f, epsilon, args=(), f0=None):
     for k in range(len(xk)):
         ei[k] = 1.0
         d = epsilon * ei
-        grad[k] = (f(*((xk + d,) + args)) - f0) / d[k]
+        df = (f(*((xk + d,) + args)) - f0) / d[k]
+        if not np.isscalar(df):
+            try:
+                df = df.item()
+            except (ValueError, AttributeError):
+                raise ValueError("The user-provided "
+                                 "objective function must "
+                                 "return a scalar value.")
+        grad[k] = df
         ei[k] = 0.0
     return grad
 
@@ -989,6 +997,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if maxiter is None:
         maxiter = len(x0) * 200
     func_calls, f = wrap_function(f, args)
+
+    old_fval = f(x0)
+
     if fprime is None:
         grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
     else:
@@ -1000,7 +1011,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     Hk = I
 
     # Sets the initial step guess to dx ~ 1
-    old_fval = f(x0)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
 
     xk = x0
@@ -2404,8 +2414,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
     """
-    Minimize a function using modified Powell's method. This method
-    only uses function values, not derivatives.
+    Minimize a function using modified Powell's method.
+
+    This method only uses function values, not derivatives.
 
     Parameters
     ----------
@@ -2415,12 +2426,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func.
-    callback : callable, optional
-        An optional user-supplied function, called after each
-        iteration.  Called as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
-    direc : ndarray, optional
-        Initial direction set.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
@@ -2430,12 +2435,25 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     maxfun : int, optional
         Maximum number of function evaluations to make.
     full_output : bool, optional
-        If True, fopt, xi, direc, iter, funcalls, and
-        warnflag are returned.
+        If True, ``fopt``, ``xi``, ``direc``, ``iter``, ``funcalls``, and
+        ``warnflag`` are returned.
     disp : bool, optional
         If True, print convergence messages.
     retall : bool, optional
         If True, return a list of the solution at each iteration.
+    callback : callable, optional
+        An optional user-supplied function, called after each
+        iteration.  Called as ``callback(xk)``, where ``xk`` is the
+        current parameter vector.
+    direc : ndarray, optional
+        Initial fitting step and parameter order set as an (N, N) array, where N
+        is the number of fitting parameters in `x0`.  Defaults to step size 1.0
+        fitting all parameters simultaneously (``np.ones((N, N))``).  To
+        prevent initial consideration of values in a step or to change initial
+        step size, set to 0 or desired step size in the Jth position in the Mth
+        block, where J is the position in `x0` and M is the desired evaluation
+        step, with steps being evaluated in index order.  Step size and ordering
+        will change freely as minimization proceeds.
 
     Returns
     -------
@@ -2459,7 +2477,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     See also
     --------
     minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Powell' `method` in particular.
+        multivariate functions. See the 'Powell' method in particular.
 
     Notes
     -----
@@ -2467,13 +2485,12 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     a function of N variables. Powell's method is a conjugate
     direction method.
 
-    The algorithm has two loops. The outer loop
-    merely iterates over the inner loop. The inner loop minimizes
-    over each current direction in the direction set. At the end
-    of the inner loop, if certain conditions are met, the direction
-    that gave the largest decrease is dropped and replaced with
-    the difference between the current estimated x and the estimated
-    x from the beginning of the inner-loop.
+    The algorithm has two loops.  The outer loop merely iterates over the inner
+    loop. The inner loop minimizes over each current direction in the direction
+    set. At the end of the inner loop, if certain conditions are met, the
+    direction that gave the largest decrease is dropped and replaced with the
+    difference between the current estimated x and the estimated x from the
+    beginning of the inner-loop.
 
     The technical conditions for replacing the direction of greatest
     increase amount to checking that
@@ -2483,6 +2500,15 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     2. The direction of greatest increase accounted for a large sufficient
        fraction of the decrease in the function value from that iteration of
        the inner loop.
+
+    References
+    ----------
+    Powell M.J.D. (1964) An efficient method for finding the minimum of a
+    function of several variables without calculating derivatives,
+    Computer Journal, 7 (2):155-162.
+
+    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
+    Numerical Recipes (any edition), Cambridge University Press
 
     Examples
     --------
@@ -2498,15 +2524,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
              Function evaluations: 18
     >>> minimum
     array(0.0)
-
-    References
-    ----------
-    Powell M.J.D. (1964) An efficient method for finding the minimum of a
-    function of several variables without calculating derivatives,
-    Computer Journal, 7 (2):155-162.
-
-    Press W., Teukolsky S.A., Vetterling W.T., and Flannery B.P.:
-    Numerical Recipes (any edition), Cambridge University Press
 
     """
     opts = {'xtol': xtol,
@@ -2733,7 +2750,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         Set to True to print convergence messages from the `finish` callable.
     workers : int or map-like callable, optional
         If `workers` is an int the grid is subdivided into `workers`
-        sections and evaluated in parallel (uses `multiprocessing.Pool`).
+        sections and evaluated in parallel (uses
+        `multiprocessing.Pool <multiprocessing>`).
         Supply `-1` to use all cores available to the Process.
         Alternatively supply a map-like callable, such as
         `multiprocessing.Pool.map` for evaluating the grid in parallel.

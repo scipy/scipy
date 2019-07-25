@@ -6,6 +6,7 @@ from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from .optimize import OptimizeWarning
 from warnings import warn
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
@@ -168,6 +169,12 @@ class Bounds(object):
         self.ub = ub
         self.keep_feasible = keep_feasible
 
+    def __repr__(self):
+        if np.any(self.keep_feasible):
+            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+        else:
+            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+
 
 class PreparedConstraint(object):
     """Constraint prepared from a user defined constraint.
@@ -242,6 +249,29 @@ class PreparedConstraint(object):
         self.fun = fun
         self.bounds = (lb, ub)
         self.keep_feasible = keep_feasible
+
+    def violation(self, x):
+        """How much the constraint is exceeded by.
+
+        Parameters
+        ----------
+        x : array-like
+            Vector of independent variables
+
+        Returns
+        -------
+        excess : array-like
+            How much the constraint is exceeded by, for each of the
+            constraints specified by `PreparedConstraint.fun`.
+        """
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            ev = self.fun.fun(np.asarray(x))
+
+        excess_lb = np.maximum(self.bounds[0] - ev, 0)
+        excess_ub = np.maximum(ev - self.bounds[1], 0)
+
+        return excess_lb + excess_ub
 
 
 def new_bounds_to_old(lb, ub, n):

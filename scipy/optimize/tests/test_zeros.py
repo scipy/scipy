@@ -5,7 +5,8 @@ from math import sqrt, exp, sin, cos
 
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
-                           assert_equal)
+                           assert_equal,
+                           assert_array_equal)
 import numpy as np
 from numpy import finfo, power, nan, isclose
 
@@ -397,14 +398,23 @@ class TestBasic(object):
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
                 with pytest.raises(
-                        RuntimeError,
-                        match='Failed to converge after %d iterations, value is .*' % (iters)):
+                    RuntimeError,
+                    match='Failed to converge after %d iterations, value is .*' % (iters)):
                     x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
-        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc)
+        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
+        with pytest.raises(RuntimeError, match='Derivative was zero'):
+            result = zeros.newton(func, 0.0, dfunc)
+
+    def test_newton_does_not_modify_x0(self):
+        # https://github.com/scipy/scipy/issues/9964
+        x0 = np.array([0.1, 3])
+        x0_copy = x0.copy()  # Copy to test for equality.
+        newton(np.sin, x0, np.cos)
+        assert_array_equal(x0, x0_copy)
 
 
 def test_gh_5555():
@@ -504,13 +514,17 @@ def test_zero_der_nz_dp():
     p0 = (2.0 - 1e-4) / (2.0 + 1e-4)
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning, "Tolerance of")
-        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0)
+        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, 1)
+    with pytest.raises(RuntimeError, match='Tolerance of'):
+        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=True)
     p0 = (-2.0 + 1e-4) / (2.0 + 1e-4)
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning, "Tolerance of")
-        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0)
+        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, -1)
+    with pytest.raises(RuntimeError, match='Tolerance of'):
+        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=True)
 
 
 def test_array_newton_failures():
@@ -619,3 +633,76 @@ def test_gh_8881():
     # Check that it now succeeds.
     rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
     assert(r.converged)
+
+
+def test_gh_9608_preserve_array_shape():
+    """
+    Test that shape is preserved for array inputs even if fprime or fprime2 is
+    scalar
+    """
+    def f(x):
+        return x**2
+
+    def fp(x):
+        return 2 * x
+
+    def fpp(x):
+        return 2
+
+    x0 = np.array([-2], dtype=np.float32)
+    rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
+    assert(r.converged)
+
+    x0_array = np.array([-2, -3], dtype=np.float32)
+    # This next invocation should fail
+    with pytest.raises(IndexError):
+        result = zeros.newton(
+            f, x0_array, fprime=fp, fprime2=fpp, full_output=True
+        )
+
+    def fpp_array(x):
+        return 2*np.ones(np.shape(x), dtype=np.float32)
+
+    result = zeros.newton(
+        f, x0_array, fprime=fp, fprime2=fpp_array, full_output=True
+    )
+    assert result.converged.all()
+
+
+@pytest.mark.parametrize(
+    "maximum_iterations,flag_expected",
+    [(10, zeros.CONVERR), (100, zeros.CONVERGED)])
+def test_gh9254_flag_if_maxiter_exceeded(maximum_iterations, flag_expected):
+    """
+    Test that if the maximum iterations is exceeded that the flag is not
+    converged.
+    """
+    result = zeros.brentq(
+        lambda x: ((1.2*x - 2.3)*x + 3.4)*x - 4.5,
+        -30, 30, (), 1e-6, 1e-6, maximum_iterations,
+        full_output=True, disp=False)
+    assert result[1].flag == flag_expected
+    if flag_expected == zeros.CONVERR:
+        # didn't converge because exceeded maximum iterations
+        assert result[1].iterations == maximum_iterations
+    elif flag_expected == zeros.CONVERGED:
+        # converged before maximum iterations
+        assert result[1].iterations < maximum_iterations
+
+
+def test_gh9551_raise_error_if_disp_true():
+    """Test that if disp is true then zero derivative raises RuntimeError"""
+
+    def f(x):
+        return x*x + 1
+
+    def f_p(x):
+        return 2*x
+
+    assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
+    with pytest.raises(
+        RuntimeError,
+        match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+        result = zeros.newton(f, 1.0, f_p)
+    root = zeros.newton(f, complex(10.0, 10.0), f_p)
+    assert_allclose(root, complex(0.0, 1.0))

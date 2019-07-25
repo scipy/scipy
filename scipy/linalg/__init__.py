@@ -7,9 +7,12 @@ Linear algebra (:mod:`scipy.linalg`)
 
 Linear algebra functions.
 
+.. eventually we should replace the numpy.linalg HTML link with just `numpy.linalg`
+
 .. seealso::
 
-   `numpy.linalg` for more linear algebra functions.  Note that
+   `numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__
+   for more linear algebra functions.  Note that
    although `scipy.linalg` imports most of them, identically named
    functions from `scipy.linalg` may offer more or slightly differing
    functionality.
@@ -150,6 +153,8 @@ Special Matrices
    circulant - Circulant matrix
    companion - Companion matrix
    dft - Discrete Fourier transform matrix
+   fiedler - Fiedler matrix
+   fiedler_companion - Fiedler companion matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
    helmert - Helmert matrix

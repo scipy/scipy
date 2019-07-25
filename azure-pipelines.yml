@@ -1,0 +1,144 @@
+trigger:
+  # start a new build for every push
+  batch: False
+  branches:
+    include:
+      - master
+      - maintenance/*
+
+# the version of OpenBLAS used is currently 0.3.5.dev
+# despite the numbering on the downloaded files
+# and should be updated to match scipy-wheels as appropriate
+
+jobs:
+- job: Linux_Python_36_32bit_full
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - script: |
+           docker pull i386/ubuntu:bionic
+           docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
+           apt-get -y update && \
+           apt-get -y install curl python3.6-dev python3.6 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
+           curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+           python3.6 get-pip.py && \
+           pip3 --version && \
+           pip3 install setuptools wheel numpy cython==0.29.2 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib --user && \
+           apt-get -y install gfortran-5 wget && \
+           cd .. && \
+           mkdir openblas && cd openblas && \
+           wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.5-274-g6a8b4269-manylinux1_i686.tar.gz && \
+           tar zxvf openblas-v0.3.5-274-g6a8b4269-manylinux1_i686.tar.gz && \
+           cp -r ./usr/local/lib/* /usr/lib && \
+           cp ./usr/local/include/* /usr/include && \
+           cd ../scipy && \
+           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html"
+    displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Publish test results for Python 3.6-32 bit full Linux'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+- job: Windows
+  pool:
+    vmImage: 'VS2017-Win2016'
+  variables:
+      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.5-274-g6a8b4269-win32-gcc_7_1_0.zip
+      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.5-274-g6a8b4269-win_amd64-gcc_7_1_0.zip
+  strategy:
+    maxParallel: 4
+    matrix:
+        Python36-32bit-full:
+          PYTHON_VERSION: '3.6'
+          PYTHON_ARCH: 'x86'
+          TEST_MODE: full
+          OPENBLAS: $(OPENBLAS_32)
+          BITS: 32
+        Python35-64bit-full:
+          PYTHON_VERSION: '3.5'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
+          OPENBLAS: $(OPENBLAS_64)
+          BITS: 64
+        Python36-64bit-full:
+          PYTHON_VERSION: '3.6'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
+          OPENBLAS: $(OPENBLAS_64)
+          BITS: 64
+        Python37-64bit-full:
+          PYTHON_VERSION: '3.7'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
+          OPENBLAS: $(OPENBLAS_64)
+          BITS: 64
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: $(PYTHON_VERSION)
+      addToPath: true
+      architecture: $(PYTHON_ARCH)
+  - script: python -m pip install --upgrade pip setuptools wheel
+    displayName: 'Install tools'
+  - powershell: |
+      $wc = New-Object net.webclient;
+      $wc.Downloadfile("$(OPENBLAS)", "openblas.zip")
+      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
+      Expand-Archive "openblas.zip" $tmpdir
+      $pyversion = python -c "from __future__ import print_function; import sys; print(sys.version.split()[0])"
+      Write-Host "Python Version: $pyversion"
+      $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
+      Write-Host "target path: $target"
+      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.5-274-g6a8b4269-gcc_7_1_0.a $target
+    displayName: 'Download / Install OpenBLAS'
+  - powershell: |
+      # wheels appear to use mingw64 version 6.3.0, but 6.4.0
+      # is the closest match available from choco package manager
+      choco install -y mingw --forcex86 --force --version=6.4.0
+    displayName: 'Install 32-bit mingw for 32-bit builds'
+    condition: eq(variables['BITS'], 32)
+  - powershell: |
+      choco install -y mingw --force --version=6.4.0
+    displayName: 'Install 64-bit mingw for 64-bit builds'
+    condition: eq(variables['BITS'], 64)
+  - script: python -m pip install numpy cython==0.29.2 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib
+    displayName: 'Install dependencies'
+  - powershell: |
+      If ($(BITS) -eq 32) {
+          # 32-bit build requires careful adjustments
+          # until Microsoft has a switch we can use
+          # directly for i686 mingw
+          $env:NPY_DISTUTILS_APPEND_FLAGS = 1
+          $env:CFLAGS = "-m32"
+          $env:LDFLAGS = "-m32"
+          refreshenv
+      }
+      $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+
+      mkdir dist
+      pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
+      ls dist -r | Foreach-Object {
+          pip install $_.FullName
+      }
+    displayName: 'Build SciPy'
+  - powershell: |
+      $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html
+    displayName: 'Run SciPy Test Suite'
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Publish test results for Python $(python.version)'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
