@@ -4404,7 +4404,7 @@ def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
            Maggioni, M., & Shen, C. (2019). Discovering and deciphering
            relationships across disparate data modalities. ELife.
     .. [2] Panda, S., Palaniappan, S., Xiong, J., Swaminathan, A.,
-           Ramachandran, S., Bridgeford, E. W., … Vogelstein, J. T. (2019).
+           Ramachandran, S., Bridgeford, E. W., ... Vogelstein, J. T. (2019).
            mgcpy: A Comprehensive High Dimensional Independence Testing Python
            Package. ArXiv:1907.02088 [Cs, Stat].
     .. [3] Shen, C., Priebe, C.E., & Vogelstein, J.T. (2019). From distance
