@@ -1125,7 +1125,7 @@ Now, we can see the test statistic, p-value, and optimal scale:
     >>> compute_mgc(x, y)
     MGC test statistic: 0.7
     P-value: 0.0
-    Optimal scale: [50, 50]
+    Optimal scale: [20, 20]
 
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
