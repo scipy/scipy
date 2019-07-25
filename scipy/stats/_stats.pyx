@@ -7,7 +7,6 @@ cimport numpy as np
 from numpy.math cimport PI
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
-import warnings
 import numpy as np
 import scipy.stats, scipy.special
 
@@ -305,9 +304,8 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
-##============================================##
-## Distance transforms used for MGC and Dcorr ##
-##============================================##
+# Distance transforms used for MGC and Dcorr
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
 cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
@@ -341,8 +339,6 @@ cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
     # center the distance matrix
     cdef np.ndarray cent_distx = distx - exp_distx
 
-    # the diagonal entries are excluded for unbiased and mgc centering, but not
-    # excluded for biased and mantel(simple) centering.
     if global_corr != "mantel" and global_corr != "biased":
         np.fill_diagonal(cent_distx, 0)
 
@@ -367,9 +363,7 @@ cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
     return transform_dist
 
 
-##========================##
-## MGC specific functions ##
-##========================##
+# MGC specific functions
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -377,7 +371,8 @@ cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
                         np.ndarray[np.float_t, ndim=2] disty,
                         np.ndarray[np.int_t, ndim=2] rank_distx,
                         np.ndarray[np.int_t, ndim=2] rank_disty):
-    # convert float32 numpy array to int, as it will be used as array indices [0 to n-1]
+    # convert float32 numpy array to int, as it will be used as array indices
+    # [0 to n-1]
     rank_distx = rank_distx.astype(np.int) - 1
     rank_disty = rank_disty.astype(np.int) - 1
 
@@ -450,8 +445,6 @@ cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
         transformed["rank_disty"].T)
     local_vary = local_vary.diagonal()
 
-    warnings.filterwarnings("ignore")
-
     # normalizing the covariances yields the local family of correlations
 
     # 2 caveats when porting from R (np.sqrt and reshape)
@@ -459,8 +452,6 @@ cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
     # avoid computational issues that may cause a few local correlations
     # to be negligebly larger than 1
     corr_mat[corr_mat > 1] = 1
-
-    warnings.filterwarnings("default")
 
     # set any local correlation to 0 if any corresponding local variance is
     # less than or equal to 0
