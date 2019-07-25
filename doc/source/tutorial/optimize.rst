@@ -1342,9 +1342,43 @@ residual is expensive to compute, good preconditioning can be crucial
 --- it can even decide whether the problem is solvable in practice or
 not.
 
+
 Preconditioning is an art, science, and industry. Here, we were lucky
 in making a simple choice that worked reasonably well, but there is a
 lot more depth to this topic than is shown here.
+
+
+Linear Sum Assignment
+^^^^^^^^^^^^^^^^^^^^^^
+
+The linear sum assignment problem is also known as minimum weight matching in
+bipartite graphs. A problem instance is described by a matrix C, where each
+C[i,j] is the cost of matching vertex i of the first partite set (a “worker”)
+and vertex j of the second set. The goal is to find a complete assignment
+of workers for tasks of minimal cost.
+
+Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is
+assigned to column j. Then the optimal assignment has cost
+
+.. math::
+    \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
+
+s.t. each row is assignment to at most one column, and each column to at most one row.
+
+This function can also solve a generalization of the classic assignment problem where the cost matrix is rectangular. If it has more rows than columns, then not every row needs to be assigned to a column, and vice versa.
+
+>>> import scipy.optimize
+>>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
+>>> from scipy.optimize import linear_sum_assignment
+>>> row_ind, col_ind = linear_sum_assignment(cost)
+>>> col_ind
+>>> array([1, 0, 2])
+>>> cost[row_ind, col_ind].sum()
+>>> 5
+
+Now we will use Hungarian method for solving a an assignment problem using
+linear_sum_assignment.
+
 
 .. rubric:: References
 
