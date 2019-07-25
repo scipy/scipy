@@ -1086,10 +1086,9 @@ the user the test statistic, p-value, other useful data:
     >>> def compute_mgc(x, y):
     ...     """Compute MGC"""
     ...     stat, pvalue, mgc_dict = mgc(x, y)
-    ...     print("MGC test statistic: ", round(stat, 3))
-    ...     print("P-value: ", round(pvalue, 2))
+    ...     print("MGC test statistic: ", round(stat, 1))
+    ...     print("P-value: ", round(pvalue, 1))
     ...     print("Optimal scale: ", mgc_dict["opt_scale"])
-    ...     return stat, pvalue, mgc_dict
 
 Now, let's use a custom plotting function to plot the data relationship:
 
