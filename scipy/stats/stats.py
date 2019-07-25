@@ -4249,7 +4249,7 @@ def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
         The independence test statistic calculation function used.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
-        within each data matrix. Set to ``None`` if `x` and `y` are already
+        within each data matrix. Set to `None` if `x` and `y` are already
         distance.
     reps : int, optional
         The number of replications used to estimate the null when using the
@@ -4424,8 +4424,8 @@ def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
     ...               2.00149312, 1.35857623, -0.06729464, 0.16168344,
     ...               -0.61048226, 0.41711113])
     >>> stat, pvalue, _ = mgc(x, y)
-    >>> round(stat, 3), round(pvalue, 2)
-    (0.439, 0.03)
+    >>> round(stat, 1), round(pvalue, 1)
+    (0.4, 0.0)
     """
     # check for NaNs
     _contains_nan(x, nan_policy='raise')
