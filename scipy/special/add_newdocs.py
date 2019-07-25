@@ -2175,15 +2175,15 @@ add_newdoc("elliprc",
     Parameters
     ----------
     x, y : array_like
-        Real or complex input parameters. ``x`` can be any number in the
-        complex plane cut along the negative real axis. ``y`` must be non-zero.
+        Real or complex input parameters. `x` can be any number in the
+        complex plane cut along the negative real axis. `y` must be non-zero.
 
     Returns
     -------
     R : ndarray
-        Value of the integral. If ``y`` is real and negative, the Cauchy
-        principal value is returned. If both of ``x`` and ``y`` are real, the
-        return value is real. Otherwise, the return value may be complex.
+        Value of the integral. If `y` is real and negative, the Cauchy
+        principal value is returned. If both of `x` and `y` are real, the
+        return value is real. Otherwise, the return value is complex.
 
     Notes
     -----
@@ -2206,7 +2206,7 @@ add_newdoc("elliprc",
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E6
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
     """)
@@ -2222,20 +2222,20 @@ add_newdoc("elliprd",
     Parameters
     ----------
     x, y, z : array_like
-        Real or complex input parameters. ``x`` or ``y`` can be any number in
-        the complex plane cut along the negative real axis, but at most one of
-        them can be zero, while ``z`` must be non-zero.
+        Real or complex input parameters. `x` or `y` can be any number in the
+        complex plane cut along the negative real axis, but at most one of them
+        can be zero, while `z` must be non-zero.
 
     Returns
     -------
     R : ndarray
-        Value of the integral. If all of ``x``, ``y``, and ``z`` are real, the
-        return value is real. Otherwise, the return value may be complex.
+        Value of the integral. If all of `x`, `y`, and `z` are real, the
+        return value is real. Otherwise, the return value is complex.
 
     Notes
     -----
-    RD is a degenerate case of the elliptic integral RJ: RD(x, y, z) = RJ(x, y,
-    z, z).
+    RD is a degenerate case of the elliptic integral RJ: ``elliprd(x, y, z) =
+    elliprj(x, y, z, z)``.
 
     The code implements Carlson's algorithm based on the duplication theorems
     and series expansion up to the 7th order. [2]
@@ -2253,7 +2253,7 @@ add_newdoc("elliprd",
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E5
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
     """)
@@ -2269,15 +2269,15 @@ add_newdoc("elliprf",
     Parameters
     ----------
     x, y, z : array_like
-        Real or complex input parameters. ``x``, ``y``, or ``z`` can be any
-        number in the complex plane cut along the negative real axis, but at
-        most one of them can be zero.
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis, but at most one of
+        them can be zero.
 
     Returns
     -------
     R : ndarray
-        Value of the integral. If all of ``x``, ``y``, and ``z`` are real, the
-        return value is real. Otherwise, the return value may be complex.
+        Value of the integral. If all of `x`, `y`, and `z` are real, the return
+        value is real. Otherwise, the return value is complex.
 
     Notes
     -----
@@ -2298,7 +2298,7 @@ add_newdoc("elliprf",
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
     """)
@@ -2314,14 +2314,14 @@ add_newdoc("elliprg",
     Parameters
     ----------
     x, y, z : array_like
-        Real or complex input parameters. ``x``, ``y``, or ``z`` can be any
-        number in the complex plane cut along the negative real axis.
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis.
 
     Returns
     -------
     R : ndarray
-        Value of the integral. If all of ``x``, ``y``, and ``z`` are real, the
-        return value is real. Otherwise, the return value may be complex.
+        Value of the integral. If all of `x`, `y`, and `z` are real, the return
+        value is real. Otherwise, the return value is complex.
 
     Notes
     -----
@@ -2329,7 +2329,7 @@ add_newdoc("elliprg",
 
     .. math:: 2 R_{\mathrm{G}}(x, y, z) = z R_{\mathrm{F}}(x, y, z) - \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) + \sqrt{\frac{x y}{z}}
 
-    and the symmetry of ``(x, y, z)`` when at least one non-zero parameter can
+    and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
     be chosen as the pivot. Other special cases are dealt with following [2].
 
     See Also
@@ -2342,7 +2342,7 @@ add_newdoc("elliprg",
     References
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
@@ -2362,18 +2362,17 @@ add_newdoc("elliprj",
     Parameters
     ----------
     x, y, z, p : array_like
-        Real or complex input parameters. ``x``, ``y``, or ``z`` can be any
-        number in the complex plane cut along the negative real axis, but at
-        most one of them can be zero. ``p`` must be non-zero.
+        Real or complex input parameters. `x`, `y`, or `z` can be any number in
+        the complex plane cut along the negative real axis, but at most one of
+        them can be zero. `p` must be non-zero.
 
     Returns
     -------
     R : ndarray
-        Value of the integral. If all of ``x``, ``y``, ``z``, and ``p`` are
-        real, the return value is real. Otherwise, the return value may be
-        complex.
+        Value of the integral. If all of `x`, `y`, `z`, and `p` are real, the
+        return value is real. Otherwise, the return value is complex.
 
-        If ``p`` is real and negative, while ``x``, ``y``, and ``z`` are real,
+        If `p` is real and negative, while `x`, `y`, and `z` are real,
         non-negative, and at most one of them is zero, the Cauchy principal
         value is returned. [1][3]
 
@@ -2381,9 +2380,9 @@ add_newdoc("elliprj",
     -----
     The code implements Carlson's algorithm based on the duplication theorems
     and series expansion up to the 7th order. [2] The algorithm is slightly
-    different from its earlier incarnation in [1] in that the call to
-    ``elliprc`` (or ``atan``/``atanh``, see [4]) is no longer needed in the
-    inner loop.
+    different from its earlier incarnation as it appears in [1], in that the
+    call to `elliprc` (or ``atan``/``atanh``, see [4]) is no longer needed in
+    the inner loop.
 
     See Also
     --------
@@ -2395,7 +2394,7 @@ add_newdoc("elliprj",
     References
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
-           integrals," Numer. Algorithms, vol. 10, no. 1, pp. 13-26, 1995.
+           integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
     .. [2] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
