@@ -2154,8 +2154,8 @@ def resample(x, num, t=None, axis=0, window=None):
     num : int
         The number of samples in the resampled signal.
     t : array_like, optional
-        If `t` is given, it is assumed to be the sample positions
-        associated with the signal data in `x`.
+        If `t` is given, it is assumed to be the equally spaced sample
+        positions associated with the signal data in `x`.
     axis : int, optional
         The axis of `x` that is resampled.  Default is 0.
     window : array_like, callable, string, float, or tuple, optional
@@ -2195,9 +2195,8 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the input vector.  The spacing between samples is changed
     from ``dx`` to ``dx * len(x) / num``.
 
-    If `t` is not None, then it represents the old sample positions,
-    and the new sample positions will be returned as well as the new
-    samples.
+    If `t` is not None, then it is used solely to calculate the resampled
+    positions `resampled_t`
 
     As noted, `resample` uses FFT transformations, which can be very
     slow if the number of input or output samples is large and prime;
