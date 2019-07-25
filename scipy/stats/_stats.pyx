@@ -10,7 +10,6 @@ from numpy cimport ndarray, int64_t, float64_t, intp_t
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
-from scipy.spatial.distance import pdist, squareform
 
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
