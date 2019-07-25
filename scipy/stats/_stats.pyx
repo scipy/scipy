@@ -308,21 +308,21 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef _dense_rank_data(ndarray[float_t, ndim=1] x):
+cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
     u, v = np.unique(x, return_inverse=True)
     return v + 1
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef _rank_distance_matrix(ndarray[float_t, ndim=2] distx):
+cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
     # faster than np.apply_along_axis
     return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in range(distx.shape[0])])
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef _center_distance_matrix(ndarray[float_t, ndim=2] distx,
+cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
                               str global_corr="mgc", is_ranked=True):
     cdef int n = distx.shape[0]
     cdef np.ndarray rank_distx = np.zeros((<object> distx).shape)
@@ -347,8 +347,8 @@ cpdef _center_distance_matrix(ndarray[float_t, ndim=2] distx,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef _transform_distance_matrix(ndarray[float_t, ndim=2] distx,
-                                 ndarray[float_t, ndim=2] disty,
+cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
+                                 np.ndarray[np.float_t, ndim=2] disty,
                                  str global_corr="mgc", is_ranked=True):
 
     if global_corr == "rank":
@@ -367,10 +367,10 @@ cpdef _transform_distance_matrix(ndarray[float_t, ndim=2] distx,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef _local_covariance(ndarray[float_t, ndim=2] distx,
-                        ndarray[float_t, ndim=2] disty,
-                        ndarray[int_t, ndim=2] rank_distx,
-                        ndarray[int_t, ndim=2] rank_disty):
+cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
+                        np.ndarray[np.float_t, ndim=2] disty,
+                        np.ndarray[np.int_t, ndim=2] rank_distx,
+                        np.ndarray[np.int_t, ndim=2] rank_disty):
     # convert float32 numpy array to int, as it will be used as array indices
     # [0 to n-1]
     rank_distx = rank_distx.astype(np.int) - 1
