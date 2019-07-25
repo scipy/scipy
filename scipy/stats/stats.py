@@ -4353,7 +4353,7 @@ def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
     A description of the process of MGC and applications on neuroscience data
     can be found in [1]_. It is performed using the following steps:
 
-    #. Two distance matrices :math:`D^x` and :math:`D^y` are computed and
+    #. Two distance matrices :math:`A` and :math:`B` are computed and
        modified to be mean zero columnwise. This results in two
        :math:`n \times n` distance matrices :math:`C^x` and :math:`C^y` (the
        centering and unbiased modification) [3]_.
@@ -4362,24 +4362,22 @@ def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
 
        #. The :math:`k`-nearest neighbor and :math:`l`-nearest neighbor graphs
           are calculated for each property. Here, :math:`G_k (i, j)` indicates
-          the :math:`k`-smallest values of the :math:`i`-th row of :math:`D^x`
+          the :math:`k`-smallest values of the :math:`i`-th row of :math:`A`
           and :math:`H_l (i, j)` indicates the :math:`l` smallested values of
-          the :math:`i`-th row of :math:`D^y`
+          the :math:`i`-th row of :math:`B`
 
        #. Let :math:`\circ` denotes the entry-wise matrix product, then local
           correlations are summed and normalized using the following statistic:
 
     .. math::
 
-        c^{kl} = \frac{\trace{( C^x \circ G_k) ({C_y \circ H_l)^T}}
-                      {\sqrt{\trace{ (C^x \circ G_k) (C^y \circ H_l)^T}
-                             \trace{ (C^x \circ G_k) (C^y \circ H_l}^T)}}
+        c^{kl} = \frac{\sum_{ij} A G_k B H_l}
+                      {\sqrt{\sum_{ij} A^2 G_k \times \sum_{ij} B^2 H_l}}
 
     #. The MGC test statistic is the smoothed optimal local correlation of
-       :math:`\left\{ c^{kl} \right\}. Denote the smoothing operation as
-       :math:`R(\cdot)` (which essentially set all isolated large correlations)
-       as 0 and connected large correlations the same as before, see [3]_.) MGC
-       is,
+       :math:`\{ c^{kl} \}`. Denote the smoothing operation as :math:`R(\cdot)`
+       (which essentially set all isolated large correlations) as 0 and
+       connected large correlations the same as before, see [3]_.) MGC is,
 
     .. math::
 
