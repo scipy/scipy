@@ -312,19 +312,6 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 @cython.wraparound(False)
 @cython.boundscheck(False)
 cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
-    r"""
-    Similar to scipy.stats.rankdata(x, "dense"), but faster!
-
-    Parameters
-    ----------
-    x : ndarray
-        Any data matrix.
-
-    Returns
-    -------
-    ndarray
-        Dense ranked ``x``.
-    """
     u, v = np.unique(x, return_inverse=True)
     return v + 1
 
@@ -332,22 +319,6 @@ cpdef _dense_rank_data(np.ndarray[np.float_t, ndim=1] x):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
-    r"""
-    Sorts the entries within each column in ascending order
-
-    For ties, the "minimum" ranking is used, e.g. if there are
-    repeating distance entries, The order is like 1,2,2,3,3,4,...
-
-    Parameters
-    ----------
-    distx : ndarray
-        A symmetric distance matrix.
-
-    Returns
-    -------
-    ndarray
-        Column-wise ranked matrix of ``distx``.
-    """
     # faster than np.apply_along_axis
     return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in
                       range(distx.shape[0])])
@@ -357,27 +328,6 @@ cpdef _rank_distance_matrix(np.ndarray[np.float_t, ndim=2] distx):
 @cython.boundscheck(False)
 cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
                               str global_corr="mgc", is_ranked=True):
-    r"""
-    Appropriately transform distance matrices by centering them, based on the
-    specified global correlation to build on.
-
-    Parameters
-    ----------
-    distx : ndarray
-        A symmetric distance matrix.
-    global_corr: {'mgc', 'rank'}, optional
-        Specifies which global correlation to build up-on. Defaults to 'mgc'.
-    is_ranked: bool, optional
-        Specifies whether ranking within a column is computed or not. Defaults
-        to True.
-
-    Returns
-    -------
-    cent_distx : ndarray
-        A :math:`n \times n` centered distance matrix.
-    rank_distx : ndarray
-        A :math:`n \times n` column-ranked distance matrix.
-    """
     cdef int n = distx.shape[0]
     cdef np.ndarray rank_distx = np.zeros((<object> distx).shape)
 
@@ -407,34 +357,6 @@ cpdef _center_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
 cpdef _transform_distance_matrix(np.ndarray[np.float_t, ndim=2] distx,
                                  np.ndarray[np.float_t, ndim=2] disty,
                                  str global_corr="mgc", is_ranked=True):
-    r"""
-    Transforms the distance matrices appropriately, with column-wise ranking if
-    needed.
-
-    Parameters
-    ----------
-    distx, disty : ndarray
-        Distance matrices with the same number of samples.
-    global_corr: {'mgc', 'rank'}, optional
-        Specifies which global correlation to build up-on. Defaults to 'mgc'.
-    is_ranked: bool, optional
-        Specifies whether ranking within a column is computed or not. If,
-        `global_corr = "rank"`, then ranking is performed regardless of the
-        value if `is_ranked`. Defaults to True. Defaults to True.
-
-    Returns
-    -------
-    transform_dist : dict
-        Contains the following keys:
-            - cent_distx : ndarray
-                A :math:`n \times n` centered `distx`.
-            - cent_disty : ndarray
-                A :math:`n \times n` centered `disty`.
-            - rank_distx : ndarray
-                A :math:`n \times n` column-ranked centered `distx`.
-            - rank_disty : ndarray
-                A :math:`n \times n` column-ranked centered `disty`.
-    """
 
     if global_corr == "rank":
         is_ranked = True
@@ -460,22 +382,6 @@ cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
                         np.ndarray[np.float_t, ndim=2] disty,
                         np.ndarray[np.int_t, ndim=2] rank_distx,
                         np.ndarray[np.int_t, ndim=2] rank_disty):
-    r"""
-    Computes all local covariances simultaneously in ``O(n^2)``.
-
-    Parameters
-    ----------
-    distx, disty : ndarray
-        Distance matrices with the same number of samples.
-    rank_distx, rank_disty : ndarray
-        Column-wise ranked matrix of the distance matrices
-
-    Returns
-    -------
-    cov_xy : ndarray
-        Matrix of all local covariances, :math:`n \times n`
-    """
-
     # convert float32 numpy array to int, as it will be used as array indices [0 to n-1]
     rank_distx = rank_distx.astype(np.int) - 1
     rank_disty = rank_disty.astype(np.int) - 1
@@ -526,68 +432,48 @@ cpdef _local_covariance(np.ndarray[np.float_t, ndim=2] distx,
 cpdef _local_correlations(np.ndarray[np.float_t, ndim=2] distx,
                           np.ndarray[np.float_t, ndim=2] disty,
                           global_corr="mgc"):
-        r"""
-        Computes all the local correlation coefficients in ``O(n^2 log n)``
+    transformed = _transform_distance_matrix(distx, disty,
+                                                global_corr)
 
-        Parameters
-        ----------
-        distx, disty : ndarray
-            Distance matrices with the same number of samples.
-        global_corr: {'mgc', 'rank'}, optional
-            Specifies which global correlation to build up-on. Defaults to
-            'mgc'.
+    # compute all local covariances
+    cdef np.ndarray cov_mat = _local_covariance(
+        transformed["cent_distx"],
+        transformed["cent_disty"].T,
+        transformed["rank_distx"],
+        transformed["rank_disty"].T)
 
-        Returns
-        -------
-        corr_mat : ndarray
-            Local correlations within :math:`[-1, 1]`
-        local_varx : ndarray
-            All local variances of `x`
-        local_vary : ndarray
-            All local variances of `y`
-        """
-        transformed = _transform_distance_matrix(distx, disty,
-                                                 global_corr)
+    # compute local variances for data A
+    cdef np.ndarray local_varx = _local_covariance(
+        transformed["cent_distx"],
+        transformed["cent_distx"].T,
+        transformed["rank_distx"],
+        transformed["rank_distx"].T)
+    local_varx = local_varx.diagonal()
 
-        # compute all local covariances
-        cdef np.ndarray cov_mat = _local_covariance(
-            transformed["cent_distx"],
-            transformed["cent_disty"].T,
-            transformed["rank_distx"],
-            transformed["rank_disty"].T)
+    # compute local variances for data B
+    cdef np.ndarray local_vary = _local_covariance(
+        transformed["cent_disty"],
+        transformed["cent_disty"].T,
+        transformed["rank_disty"],
+        transformed["rank_disty"].T)
+    local_vary = local_vary.diagonal()
 
-        # compute local variances for data A
-        cdef np.ndarray local_varx = _local_covariance(
-            transformed["cent_distx"],
-            transformed["cent_distx"].T,
-            transformed["rank_distx"],
-            transformed["rank_distx"].T)
-        local_varx = local_varx.diagonal()
+    warnings.filterwarnings("ignore")
 
-        # compute local variances for data B
-        cdef np.ndarray local_vary = _local_covariance(
-            transformed["cent_disty"],
-            transformed["cent_disty"].T,
-            transformed["rank_disty"],
-            transformed["rank_disty"].T)
-        local_vary = local_vary.diagonal()
+    # normalizing the covariances yields the local family of correlations
 
-        warnings.filterwarnings("ignore")
+    # 2 caveats when porting from R (np.sqrt and reshape)
+    corr_mat = cov_mat / \
+        np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
+    # avoid computational issues that may cause a few local correlations
+    # to be negligebly larger than 1
+    corr_mat[corr_mat > 1] = 1
 
-        # normalizing the covariances yields the local family of correlations
+    warnings.filterwarnings("default")
 
-        # 2 caveats when porting from R (np.sqrt and reshape)
-        corr_mat = cov_mat / \
-            np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
-        # avoid computational issues that may cause a few local correlations
-        # to be negligebly larger than 1
-        corr_mat[corr_mat > 1] = 1
+    # set any local correlation to 0 if any corresponding local variance is
+    # less than or equal to 0
+    corr_mat[local_varx <= 0, :] = 0
+    corr_mat[:, local_vary <= 0] = 0
 
-        warnings.filterwarnings("default")
-
-        # set any local correlation to 0 if any corresponding local variance is
-        # less than or equal to 0
-        corr_mat[local_varx <= 0, :] = 0
-        corr_mat[:, local_vary <= 0] = 0
-
-        return corr_mat, local_varx, local_vary
+    return corr_mat, local_varx, local_vary
