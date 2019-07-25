@@ -1078,8 +1078,6 @@ nonlinear data. Before we start, let's import some useful packages:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> import seaborn as sns
-    >>> import pandas as pd
     >>> from scipy.stats import mgc
 
 First, let's create a custom plotting function that computes MGC and outputs to
@@ -1089,66 +1087,18 @@ the user the test statistic, p-value, other useful data:
     ...     """Compute MGC"""
     ...     stat, pvalue, mgc_dict = mgc(x, y)
     ...     print("MGC test statistic: ", round(stat, 3))
-    ...     print("P-value: ", round(pvalue, 3))
+    ...     print("P-value: ", round(pvalue, 2))
     ...     print("Optimal scale: ", mgc_dict["opt_scale"])
     ...     return stat, pvalue, mgc_dict
 
-Now, let's use a custom plotting function to plot the data relationship and the
-corresponding local correlation maps with optimal scale:
+Now, let's use a custom plotting function to plot the data relationship:
 
-    >>> def mgc_plot(x, y, sim_name, only_viz=False, only_mgc=False)
-    ...     """Plot MGC and visualizations."""
-    ...     plt.clf()
-    ...
-    ...     if not only_mgc:
-    ...         # simulation
-    ...         fig = plt.figure(figsize=(8, 8))
-    ...         fig.suptitle(sim_name + "Simulation", fontsize=17)
-    ...         ax = sns.scatterplot(x=x[:, 0], y=y[:, 0])
-    ...         ax.set_xlabel('X', fontsize=15)
-    ...         ax.set_ylabel('Y', fontsize=15)
-    ...         plt.axis('equal')
-    ...         plt.xticks(fontsize=15)
-    ...         plt.yticks(fontsize=15)
-    ...         plt.show()
-    ...
-    ...     if not only_viz:
-    ...         # run MGC
-    ...         stat, pvalue, mgc_dict = compute_mgc(x, y)
-    ...
-    ...         # calculate MGC-map
-    ...         mgc_map = mgc_dict["mgc_map"]
-    ...
-    ...         # define 2 rows for subplots
-    ...         fig (ax, cax) = plt.subplots(ncols=2, figsize=(9.45, 7.5),
-    ...                            gridspec_kw={"width_ratio":[1, 0.05]})
-    ...
-    ...         # draw heatmap
-    ...         fig.suptitle("MGC-map", fontsize=17)
-    ...         ax = sns.heatmap(mgc_map, cmap="YlGnBu", ax=ax, cbar=False)
-    ...
-    ...         # colorbar
-    ...         fig.colorbar(ax.get_children()[0], cax=cax,
-    ...                      orientation="vertical")
-    ...
-    ...         # optimal scale
-    ...         opt_scale = mgc_dict["opt_scale"]
-    ...         ax.scatter(opt_scale[0], opt_scale[1], marker='X', s=200,
-    ...                    color='red')
-    ...
-    ...         # other formatting
-    ...         ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
-    ...         ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
-    ...         ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
-    ...         ax.yaxis.set_major_formatter(ticker.ScalarFormatter())
-    ...         ax.set_xlabel('#Neighbors for X', fontsize=15)
-    ...         ax.set_ylabel('#Neighbors for Y', fontsize=15)
-    ...         ax.xaxis.set_tick_params(labelsize=15)
-    ...         ax.yaxis.set_tick_params(labelsize=15)
-    ...         cax.xaxis.set_tick_params(labelsize=15)
-    ...         cax.yaxis.set_tick_params(labelsize=15)
-    ...
-    ...         plt.show()
+    >>> def sim_plot(x, y, sim_name):
+    ...     """Plot simulations."""
+    ...     fig = plt.figure(figsize=(8,8))
+    ...     fig.suptitle(sim_name + " Simulation", fontsize=17)
+    ...     plt.scatter(X, Y)
+    ...     plt.show()
 
 Let's look at some linear data first. The following shows this data plotted
 using the custom function defined above:
@@ -1157,44 +1107,26 @@ using the custom function defined above:
     ...               -0.1526904, 0.29178823, -0.12482558, 0.783546,
     ...               0.92732552, -0.23311696, 0.58345008, 0.05778984,
     ...               0.13608912, 0.85119328, -0.85792788, -0.8257414,
-    ...               -0.95956321, 0.66523969, 0.5563135, 0.7400243,
-    ...               0.95723668, 0.59831713, -0.07704128, 0.56105835,
-    ...               -0.76345115, 0.27984204, -0.71329343, 0.88933783,
-    ...               0.04369664, -0.17067612, -0.47088878, 0.54846738,
-    ...               -0.08769934, 0.1368679, -0.9624204, 0.23527099,
-    ...               0.22419145, 0.23386799, 0.88749616, 0.3636406,
-    ...               -0.2809842, -0.12593609, 0.39526239, -0.87954906,
-    ...               0.33353343, 0.34127574, -0.57923488, -0.7421474,
-    ...               -0.3691433, -0.27257846])
+    ...               -0.95956321, 0.66523969, 0.5563135, 0.7400243])
     >>> y = np.array([-0.75550809, 1.40576643, -0.04929934, -0.12927078,
     ...               -0.77908808, 0.6805334, -0.9317745, 0.67717586,
     ...               0.47959224, -0.03966571, 0.32804751, -0.53252625,
     ...               0.12199801, 1.06535921, -0.82466927, -0.67450545,
-    ...               -1.27672425, 0.48386911, 0.22008328, 0.56024772,
-    ...               0.55066354, -0.26482417, 0.0116718, 0.36016788,
-    ...               -1.57855032, 0.51123317, -1.16694261, 0.91531053,
-    ...               0.40824192, -0.10618466, 0.09881157, -0.06894553,
-    ...               0.11347149, -0.20553715, -1.39781897, -0.05415384,
-    ...               0.06841518, 0.26195066, 0.30492124, 0.81405384,
-    ...               -0.04815298, -0.89405794, 1.13938849, 0.06839553,
-    ...               0.92292322, 0.25131332, -1.11461119, -0.21492154,
-    ...               -0.57073177, 0.33864408])
-    >>> mgc_plot(x, y, "Linear", only_viz=True)
+    ...               -1.27672425, 0.48386911, 0.22008328, 0.56024772])
+    >>> sim_plot(x, y, "Linear")
+
+The simulation relationship can be plotted below:
 
 .. plot:: tutorial/stats/plots/mgc_plot1.png
    :align: center
    :include-source: 0
 
-Now, we can visualize the test statistic, p-value, and MGC-map:
+Now, we can see the test statistic, p-value, and optimal scale:
 
-    >>> mgc_plot(x, y, "Linear", only_mgc=True)
-    MGC test statistic: 0.498
+    >>> compute_mgc(x, y)
+    MGC test statistic: 0.676
     P-value: 0.0
     Optimal scale: [50, 50]
-
-.. plot:: tutorial/stats/plots/mgc_plot2.png
-   :align: center
-   :include-source: 0
 
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
@@ -1227,17 +1159,15 @@ The same can be done for nonlinear data sets. The following :math:`x` and
     ...               1.34647206, 2.14525574])
     >>> mgc_plot(x, y, "Spiral", only_viz=True)
 
-.. plot:: tutorial/stats/plots/mgc_plot3.png
+he simulation relationship can be plotted below:
+
+.. plot:: tutorial/stats/plots/mgc_plot2.png
    :align: center
    :include-source: 0
 
 And MGC in this case would be:
 
-    >>> mgc_plot(x, y, "Spiral", only_mgc=True)
-    MGC test statistic: -0.018
-    P-value: 0.715
-    Optimal scale: [50, 50]
-
-.. plot:: tutorial/stats/plots/mgc_plot4.png
-  :align: center
-  :include-source: 0
+    >>> compute_mgc(x, y)
+    MGC test statistic: -0.069
+    P-value: 0.89
+    Optimal scale: [20, 20]
