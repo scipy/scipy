@@ -31,8 +31,16 @@ class CorrelationFunctions(Benchmark):
         a = np.random.rand(2,2) * 10
         self.a = a
 
+        # for mgcpy function additions
+        np.random.seed(12345678)
+        self.x = np.arange(50)
+        self.y = np.arange(50)
+
     def time_fisher_exact(self, alternative):
         oddsratio, pvalue = stats.fisher_exact(self.a, alternative=alternative)
+
+    def time_mgc(self):
+        stat, pvalue = stats.mgc(self.x, self.y)
 
 
 class InferentialStats(Benchmark):
