@@ -66,9 +66,8 @@ cdef extern from "ckdtree_decl.h":
         np.float64_t   *raw_boxsize_data
         np.intp_t size
 
-    # External build and query methods in C++. Cython will
-    # release the GIL to avoid locking up the interpreter.
-
+    # External build and query methods in C++.
+    
     int build_ckdtree(ckdtree *self,
                          np.intp_t start_idx,
                          np.intp_t end_idx,
@@ -561,8 +560,9 @@ cdef class cKDTree:
 
         tmpmaxes = np.copy(self.maxes)
         tmpmins = np.copy(self.mins)
-
-        build_ckdtree(cself, 0, cself.n, &tmpmaxes[0], &tmpmins[0], median, compact)
+        
+        with nogil: 
+            build_ckdtree(cself, 0, cself.n, &tmpmaxes[0], &tmpmins[0], median, compact)
 
         # set up the tree structure pointers
         self._post_init()
@@ -767,10 +767,10 @@ cdef class cKDTree:
         cdef np.intp_t kmax = np.max(k)
 
         # Do the query in an external C++ function.
-        # The GIL will be released in the external query function.
         def _thread_func(np.intp_t start, np.intp_t stop):
-            query_knn(self.cself, &dd[start,0], &ii[start,0],
-                &xx[start,0], stop-start, &kk[0], kk.shape[0], kmax, eps, p, distance_upper_bound)
+            with nogil:
+                query_knn(self.cself, &dd[start,0], &ii[start,0],
+                    &xx[start,0], stop-start, &kk[0], kk.shape[0], kmax, eps, p, distance_upper_bound)
 
         if (n_jobs == -1):
             n_jobs = number_of_processors
@@ -929,8 +929,9 @@ cdef class cKDTree:
                 for i in range(stop - start):
                     vvres[i] = new vector[np.intp_t]()
 
-                query_ball_point(self.cself, &vxx[start, 0],
-                    &vrr[start + 0], p, eps, stop - start, vvres, return_length)
+                with nogil:
+                    query_ball_point(self.cself, &vxx[start, 0],
+                        &vrr[start + 0], p, eps, stop - start, vvres, return_length)
 
                 for i in range(stop - start):
                     if return_length:
@@ -938,10 +939,12 @@ cdef class cKDTree:
                         continue
 
                     if return_sorted:
-                        sort(vvres[i].begin(), vvres[i].end())
+                        with nogil:
+                            sort(vvres[i].begin(), vvres[i].end())
                     elif return_sorted is None and xndim > 1:
                         # compatibility with the old bug not sorting scalar queries.
-                        sort(vvres[i].begin(), vvres[i].end())
+                        with nogil:
+                            sort(vvres[i].begin(), vvres[i].end())
 
                     m = <np.intp_t> (vvres[i].size())
                     tmp = m * [None]
@@ -1031,8 +1034,8 @@ cdef class cKDTree:
                 vvres[i] = new vector[np.intp_t]()
 
             # query in C++
-            # the GIL will be released in the C++ code
-            query_ball_tree(self.cself, other.cself, r, p, eps, vvres)
+            with nogil:
+                query_ball_tree(self.cself, other.cself, r, p, eps, vvres)
 
             # store the results in a list of lists
             results = n * [None]
@@ -1097,7 +1100,9 @@ cdef class cKDTree:
         cdef ordered_pairs results
 
         results = ordered_pairs()
-        query_pairs(self.cself, r, p, eps, results.buf)
+        
+        with nogil:
+            query_pairs(self.cself, r, p, eps, results.buf)
 
         if output_type == 'set':
             return results.set()
@@ -1139,7 +1144,8 @@ cdef class cKDTree:
         if len(proper_weights) != self.n:
             raise ValueError('Number of weights differ from the number of data points')
 
-        build_weights(self.cself, &node_weights[0], &proper_weights[0])
+        with nogil:
+            build_weights(self.cself, &node_weights[0], &proper_weights[0])
 
         return node_weights
 
@@ -1324,7 +1330,9 @@ cdef class cKDTree:
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
-            count_neighbors_unweighted(self.cself, other.cself, n_queries,
+            
+            with nogil:
+                count_neighbors_unweighted(self.cself, other.cself, n_queries,
                             &real_r[0], &iresults[0], p, cumulative)
 
         else:
@@ -1344,7 +1352,9 @@ cdef class cKDTree:
 
             results = np.zeros(n_queries + 1, dtype=np.float64)
             fresults = results
-            count_neighbors_weighted(self.cself, other.cself,
+            
+            with nogil:
+                count_neighbors_weighted(self.cself, other.cself,
                                     w1p, w2p, w1np, w2np,
                                     n_queries,
                                     &real_r[0], &fresults[0], p, cumulative)
@@ -1414,7 +1424,9 @@ cdef class cKDTree:
                              "different dimensionality")
         # do the query
         res = coo_entries()
-        sparse_distance_matrix(
+        
+        with nogil:
+            sparse_distance_matrix(
                 self.cself, other.cself, p, max_distance, res.buf)
 
         if output_type == 'dict':
