@@ -259,14 +259,12 @@ class Test_init_nd_shape_and_axes(object):
 
     def test_errors(self):
         x = np.zeros(1)
-        with assert_raises(ValueError,
-                           match="when given, axes values must be a scalar"
-                           " or iterable of integers"):
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
             _init_nd_shape_and_axes(x, shape=None, axes=[[1, 2], [3, 4]])
 
-        with assert_raises(ValueError,
-                           match="when given, axes values must be a scalar"
-                           " or iterable of integers"):
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
             _init_nd_shape_and_axes(x, shape=None, axes=[1., 2., 3., 4.])
 
         with assert_raises(ValueError,
@@ -281,14 +279,12 @@ class Test_init_nd_shape_and_axes(object):
                            match="all axes must be unique"):
             _init_nd_shape_and_axes(x, shape=None, axes=[0, 0])
 
-        with assert_raises(ValueError,
-                           match="when given, shape values must be a scalar"
-                           " or iterable of integers"):
+        with assert_raises(ValueError, match="shape must be a scalar or "
+                           "iterable of integers"):
             _init_nd_shape_and_axes(x, shape=[[1, 2], [3, 4]], axes=None)
 
-        with assert_raises(ValueError,
-                           match="when given, shape values must be a scalar"
-                           " or iterable of integers"):
+        with assert_raises(ValueError, match="shape must be a scalar or "
+                           "iterable of integers"):
             _init_nd_shape_and_axes(x, shape=[1., 2., 3., 4.], axes=None)
 
         with assert_raises(ValueError,

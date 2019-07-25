@@ -7,6 +7,32 @@ import operator
 _default_workers = 1
 
 
+def _iterable_of_int(x, name=None):
+    """Convert ``x`` to an iterable sequence of int
+
+    Parameters
+    ----------
+    x : value, or Iterable of values, convertible to int
+    name : str, optional
+        Name of the argument being converted, only used in the error message
+
+    Returns
+    -------
+    y : ``List[int]``
+    """
+    if not isinstance(x, Iterable):
+        x = (x,)
+
+    try:
+        x = [operator.index(a) for a in x]
+    except TypeError as e:
+        name = name or "value"
+        raise ValueError("{} must be a scalar or iterable of integers"
+                         .format(name)) from e
+
+    return x
+
+
 def _init_nd_shape_and_axes(x, shape, axes):
     """Handles shape and axes arguments for nd transforms"""
     noshape = shape is None
@@ -15,15 +41,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     if noaxes:
         axes = range(x.ndim)
     else:
-        if not isinstance(axes, Iterable):
-            axes = (axes,)
-
-        try:
-            axes = [operator.index(a) for a in axes]
-        except TypeError as e:
-            raise ValueError("when given, axes values must be a scalar "
-                             "or iterable of integers") from e
-
+        axes = _iterable_of_int(axes, 'axes')
         axes = [a + x.ndim if a < 0 else a for a in axes]
 
         if any(a >= x.ndim or a < 0 for a in axes):
@@ -32,14 +50,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
             raise ValueError("all axes must be unique")
 
     if not noshape:
-        if not isinstance(shape, Iterable):
-            shape = (shape,)
-
-        try:
-            shape = [operator.index(s) for s in shape]
-        except TypeError as e:
-            raise ValueError("when given, shape values must be a scalar "
-                             "or iterable of integers") from e
+        shape = _iterable_of_int(shape, 'shape')
 
         if len(axes) != len(shape):
             raise ValueError("when given, axes and shape arguments"
