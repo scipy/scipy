@@ -15,7 +15,7 @@ from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
-from scipy import special, optimize, fftpack
+from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb, factorial
 from scipy._lib._numpy_compat import polyvalfromroots
 
@@ -347,7 +347,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
 
     1. An integer value is given for `worN`.
     2. `worN` is fast to compute via FFT (i.e.,
-       `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
+       `next_fast_len(worN) <scipy.fft.next_fast_len>` equals `worN`).
     3. The denominator coefficients are a single value (``a.shape[0] == 1``).
     4. `worN` is at least as long as the numerator coefficients
        (``worN >= b.shape[0]``).
@@ -438,17 +438,17 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         lastpoint = 2 * pi if whole else pi
         w = np.linspace(0, lastpoint, N, endpoint=False)
         if (a.size == 1 and N >= b.shape[0] and
-                fftpack.next_fast_len(N) == N and
+                sp_fft.next_fast_len(N) == N and
                 (b.ndim == 1 or (b.shape[-1] == 1))):
             # if N is fast, 2 * N will be fast, too, so no need to check
             n_fft = N if whole else N * 2
             if np.isrealobj(b) and np.isrealobj(a):
-                fft_func = np.fft.rfft
+                fft_func = sp_fft.rfft
             else:
-                fft_func = fftpack.fft
+                fft_func = sp_fft.fft
             h = fft_func(b, n=n_fft, axis=0)[:N]
             h /= a
-            if fft_func is np.fft.rfft and whole:
+            if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
                 stop = -1 if n_fft % 2 == 1 else -2

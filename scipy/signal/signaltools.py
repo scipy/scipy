@@ -4,16 +4,14 @@
 from __future__ import division, print_function, absolute_import
 
 import operator
-import threading
 import sys
 import timeit
 
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
-from scipy._lib._version import NumpyVersion
-from scipy import fftpack, linalg
-from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
+from scipy import linalg, fft as sp_fft
+from scipy.fft._helper import _init_nd_shape_and_axes_sorted
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
@@ -48,11 +46,6 @@ _modedict = {'valid': 0, 'same': 1, 'full': 2}
 
 _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
                  'symmetric': 1, 'reflect': 4}
-
-
-_rfft_mt_safe = (NumpyVersion(np.__version__) >= '1.9.0.dev-e24486e')
-
-_rfft_lock = threading.Lock()
 
 
 def _valfrommode(mode):
@@ -403,29 +396,16 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
-    # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.helper.next_fast_len(d) for d in shape[axes]]
+    # Speed up FFT by padding to optimal size
+    fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
     fslice = tuple([slice(sz) for sz in shape])
-    # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
-    # sure we only call rfftn/irfftn from one thread at a time.
-    if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
-        try:
-            sp1 = np.fft.rfftn(in1, fshape, axes=axes)
-            sp2 = np.fft.rfftn(in2, fshape, axes=axes)
-            ret = np.fft.irfftn(sp1 * sp2, fshape, axes=axes)[fslice].copy()
-        finally:
-            if not _rfft_mt_safe:
-                _rfft_lock.release()
+    if not complex_result:
+        fft, ifft = sp_fft.rfftn, sp_fft.irfftn
     else:
-        # If we're here, it's either because we need a complex result, or we
-        # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
-        # is already in use by another thread).  In either case, use the
-        # (threadsafe but slower) SciPy complex-FFT routines instead.
-        sp1 = fftpack.fftn(in1, fshape, axes=axes)
-        sp2 = fftpack.fftn(in2, fshape, axes=axes)
-        ret = fftpack.ifftn(sp1 * sp2, axes=axes)[fslice].copy()
-        if not complex_result:
-            ret = ret.real
+        fft, ifft = sp_fft.fftn, sp_fft.ifftn
+    sp1 = fft(in1, fshape, axes=axes)
+    sp2 = fft(in2, fshape, axes=axes)
+    ret = ifft(sp1 * sp2, fshape, axes=axes)[fslice].copy()
 
     if mode == "full":
         return ret
@@ -1547,10 +1527,6 @@ def hilbert(x, N=None, axis=-1):
     xa : ndarray
         Analytic signal of `x`, of each 1-D array along `axis`
 
-    See Also
-    --------
-    scipy.fftpack.hilbert : Return Hilbert transform of a periodic sequence x.
-
     Notes
     -----
     The analytic signal ``x_a(t)`` of signal ``x(t)`` is:
@@ -1625,7 +1601,7 @@ def hilbert(x, N=None, axis=-1):
     if N <= 0:
         raise ValueError("N must be positive.")
 
-    Xf = fftpack.fft(x, N, axis=axis)
+    Xf = sp_fft.fft(x, N, axis=axis)
     h = zeros(N)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
@@ -1638,7 +1614,7 @@ def hilbert(x, N=None, axis=-1):
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[tuple(ind)]
-    x = fftpack.ifft(Xf * h, axis=axis)
+    x = sp_fft.ifft(Xf * h, axis=axis)
     return x
 
 
@@ -1679,7 +1655,7 @@ def hilbert2(x, N=None):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
-    Xf = fftpack.fft2(x, N, axes=(0, 1))
+    Xf = sp_fft.fft2(x, N, axes=(0, 1))
     h1 = zeros(N[0], 'd')
     h2 = zeros(N[1], 'd')
     for p in range(2):
@@ -1698,7 +1674,7 @@ def hilbert2(x, N=None):
     while k > 2:
         h = h[:, newaxis]
         k -= 1
-    x = fftpack.ifft2(Xf * h, axes=(0, 1))
+    x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
 
 
@@ -2225,7 +2201,7 @@ def resample(x, num, t=None, axis=0, window=None):
 
     As noted, `resample` uses FFT transformations, which can be very
     slow if the number of input or output samples is large and prime;
-    see `scipy.fftpack.fft`.
+    see `scipy.fft.fft`.
 
     Examples
     --------
@@ -2245,47 +2221,93 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.show()
     """
     x = asarray(x)
-    X = fftpack.fft(x, axis=axis)
+    X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
+
+    # Check if we can use faster real FFT
+    real_input = np.isrealobj(x)
+
+    # Forward transform
+    if real_input:
+        X = sp_fft.rfft(x, axis=axis)
+    else:  # Full complex FFT
+        X = sp_fft.fft(x, axis=axis)
+
+    # Apply window to spectrum
     if window is not None:
         if callable(window):
-            W = window(fftpack.fftfreq(Nx))
+            W = window(sp_fft.fftfreq(Nx))
         elif isinstance(window, ndarray):
             if window.shape != (Nx,):
                 raise ValueError('window must have the same length as data')
             W = window
         else:
-            W = fftpack.ifftshift(get_window(window, Nx))
-        newshape = [1] * x.ndim
-        newshape[axis] = len(W)
-        W.shape = newshape
-        X = X * W
-        W.shape = (Nx,)
-    sl = [slice(None)] * x.ndim
+            W = sp_fft.ifftshift(get_window(window, Nx))
+
+        newshape_W = [1] * x.ndim
+        newshape_W[axis] = X.shape[axis]
+        if real_input:
+            # Fold the window back on itself to mimic complex behavior
+            W_real = W.copy()
+            W_real[1:] += W_real[-1:0:-1]
+            W_real[1:] *= 0.5
+            X *= W_real[:newshape_W[axis]].reshape(newshape_W)
+        else:
+            X *= W.reshape(newshape_W)
+
+    # Copy each half of the original spectrum to the output spectrum, either
+    # truncating high frequences (downsampling) or zero-padding them
+    # (upsampling)
+
+    # Placeholder array for output spectrum
     newshape = list(x.shape)
-    newshape[axis] = num
-    N = int(np.minimum(num, Nx))
-    Y = zeros(newshape, 'D')
-    sl[axis] = slice(0, (N + 1) // 2)
+    if real_input:
+        newshape[axis] = num // 2 + 1
+    else:
+        newshape[axis] = num
+    Y = zeros(newshape, X.dtype)
+
+    # Copy positive frequency components (and Nyquist, if present)
+    N = min(num, Nx)
+    nyq = N // 2 + 1  # Slice index that includes Nyquist if present
+    sl = [slice(None)] * x.ndim
+    sl[axis] = slice(0, nyq)
     Y[tuple(sl)] = X[tuple(sl)]
-    sl[axis] = slice(-(N - 1) // 2, None)
-    Y[tuple(sl)] = X[tuple(sl)]
+    if not real_input:
+        # Copy negative frequency components
+        if N > 2:  # (slice expression doesn't collapse to empty array)
+            sl[axis] = slice(nyq - N, None)
+            Y[tuple(sl)] = X[tuple(sl)]
 
-    if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
-        if N < Nx:  # if downsampling
-            sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
-            Y[tuple(sl)] += X[tuple(sl)]  # add the component of X at N/2
-        elif N < num:  # if upsampling
-            sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
-            Y[tuple(sl)] /= 2  # halve the component at -N/2
-            temp = Y[tuple(sl)]
-            sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
-            Y[tuple(sl)] = temp  # set that equal to the component at -N/2
+    # Split/join Nyquist component(s) if present
+    # So far we have set Y[+N/2]=X[+N/2]
+    if N % 2 == 0:
+        if num < Nx:  # downsampling
+            if real_input:
+                sl[axis] = slice(N//2, N//2 + 1)
+                Y[tuple(sl)] *= 2.
+            else:
+                # select the component of Y at frequency +N/2,
+                # add the component of X at -N/2
+                sl[axis] = slice(-N//2, -N//2 + 1)
+                Y[tuple(sl)] += X[tuple(sl)]
+        elif Nx < num:  # upsampling
+            # select the component at frequency +N/2 and halve it
+            sl[axis] = slice(N//2, N//2 + 1)
+            Y[tuple(sl)] *= 0.5
+            if not real_input:
+                temp = Y[tuple(sl)]
+                # set the component at -N/2 equal to the component at +N/2
+                sl[axis] = slice(num-N//2, num-N//2 + 1)
+                Y[tuple(sl)] = temp
 
-    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+    # Inverse transform
+    if real_input:
+        y = sp_fft.irfft(Y, num, axis=axis)
+    else:
+        y = sp_fft.ifft(Y, axis=axis, overwrite_x=True)
 
-    if x.dtype.char not in ['F', 'D']:
-        y = y.real
+    y *= (float(num) / float(Nx))
 
     if t is None:
         return y

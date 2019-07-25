@@ -78,7 +78,7 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no packages installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
 
-#. Enter ``conda install cython numpy matplotlib pytest spyder``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
+#. Enter ``conda install cython numpy matplotlib pytest spyder pybind11``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
 
 #. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the full path of the SciPy root directory. |br| This instructs ``conda`` to add the root SciPy directory to the |PYTHONPATH|_ environment variable whenever our ``scipydev`` virtual environment is activated. That way, when we ``import`` SciPy code, the code is imported from our development version of SciPy.  *Note: this step differs from the process shown in* `Anaconda SciPy Dev: Part II (macOS)`_ *, which involves creating special folders and files deep within the Anaconda directory. You can ignore that part of the video from 0:38 to 1:38; this is much simpler!*
 

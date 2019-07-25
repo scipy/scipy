@@ -339,6 +339,11 @@
             "ellpk": "d->d"
         }
     },
+    "ellipk": {
+	"_ellipk.pxd": {
+	    "ellipk": "d->d"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
@@ -660,8 +665,8 @@
         }
     },
     "hyperu": {
-        "specfun_wrappers.h": {
-            "hypU_wrap": "ddd->d"
+        "_hypergeometric.pxd": {
+            "hyperu": "ddd->d"
         }
     },
     "i0": {

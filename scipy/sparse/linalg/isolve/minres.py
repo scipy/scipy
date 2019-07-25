@@ -348,7 +348,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
 
 if __name__ == '__main__':
-    from scipy import ones, arange
+    from numpy import ones, arange
     from scipy.linalg import norm
     from scipy.sparse import spdiags
 

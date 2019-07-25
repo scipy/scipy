@@ -2876,7 +2876,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     ny = len(y)
     if nx == 0 or ny == 0:
         return BrunnerMunzelResult(np.nan, np.nan)
-    nc = nx + ny
     rankc = rankdata(np.concatenate((x,y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
@@ -2891,9 +2890,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     Sx /= nx - 1
     Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
     Sy /= ny - 1
-
-    sigmax = Sx / np.power(nc - nx, 2.0)
-    sigmay = Sx / np.power(nc - ny, 2.0)
 
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
     wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
@@ -2911,7 +2907,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
             "distribution should be 't' or 'normal'")
 
     if alternative == "greater":
-        p = p
+        pass
     elif alternative == "less":
         p = 1 - p
     elif alternative == "two-sided":

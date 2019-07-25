@@ -1,5 +1,26 @@
-from . import _pocketfft
+from scipy._lib.uarray import generate_multimethod, Dispatchable
+import numpy as np
 
+
+def _x_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer to replace the transform input array (``x``)
+    """
+    if len(args) > 0:
+        return (dispatchables[0],) + args[1:], kwargs
+    kw = kwargs.copy()
+    kw['x'] = dispatchables[0]
+    return args, kw
+
+
+def _dispatch(func):
+    """
+    Function annotation that creates a uarray multimethod from the function
+    """
+    return generate_multimethod(func, _x_replacer, domain="numpy.scipy.fft")
+
+
+@_dispatch
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the one-dimensional discrete Fourier Transform.
@@ -120,9 +141,10 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the one-dimensional inverse discrete Fourier Transform.
@@ -213,9 +235,10 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     >>> plt.show()
 
     """
-    return _pocketfft.ifft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the one-dimensional discrete Fourier Transform for real input.
@@ -295,9 +318,10 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     exploited to compute only the non-negative frequency terms.
 
     """
-    return _pocketfft.rfft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Compute the inverse of the n-point DFT for real input.
@@ -385,9 +409,135 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     specified, and the output array is purely real.
 
     """
-    return _pocketfft.irfft(x, n, axis, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
+def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+    """
+    Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
+    spectrum.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    n : int, optional
+        Length of the transformed axis of the output. For `n` output
+        points, ``n//2 + 1`` input points are necessary.  If the input is
+        longer than this, it is cropped.  If it is shorter than this, it is
+        padded with zeros. If `n` is not given, it is taken to be ``2*(m-1)``
+        where ``m`` is the length of the input along the axis specified by
+        `axis`.
+    axis : int, optional
+        Axis over which to compute the FFT. If not given, the last
+        axis is used.
+    norm : {None, "ortho"}, optional
+        Normalization mode (see `fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See `fft` for more details.
+
+    Returns
+    -------
+    out : ndarray
+        The truncated or zero-padded input, transformed along the axis
+        indicated by `axis`, or the last one if `axis` is not specified.
+        The length of the transformed axis is `n`, or, if `n` is not given,
+        ``2*m - 2`` where ``m`` is the length of the transformed axis of
+        the input. To get an odd number of output points, `n` must be
+        specified, for instance as ``2*m - 1`` in the typical case,
+
+    Raises
+    ------
+    IndexError
+        If `axis` is larger than the last axis of `a`.
+
+    See also
+    --------
+    rfft : Compute the one-dimensional FFT for real input.
+    ihfft : The inverse of `hfft`.
+    hfftn : Compute the n-dimensional FFT of a Hermitian signal.
+
+    Notes
+    -----
+    `hfft`/`ihfft` are a pair analogous to `rfft`/`irfft`, but for the
+    opposite case: here the signal has Hermitian symmetry in the time
+    domain and is real in the frequency domain. So here it's `hfft` for
+    which you must supply the length of the result if it is to be odd.
+    * even: ``ihfft(hfft(a, 2*len(a) - 2) == a``, within roundoff error,
+    * odd: ``ihfft(hfft(a, 2*len(a) - 1) == a``, within roundoff error.
+
+    Examples
+    --------
+    >>> from scipy.fft import fft, hfft
+    >>> a = 2 * np.pi * np.arange(10) / 10
+    >>> signal = np.cos(a) + 3j * np.sin(3 * a)
+    >>> fft(signal).round(10)
+    array([ -0.+0.j,   5.+0.j,  -0.+0.j,  15.-0.j,   0.+0.j,   0.+0.j,
+            -0.+0.j, -15.-0.j,   0.+0.j,   5.+0.j])
+    >>> hfft(signal[:6]).round(10) # Input first half of signal
+    array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
+    >>> hfft(signal, 10)  # Input entire signal and truncate
+    array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
+    """
+    return (Dispatchable(x, np.ndarray),)
+
+
+@_dispatch
+def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+    """
+    Compute the inverse FFT of a signal that has Hermitian symmetry.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    n : int, optional
+        Length of the inverse FFT, the number of points along
+        transformation axis in the input to use.  If `n` is smaller than
+        the length of the input, the input is cropped.  If it is larger,
+        the input is padded with zeros. If `n` is not given, the length of
+        the input along the axis specified by `axis` is used.
+    axis : int, optional
+        Axis over which to compute the inverse FFT. If not given, the last
+        axis is used.
+    norm : {None, "ortho"}, optional
+        Normalization mode (see `fft`). Default is None.
+
+    Returns
+    -------
+    out : complex ndarray
+        The truncated or zero-padded input, transformed along the axis
+        indicated by `axis`, or the last one if `axis` is not specified.
+        The length of the transformed axis is ``n//2 + 1``.
+
+    See also
+    --------
+    hfft, irfft
+
+    Notes
+    -----
+    `hfft`/`ihfft` are a pair analogous to `rfft`/`irfft`, but for the
+    opposite case: here the signal has Hermitian symmetry in the time
+    domain and is real in the frequency domain. So here it's `hfft` for
+    which you must supply the length of the result if it is to be odd:
+    * even: ``ihfft(hfft(a, 2*len(a) - 2) == a``, within roundoff error,
+    * odd: ``ihfft(hfft(a, 2*len(a) - 1) == a``, within roundoff error.
+
+    Examples
+    --------
+    >>> from scipy.fft import ifft, ihfft
+    >>> spectrum = np.array([ 15, -4, 0, -1, 0, -4])
+    >>> ifft(spectrum)
+    array([1.+0.j,  2.+0.j,  3.+0.j,  4.+0.j,  3.+0.j,  2.+0.j]) # may vary
+    >>> ihfft(spectrum)
+    array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
+    """
+    return (Dispatchable(x, np.ndarray),)
+
+
+@_dispatch
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional discrete Fourier Transform.
@@ -480,9 +630,10 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional inverse discrete Fourier Transform.
@@ -573,9 +724,10 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     >>> plt.show()
 
     """
-    return _pocketfft.ifftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional discrete Fourier Transform
@@ -663,9 +815,10 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.fft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional inverse discrete Fourier Transform.
@@ -750,9 +903,10 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.ifft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional discrete Fourier Transform for real input.
@@ -838,9 +992,10 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
             [0.+0.j,  0.+0.j]]])
 
     """
-    return _pocketfft.rfftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional FFT of a real array.
@@ -876,9 +1031,10 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
     """
 
-    return _pocketfft.rfft2(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the inverse of the N-dimensional FFT of real input.
@@ -964,7 +1120,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     >>> import scipy.fft
     >>> x = np.zeros((3, 2, 2))
     >>> x[0, 0, 0] = 3 * 2 * 2
-    >>> scipy.fft.irfftn(a)
+    >>> scipy.fft.irfftn(x)
     array([[[1.,  1.],
             [1.,  1.]],
            [[1.,  1.],
@@ -973,9 +1129,10 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
             [1.,  1.]]])
 
     """
-    return _pocketfft.irfftn(x, s, axes, norm, overwrite_x)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     """
     Compute the 2-dimensional inverse FFT of a real array.
@@ -1010,5 +1167,269 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     For more details see `irfftn`.
 
     """
+    return (Dispatchable(x, np.ndarray),)
 
-    return _pocketfft.irfft2(x, s, axes, norm, overwrite_x)
+
+@_dispatch
+def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Compute the N-dimensional FFT of Hermitian symmetric complex input, i.e. a
+    signal with a real spectrum.
+
+    This function computes the N-dimensional discrete Fourier Transform for a
+    Hermitian symmetric complex input over any number of axes in an
+    M-dimensional array by means of the Fast Fourier Transform (FFT). In other
+    words, ``ihfftn(hfftn(x, s)) == x`` to within numerical accuracy. (``s``
+    here is ``x.shape`` with ``s[-1] = x.shape[-1] * 2 - 1``, this is necessary
+    for the same reason ``x.shape`` would be necessary for `irfft`.)
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    s : sequence of ints, optional
+        Shape (length of each transformed axis) of the output
+        (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.). `s` is also the
+        number of input points used along this axis, except for the last axis,
+        where ``s[-1]//2+1`` points of the input are used.
+        Along any axis, if the shape indicated by `s` is smaller than that of
+        the input, the input is cropped.  If it is larger, the input is padded
+        with zeros. If `s` is not given, the shape of the input along the axes
+        specified by axes is used. Except for the last axis which is taken to be
+        ``2*(m-1)`` where ``m`` is the length of the input along that axis.
+    axes : sequence of ints, optional
+        Axes over which to compute the inverse FFT. If not given, the last
+        `len(s)` axes are used, or all axes if `s` is also not specified.
+        Repeated indices in `axes` means that the inverse transform over that
+        axis is performed multiple times.
+    norm : {None, "ortho"}, optional
+        Normalization mode (see `fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
+
+    Returns
+    -------
+    out : ndarray
+        The truncated or zero-padded input, transformed along the axes
+        indicated by `axes`, or by a combination of `s` or `x`,
+        as explained in the parameters section above.
+        The length of each transformed axis is as given by the corresponding
+        element of `s`, or the length of the input in every axis except for the
+        last one if `s` is not given.  In the final transformed axis the length
+        of the output when `s` is not given is ``2*(m-1)`` where ``m`` is the
+        length of the final transformed axis of the input.  To get an odd
+        number of output points in the final axis, `s` must be specified.
+
+    Raises
+    ------
+    ValueError
+        If `s` and `axes` have different length.
+    IndexError
+        If an element of `axes` is larger than than the number of axes of `x`.
+
+    See Also
+    --------
+    ihfftn : The inverse n-dimensional FFT with real spectrum. Inverse of `hfftn`.
+    fft : The one-dimensional FFT, with definitions and conventions used.
+    rfft : Forward FFT of real input
+
+    Notes
+    -----
+
+    For a 1 dimensional signal ``x`` to have a real spectrum, it must satisfy
+    the Hermitian property::
+
+        x[i] == np.conj(x[-i]) for all i
+
+    This generalizes into higher dimensions by reflecting over each axis in
+    turn::
+
+        x[i, j, k, ...] == np.conj(x[-i, -j, -k, ...]) for all i, j, k, ...
+
+    This should not be confused with a Hermitian matrix, for which the
+    transpose is it's own conjugate::
+
+        x[i, j] == np.conj(x[j, i]) for all i, j
+
+
+    The default value of `s` assumes an even output length in the final
+    transformation axis. When performing the final complex to real
+    transformation, the Hermitian symmetry requires that the last imaginary
+    component along that axis must be 0 and so it is ignored. To avoid losing
+    information, the correct length of the real input *must* be given.
+
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> x = np.ones((3, 2, 2))
+    >>> scipy.fft.hfftn(x)
+    array([[[12.,  0.],
+            [ 0.,  0.]],
+           [[ 0.,  0.],
+            [ 0.,  0.]],
+           [[ 0.,  0.],
+            [ 0.,  0.]]])
+
+    """
+    return (Dispatchable(x, np.ndarray),)
+
+
+@_dispatch
+def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+    """
+    Compute the 2-dimensional FFT of a Hermitian complex array.
+
+    Parameters
+    ----------
+    x : array
+        Input array, taken to be Hermitian complex.
+    s : sequence of ints, optional
+        Shape of the real output.
+    axes : sequence of ints, optional
+        Axes over which to compute the FFT.
+    norm : {None, "ortho"}, optional
+        Normalization mode (see `fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See `fft` for more details.
+
+    Returns
+    -------
+    out : ndarray
+        The real result of the 2D Hermitian complex real FFT.
+
+    See Also
+    --------
+    hfftn : Compute the N-dimensional discrete Fourier Transform for Hermitian
+            complex input.
+
+    Notes
+    -----
+    This is really just `hfftn` with different default behavior.
+    For more details see `hfftn`.
+
+    """
+    return (Dispatchable(x, np.ndarray),)
+
+
+@_dispatch
+def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Compute the N-dimensional inverse discrete Fourier Transform for a real
+    spectum.
+
+    This function computes the N-dimensional inverse discrete Fourier Transform
+    over any number of axes in an M-dimensional real array by means of the Fast
+    Fourier Transform (FFT). By default, all axes are transformed, with the
+    real transform performed over the last axis, while the remaining transforms
+    are complex.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array, taken to be real.
+    s : sequence of ints, optional
+        Shape (length along each transformed axis) to use from the input.
+        (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
+        Along any axis, if the given shape is smaller than that of the input,
+        the input is cropped.  If it is larger, the input is padded with zeros.
+        if `s` is not given, the shape of the input along the axes specified
+        by `axes` is used.
+    axes : sequence of ints, optional
+        Axes over which to compute the FFT.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
+    norm : {None, "ortho"}, optional
+        Normalization mode (see `fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
+
+    Returns
+    -------
+    out : complex ndarray
+        The truncated or zero-padded input, transformed along the axes
+        indicated by `axes`, or by a combination of `s` and `x`,
+        as explained in the parameters section above.
+        The length of the last axis transformed will be ``s[-1]//2+1``,
+        while the remaining transformed axes will have lengths according to
+        `s`, or unchanged from the input.
+
+    Raises
+    ------
+    ValueError
+        If `s` and `axes` have different length.
+    IndexError
+        If an element of `axes` is larger than than the number of axes of `x`.
+
+    See Also
+    --------
+    hfftn : The forward n-dimensional FFT of Hermitian input.
+    hfft : The one-dimensional FFT of Hermitian input.
+    fft : The one-dimensional FFT, with definitions and conventions used.
+    fftn : The n-dimensional FFT.
+    hfft2 : The two-dimensional FFT of Hermitian input.
+
+    Notes
+    -----
+
+    The transform for real input is performed over the last transformation
+    axis, as by `ihfft`, then the transform over the remaining axes is
+    performed as by `ifftn`. The order of the output is the positive part of
+    the Hermitian output signal, in the same format as `rfft`.
+
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> x = np.ones((2, 2, 2))
+    >>> scipy.fft.ihfftn(x)
+    array([[[1.+0.j,  0.+0.j], # may vary
+            [0.+0.j,  0.+0.j]],
+           [[0.+0.j,  0.+0.j],
+            [0.+0.j,  0.+0.j]]])
+    >>> scipy.fft.ihfftn(x, axes=(2, 0))
+    array([[[1.+0.j,  0.+0.j], # may vary
+            [1.+0.j,  0.+0.j]],
+           [[0.+0.j,  0.+0.j],
+            [0.+0.j,  0.+0.j]]])
+
+    """
+    return (Dispatchable(x, np.ndarray),)
+
+
+@_dispatch
+def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+    """
+    Compute the 2-dimensional inverse FFT of a real spectrum.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array
+    s : sequence of ints, optional
+        Shape of the real input to the inverse FFT.
+    axes : sequence of ints, optional
+        The axes over which to compute the inverse fft.
+        Default is the last two axes.
+    norm : {None, "ortho"}, optional
+        Normalization mode (see `fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
+
+    Returns
+    -------
+    out : ndarray
+        The result of the inverse real 2-D FFT.
+
+    See Also
+    --------
+    ihfftn : Compute the inverse of the N-dimensional FFT of Hermitian input.
+
+    Notes
+    -----
+    This is really `ihfftn` with different defaults.
+    For more details see `ihfftn`.
+
+    """
+    return (Dispatchable(x, np.ndarray),)

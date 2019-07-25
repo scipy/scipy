@@ -7,33 +7,36 @@
  *  Python interface.
  *
  *  Copyright (C) 2019 Max-Planck-Society
+ *  Copyright (C) 2019 Peter Bell
  *  \author Martin Reinecke
+ *  \author Peter Bell
  */
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include "pocketfft.h"
-#include "scipy_features.h"
-
-//
-// Python interface
-//
+#include "pocketfft_hdronly.h"
 
 namespace {
 
 using namespace std;
-using namespace pocketfft;
+using pocketfft::shape_t;
+using pocketfft::stride_t;
 
 namespace py = pybind11;
 
-auto c64 = py::dtype("complex64");
-auto c128 = py::dtype("complex128");
-auto c256 = py::dtype("longcomplex");
-auto f32 = py::dtype("float32");
-auto f64 = py::dtype("float64");
-auto f128 = py::dtype("longfloat");
+// Only instantiate long double transforms if they offer more precision
+using ldbl_t = typename std::conditional<
+  sizeof(long double)==sizeof(double), double, long double>::type;
+
+using c64 = std::complex<float>;
+using c128 = std::complex<double>;
+using clong = std::complex<ldbl_t>;
+using f32 = float;
+using f64 = double;
+using flong = ldbl_t;
+auto None = py::none();
 
 shape_t copy_shape(const py::array &arr)
   {
@@ -51,9 +54,9 @@ stride_t copy_strides(const py::array &arr)
   return res;
   }
 
-shape_t makeaxes(const py::array &in, py::object axes)
+shape_t makeaxes(const py::array &in, const py::object &axes)
   {
-  if (axes.is(py::none()))
+  if (axes.is_none())
     {
     shape_t res(size_t(in.ndim()));
     for (size_t i=0; i<res.size(); ++i)
@@ -75,149 +78,253 @@ shape_t makeaxes(const py::array &in, py::object axes)
   }
 
 #define DISPATCH(arr, T1, T2, T3, func, args) \
-  auto dtype = arr.dtype(); \
-  if (dtype.is(T1)) return func<double> args; \
-  if (dtype.is(T2)) return func<float> args; \
-  if (dtype.is(T3)) return func<longfloat_t> args; \
-  throw runtime_error("unsupported data type");
+  { \
+  if (py::isinstance<py::array_t<T1>>(arr)) return func<double> args; \
+  if (py::isinstance<py::array_t<T2>>(arr)) return func<float> args;  \
+  if (py::isinstance<py::array_t<T3>>(arr)) return func<ldbl_t> args; \
+  throw runtime_error("unsupported data type"); \
+  }
 
-template<typename T> py::array xfftn_internal(const py::array &in,
-  const shape_t &axes, norm_t norm, bool inplace, bool fwd, size_t nthreads)
+template<typename T> T norm_fct(int inorm, size_t N)
   {
+  if (inorm==0) return T(1);
+  if (inorm==2) return T(1/ldbl_t(N));
+  if (inorm==1) return T(1/sqrt(ldbl_t(N)));
+  throw invalid_argument("invalid value for inorm (must be 0, 1, or 2)");
+  }
+
+template<typename T> T norm_fct(int inorm, const shape_t &shape,
+  const shape_t &axes, size_t fct=1, int delta=0)
+  {
+  if (inorm==0) return T(1);
+  size_t N(1);
+  for (auto a: axes)
+    N *= fct * size_t(int64_t(shape[a])+delta);
+  return norm_fct<T>(inorm, N);
+  }
+
+template<typename T> py::array_t<T> prepare_output(py::object &out_,
+  shape_t &dims)
+  {
+  if (out_.is_none()) return py::array_t<T>(dims);
+  auto tmp = out_.cast<py::array_t<T>>();
+  if (!tmp.is(out_)) // a new object was created during casting
+    throw runtime_error("unexpected data type for output array");
+  return tmp;
+  }
+
+template<typename T> py::array c2c_internal(const py::array &in,
+  const py::object &axes_, bool forward, int inorm, py::object &out_,
+  size_t nthreads)
+  {
+  auto axes = makeaxes(in, axes_);
   auto dims(copy_shape(in));
-  py::array res = inplace ? in : py::array_t<complex<T>>(dims);
+  auto res = prepare_output<complex<T>>(out_, dims);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
   auto d_in=reinterpret_cast<const complex<T> *>(in.data());
   auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
   {
   py::gil_scoped_release release;
-  auto fct = norm_fct<T>(norm, dims, axes);
-  c2c(dims, s_in, s_out, axes, fwd, d_in, d_out, fct, nthreads);
+  T fct = norm_fct<T>(inorm, dims, axes);
+  pocketfft::c2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
   }
   return res;
   }
 
-py::array xfftn(const py::array &in, py::object axes, norm_t norm, bool inplace,
-                bool fwd, size_t nthreads)
-  {
-    py::array a = asfarray(in, inplace);
-    auto dtype = a.dtype();
-#define X_(NP_TYPE, FUNC)                                               \
-    if (dtype.is(NP_TYPE)) \
-      return FUNC(a, makeaxes(a, axes), norm, inplace, fwd, nthreads)
-    X_(c64,  xfftn_internal<float>);
-    X_(c128, xfftn_internal<double>);
-    X_(c256, xfftn_internal<longfloat_t>);
-    X_(f32,  xfftn_real<float>);
-    X_(f64,  xfftn_real<double>);
-    X_(f128, xfftn_real<longfloat_t>);
-#undef X_
-    throw runtime_error("unsupported data type");
-  }
-
-py::array fftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
+template<typename T> py::array c2c_sym_internal(const py::array &in,
+  const py::object &axes_, bool forward, int inorm, py::object &out_,
   size_t nthreads)
-  { return xfftn(a, axes, norm, inplace, true, nthreads); }
-
-py::array ifftn(const py::array &a, py::object axes, norm_t norm, bool inplace,
-  size_t nthreads)
-  { return xfftn(a, axes, norm, inplace, false, nthreads); }
-
-template<typename T> py::array rfftn_internal(const py::array &in,
-  py::object axes_, norm_t norm, size_t nthreads)
   {
   auto axes = makeaxes(in, axes_);
-  auto dims_in(copy_shape(in)), dims_out(dims_in);
-  dims_out[axes.back()] = (dims_out[axes.back()]>>1)+1;
-  py::array res = py::array_t<complex<T>>(dims_out);
+  auto dims(copy_shape(in));
+  auto res = prepare_output<complex<T>>(out_, dims);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
   auto d_in=reinterpret_cast<const T *>(in.data());
   auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
   {
   py::gil_scoped_release release;
-  auto fct = norm_fct<T>(norm, dims_in, axes);
-  r2c(dims_in, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+  T fct = norm_fct<T>(inorm, dims, axes);
+  pocketfft::r2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
+  // now fill in second half
+  using namespace pocketfft::detail;
+  ndarr<complex<T>> ares(res.mutable_data(), dims, s_out);
+  rev_iter iter(ares, axes);
+  while(iter.remaining()>0)
+    {
+    auto v = ares[iter.ofs()];
+    ares[iter.rev_ofs()] = conj(v);
+    iter.advance();
+    }
   }
   return res;
   }
 
-py::array rfftn(const py::array &in, py::object axes_, norm_t norm,
-  size_t nthreads)
+py::array c2c(const py::array &a, const py::object &axes_, bool forward,
+  int inorm, py::object &out_, size_t nthreads)
   {
-  py::array a = asfarray(in);
-  DISPATCH(a, f64, f32, f128, rfftn_internal, (a, axes_, norm, nthreads))
+  if (a.dtype().kind() == 'c')
+    DISPATCH(a, c128, c64, clong, c2c_internal, (a, axes_, forward,
+             inorm, out_, nthreads))
+
+  DISPATCH(a, f64, f32, flong, c2c_sym_internal, (a, axes_, forward,
+           inorm, out_, nthreads))
   }
 
-template<typename T> py::array xrfft_scipy(const py::array &in,
-  size_t axis, norm_t norm, bool inplace, bool fwd, size_t nthreads)
+template<typename T> py::array r2c_internal(const py::array &in,
+  const py::object &axes_, bool forward, int inorm, py::object &out_,
+  size_t nthreads)
   {
+  auto axes = makeaxes(in, axes_);
+  auto dims_in(copy_shape(in)), dims_out(dims_in);
+  dims_out[axes.back()] = (dims_out[axes.back()]>>1)+1;
+  py::array res = prepare_output<complex<T>>(out_, dims_out);
+  auto s_in=copy_strides(in);
+  auto s_out=copy_strides(res);
+  auto d_in=reinterpret_cast<const T *>(in.data());
+  auto d_out=reinterpret_cast<complex<T> *>(res.mutable_data());
+  {
+  py::gil_scoped_release release;
+  T fct = norm_fct<T>(inorm, dims_in, axes);
+  pocketfft::r2c(dims_in, s_in, s_out, axes, forward, d_in, d_out, fct,
+    nthreads);
+  }
+  return res;
+  }
+
+py::array r2c(const py::array &in, const py::object &axes_, bool forward,
+  int inorm, py::object &out_, size_t nthreads)
+  {
+  DISPATCH(in, f64, f32, flong, r2c_internal, (in, axes_, forward, inorm, out_,
+    nthreads))
+  }
+
+template<typename T> py::array r2r_fftpack_internal(const py::array &in,
+  const py::object &axes_, bool real2hermitian, bool forward, int inorm,
+  py::object &out_, size_t nthreads)
+  {
+  auto axes = makeaxes(in, axes_);
   auto dims(copy_shape(in));
-  py::array res = inplace ? in : py::array_t<T>(dims);
+  py::array res = prepare_output<T>(out_, dims);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
   auto d_in=reinterpret_cast<const T *>(in.data());
   auto d_out=reinterpret_cast<T *>(res.mutable_data());
   {
   py::gil_scoped_release release;
-  auto fct = norm_fct<T>(norm, dims, {axis});
-  r2r_fftpack(dims, s_in, s_out, axis, fwd, d_in, d_out, fct, nthreads);
+  T fct = norm_fct<T>(inorm, dims, axes);
+  pocketfft::r2r_fftpack(dims, s_in, s_out, axes, real2hermitian, forward,
+    d_in, d_out, fct, nthreads);
   }
   return res;
   }
 
-py::array rfft_scipy(const py::array &in, size_t axis, norm_t norm, bool inplace,
+py::array r2r_fftpack(const py::array &in, const py::object &axes_,
+  bool real2hermitian, bool forward, int inorm, py::object &out_,
   size_t nthreads)
   {
-  py::array a = asfarray(in, inplace);
-  DISPATCH(a, f64, f32, f128, xrfft_scipy, (a, axis, norm, inplace, true,
+  DISPATCH(in, f64, f32, flong, r2r_fftpack_internal, (in, axes_,
+    real2hermitian, forward, inorm, out_, nthreads))
+  }
+
+template<typename T> py::array dct_internal(const py::array &in,
+  const py::object &axes_, int type, int inorm, py::object &out_,
+  size_t nthreads)
+  {
+  auto axes = makeaxes(in, axes_);
+  auto dims(copy_shape(in));
+  py::array res = prepare_output<T>(out_, dims);
+  auto s_in=copy_strides(in);
+  auto s_out=copy_strides(res);
+  auto d_in=reinterpret_cast<const T *>(in.data());
+  auto d_out=reinterpret_cast<T *>(res.mutable_data());
+  {
+  py::gil_scoped_release release;
+  T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, -1)
+                    : norm_fct<T>(inorm, dims, axes, 2);
+  bool ortho = inorm == 1;
+  pocketfft::dct(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
+    nthreads);
+  }
+  return res;
+  }
+
+py::array dct(const py::array &in, int type, const py::object &axes_,
+  int inorm, py::object &out_, size_t nthreads)
+  {
+  if ((type<1) || (type>4)) throw invalid_argument("invalid DCT type");
+  DISPATCH(in, f64, f32, flong, dct_internal, (in, axes_, type, inorm, out_,
     nthreads))
   }
 
-py::array irfft_scipy(const py::array &in, size_t axis, norm_t norm,
-  bool inplace, size_t nthreads)
+template<typename T> py::array dst_internal(const py::array &in,
+  const py::object &axes_, int type, int inorm, py::object &out_,
+  size_t nthreads)
   {
-  py::array a = asfarray(in, inplace);
-  DISPATCH(a, f64, f32, f128, xrfft_scipy, (a, axis, norm, inplace, false,
-    nthreads))
+  auto axes = makeaxes(in, axes_);
+  auto dims(copy_shape(in));
+  py::array res = prepare_output<T>(out_, dims);
+  auto s_in=copy_strides(in);
+  auto s_out=copy_strides(res);
+  auto d_in=reinterpret_cast<const T *>(in.data());
+  auto d_out=reinterpret_cast<T *>(res.mutable_data());
+  {
+  py::gil_scoped_release release;
+  T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, 1)
+                    : norm_fct<T>(inorm, dims, axes, 2);
+  bool ortho = inorm == 1;
+  pocketfft::dst(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
+    nthreads);
   }
-template<typename T> py::array irfftn_internal(const py::array &in,
-  py::object axes_, size_t lastsize, norm_t norm, size_t nthreads)
+  return res;
+  }
+
+py::array dst(const py::array &in, int type, const py::object &axes_,
+  int inorm, py::object &out_, size_t nthreads)
+  {
+  if ((type<1) || (type>4)) throw invalid_argument("invalid DST type");
+  DISPATCH(in, f64, f32, flong, dst_internal, (in, axes_, type, inorm,
+    out_, nthreads))
+  }
+
+template<typename T> py::array c2r_internal(const py::array &in,
+  const py::object &axes_, size_t lastsize, bool forward, int inorm,
+  py::object &out_, size_t nthreads)
   {
   auto axes = makeaxes(in, axes_);
   size_t axis = axes.back();
   shape_t dims_in(copy_shape(in)), dims_out=dims_in;
   if (lastsize==0) lastsize=2*dims_in[axis]-1;
   if ((lastsize/2) + 1 != dims_in[axis])
-    throw runtime_error("bad lastsize");
+    throw invalid_argument("bad lastsize");
   dims_out[axis] = lastsize;
-  py::array res = py::array_t<T>(dims_out);
+  py::array res = prepare_output<T>(out_, dims_out);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
   auto d_in=reinterpret_cast<const complex<T> *>(in.data());
   auto d_out=reinterpret_cast<T *>(res.mutable_data());
   {
   py::gil_scoped_release release;
-  auto fct = norm_fct<T>(norm, dims_out, axes);
-  c2r(dims_out, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+  T fct = norm_fct<T>(inorm, dims_out, axes);
+  pocketfft::c2r(dims_out, s_in, s_out, axes, forward, d_in, d_out, fct,
+    nthreads);
   }
   return res;
   }
 
-py::array irfftn(const py::array &in, py::object axes_, size_t lastsize,
-  norm_t norm, size_t nthreads)
+py::array c2r(const py::array &in, const py::object &axes_, size_t lastsize,
+  bool forward, int inorm, py::object &out_, size_t nthreads)
   {
-  py::array a = asfarray(in);
-  DISPATCH(a, c128, c64, c256, irfftn_internal, (a, axes_, lastsize, norm,
-    nthreads))
+  DISPATCH(in, c128, c64, clong, c2r_internal, (in, axes_, lastsize, forward,
+    inorm, out_, nthreads))
   }
 
-template<typename T> py::array hartley_internal(const py::array &in,
-  py::object axes_, norm_t norm, bool inplace, size_t nthreads)
+template<typename T> py::array separable_hartley_internal(const py::array &in,
+  const py::object &axes_, int inorm, py::object &out_, size_t nthreads)
   {
   auto dims(copy_shape(in));
-  py::array res = inplace ? in : py::array_t<T>(dims);
+  py::array res = prepare_output<T>(out_, dims);
   auto axes = makeaxes(in, axes_);
   auto s_in=copy_strides(in);
   auto s_out=copy_strides(res);
@@ -225,82 +332,55 @@ template<typename T> py::array hartley_internal(const py::array &in,
   auto d_out=reinterpret_cast<T *>(res.mutable_data());
   {
   py::gil_scoped_release release;
-  auto fct = norm_fct<T>(norm, dims, axes);
-  r2r_hartley(dims, s_in, s_out, axes, d_in, d_out, fct, nthreads);
+  T fct = norm_fct<T>(inorm, dims, axes);
+  pocketfft::r2r_separable_hartley(dims, s_in, s_out, axes, d_in, d_out, fct,
+    nthreads);
   }
   return res;
   }
 
-py::array hartley(const py::array &in, py::object axes_, norm_t norm,
-  bool inplace, size_t nthreads)
+py::array separable_hartley(const py::array &in, const py::object &axes_,
+  int inorm, py::object &out_, size_t nthreads)
   {
-  DISPATCH(in, f64, f32, f128, hartley_internal, (in, axes_, norm, inplace,
-    nthreads))
+  DISPATCH(in, f64, f32, flong, separable_hartley_internal, (in, axes_, inorm,
+    out_, nthreads))
   }
 
 template<typename T>py::array complex2hartley(const py::array &in,
-  const py::array &tmp, py::object axes_, bool inplace)
+  const py::array &tmp, const py::object &axes_, py::object &out_)
   {
   using namespace pocketfft::detail;
-  size_t ndim = size_t(in.ndim());
   auto dims_out(copy_shape(in));
-  py::array out = inplace ? in : py::array_t<T>(dims_out);
-  ndarr<cmplx<T>> atmp(tmp.data(), copy_shape(tmp), copy_strides(tmp));
+  py::array out = prepare_output<T>(out_, dims_out);
+  cndarr<cmplx<T>> atmp(tmp.data(), copy_shape(tmp), copy_strides(tmp));
   ndarr<T> aout(out.mutable_data(), copy_shape(out), copy_strides(out));
   auto axes = makeaxes(in, axes_);
   {
   py::gil_scoped_release release;
-  size_t axis = axes.back();
-  multi_iter<1,cmplx<T>,T> it(atmp, aout, axis);
-  vector<bool> swp(ndim,false);
-  for (auto i: axes)
-    if (i!=axis)
-      swp[i] = true;
-  while(it.remaining()>0)
+  simple_iter iin(atmp);
+  rev_iter iout(aout, axes);
+  while(iin.remaining()>0)
     {
-    ptrdiff_t rofs = 0;
-    for (size_t i=0; i<it.pos.size(); ++i)
-      {
-      if (i==axis) continue;
-      if (!swp[i])
-        rofs += ptrdiff_t(it.pos[i])*it.oarr.stride(i);
-      else
-        {
-        auto x = ptrdiff_t((it.pos[i]==0) ? 0 : it.iarr.shape(i)-it.pos[i]);
-        rofs += x*it.oarr.stride(i);
-        }
-      }
-    it.advance(1);
-    for (size_t i=0; i<it.length_in(); ++i)
-      {
-      auto re = it.in(i).r;
-      auto im = it.in(i).i;
-      auto rev_i = ptrdiff_t((i==0) ? 0 : it.length_out()-i);
-      it.out(i) = re+im;
-      aout[rofs + rev_i*it.stride_out()] = re-im;
-      }
+    auto v = atmp[iin.ofs()];
+    aout[iout.ofs()] = v.r+v.i;
+    aout[iout.rev_ofs()] = v.r-v.i;
+    iin.advance(); iout.advance();
     }
   }
   return out;
   }
 
-py::array mycomplex2hartley(const py::array &in,
-  const py::array &tmp, py::object axes_, bool inplace)
+py::array genuine_hartley(const py::array &in, const py::object &axes_,
+  int inorm, py::object &out_, size_t nthreads)
   {
-  DISPATCH(in, f64, f32, f128, complex2hartley, (in, tmp, axes_, inplace))
-  }
-
-py::array hartley2(const py::array &in, py::object axes_, norm_t norm,
-  bool inplace, size_t nthreads)
-  {
-  return mycomplex2hartley(in, rfftn(in, axes_, norm, nthreads), axes_,
-    inplace);
+  auto tmp = r2c(in, axes_, true, inorm, None, nthreads);
+  DISPATCH(in, f64, f32, flong, complex2hartley, (in, tmp, axes_, out_))
   }
 
 const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
 
 This module supports
-- single and double precision
+- single, double, and long double precision
 - complex and real-valued transforms
 - multi-dimensional transforms
 
@@ -309,176 +389,276 @@ vector instructions for faster execution if these are supported by the CPU and
 were enabled during compilation.
 )""";
 
-const char *fftn_DS = R"""(
-Performs a forward complex FFT.
+const char *c2c_DS = R"""(Performs a complex FFT.
 
 Parameters
 ----------
-a : numpy.ndarray (np.complex64 or np.complex128)
-    The input data
+a : numpy.ndarray (any complex or real type)
+    The input data. If its type is real, a more efficient real-to-complex
+    transform will be used.
 axes : list of integers
     The axes along which the FFT is carried out.
     If not set, all axes will be transformed.
-fct : float
-    Normalization factor
-inplace : bool
-    if False, returns the result in a new array and leaves the input unchanged.
-    if True, stores the result in the input array and returns a handle to it.
+forward : bool
+    If `True`, a negative sign is used in the exponent, else a positive one.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : divide by sqrt(N)
+      2 : divide by N
+    where N is the product of the lengths of the transformed axes.
+out : numpy.ndarray (same shape as `a`, complex type with same accuracy as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 
 Returns
 -------
-np.ndarray (same shape and data type as a)
+numpy.ndarray (same shape as `a`, complex type with same accuracy as `a`)
     The transformed data.
 )""";
 
-const char *ifftn_DS = R"""(Performs a backward complex FFT.
+const char *r2c_DS = R"""(Performs an FFT whose input is strictly real.
 
 Parameters
 ----------
-a : numpy.ndarray (np.complex64 or np.complex128)
-    The input data
-axes : list of integers
-    The axes along which the FFT is carried out.
-    If not set, all axes will be transformed.
-fct : float
-    Normalization factor
-inplace : bool
-    if False, returns the result in a new array and leaves the input unchanged.
-    if True, stores the result in the input array and returns a handle to it.
-nthreads : int
-    Number of threads to use. If 0, use the system default (typically governed
-    by the `OMP_NUM_THREADS` environment variable).
-
-Returns
--------
-np.ndarray (same shape and data type as a)
-    The transformed data
-)""";
-
-const char *rfftn_DS = R"""(Performs a forward real-valued FFT.
-
-Parameters
-----------
-a : numpy.ndarray (np.float32 or np.float64)
+a : numpy.ndarray (any real type)
     The input data
 axes : list of integers
     The axes along which the FFT is carried out.
     If not set, all axes will be transformed in ascending order.
-fct : float
-    Normalization factor
+forward : bool
+    If `True`, a negative sign is used in the exponent, else a positive one.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : divide by sqrt(N)
+      2 : divide by N
+    where N is the product of the lengths of the transformed input axes.
+out : numpy.ndarray (complex type with same accuracy as `a`)
+    For the required shape, see the `Returns` section.
+    Must not overlap with `a`.
+    If None, a new array is allocated to store the output.
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 
 Returns
 -------
-np.ndarray (np.complex64 or np.complex128)
+numpy.ndarray (complex type with same accuracy as `a`)
     The transformed data. The shape is identical to that of the input array,
     except for the axis that was transformed last. If the length of that axis
     was n on input, it is n//2+1 on output.
 )""";
 
-const char *rfft_scipy_DS = R"""(Performs a forward real-valued FFT.
+const char *c2r_DS = R"""(Performs an FFT whose output is strictly real.
 
 Parameters
 ----------
-a : numpy.ndarray (np.float32 or np.float64)
-    The input data
-axis : int
-    The axis along which the FFT is carried out.
-fct : float
-    Normalization factor
-inplace : bool
-    if False, returns the result in a new array and leaves the input unchanged.
-    if True, stores the result in the input array and returns a handle to it.
-nthreads : int
-    Number of threads to use. If 0, use the system default (typically governed
-    by the `OMP_NUM_THREADS` environment variable).
-
-Returns
--------
-np.ndarray (np.float32 or np.float64)
-    The transformed data. The shape is identical to that of the input array.
-    Along the transformed axis, values are arranged in
-    FFTPACK half-complex order, i.e. `a[0].re, a[1].re, a[1].im, a[2].re ...`.
-)""";
-
-const char *irfftn_DS = R"""(Performs a backward real-valued FFT.
-
-Parameters
-----------
-a : numpy.ndarray (np.complex64 or np.complex128)
+a : numpy.ndarray (any complex type)
     The input data
 axes : list of integers
     The axes along which the FFT is carried out.
     If not set, all axes will be transformed in ascending order.
 lastsize : the output size of the last axis to be transformed.
     If the corresponding input axis has size n, this can be 2*n-2 or 2*n-1.
-fct : float
-    Normalization factor
+forward : bool
+    If `True`, a negative sign is used in the exponent, else a positive one.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : divide by sqrt(N)
+      2 : divide by N
+    where N is the product of the lengths of the transformed output axes.
+out : numpy.ndarray (real type with same accuracy as `a`)
+    For the required shape, see the `Returns` section.
+    Must not overlap with `a`.
+    If None, a new array is allocated to store the output.
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 
 Returns
 -------
-np.ndarray (np.float32 or np.float64)
+numpy.ndarray (real type with same accuracy as `a`)
     The transformed data. The shape is identical to that of the input array,
     except for the axis that was transformed last, which has now `lastsize`
     entries.
 )""";
 
-const char *irfft_scipy_DS = R"""(Performs a backward real-valued FFT.
+const char *r2r_fftpack_DS = R"""(Performs a real-valued FFT using the FFTPACK storage scheme.
 
 Parameters
 ----------
-a : numpy.ndarray (np.float32 or np.float64)
-    The input data. Along the transformed axis, values are expected in
-    FFTPACK half-complex order, i.e. `a[0].re, a[1].re, a[1].im, a[2].re ...`.
-axis : int
-    The axis along which the FFT is carried out.
-fct : float
-    Normalization factor
-inplace : bool
-    if False, returns the result in a new array and leaves the input unchanged.
-    if True, stores the result in the input array and returns a handle to it.
+a : numpy.ndarray (any real type)
+    The input data
+axes : list of integers
+    The axes along which the FFT is carried out.
+    If not set, all axes will be transformed.
+real2hermitian : bool
+    if True, the input is purely real and the output will have Hermitian
+    symmetry and be stored in FFTPACK's halfcomplex ordering, otherwise the
+    opposite.
+forward : bool
+    If `True`, a negative sign is used in the exponent, else a positive one.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : divide by sqrt(N)
+      2 : divide by N
+    where N is the length of `axis`.
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 
 Returns
 -------
-np.ndarray (np.float32 or np.float64)
+numpy.ndarray (same shape and data type as `a`)
     The transformed data. The shape is identical to that of the input array.
 )""";
 
-const char *hartley_DS = R"""(Performs a Hartley transform.
-For every requested axis, a 1D forward Fourier transform is carried out,
-and the sum of real and imaginary parts of the result is stored in the output
-array.
+const char *separable_hartley_DS = R"""(Performs a separable Hartley transform.
+For every requested axis, a 1D forward Fourier transform is carried out, and
+the real and imaginary parts of the result are added before the next axis is
+processed.
 
 Parameters
 ----------
-a : numpy.ndarray (np.float32 or np.float64)
+a : numpy.ndarray (any real type)
     The input data
 axes : list of integers
     The axes along which the transform is carried out.
     If not set, all axes will be transformed.
-fct : float
-    Normalization factor
-inplace : bool
-    if False, returns the result in a new array and leaves the input unchanged.
-    if True, stores the result in the input array and returns a handle to it.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : divide by sqrt(N)
+      2 : divide by N
+    where N is the product of the lengths of the transformed axes.
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
 
 Returns
 -------
-np.ndarray (same shape and data type as a)
+numpy.ndarray (same shape and data type as `a`)
+    The transformed data
+)""";
+
+const char *genuine_hartley_DS = R"""(Performs a full Hartley transform.
+A full Fourier transform is carried out over the requested axes, and the
+sum of real and imaginary parts of the result is stored in the output
+array. For a single transformed axis, this is identical to `separable_hartley`,
+but when transforming multiple axes, the results are different.
+
+Parameters
+----------
+a : numpy.ndarray (any real type)
+    The input data
+axes : list of integers
+    The axes along which the transform is carried out.
+    If not set, all axes will be transformed.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : divide by sqrt(N)
+      2 : divide by N
+    where N is the product of the lengths of the transformed axes.
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
+nthreads : int
+    Number of threads to use. If 0, use the system default (typically governed
+    by the `OMP_NUM_THREADS` environment variable).
+
+Returns
+-------
+numpy.ndarray (same shape and data type as `a`)
+    The transformed data
+)""";
+
+const char *dct_DS = R"""(Performs a discrete cosine transform.
+
+Parameters
+----------
+a : numpy.ndarray (any real type)
+    The input data
+type : integer
+    the type of DCT. Must be in [1; 4].
+axes : list of integers
+    The axes along which the transform is carried out.
+    If not set, all axes will be transformed.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : make transform orthogonal and divide by sqrt(N)
+      2 : divide by N
+    where N is the product of n_i for every transformed axis i.
+    n_i is 2*(<axis_length>-1 for type 1 and 2*<axis length>
+    for types 2, 3, 4.
+    Making the transform orthogonal involves the following additional steps
+    for every 1D sub-transform:
+      Type 1 : multiply first and last input value by sqrt(2)
+               divide first and last output value by sqrt(2)
+      Type 2 : divide first output value by sqrt(2)
+      Type 3 : multiply first input value by sqrt(2)
+      Type 4 : nothing
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
+nthreads : int
+    Number of threads to use. If 0, use the system default (typically governed
+    by the `OMP_NUM_THREADS` environment variable).
+
+Returns
+-------
+numpy.ndarray (same shape and data type as `a`)
+    The transformed data
+)""";
+
+const char *dst_DS = R"""(Performs a discrete sine transform.
+
+Parameters
+----------
+a : numpy.ndarray (any real type)
+    The input data
+type : integer
+    the type of DST. Must be in [1; 4].
+axes : list of integers
+    The axes along which the transform is carried out.
+    If not set, all axes will be transformed.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : make transform orthogonal and divide by sqrt(N)
+      2 : divide by N
+    where N is the product of n_i for every transformed axis i.
+    n_i is 2*(<axis_length>+1 for type 1 and 2*<axis length>
+    for types 2, 3, 4.
+    Making the transform orthogonal involves the following additional steps
+    for every 1D sub-transform:
+      Type 1 : nothing
+      Type 2 : divide first output value by sqrt(2)
+      Type 3 : multiply first input value by sqrt(2)
+      Type 4 : nothing
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
+nthreads : int
+    Number of threads to use. If 0, use the system default (typically governed
+    by the `OMP_NUM_THREADS` environment variable).
+
+Returns
+-------
+numpy.ndarray (same shape and data type as `a`)
     The transformed data
 )""";
 
@@ -489,26 +669,20 @@ PYBIND11_MODULE(pypocketfft, m)
   using namespace pybind11::literals;
 
   m.doc() = pypocketfft_DS;
-  py::enum_<norm_t>(m, "norm_t")
-    .value("none",  norm_t::none)
-    .value("ortho", norm_t::ortho)
-    .value("size",  norm_t::size);
-  m.def("fftn",&fftn, fftn_DS, "a"_a, "axes"_a=py::none(), "norm"_a=norm_t::none,
-        "inplace"_a=false, "nthreads"_a=1);
-  m.def("ifftn",&ifftn, ifftn_DS, "a"_a, "axes"_a=py::none(),
-        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
-  m.def("rfftn",&rfftn, rfftn_DS, "a"_a, "axes"_a=py::none(),
-        "norm"_a=norm_t::none, "nthreads"_a=1);
-  m.def("rfft_scipy",&rfft_scipy, rfft_scipy_DS, "a"_a, "axis"_a,
-        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
-  m.def("irfftn",&irfftn, irfftn_DS, "a"_a, "axes"_a=py::none(), "lastsize"_a=0,
-    "norm"_a=norm_t::none, "nthreads"_a=1);
-  m.def("irfft_scipy",&irfft_scipy, irfft_scipy_DS, "a"_a, "axis"_a,
-        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
-  m.def("hartley",&hartley, hartley_DS, "a"_a, "axes"_a=py::none(),
-        "norm"_a=norm_t::none, "inplace"_a=false, "nthreads"_a=1);
-  m.def("hartley2",&hartley2, "a"_a, "axes"_a=py::none(), "norm"_a=norm_t::none,
-    "inplace"_a=false, "nthreads"_a=1);
-  m.def("complex2hartley",&mycomplex2hartley, "in"_a, "tmp"_a, "axes"_a,
-    "inplace"_a=false);
+  m.def("c2c", c2c, c2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,
+    "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("r2c", r2c, r2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,
+    "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("c2r", c2r, c2r_DS, "a"_a, "axes"_a=None, "lastsize"_a=0,
+    "forward"_a=true, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("r2r_fftpack", r2r_fftpack, r2r_fftpack_DS, "a"_a, "axes"_a,
+    "real2hermitian"_a, "forward"_a, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("separable_hartley", separable_hartley, separable_hartley_DS, "a"_a,
+    "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("genuine_hartley", genuine_hartley, genuine_hartley_DS, "a"_a,
+    "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("dct", dct, dct_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
+    "out"_a=None, "nthreads"_a=1);
+  m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
+    "out"_a=None, "nthreads"_a=1);
   }

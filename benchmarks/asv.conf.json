@@ -44,7 +44,7 @@
     "env_dir": "env",
 
     "environment_type": "virtualenv",
-    "wheel_cache_size": 10,
+    "build_cache_size": 10,
 
     // The directory (relative to the current directory) that raw benchmark
     // results are stored in.  If not provided, defaults to "results".

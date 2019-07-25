@@ -30,7 +30,7 @@ def configuration(parent_package='', top_path=None):
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src,
+                         sources=['qhull.c', 'qhull_misc.c'] + qhull_src,
                          **cfg)
 
     # cKDTree

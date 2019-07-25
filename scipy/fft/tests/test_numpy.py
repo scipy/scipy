@@ -2,12 +2,14 @@ from __future__ import division, absolute_import, print_function
 
 import queue
 import threading
+import multiprocessing
 import numpy as np
 import pytest
 from numpy.random import random
 from numpy.testing import (
-        assert_array_almost_equal, assert_array_equal, assert_raises,
+        assert_array_almost_equal, assert_array_equal, assert_allclose
         )
+from pytest import raises as assert_raises
 import scipy.fft as fft
 
 def fft1(x):
@@ -117,7 +119,6 @@ class TestFFT1D(object):
         assert_array_almost_equal(
             x, fft.irfftn(fft.rfftn(x, norm="ortho"), norm="ortho"))
 
-    @pytest.mark.skip(reason="hfft not currently implemented")
     def test_hfft(self):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
@@ -126,7 +127,6 @@ class TestFFT1D(object):
         assert_array_almost_equal(fft.hfft(x_herm) / np.sqrt(30),
                                   fft.hfft(x_herm, norm="ortho"))
 
-    @pytest.mark.skip(reason="ihfft not currently implemented")
     def test_ihfft(self):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
@@ -136,8 +136,33 @@ class TestFFT1D(object):
             x_herm, fft.ihfft(fft.hfft(x_herm, norm="ortho"),
                                  norm="ortho"))
 
+    def test_hfft2(self):
+        x = random((30, 20))
+        assert_array_almost_equal(x, fft.hfft2(fft.ihfft2(x)))
+        assert_array_almost_equal(
+            x, fft.hfft2(fft.ihfft2(x, norm="ortho"), norm="ortho"))
+
+    def test_ihfft2(self):
+        x = random((30, 20))
+        assert_array_almost_equal(fft.ifft2(x)[:, :11], fft.ihfft2(x))
+        assert_array_almost_equal(fft.ihfft2(x) * np.sqrt(30 * 20),
+                                  fft.ihfft2(x, norm="ortho"))
+
+    def test_hfftn(self):
+        x = random((30, 20, 10))
+        assert_array_almost_equal(x, fft.hfftn(fft.ihfftn(x)))
+        assert_array_almost_equal(
+            x, fft.hfftn(fft.ihfftn(x, norm="ortho"), norm="ortho"))
+
+    def test_ihfftn(self):
+        x = random((30, 20, 10))
+        assert_array_almost_equal(fft.ifftn(x)[:, :, :6], fft.ihfftn(x))
+        assert_array_almost_equal(fft.ihfftn(x) * np.sqrt(30 * 20 * 10),
+                                  fft.ihfftn(x, norm="ortho"))
+
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn])
+                                    fft.rfftn, fft.irfftn,
+                                    fft.hfftn, fft.ihfftn])
     def test_axes(self, op):
         x = random((30, 20, 10))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
@@ -155,7 +180,7 @@ class TestFFT1D(object):
                       (fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
                       #       (necessary for comparison to x_norm above)
-                      #(fft.ihfft, fft.hfft),
+                      (fft.ihfft, fft.hfft),
                       ]
         for forw, back in func_pairs:
             for n in [x.size, 2*x.size]:
@@ -172,6 +197,7 @@ class TestFFT1D(object):
         x = random(30).astype(dtype)
         assert_array_almost_equal(fft.ifft(fft.fft(x)), x)
         assert_array_almost_equal(fft.irfft(fft.rfft(x)), x)
+        assert_array_almost_equal(fft.hfft(fft.ihfft(x), len(x)), x)
 
 
 @pytest.mark.parametrize(
@@ -249,6 +275,25 @@ class TestFFTThreadSafe(object):
     def test_irfft(self):
         a = np.ones(self.input_shape) * 1+0j
         self._test_mtsame(fft.irfft, a)
+
+    def test_hfft(self):
+        a = np.ones(self.input_shape, np.complex64)
+        self._test_mtsame(fft.hfft, a)
+
+    def test_ihfft(self):
+        a = np.ones(self.input_shape)
+        self._test_mtsame(fft.ihfft, a)
+
+
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
+def test_multiprocess(func):
+    # Test that fft still works after fork (gh-10422)
+    with multiprocessing.Pool(2) as p:
+        res = p.map(func, [np.ones(100) for _ in range(4)])
+
+    expect = func(np.ones(100))
+    for x in res:
+        assert_allclose(x, expect)
 
 
 class TestIRFFTN(object):
