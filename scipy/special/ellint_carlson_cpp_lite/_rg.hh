@@ -20,11 +20,13 @@ rg(const T& x, const T& y, const T& z, const double& rerr, T& res)
     typedef typing::decplx_t<T> RT;
 
     ExitStatus status = ExitStatus::success;
+#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
     if ( argcheck::invalid_rerr(rerr, 1.0e-4) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_rerr;
     }
+#endif
 
     T cct[3] = {x, y, z};
     std::sort(std::begin(cct), std::end(cct), util::abscmp<T>);
@@ -64,7 +66,7 @@ rg(const T& x, const T& y, const T& z, const double& rerr, T& res)
     }
 
     T tmp = cct[2] * rfv;
-    tmp += (cct[2] - cct[1]) * (cct[2] - cct[0]) * rdv / (RT)(-3.0) +
+    tmp += (cct[1] - cct[2]) * (cct[2] - cct[0]) * rdv / (RT)3.0 +
            std::sqrt(cct[0] * cct[1] / cct[2]);
     tmp *= (RT)0.5;
 

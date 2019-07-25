@@ -19,15 +19,17 @@ rc(const T& x, const T& y, const double& rerr, T& res)
     typedef typing::decplx_t<T> RT;
 
     ExitStatus status = ExitStatus::success;
+#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
     if ( argcheck::invalid_rerr(rerr, 2.0e-4) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_rerr;
     }
+#endif
 
     /* Cauchy principal value with real negative y */
     if ( argcheck::too_small(std::imag(y)) &&
-        ( std::real(y) < (RT)0.0 ) )
+        ( std::real(y) < 0.0 ) )
     {
 	T tmpres;
 	status = ellint_carlson::rc(x - y, -y, rerr, tmpres);

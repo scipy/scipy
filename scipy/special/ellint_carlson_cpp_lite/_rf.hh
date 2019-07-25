@@ -21,11 +21,13 @@ rf0(const T& x, const T& y, const double& rerr, T& res)
     typedef typing::decplx_t<T> RT;
 
     ExitStatus status = ExitStatus::success;
+#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
     if ( argcheck::invalid_rerr(rerr, 1.0e-4) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_rerr;
     }
+#endif
 
     double rsq = 2.0 * std::sqrt(rerr);
 
@@ -64,11 +66,13 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
     T cct2[3];
 
     ExitStatus status = ExitStatus::success;
+#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
     if ( argcheck::invalid_rerr(rerr, 3.0e-4) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_rerr;
     }
+#endif
 
     if ( argcheck::ph_good(x) && argcheck::ph_good(y) && argcheck::ph_good(z) )
     {

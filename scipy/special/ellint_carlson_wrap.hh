@@ -13,6 +13,7 @@
 #endif
 
 
+#define ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
 #include "ellint_carlson_cpp_lite/ellint_carlson.hh"
 
 

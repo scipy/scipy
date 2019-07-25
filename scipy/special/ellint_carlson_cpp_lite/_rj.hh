@@ -147,24 +147,19 @@ good_args(const T& x, const T& y, const T& z, const T& p,
 
     /* "If x, y, z are real and nonnegative, at most one of them is 0, and the
      * fourth variable of RJ is negative, the Cauchy principal value ..." */
-    bool x0 = argcheck::too_small(x);
-    bool y0 = argcheck::too_small(y);
-    bool z0 = argcheck::too_small(z);
     bool xyzreal_nonneg_atmost1z = ( argcheck::too_small(xi) &&
                                      argcheck::too_small(yi) &&
                                      argcheck::too_small(zi) &&
 				     (xr >= 0.0) && (yr > 0.0) );
-    if ( argcheck::too_small(pi) )
+    if ( argcheck::too_small(pi) && xyzreal_nonneg_atmost1z )
     {
-	if ( (classify.retry_caupv = ( xyzreal_nonneg_atmost1z &&
-	                               (pr < 0.0) )) )
+	if ( (classify.retry_caupv = ( pr < 0.0 )) )
 	{
 	    return false;
 	}
 	/* "Assume x, y, and z are real and nonnegative, at most one of them is
 	 * 0, and p > 0" */
-	if ( (classify.maybe_asymp = ( xyzreal_nonneg_atmost1z &&
-	                               (pr > 0.0) )) )
+	if ( (classify.maybe_asymp = ( pr > 0.0 )) )
 	{
 	    return true;
 	}
@@ -173,6 +168,9 @@ good_args(const T& x, const T& y, const T& z, const T& p,
      * 0, while Re p > 0."
      *     [1] By "them", Carlson seems to have meant the numbers x, y, z
      *         themselves, rather than their "real parts". */
+    bool x0 = argcheck::too_small(x);
+    bool y0 = argcheck::too_small(y);
+    bool z0 = argcheck::too_small(z);
     if ( ( pr > 0.0 ) && ( xr >= 0.0 ) && !((y0 && (x0 || z0)) || (x0 && z0)) )
     {
 	return true;
@@ -390,11 +388,13 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res)
     T cct2[6];
 
     ExitStatus status = ExitStatus::success;
+#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
     if ( argcheck::invalid_rerr(rerr, 1.0e-4) )
     {
 	res = typing::nan<T>();
 	return ExitStatus::bad_rerr;
     }
+#endif
 
     /* Put the symmetric arguments in the order of real parts. */
     cct1[0] = x;
