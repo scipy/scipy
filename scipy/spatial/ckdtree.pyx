@@ -511,8 +511,13 @@ cdef class cKDTree:
 
     def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True,
             copy_data=False, balanced_tree=True, boxsize=None):
-        cdef np.float64_t [::1] tmpmaxes, tmpmins
-        cdef ckdtree * cself = self.cself
+        
+        cdef: 
+            np.float64_t [::1] tmpmaxes, tmpmins
+            np.float64_t *ptmpmaxes
+            np.float64_t *ptmpmins
+            ckdtree *cself = self.cself
+            int compact, median
 
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
@@ -561,8 +566,10 @@ cdef class cKDTree:
         tmpmaxes = np.copy(self.maxes)
         tmpmins = np.copy(self.mins)
         
+        ptmpmaxes = &tmpmaxes[0]
+        ptmpmins = &tmpmins[0]
         with nogil: 
-            build_ckdtree(cself, 0, cself.n, &tmpmaxes[0], &tmpmins[0], median, compact)
+            build_ckdtree(cself, 0, cself.n, ptmpmaxes, ptmpmins, median, compact)
 
         # set up the tree structure pointers
         self._post_init()
@@ -760,17 +767,22 @@ cdef class cKDTree:
         # The C++ function touches all dd and ii entries,
         # setting the missing values.
 
-        cdef np.float64_t [:, ::1] dd = np.empty((n,len(k)),dtype=np.float64)
-        cdef np.intp_t [:, ::1] ii = np.empty((n,len(k)),dtype=np.intp)
-        cdef np.intp_t [::1] kk = np.array(k, dtype=np.intp)
-
-        cdef np.intp_t kmax = np.max(k)
+        cdef: 
+            np.float64_t [:, ::1] dd = np.empty((n,len(k)),dtype=np.float64)
+            np.intp_t [:, ::1] ii = np.empty((n,len(k)),dtype=np.intp)
+            np.intp_t [::1] kk = np.array(k, dtype=np.intp)
+            np.intp_t kmax = np.max(k)
 
         # Do the query in an external C++ function.
         def _thread_func(np.intp_t start, np.intp_t stop):
-            with nogil:
-                query_knn(self.cself, &dd[start,0], &ii[start,0],
-                    &xx[start,0], stop-start, &kk[0], kk.shape[0], kmax, eps, p, distance_upper_bound)
+            cdef:
+                np.float64_t *pdd = &dd[start,0]
+                np.intp_t *pii = &ii[start,0]
+                np.float64_t *pxx = &xx[start,0]
+                np.intp_t *pkk = &kk[0]                
+            with nogil:         
+                query_knn(self.cself, pdd, pii,
+                    pxx, stop-start, pkk, kk.shape[0], kmax, eps, p, distance_upper_bound)
 
         if (n_jobs == -1):
             n_jobs = number_of_processors
@@ -915,9 +927,16 @@ cdef class cKDTree:
         vrr = np.reshape(r, (-1))
 
         def _thread_func(np.intp_t start, np.intp_t stop):
-            cdef vector[np.intp_t] **vvres
-            cdef np.intp_t i
-            cdef np.intp_t *cur
+            cdef: 
+                vector[np.intp_t] **vvres
+                np.intp_t i
+                np.intp_t *cur
+                int rlen
+                np.float64_t *pvxx
+                np.float64_t *pvrr
+            
+            rlen = <int> return_length
+            
             try:
                 vvres = (<vector[np.intp_t] **>
                     PyMem_Malloc((stop-start) * sizeof(void*)))
@@ -929,9 +948,12 @@ cdef class cKDTree:
                 for i in range(stop - start):
                     vvres[i] = new vector[np.intp_t]()
 
+                pvxx = &vxx[start, 0]
+                pvrr = &vrr[start + 0]
+                
                 with nogil:
-                    query_ball_point(self.cself, &vxx[start, 0],
-                        &vrr[start + 0], p, eps, stop - start, vvres, return_length)
+                    query_ball_point(self.cself, pvxx,
+                        pvrr, p, eps, stop - start, vvres, rlen)
 
                 for i in range(stop - start):
                     if return_length:
@@ -1043,7 +1065,8 @@ cdef class cKDTree:
                 m = <np.intp_t> (vvres[i].size())
                 if NPY_LIKELY(m > 0):
                     tmp = m * [None]
-                    sort(vvres[i].begin(), vvres[i].end())
+                    with nogil:
+                        sort(vvres[i].begin(), vvres[i].end())
                     cur = &vvres[i].front()
                     for j in range(m):
                         tmp[j] = cur[0]
@@ -1131,9 +1154,12 @@ cdef class cKDTree:
             total weight for each KD-Tree node.
 
         """
-        cdef np.intp_t num_of_nodes
-        cdef np.float64_t [::1] node_weights
-        cdef np.float64_t [::1] proper_weights
+        cdef: 
+            np.intp_t num_of_nodes
+            np.float64_t [::1] node_weights
+            np.float64_t [::1] proper_weights
+            np.float64_t *pnw
+            np.float64_t *ppw
 
         num_of_nodes = self.cself.tree_buffer.size();
         node_weights = np.empty(num_of_nodes, dtype=np.float64)
@@ -1144,8 +1170,11 @@ cdef class cKDTree:
         if len(proper_weights) != self.n:
             raise ValueError('Number of weights differ from the number of data points')
 
+        pnw = &node_weights[0]
+        ppw = &proper_weights[0]
+
         with nogil:
-            build_weights(self.cself, &node_weights[0], &proper_weights[0])
+            build_weights(self.cself, pnw, ppw)
 
         return node_weights
 
@@ -1289,6 +1318,10 @@ cdef class cKDTree:
             np.float64_t *w1np = NULL
             np.float64_t *w2p = NULL
             np.float64_t *w2np = NULL
+            np.float64_t *prr
+            np.intp_t *pir
+            np.float64_t *pfr
+            int cum
 
         # Make sure trees are compatible
         if self.m != other.m:
@@ -1324,6 +1357,8 @@ cdef class cKDTree:
             if other is not self:
                 raise ValueError("Two different trees are used. Specify weights for both in a tuple.")
 
+        cum = <int> cumulative
+
         if self_weights is None and other_weights is None:
             int_result = True
             # unweighted, use the integer arithmetics
@@ -1331,9 +1366,12 @@ cdef class cKDTree:
 
             iresults = results
             
+            prr = &real_r[0]
+            pir = &iresults[0]
+            
             with nogil:
                 count_neighbors_unweighted(self.cself, other.cself, n_queries,
-                            &real_r[0], &iresults[0], p, cumulative)
+                            prr, pir, p, cum)
 
         else:
             int_result = False
@@ -1353,11 +1391,14 @@ cdef class cKDTree:
             results = np.zeros(n_queries + 1, dtype=np.float64)
             fresults = results
             
+            prr = &real_r[0]
+            pfr = &fresults[0]
+            
             with nogil:
                 count_neighbors_weighted(self.cself, other.cself,
                                     w1p, w2p, w1np, w2np,
                                     n_queries,
-                                    &real_r[0], &fresults[0], p, cumulative)
+                                    prr, pfr, p, cum)
 
         results2 = np.zeros(inverse.shape, results.dtype)
         if cumulative:
