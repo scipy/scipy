@@ -29,7 +29,7 @@ rf0(const T& x, const T& y, const double& rerr, T& res)
     }
 #endif
 
-    double rsq = 2.0 * std::sqrt(rerr);
+    double rsq = 2.7 * std::sqrt(rerr);
 
     T xm = std::sqrt(x);
     T ym = std::sqrt(y);
