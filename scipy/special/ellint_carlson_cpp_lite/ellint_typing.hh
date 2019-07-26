@@ -147,7 +147,7 @@ namespace ellint_carlson { namespace typing
     constexpr real_only<T, T>
     half_epsilon()
     {
-	return std::numeric_limits<T>::epsilon() / (T)2.0;
+	return std::numeric_limits<T>::epsilon() * (T)0.5;
     }
 
     /* Complexified specialisation, with the complex NaN and infinity as

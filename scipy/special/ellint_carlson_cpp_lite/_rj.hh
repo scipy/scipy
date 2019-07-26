@@ -243,7 +243,7 @@ rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
 	status = status_tmp;
     }
     xct1[0] = pn / xct1[3] - (T)1.0;
-    xct1[1] = (T)(-3.0) / xct1[3];
+    xct1[1] = -(T)3.0 / xct1[3];
     xct1[2] = (T)3.0 * std::sqrt(xy / (xypq * xct1[3]));
 
     /* tmpres = (pn - zz) * rjv - 3.0 * (rfv - sqrt(xy * zz / xypq) * rcv); */
@@ -410,7 +410,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res)
     {
 	if ( classify.good_infinity )
 	{
-	    res = T(0.0);
+	    res = (T)0.0;
 	    return ExitStatus::success;
 	}
 

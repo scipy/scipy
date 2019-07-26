@@ -129,7 +129,7 @@ namespace ellint_carlson { namespace arithmetic
 	eft_sum(z3, z4, z6, corr.value_imag[2]);
 
 	corr.value_real[1] = -corr.value_real[1];
-	prod = CT(z5, z6);
+	prod = CT{z5, z6};
     }
 
 

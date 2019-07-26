@@ -43,8 +43,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     extract_vector(const RT& sigma, RT(& p)[LEN], bool(& mask)[LEN], RT& tau)
     {
 	RT q;
-	RT tmp(0.0);
-
+	tau = (RT)0.0;
 	for ( std::size_t i = 0; i < LEN; ++i )
 	{
 	    if ( mask[i] )
@@ -54,10 +53,9 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
 		{
 		    mask[i] = false;
 		}
-		tmp += q;
+		tau += q;
 	    }
 	}
-	tau = tmp;
     }
 
 
@@ -166,7 +164,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
 	    {
 		/* Dekker "FastTwoSum" algorithm */
 		tau2 = tau - (tau1 - t);
-		return masked_sum(p, mask) + (tau2 + tau1);
+		return tau1 + (tau2 + masked_sum(p, mask));
 	    }
 	    t = tau1;
 	    if ( t == 0.0 )
