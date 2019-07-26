@@ -5227,7 +5227,6 @@ class ncx2_gen(rv_continuous):
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
         return _lazywhere(cond, (q, df, nc), f=sc.chndtrix, f2=chi2.ppf)
-        #return sc.chndtrix(q, df, nc)
 
     def _stats(self, df, nc):
         val = df + 2.0*nc
