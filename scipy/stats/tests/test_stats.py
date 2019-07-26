@@ -5118,21 +5118,19 @@ class TestMGCErrorWarnings(object):
         assert_raises(ValueError, stats.mgc, x, x,
                       compute_distance=compute_distance)
 
-    def test_errorwarn_reps(self):
+    @pytest.mark.parametrize("reps", [
+        -1,    # reps is negative
+        '1',   # reps is not integer
+        (),     # reps is empty
+    ])
+    def test_error_reps(self, reps):
         # raises error if reps is negative
         x = np.arange(20)
-        reps = -1
         assert_raises(ValueError, stats.mgc, x, x, reps=reps)
 
-        # raises error if reps is not an integer
-        reps = '1'
-        assert_raises(ValueError, stats.mgc, x, x, reps=reps)
-
-        # raises error if reps is None type
-        reps = ()
-        assert_raises(ValueError, stats.mgc, x, x, reps=reps)
-
+    def test_warns_reps(self):
         # raises warning when reps is less than 1000
+        x = np.arange(20)
         reps = 100
         assert_warns(RuntimeWarning, stats.mgc, x, x, reps=reps)
 
