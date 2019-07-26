@@ -4,7 +4,7 @@ SciPy Roadmap
 =============
 
 This roadmap page contains only the most important ideas and needs for SciPy
-going forward.  For a more detailed roadmap, including per-submodule status,
+going forward.  For a more detailed roadmap, including per-subpackage status,
 many more ideas, API stability and more, see :ref:`scipy-roadmap-detailed`.
 
 
@@ -53,7 +53,7 @@ along.  The tentative plan is:
 Fourier transform enhancements
 ------------------------------
 
-The new ``scipy.fft`` submodule should be extended to add a backend system with
+The new ``scipy.fft`` subpackage should be extended to add a backend system with
 support for PyFFTW and mkl-fft.
 
 
@@ -98,11 +98,8 @@ however; we need to make it faster and make it easier to compare performance of
 optimizers via plotting performance profiles.
 
 
-Linear programming enhancements
--------------------------------
+Statistics enhancements
+-----------------------
 
-Recently all known issues with ``optimize.linprog`` have been solved.  Now we
-have many ideas for additional functionality (e.g. integer constraints, sparse
-matrix support, performance improvements), see gh-9269.
-
-
+The `scipy.stats` enhancements listed in the `scipy-roadmap-detailed`_ are of
+particularly high importance to the project.

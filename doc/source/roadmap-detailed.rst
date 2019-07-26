@@ -355,15 +355,28 @@ functions, and spheroidal wave functions. Three possible ways to handle this:
 stats
 `````
 
-This module is in good shape overall.  New functionality that's similar to
-what's already present can continue to be added; more advanced statistical
-routines may fit better in ``statsmodels``.  Some ideas for new contributions
-are:
+The ``scipy.stats`` subpackage does not seek to duplicate the advanced 
+functionality of downstream packages (e.g. StatsModels, LinearModels, PyMC3),
+but to provide a solid foundation for them. The following improvements will 
+help SciPy better serve this role.
 
-- Implementing (well-known) distributions to the ``stats.distributions``
-  framework is always welcome.
-- Continuing work on making the function signatures of ``stats`` and
-  ``stats.mstats`` more consistent, and adding tests to ensure that that
+- Add fundamental and widely used hypothesis tests, including the various types
+  of ANOVA and ANCOVA.
+- Where appropriate, provide more than just a p-value as the result of a 
+  statistical test; include also confidence intervals and measures of effect 
+  size in the results.
+- Ensure that fitting a probability distribution to a data set is
+  easily accomplished with methods tailored to the distribution and 
+  and with calculations to assess the quality of the fit.
+- Implement additional widely used continuous and discrete probability 
+  distributions, including mixture distributions.
+- Improve the core calculations provided by SciPy's probability distributions 
+  so they can robustly handle wide ranges of parameter values.
+  
+In addition, we should:
+
+- Continue work on making the function signatures of ``stats`` and
+  ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.
 - Return ``Bunch`` objects from functions that now return many values, and for
   functions for which extra return values are desired (see
@@ -372,5 +385,5 @@ are:
   example implement an exact two-sided KS test (see
   `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
   Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
-- There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
-  PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
+- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the 
+  stalled PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__.
