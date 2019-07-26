@@ -90,6 +90,9 @@ the assumption of signal periodicity in the FFT method.
 
 `scipy.stats` changes
 ---------------------
+:func:`scipy.stats.mgc` added as an independence test that operates on high
+dimensional and nonlinear data sets. It has higher statistical power than other
+`scipy.stats` tests while being the only one that operates on multivariate data.
 
 
 Other changes

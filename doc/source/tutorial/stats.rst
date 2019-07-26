@@ -1070,3 +1070,87 @@ the individual data points on top.
    :align: center
    :include-source: 0
 
+Multiscale Graph Correlation (MGC)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With :func:`~stats.mgc`, we can test for independence on high dimensional and
+nonlinear data. Before we start, let's import some useful packages:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import mgc
+
+First, let's create a custom plotting function that computes MGC and outputs to
+the user the test statistic:
+
+    >>> def compute_mgc(x, y):
+    ...     """Compute MGC"""
+    ...     stat, pvalue, mgc_dict = mgc(x, y)
+    ...     print("MGC test statistic: ", round(stat, 1))
+    ...     print("P-value: ", round(pvalue, 1))
+    ...     print("Optimal scale: ", mgc_dict["opt_scale"])
+
+Now, let's use a custom plotting function to plot the data relationship:
+
+    >>> def sim_plot(x, y, sim_name):
+    ...     """Plot simulations."""
+    ...     fig = plt.figure(figsize=(8,8))
+    ...     fig.suptitle(sim_name + " Simulation", fontsize=17)
+    ...     plt.scatter(x, y)
+    ...     plt.show()
+
+Let's look at some linear data first. The following shows this data plotted
+using the custom function defined above:
+
+    >>> x = np.array([0.09762701, 0.43037873, 0.20552675, 0.08976637,
+    ...               -0.1526904, 0.29178823, -0.12482558, 0.783546,
+    ...               0.92732552, -0.23311696, 0.58345008, 0.05778984,
+    ...               0.13608912, 0.85119328, -0.85792788, -0.8257414,
+    ...               -0.95956321, 0.66523969, 0.5563135, 0.7400243])
+    >>> y = np.array([-0.75550809, 1.40576643, -0.04929934, -0.12927078,
+    ...               -0.77908808, 0.6805334, -0.9317745, 0.67717586,
+    ...               0.47959224, -0.03966571, 0.32804751, -0.53252625,
+    ...               0.12199801, 1.06535921, -0.82466927, -0.67450545,
+    ...               -1.27672425, 0.48386911, 0.22008328, 0.56024772])
+    >>> sim_plot(x, y, "Linear")
+
+The simulation relationship can be plotted below:
+
+.. plot:: tutorial/stats/plots/mgc_plot1.png
+   :align: center
+   :include-source: 0
+
+Now, we can see the test statistic, p-value, and optimal scale:
+
+    >>> compute_mgc(x, y)
+    MGC test statistic: 0.7
+    P-value: 0.0
+    Optimal scale: [20, 20]
+
+The same can be done for nonlinear data sets. The following :math:`x` and
+:math:`y` arrays are derived from a nonlinear simulation:
+
+    >>> x = np.array([-0.915363905, 2.134736725, 1.591825890, -0.947720469,
+    ...               -0.629203447, 0.157367412, -3.009624669, 0.342083914,
+    ...               0.126834696, 2.009228424, 0.137638139, -4.168139174,
+    ...               1.854371040, 1.696600346, -2.454855196, 1.770009913,
+    ...               -0.080973938, 1.985722698, 0.671279564, 1.521294941])
+    >>> y = np.array([0.12441532, -2.63498763, 2.18349959, -0.58779997,
+    ...               -1.58602656, 0.35894756, -0.73954299, 1.76585591,
+    ...               -0.35002851, 0.48618590, 0.95628300, 1.99038991,
+    ...               1.92277498, 1.34861841,  1.42509605,  0.65982368,
+    ...               -1.56731299, -0.17000082, 1.81187432, -0.73726241])
+    >>> sim_plot(x, y, "Spiral")
+
+The simulation relationship can be plotted below:
+
+.. plot:: tutorial/stats/plots/mgc_plot2.png
+   :align: center
+   :include-source: 0
+
+And MGC in this case would be:
+
+    >>> compute_mgc(x, y)
+    MGC test statistic: -0.1
+    P-value: 0.9
+    Optimal scale: [20, 20]

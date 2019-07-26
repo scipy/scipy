@@ -107,6 +107,7 @@ Correlation Functions
    weightedtau
    linregress
    theilslopes
+   mgc
 
 Inferential Stats
 -----------------
@@ -175,6 +176,8 @@ import numpy as np
 from numpy import array, asarray, ma
 
 from scipy._lib.six import callable, string_types
+from scipy.spatial.distance import pdist, squareform
+from scipy.ndimage import measurements
 from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere
 import scipy.special as special
@@ -183,7 +186,8 @@ from . import distributions
 from . import mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
-from ._stats import _kendall_dis, _toint64, _weightedrankedtau
+from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
+                     _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp
 
@@ -199,6 +203,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
+           'mgc',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
@@ -639,6 +644,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     am = _mask_to_limits(a, limits, inclusive)
     amnan = am.filled(fill_value=np.nan)
     return np.nanvar(amnan, ddof=ddof, axis=axis)
+
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
@@ -4226,6 +4232,394 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
 
 
+# FROM MGCPY: https://github.com/neurodata/mgcpy
+
+def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
+    r"""
+    Helper function that calculates the p-value. See below for uses.
+
+    Parameters
+    ----------
+    x, y : array_like
+        `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
+        matrices.
+    stat : float
+        The sample MGC test statistic within :math:`[-1, 1]`.
+    ind_test : callable
+        The independence test statistic calculation function used.
+    compute_distance : callable
+        A function that computes the distance or similarity among the samples
+        within each data matrix. Set to `None` if `x` and `y` are already
+        distance.
+    reps : int, optional
+        The number of replications used to estimate the null when using the
+        permutation test. The default is 1000 repelications.
+
+    Returns
+    -------
+    stat : float
+        The sample test p-value.
+    """
+    # generate null distribution and p-value
+    pvalue = 0
+    null_dist = np.zeros(reps)
+    for i in range(reps):
+        # randomly permute one of the data matrices
+        permy = np.random.permutation(y)
+
+        # calculate permuted stats and MGC map
+        perm_stat, _ = ind_test(x, permy, compute_distance)
+        null_dist[i] = perm_stat
+
+        # calculate p-value
+        pvalue += ((perm_stat >= stat) * (1/reps))
+
+    # correct for a p_value of 0. This is because, with bootstrapping
+    # permutations, a value of 0 is incorrect
+    if pvalue == 0:
+        pvalue = 1 / reps
+
+    return pvalue, null_dist
+
+
+def _euclidean_dist(x):
+    return squareform(pdist(x, metric='euclidean'))
+
+
+MGCResult = namedtuple('MGCResult', ('correlation', 'pvalue', 'mgcdict'))
+
+
+def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
+    r"""
+    Computes the MGC test statistic, a high dimensional measure of independence
+    between arbitrary data matrices.
+
+    Building upon the ideas of nearest neighbor methods and distance-based
+    statistical methods, MGC achieves higher statistical power compared with
+    comparable distance based statistics while also providing a map that
+    characterizes the latent geometry of the relationship [1]_.
+    Characterizations of this implementation in particular have been
+    benchmarked extensively [2]_.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Input data or distance matrices with the same number of samples. That
+        is, if `x` is :math:`n \times p`, `y` must be :math:`n \times q` where
+        n is the number of samples and p and q are the number of dimensions.
+        Alternatively, `x` and `y` can be :math:`n \times n` distance or
+        similarity matrices.
+    compute_distance : callable, optional
+        A function that computes the distance or similarity among the samples
+        within each data matrix. Set to ``None`` if `x` and `y` are already
+        distance matrices. The default uses the euclidean norm metric.
+    reps : int, optional
+        The number of replications used to estimate the null when using the
+        permutation test. The default is 1000 repelications.
+
+    Returns
+    -------
+    stat : float
+        The sample MGC test statistic within :math:`[-1, 1]`.
+    pvalue : float
+        The p-value obtained via permutation.
+    mgc_dict : dict
+        Contains additional useful additional returns containing the following
+        keys:
+
+            - mgc_map : ndarray
+                A 2D representation of the latent geometry of the relationship.
+            - opt_scale : (int, int)
+                The estimated optimal scale as a :math:`(x, y)` pair.
+            - null_dist : list
+                The null distribution derived from the permuted matrices
+
+    Warns
+    -----
+    PermutationReplicationLow
+        Raised if the number of replications is under a 1000. At an alpha level
+        of 0.05, p-values computations may be unreliable.
+
+    See Also
+    --------
+    pearsonr : Pearson correlation coefficient and p-value for testing
+               non-correlation.
+    kendalltau : Calculates Kendall's tau.
+    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+
+    Notes
+    -----
+
+    A description of the process of MGC and applications on neuroscience data
+    can be found in [1]_. It is performed using the following steps:
+
+    #. Two distance matrices :math:`A` and :math:`B` are computed and
+       modified to be mean zero columnwise. This results in two
+       :math:`n \times n` distance matrices :math:`C^x` and :math:`C^y` (the
+       centering and unbiased modification) [3]_.
+
+    #. For all values :math:`k` and :math:`l` from :math:`1, ..., n`,
+
+       #. The :math:`k`-nearest neighbor and :math:`l`-nearest neighbor graphs
+          are calculated for each property. Here, :math:`G_k (i, j)` indicates
+          the :math:`k`-smallest values of the :math:`i`-th row of :math:`A`
+          and :math:`H_l (i, j)` indicates the :math:`l` smallested values of
+          the :math:`i`-th row of :math:`B`
+
+       #. Let :math:`\circ` denotes the entry-wise matrix product, then local
+          correlations are summed and normalized using the following statistic:
+
+    .. math::
+
+        c^{kl} = \frac{\sum_{ij} A G_k B H_l}
+                      {\sqrt{\sum_{ij} A^2 G_k \times \sum_{ij} B^2 H_l}}
+
+    #. The MGC test statistic is the smoothed optimal local correlation of
+       :math:`\{ c^{kl} \}`. Denote the smoothing operation as :math:`R(\cdot)`
+       (which essentially set all isolated large correlations) as 0 and
+       connected large correlations the same as before, see [3]_.) MGC is,
+
+    .. math::
+
+        MGC_n (x, y) = \max_{(k, l)} R \left(c^{kl} \left( x_n, y_n \right)
+                                                    \right)
+
+    The test statistic returns a value between :math:`(-1, 1)` since it is
+    normalized.
+
+    The p-value returned is calculated using a permutation test. This process
+    is completed by first randomly permuting :math:`y` to estimate the null
+    distribution and then calculating the probability of observing a test
+    statistic, under the null, at least as extreme as the observed test
+    statistic.
+
+    MGC requires at least 5 samples to run with reliable results. It can also
+    handle multidimensional arrays.
+
+    .. versionadded:: 1.4.0
+
+    References
+    ----------
+    .. [1] Vogelstein, J. T., Bridgeford, E. W., Wang, Q., Priebe, C. E.,
+           Maggioni, M., & Shen, C. (2019). Discovering and deciphering
+           relationships across disparate data modalities. ELife.
+    .. [2] Panda, S., Palaniappan, S., Xiong, J., Swaminathan, A.,
+           Ramachandran, S., Bridgeford, E. W., ... Vogelstein, J. T. (2019).
+           mgcpy: A Comprehensive High Dimensional Independence Testing Python
+           Package. ArXiv:1907.02088 [Cs, Stat].
+    .. [3] Shen, C., Priebe, C.E., & Vogelstein, J.T. (2019). From distance
+           correlation to multiscale graph correlation. Journal of the American
+           Statistical Association.
+
+    Examples
+    --------
+    >>> from scipy.stats import mgc
+    >>> x = np.array([0.07487683, -0.18073412, 0.37266440, 0.06074847,
+    ...               0.76899045, 0.51862516, -0.13480764, -0.54368083,
+    ...               -0.73812644, 0.54910974])
+    >>> y = np.array([-1.31741173, -0.41634224, 2.24021815, 0.88317196,
+    ...               2.00149312, 1.35857623, -0.06729464, 0.16168344,
+    ...               -0.61048226, 0.41711113])
+    >>> stat, pvalue, _ = mgc(x, y)
+    >>> round(stat, 1), round(pvalue, 1)
+    (0.4, 0.0)
+    """
+    # check for NaNs
+    _contains_nan(x, nan_policy='raise')
+    _contains_nan(y, nan_policy='raise')
+
+    # convert arrays of type (n,) to (n, 1)
+    if x.ndim == 1:
+        x.shape = (-1, 1)
+    if y.ndim == 1:
+        y.shape = (-1, 1)
+
+    if x.shape[0] != y.shape[0]:
+        raise ValueError("Shape mismatch, x and y must have shape [n, p] and"
+                         " [n, q].")
+
+    if x.shape[0] < 5 or y.shape[0] < 5:
+        raise ValueError("MGC requires at least 5 samples to give reasonable "
+                         "results.")
+
+    # convert x and y to float
+    x = np.asarray(x).astype(np.float64)
+    y = np.asarray(y).astype(np.float64)
+
+    # check if compute_distance_matrix if a callable()
+    if not callable(compute_distance) and compute_distance is not None:
+        raise ValueError("Compute_distance must be a function.")
+
+    # check if number of reps exists, integer, or > 0 (if under 1000 raises
+    # warning)
+    if not reps or not np.issubdtype(type(reps), np.int64) or reps < 0:
+        raise ValueError("Number of reps must be an integer greater than 0.")
+    elif reps < 1000:
+        msg = ("The number of replications is low (under 1000), and p-value "
+               "calculations may be unreliable. Use the p-value result, with "
+               "caution!")
+        warnings.warn(msg, RuntimeWarning)
+
+    # calculate MGC stat
+    stat, stat_dict = _mgc_stat(x, y, compute_distance)
+    stat_mgc_map = stat_dict["stat_mgc_map"]
+    opt_scale = stat_dict["opt_scale"]
+
+    # calculate permutation MGC p-value
+    pvalue, null_dist = _perm_test(x, y, stat, _mgc_stat, compute_distance,
+                                   reps=reps)
+
+    # save all stats (other than stat/p-value) in dictionary
+    mgc_dict = {"mgc_map": stat_mgc_map,
+                "opt_scale": opt_scale,
+                "null_dist": null_dist}
+
+    return MGCResult(stat, pvalue, mgc_dict)
+
+
+def _mgc_stat(x, y, compute_distance):
+    r"""
+    Helper function that calculates the MGC stat. See above for use.
+
+    Parameters
+    ----------
+    x, y : array_like
+        `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
+        matrices.
+    compute_distance : callable
+        A function that computes the distance or similarity among the samples
+        within each data matrix. Set to ``None`` if `x` and `y` are already
+        distance.
+
+    Returns
+    -------
+    stat : float
+        The sample MGC test statistic within :math:`[-1, 1]`.
+    stat_dict : dict
+        Contains additional useful additional returns containing the following
+        keys:
+            - stat_mgc_map : ndarray
+                MGC-map of the statistics.
+            - opt_scale : (float, float)
+                The estimated optimal scale as a :math:`(x, y)` pair.
+    """
+    # compute distance matrices for x and y
+    distx = compute_distance(x)
+    disty = compute_distance(y)
+
+    # calculate MGC map and optimal scale
+    stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')[0]
+
+    m, n = stat_mgc_map.shape
+    if m == 1 or n == 1:
+        stat = stat_mgc_map[m - 1][n - 1]
+        opt_scale = m * n
+    else:
+        samp_size = len(distx) - 1
+
+        # threshold to find connected region of significant local correlations
+        sig_connect = _threshold_mgc_map(stat_mgc_map, samp_size)
+
+        # maximum within the significant region
+        stat, opt_scale = _smooth_mgc_map(sig_connect, stat_mgc_map)
+
+    stat_dict = {"stat_mgc_map": stat_mgc_map,
+                 "opt_scale": opt_scale}
+
+    return stat, stat_dict
+
+
+def _threshold_mgc_map(stat_mgc_map, samp_size):
+    r"""
+    Finds a connected region of significance in the MGC-map by thresholding.
+
+    Parameters
+    ----------
+    stat_mgc_map : ndarray
+        All local correlations within :math:`[-1,1]`.
+    samp_size : int
+        The sample size of original data.
+
+    Returns
+    -------
+    sig_connect : ndarray
+        A binary matrix with 1's indicating the significant region.
+    """
+    m, n = stat_mgc_map.shape
+
+    # parametric threshold, based on a threshold is estimated based on the
+    # normal distribution approximation
+    per_sig = 1 - (0.02 / samp_size)  # Percentile to consider as significant
+    threshold = samp_size * (samp_size - 3)/4 - 1/2  # Beta approximation
+    threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
+
+    # take the max of threshold and local correlation at the maximal scale
+    threshold = max(threshold, stat_mgc_map[m - 1][n - 1])
+
+    # find the largest connected component of significant correlations
+    sig_connect = stat_mgc_map > threshold
+    if np.sum(sig_connect) > 0:
+        sig_connect, _ = measurements.label(sig_connect)
+        _, label_counts = np.unique(sig_connect, return_counts=True)
+
+        # skip the first element in label_counts, as it is count(zeros)
+        max_label = np.argmax(label_counts[1:]) + 1
+        sig_connect = sig_connect == max_label
+    else:
+        sig_connect = np.array([[False]])
+
+    return sig_connect
+
+
+def _smooth_mgc_map(sig_connect, stat_mgc_map):
+    """
+    Finds the smoothed maximal within the significant region R.
+
+    If area of R is too small it returns the last local correlation. Otherwise,
+    returns the maximum within significant_connected_region.
+
+    Parameters
+    ----------
+    sig_connect: ndarray
+        A binary matrix with 1's indicating the significant region.
+    stat_mgc_map: ndarray
+        All local correlations within :math:`[-1,1]`.
+
+    Returns
+    -------
+    stat : float
+        The sample MGC statistic within :math:`[-1, 1]`.
+    opt_scale: (float, float)
+        The estimated optimal scale as an :math:``(x, y)`` pair.
+    """
+
+    m, n = stat_mgc_map.shape
+
+    # default sample mgc and optimal scale to local corr at max scale
+    stat = stat_mgc_map[m - 1][n - 1]
+    opt_scale = [m, n]
+
+    if np.linalg.norm(sig_connect) != 0:
+        # proceed only when the connected region's area is sufficiently large
+        if np.sum(sig_connect) >= np.ceil(0.02 * max(m, n)) * min(m, n):
+            max_corr = np.max(stat_mgc_map[sig_connect])
+
+            # find all scales within significant_connected_region that maximize
+            # the local correlation
+            max_corr_index = np.where((stat_mgc_map >= max_corr) & sig_connect)
+
+            if max_corr >= stat:
+                stat = max_corr
+
+                k, l = max_corr_index
+                one_d_indices = k * n + l  # 2D to 1D indexing
+                k = np.max(one_d_indices) // n
+                l = np.max(one_d_indices) % n
+                opt_scale = [k+1, l+1]  # adding 1s to match R indexing
+
+    return stat, opt_scale
+
+
 #####################################
 #       INFERENTIAL STATISTICS      #
 #####################################
@@ -4440,8 +4834,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         Sample 1    150      30         0.2        0.16
         Sample 2    200      45         0.225      0.174375
 
-    The sample mean :math:`\hat{p}` is the proportion of ones in the sample 
-    and the variance for a binary observation is estimated by 
+    The sample mean :math:`\hat{p}` is the proportion of ones in the sample
+    and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
     >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
@@ -4876,6 +5270,7 @@ def _count(a, axis=None):
 
 Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
+
 
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     """
@@ -5641,6 +6036,7 @@ def tiecorrect(rankvals):
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
+
 
 def mannwhitneyu(x, y, use_continuity=True, alternative=None):
     """
