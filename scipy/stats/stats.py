@@ -107,7 +107,7 @@ Correlation Functions
    weightedtau
    linregress
    theilslopes
-   mgc
+   multiscale_graphcorr
 
 Inferential Stats
 -----------------
@@ -203,7 +203,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
-           'mgc',
+           'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
@@ -4244,7 +4244,7 @@ def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
         `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
         matrices.
     stat : float
-        The sample MGC test statistic within :math:`[-1, 1]`.
+        The sample test statistic.
     ind_test : callable
         The independence test statistic calculation function used.
     compute_distance : callable
@@ -4289,10 +4289,10 @@ def _euclidean_dist(x):
 MGCResult = namedtuple('MGCResult', ('correlation', 'pvalue', 'mgcdict'))
 
 
-def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
+def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     r"""
-    Computes the MGC test statistic, a high dimensional measure of independence
-    between arbitrary data matrices.
+    Computes the Multiscale Graph Correlation (MGC) test statistic, a high
+    dimensional measure of independence between arbitrary data matrices.
 
     Building upon the ideas of nearest neighbor methods and distance-based
     statistical methods, MGC achieves higher statistical power compared with
@@ -4413,14 +4413,14 @@ def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
 
     Examples
     --------
-    >>> from scipy.stats import mgc
+    >>> from scipy.stats import multiscale_graphcorr
     >>> x = np.array([0.07487683, -0.18073412, 0.37266440, 0.06074847,
     ...               0.76899045, 0.51862516, -0.13480764, -0.54368083,
     ...               -0.73812644, 0.54910974])
     >>> y = np.array([-1.31741173, -0.41634224, 2.24021815, 0.88317196,
     ...               2.00149312, 1.35857623, -0.06729464, 0.16168344,
     ...               -0.61048226, 0.41711113])
-    >>> stat, pvalue, _ = mgc(x, y)
+    >>> stat, pvalue, _ = multiscale_graphcorr(x, y)
     >>> round(stat, 1), round(pvalue, 1)
     (0.4, 0.0)
     """

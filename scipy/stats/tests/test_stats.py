@@ -5094,28 +5094,28 @@ class TestMGCErrorWarnings(object):
         # raises error if number of samples different (n)
         x = np.arange(20)
         y = np.arange(40)
-        assert_raises(ValueError, stats.mgc, x, y)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_lowsamples(self):
         # raises error if samples are low (< 3)
         x = np.arange(3)
         y = np.arange(3)
-        assert_raises(ValueError, stats.mgc, x, y)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_nans(self):
         # raises error if inputs contain NaNs
         x = np.arange(20, dtype=float)
         x[0] = np.nan
-        assert_raises(ValueError, stats.mgc, x, x)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, x)
 
         y = np.arange(20)
-        assert_raises(ValueError, stats.mgc, x, y)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_wrongdisttype(self):
         # raises error if compute_distance is not a function
         x = np.arange(20)
         compute_distance = 0
-        assert_raises(ValueError, stats.mgc, x, x,
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
                       compute_distance=compute_distance)
 
     @pytest.mark.parametrize("reps", [
@@ -5126,13 +5126,13 @@ class TestMGCErrorWarnings(object):
     def test_error_reps(self, reps):
         # raises error if reps is negative
         x = np.arange(20)
-        assert_raises(ValueError, stats.mgc, x, x, reps=reps)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, x, reps=reps)
 
     def test_warns_reps(self):
         # raises warning when reps is less than 1000
         x = np.arange(20)
         reps = 100
-        assert_warns(RuntimeWarning, stats.mgc, x, x, reps=reps)
+        assert_warns(RuntimeWarning, stats.multiscale_graphcorr, x, x, reps=reps)
 
 
 class TestMGCStat(object):
@@ -5168,12 +5168,12 @@ class TestMGCStat(object):
                       -0.57073177, 0.33864408])
 
         # verify stat is 1 and p-value is 1/reps when calculating x and x
-        stat, pvalue, _ = stats.mgc(x, x, reps=reps)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, x, reps=reps)
         assert_approx_equal(stat, 1, significant=2)
         assert_approx_equal(pvalue, 1/reps, significant=2)
 
         # verify stat and pvalue against mgcpy implementation
-        stat, pvalue, _ = stats.mgc(x, y, reps=reps)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=reps)
         assert_approx_equal(stat, 0.498, significant=2)
         assert_approx_equal(pvalue, 1/reps, significant=2)
 
@@ -5209,11 +5209,11 @@ class TestMGCStat(object):
                       1.34647206, 2.14525574])
 
         # verify stat is 1 and p-value is 1/reps when calculating x and x
-        stat, pvalue, _ = stats.mgc(x, x)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, x)
         assert_approx_equal(stat, 1, significant=2)
         assert_approx_equal(pvalue, 1/reps, significant=2)
 
         # verify stat and pvalue against mgcpy implementation
-        stat, pvalue, _ = stats.mgc(x, y)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
         assert_approx_equal(stat, -0.018, significant=2)
         assert_approx_equal(pvalue, 0.708, significant=1)

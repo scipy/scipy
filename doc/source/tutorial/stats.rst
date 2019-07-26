@@ -1073,19 +1073,20 @@ the individual data points on top.
 Multiscale Graph Correlation (MGC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With :func:`~stats.mgc`, we can test for independence on high dimensional and
-nonlinear data. Before we start, let's import some useful packages:
+With :func:`~stats.multiscale_graphcorr`, we can test for independence on high
+dimensional and nonlinear data. Before we start, let's import some useful
+packages:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import mgc
+    >>> from scipy.stats import multiscale_graphcorr
 
 First, let's create a custom plotting function that computes MGC and outputs to
 the user the test statistic:
 
     >>> def compute_mgc(x, y):
     ...     """Compute MGC"""
-    ...     stat, pvalue, mgc_dict = mgc(x, y)
+    ...     stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
     ...     print("MGC test statistic: ", round(stat, 1))
     ...     print("P-value: ", round(pvalue, 1))
     ...     print("Optimal scale: ", mgc_dict["opt_scale"])

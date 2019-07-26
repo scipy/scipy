@@ -324,7 +324,7 @@ cdef _rank_distance_matrix(float64_t[:, :] distx):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 cdef _center_distance_matrix(ndarray[float64_t, ndim=2] distx,
-                             str global_corr="mgc", is_ranked=True):
+                             str global_corr='mgc', is_ranked=True):
     cdef int n = distx.shape[0]
     cdef ndarray rank_distx = np.zeros((<object> distx).shape)
 
@@ -350,7 +350,7 @@ cdef _center_distance_matrix(ndarray[float64_t, ndim=2] distx,
 @cython.boundscheck(False)
 cdef _transform_distance_matrix(ndarray[float64_t, ndim=2] distx,
                                 ndarray[float64_t, ndim=2] disty,
-                                str global_corr="mgc", is_ranked=True):
+                                str global_corr='mgc', is_ranked=True):
 
     if global_corr == "rank":
         is_ranked = True
@@ -420,7 +420,7 @@ cdef _local_covariance(ndarray[float64_t, ndim=2] distx,
 @cython.boundscheck(False)
 cpdef _local_correlations(ndarray[float64_t, ndim=2] distx,
                           ndarray[float64_t, ndim=2] disty,
-                          global_corr="mgc"):
+                          str global_corr='mgc'):
     transformed = _transform_distance_matrix(distx, disty, global_corr)
 
     # compute all local covariances
