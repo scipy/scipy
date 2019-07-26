@@ -176,7 +176,7 @@ import numpy as np
 from numpy import array, asarray, ma
 
 from scipy._lib.six import callable, string_types
-from scipy.spatial.distance import pdist, squareform
+from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere
@@ -4283,7 +4283,7 @@ def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
 
 
 def _euclidean_dist(x):
-    return squareform(pdist(x, metric='euclidean'))
+    return cdist(x, x)
 
 
 MGCResult = namedtuple('MGCResult', ('correlation', 'pvalue', 'mgcdict'))
