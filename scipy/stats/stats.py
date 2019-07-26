@@ -4413,7 +4413,6 @@ def mgc(x, y, compute_distance=_euclidean_dist, reps=1000):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.stats import mgc
     >>> x = np.array([0.07487683, -0.18073412, 0.37266440, 0.06074847,
     ...               0.76899045, 0.51862516, -0.13480764, -0.54368083,
