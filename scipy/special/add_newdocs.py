@@ -2349,6 +2349,17 @@ add_newdoc("elliprg",
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
            https://dlmf.nist.gov/19.20.ii
+
+    Examples
+    --------
+    The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
+    ``c`` is given by :math:`S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1     / c^2)`.
+
+    >>> def ellipsoid_area(a, b, c):
+    ...     r = 4.0 * np.pi * a * b * c
+    ...     return r * elliprg(1.0 / (a * a), 1.0 / (b * b), 1.0 / (c * c))
+    >>> print(ellipsoid_area(1, 3, 5))
+    108.62688289491807
     """)
 
 add_newdoc("elliprj",
