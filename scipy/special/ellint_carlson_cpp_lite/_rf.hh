@@ -15,21 +15,24 @@
 namespace ellint_carlson {
 
 template<typename T>
+inline void agm_update(T& x, T& y)
+{
+    typedef typing::decplx_t<T> RT;
+
+    T xnext = (x + y) * (RT)0.5;
+    T ynext = std::sqrt(x * y);
+
+    x = xnext;
+    y = ynext;
+}
+
+template<typename T>
 static ExitStatus
 rf0(const T& x, const T& y, const double& rerr, T& res)
 {
     typedef typing::decplx_t<T> RT;
-
     ExitStatus status = ExitStatus::success;
-#ifndef ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
-    if ( argcheck::invalid_rerr(rerr, 1.0e-4) )
-    {
-	res = typing::nan<T>();
-	return ExitStatus::bad_rerr;
-    }
-#endif
-
-    double rsq = 2.7 * std::sqrt(rerr);
+    double rsq = 2.0 * std::sqrt(rerr);
 
     T xm = std::sqrt(x);
     T ym = std::sqrt(y);
@@ -42,11 +45,7 @@ rf0(const T& x, const T& y, const double& rerr, T& res)
 	    break;
 	}
 
-	T xnext = (xm + ym) * (RT)0.5;
-	T ynext = std::sqrt(xm * ym);
-
-	xm = xnext;
-	ym = ynext;
+	agm_update(xm, ym);
 
 	++m;
     }
@@ -116,8 +115,7 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
     unsigned int m = 0;
     RT aAm;
     while ( (aAm = std::abs(Am)) <= fterm ||
-	    aAm <= std::abs(std::max({xxm, yym, Am - zm},
-                                     util::abscmp<T>)) )
+	    aAm <= std::abs(std::max({xxm, yym, Am - zm}, util::abscmp<T>)) )
     {
 	if ( m > config::max_iter )
 	{
@@ -147,7 +145,7 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
     yym /= Am;
     T zzm = -(xxm + yym);
     T e2 = xxm * yym - zzm * zzm;
-    T e3 = yym * zzm * xxm;
+    T e3 = xxm * (yym * zzm);
     T s = arithmetic::comp_horner(e2, constants::RF_C1);
     s += e3 * (arithmetic::comp_horner(e2, constants::RF_C2) +
                e3 * (RT)(constants::RF_c33));
