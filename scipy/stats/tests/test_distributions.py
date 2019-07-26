@@ -3261,7 +3261,8 @@ def test_ncx2_tails_pdf():
 @pytest.mark.parametrize('method, expected', [
     ('cdf', np.array([2.497951336e-09, 3.437288941e-10])),
     ('pdf', np.array([1.238579980e-07, 1.710041145e-08])),
-    ('logpdf', np.array([-15.90413011, -17.88416331]))
+    ('logpdf', np.array([-15.90413011, -17.88416331])),
+    ('ppf', np.array([4.865182052, 7.017182271]))
 ])
 def test_ncx2_zero_nc(method, expected):
     # gh-5441
@@ -3271,6 +3272,7 @@ def test_ncx2_zero_nc(method, expected):
     # > pchisq(0.1, df=10, ncp=c(0,4))
     # > dchisq(0.1, df=10, ncp=c(0,4))
     # > dchisq(0.1, df=10, ncp=c(0,4), log=TRUE)
+    # > qchisq(0.1, df=10, ncp=c(0,4))
 
     result = getattr(stats.ncx2, method)(0.1, nc=[0, 4], df=10)
     assert_allclose(result, expected, atol=1e-15)
