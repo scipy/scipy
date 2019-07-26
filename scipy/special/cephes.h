@@ -52,8 +52,6 @@ extern double gdtri(double a, double b, double y);
 
 extern double hyp2f1(double a, double b, double c, double x);
 extern double hyperg(double a, double b, double x);
-extern double hyp2f0(double a, double b, double x, int type, double *err);
-extern double onef2(double a, double b, double c, double x, double *err);
 extern double threef0(double a, double b, double c, double x, double *err);
 
 extern double i0(double x);

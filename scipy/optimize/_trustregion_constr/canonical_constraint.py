@@ -88,7 +88,7 @@ class CanonicalConstraint(object):
         def hess(x, v_eq, v_ineq):
             return empty_hess
 
-        return cls(0, 0, fun, jac, hess, np.empty(0))
+        return cls(0, 0, fun, jac, hess, np.empty(0, dtype=np.bool))
 
     @classmethod
     def concatenate(cls, canonical_constraints, sparse_jacobian):

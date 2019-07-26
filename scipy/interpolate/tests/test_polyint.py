@@ -12,8 +12,9 @@ from pytest import raises as assert_raises
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
     BarycentricInterpolator, barycentric_interpolate,
-    approximate_taylor_polynomial, pchip, PchipInterpolator,
-    pchip_interpolate, Akima1DInterpolator, CubicSpline, make_interp_spline)
+    approximate_taylor_polynomial, CubicHermiteSpline, pchip,
+    PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
+    make_interp_spline)
 
 from scipy._lib.six import xrange
 
@@ -32,7 +33,11 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
         return
 
     xi = np.zeros(x_shape)
-    yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
+    if interpolator_cls is CubicHermiteSpline:
+        dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
+        yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
+    else:
+        yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
 
     target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
@@ -40,7 +45,12 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
 
     # check it works also with lists
     if x_shape and y.size > 0:
-        interpolator_cls(list(x), list(y), axis=axis, **extra_args)(list(xi))
+        if interpolator_cls is CubicHermiteSpline:
+            interpolator_cls(list(x), list(y), list(dydx), axis=axis,
+                             **extra_args)(list(xi))
+        else:
+            interpolator_cls(list(x), list(y), axis=axis,
+                             **extra_args)(list(xi))
 
     # check also values
     if xi.size > 0 and deriv_shape is None:
@@ -60,8 +70,8 @@ def test_shapes():
     def spl_interp(x, y, axis):
         return make_interp_spline(x, y, axis=axis)
 
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
-               Akima1DInterpolator, CubicSpline, spl_interp]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, CubicHermiteSpline,
+               pchip, Akima1DInterpolator, CubicSpline, spl_interp]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -132,16 +142,18 @@ def test_deriv_shapes():
                     check_shape(ip, s1, s2, (), axis)
 
 
-def _check_complex(ip):
+def test_complex():
     x = [1, 2, 3, 4]
     y = [1, 2, 1j, 3]
-    p = ip(x, y)
-    assert_allclose(y, p(x))
 
-
-def test_complex():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
-        _check_complex(ip)
+        p = ip(x, y)
+        assert_allclose(y, p(x))
+
+    dydx = [0, -1j, 2, 3j]
+    p = CubicHermiteSpline(x, y, dydx)
+    assert_allclose(y, p(x))
+    assert_allclose(dydx, p(x, 1))
 
 
 class TestKrogh(object):
@@ -370,7 +382,7 @@ class TestPCHIP(object):
                 y1, y2 = y2, y1
             xp = np.linspace(x1, x2, 10)
             yp = p(xp)
-            assert_(((y1 <= yp) & (yp <= y2)).all())
+            assert_(((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15)).all())
 
     def test_monotone(self):
         # PCHIP should preserve monotonicty
@@ -479,6 +491,7 @@ class TestPCHIP(object):
         p = pchip([0, 1], [-1, 1])
         r = p.roots()
         assert_allclose(r, 0.5)
+
 
 class TestCubicSpline(object):
     @staticmethod
@@ -662,3 +675,21 @@ class TestCubicSpline(object):
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
+
+def test_CubicHermiteSpline_correctness():
+    x = [0, 2, 7]
+    y = [-1, 2, 3]
+    dydx = [0, 3, 7]
+    s = CubicHermiteSpline(x, y, dydx)
+    assert_allclose(s(x), y, rtol=1e-15)
+    assert_allclose(s(x, 1), dydx, rtol=1e-15)
+
+
+def test_CubicHermiteSpline_error_handling():
+    x = [1, 2, 3]
+    y = [0, 3, 5]
+    dydx = [1, -1, 2, 3]
+    assert_raises(ValueError, CubicHermiteSpline, x, y, dydx)
+
+    dydx_with_nan = [1, 0, np.nan]
+    assert_raises(ValueError, CubicHermiteSpline, x, y, dydx_with_nan)

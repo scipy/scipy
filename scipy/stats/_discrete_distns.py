@@ -43,8 +43,10 @@ class binom_gen(rv_discrete):
         return self._random_state.binomial(n, p, self._size)
 
     def _argcheck(self, n, p):
-        self.b = n
         return (n >= 0) & (p >= 0) & (p <= 1)
+
+    def _get_support(self, n, p):
+        return self.a, n
 
     def _logpmf(self, x, n, p):
         k = floor(x)
@@ -118,6 +120,10 @@ class bernoulli_gen(binom_gen):
 
     def _argcheck(self, p):
         return (p >= 0) & (p <= 1)
+
+    def _get_support(self, p):
+        # Overrides binom_gen._get_support!x
+        return self.a, self.b
 
     def _logpmf(self, x, p):
         return binom._logpmf(x, 1, p)
@@ -233,6 +239,10 @@ class geom_gen(rv_discrete):
 
     %(after_notes)s
 
+    See Also
+    --------
+    planck
+
     %(example)s
 
     """
@@ -243,7 +253,6 @@ class geom_gen(rv_discrete):
         return (p <= 1) & (p >= 0)
 
     def _pmf(self, k, p):
-        # geom.pmf(k) = (1-p)**(k-1)*p
         return np.power(1-p, k-1) * p
 
     def _logpmf(self, k, p):
@@ -342,11 +351,12 @@ class hypergeom_gen(rv_discrete):
     def _rvs(self, M, n, N):
         return self._random_state.hypergeometric(n, M-n, N, size=self._size)
 
+    def _get_support(self, M, n, N):
+        return np.maximum(N-(M-n), 0), np.minimum(n, N)
+
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
-        self.a = np.maximum(N-(M-n), 0)
-        self.b = np.minimum(n, N)
         return cond
 
     def _logpmf(self, k, M, n, N):
@@ -385,7 +395,6 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        """More precise calculation, 1 - cdf doesn't cut it."""
         # This for loop is needed because `k` can be an array. If that's the
         # case, the sf() method makes M, n and N arrays of the same shape. We
         # therefore unpack all inputs args, so we can do the manual
@@ -399,14 +408,27 @@ class hypergeom_gen(rv_discrete):
         return np.asarray(res)
 
     def _logsf(self, k, M, n, N):
-        """
-        More precise calculation than log(sf)
-        """
         res = []
         for quant, tot, good, draw in zip(k, M, n, N):
-            # Integration over probability mass function using logsumexp
-            k2 = np.arange(quant + 1, draw + 1)
-            res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+            if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-cdf)
+                res.append(log1p(-exp(self.logcdf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(quant + 1, draw + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
+        return np.asarray(res)
+
+    def _logcdf(self, k, M, n, N):
+        res = []
+        for quant, tot, good, draw in zip(k, M, n, N):
+            if (quant + 0.5) * (tot + 0.5) > (good - 0.5) * (draw - 0.5):
+                # Less terms to sum if we calculate log(1-sf)
+                res.append(log1p(-exp(self.logsf(quant, tot, good, draw))))
+            else:
+                # Integration over probability mass function using logsumexp
+                k2 = np.arange(0, quant + 1)
+                res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
         return np.asarray(res)
 
 
@@ -546,9 +568,15 @@ class planck_gen(rv_discrete):
 
     for :math:`k \ge 0` and :math:`\lambda > 0`.
 
-    `planck` takes :math:`\lambda` as shape parameter.
+    `planck` takes :math:`\lambda` as shape parameter. The Planck distribution
+    can be written as a geometric distribution (`geom`) with
+    :math:`p = 1 - \exp(-\lambda)` shifted by `loc = -1`.
 
     %(after_notes)s
+
+    See Also
+    --------
+    geom
 
     %(example)s
 
@@ -557,14 +585,14 @@ class planck_gen(rv_discrete):
         return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        return (1-exp(-lambda_))*exp(-lambda_*k)
+        return -expm1(-lambda_)*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
-        return 1-exp(-lambda_*(k+1))
+        return -expm1(-lambda_*(k+1))
 
     def _sf(self, x, lambda_):
-        return np.exp(self._logsf(x, lambda_))
+        return exp(self._logsf(x, lambda_))
 
     def _logsf(self, x, lambda_):
         k = floor(x)
@@ -572,21 +600,25 @@ class planck_gen(rv_discrete):
 
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
-        vals1 = (vals-1).clip(self.a, np.inf)
+        vals1 = (vals-1).clip(*(self._get_support(lambda_)))
         temp = self._cdf(vals1, lambda_)
         return np.where(temp >= q, vals1, vals)
 
+    def _rvs(self, lambda_):
+        # use relation to geometric distribution for sampling
+        p = -expm1(-lambda_)
+        return self._random_state.geometric(p, size=self._size) - 1.0
+
     def _stats(self, lambda_):
-        mu = 1/(exp(lambda_)-1)
+        mu = 1/expm1(lambda_)
         var = exp(-lambda_)/(expm1(-lambda_))**2
         g1 = 2*cosh(lambda_/2.0)
         g2 = 4+2*cosh(lambda_)
         return mu, var, g1, g2
 
     def _entropy(self, lambda_):
-        l = lambda_
-        C = (1-exp(-l))
-        return l*exp(-l)/C - log(C)
+        C = -expm1(-lambda_)
+        return lambda_*exp(-lambda_)/C - log(C)
 
 
 planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
@@ -615,9 +647,10 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_, N):
-        self.a = 0
-        self.b = N - 1
         return (lambda_ > 0) & (N > 0)
+
+    def _get_support(self, lambda_, N):
+        return self.a, N - 1
 
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
@@ -650,7 +683,7 @@ class boltzmann_gen(rv_discrete):
         return mu, var, g1, g2
 
 
-boltzmann = boltzmann_gen(name='boltzmann',
+boltzmann = boltzmann_gen(name='boltzmann', a=0,
                           longname='A truncated discrete exponential ')
 
 
@@ -677,9 +710,10 @@ class randint_gen(rv_discrete):
 
     """
     def _argcheck(self, low, high):
-        self.a = low
-        self.b = high - 1
         return (high > low)
+
+    def _get_support(self, low, high):
+        return low, high-1
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
@@ -707,6 +741,9 @@ class randint_gen(rv_discrete):
 
     def _rvs(self, low, high):
         """An array of *size* random integers >= ``low`` and < ``high``."""
+        if np.asarray(low).size == 1 and np.asarray(high).size == 1:
+            # no need to vectorize in that case
+            return self._random_state.randint(low, high, size=self._size)
         if self._size is not None:
             # NumPy's RandomState.randint() doesn't broadcast its arguments.
             # Use `broadcast_to()` to extend the shapes of low and high
@@ -741,7 +778,7 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the 
+    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the
     Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s

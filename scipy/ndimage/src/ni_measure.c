@@ -203,9 +203,9 @@ break
 
 typedef struct {
     npy_intp index;
-    npy_uint8 cost;
     void *next, *prev;
     npy_uint16 done;
+    npy_uint8 cost;
 } NI_WatershedElement;
 
 int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,

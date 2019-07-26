@@ -22,13 +22,9 @@ Package Content
    OdrError      -- Error exception.
    OdrStop       -- Stop exception.
 
-   odr_error     -- Same as OdrError (for backwards compatibility)
-   odr_stop      -- Same as OdrStop (for backwards compatibility)
-
 Prebuilt models:
 
 .. autosummary::
-   :toctree: generated/
 
    polynomial
 
@@ -136,7 +132,8 @@ from .odrpack import *
 from .models import *
 from . import add_newdocs
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir()
+           if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

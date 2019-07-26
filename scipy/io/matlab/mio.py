@@ -4,7 +4,7 @@ Module for reading and writing matlab (TM) .mat files
 # Authors: Travis Oliphant, Matthew Brett
 
 from __future__ import division, print_function, absolute_import
-
+from contextlib import contextmanager
 from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
@@ -14,29 +14,38 @@ from .mio5 import MatFile5Reader, MatFile5Writer
 __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 
 
-def _open_file(file_like, appendmat):
+@contextmanager
+def _open_file_context(file_like, appendmat, mode='rb'):
+    f, opened = _open_file(file_like, appendmat, mode)
+    yield f
+    if opened:
+        f.close()
+
+
+def _open_file(file_like, appendmat, mode='rb'):
     """
     Open `file_like` and return as file-like object. First, check if object is
     already file-like; if so, return it as-is. Otherwise, try to pass it
     to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
     append '.mat' and try again.
     """
-    try:
-        file_like.read(0)
+    reqs = {'read'} if set(mode) & set('r+') else set()
+    if set(mode) & set('wax+'):
+        reqs.add('write')
+    if reqs.issubset(dir(file_like)):
         return file_like, False
-    except AttributeError:
-        pass
 
     try:
-        return open(file_like, 'rb'), True
+        return open(file_like, mode), True
     except IOError:
         # Probably "not found"
         if isinstance(file_like, string_types):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
-            return open(file_like, 'rb'), True
+            return open(file_like, mode), True
         else:
             raise IOError('Reader needs file name or open file-like object')
+
 
 @docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
@@ -204,14 +213,15 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         3.14159265+3.14159265j])
     """
     variable_names = kwargs.pop('variable_names', None)
-    MR, file_opened = mat_reader_factory(file_name, appendmat, **kwargs)
-    matfile_dict = MR.get_variables(variable_names)
+    with _open_file_context(file_name, appendmat) as f:
+        MR, _ = mat_reader_factory(f, **kwargs)
+        matfile_dict = MR.get_variables(variable_names)
+
     if mdict is not None:
         mdict.update(matfile_dict)
     else:
         mdict = matfile_dict
-    if file_opened:
-        MR.mat_stream.close()
+
     return mdict
 
 
@@ -252,39 +262,21 @@ def savemat(file_name, mdict,
     oned_as : {'row', 'column'}, optional
         If 'column', write 1-D numpy arrays as column vectors.
         If 'row', write 1-D numpy arrays as row vectors.
-
-    See also
-    --------
-    mio4.MatFile4Writer
-    mio5.MatFile5Writer
     """
-    file_opened = False
-    if hasattr(file_name, 'write'):
-        # File-like object already; use as-is
-        file_stream = file_name
-    else:
-        if isinstance(file_name, string_types):
-            if appendmat and not file_name.endswith('.mat'):
-                file_name = file_name + ".mat"
-
-        file_stream = open(file_name, 'wb')
-        file_opened = True
-
-    if format == '4':
-        if long_field_names:
-            raise ValueError("Long field names are not available for version 4 files")
-        MW = MatFile4Writer(file_stream, oned_as)
-    elif format == '5':
-        MW = MatFile5Writer(file_stream,
-                            do_compression=do_compression,
-                            unicode_strings=True,
-                            long_field_names=long_field_names,
-                            oned_as=oned_as)
-    else:
-        raise ValueError("Format should be '4' or '5'")
-    MW.put_variables(mdict)
-    if file_opened:
-        file_stream.close()
+    with _open_file_context(file_name, appendmat, 'wb') as file_stream:
+        if format == '4':
+            if long_field_names:
+                raise ValueError("Long field names are not available for version 4 files")
+            MW = MatFile4Writer(file_stream, oned_as)
+        elif format == '5':
+            MW = MatFile5Writer(file_stream,
+                                do_compression=do_compression,
+                                unicode_strings=True,
+                                long_field_names=long_field_names,
+                                oned_as=oned_as)
+        else:
+            raise ValueError("Format should be '4' or '5'")
+        MW.put_variables(mdict)
 
 
 @docfiller
@@ -319,8 +311,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     .. versionadded:: 0.12.0
 
     """
-    ML, file_opened = mat_reader_factory(file_name, **kwargs)
-    variables = ML.list_variables()
-    if file_opened:
-        ML.mat_stream.close()
+    with _open_file_context(file_name, appendmat) as f:
+        ML, file_opened = mat_reader_factory(f, **kwargs)
+        variables = ML.list_variables()
     return variables

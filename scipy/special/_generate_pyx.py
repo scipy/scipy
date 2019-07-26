@@ -104,7 +104,6 @@ CYTHON_SPECIAL_PYX = """\
 \"\"\"
 .. highlight:: cython
 
-================================
 Cython API for Special Functions
 ================================
 
@@ -124,13 +123,13 @@ The module is usable from Cython via::
     cimport scipy.special.cython_special
 
 Error Handling
-==============
+--------------
 
 Functions can indicate an error by returning ``nan``; however they
 cannot emit warnings like their counterparts in ``scipy.special``.
 
 Available Functions
-===================
+-------------------
 
 FUNCLIST
 \"\"\"
@@ -596,7 +595,7 @@ class Ufunc(Func):
     """
     def __init__(self, name, signatures):
         super(Ufunc, self).__init__(name, signatures)
-        self.doc = add_newdocs.get("scipy.special." + name)
+        self.doc = add_newdocs.get(name)
         if self.doc is None:
             raise ValueError("No docstring for ufunc %r" % name)
         self.doc = textwrap.dedent(self.doc).strip()
@@ -841,7 +840,7 @@ class FusedFunc(Func):
         all_codes = tuple([codes for _unused, codes in fused_types])
 
         codelens = list(map(lambda x: len(x), all_codes))
-        last = numpy.product(codelens) - 1
+        last = numpy.prod(codelens) - 1
         for m, codes in enumerate(itertools.product(*all_codes)):
             fused_codes, decs = [], []
             for n, fused_type in enumerate(fused_types):

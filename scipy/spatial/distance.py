@@ -1,5 +1,4 @@
 """
-=====================================================
 Distance computations (:mod:`scipy.spatial.distance`)
 =====================================================
 
@@ -260,6 +259,16 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_name, **kwargs):
     return XA, XB, typ, kwargs
 
 
+def _validate_hamming_kwargs(X, m, n, **kwargs):
+    w = kwargs.get('w', np.ones((n,), dtype='double'))
+
+    if w.ndim != 1 or w.shape[0] != n:
+        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+
+    kwargs['w'] = _validate_weights(w)
+    return kwargs
+
+
 def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
     VI = kwargs.pop('VI', None)
     if VI is None:
@@ -361,8 +370,8 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `np.random.RandomState` seed. Default is 0, a random shuffling of
-        u and v that guarantees reproducibility.
+        Local `numpy.random.RandomState` seed. Default is 0, a random
+        shuffling of u and v that guarantees reproducibility.
 
     Returns
     -------
@@ -374,6 +383,12 @@ def directed_hausdorff(u, v, seed=0):
 
     index_2 : int
         index of point contributing to Hausdorff pair in `v`
+
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `u` and `v` do not have
+        the same number of columns.
 
     Notes
     -----
@@ -435,6 +450,9 @@ def directed_hausdorff(u, v, seed=0):
     """
     u = np.asarray(u, dtype=np.float64, order='c')
     v = np.asarray(v, dtype=np.float64, order='c')
+    if u.shape[1] != v.shape[1]:
+        raise ValueError('u and v need to have the same '
+                         'number of columns')
     result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
 
@@ -1659,7 +1677,8 @@ _METRICS = {
     'dice': MetricInfo(aka=['dice'], types=['bool']),
     'euclidean': MetricInfo(aka=['euclidean', 'euclid', 'eu', 'e']),
     'hamming': MetricInfo(aka=['matching', 'hamming', 'hamm', 'ha', 'h'],
-                          types=['double', 'bool']),
+                          types=['double', 'bool'],
+                          validator=_validate_hamming_kwargs),
     'jaccard': MetricInfo(aka=['jaccard', 'jacc', 'ja', 'j'],
                           types=['double', 'bool']),
     'jensenshannon': MetricInfo(aka=['jensenshannon', 'js'],
@@ -1698,7 +1717,7 @@ def _select_weighted_metric(mstr, kwargs, out):
         # w=None is the same as omitting it
         kwargs.pop("w")
 
-    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka:
+    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka + _METRICS['hamming'].aka:
         # These support weights
         pass
     elif "w" in kwargs:

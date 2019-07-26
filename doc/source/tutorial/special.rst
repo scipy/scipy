@@ -21,7 +21,7 @@ write the function in either C, Fortran, or Python. Look in the source
 code of the library for examples of each of these kinds of functions.
 
 
-Bessel functions of real order(:func:`jn`, :func:`jn_zeros`)
+Bessel functions of real order(:func:`jv`, :func:`jn_zeros`)
 ------------------------------------------------------------
 
 Bessel functions are a family of solutions to Bessel's differential equation
@@ -108,7 +108,7 @@ be worth it.
 
 Avoiding Python Function Overhead
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  
+
 For the ufuncs in special, Python function overhead is avoided by
 vectorizing, that is, by passing an array to the function. Typically
 this approach works quite well, but sometimes it is more convenient to
@@ -123,7 +123,7 @@ overhead can become significant. Consider the following example::
       cdef:
           int n
           double x = 1
-    
+
       for n in range(100):
           sc.jv(n, x)
 

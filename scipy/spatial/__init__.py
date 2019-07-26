@@ -7,7 +7,8 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
 
 Spatial Transformations
 =======================
-Contained in the `scipy.spatial.transform` submodule.
+
+These are contained in the `scipy.spatial.transform` submodule.
 
 Nearest-neighbor Queries
 ========================
@@ -62,10 +63,8 @@ tessellation (N-dim simplices), convex hull facets, and Voronoi ridges
 
 For Delaunay triangulations and convex hulls, the neighborhood
 structure of the simplices satisfies the condition:
-
-    ``tess.neighbors[i,j]`` is the neighboring simplex of the i-th
-    simplex, opposite to the j-vertex. It is -1 in case of no
-    neighbor.
+``tess.neighbors[i,j]`` is the neighboring simplex of the ``i``-th
+simplex, opposite to the ``j``-vertex. It is -1 in case of no neighbor.
 
 Convex hull facets also define a hyperplane equation::
 
@@ -101,12 +100,11 @@ from .qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes
-from . import transform
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-__all__ += ['distance']
+__all__ += ['distance', 'transform']
 
-from . import distance
+from . import distance, transform
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

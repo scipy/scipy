@@ -189,11 +189,13 @@ Summary statistics
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
+   gstd              -- Geometric Standard Deviation
    iqr
    sem
    bayes_mvs
    mvsdist
    entropy
+   median_absolute_deviation
 
 Frequency statistics
 ====================
@@ -244,6 +246,7 @@ Statistical tests
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    tiecorrect
    rankdata
@@ -350,13 +353,22 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/
 
    gaussian_kde
+
+Warnings used in :mod:`scipy.stats`
+===================================
+
+.. autosummary::
+   :toctree: generated/
+
+   PearsonRConstantInputWarning
+   PearsonRNearConstantInputWarning
 
 For many more stat related functions install the software R and the
 interface package rpy.

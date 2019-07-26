@@ -33,7 +33,7 @@ Highlights of this release
 - A new optimization algorithm, ``shgo`` (simplicial homology
   global optimization) for derivative free optimization problems
 - A new category of quaternion-based transformations are available in
-`scipy.spatial.transform`
+  `scipy.spatial.transform`
 
 New features
 ============
@@ -200,7 +200,7 @@ The Brunner-Munzel test is now available as ``brunnermunzel`` in ``stats``
 and ``mstats``
 
 `scipy.linalg` improvements
---------------------------
+---------------------------
 
 `scipy.linalg.lapack` now exposes the LAPACK routines using the Rectangular
 Full Packed storage (RFP) for upper triangular, lower triangular, symmetric,

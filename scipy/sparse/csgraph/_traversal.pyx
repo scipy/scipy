@@ -43,8 +43,9 @@ def connected_components(csgraph, directed=True, connection='weak',
     connection : str, optional
         ['weak'|'strong'].  For directed graphs, the type of connection to
         use.  Nodes i and j are strongly connected if a path exists both
-        from i to j and from j to i.  Nodes i and j are weakly connected if
-        only one of these paths exists.  If directed == False, this keyword
+        from i to j and from j to i. A directed graph is weakly connected
+        if replacing all of its directed edges with undirected edges produces
+        a connected (undirected) graph. If directed == False, this keyword
         is not referenced.
     return_labels : bool, optional
         If True (default), then return the labels for each of the connected

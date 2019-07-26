@@ -2152,10 +2152,7 @@ class TestNdimage:
     def test_zoom_output_shape_roundoff(self):
         arr = numpy.zeros((3, 11, 25))
         zoom = (4.0 / 3, 15.0 / 11, 29.0 / 25)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "From scipy 0.13.0, the output shape of zoom.. is calculated with round.. instead of int")
-            out = ndimage.zoom(arr, zoom)
+        out = ndimage.zoom(arr, zoom)
         assert_array_equal(out.shape, (4, 15, 29))
 
     def test_rotate01(self):
@@ -2264,6 +2261,36 @@ class TestNdimage:
         for order in range(0, 6):
             out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False)
             assert_array_almost_equal(out, expected)
+
+    def test_rotate09(self):
+        data = numpy.array([[0, 0, 0, 0, 0],
+                            [0, 1, 1, 0, 0],
+                            [0, 0, 0, 0, 0]] * 2, dtype=numpy.float64)
+        with assert_raises(ValueError):
+            ndimage.rotate(data, 90, axes=(0, data.ndim))
+
+    def test_rotate10(self):
+        data = numpy.arange(45, dtype=numpy.float64).reshape((3, 5, 3))
+
+        # The output of ndimage.rotate before refactoring
+        expected = numpy.array([[[0.0, 0.0, 0.0],
+                                 [0.0, 0.0, 0.0],
+                                 [6.54914793, 7.54914793, 8.54914793],
+                                 [10.84520162, 11.84520162, 12.84520162],
+                                 [0.0, 0.0, 0.0]],
+                                [[6.19286575, 7.19286575, 8.19286575],
+                                 [13.4730712, 14.4730712, 15.4730712],
+                                 [21.0, 22.0, 23.0],
+                                 [28.5269288, 29.5269288, 30.5269288],
+                                 [35.80713425, 36.80713425, 37.80713425]],
+                                [[0.0, 0.0, 0.0],
+                                 [31.15479838, 32.15479838, 33.15479838],
+                                 [35.45085207, 36.45085207, 37.45085207],
+                                 [0.0, 0.0, 0.0],
+                                 [0.0, 0.0, 0.0]]])
+
+        out = ndimage.rotate(data, angle=12, reshape=False)
+        assert_array_almost_equal(out, expected)
 
     def test_watershed_ift01(self):
         data = numpy.array([[0, 0, 0, 0, 0, 0, 0],
@@ -3553,6 +3580,62 @@ class TestNdimage:
             ndimage.binary_erosion(a, structure=a, iterations=0,
                                    border_value=True),
             b)
+
+    def test_binary_erosion38(self):
+        data = numpy.array([[1, 0, 1],
+                           [0, 1, 0],
+                           [1, 0, 1]], dtype=bool)
+        iterations = 2.0
+        with assert_raises(TypeError):
+            out = ndimage.binary_erosion(data, iterations=iterations)
+
+    def test_binary_erosion39(self):
+        iterations = numpy.int32(3)
+        struct = [[0, 1, 0],
+                  [1, 1, 1],
+                  [0, 1, 0]]
+        expected = [[0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0]], bool)
+        out = numpy.zeros(data.shape, bool)
+        ndimage.binary_erosion(data, struct, border_value=1,
+                               iterations=iterations, output=out)
+        assert_array_almost_equal(out, expected)
+
+    def test_binary_erosion40(self):
+        iterations = numpy.int64(3)
+        struct = [[0, 1, 0],
+                  [1, 1, 1],
+                  [0, 1, 0]]
+        expected = [[0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0]]
+        data = numpy.array([[0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0]], bool)
+        out = numpy.zeros(data.shape, bool)
+        ndimage.binary_erosion(data, struct, border_value=1,
+                               iterations=iterations, output=out)
+        assert_array_almost_equal(out, expected)
 
     def test_binary_dilation01(self):
         for type_ in self.types:

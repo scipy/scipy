@@ -22,6 +22,17 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
+    config.add_library('rectangular_lsap',
+                       sources='rectangular_lsap/rectangular_lsap.cpp',
+                       headers='rectangular_lsap/rectangular_lsap.h')
+    config.add_extension('_lsap_module',
+                         sources=['_lsap_module.c'],
+                         libraries=['rectangular_lsap'],
+                         depends=(['rectangular_lsap/rectangular_lsap.cpp',
+                                   'rectangular_lsap/rectangular_lsap.h']),
+                         include_dirs=include_dirs,
+                         **numpy_nodepr_api)
+
     rootfind_src = [join('Zeros','*.c')]
     rootfind_hdr = [join('Zeros','zeros.h')]
     config.add_library('rootfind',
@@ -74,11 +85,21 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
+    config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])
+
     config.add_subpackage('_lsq')
 
     config.add_subpackage('_trlib')
 
     config.add_subpackage('_trustregion_constr')
+
+    # cython optimize API for zeros functions
+    config.add_subpackage('cython_optimize')
+    config.add_data_files('cython_optimize.pxd')
+    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
+    config.add_extension(
+        'cython_optimize._zeros',
+        sources=[os.path.join('cython_optimize', '_zeros.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')

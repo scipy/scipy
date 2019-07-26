@@ -10,7 +10,7 @@ Sparse Eigenvalue Problems with ARPACK
 
 Introduction
 ------------
-ARPACK is a Fortran package which provides routines for quickly finding a few
+ARPACK [1]_ is a Fortran package which provides routines for quickly finding a few
 eigenvalues/eigenvectors of large sparse matrices.  In order to find these
 solutions, it requires only left-multiplication by the matrix in question.
 This operation is performed through a *reverse-communication* interface.  The
@@ -85,7 +85,7 @@ Examples
 --------
 Imagine you'd like to find the smallest and largest eigenvalues and the
 corresponding eigenvectors for a large matrix.  ARPACK can handle many
-forms of input: dense matrices such as :func:`numpy.ndarray` instances, sparse
+forms of input: dense matrices such as `numpy.ndarray` instances, sparse
 matrices such as :func:`scipy.sparse.csr_matrix`, or a general linear operator
 derived from :func:`scipy.sparse.linalg.LinearOperator`.  For this example, for
 simplicity, we'll construct a symmetric, positive-definite matrix.

@@ -199,7 +199,19 @@ Kai Striega for improvements to the scipy.optimize.linprog simplex method.
 Josua Sassen for improvements to scipy.interpolate.Rbf
 Stiaan Gerber for a bug fix in scipy.optimize.
 Nicolas Hug for the Yeo-Johnson transformation.
+Idan David for improvements to the log survival function and log cumulative
+     distribution function of the hypergeometric distribution.
 Petar Mlinarić for a bug fix in scipy.io.mmio.
+Franz Forstmayr for documentation in scipy.signal
+Vega Theil Carstensen for a bug fix in scipy.optimize.linesearch.
+Jordi Montes for initial contribution of the Clarkson-Woodruff sketch.
+William Conner DiPaolo for improvements to the Clarkson-Woodruff transform.
+Forrest Collman for adding multi-target dijsktra to scipy.sparse.csgraph
+Carlos Ramos Carreño for adding support for relational attributes in loadarff.
+Jason M. Manley for documentation fixes.
+Aidan Dang for block QR wrappers in scipy.linalg.lapack.
+Clement Ng for modifying tests in scipy.stats.
+Fletcher H. Easton for a bug fix in scipy.linalg.interpolative.
 
 Institutions
 ------------

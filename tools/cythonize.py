@@ -79,7 +79,8 @@ def process_pyx(fromfile, tofile, cwd):
                 raise ImportError()
 
         if LooseVersion(cython_version) < LooseVersion(required_version):
-            raise Exception('Building SciPy requires Cython >= ' + required_version)
+            raise Exception('Building SciPy requires Cython >= {}, found '
+                            '{}'.format(required_version, cython_version))
 
     except ImportError:
         pass

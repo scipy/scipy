@@ -70,6 +70,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
@@ -96,6 +97,7 @@ PUBLIC_SUBMODULES = [
     'special',
     'stats',
     'stats.mstats',
+    'stats.contingency',
 ]
 
 # Docs for these modules are included in the parent module
@@ -131,6 +133,9 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
+    r'scipy\.stats\.contingency\.chi2_contingency',
+    r'scipy\.stats\.contingency\.expected_freq',
+    r'scipy\.stats\.contingency\.margins',
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -322,7 +327,7 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'versionchanged', 'module', 'class',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])

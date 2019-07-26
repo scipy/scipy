@@ -5,7 +5,8 @@ __docformat__ = "restructuredtext en"
 __all__ = []
 
 
-from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
+from numpy import asanyarray, asarray, array, matrix, zeros
+from scipy.sparse.sputils import asmatrix
 
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator, \
      IdentityOperator

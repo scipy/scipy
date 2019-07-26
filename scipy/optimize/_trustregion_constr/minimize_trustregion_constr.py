@@ -258,7 +258,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     cg_niter : int
         Total number of the conjugate gradient method iterations.
     method : {'equality_constrained_sqp', 'tr_interior_point'}
-        Optimization method used.    
+        Optimization method used.
     constr : list of ndarray
         List of constraint values at the solution.
     jac : list of {ndarray, sparse matrix}
@@ -305,6 +305,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 2 : Reached the trust-region boundary.
             * 3 : Negative curvature detected.
             * 4 : Tolerance was satisfied.
+
+    References
+    ----------
+    .. [1] Conn, A. R., Gould, N. I., & Toint, P. L.
+           Trust region methods. 2000. Siam. pp. 19.
     """
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)

@@ -205,7 +205,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
 
-
     See also
     --------
     minimize_scalar : Interface to minimization algorithms for scalar
@@ -349,7 +348,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     its contents also passed as `method` parameters pair by pair.  Also, if
     `jac` has been passed as a bool type, `jac` and `fun` are mangled so that
     `fun` returns just the function values and `jac` is converted to a function
-    returning the Jacobian.  The method shall return an ``OptimizeResult``
+    returning the Jacobian.  The method shall return an `OptimizeResult`
     object.
 
     The provided `method` callable must be able to accept (and possibly ignore)
@@ -713,7 +712,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     where ``kwargs`` corresponds to any other parameters passed to `minimize`
     (such as `bracket`, `tol`, etc.), except the `options` dict, which has
     its contents also passed as `method` parameters pair by pair.  The method
-    shall return an ``OptimizeResult`` object.
+    shall return an `OptimizeResult` object.
 
     The provided `method` callable must be able to accept (and possibly ignore)
     arbitrary parameters; the set of parameters accepted by `minimize` may

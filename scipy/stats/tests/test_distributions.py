@@ -142,7 +142,7 @@ def test_vonmises_numerical():
 
 
 @pytest.mark.parametrize('dist',
-                         ['alpha', 'betaprime', 'burr', 'burr12',
+                         ['alpha', 'betaprime',
                           'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
                           'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
                           'powerlognorm', 'rayleigh', 'wald'])
@@ -157,6 +157,17 @@ def test_support(dist):
     assert_equal(dist.logpdf(dist.a, *args), -np.inf)
     assert_almost_equal(dist.pdf(dist.b, *args), 0)
     assert_equal(dist.logpdf(dist.b, *args), -np.inf)
+
+
+@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+def test_retrieving_support(dist, args, alpha):
+    """"""
+    dist = getattr(stats, dist)
+
+    loc, scale = 1, 2
+    supp = dist.support(*args)
+    supp_loc_scale = dist.support(*args, loc=loc, scale=scale)
+    assert_almost_equal(np.array(supp)*scale + loc, np.array(supp_loc_scale))
 
 
 class TestRandInt(object):
@@ -183,7 +194,7 @@ class TestRandInt(object):
         assert_array_almost_equal(vals, out)
 
     def test_cdf(self):
-        x = np.linspace(0,36,100)
+        x = np.linspace(0, 36, 100)
         k = numpy.floor(x)
         out = numpy.select([k >= 30, k >= 5], [1.0, (k-5.0+1)/(30-5.0)], 0)
         vals = stats.randint.cdf(x, 5, 30)
@@ -474,6 +485,13 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
+    def test_moments(self):
+        m, v, s, k = stats.truncnorm.stats(-30, 30, moments='mvsk')
+        assert_almost_equal(m, 0)
+        assert_almost_equal(v, 1)
+        assert_almost_equal(s, 0.0)
+        assert_almost_equal(k, 0.0)
+
     @pytest.mark.xfail(reason="truncnorm rvs is know to fail at extreme tails")
     def test_gh_2477_large_values(self):
         # Check a case that fails because of extreme tailness.
@@ -571,8 +589,63 @@ class TestHypergeom(object):
         N = 5e4
 
         result = stats.hypergeom.logsf(k, M, n, N)
-        exspected = -2239.771   # From R
-        assert_almost_equal(result, exspected, decimal=3)
+        expected = -2239.771   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        k = 1
+        M = 1600
+        n = 600
+        N = 300
+
+        result = stats.hypergeom.logsf(k, M, n, N)
+        expected = -2.566567e-68   # From R
+        assert_almost_equal(result, expected, decimal=15)
+
+    def test_logcdf(self):
+        # Test logcdf for very large numbers. See issue #8692
+        # Results compare with those from R (v3.3.2):
+        # phyper(k, n, M-n, N, lower.tail=TRUE, log.p=TRUE)
+        # -5273.335
+
+        k = 1
+        M = 1e7
+        n = 1e6
+        N = 5e4
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -5273.335   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        # Same example as in issue #8692
+        k = 40
+        M = 1600
+        n = 50
+        N = 300
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -7.565148879229e-23    # From R
+        assert_almost_equal(result, expected, decimal=15)
+
+        k = 125
+        M = 1600
+        n = 250
+        N = 500
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -4.242688e-12    # From R
+        assert_almost_equal(result, expected, decimal=15)
+
+        # test broadcasting robustness based on reviewer
+        # concerns in PR 9603; using an array version of
+        # the example from issue #8692
+        k = np.array([40, 40, 40])
+        M = 1600
+        n = 50
+        N = 300
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = np.full(3, -7.565148879229e-23)  # filled from R result
+        assert_almost_equal(result, expected, decimal=15)
 
 
 class TestLoggamma(object):
@@ -731,13 +804,14 @@ class TestGenpareto(object):
         for c in [1., 0.]:
             c = np.asarray(c)
             stats.genpareto._argcheck(c)  # ugh
-            assert_equal(stats.genpareto.a, 0.)
-            assert_(np.isposinf(stats.genpareto.b))
+            a, b = stats.genpareto._get_support(c)
+            assert_equal(a, 0.)
+            assert_(np.isposinf(b))
 
         # c < 0: a=0, b=1/|c|
         c = np.asarray(-2.)
         stats.genpareto._argcheck(c)
-        assert_allclose([stats.genpareto.a, stats.genpareto.b], [0., 0.5])
+        assert_allclose(stats.genpareto._get_support(c), [0., 0.5])
 
     def test_c0(self):
         # with c=0, genpareto reduces to the exponential distribution
@@ -1070,6 +1144,17 @@ class TestInvGamma(object):
 
 
 class TestF(object):
+    def test_endpoints(self):
+        # Compute the pdf at the left endpoint dst.a.
+        data = [[stats.f, (2, 1), 1.0]]
+        for _f, _args, _correct in data:
+            ans = _f.pdf(_f.a, *_args)
+            print(_f, (_args), ans, _correct, ans == _correct)
+
+        ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [_correct_ for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
     def test_f_moments(self):
         # n-th moment of F distributions is only finite for n < dfd / 2
         m, v, s, k = stats.f.stats(11, 6.5, moments='mvsk')
@@ -1331,6 +1416,9 @@ class TestExponNorm(object):
         # Test for extreme values against overflows
         assert_almost_equal(stats.exponnorm.pdf(-900, 1), 0.0)
         assert_almost_equal(stats.exponnorm.pdf(+900, 1), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(1, 0.01), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(-900, 0.01), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(+900, 0.01), 0.0)
 
 
 class TestGenExpon(object):
@@ -2170,14 +2258,14 @@ class TestFrozen(object):
         # depends on the value of the shape parameter:
         # for c > 0: a, b = 0, inf
         # for c < 0: a, b = 0, -1/c
-        rv = stats.genpareto(c=-0.1)
-        a, b = rv.dist.a, rv.dist.b
+        c = -0.1
+        rv = stats.genpareto(c=c)
+        a, b = rv.dist._get_support(c)
         assert_equal([a, b], [0., 10.])
-        assert_equal([rv.a, rv.b], [0., 10.])
 
-        stats.genpareto.pdf(0, c=0.1)  # this changes genpareto.b
-        assert_equal([rv.dist.a, rv.dist.b], [a, b])
-        assert_equal([rv.a, rv.b], [a, b])
+        c = 0.1
+        stats.genpareto.pdf(0, c=c)
+        assert_equal(rv.dist._get_support(c), [0, np.inf])
 
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
@@ -2715,6 +2803,94 @@ class TestTriang(object):
             assert_equal(stats.triang.cdf(1., 1.), 1)
 
 
+class TestMielke(object):
+    def test_moments(self):
+        k, s = 4.642, 0.597
+        # n-th moment exists only if n < s
+        assert_equal(stats.mielke(k, s).moment(1), np.inf)
+        assert_equal(stats.mielke(k, 1.0).moment(1), np.inf)
+        assert_(np.isfinite(stats.mielke(k, 1.01).moment(1)))
+
+    def test_burr_equivalence(self):
+        x = np.linspace(0.01, 100, 50)
+        k, s = 2.45, 5.32
+        assert_allclose(stats.burr.pdf(x, s, k/s), stats.mielke.pdf(x, k, s))
+
+
+class TestBurr(object):
+    def test_endpoints_7491(self):
+        # gh-7491
+        # Compute the pdf at the left endpoint dst.a.
+        data = [
+            [stats.fisk, (1,), 1],
+            [stats.burr, (0.5, 2), 1],
+            [stats.burr, (1, 1), 1],
+            [stats.burr, (2, 0.5), 1],
+            [stats.burr12, (1, 0.5), 0.5],
+            [stats.burr12, (1, 1), 1.0],
+            [stats.burr12, (1, 2), 2.0]]
+
+        ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [_correct_ for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
+        ans = [_f.logpdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [np.log(_correct_) for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
+    def test_burr_stats_9544(self):
+        # gh-9544.  Test from gh-9978
+        c, d = 5.0, 3
+        mean, variance = stats.burr(c, d).stats()
+        # mean = sc.beta(3 + 1/5, 1. - 1/5) * 3  = 1.4110263...
+        # var =  sc.beta(3 + 2 / 5, 1. - 2 / 5) * 3 - (sc.beta(3 + 1 / 5, 1. - 1 / 5) * 3) ** 2
+        mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
+        assert_allclose(mean, mean_hc)
+        assert_allclose(variance, variance_hc)
+
+    def test_burr_nan_mean_var_9544(self):
+        # gh-9544.  Test from gh-9978
+        c, d = 0.5, 3
+        mean, variance = stats.burr(c, d).stats()
+        assert_(np.isnan(mean))
+        assert_(np.isnan(variance))
+        c, d = 1.5, 3
+        mean, variance = stats.burr(c, d).stats()
+        assert_(np.isfinite(mean))
+        assert_(np.isnan(variance))
+
+        c, d = 0.5, 3
+        e1, e2, e3, e4 = stats.burr._munp(np.array([1, 2, 3, 4]), c, d)
+        assert_(np.isnan(e1))
+        assert_(np.isnan(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 1.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isnan(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 2.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 3.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isfinite(e3))
+        assert_(np.isnan(e4))
+        c, d = 4.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isfinite(e3))
+        assert_(np.isfinite(e4))
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,
@@ -3080,6 +3256,32 @@ def test_ncx2_tails_pdf():
         logval = stats.ncx2.logpdf(1, np.arange(340, 350), 2)
 
     assert_(np.isneginf(logval).all())
+
+
+@pytest.mark.parametrize('method, expected', [
+    ('cdf', np.array([2.497951336e-09, 3.437288941e-10])),
+    ('pdf', np.array([1.238579980e-07, 1.710041145e-08])),
+    ('logpdf', np.array([-15.90413011, -17.88416331]))
+])
+def test_ncx2_zero_nc(method, expected):
+    # gh-5441
+    # ncx2 with nc=0 is identical to chi2
+    # Comparison to R (v3.5.1)
+    # > options(digits=10)
+    # > pchisq(0.1, df=10, ncp=c(0,4))
+    # > dchisq(0.1, df=10, ncp=c(0,4))
+    # > dchisq(0.1, df=10, ncp=c(0,4), log=TRUE)
+
+    result = getattr(stats.ncx2, method)(0.1, nc=[0, 4], df=10)
+    assert_allclose(result, expected, atol=1e-15)
+
+
+def test_ncx2_zero_nc_rvs():
+    # gh-5441
+    # ncx2 with nc=0 is identical to chi2
+    result = stats.ncx2.rvs(df=10, nc=0, random_state=1)
+    expected = stats.chi2.rvs(df=10, random_state=1)
+    assert_allclose(result, expected, atol=1e-15)
 
 
 def test_foldnorm_zero():

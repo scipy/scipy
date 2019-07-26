@@ -3,8 +3,7 @@
 
 Reciprocal Distribution
 =======================
-
-Shape parameters :math:`a,b>0` :math:`x\in\left[a,b\right]`
+There are two shape parameters :math:`a,b>0` and the support is :math:`x\in\left[a,b\right]`.
 
 .. math::
    :nowrap:

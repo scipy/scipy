@@ -26,17 +26,17 @@ class TestDLTI(object):
 
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
-        u = np.hstack((np.asmatrix(np.linspace(0, 4.0, num=5)).transpose(),
+        u = np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
                        0.01 * np.ones((5, 1)),
                        -0.002 * np.ones((5, 1))))
         t_in = np.linspace(0, 2.0, num=5)
 
         # Define the known result
-        yout_truth = np.asmatrix([-0.001,
-                                  -0.00073,
-                                  0.039446,
-                                  0.0915387,
-                                  0.13195948]).transpose()
+        yout_truth = np.array([[-0.001,
+                                -0.00073,
+                                0.039446,
+                                0.0915387,
+                                0.13195948]]).T
         xout_truth = np.asarray([[0, 0],
                                  [0.0012, 0.0005],
                                  [0.40233, 0.00071],
@@ -66,11 +66,11 @@ class TestDLTI(object):
         # Transfer functions (assume dt = 0.5)
         num = np.asarray([1.0, -0.1])
         den = np.asarray([0.3, 1.0, 0.2])
-        yout_truth = np.asmatrix([0.0,
-                                  0.0,
-                                  3.33333333333333,
-                                  -4.77777777777778,
-                                  23.0370370370370]).transpose()
+        yout_truth = np.array([[0.0,
+                                0.0,
+                                3.33333333333333,
+                                -4.77777777777778,
+                                23.0370370370370]]).T
 
         # Assume use of the first column of the control input built earlier
         tout, yout = dlsim((num, den, 0.5), u[:, 0], t_in)
@@ -90,7 +90,7 @@ class TestDLTI(object):
         zd = np.array([0.5, -0.5])
         pd = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
         k = 1.0
-        yout_truth = np.asmatrix([0.0, 1.0, 2.0, 2.25, 2.5]).transpose()
+        yout_truth = np.array([[0.0, 1.0, 2.0, 2.25, 2.5]]).T
 
         tout, yout = dlsim((zd, pd, k, 0.5), u[:, 0], t_in)
 

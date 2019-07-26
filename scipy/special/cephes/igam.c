@@ -120,7 +120,6 @@ static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
 
 static double igamc_continued_fraction(double, double);
-static double igam_leading_factor(double, double);
 static double igam_series(double, double);
 static double igamc_series(double, double);
 static double asymptotic_series(double, double, int);

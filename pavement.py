@@ -113,10 +113,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.3.0-notes.rst'
+RELEASE = 'doc/release/1.4.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.2.0'
+LOG_START = 'v1.3.0'
 LOG_END = 'master'
 
 
@@ -129,7 +129,7 @@ PYVER="3.6"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
-        virtualenv=Bunch(packages_to_install=["sphinx==1.1.3", "numpydoc"],
+        virtualenv=Bunch(packages_to_install=["sphinx==1.8.5", "numpydoc"],
                          no_site_packages=False),
         sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         superpack=Bunch(builddir="build-superpack",
@@ -684,8 +684,9 @@ SHA256
 """)
         ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
 
-    # Sign release
-    cmd = ['gpg', '--clearsign', '--armor']
+    # Sign release; on some platforms gpg2 may actually
+    # be named gpg
+    cmd = ['gpg2', '--clearsign', '--armor']
     if hasattr(options, 'gpg_key'):
         cmd += ['--default-key', options.gpg_key]
     cmd += ['--output', str(target), str(tmp_target)]

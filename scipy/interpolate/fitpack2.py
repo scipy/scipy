@@ -23,7 +23,7 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
+from numpy import zeros, concatenate, ravel, diff, array, ones
 import numpy as np
 
 from . import fitpack
@@ -173,7 +173,7 @@ class UnivariateSpline(object):
                     not w_finite):
                 raise ValueError("x and y array must not contain "
                                  "NaNs or infs.")
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -461,7 +461,9 @@ class UnivariateSpline(object):
 
         """
         tck = fitpack.splder(self._eval_args, n)
-        return UnivariateSpline._from_tck(tck, self.ext)
+        # if self.ext is 'const', derivative.ext will be 'zeros'
+        ext = 1 if self.ext == 3 else self.ext
+        return UnivariateSpline._from_tck(tck, ext=ext)
 
     def antiderivative(self, n=1):
         """
@@ -597,7 +599,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -736,7 +738,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -748,7 +750,7 @@ class LSQUnivariateSpline(UnivariateSpline):
             xe = x[-1]
         t = concatenate(([xb]*(k+1), t, [xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
+        if not np.all(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
                              'Schoenberg-Whitney conditions')
         if not dfitpack.fpchec(x, t, k) == 0:
@@ -929,16 +931,17 @@ class BivariateSpline(_BivariateSplineBase):
 
     See Also
     --------
-    UnivariateSpline : a similar class for univariate spline interpolation
+    UnivariateSpline :
+        a similar class for univariate spline interpolation
     SmoothBivariateSpline :
         to create a BivariateSpline through the given points
     LSQBivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
-    SphereBivariateSpline :
-        bivariate spline interpolation in spherical cooridinates
+    RectSphereBivariateSpline
+    SmoothSphereBivariateSpline :
+    LSQSphereBivariateSpline
     bisplrep : older wrapping of FITPACK
     bisplev : older wrapping of FITPACK
-
     """
 
     @classmethod
@@ -1162,9 +1165,9 @@ class RectBivariateSpline(BivariateSpline):
 
     def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
         x, y = ravel(x), ravel(y)
-        if not all(diff(x) > 0.0):
+        if not np.all(diff(x) > 0.0):
             raise ValueError('x must be strictly increasing')
-        if not all(diff(y) > 0.0):
+        if not np.all(diff(y) > 0.0):
             raise ValueError('y must be strictly increasing')
         if not ((x.min() == x[0]) and (x.max() == x[-1])):
             raise ValueError('x must be strictly ascending')
@@ -1392,6 +1395,9 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
     Weighted least-squares bivariate spline approximation in spherical
     coordinates.
+    
+    Determines a smooth bicubic spline according to a given
+    set of knots in the `theta` and `phi` directions.
 
     .. versionadded:: 0.11.0
 
@@ -1483,7 +1489,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if ier < -2:
             deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
-            warnings.warn(message, stacklevel=3)
+            warnings.warn(message, stacklevel=2)
         elif ier not in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)

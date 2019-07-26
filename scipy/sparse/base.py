@@ -1,15 +1,13 @@
 """Base class for sparse matrices"""
 from __future__ import division, print_function, absolute_import
 
-import sys
-
 import numpy as np
 
 from scipy._lib.six import xrange
 from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
                       get_sum_dtype, validateaxis, check_reshape_kwargs,
-                      check_shape)
+                      check_shape, asmatrix)
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -117,7 +115,8 @@ class spmatrix(object):
 
         See Also
         --------
-        np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
+        numpy.matrix.reshape : NumPy's implementation of 'reshape' for
+                               matrices
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
@@ -388,6 +387,9 @@ class spmatrix(object):
     def __abs__(self):
         return abs(self.tocsr())
 
+    def __round__(self, ndigits=0):
+        return round(self.tocsr(), ndigits=ndigits)
+
     def _add_sparse(self, other):
         return self.tocsr()._add_sparse(other)
 
@@ -502,7 +504,7 @@ class spmatrix(object):
             result = self._mul_vector(np.ravel(other))
 
             if isinstance(other, np.matrix):
-                result = np.asmatrix(result)
+                result = asmatrix(result)
 
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
@@ -520,7 +522,7 @@ class spmatrix(object):
             result = self._mul_multivector(np.asarray(other))
 
             if isinstance(other, np.matrix):
-                result = np.asmatrix(result)
+                result = asmatrix(result)
 
             return result
 
@@ -710,8 +712,8 @@ class spmatrix(object):
 
         See Also
         --------
-        np.matrix.transpose : NumPy's implementation of 'transpose'
-                              for matrices
+        numpy.matrix.transpose : NumPy's implementation of 'transpose'
+                                 for matrices
         """
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
@@ -749,7 +751,7 @@ class spmatrix(object):
 
         See Also
         --------
-        np.matrix.getH : NumPy's implementation of `getH` for matrices
+        numpy.matrix.getH : NumPy's implementation of `getH` for matrices
         """
         return self.transpose().conj()
 
@@ -846,7 +848,7 @@ class spmatrix(object):
             with the appropriate values and returned wrapped in a
             `numpy.matrix` object that shares the same memory.
         """
-        return np.asmatrix(self.toarray(order=order, out=out))
+        return asmatrix(self.toarray(order=order, out=out))
 
     def toarray(self, order=None, out=None):
         """
@@ -985,7 +987,7 @@ class spmatrix(object):
 
         See Also
         --------
-        np.matrix.sum : NumPy's implementation of 'sum' for matrices
+        numpy.matrix.sum : NumPy's implementation of 'sum' for matrices
 
         """
         validateaxis(axis)
@@ -1000,7 +1002,7 @@ class spmatrix(object):
 
         if axis is None:
             # sum over rows and columns
-            return (self * np.asmatrix(np.ones(
+            return (self * asmatrix(np.ones(
                 (n, 1), dtype=res_dtype))).sum(
                 dtype=dtype, out=out)
 
@@ -1010,11 +1012,11 @@ class spmatrix(object):
         # axis = 0 or 1 now
         if axis == 0:
             # sum over columns
-            ret = np.asmatrix(np.ones(
+            ret = asmatrix(np.ones(
                 (1, m), dtype=res_dtype)) * self
         else:
             # sum over rows
-            ret = self * np.asmatrix(
+            ret = self * asmatrix(
                 np.ones((n, 1), dtype=res_dtype))
 
         if out is not None and out.shape != ret.shape:
@@ -1056,7 +1058,7 @@ class spmatrix(object):
 
         See Also
         --------
-        np.matrix.mean : NumPy's implementation of 'mean' for matrices
+        numpy.matrix.mean : NumPy's implementation of 'mean' for matrices
 
         """
         def _is_integral(dtype):

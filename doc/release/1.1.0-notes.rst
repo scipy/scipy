@@ -484,7 +484,7 @@ Pull requests for 1.1.0
 * `#8124 <https://github.com/scipy/scipy/pull/8124>`__: Change to avoid use of `fmod` in scipy.signal.chebwin
 * `#8126 <https://github.com/scipy/scipy/pull/8126>`__: Added examples for mode arg in geometric_transform
 * `#8128 <https://github.com/scipy/scipy/pull/8128>`__: relax relative tolerance parameter in TestMinumumPhase.test_hilbert
-* `#8129 <https://github.com/scipy/scipy/pull/8129>`__: ENH: special: use rational approximation for `digamma` on `[1,...
+* `#8129 <https://github.com/scipy/scipy/pull/8129>`__: ENH: special: use rational approximation for \`digamma\` on \`[1,...
 * `#8137 <https://github.com/scipy/scipy/pull/8137>`__: DOC Correct matrix width
 * `#8141 <https://github.com/scipy/scipy/pull/8141>`__: MAINT: optimize: remove unused `__main__` code in L-BSGS-B
 * `#8147 <https://github.com/scipy/scipy/pull/8147>`__: BLD: update Bento build for removal of .npz scipy.special test...
@@ -529,7 +529,7 @@ Pull requests for 1.1.0
 * `#8301 <https://github.com/scipy/scipy/pull/8301>`__: DOC: make public API documentation cross-link to refguide.
 * `#8302 <https://github.com/scipy/scipy/pull/8302>`__: make sure _onenorm_matrix_power_nnm actually returns a float
 * `#8313 <https://github.com/scipy/scipy/pull/8313>`__: Change copyright to outdated 2008-2016 to 2008-year
-* `#8315 <https://github.com/scipy/scipy/pull/8315>`__: TST: Add tests for `scipy.sparse.linalg.isolve.minres`
+* `#8315 <https://github.com/scipy/scipy/pull/8315>`__: TST: Add tests for \`scipy.sparse.linalg.isolve.minres\`
 * `#8318 <https://github.com/scipy/scipy/pull/8318>`__: ENH: odeint: Add the argument 'tfirst' to odeint.
 * `#8328 <https://github.com/scipy/scipy/pull/8328>`__: ENH: optimize: ``trust-constr`` optimization algorithms [GSoC...
 * `#8330 <https://github.com/scipy/scipy/pull/8330>`__: ENH: add a maxiter argument to NNLS
