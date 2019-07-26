@@ -668,6 +668,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
 
     Returns
@@ -729,6 +730,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
 
     Returns
@@ -1018,6 +1020,7 @@ def variation(a, axis=0, nan_policy='propagate'):
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
 
     Returns
@@ -1073,6 +1076,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
 
     Returns
@@ -1176,6 +1180,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
 
     Returns
@@ -2230,6 +2235,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
 
     Returns
@@ -2555,6 +2561,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
            at the position of `n` for `axis=0` or `m` for `axis=1`
         - 'raise' throws an error
         - 'omit' performs the calculations ignoring nan values
+
         Default is 'propagate'.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}, optional
         Specifies the interpolation method to use when the percentile
