@@ -1117,7 +1117,7 @@ using the custom function defined above:
 
 The simulation relationship can be plotted below:
 
-.. plot:: tutorial/stats/plots/mgc_plot1.png
+.. plot:: tutorial/stats/plots/mgc_plot1.py
    :align: center
    :include-source: 0
 
@@ -1145,7 +1145,7 @@ The same can be done for nonlinear data sets. The following :math:`x` and
 
 The simulation relationship can be plotted below:
 
-.. plot:: tutorial/stats/plots/mgc_plot2.png
+.. plot:: tutorial/stats/plots/mgc_plot2.py
    :align: center
    :include-source: 0
 
