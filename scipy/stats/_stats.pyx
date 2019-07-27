@@ -309,33 +309,30 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _dense_rank_data(ndarray x):
-    cdef float64_t[:] x_view = x
-    _, v = np.unique(x_view, return_inverse=True)
+cdef _dense_rank_data(float64_t[:] x):
+    _, v = np.unique(x, return_inverse=True)
     return v + 1
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _rank_distance_matrix(ndarray distx):
+cdef _rank_distance_matrix(float64_t[:, :] distx):
     # faster than np.apply_along_axis
-    cdef float64_t[:, :] distx_view = distx
-    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in range(distx_view.shape[0])])
+    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in range(distx.shape[0])])
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _center_distance_matrix(ndarray distx, str global_corr='mgc', is_ranked=True):
-    cdef float64_t[:, :] distx_view = distx
+cdef _center_distance_matrix(ndarray[float64_t, ndim=2] distx,
+                             str global_corr='mgc', is_ranked=True):
     cdef int n = distx.shape[0]
     cdef ndarray rank_distx = np.zeros((<object> distx).shape)
-    cdef float64_t[:, :] rank_distx_view = rank_distx
 
     if is_ranked:
         rank_distx = _rank_distance_matrix(distx)
 
     if global_corr == "rank":
-        distx = rank_distx
+        distx = rank_distx.astype(np.float)
 
     # 'mgc' distance transform (col-wise mean) - default
     cdef ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T

@@ -1070,7 +1070,6 @@ the individual data points on top.
    :align: center
    :include-source: 0
 
-
 Multiscale Graph Correlation (MGC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
