@@ -101,5 +101,10 @@ optimizers via plotting performance profiles.
 Statistics enhancements
 -----------------------
 
-The `scipy.stats` enhancements listed in the `scipy-roadmap-detailed`_ are of
+The `scipy.stats` enhancements listed in the :ref:`scipy-roadmap-detailed` are of
 particularly high importance to the project.
+
+- Improve the options for fitting a probability distribution to data.
+- Expand the set of hypothesis tests.  In particular, include all the basic
+  variations of analysis of variance.
+- Add confidence intervals for all statistical tests.

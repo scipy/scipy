@@ -355,23 +355,64 @@ functions, and spheroidal wave functions. Three possible ways to handle this:
 stats
 `````
 
-The ``scipy.stats`` subpackage does not seek to duplicate the advanced 
-functionality of downstream packages (e.g. StatsModels, LinearModels, PyMC3),
-but to provide a solid foundation for them. The following improvements will 
-help SciPy better serve this role.
+The ``scipy.stats`` subpackage aims to provide fundamental statistical
+methods as might be covered in standard statistics texts such as Johnson's
+"Miller & Freund's Probability and Statistics for Engineers", Sokal & Rohlf's
+"Biometry", or Zar's "Biostatistical Analysis".  It does not seek to duplicate
+the advanced functionality of downstream packages (e.g. StatsModels,
+LinearModels, PyMC3); instead, it can provide a solid foundation on which
+they can build.  (Note that these are rough guidelines, not strict rules.
+"Advanced" is an ill-defined and subjective term, and "advanced" methods
+may also be included in SciPy, especially if no other widely used and
+well-supported package covers the topic.  Also note that *some* duplication
+with downstream projects is inevitable and not necessarily a bad thing.)
 
-- Add fundamental and widely used hypothesis tests, including the various types
-  of ANOVA and ANCOVA.
-- Where appropriate, provide more than just a p-value as the result of a 
-  statistical test; include also confidence intervals and measures of effect 
+The following improvements will help SciPy better serve this role.
+
+- Add fundamental and widely used hypothesis tests:
+
+  - Alexander-Govern test
+  - Somers' D
+  - Kendall's tau-c
+  - Page's L-test
+  - Tukey-Kramer test
+  - the various types of analysis of variance (ANOVA):
+
+    - fixed-effects and random-effects ANOVA
+    - two-way ANOVA (single replicate, uniform number of replicates, variable
+      number of replicates)
+    - multiway ANOVA (i.e. generalize two-way ANOVA)
+    - nested ANOVA
+    - analysis of covariance (ANCOVA)
+
+- Where appropriate, provide more than just a p-value as the result of a
+  statistical test; include also confidence intervals and measures of effect
   size in the results.
-- Ensure that fitting a probability distribution to a data set is
-  easily accomplished with methods tailored to the distribution and 
-  and with calculations to assess the quality of the fit.
-- Implement additional widely used continuous and discrete probability 
-  distributions, including mixture distributions.
+- Enhance the `fit` method of the continuous probability distributions:
+
+  - Expand the options for fitting to include:
+
+    - method of moments
+    - maximal product spacings
+    - method of L-moments / probability weighted moments
+
+  - Include measures of goodness-of-fit in the results
+  - Handle censored data
+
+- Implement additional widely used continuous and discrete probability
+  distributions:
+
+  - noncentral hypergeometric distribution (both Fisher's and Wallenius')
+  - negative hypergeometric distribution
+  - multivariate hypergeometric distribution
+  - multivariate t distribution
+  - mixture distributions
+
 - Improve the core calculations provided by SciPy's probability distributions 
-  so they can robustly handle wide ranges of parameter values.
+  so they can robustly handle wide ranges of parameter values.  Specifically,
+  replace many of the PDF and CDF methods from the Fortran library CDFLIB
+  used in scipy.special with better code, perhaps ported from the Boost C++
+  library.
   
 In addition, we should:
 
