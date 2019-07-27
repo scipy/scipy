@@ -1620,6 +1620,12 @@ class Rotation(object):
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
+
+        # Correct improper rotation if necessary (as in Kabsch algorithm)
+        if np.linalg.det(u @ vh) < 0:
+            s[-1] = -s[-1]
+            u[:, -1] = -u[:, -1]
+
         C = np.dot(u, vh)
 
         zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
