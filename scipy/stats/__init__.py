@@ -231,7 +231,7 @@ Correlation functions
    linregress
    siegelslopes
    theilslopes
-   mgc
+   multiscale_graphcorr
 
 Statistical tests
 =================
