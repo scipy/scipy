@@ -1083,7 +1083,8 @@ packages:
 
 Let's use a custom plotting function to plot the data relationship:
 
-    >>> def mgc_plot(x, y, sim_name, mgc_dict, only_viz=False, only_mgc=False):
+    >>> def mgc_plot(x, y, sim_name, mgc_dict=None, only_viz=False,
+    ...              only_mgc=False):
     ...     """Plot sim and MGC-plot"""
     ...     if not only_mgc:
     ...         # simulation
