@@ -70,7 +70,7 @@ matrix:
             - *common_packages
             - python3.5-dbg
             - python3.5-dev
-   - python: 3.8-dev
+    - python: 3.8-dev
       env:
         - TESTMODE=fast
         - NUMPYSPEC="numpy"
