@@ -1372,9 +1372,10 @@ This function can also solve a generalization of the classic assignment problem 
 >>> from scipy.optimize import linear_sum_assignment
 >>> row_ind, col_ind = linear_sum_assignment(cost)
 >>> col_ind
->>> array([1, 0, 2])
+>>> np.array([1, 0, 2])
 >>> cost[row_ind, col_ind].sum()
->>> 5
+
+5
 
 Now we will use Hungarian method for solving a an assignment problem using
 linear_sum_assignment.
