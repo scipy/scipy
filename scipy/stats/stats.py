@@ -4424,6 +4424,9 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     >>> round(stat, 1), round(pvalue, 1)
     (0.4, 0.0)
     """
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
+        raise ValueError("x and/or why must be ndarrays")
+
     # check for NaNs
     _contains_nan(x, nan_policy='raise')
     _contains_nan(y, nan_policy='raise')
@@ -4452,7 +4455,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
 
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
     # warning)
-    if not np.issubdtype(type(reps), np.int64) or reps < 0:
+    if not isinstance(reps, int) or reps < 0:
         raise ValueError("Number of reps must be an integer greater than 0.")
     elif reps < 1000:
         msg = ("The number of replications is low (under 1000), and p-value "
