@@ -314,6 +314,8 @@ class NullSlice(Benchmark):
             for fmt in self.params[1]:
                 self._setup(density, fmt)
 
+    setup_cache.timeout = 120
+
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...
         with open('{}-{}.pck'.format(density, format), 'rb') as f:

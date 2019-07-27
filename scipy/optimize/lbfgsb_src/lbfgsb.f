@@ -2456,6 +2456,10 @@ c     This subroutine calls subroutine dcsrch from the Minpack2 library
 c       to perform the line search.  Subroutine dscrch is safeguarded so
 c       that all trial points lie within the feasible region.
 c
+c     Be mindful that the dcsrch subroutine being called is a copy in
+c       this file (lbfgsb.f) and NOT in the Minpack2 copy distributed
+c       by scipy.
+c      
 c     Subprograms called:
 c
 c       Minpack2 Library ... dcsrch.

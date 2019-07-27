@@ -62,7 +62,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
-        self.values = y
+        self.values = np.asarray(y)
 
     def __call__(self, *args):
         """
@@ -92,12 +92,11 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     Parameters
     ----------
-    points : ndarray of floats, shape (n, D)
-        Data point coordinates. Can either be an array of
-        shape (n, D), or a tuple of `ndim` arrays.
+    points : 2-D ndarray of floats with shape (n, D), or length D tuple of 1-D ndarrays with shape (n,).
+        Data point coordinates. 
     values : ndarray of float or complex, shape (n,)
         Data values.
-    xi : 2-D ndarray of float or tuple of 1-D array, shape (M, D)
+    xi : 2-D ndarray of floats with shape (m, D), or length D tuple of ndarrays broadcastable to the same shape.
         Points at which to interpolate data.
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of

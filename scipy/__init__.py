@@ -18,7 +18,8 @@ Using any of these subpackages requires an explicit import.  For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
@@ -121,3 +122,7 @@ else:
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
     del PytestTester
+
+    # This makes "from scipy import fft" return scipy.fft, not np.fft
+    del fft
+    from . import fft

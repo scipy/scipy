@@ -77,6 +77,31 @@ class TestTrimmedStats(object):
         y = stats.tvar(X, limits=None)
         assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
 
+        x_2d = arange(63, dtype=float64).reshape((9, 7))
+        y = stats.tvar(x_2d, axis=None)
+        assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
+
+        y = stats.tvar(x_2d, axis=0)
+        assert_array_almost_equal(y[0], np.full((1, 7), 367.50000000), decimal=8)
+
+        y = stats.tvar(x_2d, axis=1)
+        assert_array_almost_equal(y[0], np.full((1, 9), 4.66666667), decimal=8)
+
+        y = stats.tvar(x_2d[3, :])
+        assert_approx_equal(y, 4.666666666666667, significant=self.dprec)
+
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "Degrees of freedom <= 0 for slice.")
+
+            # Limiting some values along one axis
+            y = stats.tvar(x_2d, limits=(1, 5), axis=1, inclusive=(True, True))
+            assert_approx_equal(y[0], 2.5, significant=self.dprec)
+
+            # Limiting all values along one axis
+            y = stats.tvar(x_2d, limits=(0, 6), axis=1, inclusive=(True, True))
+            assert_approx_equal(y[0], 4.666666666666667, significant=self.dprec)
+            assert_equal(y[1], np.nan)
+
     def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
         assert_approx_equal(y, 2.1602468994692865, significant=self.dprec)

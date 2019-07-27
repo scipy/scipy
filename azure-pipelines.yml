@@ -23,12 +23,12 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib --user && \
+           pip3 install setuptools wheel numpy cython==0.29.2 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib --user && \
            apt-get -y install gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
-           wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.3-186-g701ea883-manylinux1_i686.tar.gz && \
-           tar zxvf openblas-v0.3.3-186-g701ea883-manylinux1_i686.tar.gz && \
+           wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.5-274-g6a8b4269-manylinux1_i686.tar.gz && \
+           tar zxvf openblas-v0.3.5-274-g6a8b4269-manylinux1_i686.tar.gz && \
            cp -r ./usr/local/lib/* /usr/lib && \
            cp ./usr/local/include/* /usr/include && \
            cd ../scipy && \
@@ -49,8 +49,8 @@ jobs:
   pool:
     vmImage: 'VS2017-Win2016'
   variables:
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.3-186-g701ea883-win32-gcc_7_1_0.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.3-186-g701ea883-win_amd64-gcc_7_1_0.zip
+      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.5-274-g6a8b4269-win32-gcc_7_1_0.zip
+      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.5-274-g6a8b4269-win_amd64-gcc_7_1_0.zip
   strategy:
     maxParallel: 4
     matrix:
@@ -95,7 +95,7 @@ jobs:
       Write-Host "Python Version: $pyversion"
       $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
       Write-Host "target path: $target"
-      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.3-186-g701ea883-gcc_7_1_0.a $target
+      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.5-274-g6a8b4269-gcc_7_1_0.a $target
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
@@ -107,7 +107,7 @@ jobs:
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
     condition: eq(variables['BITS'], 64)
-  - script: python -m pip install numpy cython==0.29.2 pytest pytest-timeout pytest-xdist pytest-env pytest-faulthandler pytest-cov Pillow mpmath matplotlib
+  - script: python -m pip install numpy cython==0.29.2 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib
     displayName: 'Install dependencies'
   - powershell: |
       If ($(BITS) -eq 32) {

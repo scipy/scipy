@@ -16,16 +16,16 @@ def get(name):
     return docdict.get(name)
 
 
-def add_newdoc(place, name, doc):
-    docdict['.'.join((place, name))] = doc
+def add_newdoc(name, doc):
+    docdict[name] = doc
 
 
-add_newdoc("scipy.special", "_sf_error_test_function",
+add_newdoc("_sf_error_test_function",
     """
     Private function; do not use.
     """)
 
-add_newdoc("scipy.special", "sph_harm",
+add_newdoc("sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
 
@@ -89,22 +89,22 @@ add_newdoc("scipy.special", "sph_harm",
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     """)
 
-add_newdoc("scipy.special", "_ellip_harm",
+add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
     """)
 
-add_newdoc("scipy.special", "_ellip_norm",
+add_newdoc("_ellip_norm",
     """
     Internal function, use `ellip_norm` instead.
     """)
 
-add_newdoc("scipy.special", "_lambertw",
+add_newdoc("_lambertw",
     """
     Internal function, use `lambertw` instead.
     """)
 
-add_newdoc("scipy.special", "wrightomega",
+add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
 
@@ -157,7 +157,7 @@ add_newdoc("scipy.special", "wrightomega",
     """)
 
 
-add_newdoc("scipy.special", "agm",
+add_newdoc("agm",
     """
     agm(a, b)
 
@@ -212,7 +212,7 @@ add_newdoc("scipy.special", "agm",
            [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
     """)
 
-add_newdoc("scipy.special", "airy",
+add_newdoc("airy",
     r"""
     airy(z)
 
@@ -285,7 +285,7 @@ add_newdoc("scipy.special", "airy",
 
     """)
 
-add_newdoc("scipy.special", "airye",
+add_newdoc("airye",
     """
     airye(z)
 
@@ -323,7 +323,7 @@ add_newdoc("scipy.special", "airye",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "bdtr",
+add_newdoc("bdtr",
     r"""
     bdtr(k, n, p)
 
@@ -366,7 +366,7 @@ add_newdoc("scipy.special", "bdtr",
 
     """)
 
-add_newdoc("scipy.special", "bdtrc",
+add_newdoc("bdtrc",
     r"""
     bdtrc(k, n, p)
 
@@ -414,7 +414,7 @@ add_newdoc("scipy.special", "bdtrc",
 
     """)
 
-add_newdoc("scipy.special", "bdtri",
+add_newdoc("bdtri",
     """
     bdtri(k, n, y)
 
@@ -459,7 +459,7 @@ add_newdoc("scipy.special", "bdtri",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "bdtrik",
+add_newdoc("bdtrik",
     """
     bdtrik(y, n, p)
 
@@ -509,7 +509,7 @@ add_newdoc("scipy.special", "bdtrik",
 
     """)
 
-add_newdoc("scipy.special", "bdtrin",
+add_newdoc("bdtrin",
     """
     bdtrin(k, y, p)
 
@@ -558,7 +558,7 @@ add_newdoc("scipy.special", "bdtrin",
            Functions, Inverses, and Other Parameters.
     """)
 
-add_newdoc("scipy.special", "binom",
+add_newdoc("binom",
     """
     binom(n, k)
 
@@ -570,7 +570,7 @@ add_newdoc("scipy.special", "binom",
 
     """)
 
-add_newdoc("scipy.special", "btdtria",
+add_newdoc("btdtria",
     r"""
     btdtria(p, b, x)
 
@@ -623,7 +623,7 @@ add_newdoc("scipy.special", "btdtria",
 
     """)
 
-add_newdoc("scipy.special", "btdtrib",
+add_newdoc("btdtrib",
     r"""
     btdtria(a, p, x)
 
@@ -677,35 +677,35 @@ add_newdoc("scipy.special", "btdtrib",
 
     """)
 
-add_newdoc("scipy.special", "bei",
+add_newdoc("bei",
     """
     bei(x)
 
     Kelvin function bei
     """)
 
-add_newdoc("scipy.special", "beip",
+add_newdoc("beip",
     """
     beip(x)
 
     Derivative of the Kelvin function `bei`
     """)
 
-add_newdoc("scipy.special", "ber",
+add_newdoc("ber",
     """
     ber(x)
 
     Kelvin function ber.
     """)
 
-add_newdoc("scipy.special", "berp",
+add_newdoc("berp",
     """
     berp(x)
 
     Derivative of the Kelvin function `ber`
     """)
 
-add_newdoc("scipy.special", "besselpoly",
+add_newdoc("besselpoly",
     r"""
     besselpoly(a, lmb, nu)
 
@@ -720,7 +720,7 @@ add_newdoc("scipy.special", "besselpoly",
 
     """)
 
-add_newdoc("scipy.special", "beta",
+add_newdoc("beta",
     """
     beta(a, b)
 
@@ -731,7 +731,7 @@ add_newdoc("scipy.special", "beta",
         beta(a, b) =  gamma(a) * gamma(b) / gamma(a+b)
     """)
 
-add_newdoc("scipy.special", "betainc",
+add_newdoc("betainc",
     """
     betainc(a, b, x)
 
@@ -751,7 +751,7 @@ add_newdoc("scipy.special", "betainc",
 
     """)
 
-add_newdoc("scipy.special", "betaincinv",
+add_newdoc("betaincinv",
     """
     betaincinv(a, b, y)
 
@@ -760,7 +760,7 @@ add_newdoc("scipy.special", "betaincinv",
     Compute `x` such that betainc(a, b, x) = y.
     """)
 
-add_newdoc("scipy.special", "betaln",
+add_newdoc("betaln",
     """
     betaln(a, b)
 
@@ -769,7 +769,7 @@ add_newdoc("scipy.special", "betaln",
     Computes ``ln(abs(beta(a, b)))``.
     """)
 
-add_newdoc("scipy.special", "boxcox",
+add_newdoc("boxcox",
     """
     boxcox(x, lmbda)
 
@@ -809,7 +809,7 @@ add_newdoc("scipy.special", "boxcox",
     array([ 0.69314718,  1.        ,  1.5       ])
     """)
 
-add_newdoc("scipy.special", "boxcox1p",
+add_newdoc("boxcox1p",
     """
     boxcox1p(x, lmbda)
 
@@ -849,7 +849,7 @@ add_newdoc("scipy.special", "boxcox1p",
     array([ 0.00996272,  0.09645476])
     """)
 
-add_newdoc("scipy.special", "inv_boxcox",
+add_newdoc("inv_boxcox",
     """
     inv_boxcox(y, lmbda)
 
@@ -885,7 +885,7 @@ add_newdoc("scipy.special", "inv_boxcox",
     array([1., 4., 10.])
     """)
 
-add_newdoc("scipy.special", "inv_boxcox1p",
+add_newdoc("inv_boxcox1p",
     """
     inv_boxcox1p(y, lmbda)
 
@@ -921,7 +921,7 @@ add_newdoc("scipy.special", "inv_boxcox1p",
     array([1., 4., 10.])
     """)
 
-add_newdoc("scipy.special", "btdtr",
+add_newdoc("btdtr",
     r"""
     btdtr(a, b, x)
 
@@ -968,7 +968,7 @@ add_newdoc("scipy.special", "btdtr",
 
     """)
 
-add_newdoc("scipy.special", "btdtri",
+add_newdoc("btdtri",
     r"""
     btdtri(a, b, p)
 
@@ -1013,7 +1013,7 @@ add_newdoc("scipy.special", "btdtri",
 
     """)
 
-add_newdoc("scipy.special", "cbrt",
+add_newdoc("cbrt",
     """
     cbrt(x)
 
@@ -1040,7 +1040,7 @@ add_newdoc("scipy.special", "cbrt",
 
     """)
 
-add_newdoc("scipy.special", "chdtr",
+add_newdoc("chdtr",
     """
     chdtr(v, x)
 
@@ -1052,7 +1052,7 @@ add_newdoc("scipy.special", "chdtr",
         1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
     """)
 
-add_newdoc("scipy.special", "chdtrc",
+add_newdoc("chdtrc",
     """
     chdtrc(v, x)
 
@@ -1065,7 +1065,7 @@ add_newdoc("scipy.special", "chdtrc",
         1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)
     """)
 
-add_newdoc("scipy.special", "chdtri",
+add_newdoc("chdtri",
     """
     chdtri(v, p)
 
@@ -1074,7 +1074,7 @@ add_newdoc("scipy.special", "chdtri",
     Returns the argument x such that ``chdtrc(v, x) == p``.
     """)
 
-add_newdoc("scipy.special", "chdtriv",
+add_newdoc("chdtriv",
     """
     chdtriv(p, x)
 
@@ -1083,7 +1083,7 @@ add_newdoc("scipy.special", "chdtriv",
     Returns the argument v such that ``chdtr(v, x) == p``.
     """)
 
-add_newdoc("scipy.special", "chndtr",
+add_newdoc("chndtr",
     """
     chndtr(x, df, nc)
 
@@ -1091,49 +1091,49 @@ add_newdoc("scipy.special", "chndtr",
 
     """)
 
-add_newdoc("scipy.special", "chndtrix",
+add_newdoc("chndtrix",
     """
     chndtrix(p, df, nc)
 
     Inverse to `chndtr` vs `x`
     """)
 
-add_newdoc("scipy.special", "chndtridf",
+add_newdoc("chndtridf",
     """
     chndtridf(x, p, nc)
 
     Inverse to `chndtr` vs `df`
     """)
 
-add_newdoc("scipy.special", "chndtrinc",
+add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p)
 
     Inverse to `chndtr` vs `nc`
     """)
 
-add_newdoc("scipy.special", "cosdg",
+add_newdoc("cosdg",
     """
     cosdg(x)
 
     Cosine of the angle `x` given in degrees.
     """)
 
-add_newdoc("scipy.special", "cosm1",
+add_newdoc("cosm1",
     """
     cosm1(x)
 
     cos(x) - 1 for use when `x` is near zero.
     """)
 
-add_newdoc("scipy.special", "cotdg",
+add_newdoc("cotdg",
     """
     cotdg(x)
 
     Cotangent of the angle `x` given in degrees.
     """)
 
-add_newdoc("scipy.special", "dawsn",
+add_newdoc("dawsn",
     """
     dawsn(x)
 
@@ -1164,7 +1164,7 @@ add_newdoc("scipy.special", "dawsn",
 
     """)
 
-add_newdoc("scipy.special", "ellipe",
+add_newdoc("ellipe",
     r"""
     ellipe(m)
 
@@ -1247,7 +1247,7 @@ add_newdoc("scipy.special", "ellipe",
 
     """)
 
-add_newdoc("scipy.special", "ellipeinc",
+add_newdoc("ellipeinc",
     r"""
     ellipeinc(phi, m)
 
@@ -1298,7 +1298,7 @@ add_newdoc("scipy.special", "ellipeinc",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
-add_newdoc("scipy.special", "ellipj",
+add_newdoc("ellipj",
     """
     ellipj(u, m)
 
@@ -1350,7 +1350,7 @@ add_newdoc("scipy.special", "ellipj",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "ellipkm1",
+add_newdoc("ellipkm1",
     """
     ellipkm1(p)
 
@@ -1402,7 +1402,53 @@ add_newdoc("scipy.special", "ellipkm1",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "ellipkinc",
+add_newdoc("ellipk",
+    r"""
+    ellipk(m)
+
+    Complete elliptic integral of the first kind.
+
+    This function is defined as
+
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        The parameter of the elliptic integral.
+
+    Returns
+    -------
+    K : array_like
+        Value of the elliptic integral.
+
+    Notes
+    -----
+    For more precision around point m = 1, use `ellipkm1`, which this
+    function calls.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind around m = 1
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    """)
+
+add_newdoc("ellipkinc",
     r"""
     ellipkinc(phi, m)
 
@@ -1454,7 +1500,7 @@ add_newdoc("scipy.special", "ellipkinc",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
-add_newdoc("scipy.special", "entr",
+add_newdoc("entr",
     r"""
     entr(x)
 
@@ -1484,7 +1530,7 @@ add_newdoc("scipy.special", "entr",
 
     """)
 
-add_newdoc("scipy.special", "erf",
+add_newdoc("erf",
     """
     erf(z)
 
@@ -1533,7 +1579,7 @@ add_newdoc("scipy.special", "erf",
 
     """)
 
-add_newdoc("scipy.special", "erfc",
+add_newdoc("erfc",
     """
     erfc(x)
 
@@ -1560,7 +1606,7 @@ add_newdoc("scipy.special", "erfc",
 
     """)
 
-add_newdoc("scipy.special", "erfi",
+add_newdoc("erfi",
     """
     erfi(z)
 
@@ -1592,7 +1638,7 @@ add_newdoc("scipy.special", "erfi",
 
     """)
 
-add_newdoc("scipy.special", "erfcx",
+add_newdoc("erfcx",
     """
     erfcx(x)
 
@@ -1624,7 +1670,7 @@ add_newdoc("scipy.special", "erfcx",
 
     """)
 
-add_newdoc("scipy.special", "eval_jacobi",
+add_newdoc("eval_jacobi",
     r"""
     eval_jacobi(n, alpha, beta, x, out=None)
 
@@ -1667,7 +1713,7 @@ add_newdoc("scipy.special", "eval_jacobi",
     hyp2f1 : Gauss hypergeometric function
     """)
 
-add_newdoc("scipy.special", "eval_sh_jacobi",
+add_newdoc("eval_sh_jacobi",
     r"""
     eval_sh_jacobi(n, p, q, x, out=None)
 
@@ -1705,7 +1751,7 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
     eval_jacobi : evaluate Jacobi polynomials
     """)
 
-add_newdoc("scipy.special", "eval_gegenbauer",
+add_newdoc("eval_gegenbauer",
     r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
@@ -1746,7 +1792,7 @@ add_newdoc("scipy.special", "eval_gegenbauer",
     hyp2f1 : Gauss hypergeometric function
     """)
 
-add_newdoc("scipy.special", "eval_chebyt",
+add_newdoc("eval_chebyt",
     r"""
     eval_chebyt(n, x, out=None)
 
@@ -1791,7 +1837,7 @@ add_newdoc("scipy.special", "eval_chebyt",
     up to order ``10000``.
     """)
 
-add_newdoc("scipy.special", "eval_chebyu",
+add_newdoc("eval_chebyu",
     r"""
     eval_chebyu(n, x, out=None)
 
@@ -1830,7 +1876,7 @@ add_newdoc("scipy.special", "eval_chebyu",
     hyp2f1 : Gauss hypergeometric function
     """)
 
-add_newdoc("scipy.special", "eval_chebys",
+add_newdoc("eval_chebys",
     r"""
     eval_chebys(n, x, out=None)
 
@@ -1866,7 +1912,7 @@ add_newdoc("scipy.special", "eval_chebys",
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
-add_newdoc("scipy.special", "eval_chebyc",
+add_newdoc("eval_chebyc",
     r"""
     eval_chebyc(n, x, out=None)
 
@@ -1903,7 +1949,7 @@ add_newdoc("scipy.special", "eval_chebyc",
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
     """)
 
-add_newdoc("scipy.special", "eval_sh_chebyt",
+add_newdoc("eval_sh_chebyt",
     r"""
     eval_sh_chebyt(n, x, out=None)
 
@@ -1940,7 +1986,7 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     """)
 
-add_newdoc("scipy.special", "eval_sh_chebyu",
+add_newdoc("eval_sh_chebyu",
     r"""
     eval_sh_chebyu(n, x, out=None)
 
@@ -1976,7 +2022,7 @@ add_newdoc("scipy.special", "eval_sh_chebyu",
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
-add_newdoc("scipy.special", "eval_legendre",
+add_newdoc("eval_legendre",
     r"""
     eval_legendre(n, x, out=None)
 
@@ -2015,7 +2061,7 @@ add_newdoc("scipy.special", "eval_legendre",
     numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
-add_newdoc("scipy.special", "eval_sh_legendre",
+add_newdoc("eval_sh_legendre",
     r"""
     eval_sh_legendre(n, x, out=None)
 
@@ -2051,7 +2097,7 @@ add_newdoc("scipy.special", "eval_sh_legendre",
     numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
-add_newdoc("scipy.special", "eval_genlaguerre",
+add_newdoc("eval_genlaguerre",
     r"""
     eval_genlaguerre(n, alpha, x, out=None)
 
@@ -2095,7 +2141,7 @@ add_newdoc("scipy.special", "eval_genlaguerre",
     eval_laguerre : evaluate Laguerre polynomials
     """)
 
-add_newdoc("scipy.special", "eval_laguerre",
+add_newdoc("eval_laguerre",
      r"""
      eval_laguerre(n, x, out=None)
 
@@ -2134,7 +2180,7 @@ add_newdoc("scipy.special", "eval_laguerre",
      eval_genlaguerre : evaluate generalized Laguerre polynomials
      """)
 
-add_newdoc("scipy.special", "eval_hermite",
+add_newdoc("eval_hermite",
     r"""
     eval_hermite(n, x, out=None)
 
@@ -2169,7 +2215,7 @@ add_newdoc("scipy.special", "eval_hermite",
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
     """)
 
-add_newdoc("scipy.special", "eval_hermitenorm",
+add_newdoc("eval_hermitenorm",
     r"""
     eval_hermitenorm(n, x, out=None)
 
@@ -2205,7 +2251,7 @@ add_newdoc("scipy.special", "eval_hermitenorm",
     eval_hermite : evaluate physicist's Hermite polynomials
     """)
 
-add_newdoc("scipy.special", "exp1",
+add_newdoc("exp1",
     """
     exp1(z)
 
@@ -2216,7 +2262,7 @@ add_newdoc("scipy.special", "exp1",
         integral(exp(-z*t)/t, t=1..inf).
     """)
 
-add_newdoc("scipy.special", "exp10",
+add_newdoc("exp10",
     """
     exp10(x)
 
@@ -2245,7 +2291,7 @@ add_newdoc("scipy.special", "exp10",
 
     """)
 
-add_newdoc("scipy.special", "exp2",
+add_newdoc("exp2",
     """
     exp2(x)
 
@@ -2273,7 +2319,7 @@ add_newdoc("scipy.special", "exp2",
            [ 1.41421356,  2.        ,  2.82842712]])
     """)
 
-add_newdoc("scipy.special", "expi",
+add_newdoc("expi",
     """
     expi(x)
 
@@ -2286,7 +2332,7 @@ add_newdoc("scipy.special", "expi",
     See `expn` for a different exponential integral.
     """)
 
-add_newdoc('scipy.special', 'expit',
+add_newdoc('expit',
     """
     expit(x)
 
@@ -2345,7 +2391,7 @@ add_newdoc('scipy.special', 'expit',
 
     """)
 
-add_newdoc("scipy.special", "expm1",
+add_newdoc("expm1",
     """
     expm1(x)
 
@@ -2392,7 +2438,7 @@ add_newdoc("scipy.special", "expm1",
 
     """)
 
-add_newdoc("scipy.special", "expn",
+add_newdoc("expn",
     """
     expn(n, x)
 
@@ -2404,7 +2450,7 @@ add_newdoc("scipy.special", "expn",
         integral(exp(-x*t) / t**n, t=1..inf).
     """)
 
-add_newdoc("scipy.special", "exprel",
+add_newdoc("exprel",
     r"""
     exprel(x)
 
@@ -2452,7 +2498,7 @@ add_newdoc("scipy.special", "exprel",
     0.99999999392252903
     """)
 
-add_newdoc("scipy.special", "fdtr",
+add_newdoc("fdtr",
     r"""
     fdtr(dfn, dfd, x)
 
@@ -2503,7 +2549,7 @@ add_newdoc("scipy.special", "fdtr",
 
     """)
 
-add_newdoc("scipy.special", "fdtrc",
+add_newdoc("fdtrc",
     r"""
     fdtrc(dfn, dfd, x)
 
@@ -2547,7 +2593,7 @@ add_newdoc("scipy.special", "fdtrc",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "fdtri",
+add_newdoc("fdtri",
     r"""
     fdtri(dfn, dfd, p)
 
@@ -2595,7 +2641,7 @@ add_newdoc("scipy.special", "fdtri",
 
     """)
 
-add_newdoc("scipy.special", "fdtridfd",
+add_newdoc("fdtridfd",
     """
     fdtridfd(dfn, p, x)
 
@@ -2604,7 +2650,7 @@ add_newdoc("scipy.special", "fdtridfd",
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
-add_newdoc("scipy.special", "fdtridfn",
+add_newdoc("fdtridfn",
     """
     fdtridfn(p, dfd, x)
 
@@ -2613,7 +2659,7 @@ add_newdoc("scipy.special", "fdtridfn",
     finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
-add_newdoc("scipy.special", "fresnel",
+add_newdoc("fresnel",
     """
     fresnel(z)
 
@@ -2636,7 +2682,7 @@ add_newdoc("scipy.special", "fresnel",
 
     """)
 
-add_newdoc("scipy.special", "gamma",
+add_newdoc("gamma",
     r"""
     gamma(z)
 
@@ -2695,7 +2741,7 @@ add_newdoc("scipy.special", "gamma",
 
     """)
 
-add_newdoc("scipy.special", "gammainc",
+add_newdoc("gammainc",
     r"""
     gammainc(a, x)
 
@@ -2727,7 +2773,7 @@ add_newdoc("scipy.special", "gammainc",
        https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
-add_newdoc("scipy.special", "gammaincc",
+add_newdoc("gammaincc",
     r"""
     gammaincc(a, x)
 
@@ -2759,7 +2805,7 @@ add_newdoc("scipy.special", "gammaincc",
        https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
-add_newdoc("scipy.special", "gammainccinv",
+add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
@@ -2768,7 +2814,7 @@ add_newdoc("scipy.special", "gammainccinv",
     Returns `x` such that ``gammaincc(a, x) == y``.
     """)
 
-add_newdoc("scipy.special", "gammaincinv",
+add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
@@ -2777,7 +2823,7 @@ add_newdoc("scipy.special", "gammaincinv",
     Returns `x` such that ``gammainc(a, x) = y``.
     """)
 
-add_newdoc("scipy.special", "gammaln",
+add_newdoc("gammaln",
     """
     Logarithm of the absolute value of the Gamma function.
 
@@ -2805,7 +2851,7 @@ add_newdoc("scipy.special", "gammaln",
     For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
     """)
 
-add_newdoc("scipy.special", "gammasgn",
+add_newdoc("gammasgn",
     """
     gammasgn(x)
 
@@ -2817,7 +2863,7 @@ add_newdoc("scipy.special", "gammasgn",
     loggamma
     """)
 
-add_newdoc("scipy.special", "gdtr",
+add_newdoc("gdtr",
     r"""
     gdtr(a, b, x)
 
@@ -2868,7 +2914,7 @@ add_newdoc("scipy.special", "gdtr",
 
     """)
 
-add_newdoc("scipy.special", "gdtrc",
+add_newdoc("gdtrc",
     r"""
     gdtrc(a, b, x)
 
@@ -2918,7 +2964,7 @@ add_newdoc("scipy.special", "gdtrc",
 
     """)
 
-add_newdoc("scipy.special", "gdtria",
+add_newdoc("gdtria",
     """
     gdtria(p, b, x, out=None)
 
@@ -2987,7 +3033,7 @@ add_newdoc("scipy.special", "gdtria",
     1.2
     """)
 
-add_newdoc("scipy.special", "gdtrib",
+add_newdoc("gdtrib",
     """
     gdtrib(a, p, x, out=None)
 
@@ -3056,7 +3102,7 @@ add_newdoc("scipy.special", "gdtrib",
     3.3999999999723882
     """)
 
-add_newdoc("scipy.special", "gdtrix",
+add_newdoc("gdtrix",
     """
     gdtrix(a, b, p, out=None)
 
@@ -3126,7 +3172,7 @@ add_newdoc("scipy.special", "gdtrix",
     5.5999999999999996
     """)
 
-add_newdoc("scipy.special", "hankel1",
+add_newdoc("hankel1",
     r"""
     hankel1(v, z)
 
@@ -3168,7 +3214,7 @@ add_newdoc("scipy.special", "hankel1",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "hankel1e",
+add_newdoc("hankel1e",
     r"""
     hankel1e(v, z)
 
@@ -3210,7 +3256,7 @@ add_newdoc("scipy.special", "hankel1e",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "hankel2",
+add_newdoc("hankel2",
     r"""
     hankel2(v, z)
 
@@ -3252,7 +3298,7 @@ add_newdoc("scipy.special", "hankel2",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "hankel2e",
+add_newdoc("hankel2e",
     r"""
     hankel2e(v, z)
 
@@ -3295,7 +3341,7 @@ add_newdoc("scipy.special", "hankel2e",
 
     """)
 
-add_newdoc("scipy.special", "huber",
+add_newdoc("huber",
     r"""
     huber(delta, r)
 
@@ -3323,7 +3369,7 @@ add_newdoc("scipy.special", "huber",
 
     """)
 
-add_newdoc("scipy.special", "hyp0f1",
+add_newdoc("hyp0f1",
     r"""
     hyp0f1(v, x)
 
@@ -3349,45 +3395,14 @@ add_newdoc("scipy.special", "hyp0f1",
     and satisfies the differential equation :math:`f''(z) + vf'(z) = f(z)`.
     """)
 
-add_newdoc("scipy.special", "hyp1f1",
+add_newdoc("hyp1f1",
     """
     hyp1f1(a, b, x)
 
     Confluent hypergeometric function 1F1(a, b; x)
     """)
 
-add_newdoc("scipy.special", "hyp1f2",
-    """
-    hyp1f2(a, b, c, x)
-
-    Hypergeometric function 1F2 and error estimate
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
-    """)
-
-add_newdoc("scipy.special", "hyp2f0",
-    """
-    hyp2f0(a, b, x, type)
-
-    Hypergeometric function 2F0 in y and an error estimate
-
-    The parameter `type` determines a convergence factor and can be
-    either 1 or 2.
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
-    """)
-
-add_newdoc("scipy.special", "hyp2f1",
+add_newdoc("hyp2f1",
     r"""
     hyp2f1(a, b, c, z)
 
@@ -3436,28 +3451,14 @@ add_newdoc("scipy.special", "hyp2f1",
 
     """)
 
-add_newdoc("scipy.special", "hyp3f0",
-    """
-    hyp3f0(a, b, c, x)
-
-    Hypergeometric function 3F0 in y and an error estimate
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
-    """)
-
-add_newdoc("scipy.special", "hyperu",
+add_newdoc("hyperu",
     """
     hyperu(a, b, x)
 
     Confluent hypergeometric function U(a, b, x) of the second kind
     """)
 
-add_newdoc("scipy.special", "i0",
+add_newdoc("i0",
     r"""
     i0(x)
 
@@ -3498,7 +3499,7 @@ add_newdoc("scipy.special", "i0",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "i0e",
+add_newdoc("i0e",
     """
     i0e(x)
 
@@ -3539,7 +3540,7 @@ add_newdoc("scipy.special", "i0e",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "i1",
+add_newdoc("i1",
     r"""
     i1(x)
 
@@ -3581,7 +3582,7 @@ add_newdoc("scipy.special", "i1",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "i1e",
+add_newdoc("i1e",
     """
     i1e(x)
 
@@ -3622,12 +3623,12 @@ add_newdoc("scipy.special", "i1e",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "_igam_fac",
+add_newdoc("_igam_fac",
     """
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "it2i0k0",
+add_newdoc("it2i0k0",
     """
     it2i0k0(x)
 
@@ -3641,7 +3642,7 @@ add_newdoc("scipy.special", "it2i0k0",
         ``integral(k0(t)/t, t=x..inf)``
     """)
 
-add_newdoc("scipy.special", "it2j0y0",
+add_newdoc("it2j0y0",
     """
     it2j0y0(x)
 
@@ -3655,7 +3656,7 @@ add_newdoc("scipy.special", "it2j0y0",
         ``integral(y0(t)/t, t=x..inf)``
     """)
 
-add_newdoc("scipy.special", "it2struve0",
+add_newdoc("it2struve0",
     r"""
     it2struve0(x)
 
@@ -3694,7 +3695,7 @@ add_newdoc("scipy.special", "it2struve0",
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
-add_newdoc("scipy.special", "itairy",
+add_newdoc("itairy",
     """
     itairy(x)
 
@@ -3733,7 +3734,7 @@ add_newdoc("scipy.special", "itairy",
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
-add_newdoc("scipy.special", "iti0k0",
+add_newdoc("iti0k0",
     """
     iti0k0(x)
 
@@ -3747,7 +3748,7 @@ add_newdoc("scipy.special", "iti0k0",
     ii0, ik0
     """)
 
-add_newdoc("scipy.special", "itj0y0",
+add_newdoc("itj0y0",
     """
     itj0y0(x)
 
@@ -3761,7 +3762,7 @@ add_newdoc("scipy.special", "itj0y0",
     ij0, iy0
     """)
 
-add_newdoc("scipy.special", "itmodstruve0",
+add_newdoc("itmodstruve0",
     r"""
     itmodstruve0(x)
 
@@ -3793,7 +3794,7 @@ add_newdoc("scipy.special", "itmodstruve0",
 
     """)
 
-add_newdoc("scipy.special", "itstruve0",
+add_newdoc("itstruve0",
     r"""
     itstruve0(x)
 
@@ -3829,7 +3830,7 @@ add_newdoc("scipy.special", "itstruve0",
 
     """)
 
-add_newdoc("scipy.special", "iv",
+add_newdoc("iv",
     r"""
     iv(v, z)
 
@@ -3887,7 +3888,7 @@ add_newdoc("scipy.special", "iv",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "ive",
+add_newdoc("ive",
     r"""
     ive(v, z)
 
@@ -3939,7 +3940,7 @@ add_newdoc("scipy.special", "ive",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "j0",
+add_newdoc("j0",
     r"""
     j0(x)
 
@@ -3986,7 +3987,7 @@ add_newdoc("scipy.special", "j0",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "j1",
+add_newdoc("j1",
     """
     j1(x)
 
@@ -4025,7 +4026,7 @@ add_newdoc("scipy.special", "j1",
 
     """)
 
-add_newdoc("scipy.special", "jn",
+add_newdoc("jn",
     """
     jn(n, x)
 
@@ -4043,7 +4044,7 @@ add_newdoc("scipy.special", "jn",
 
     """)
 
-add_newdoc("scipy.special", "jv",
+add_newdoc("jv",
     r"""
     jv(v, z)
 
@@ -4095,7 +4096,7 @@ add_newdoc("scipy.special", "jv",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "jve",
+add_newdoc("jve",
     r"""
     jve(v, z)
 
@@ -4144,7 +4145,7 @@ add_newdoc("scipy.special", "jve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "k0",
+add_newdoc("k0",
     r"""
     k0(x)
 
@@ -4181,7 +4182,7 @@ add_newdoc("scipy.special", "k0",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "k0e",
+add_newdoc("k0e",
     """
     k0e(x)
 
@@ -4220,7 +4221,7 @@ add_newdoc("scipy.special", "k0e",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "k1",
+add_newdoc("k1",
     """
     k1(x)
 
@@ -4254,7 +4255,7 @@ add_newdoc("scipy.special", "k1",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "k1e",
+add_newdoc("k1e",
     """
     k1e(x)
 
@@ -4293,21 +4294,21 @@ add_newdoc("scipy.special", "k1e",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "kei",
+add_newdoc("kei",
     """
     kei(x)
 
     Kelvin function ker
     """)
 
-add_newdoc("scipy.special", "keip",
+add_newdoc("keip",
     """
     keip(x)
 
     Derivative of the Kelvin function kei
     """)
 
-add_newdoc("scipy.special", "kelvin",
+add_newdoc("kelvin",
     """
     kelvin(x)
 
@@ -4323,21 +4324,21 @@ add_newdoc("scipy.special", "kelvin",
         for ker and kei.
     """)
 
-add_newdoc("scipy.special", "ker",
+add_newdoc("ker",
     """
     ker(x)
 
     Kelvin function ker
     """)
 
-add_newdoc("scipy.special", "kerp",
+add_newdoc("kerp",
     """
     kerp(x)
 
     Derivative of the Kelvin function ker
     """)
 
-add_newdoc("scipy.special", "kl_div",
+add_newdoc("kl_div",
     r"""
     kl_div(x, y)
 
@@ -4369,7 +4370,7 @@ add_newdoc("scipy.special", "kl_div",
 
     """)
 
-add_newdoc("scipy.special", "kn",
+add_newdoc("kn",
     r"""
     kn(n, x)
 
@@ -4432,7 +4433,7 @@ add_newdoc("scipy.special", "kn",
     array([   44.23241585,   360.9605896 ,  3653.83831186])
     """)
 
-add_newdoc("scipy.special", "kolmogi",
+add_newdoc("kolmogi",
     """
     kolmogi(p)
 
@@ -4474,7 +4475,7 @@ add_newdoc("scipy.special", "kolmogi",
 
     """)
 
-add_newdoc("scipy.special", "kolmogorov",
+add_newdoc("kolmogorov",
     r"""
     kolmogorov(y)
 
@@ -4563,22 +4564,22 @@ add_newdoc("scipy.special", "kolmogorov",
     >>> plt.show()
     """)
 
-add_newdoc("scipy.special", "_kolmogc",
+add_newdoc("_kolmogc",
     r"""
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_kolmogci",
+add_newdoc("_kolmogci",
     r"""
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_kolmogp",
+add_newdoc("_kolmogp",
     r"""
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "kv",
+add_newdoc("kv",
     r"""
     kv(v, z)
 
@@ -4651,7 +4652,7 @@ add_newdoc("scipy.special", "kv",
 
     """)
 
-add_newdoc("scipy.special", "kve",
+add_newdoc("kve",
     r"""
     kve(v, z)
 
@@ -4690,29 +4691,29 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
-add_newdoc("scipy.special", "_lanczos_sum_expg_scaled",
+add_newdoc("_lanczos_sum_expg_scaled",
     """
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_lgam1p",
+add_newdoc("_lgam1p",
     """
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "log1p",
+add_newdoc("log1p",
     """
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
     """)
 
-add_newdoc("scipy.special", "_log1pmx",
+add_newdoc("_log1pmx",
     """
     Internal function, do not use.
     """)
 
-add_newdoc('scipy.special', 'logit',
+add_newdoc('logit',
     """
     logit(x)
 
@@ -4771,7 +4772,7 @@ add_newdoc('scipy.special', 'logit',
 
     """)
 
-add_newdoc("scipy.special", "lpmv",
+add_newdoc("lpmv",
     r"""
     lpmv(m, v, x)
 
@@ -4826,7 +4827,7 @@ add_newdoc("scipy.special", "lpmv",
 
     """)
 
-add_newdoc("scipy.special", "mathieu_a",
+add_newdoc("mathieu_a",
     """
     mathieu_a(m, q)
 
@@ -4836,7 +4837,7 @@ add_newdoc("scipy.special", "mathieu_a",
     ``ce_m(z, q)``, of Mathieu's equation.
     """)
 
-add_newdoc("scipy.special", "mathieu_b",
+add_newdoc("mathieu_b",
     """
     mathieu_b(m, q)
 
@@ -4846,7 +4847,7 @@ add_newdoc("scipy.special", "mathieu_b",
     ``se_m(z, q)``, of Mathieu's equation.
     """)
 
-add_newdoc("scipy.special", "mathieu_cem",
+add_newdoc("mathieu_cem",
     """
     mathieu_cem(m, q, x)
 
@@ -4873,7 +4874,7 @@ add_newdoc("scipy.special", "mathieu_cem",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modcem1",
+add_newdoc("mathieu_modcem1",
     """
     mathieu_modcem1(m, q, x)
 
@@ -4891,7 +4892,7 @@ add_newdoc("scipy.special", "mathieu_modcem1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modcem2",
+add_newdoc("mathieu_modcem2",
     """
     mathieu_modcem2(m, q, x)
 
@@ -4909,7 +4910,7 @@ add_newdoc("scipy.special", "mathieu_modcem2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modsem1",
+add_newdoc("mathieu_modsem1",
     """
     mathieu_modsem1(m, q, x)
 
@@ -4927,7 +4928,7 @@ add_newdoc("scipy.special", "mathieu_modsem1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modsem2",
+add_newdoc("mathieu_modsem2",
     """
     mathieu_modsem2(m, q, x)
 
@@ -4945,7 +4946,7 @@ add_newdoc("scipy.special", "mathieu_modsem2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_sem",
+add_newdoc("mathieu_sem",
     """
     mathieu_sem(m, q, x)
 
@@ -4972,7 +4973,7 @@ add_newdoc("scipy.special", "mathieu_sem",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "modfresnelm",
+add_newdoc("modfresnelm",
     """
     modfresnelm(x)
 
@@ -4986,7 +4987,7 @@ add_newdoc("scipy.special", "modfresnelm",
         Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
     """)
 
-add_newdoc("scipy.special", "modfresnelp",
+add_newdoc("modfresnelp",
     """
     modfresnelp(x)
 
@@ -5000,7 +5001,7 @@ add_newdoc("scipy.special", "modfresnelp",
         Integral ``K_+(x)``: ``1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp``
     """)
 
-add_newdoc("scipy.special", "modstruve",
+add_newdoc("modstruve",
     r"""
     modstruve(v, x)
 
@@ -5048,7 +5049,7 @@ add_newdoc("scipy.special", "modstruve",
            https://dlmf.nist.gov/11
     """)
 
-add_newdoc("scipy.special", "nbdtr",
+add_newdoc("nbdtr",
     r"""
     nbdtr(k, n, p)
 
@@ -5104,7 +5105,7 @@ add_newdoc("scipy.special", "nbdtr",
 
     """)
 
-add_newdoc("scipy.special", "nbdtrc",
+add_newdoc("nbdtrc",
     r"""
     nbdtrc(k, n, p)
 
@@ -5155,7 +5156,7 @@ add_newdoc("scipy.special", "nbdtrc",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "nbdtri",
+add_newdoc("nbdtri",
     """
     nbdtri(k, n, y)
 
@@ -5197,7 +5198,7 @@ add_newdoc("scipy.special", "nbdtri",
 
     """)
 
-add_newdoc("scipy.special", "nbdtrik",
+add_newdoc("nbdtrik",
     r"""
     nbdtrik(y, n, p)
 
@@ -5253,7 +5254,7 @@ add_newdoc("scipy.special", "nbdtrik",
 
     """)
 
-add_newdoc("scipy.special", "nbdtrin",
+add_newdoc("nbdtrin",
     r"""
     nbdtrin(k, y, p)
 
@@ -5309,7 +5310,7 @@ add_newdoc("scipy.special", "nbdtrin",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtr",
+add_newdoc("ncfdtr",
     r"""
     ncfdtr(dfn, dfd, nc, f)
 
@@ -5399,7 +5400,7 @@ add_newdoc("scipy.special", "ncfdtr",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtri",
+add_newdoc("ncfdtri",
     """
     ncfdtri(dfn, dfd, nc, p)
 
@@ -5449,7 +5450,7 @@ add_newdoc("scipy.special", "ncfdtri",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtridfd",
+add_newdoc("ncfdtridfd",
     """
     ncfdtridfd(dfn, p, nc, f)
 
@@ -5507,7 +5508,7 @@ add_newdoc("scipy.special", "ncfdtridfd",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtridfn",
+add_newdoc("ncfdtridfn",
     """
     ncfdtridfn(p, dfd, nc, f)
 
@@ -5565,7 +5566,7 @@ add_newdoc("scipy.special", "ncfdtridfn",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtrinc",
+add_newdoc("ncfdtrinc",
     """
     ncfdtrinc(dfn, dfd, p, f)
 
@@ -5616,7 +5617,7 @@ add_newdoc("scipy.special", "ncfdtrinc",
 
     """)
 
-add_newdoc("scipy.special", "nctdtr",
+add_newdoc("nctdtr",
     """
     nctdtr(df, nc, t)
 
@@ -5665,7 +5666,7 @@ add_newdoc("scipy.special", "nctdtr",
 
     """)
 
-add_newdoc("scipy.special", "nctdtridf",
+add_newdoc("nctdtridf",
     """
     nctdtridf(p, nc, t)
 
@@ -5684,7 +5685,7 @@ add_newdoc("scipy.special", "nctdtridf",
 
     """)
 
-add_newdoc("scipy.special", "nctdtrinc",
+add_newdoc("nctdtrinc",
     """
     nctdtrinc(df, p, t)
 
@@ -5703,7 +5704,7 @@ add_newdoc("scipy.special", "nctdtrinc",
 
     """)
 
-add_newdoc("scipy.special", "nctdtrit",
+add_newdoc("nctdtrit",
     """
     nctdtrit(df, nc, p)
 
@@ -5722,7 +5723,7 @@ add_newdoc("scipy.special", "nctdtrit",
 
     """)
 
-add_newdoc("scipy.special", "ndtr",
+add_newdoc("ndtr",
     r"""
     ndtr(x)
 
@@ -5755,7 +5756,7 @@ add_newdoc("scipy.special", "ndtr",
     """)
 
 
-add_newdoc("scipy.special", "nrdtrimn",
+add_newdoc("nrdtrimn",
     """
     nrdtrimn(p, x, std)
 
@@ -5781,7 +5782,7 @@ add_newdoc("scipy.special", "nrdtrimn",
 
     """)
 
-add_newdoc("scipy.special", "nrdtrisd",
+add_newdoc("nrdtrisd",
     """
     nrdtrisd(p, x, mn)
 
@@ -5807,7 +5808,7 @@ add_newdoc("scipy.special", "nrdtrisd",
 
     """)
 
-add_newdoc("scipy.special", "log_ndtr",
+add_newdoc("log_ndtr",
     """
     log_ndtr(x)
 
@@ -5837,7 +5838,7 @@ add_newdoc("scipy.special", "log_ndtr",
 
     """)
 
-add_newdoc("scipy.special", "ndtri",
+add_newdoc("ndtri",
     """
     ndtri(y)
 
@@ -5848,7 +5849,7 @@ add_newdoc("scipy.special", "ndtri",
     is equal to y.
     """)
 
-add_newdoc("scipy.special", "obl_ang1",
+add_newdoc("obl_ang1",
     """
     obl_ang1(m, n, c, x)
 
@@ -5866,7 +5867,7 @@ add_newdoc("scipy.special", "obl_ang1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_ang1_cv",
+add_newdoc("obl_ang1_cv",
     """
     obl_ang1_cv(m, n, c, cv, x)
 
@@ -5885,7 +5886,7 @@ add_newdoc("scipy.special", "obl_ang1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_cv",
+add_newdoc("obl_cv",
     """
     obl_cv(m, n, c)
 
@@ -5895,7 +5896,7 @@ add_newdoc("scipy.special", "obl_cv",
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
     """)
 
-add_newdoc("scipy.special", "obl_rad1",
+add_newdoc("obl_rad1",
     """
     obl_rad1(m, n, c, x)
 
@@ -5913,7 +5914,7 @@ add_newdoc("scipy.special", "obl_rad1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_rad1_cv",
+add_newdoc("obl_rad1_cv",
     """
     obl_rad1_cv(m, n, c, cv, x)
 
@@ -5932,7 +5933,7 @@ add_newdoc("scipy.special", "obl_rad1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_rad2",
+add_newdoc("obl_rad2",
     """
     obl_rad2(m, n, c, x)
 
@@ -5950,7 +5951,7 @@ add_newdoc("scipy.special", "obl_rad2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_rad2_cv",
+add_newdoc("obl_rad2_cv",
     """
     obl_rad2_cv(m, n, c, cv, x)
 
@@ -5969,7 +5970,7 @@ add_newdoc("scipy.special", "obl_rad2_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pbdv",
+add_newdoc("pbdv",
     """
     pbdv(v, x)
 
@@ -5986,7 +5987,7 @@ add_newdoc("scipy.special", "pbdv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pbvv",
+add_newdoc("pbvv",
     """
     pbvv(v, x)
 
@@ -6003,7 +6004,7 @@ add_newdoc("scipy.special", "pbvv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pbwa",
+add_newdoc("pbwa",
     r"""
     pbwa(a, x)
 
@@ -6046,7 +6047,7 @@ add_newdoc("scipy.special", "pbwa",
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
-add_newdoc("scipy.special", "pdtr",
+add_newdoc("pdtr",
     """
     pdtr(k, m)
 
@@ -6057,7 +6058,7 @@ add_newdoc("scipy.special", "pdtr",
     must both be positive and `k` an integer.
     """)
 
-add_newdoc("scipy.special", "pdtrc",
+add_newdoc("pdtrc",
     """
     pdtrc(k, m)
 
@@ -6068,7 +6069,7 @@ add_newdoc("scipy.special", "pdtrc",
     k+1, m).  Arguments must both be positive and `k` an integer.
     """)
 
-add_newdoc("scipy.special", "pdtri",
+add_newdoc("pdtri",
     """
     pdtri(k, y)
 
@@ -6080,7 +6081,7 @@ add_newdoc("scipy.special", "pdtri",
     integer and `y` between 0 and 1.
     """)
 
-add_newdoc("scipy.special", "pdtrik",
+add_newdoc("pdtrik",
     """
     pdtrik(p, m)
 
@@ -6089,7 +6090,7 @@ add_newdoc("scipy.special", "pdtrik",
     Returns the quantile k such that ``pdtr(k, m) = p``
     """)
 
-add_newdoc("scipy.special", "poch",
+add_newdoc("poch",
     r"""
     poch(z, m)
 
@@ -6120,7 +6121,7 @@ add_newdoc("scipy.special", "poch",
         The value of the function.
     """)
 
-add_newdoc("scipy.special", "pro_ang1",
+add_newdoc("pro_ang1",
     """
     pro_ang1(m, n, c, x)
 
@@ -6138,7 +6139,7 @@ add_newdoc("scipy.special", "pro_ang1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_ang1_cv",
+add_newdoc("pro_ang1_cv",
     """
     pro_ang1_cv(m, n, c, cv, x)
 
@@ -6157,7 +6158,7 @@ add_newdoc("scipy.special", "pro_ang1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_cv",
+add_newdoc("pro_cv",
     """
     pro_cv(m, n, c)
 
@@ -6167,7 +6168,7 @@ add_newdoc("scipy.special", "pro_cv",
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
     """)
 
-add_newdoc("scipy.special", "pro_rad1",
+add_newdoc("pro_rad1",
     """
     pro_rad1(m, n, c, x)
 
@@ -6185,7 +6186,7 @@ add_newdoc("scipy.special", "pro_rad1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_rad1_cv",
+add_newdoc("pro_rad1_cv",
     """
     pro_rad1_cv(m, n, c, cv, x)
 
@@ -6204,7 +6205,7 @@ add_newdoc("scipy.special", "pro_rad1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_rad2",
+add_newdoc("pro_rad2",
     """
     pro_rad2(m, n, c, x)
 
@@ -6222,7 +6223,7 @@ add_newdoc("scipy.special", "pro_rad2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_rad2_cv",
+add_newdoc("pro_rad2_cv",
     """
     pro_rad2_cv(m, n, c, cv, x)
 
@@ -6241,7 +6242,7 @@ add_newdoc("scipy.special", "pro_rad2_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pseudo_huber",
+add_newdoc("pseudo_huber",
     r"""
     pseudo_huber(delta, r)
 
@@ -6269,7 +6270,7 @@ add_newdoc("scipy.special", "pseudo_huber",
 
     """)
 
-add_newdoc("scipy.special", "psi",
+add_newdoc("psi",
     """
     psi(z, out=None)
 
@@ -6315,7 +6316,7 @@ add_newdoc("scipy.special", "psi",
 
     """)
 
-add_newdoc("scipy.special", "radian",
+add_newdoc("radian",
     """
     radian(d, m, s)
 
@@ -6325,7 +6326,7 @@ add_newdoc("scipy.special", "radian",
     radians.
     """)
 
-add_newdoc("scipy.special", "rel_entr",
+add_newdoc("rel_entr",
     r"""
     rel_entr(x, y)
 
@@ -6357,7 +6358,7 @@ add_newdoc("scipy.special", "rel_entr",
 
     """)
 
-add_newdoc("scipy.special", "rgamma",
+add_newdoc("rgamma",
     """
     rgamma(z)
 
@@ -6366,7 +6367,7 @@ add_newdoc("scipy.special", "rgamma",
     Returns ``1/gamma(x)``
     """)
 
-add_newdoc("scipy.special", "round",
+add_newdoc("round",
     """
     round(x)
 
@@ -6377,7 +6378,7 @@ add_newdoc("scipy.special", "round",
     is chosen.
     """)
 
-add_newdoc("scipy.special", "shichi",
+add_newdoc("shichi",
     r"""
     shichi(x, out=None)
 
@@ -6430,7 +6431,7 @@ add_newdoc("scipy.special", "shichi",
            (Version 0.19) http://mpmath.org/
     """)
 
-add_newdoc("scipy.special", "sici",
+add_newdoc("sici",
     r"""
     sici(x, out=None)
 
@@ -6483,14 +6484,14 @@ add_newdoc("scipy.special", "sici",
            (Version 0.19) http://mpmath.org/
     """)
 
-add_newdoc("scipy.special", "sindg",
+add_newdoc("sindg",
     """
     sindg(x)
 
     Sine of angle given in degrees
     """)
 
-add_newdoc("scipy.special", "smirnov",
+add_newdoc("smirnov",
     r"""
     smirnov(n, d)
 
@@ -6588,7 +6589,7 @@ add_newdoc("scipy.special", "smirnov",
     >>> plt.show()
     """)
 
-add_newdoc("scipy.special", "smirnovi",
+add_newdoc("smirnovi",
     """
     smirnovi(n, p)
 
@@ -6624,24 +6625,24 @@ add_newdoc("scipy.special", "smirnovi",
     kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
     """)
 
-add_newdoc("scipy.special", "_smirnovc",
+add_newdoc("_smirnovc",
     """
     _smirnovc(n, d)
      Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_smirnovci",
+add_newdoc("_smirnovci",
     """
      Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_smirnovp",
+add_newdoc("_smirnovp",
     """
     _smirnovp(n, p)
      Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "spence",
+add_newdoc("spence",
     r"""
     spence(z, out=None)
 
@@ -6678,7 +6679,7 @@ add_newdoc("scipy.special", "spence",
     this is our ``spence(1 - z)``.
     """)
 
-add_newdoc("scipy.special", "stdtr",
+add_newdoc("stdtr",
     """
     stdtr(df, t)
 
@@ -6692,7 +6693,7 @@ add_newdoc("scipy.special", "stdtr",
 
     """)
 
-add_newdoc("scipy.special", "stdtridf",
+add_newdoc("stdtridf",
     """
     stdtridf(p, t)
 
@@ -6701,7 +6702,7 @@ add_newdoc("scipy.special", "stdtridf",
     Returns the argument df such that stdtr(df, t) is equal to `p`.
     """)
 
-add_newdoc("scipy.special", "stdtrit",
+add_newdoc("stdtrit",
     """
     stdtrit(df, p)
 
@@ -6710,7 +6711,7 @@ add_newdoc("scipy.special", "stdtrit",
     Returns the argument `t` such that stdtr(df, t) is equal to `p`.
     """)
 
-add_newdoc("scipy.special", "struve",
+add_newdoc("struve",
     r"""
     struve(v, x)
 
@@ -6759,14 +6760,14 @@ add_newdoc("scipy.special", "struve",
 
     """)
 
-add_newdoc("scipy.special", "tandg",
+add_newdoc("tandg",
     """
     tandg(x)
 
     Tangent of angle x given in degrees.
     """)
 
-add_newdoc("scipy.special", "tklmbda",
+add_newdoc("tklmbda",
     """
     tklmbda(x, lmbda)
 
@@ -6774,7 +6775,7 @@ add_newdoc("scipy.special", "tklmbda",
 
     """)
 
-add_newdoc("scipy.special", "wofz",
+add_newdoc("wofz",
     """
     wofz(z)
 
@@ -6810,7 +6811,7 @@ add_newdoc("scipy.special", "wofz",
 
     """)
 
-add_newdoc("scipy.special", "xlogy",
+add_newdoc("xlogy",
     """
     xlogy(x, y)
 
@@ -6835,7 +6836,7 @@ add_newdoc("scipy.special", "xlogy",
 
     """)
 
-add_newdoc("scipy.special", "xlog1py",
+add_newdoc("xlog1py",
     """
     xlog1py(x, y)
 
@@ -6860,7 +6861,7 @@ add_newdoc("scipy.special", "xlog1py",
 
     """)
 
-add_newdoc("scipy.special", "y0",
+add_newdoc("y0",
     r"""
     y0(x)
 
@@ -6905,7 +6906,7 @@ add_newdoc("scipy.special", "y0",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "y1",
+add_newdoc("y1",
     """
     y1(x)
 
@@ -6944,7 +6945,7 @@ add_newdoc("scipy.special", "y1",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "yn",
+add_newdoc("yn",
     r"""
     yn(n, x)
 
@@ -6980,7 +6981,7 @@ add_newdoc("scipy.special", "yn",
            http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "yv",
+add_newdoc("yv",
     r"""
     yv(v, z)
 
@@ -7027,7 +7028,7 @@ add_newdoc("scipy.special", "yv",
 
     """)
 
-add_newdoc("scipy.special", "yve",
+add_newdoc("yve",
     r"""
     yve(v, z)
 
@@ -7074,7 +7075,7 @@ add_newdoc("scipy.special", "yve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "_zeta",
+add_newdoc("_zeta",
     """
     _zeta(x, q)
 
@@ -7082,7 +7083,7 @@ add_newdoc("scipy.special", "_zeta",
 
     """)
 
-add_newdoc("scipy.special", "zetac",
+add_newdoc("zetac",
     """
     zetac(x)
 
@@ -7130,7 +7131,7 @@ add_newdoc("scipy.special", "zetac",
 
     """)
 
-add_newdoc("scipy.special", "_struve_asymp_large_z",
+add_newdoc("_struve_asymp_large_z",
     """
     _struve_asymp_large_z(v, z, is_h)
 
@@ -7143,7 +7144,7 @@ add_newdoc("scipy.special", "_struve_asymp_large_z",
     v, err
     """)
 
-add_newdoc("scipy.special", "_struve_power_series",
+add_newdoc("_struve_power_series",
     """
     _struve_power_series(v, z, is_h)
 
@@ -7156,7 +7157,7 @@ add_newdoc("scipy.special", "_struve_power_series",
     v, err
     """)
 
-add_newdoc("scipy.special", "_struve_bessel_series",
+add_newdoc("_struve_bessel_series",
     """
     _struve_bessel_series(v, z, is_h)
 
@@ -7169,47 +7170,47 @@ add_newdoc("scipy.special", "_struve_bessel_series",
     v, err
     """)
 
-add_newdoc("scipy.special", "_spherical_jn",
+add_newdoc("_spherical_jn",
     """
     Internal function, use `spherical_jn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_jn_d",
+add_newdoc("_spherical_jn_d",
     """
     Internal function, use `spherical_jn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_yn",
+add_newdoc("_spherical_yn",
     """
     Internal function, use `spherical_yn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_yn_d",
+add_newdoc("_spherical_yn_d",
     """
     Internal function, use `spherical_yn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_in",
+add_newdoc("_spherical_in",
     """
     Internal function, use `spherical_in` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_in_d",
+add_newdoc("_spherical_in_d",
     """
     Internal function, use `spherical_in` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_kn",
+add_newdoc("_spherical_kn",
     """
     Internal function, use `spherical_kn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_kn_d",
+add_newdoc("_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
     """)
 
-add_newdoc("scipy.special", "loggamma",
+add_newdoc("loggamma",
     r"""
     loggamma(z, out=None)
 
@@ -7268,17 +7269,17 @@ add_newdoc("scipy.special", "loggamma",
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
     """)
 
-add_newdoc("scipy.special", "_sinpi",
+add_newdoc("_sinpi",
     """
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_cospi",
+add_newdoc("_cospi",
     """
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "owens_t",
+add_newdoc("owens_t",
     """
     owens_t(h, a)
 

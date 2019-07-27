@@ -1,3 +1,5 @@
+:orphan:
+
 .. _building:
 
 Building from sources
@@ -8,7 +10,7 @@ Building from sources
    If you are only trying to install SciPy, see
    :doc:`../install_upgrade`.
 
-Build instructions for different operating systems:
+Build instructions for different operating systems and an FAQ:
 
 .. toctree::
    :maxdepth: 2
@@ -16,4 +18,4 @@ Build instructions for different operating systems:
    linux
    windows
    macosx
-
+   faq

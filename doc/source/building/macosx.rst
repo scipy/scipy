@@ -2,6 +2,11 @@
 Building From Source on Mac OSX
 ===============================
 
+.. note::
+
+   This document has not been maintained and is retained for reference only.
+   For building on macOS, please see :ref:`quickstart-mac`.
+
 These instructions describe how to build NumPy and SciPy libraries from
 source.
 

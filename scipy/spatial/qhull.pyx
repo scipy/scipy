@@ -162,9 +162,6 @@ cdef extern from "qhull_src/src/libqhull_r.h":
     setT *qh_pointvertex(qhT *) nogil
     realT *qh_readpoints(qhT *, int* num, int *dim, boolT* ismalloc) nogil
     void qh_zero(qhT *, void *errfile) nogil
-    int qh_new_qhull(qhT *, int dim, int numpoints, realT *points,
-                     boolT ismalloc, char* qhull_cmd, void *outfile,
-                     void *errfile, coordT* feaspoint) nogil
     int qh_pointid(qhT *, pointT *point) nogil
     vertexT *qh_nearvertex(qhT *, facetT *facet, pointT *point, double *dist) nogil
     boolT qh_addpoint(qhT *, pointT *furthest, facetT *facet, boolT checkdist) nogil
@@ -172,6 +169,11 @@ cdef extern from "qhull_src/src/libqhull_r.h":
                              realT *bestdist, boolT *isoutside) nogil
     void qh_setdelaunay(qhT *, int dim, int count, pointT *points) nogil
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
+
+cdef extern from "qhull_misc.h":
+    int qh_new_qhull_scipy(qhT *, int dim, int numpoints, realT *points,
+                           boolT ismalloc, char* qhull_cmd, void *outfile,
+                           void *errfile, coordT* feaspoint) nogil
 
 cdef extern from "qhull_src/src/io_r.h":
     ctypedef enum qh_RIDGE:
@@ -343,9 +345,9 @@ cdef class _Qhull:
                 coord = <coordT*>interior_point.data
             else:
                 coord = NULL
-            exitcode = qh_new_qhull(self._qh, self.ndim, self.numpoints,
-                                    <realT*>points.data, 0,
-                                    options_c, NULL, self._messages.handle, coord)
+            exitcode = qh_new_qhull_scipy(self._qh, self.ndim, self.numpoints,
+                                          <realT*>points.data, 0,
+                                          options_c, NULL, self._messages.handle, coord)
 
         if exitcode != 0:
             msg = self._messages.get()
@@ -1722,6 +1724,10 @@ class Delaunay(_QhullUser):
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
+    furthest_site
+        True if this was a furthest site triangulation and False if not.
+
+        .. versionadded:: 1.4.0
 
     Raises
     ------
@@ -1836,6 +1842,8 @@ class Delaunay(_QhullUser):
         qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt",
                        furthest_site=furthest_site, incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
+
+        self.furthest_site = furthest_site
 
     def _update(self, qhull):
         qhull.triangulate()
@@ -2515,6 +2523,10 @@ class Voronoi(_QhullUser):
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
+    furthest_site
+        True if this was a furthest site triangulation and False if not.
+
+        .. versionadded:: 1.4.0
 
     Raises
     ------
@@ -2547,35 +2559,35 @@ class Voronoi(_QhullUser):
     The Voronoi vertices:
 
     >>> vor.vertices
-    array([[ 0.5,  0.5],
-           [ 1.5,  0.5],
-           [ 0.5,  1.5],
-           [ 1.5,  1.5]])
+    array([[0.5, 0.5],
+           [0.5, 1.5],
+           [1.5, 0.5],
+           [1.5, 1.5]])
 
     There is a single finite Voronoi region, and four finite Voronoi
     ridges:
 
     >>> vor.regions
-    [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [3, 2, 0, 1], [2, -1, 0], [3, -1, 1]]
+    [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [0, 1, 3, 2], [2, -1, 0], [3, -1, 1]]
     >>> vor.ridge_vertices
-    [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [0, 2], [1, 3]]
+    [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [1, 3], [0, 2]]
 
     The ridges are perpendicular between lines drawn between the following
     input points:
 
     >>> vor.ridge_points
-    array([[0, 1],
-           [0, 3],
-           [6, 3],
-           [6, 7],
-           [3, 4],
-           [5, 8],
-           [5, 2],
-           [5, 4],
-           [8, 7],
+    array([[0, 3],
+           [0, 1],
+           [2, 5],
            [2, 1],
-           [4, 1],
-           [4, 7]], dtype=int32)
+           [1, 4],
+           [7, 8],
+           [7, 6],
+           [7, 4],
+           [8, 5],
+           [6, 3],
+           [4, 5],
+           [4, 3]], dtype=int32)
 
     """
     def __init__(self, points, furthest_site=False, incremental=False,
@@ -2598,6 +2610,8 @@ class Voronoi(_QhullUser):
         qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site,
                        incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
+
+        self.furthest_site = furthest_site
 
     def _update(self, qhull):
         self.vertices, self.ridge_points, self.ridge_vertices, \

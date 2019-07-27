@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
@@ -607,7 +607,7 @@ def test_dft():
     x = array([0, 1, 2, 3, 4, 5, 0, 1])
     m = dft(8)
     mx = m.dot(x)
-    fx = fftpack.fft(x)
+    fx = fft(x)
     assert_array_almost_equal(mx, fx)
 
 
