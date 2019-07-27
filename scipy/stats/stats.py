@@ -4452,7 +4452,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
 
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
     # warning)
-    if not reps or not np.issubdtype(type(reps), np.int64) or reps < 0:
+    if not np.issubdtype(type(reps), np.int64) or reps < 0:
         raise ValueError("Number of reps must be an integer greater than 0.")
     elif reps < 1000:
         msg = ("The number of replications is low (under 1000), and p-value "
