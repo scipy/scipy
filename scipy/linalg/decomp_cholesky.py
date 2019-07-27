@@ -100,7 +100,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True, chol_pivot=Fa
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c,lower, rank_bn, piv = _mycholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, chol_pivot=chol_pivot, piv_tol=piv_tol)
+    c,lower, rank_bn, piv = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, chol_pivot=chol_pivot, piv_tol=piv_tol)
     return c, rank_bn, piv
 
 
