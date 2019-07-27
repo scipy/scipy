@@ -7,7 +7,9 @@
  *  Python interface.
  *
  *  Copyright (C) 2019 Max-Planck-Society
+ *  Copyright (C) 2019 Peter Bell
  *  \author Martin Reinecke
+ *  \author Peter Bell
  */
 
 #include <pybind11/pybind11.h>
@@ -92,12 +94,12 @@ template<typename T> T norm_fct(int inorm, size_t N)
   }
 
 template<typename T> T norm_fct(int inorm, const shape_t &shape,
-  const shape_t &axes)
+  const shape_t &axes, size_t fct=1, int delta=0)
   {
   if (inorm==0) return T(1);
   size_t N(1);
   for (auto a: axes)
-    N *= shape[a];
+    N *= fct * size_t(int64_t(shape[a])+delta);
   return norm_fct<T>(inorm, N);
   }
 
@@ -226,6 +228,66 @@ py::array r2r_fftpack(const py::array &in, const py::object &axes_,
     real2hermitian, forward, inorm, out_, nthreads))
   }
 
+template<typename T> py::array dct_internal(const py::array &in,
+  const py::object &axes_, int type, int inorm, py::object &out_,
+  size_t nthreads)
+  {
+  auto axes = makeaxes(in, axes_);
+  auto dims(copy_shape(in));
+  py::array res = prepare_output<T>(out_, dims);
+  auto s_in=copy_strides(in);
+  auto s_out=copy_strides(res);
+  auto d_in=reinterpret_cast<const T *>(in.data());
+  auto d_out=reinterpret_cast<T *>(res.mutable_data());
+  {
+  py::gil_scoped_release release;
+  T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, -1)
+                    : norm_fct<T>(inorm, dims, axes, 2);
+  bool ortho = inorm == 1;
+  pocketfft::dct(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
+    nthreads);
+  }
+  return res;
+  }
+
+py::array dct(const py::array &in, int type, const py::object &axes_,
+  int inorm, py::object &out_, size_t nthreads)
+  {
+  if ((type<1) || (type>4)) throw invalid_argument("invalid DCT type");
+  DISPATCH(in, f64, f32, flong, dct_internal, (in, axes_, type, inorm, out_,
+    nthreads))
+  }
+
+template<typename T> py::array dst_internal(const py::array &in,
+  const py::object &axes_, int type, int inorm, py::object &out_,
+  size_t nthreads)
+  {
+  auto axes = makeaxes(in, axes_);
+  auto dims(copy_shape(in));
+  py::array res = prepare_output<T>(out_, dims);
+  auto s_in=copy_strides(in);
+  auto s_out=copy_strides(res);
+  auto d_in=reinterpret_cast<const T *>(in.data());
+  auto d_out=reinterpret_cast<T *>(res.mutable_data());
+  {
+  py::gil_scoped_release release;
+  T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, 1)
+                    : norm_fct<T>(inorm, dims, axes, 2);
+  bool ortho = inorm == 1;
+  pocketfft::dst(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
+    nthreads);
+  }
+  return res;
+  }
+
+py::array dst(const py::array &in, int type, const py::object &axes_,
+  int inorm, py::object &out_, size_t nthreads)
+  {
+  if ((type<1) || (type>4)) throw invalid_argument("invalid DST type");
+  DISPATCH(in, f64, f32, flong, dst_internal, (in, axes_, type, inorm,
+    out_, nthreads))
+  }
+
 template<typename T> py::array c2r_internal(const py::array &in,
   const py::object &axes_, size_t lastsize, bool forward, int inorm,
   py::object &out_, size_t nthreads)
@@ -235,7 +297,7 @@ template<typename T> py::array c2r_internal(const py::array &in,
   shape_t dims_in(copy_shape(in)), dims_out=dims_in;
   if (lastsize==0) lastsize=2*dims_in[axis]-1;
   if ((lastsize/2) + 1 != dims_in[axis])
-    throw runtime_error("bad lastsize");
+    throw invalid_argument("bad lastsize");
   dims_out[axis] = lastsize;
   py::array res = prepare_output<T>(out_, dims_out);
   auto s_in=copy_strides(in);
@@ -297,7 +359,6 @@ template<typename T>py::array complex2hartley(const py::array &in,
   py::gil_scoped_release release;
   simple_iter iin(atmp);
   rev_iter iout(aout, axes);
-  if (iin.remaining()!=iout.remaining()) throw runtime_error("oops");
   while(iin.remaining()>0)
     {
     auto v = atmp[iin.ofs()];
@@ -524,6 +585,83 @@ numpy.ndarray (same shape and data type as `a`)
     The transformed data
 )""";
 
+const char *dct_DS = R"""(Performs a discrete cosine transform.
+
+Parameters
+----------
+a : numpy.ndarray (any real type)
+    The input data
+type : integer
+    the type of DCT. Must be in [1; 4].
+axes : list of integers
+    The axes along which the transform is carried out.
+    If not set, all axes will be transformed.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : make transform orthogonal and divide by sqrt(N)
+      2 : divide by N
+    where N is the product of n_i for every transformed axis i.
+    n_i is 2*(<axis_length>-1 for type 1 and 2*<axis length>
+    for types 2, 3, 4.
+    Making the transform orthogonal involves the following additional steps
+    for every 1D sub-transform:
+      Type 1 : multiply first and last input value by sqrt(2)
+               divide first and last output value by sqrt(2)
+      Type 2 : divide first output value by sqrt(2)
+      Type 3 : multiply first input value by sqrt(2)
+      Type 4 : nothing
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
+nthreads : int
+    Number of threads to use. If 0, use the system default (typically governed
+    by the `OMP_NUM_THREADS` environment variable).
+
+Returns
+-------
+numpy.ndarray (same shape and data type as `a`)
+    The transformed data
+)""";
+
+const char *dst_DS = R"""(Performs a discrete sine transform.
+
+Parameters
+----------
+a : numpy.ndarray (any real type)
+    The input data
+type : integer
+    the type of DST. Must be in [1; 4].
+axes : list of integers
+    The axes along which the transform is carried out.
+    If not set, all axes will be transformed.
+inorm : int
+    Normalization type
+      0 : no normalization
+      1 : make transform orthogonal and divide by sqrt(N)
+      2 : divide by N
+    where N is the product of n_i for every transformed axis i.
+    n_i is 2*(<axis_length>+1 for type 1 and 2*<axis length>
+    for types 2, 3, 4.
+    Making the transform orthogonal involves the following additional steps
+    for every 1D sub-transform:
+      Type 1 : nothing
+      Type 2 : divide first output value by sqrt(2)
+      Type 3 : multiply first input value by sqrt(2)
+      Type 4 : nothing
+out : numpy.ndarray (same shape and data type as `a`)
+    May be identical to `a`, but if it isn't, it must not overlap with `a`.
+    If None, a new array is allocated to store the output.
+nthreads : int
+    Number of threads to use. If 0, use the system default (typically governed
+    by the `OMP_NUM_THREADS` environment variable).
+
+Returns
+-------
+numpy.ndarray (same shape and data type as `a`)
+    The transformed data
+)""";
+
 } // unnamed namespace
 
 PYBIND11_MODULE(pypocketfft, m)
@@ -543,4 +681,8 @@ PYBIND11_MODULE(pypocketfft, m)
     "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
   m.def("genuine_hartley", genuine_hartley, genuine_hartley_DS, "a"_a,
     "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
+  m.def("dct", dct, dct_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
+    "out"_a=None, "nthreads"_a=1);
+  m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
+    "out"_a=None, "nthreads"_a=1);
   }

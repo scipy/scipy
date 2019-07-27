@@ -16,21 +16,9 @@ class _ScipyBackend:
     """
     __ua_domain__ = "numpy.scipy.fft"
 
-    realtransforms = {
-        'dct': _fftpack.dct,
-        'dst': _fftpack.dst,
-        'dctn': _fftpack.dctn,
-        'dstn': _fftpack.dstn,
-        'idct': _realtransforms._idct,
-        'idst': _realtransforms._idst,
-        'idctn': _realtransforms._idctn,
-        'idstn': _realtransforms._idstn,
-    }
-
     @staticmethod
     def __ua_function__(method, args, kwargs):
-        fn = (getattr(_pocketfft, method.__name__, None)
-              or _ScipyBackend.realtransforms.get(method.__name__, None))
+        fn = getattr(_pocketfft, method.__name__, None)
 
         if fn is None:
             return NotImplemented

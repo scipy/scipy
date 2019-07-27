@@ -2,6 +2,19 @@
 #   http://lint.travis-ci.org/
 language: python
 sudo: false
+addons:
+  apt:
+    packages: &common_packages
+    - libatlas-dev
+    - libatlas-base-dev
+    - liblapack-dev
+    - gfortran
+    - libgmp-dev
+    - libmpfr-dev
+    - libsuitesparse-dev
+    - ccache
+    - swig
+    - libmpc-dev
 env:
   global:
    # Wheelhouse for pre-release wheels
@@ -42,6 +55,21 @@ matrix:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
         - NUMPYSPEC="numpy==1.15.4"
+    # Test SciPy with the debug version of Python.
+    # However travis only specifies regular or development builds of Python
+    # so we must install python3.5-dbg using apt.
+    - language: generic
+      dist: xenial  # Requires Xenial(ubunu 18.04) as python-dbg uses py3.5
+      env:
+        - USE_DEBUG=python3.5-dbg
+        - TESTMODE=fast
+        - NUMPYSPEC="--upgrade numpy"
+      addons:
+        apt:
+          packages:
+            - *common_packages
+            - python3.5-dbg
+            - python3.5-dev
     - python: 3.6
       env:
         - TESTMODE=fast
@@ -73,26 +101,12 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
-addons:
-  apt:
-    packages:
-    - libatlas-dev
-    - libatlas-base-dev
-    - liblapack-dev
-    - gfortran
-    - libgmp-dev
-    - libmpfr-dev
-    - libsuitesparse-dev
-    - ccache
-    - swig
-    - libmpc-dev
 cache:
   directories:
     - $HOME/.ccache
     - $HOME/.cache/pip
     - $HOME/Library/Caches/pip
 before_install:
-  # Work in our own virtualenv to isolate from travis-ci packages.
   - echo $TRAVIS_OS_NAME
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -151,6 +165,14 @@ before_install:
   - ulimit -a
   - mkdir builds
   - cd builds
+  - |
+    if [ -n "${USE_DEBUG}" ]; then
+        # Work in our own virtualenv to isolate from travis-ci packages.
+        virtualenv --python=$USE_DEBUG venv
+        source venv/bin/activate
+    fi
+  - python -V -V
+  - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
   - travis_retry pip install --upgrade pip setuptools wheel
   - travis_retry pip install cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
@@ -174,7 +196,6 @@ before_install:
         travis_retry pip install "asv>=0.4.1"
     fi
   - pip uninstall -y nose
-  - python -V
   - ccache -s
   - cd ..
   - set -o pipefail
