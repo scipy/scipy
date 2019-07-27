@@ -309,22 +309,23 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _dense_rank_data(float64_t[:] x):
-    _, v = np.unique(x, return_inverse=True)
+cdef _dense_rank_data(x):
+    cdef float64_t[:] x_view = x
+    _, v = np.unique(x_view, return_inverse=True)
     return v + 1
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _rank_distance_matrix(float64_t[:, :] distx):
+cdef _rank_distance_matrix(ndarray distx):
     # faster than np.apply_along_axis
-    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in range(distx.shape[0])])
+    cdef float64_t[:, :] distx_view = distx
+    return np.hstack([_dense_rank_data(distx_view[:, i]).reshape(-1, 1) for i in range(distx_view.shape[0])])
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _center_distance_matrix(ndarray[float64_t, ndim=2] distx,
-                             str global_corr='mgc', is_ranked=True):
+cdef _center_distance_matrix(ndarray distx, str global_corr='mgc', is_ranked=True):
     cdef int n = distx.shape[0]
     cdef ndarray rank_distx = np.zeros((<object> distx).shape)
 
@@ -348,9 +349,7 @@ cdef _center_distance_matrix(ndarray[float64_t, ndim=2] distx,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _transform_distance_matrix(ndarray[float64_t, ndim=2] distx,
-                                ndarray[float64_t, ndim=2] disty,
-                                str global_corr='mgc', is_ranked=True):
+cdef _transform_distance_matrix(ndarray distx, ndarray disty, str global_corr='mgc', is_ranked=True):
 
     if global_corr == "rank":
         is_ranked = True
@@ -368,21 +367,27 @@ cdef _transform_distance_matrix(ndarray[float64_t, ndim=2] distx,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _local_covariance(ndarray[float64_t, ndim=2] distx,
-                       ndarray[float64_t, ndim=2] disty,
-                       ndarray[intp_t, ndim=2] rank_distx,
-                       ndarray[intp_t, ndim=2] rank_disty):
+cdef _local_covariance(ndarray distx, ndarray disty, ndarray rank_distx, ndarray rank_disty):
+
+    cdef float64_t[:, :] distx_view = distx
+    cdef float64_t[:, :] disty_view = disty
+    cdef intp_t[:, :] rank_distx_view = rank_distx
+    cdef intp_t[:, :] rank_disty_view = rank_disty
+
     # convert float32 numpy array to int, as it will be used as array indices
     # [0 to n-1]
     rank_distx = rank_distx.astype(np.int) - 1
     rank_disty = rank_disty.astype(np.int) - 1
 
-    cdef int n = distx.shape[0]
-    cdef int nx = np.max(rank_distx) + 1
-    cdef int ny = np.max(rank_disty) + 1
+    cdef int n = distx_view.shape[0]
+    cdef int nx = np.max(rank_distx_view) + 1
+    cdef int ny = np.max(rank_disty_view) + 1
     cdef ndarray cov_xy = np.zeros((nx, ny), dtype=np.float)
+    cdef float64_t[:, :] cov_xy_view = cov_xy
     cdef ndarray expectx = np.zeros(nx, dtype=np.float)
+    cdef float64_t[:] expectx_view = expectx
     cdef ndarray expecty = np.zeros(ny, dtype=np.float)
+    cdef float64_t[:] expecty_view = expecty
 
     # summing up the the element-wise product of A and B based on the ranks,
     # yields the local family of covariances
@@ -390,25 +395,25 @@ cdef _local_covariance(ndarray[float64_t, ndim=2] distx,
     cdef int i, j, k, l
     for i in range(n):
         for j in range(n):
-            a = distx[i, j]
-            b = disty[i, j]
-            k = rank_distx[i, j]
-            l = rank_disty[i, j]
+            a = distx_view[i, j]
+            b = disty_view[i, j]
+            k = rank_distx_view[i, j]
+            l = rank_disty_view[i, j]
 
-            cov_xy[k, l] += a * b
+            cov_xy_view[k, l] += a * b
 
-            expectx[k] += a
-            expecty[l] += b
+            expectx_view[k] += a
+            expecty_view[l] += b
 
-    cov_xy[:, 0] = np.cumsum(cov_xy[:, 0])
-    expectx = np.cumsum(expectx)
+    cov_xy[:, 0] = np.cumsum(cov_xy_view[:, 0])
+    expectx = np.cumsum(expectx_view)
 
-    cov_xy[0, :] = np.cumsum(cov_xy[0, :])
-    expecty = np.cumsum(expecty)
+    cov_xy[0, :] = np.cumsum(cov_xy_view[0, :])
+    expecty = np.cumsum(expecty_view)
 
     for k in range(nx - 1):
         for l in range(ny - 1):
-            cov_xy[k+1, l+1] += (cov_xy[k+1, l] + cov_xy[k, l+1] - cov_xy[k, l])
+            cov_xy_view[k+1, l+1] += (cov_xy_view[k+1, l] + cov_xy_view[k, l+1] - cov_xy_view[k, l])
 
     # centering the covariances
     cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) / n**2)  # caveat when porting from R (reshape)
@@ -418,8 +423,8 @@ cdef _local_covariance(ndarray[float64_t, ndim=2] distx,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef _local_correlations(ndarray[float64_t, ndim=2] distx,
-                          ndarray[float64_t, ndim=2] disty,
+cpdef _local_correlations(ndarray distx,
+                          ndarray disty,
                           str global_corr='mgc'):
     transformed = _transform_distance_matrix(distx, disty, global_corr)
 
