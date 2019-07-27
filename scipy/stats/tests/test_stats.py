@@ -5089,15 +5089,15 @@ class TestEppsSingleton(object):
 class TestMGCErrorWarnings(object):
     """ Tests errors and warnings derived from MGC.
     """
-    def test_error_notndarray(self, reps):
+    def test_error_notndarray(self):
         # raises error if x or y is not a ndarray
         x = np.arange(20)
         y = [5] * 20
-        assert_raises(ValueError, stats.multiscale_graphcorr, x, y, reps=reps)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
         x = [5] * 20
         y = np.arange(20)
-        assert_raises(ValueError, stats.multiscale_graphcorr, x, y, reps=reps)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_shape(self):
         # raises error if number of samples different (n)
