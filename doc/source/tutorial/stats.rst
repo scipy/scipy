@@ -1081,18 +1081,9 @@ packages:
     >>> import matplotlib.pyplot as plt; plt.style.use('classic')
     >>> from scipy.stats import multiscale_graphcorr
 
-First, let's create a custom plotting function that computes MGC and outputs to
-the user the test statistic:
+Let's use a custom plotting function to plot the data relationship:
 
-    >>> def compute_mgc(x, y):
-    ...     """Compute MGC"""
-    ...     stat, pvalue, _ = multiscale_graphcorr(x, y)
-    ...     print("MGC test statistic: ", round(stat, 1))
-    ...     print("P-value: ", round(pvalue, 1))
-
-Now, let's use a custom plotting function to plot the data relationship:
-
-    >>> def mgc_plot(x, y, sim_name, only_viz=False, only_mgc=False):
+    >>> def mgc_plot(x, y, sim_name, mgc_dict, only_viz=False, only_mgc=False):
     ...     """Plot sim and MGC-plot"""
     ...     if not only_mgc:
     ...         # simulation
@@ -1106,8 +1097,6 @@ Now, let's use a custom plotting function to plot the data relationship:
     ...         plt.yticks(fontsize=15)
     ...         plt.show()
     ...     if not only_viz:
-    ...         # run MGC
-    ...         stat, pvalue, mgc_dict = compute_mgc(x, y)
     ...         # local correlation map
     ...         plt.figure(figsize=(8,8))
     ...         mgc_map = mgc_dict["mgc_map"]
@@ -1134,8 +1123,7 @@ Now, let's use a custom plotting function to plot the data relationship:
     ...         ax.set_ylim(0, 60)
     ...         plt.show()
 
-Let's look at some linear data first. The following shows this data plotted
-using the custom function defined above:
+Let's look at some linear data first:
 
     >>> x = np.array([-0.69198779, 0.18236784, -0.55349325, -0.29817661,
     ...               -0.18634447, -0.87385644, -0.01675855, 0.54961639,
@@ -1177,10 +1165,15 @@ The simulation relationship can be plotted below:
    :align: center
    :include-source: 0
 
-Now, we can see the test statistic, p-value, and MGC map can be visualized
-below:
+Now, we can see the test statistic, p-value, and MGC map visualized below. The
+optimal scale is shown on the map as a red "x"::
 
-    >>> mgc_plot(x, y, "Linear", only_mgc=True)
+    >>> stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
+    >>> print("MGC test statistic: ", round(stat, 1))
+    MGC test statistic:  1.0
+    >>> print("P-value: ", round(pvalue, 1))
+    P-value:  0.0
+    >>> mgc_plot(x, y, "Linear", mgc_dict, only_mgc=True)
 
 .. plot:: tutorial/stats/plots/mgc_plot2.py
    :align: center
@@ -1223,29 +1216,21 @@ The same can be done for nonlinear data sets. The following :math:`x` and
 
 The simulation relationship can be plotted below:
 
-.. plot:: tutorial/stats/plots/mgc_plot2.py
-   :align: center
-   :include-source: 0
-
-And MGC in this case would be:
-
-    >>> compute_mgc(x, y)
-    MGC test statistic: -0.1
-    P-value: 0.9
-    Optimal scale: [20, 20]
-
-The simulation relationship can be plotted below:
-
     >>> mgc_plot(x, y, "Spiral", only_viz=True)
 
 .. plot:: tutorial/stats/plots/mgc_plot3.py
    :align: center
    :include-source: 0
 
-Now, we can see the test statistic, p-value, and MGC map can be visualized
-below:
+Now, we can see the test statistic, p-value, and MGC map visualized below. The
+optimal scale is shown on the map as a red "x":
 
-    >>> mgc_plot(x, y, "Spiral", only_mgc=True)
+    >>> stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
+    >>> print("MGC test statistic: ", round(stat, 1))
+    MGC test statistic:  0.2
+    >>> print("P-value: ", round(pvalue, 1))
+    P-value:  0.0
+    >>> mgc_plot(x, y, "Spiral", mgc_dict, only_mgc=True)
 
 .. plot:: tutorial/stats/plots/mgc_plot4.py
    :align: center

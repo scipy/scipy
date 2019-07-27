@@ -3,19 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.stats import multiscale_graphcorr
 
 
-def compute_mgc(x, y):
-    """Compute MGC"""
-    stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
-    print("MGC test statistic: ", round(stat, 1))
-    print("P-value: ", round(pvalue, 1))
-    return mgc_dict
-
-
-def mgc_plot(x, y, sim_name):
+def mgc_plot(x, y, sim_name, mgc_dict):
     """Plot sim and MGC-plot"""
-    # run MGC
-    mgc_dict = compute_mgc(x, y)
-
     # local correlation map
     plt.figure(figsize=(8, 8))
     mgc_map = mgc_dict["mgc_map"]
@@ -77,4 +66,5 @@ y = np.array([-0.6908471, 0.16075167, -0.67384637, -0.34711818, -0.26276349,
               0.65305384, -0.35459847, 0.30447249, -0.55376159, -0.82961632])
 
 
-mgc_plot(x, y, "Linear")
+_, _, mgc_dict = multiscale_graphcorr(x, y)
+mgc_plot(x, y, "Linear", mgc_dict)

@@ -4353,21 +4353,21 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     A description of the process of MGC and applications on neuroscience data
     can be found in [1]_. It is performed using the following steps:
 
-    #. Two distance matrices :math:`A` and :math:`B` are computed and
+    #. Two distance matrices :math:`D^x` and :math:`D^x` are computed and
        modified to be mean zero columnwise. This results in two
-       :math:`n \times n` distance matrices :math:`C^x` and :math:`C^y` (the
+       :math:`n \times n` distance matrices :math:`A` and :math:`B` (the
        centering and unbiased modification) [3]_.
 
     #. For all values :math:`k` and :math:`l` from :math:`1, ..., n`,
 
-       #. The :math:`k`-nearest neighbor and :math:`l`-nearest neighbor graphs
-          are calculated for each property. Here, :math:`G_k (i, j)` indicates
-          the :math:`k`-smallest values of the :math:`i`-th row of :math:`A`
-          and :math:`H_l (i, j)` indicates the :math:`l` smallested values of
-          the :math:`i`-th row of :math:`B`
+       * The :math:`k`-nearest neighbor and :math:`l`-nearest neighbor graphs
+         are calculated for each property. Here, :math:`G_k (i, j)` indicates
+         the :math:`k`-smallest values of the :math:`i`-th row of :math:`A`
+         and :math:`H_l (i, j)` indicates the :math:`l` smallested values of
+         the :math:`i`-th row of :math:`B`
 
-       #. Let :math:`\circ` denotes the entry-wise matrix product, then local
-          correlations are summed and normalized using the following statistic:
+       * Let :math:`\circ` denotes the entry-wise matrix product, then local
+         correlations are summed and normalized using the following statistic:
 
     .. math::
 
