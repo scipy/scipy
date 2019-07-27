@@ -13,7 +13,7 @@ __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-              check_finite=True, potrf = None):
+              check_finite=True, chol_pivot=False, piv_tol=-1):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a) if check_finite else asarray(a)
@@ -33,8 +33,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         return a1.copy(), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    if potrf is None:
-        potrf, = get_lapack_funcs(('potrf',), (a1,))
+    potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
         raise LinAlgError("%d-th leading minor of the array is not positive "
@@ -42,10 +41,23 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     if info < 0:
         raise ValueError('LAPACK reported an illegal value in {}-th argument'
                          'on entry to "POTRF".'.format(-info))
-    return c, lower
 
+    # if the pivot flag is false, return the result
+    if not chol_pivot:
+        return c, lower, 0, []
+    
+    pstrf, = get_lapack_funcs(('pstrf',), (a1,))
+    c, pivot, rank, info=pstrf(x, lower=False, overwrite_a=False, clean=True, tol=piv_tol)
+    #c = pstrf(a1, lower=lower, info=info,clean=clean, rank_bn=rank_bn,piv=piv, tol=piv_tol,work=work)
+    if info > 0:
+        raise LinAlgError("%d-th leading minor of the array is not positive "
+                          "definite" % info)
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         'on entry to "POTRF".'.format(-info))
+    return c, lower, rank, pivot
 
-def cholesky(a, lower=False, overwrite_a=False, check_finite=True, potrf = None):
+def cholesky(a, lower=False, overwrite_a=False, check_finite=True, chol_pivot=False, piv_tol=-1):
     """
     Compute the Cholesky decomposition of a matrix.
 
@@ -88,10 +100,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True, potrf = None)
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                         check_finite=check_finite, potrf=potrf)
-    return c
-
+    c,lower, rank_bn, piv = _mycholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, chol_pivot=chol_pivot, piv_tol=piv_tol)
+    return c, rank_bn, piv
 
 
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
