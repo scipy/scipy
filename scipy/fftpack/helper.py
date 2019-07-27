@@ -4,6 +4,7 @@ import operator
 from numpy import (arange, array, asarray, atleast_1d, intc, integer,
                    isscalar, issubdtype, take, unique, where)
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
+import numpy as np
 from bisect import bisect_left
 
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
@@ -184,53 +185,56 @@ def _init_nd_shape_and_axes(x, shape, axes):
         The shape of the result. It is a 1D integer array.
 
     """
-    x = asarray(x)
+    s, a = _init_nd_shape_and_axes_impl(np.asarray(x), shape, axes)
+    return np.asarray(s), np.asarray(a)
+
+
+def _init_nd_shape_and_axes_impl(x, shape, axes):
+    """Implementation of _init_nd_shape_and_axes"""
     noshape = shape is None
     noaxes = axes is None
 
     if noaxes:
-        axes = arange(x.ndim, dtype=intc)
+        axes = range(x.ndim)
     else:
-        axes = atleast_1d(axes)
+        axes = np.atleast_1d(axes)
 
-    if axes.size == 0:
-        axes = axes.astype(intc)
+        if axes.size == 0:
+            axes = axes.astype(np.intc)
 
-    if not axes.ndim == 1:
-        raise ValueError("when given, axes values must be a scalar or vector")
-    if not issubdtype(axes.dtype, integer):
-        raise ValueError("when given, axes values must be integers")
+        if not axes.ndim == 1:
+            raise ValueError("when given, axes values must be a scalar or vector")
+        if not np.issubdtype(axes.dtype, np.integer):
+            raise ValueError("when given, axes values must be integers")
 
-    axes = where(axes < 0, axes + x.ndim, axes)
+        axes = [a + x.ndim if a < 0 else a for a in axes]
 
-    if axes.size != 0 and (axes.max() >= x.ndim or axes.min() < 0):
-        raise ValueError("axes exceeds dimensionality of input")
-    if axes.size != 0 and unique(axes).shape != axes.shape:
-        raise ValueError("all axes must be unique")
+        if any(a >= x.ndim or a < 0 for a in axes):
+            raise ValueError("axes exceeds dimensionality of input")
+        if len(set(axes)) != len(axes):
+            raise ValueError("all axes must be unique")
 
     if not noshape:
-        shape = atleast_1d(shape)
-    elif isscalar(x):
-        shape = array([], dtype=intc)
+        shape = np.atleast_1d(shape)
+
+        if shape.size == 0:
+            shape = shape.astype(np.intc)
+
+        if shape.ndim != 1:
+            raise ValueError("when given, shape values must be a scalar or vector")
+        if not np.issubdtype(shape.dtype, np.integer):
+            raise ValueError("when given, shape values must be integers")
+        if len(axes) != len(shape):
+            raise ValueError("when given, axes and shape arguments"
+                             " have to be of the same length")
+
+        shape = [x.shape[a] if s == -1 else s for s, a in zip(shape, axes)]
     elif noaxes:
-        shape = array(x.shape, dtype=intc)
+        shape = list(x.shape)
     else:
-        shape = take(x.shape, axes)
+        shape = [x.shape[a] for a in axes]
 
-    if shape.size == 0:
-        shape = shape.astype(intc)
-
-    if shape.ndim != 1:
-        raise ValueError("when given, shape values must be a scalar or vector")
-    if not issubdtype(shape.dtype, integer):
-        raise ValueError("when given, shape values must be integers")
-    if axes.shape != shape.shape:
-        raise ValueError("when given, axes and shape arguments"
-                         " have to be of the same length")
-
-    shape = where(shape == -1, array(x.shape)[axes], shape)
-
-    if shape.size != 0 and (shape < 1).any():
+    if any(s < 1 for s in shape):
         raise ValueError(
             "invalid number of data points ({0}) specified".format(shape))
 

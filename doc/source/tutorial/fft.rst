@@ -1,9 +1,9 @@
-Fourier Transforms (:mod:`scipy.fftpack`)
+Fourier Transforms (:mod:`scipy.fft`)
 =========================================
 
 .. sectionauthor:: SciPy Developers
 
-.. currentmodule:: scipy.fftpack
+.. currentmodule:: scipy.fft
 
 .. contents::
 
@@ -20,7 +20,7 @@ Fourier analysis and its applications.
 
 .. note::
 
-   PyFFTW_ provides a way to replace a number of functions in `scipy.fftpack`
+   PyFFTW_ provides a way to replace a number of functions in `scipy.fft`
    with its own functions, which are usually significantly faster, via
    pyfftw.interfaces_.  Because PyFFTW_ relies on the GPL-licensed FFTW_ it
    cannot be included in SciPy.  Users for whom the speed of FFT routines is
@@ -49,7 +49,7 @@ and the inverse transform is defined as follows
 These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively as shown in the following example.
 
->>> from scipy.fftpack import fft, ifft
+>>> from scipy.fft import fft, ifft
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> y = fft(x)
 >>> y
@@ -89,7 +89,7 @@ The example plots the FFT of the sum of two sines.
 
 .. plot::
 
-    >>> from scipy.fftpack import fft
+    >>> from scipy.fft import fft
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
@@ -116,7 +116,7 @@ truncated for illustrative purposes).
 
 .. plot::
 
-    >>> from scipy.fftpack import fft
+    >>> from scipy.fft import fft
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
@@ -142,7 +142,7 @@ helper functions.
 
 The function :func:`fftfreq` returns the FFT sample frequency points.
 
->>> from scipy.fftpack import fftfreq
+>>> from scipy.fft import fftfreq
 >>> freq = fftfreq(8, 0.125)
 >>> freq
 array([ 0., 1., 2., 3., -4., -3., -2., -1.])
@@ -150,7 +150,7 @@ array([ 0., 1., 2., 3., -4., -3., -2., -1.])
 In a similar spirit, the function :func:`fftshift` allows swapping the lower
 and upper halves of a vector, so that it becomes suitable for display.
 
->>> from scipy.fftpack import fftshift
+>>> from scipy.fft import fftshift
 >>> x = np.arange(8)
 >>> fftshift(x)
 array([4, 5, 6, 7, 0, 1, 2, 3])
@@ -160,7 +160,7 @@ asymmetric spectrum.
 
 .. plot::
 
-    >>> from scipy.fftpack import fft, fftfreq, fftshift
+    >>> from scipy.fft import fft, fftfreq, fftshift
     >>> # number of signal points
     >>> N = 400
     >>> # sample spacing
@@ -177,24 +177,27 @@ asymmetric spectrum.
     >>> plt.show()
 
 
-The function :func:`rfft` calculates the FFT of a real sequence and outputs
-the FFT coefficients :math:`y[n]` with separate real and imaginary parts. In
-case of N being even: :math:`[y[0], Re(y[1]), Im(y[1]),..., Re(y[N/2])]`; in
-case N being odd :math:`[y[0], Re(y[1]),Im(y[1]),..., Re(y[N/2]),
-Im(y[N/2])]`.
+The function :func:`rfft` calculates the FFT of a real sequence and outputs the
+complex FFT coefficients :math:`y[n]` for only half of the frequency range. The
+remaining negative frequency components are implied by the Hermitian symmetry of
+the FFT for a real input (``y[n] = conj(y[-n])``). In case of N being even:
+:math:`[Re(y[0]) + 0j, y[1], ..., Re(y[N/2]) + 0j]`; in case N being odd
+:math:`[Re(y[0]) + 0j, y[1], ..., y[N/2]`. The terms shown explicitly as
+:math:`Re(y[k]) + 0j` are restricted to be purely real since, by the hermitian
+property, they are their own complex conjugate.
 
 The corresponding function :func:`irfft` calculates the IFFT of the FFT
 coefficients with this special ordering.
 
->>> from scipy.fftpack import fft, rfft, irfft
+>>> from scipy.fft import fft, rfft, irfft
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5, 1.0])
 >>> fft(x)
 array([ 5.5 +0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
         1.5 +0.j        , -2.75+1.29903811j,  2.25+0.4330127j ])
 >>> yr = rfft(x)
 >>> yr
-array([ 5.5       ,  2.25      , -0.4330127 , -2.75      , -1.29903811,
-        1.5       ])
+array([ 5.5 +0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
+        1.5 +0.j        ])
 >>> irfft(yr)
 array([ 1. ,  2. ,  1. , -1. ,  1.5,  1. ])
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
@@ -204,7 +207,22 @@ array([ 4.5       +0.j        ,  2.08155948-1.65109876j,
         2.08155948+1.65109876j])
 >>> yr = rfft(x)
 >>> yr
-array([ 4.5       ,  2.08155948, -1.65109876, -1.83155948,  1.60822041])
+array([ 4.5       +0.j        ,  2.08155948-1.65109876j,
+        -1.83155948+1.60822041j])
+
+Notice that the :func:`rfft` of odd and even length signals are the same shape.
+By default, :func:`irfft` assumes the ouput signal should be of even length. And
+so for odd signals, will give the wrong result:
+
+>>> irfft(yr)
+array([ 1.70788987,  2.40843925, -0.37366961,  0.75734049])
+
+To recover the original odd length signal, we **must** pass the output shape by
+the `n` parameter.
+
+>>> irfft(yr, n=len(x))
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
 
 
 Two and n-dimensional discrete Fourier transforms
@@ -214,12 +232,16 @@ The functions :func:`fft2` and :func:`ifft2` provide 2-dimensional FFT, and
 IFFT, respectively. Similar, :func:`fftn` and :func:`ifftn` provide
 n-dimensional FFT, and IFFT, respectively.
 
+For real input signals, similar to :func:`rfft`, we have the functions
+:func:`rfft2` and :func:`irfft2` for 2-dimensional real transforms;
+:func:`rfftn` and :func:`irfftn` for n-dimensional real transforms.
+
 The example below demonstrates a 2-dimensional IFFT and plots the resulting
 (2-dimensional) time-domain signals.
 
 .. plot::
 
-    >>> from scipy.fftpack import ifftn
+    >>> from scipy.fft import ifftn
     >>> import matplotlib.pyplot as plt
     >>> import matplotlib.cm as cm
     >>> N = 30
@@ -245,13 +267,6 @@ The example below demonstrates a 2-dimensional IFFT and plots the resulting
     >>> plt.show()
 
 
-FFT convolution
-_______________
-
-`scipy.fftpack.convolve` performs a convolution of two one-dimensional
-arrays in frequency domain.
-
-
 Discrete Cosine Transforms
 --------------------------
 
@@ -271,7 +286,7 @@ Type I DCT
 __________
 
 SciPy uses the following definition of the unnormalized DCT-I
-(``norm='None'``):
+(``norm=None``):
 
 .. math::
 
@@ -279,14 +294,13 @@ SciPy uses the following definition of the unnormalized DCT-I
     \cos\left(\frac{\pi nk}{N-1}\right),
     \qquad 0 \le k < N.
 
-Only ``None`` is supported as normalization mode for DCT-I. Note also that the
-DCT-I is only supported for input size > 1
+Note that the DCT-I is only supported for input size > 1
 
 Type II DCT
 ___________
 
 SciPy uses the following definition of the unnormalized DCT-II
-(``norm='None'``):
+(``norm=None``):
 
 .. math::
 
@@ -313,7 +327,7 @@ Type III DCT
 ____________
 
 SciPy uses the following definition of the unnormalized DCT-III
-(``norm='None'``):
+(``norm=None``):
 
 .. math::
 
@@ -332,32 +346,58 @@ DCT and IDCT
 ____________
 
 
-The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up to
-a factor `2N`. The orthonormalized DCT-III is exactly the inverse of the orthonormalized DCT-
-II. The function :func:`idct` performs the mappings between the DCT and IDCT types.
+The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up to a
+factor `2N`. The orthonormalized DCT-III is exactly the inverse of the
+orthonormalized DCT- II. The function :func:`idct` performs the mappings between
+the DCT and IDCT types, as well as performing the correct normalization.
 
-The example below shows the relation between DCT and IDCT for different types
-and normalizations.
+The following example shows the relation between DCT and IDCT for different
+types and normalizations.
 
->>> from scipy.fftpack import dct, idct
+>>> from scipy.fft import dct, idct
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
+
+The DCT-II and DCT-III are each others inverses, so for an orthonormal transform
+we return back to the original signal.
+
 >>> dct(dct(x, type=2, norm='ortho'), type=3, norm='ortho')
-[1.0, 2.0, 1.0, -1.0, 1.5]
->>>  # scaling factor 2*N = 10
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+Doing the same under default normalization however, we pick up an extra scaling
+factor of :math:`2N=10` since the forward transform is unnormalized.
+
+>>> dct(dct(x, type=2), type=3)
+array([ 10.,  20.,  10., -10.,  15.])
+
+For this reason, we should use the function `idct` using the same type for both,
+giving a correctly normalized result.
+
+>>> # Normalized inverse: no scaling factor
 >>> idct(dct(x, type=2), type=2)
-array([ 10.,  20.,  10., -10.,  15.])
->>>  # no scaling factor
->>> idct(dct(x, type=2, norm='ortho'), type=2, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*N = 10
->>> idct(dct(x, type=3), type=3)
-array([ 10.,  20.,  10., -10.,  15.])
->>>  # no scaling factor
->>> idct(dct(x, type=3, norm='ortho'), type=3, norm='ortho')
+
+Analogous results can be seen for the DCT-I which is its own inverse up to a
+factor of :math:`2(N-1)`
+
+>>> dct(dct(x, type=1, norm='ortho'), type=1, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*(N-1) = 8
+>>> # Unnormalized round-trip via DCT-I: scaling factor 2*(N-1) = 8
+>>> dct(dct(x, type=1), type=1)
+array([ 8. ,  16.,  8. , -8. ,  12.])
+>>> # Normalized inverse: no scaling factor
 >>> idct(dct(x, type=1), type=1)
-array([  8.,  16.,   8.,  -8.,  12.])
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+And for the DCT-IV which is also its own inverse up to a factor of :math:`2N`
+
+>>> dct(dct(x, type=4, norm='ortho'), type=4, norm='ortho')
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+>>> # Unnormalized round-trip via DCT-IV: scaling factor 2*N = 10
+>>> dct(dct(x, type=4), type=4)
+array([ 10.,  20.,  10., -10.,  15.])
+>>> # Normalized inverse: no scaling factor
+>>> idct(dct(x, type=4), type=4)
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
 Example
 _______
@@ -377,7 +417,7 @@ provides a five-fold compression rate.
 
 .. plot::
 
-    >>> from scipy.fftpack import dct, idct
+    >>> from scipy.fft import dct, idct
     >>> import matplotlib.pyplot as plt
     >>> N = 100
     >>> t = np.linspace(0,20,N)
@@ -414,22 +454,21 @@ Type I DST
 __________
 
 DST-I assumes the input is odd around n=-1 and n=N. SciPy uses the following
-definition of the unnormalized DST-I (``norm='None'``):
+definition of the unnormalized DST-I (``norm=None``):
 
 .. math::
 
     y[k] = 2\sum_{n=0}^{N-1} x[n]  \sin\left( \pi {(n+1) (k+1)}\over{N+1}
     \right), \qquad 0 \le k < N.
 
-Only ``None`` is supported as normalization mode for DST-I. Note also that the
-DST-I is only supported for input size > 1. The (unnormalized) DST-I is its
-own inverse, up to a factor `2(N+1)`.
+Note also that the DST-I is only supported for input size > 1. The
+(unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
 
 Type II DST
 ___________
 
 DST-II assumes the input is odd around n=-1/2 and even around n=N. SciPy uses
-the following definition of the unnormalized DST-II (``norm='None'``):
+the following definition of the unnormalized DST-II (``norm=None``):
 
 .. math::
 
@@ -440,7 +479,7 @@ Type III DST
 ____________
 
 DST-III assumes the input is odd around n=-1 and even around n=N-1. SciPy uses
-the following definition of the unnormalized DST-III (``norm='None'``):
+the following definition of the unnormalized DST-III (``norm=None``):
 
 .. math::
 
@@ -452,38 +491,52 @@ DST and IDST
 ____________
 
 
-The example below shows the relation between DST and IDST for different types
-and normalizations.
+The following example below shows the relation between DST and IDST for
+different types and normalizations.
 
->>> from scipy.fftpack import dst, idst
+>>> from scipy.fft import dst, idst
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
->>>  # scaling factor 2*N = 10
+
+The DST-II and DST-III are each others inverses, so for an orthonormal transform
+we return back to the original signal.
+
+>>> dst(dst(x, type=2, norm='ortho'), type=3, norm='ortho')
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+Doing the same under default normalization however, we pick up an extra scaling
+factor of :math:`2N=10` since the forward transform is unnormalized.
+
+>>> dst(dst(x, type=2), type=3)
+array([ 10.,  20.,  10., -10.,  15.])
+
+For this reason, we should use the function `idst` using the same type for both,
+giving a correctly normalized result.
+
 >>> idst(dst(x, type=2), type=2)
-array([ 10.,  20.,  10., -10.,  15.])
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+Analogous results can be seen for the DST-I which is its own inverse up to a
+factor of :math:`2(N-1)`
+
+>>> dst(dst(x, type=1, norm='ortho'), type=1, norm='ortho')
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+>>>  # scaling factor 2*(N+1) = 12
+>>> dst(dst(x, type=1), type=1)
+array([ 12.,  24.,  12., -12.,  18.])
 >>>  # no scaling factor
->>> idst(dst(x, type=2, norm='ortho'), type=2, norm='ortho')
+>>> idst(dst(x, type=1), type=1)
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
+
+And for the DST-IV which is also its own inverse up to a factor of :math:`2N`
+
+>>> dst(dst(x, type=4, norm='ortho'), type=4, norm='ortho')
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
->>> idst(dst(x, type=3), type=3)
+>>> dst(dst(x, type=4), type=4)
 array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
->>> idst(dst(x, type=3, norm='ortho'), type=3, norm='ortho')
+>>> idst(dst(x, type=4), type=4)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
->>>  # scaling factor 2*(N+1) = 8
->>> idst(dst(x, type=1), type=1)
-array([ 12.,  24.,  12., -12.,  18.])
-
-
-Cache Destruction
------------------
-
-To accelerate repeat transforms on arrays of the same shape and dtype,
-scipy.fftpack keeps a cache of the prime factorization of length of the array
-and pre-computed trigonometric functions.  These caches can be destroyed by
-calling the appropriate function in ``scipy.fftpack._fftpack``.
-dst(type=1) and idst(type=1) share a cache (``*dst1_cache``).  As do dst(type=2),
-dst(type=3), idst(type=3), and idst(type=3) (``*dst2_cache``).
-
 
 References
 ----------

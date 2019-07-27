@@ -208,6 +208,12 @@ Jordi Montes for initial contribution of the Clarkson-Woodruff sketch.
 William Conner DiPaolo for improvements to the Clarkson-Woodruff transform.
 Forrest Collman for adding multi-target dijsktra to scipy.sparse.csgraph
 Carlos Ramos Carreño for adding support for relational attributes in loadarff.
+Jason M. Manley for documentation fixes.
+Aidan Dang for block QR wrappers in scipy.linalg.lapack.
+Clement Ng for modifying tests in scipy.stats.
+Fletcher H. Easton for a bug fix in scipy.linalg.interpolative.
+Christian Brueffer for improvements to code readability/style and documentation.
+
 
 Institutions
 ------------

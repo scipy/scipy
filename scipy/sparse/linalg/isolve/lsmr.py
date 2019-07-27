@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['lsmr']
 
-from numpy import zeros, infty, atleast_1d
+from numpy import zeros, infty, atleast_1d, result_type
 from numpy.linalg import norm
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
@@ -43,7 +43,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     A : {matrix, sparse matrix, ndarray, LinearOperator}
         Matrix A in the linear system.
         Alternatively, ``A`` can be a linear operator which can
-        produce ``Ax`` and ``A^T x`` using, e.g.,
+        produce ``Ax`` and ``A^H x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : array_like, shape (m,)
         Vector b in the linear system.
@@ -63,7 +63,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         residual vector for the current approximate solution ``x``.
         If ``Ax = b`` seems to be consistent, ``lsmr`` terminates
         when ``norm(r) <= atol * norm(A) * norm(x) + btol * norm(b)``.
-        Otherwise, lsmr terminates when ``norm(A^{T} r) <=
+        Otherwise, lsmr terminates when ``norm(A^H r) <=
         atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-6 (say),
         the final ``norm(r)`` should be accurate to about 6
         digits. (The final x will usually have fewer correct digits,
@@ -119,7 +119,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     normr : float
         ``norm(b-Ax)``
     normar : float
-        ``norm(A^T (b - Ax))``
+        ``norm(A^H (b - Ax))``
     norma : float
         ``norm(A)``
     conda : float
@@ -208,7 +208,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
          'Cond(Abar) seems to be too large for this machine         ',
          'The iteration limit has been reached                      ')
 
-    hdg1 = '   itn      x(1)       norm r    norm A''r'
+    hdg1 = '   itn      x(1)       norm r    norm Ar'
     hdg2 = ' compatible   LS      norm A   cond A'
     pfreq = 20   # print frequency (for repeating the heading)
     pcount = 0   # print counter
@@ -221,6 +221,11 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if maxiter is None:
         maxiter = minDim
 
+    if x0 is None:
+        dtype = result_type(A, b, float)
+    else:
+        dtype = result_type(A, b, x0, float)
+
     if show:
         print(' ')
         print('LSMR            Least-squares solution of  Ax = b\n')
@@ -232,7 +237,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     u = b
     normb = norm(b)
     if x0 is None:
-        x = zeros(n)
+        x = zeros(n, dtype)
         beta = normb.copy()
     else:
         x = atleast_1d(x0)
@@ -244,7 +249,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         v = A.rmatvec(u)
         alpha = norm(v)
     else:
-        v = zeros(n)
+        v = zeros(n, dtype)
         alpha = 0
 
     if alpha > 0:
@@ -261,7 +266,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     sbar = 0
 
     h = v.copy()
-    hbar = zeros(n)
+    hbar = zeros(n, dtype)
 
     # Initialize variables for estimation of ||r||.
 

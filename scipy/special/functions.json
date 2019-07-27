@@ -339,6 +339,11 @@
             "ellpk": "d->d"
         }
     },
+    "ellipk": {
+	"_ellipk.pxd": {
+	    "ellipk": "d->d"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
@@ -651,19 +656,6 @@
             "hyp1f1_wrap": "ddd->d"
         }
     },
-    "hyp1f2": {
-        "cephes.h": {
-            "onef2": "dddd*d->d"
-        }
-    },
-    "hyp2f0": {
-        "_legacy.pxd": {
-            "hyp2f0_unsafe": "dddd*d->d"
-        },
-        "cephes.h": {
-            "hyp2f0": "dddi*d->d"
-        }
-    },
     "hyp2f1": {
         "cephes.h": {
             "hyp2f1": "dddd->d"
@@ -672,14 +664,9 @@
             "chyp2f1_wrap": "dddD->D"
         }
     },
-    "hyp3f0": {
-        "cephes.h": {
-            "threef0": "dddd*d->d"
-        }
-    },
     "hyperu": {
-        "specfun_wrappers.h": {
-            "hypU_wrap": "ddd->d"
+        "_hypergeometric.pxd": {
+            "hyperu": "ddd->d"
         }
     },
     "i0": {

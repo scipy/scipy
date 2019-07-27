@@ -9,6 +9,7 @@ MODULES = [
     "scipy.cluster.vq",
     "scipy.cluster.hierarchy",
     "scipy.constants",
+    "scipy.fft",
     "scipy.fftpack",
     "scipy.integrate",
     "scipy.interpolate",

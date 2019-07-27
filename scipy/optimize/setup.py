@@ -22,6 +22,17 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
+    config.add_library('rectangular_lsap',
+                       sources='rectangular_lsap/rectangular_lsap.cpp',
+                       headers='rectangular_lsap/rectangular_lsap.h')
+    config.add_extension('_lsap_module',
+                         sources=['_lsap_module.c'],
+                         libraries=['rectangular_lsap'],
+                         depends=(['rectangular_lsap/rectangular_lsap.cpp',
+                                   'rectangular_lsap/rectangular_lsap.h']),
+                         include_dirs=include_dirs,
+                         **numpy_nodepr_api)
+
     rootfind_src = [join('Zeros','*.c')]
     rootfind_hdr = [join('Zeros','zeros.h')]
     config.add_library('rootfind',

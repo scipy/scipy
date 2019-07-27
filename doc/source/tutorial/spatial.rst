@@ -193,20 +193,20 @@ points is closest to this one", and define the regions that way:
    >>> from scipy.spatial import Voronoi
    >>> vor = Voronoi(points)
    >>> vor.vertices
-   array([[ 0.5,  0.5],
-          [ 1.5,  0.5],
-          [ 0.5,  1.5],
-          [ 1.5,  1.5]])
+   array([[0.5, 0.5],
+          [0.5, 1.5],
+          [1.5, 0.5],
+          [1.5, 1.5]])
    
    The Voronoi vertices denote the set of points forming the polygonal
    edges of the Voronoi regions. In this case, there are 9 different
    regions:
    
    >>> vor.regions
-   [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [3, 2, 0, 1], [2, -1, 0], [3, -1, 1]]
+   [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [0, 1, 3, 2], [2, -1, 0], [3, -1, 1]]
    
    Negative value ``-1`` again indicates a point at infinity. Indeed,
-   only one of the regions, ``[3, 1, 0, 2]``, is bounded. Note here that
+   only one of the regions, ``[0, 1, 3, 2]``, is bounded. Note here that
    due to similar numerical precision issues as in Delaunay triangulation
    above, there may be fewer Voronoi regions than input points.
    
@@ -214,7 +214,7 @@ points is closest to this one", and define the regions that way:
    similar collection of simplices as the convex hull pieces:
    
    >>> vor.ridge_vertices
-   [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [0, 2], [1, 3]]
+   [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [1, 3], [0, 2]]
    
    These numbers indicate indices of the Voronoi vertices making up the
    line segments. ``-1`` is again a point at infinity --- only four of
@@ -226,18 +226,18 @@ points is closest to this one", and define the regions that way:
    recorded:
    
    >>> vor.ridge_points
-   array([[0, 1],
-          [0, 3],
-          [6, 3],
-          [6, 7],
-          [3, 4],
-          [5, 8],
-          [5, 2],
-          [5, 4],
-          [8, 7],
+   array([[0, 3],
+          [0, 1],
+          [2, 5],
           [2, 1],
-          [4, 1],
-          [4, 7]], dtype=int32)
+          [1, 4],
+          [7, 8],
+          [7, 6],
+          [7, 4],
+          [8, 5],
+          [6, 3],
+          [4, 5],
+          [4, 3]], dtype=int32)
    
    This information, taken together, is enough to construct the full
    diagram.

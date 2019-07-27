@@ -108,9 +108,9 @@ def get_version_info():
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
         # load it as a separate module to not load scipy/__init__.py
-        import imp
-        version = imp.load_source('scipy.version', 'scipy/version.py')
-        GIT_REVISION = version.git_revision
+        import runpy
+        ns = runpy.run_path('scipy/version.py')
+        GIT_REVISION = ns['git_revision']
     else:
         GIT_REVISION = "Unknown"
 
@@ -239,6 +239,10 @@ def get_build_ext_override():
                     # line below fixes gh-8680
                     ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            # Allow late configuration
+            if hasattr(ext, '_pre_build_hook'):
+                ext._pre_build_hook(self, ext)
 
             old_build_ext.build_extension(self, ext)
 
@@ -467,6 +471,9 @@ def setup_package():
         build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
+    install_requires = build_requires
+    setup_requires = build_requires + ['pybind11>=2.2.4']
+
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -485,8 +492,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=build_requires,
-        install_requires=build_requires,
+        setup_requires=setup_requires,
+        install_requires=install_requires,
         python_requires='>=3.5',
     )
 

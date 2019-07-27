@@ -334,7 +334,6 @@ Constrained multivariate methods:
    fmin_tnc - Truncated Newton code.
    fmin_cobyla - Constrained optimization by linear approximation.
    fmin_slsqp - Minimization using sequential least-squares programming.
-   differential_evolution - stochastic minimization using differential evolution.
 
 Univariate (scalar) minimization methods:
 
@@ -401,7 +400,7 @@ from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
-from ._hungarian import linear_sum_assignment
+from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,

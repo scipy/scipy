@@ -33,8 +33,6 @@ cdef extern from "cephes.h" nogil:
     double gdtri(double a, double b, double y)
     double hyp2f1(double a, double b, double c, double x)
     double hyperg(double a, double b, double x)
-    double hyp2f0(double a, double b, double x, int type, double *err)
-    double onef2(double a, double b, double c, double x, double *err)
     double threef0(double a, double b, double c, double x, double *err)
     double i0(double x)
     double i0e(double x)

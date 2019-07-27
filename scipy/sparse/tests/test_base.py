@@ -658,6 +658,12 @@ class _TestCommon(object):
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(abs(A),abs(self.spmatrix(A)).todense())
 
+    def test_round(self):
+        decimal = 1
+        A = matrix([[-1.35, 0.56], [17.25, -5.98]], 'd')
+        assert_equal(np.around(A, decimals=decimal),
+                     round(self.spmatrix(A), ndigits=decimal).todense())
+
     def test_elementwise_power(self):
         A = matrix([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]], 'd')
         assert_equal(np.power(A, 2), self.spmatrix(A).power(2).todense())

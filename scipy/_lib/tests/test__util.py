@@ -56,6 +56,11 @@ def test_check_random_state():
     rsi = check_random_state(None)
     assert_equal(type(rsi), np.random.RandomState)
     assert_raises(ValueError, check_random_state, 'a')
+    if hasattr(np.random, 'Generator'):
+        # np.random.Generator is only available in numpy >= 1.17
+        rg = np.random.Generator(np.random.PCG64())
+        rsi = check_random_state(rg)
+        assert_equal(type(rsi), np.random.Generator)
 
 
 class TestMapWrapper(object):
