@@ -567,7 +567,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_ascending(double *x,
+cdef int find_interval_ascending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
@@ -652,7 +652,7 @@ cdef int find_interval_ascending(double *x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_descending(double *x,
+cdef int find_interval_descending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
