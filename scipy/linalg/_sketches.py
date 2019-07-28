@@ -72,7 +72,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
         Input matrix, of shape ``(n, d)``.
     sketch_size: int
         Number of rows for the sketch.
-    seed : None or int or `numpy.random.RandomState` instance, optional
+    seed : None or int or `numpy.random.mtrand.RandomState` instance, optional
         This parameter defines the ``RandomState`` object to use for drawing
         random variates.
         If None (or ``np.random``), the global ``np.random`` state is used.
