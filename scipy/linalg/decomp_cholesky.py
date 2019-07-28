@@ -44,18 +44,18 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     # if the pivot flag is false, return the result
     if not chol_pivot:
-        return c, lower, 0, []
-    
-    pstrf, = get_lapack_funcs(('pstrf',), (a1,))
-    c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=piv_tol)
+        return c, lower
+    else:
+        pstrf, = get_lapack_funcs(('pstrf',), (a1,))
+        c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=piv_tol)
 
-    if info > 0:
-        raise LinAlgError("%d-th leading minor of the array is not positive "
+        if info > 0:
+            raise LinAlgError("%d-th leading minor of the array is not positive "
                           "definite" % info)
-    if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+        if info < 0:
+            raise ValueError('LAPACK reported an illegal value in {}-th argument'
                          'on entry to "POTRF".'.format(-info))
-    return c, lower, rank, pivot
+        return c, lower, rank, pivot
 
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True, chol_pivot=False, piv_tol=-1):
     """
@@ -100,8 +100,12 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True, chol_pivot=Fa
            [ 0.+2.j,  5.+0.j]])
 
     """
-    c,lower, rank_bn, piv = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, chol_pivot=chol_pivot, piv_tol=piv_tol)
-    return c, rank_bn, piv
+    if not chol_pivot:
+        c,lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite)
+        return c
+    else:
+        c,lower, rank_bn, piv = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, chol_pivot=chol_pivot, piv_tol=piv_tol)
+        return c, rank_bn, piv
 
 
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
