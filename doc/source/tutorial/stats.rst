@@ -34,8 +34,8 @@ for encapsulating :ref:`continuous random variables
 <continuous-random-variables>` and :ref:`discrete random variables
 <discrete-random-variables>` . Over 80 continuous random variables
 (RVs) and 10 discrete random variables have been implemented using
-these classes. Besides this, new routines and distributions can easily
-added by the end user. (If you create one, please contribute it).
+these classes. Besides this, new routines and distributions can be
+easily added by the end user. (If you create one, please contribute it).
 
 All of the statistics functions are located in the sub-package
 :mod:`scipy.stats` and a fairly complete listing of these functions
