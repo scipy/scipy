@@ -6,7 +6,10 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+           'is_matrix_symmetric','is_matrix_positive_definite',
+           'is_matrix_positive_semidefinite','is_matrix_negative_definite',
+           'is_matrix_negative_semidefinite','is_matrix_indefinite']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single)
@@ -17,6 +20,7 @@ from .misc import norm
 from .basic import solve, inv
 from .special_matrices import triu
 from .decomp_svd import svd
+from .decomp import eig
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
@@ -668,3 +672,191 @@ def signm(A, disp=True):
         return S0
     else:
         return S0, errest
+
+
+def is_matrix_symmetric(A, rtol=1e-05, atol=1e-08):
+    """
+    Returns True if a matrix is symmetric
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    rtol : float
+        Relative tolerance.
+    atol : float
+        Absolute tolerance.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is symmetric.
+
+    Examples
+    --------
+    from scipy.linalg import is_matrix_symmetric
+    m = np.array([[2,3],[3,2]])
+    print(is_matrix_symmetric(m))
+    m = np.array([[5,0],[1,3]])
+    print(is_matrix_symmetric(m))
+    References
+    ----------
+    Hazewinkel, Michiel, ed. (2001) [1994], "Symmetric matrix", Encyclopedia of Mathematics, 
+    Springer Science+Business Media B.V. / Kluwer Academic Publishers, ISBN 978-1-55608-010-4
+    credit to: Nils Werner
+    https://stackoverflow.com/questions/42908334/checking-if-a-matrix-is-symmetric-in-numpy
+    """
+    A = _asarray_square(A)
+    return np.allclose(A, A.T, rtol=rtol, atol=atol)
+
+def is_matrix_positive_definite(A):
+    """
+    Returns True if a matrix is positive definite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is positive definite.
+
+    Examples
+    --------
+    from scipy.linalg import is_matrix_positive_definite
+    m = np.array([[5,1],[1,3]])
+    print(is_matrix_positive_definite(m))
+    m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    print(is_matrix_positive_definite(m))
+
+    References
+    ----------
+    Definiteness of a matrix, From Wikipedia, the free encyclopedia
+    https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
+    """
+    A = _asarray_square(A)
+    if not is_matrix_symmetric(A):
+        raise ValueError('expected symmetric matrix')
+    eiVal, eiVecR=eig(A)
+    return (eiVal>0).all()
+
+def is_matrix_positive_semidefinite(A):
+    """
+    Returns True if a matrix is positive semidefinite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is positive semidefinite.
+
+    Examples
+    --------
+    from scipy.linalg import is_matrix_positive_semidefinite
+    m = np.array([[1,-1],[-1,1]])
+    print(is_matrix_positive_semidefinite(m))
+
+    References
+    ----------
+    Definiteness of a matrix, From Wikipedia, the free encyclopedia
+    https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
+    """
+    A = _asarray_square(A)
+    if not is_matrix_symmetric(A):
+        raise ValueError('expected symmetric matrix')
+    eiVal, eiVecR=eig(A)
+    return (eiVal>=0).all()
+
+def is_matrix_negative_definite(A):
+    """
+    Returns True if a matrix is negative definite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is negative definite.
+
+    Examples
+    --------
+    from scipy.linalg import is_matrix_negative_definite
+    m = np.array([[-5,-1],[-1,-3]])
+    print(is_matrix_negative_definite(m))
+
+    References
+    ----------
+    Definiteness of a matrix, From Wikipedia, the free encyclopedia
+    https://en.wikipedia.org/wiki/positive-definite_matrix#Eigenvalues
+    """
+    A = _asarray_square(A)
+    if not is_matrix_symmetric(A):
+        raise ValueError('expected symmetric matrix')
+    eiVal, eiVecR=eig(A)
+    return (eiVal<0).all()
+
+def is_matrix_negative_semidefinite(A):
+    """
+    Returns True if a matrix is negative semidefinite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is negative semidefinite.
+
+    Examples
+    --------
+    from scipy.linalg import is_matrix_negative_semidefinite
+    m = np.array([[-1,1],[1,-1]])
+    print(is_matrix_negative_semidefinite(m))
+
+    References
+    ----------
+    Definiteness of a matrix, From Wikipedia, the free encyclopedia
+    https://en.wikipedia.org/wiki/positive-definite_matrix#Eigenvalues
+    """
+    A = _asarray_square(A)
+    if not is_matrix_symmetric(A):
+        raise ValueError('expected symmetric matrix')
+    eiVal, eiVecR=eig(A)
+    return (eiVal<=0).all()
+
+def is_matrix_indefinite(A):
+    """
+    Returns True if a matrix is indefinite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is indefinite.
+
+    Examples
+    --------
+    from scipy.linalg import is_matrix_indefinite
+    m = np.array([[5,1],[1,0]])
+    print(is_matrix_indefinite(m))
+
+    References
+    ----------
+    Definiteness of a matrix, From Wikipedia, the free encyclopedia
+    https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
+    """
+    A = _asarray_square(A)
+    if not is_matrix_symmetric(A):
+        raise ValueError('expected symmetric matrix')
+    eiVal, eiVecR=eig(A)
+    return (eiVal<0).any() & (eiVal>0).any()
+

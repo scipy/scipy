@@ -13,7 +13,7 @@ __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-              check_finite=True, chol_pivot=False, piv_tol=-1):
+              check_finite=True, full_pivot=False, pivot_tol=-1):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a) if check_finite else asarray(a)
@@ -33,21 +33,25 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         return a1.copy(), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    potrf, = get_lapack_funcs(('potrf',), (a1,))
-    c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
-    if info > 0:
-        raise LinAlgError("%d-th leading minor of the array is not positive "
-                          "definite" % info)
-    if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         'on entry to "POTRF".'.format(-info))
 
     # if the pivot flag is false, return the result
-    if not chol_pivot:
+    if not full_pivot:
+        potrf, = get_lapack_funcs(('potrf',), (a1,))
+        c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
+        if info > 0:
+            raise LinAlgError("%d-th leading minor of the array is not positive "
+                              "definite" % info)
+        if info < 0:
+            raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                             'on entry to "POTRF".'.format(-info))
         return c, lower
-    else:
+    else: # if the pivot flag is true, return the result plus rank and pivot
+
+        if not is_matrix_positive_semidefinite(a1):
+            raise LinAlgError("Matrix is not positive semidefinite")
+
         pstrf, = get_lapack_funcs(('pstrf',), (a1,))
-        c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=piv_tol)
+        c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=pivot_tol)
 
         if info > 0:
             raise LinAlgError("%d-th leading minor of the array is not positive "
@@ -57,7 +61,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
                          'on entry to "POTRF".'.format(-info))
         return c, lower, rank, pivot
 
-def cholesky(a, lower=False, overwrite_a=False, check_finite=True, chol_pivot=False, piv_tol=-1):
+def cholesky(a, lower=False, overwrite_a=False, check_finite=True, full_pivot=False, pivot_tol=-1):
     """
     Compute the Cholesky decomposition of a matrix.
 
@@ -100,11 +104,11 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True, chol_pivot=Fa
            [ 0.+2.j,  5.+0.j]])
 
     """
-    if not chol_pivot:
+    if not full_pivot:
         c,lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite)
         return c
     else:
-        c,lower, rank_bn, piv = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, chol_pivot=chol_pivot, piv_tol=piv_tol)
+        c,lower, rank_bn, piv = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True, check_finite=check_finite, full_pivot=full_pivot, pivot_tol=pivot_tol)
         return c, rank_bn, piv
 
 
