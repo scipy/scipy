@@ -891,7 +891,7 @@ int Function::clear(Function * self)
 
 PyGetSetDef Function_getset[] =
 {
-  {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+  {(char*)"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
   {NULL} /* Sentinel */
 };
 
