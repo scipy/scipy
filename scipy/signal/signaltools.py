@@ -2322,8 +2322,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     The signal `x` is upsampled by the factor `up`, a zero-phase low-pass
     FIR filter is applied, and then it is downsampled by the factor `down`.
     The resulting sample rate is ``up / down`` times the original sample
-    rate. Values beyond the boundary of the signal are assumed to be zero
-    during the filtering step.
+    rate. By default, values beyond the boundary of the signal are assumed
+    to be zero during the filtering step.
 
     Parameters
     ----------
@@ -2338,6 +2338,11 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     window : string, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
+    border : string, optional
+        `zero`, `mean` or `edge`. Changes assumptions on the values beyond the
+		boundary. If `zero`, assumed to be zero. If `mean`, assumed to be the
+        mean. If `edge` assumed to continue a linear trend defined by the
+        first and last points.
 
     Returns
     -------
@@ -2372,6 +2377,11 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     For any other type of `window`, the functions `scipy.signal.get_window`
     and `scipy.signal.firwin` are called to generate the appropriate filter
     coefficients.
+
+    The argument border changes assumptions on the values beyond the
+	boundary. The default (border=`zero`) is to assume that they are zero. In
+    other cases, the mean or a linear trend is substracted from the signal
+    prior to resampling, and then reapplied to the output.
 
     The first sample of the returned vector is the same as the first
     sample of the input vector. The spacing between samples is changed
