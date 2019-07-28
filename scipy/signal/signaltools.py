@@ -2339,9 +2339,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
     border : string, optional
-        `zero`, `mean` or `edge`. Changes assumptions on the values beyond the
+        `zero`, `mean` or `line`. Changes assumptions on the values beyond the
         boundary. If `zero`, assumed to be zero. If `mean`, assumed to be the
-        mean. If `edge` assumed to continue a linear trend defined by the
+        mean. If `line` assumed to continue a linear trend defined by the
         first and last points.
 
     Returns
@@ -2426,7 +2426,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     down //= g_
     if up == down == 1:
         return x.copy()
-
     n_in = x.shape[axis]
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
@@ -2458,15 +2457,17 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     n_pre_remove_end = n_pre_remove + n_out
 
     # Remove background depending on the border option
-    if border is 'zero':
+    funcs = {'mean': np.mean, 'median': np.median,
+             'minimum': np.amin, 'maximum': np.amax}
+    if border == 'zero':
         background_line = None
-    elif border is 'mean':
-        background_line = [np.mean(x, axis=axis), 0]
-    elif border is 'edge':
+    elif border in funcs:
+        background_line = [funcs[border](x, axis=axis), 0]
+    elif border == 'line':
         background_line = [x.take(0, axis),
                            (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
     else:
-        raise ValueError('border must be zero, mean or edge')
+        raise ValueError('border must be line, maximum, mean, median, minimum or zero')
 
     if background_line is not None:
         rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)

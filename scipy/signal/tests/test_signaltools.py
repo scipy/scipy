@@ -920,7 +920,7 @@ class TestResample(object):
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
-        for border in ['zero', 'mean', 'edge']:
+        for border in ['zero', 'mean', 'median', 'maximum', 'minimum', 'line']:
             signal.resample_poly(impulse, 5, 1, window=window, border=border)
             assert_array_equal(window, window_orig)
 
@@ -928,7 +928,7 @@ class TestResample(object):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
-        for border in ['zero', 'mean', 'edge']:
+        for border in ['zero', 'mean', 'median', 'maximum', 'minimum', 'line']:
             y = signal.resample_poly(x, 1, 2, window=h, border=border)
             assert_(y.dtype == np.float32)
 
@@ -938,8 +938,10 @@ class TestResample(object):
         ('polyphase', True, 'zero'),
         ('polyphase', False, 'mean'),
         ('polyphase', True, 'mean'),
-        ('polyphase', False, 'edge'),
-        ('polyphase', True, 'edge'),
+        ('polyphase', False, 'median'),
+        ('polyphase', True, 'median'),
+        ('polyphase', False, 'line'),
+        ('polyphase', True, 'line'),
     ])
     def test_resample_methods(self, method, ext, border):
         # Test resampling of sinusoids and random noise (1-sec)
