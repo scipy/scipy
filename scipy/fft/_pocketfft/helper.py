@@ -1,5 +1,5 @@
 import numpy as np
-from collections.abc import Iterable
+from numbers import Number
 import operator
 
 
@@ -12,7 +12,7 @@ def _iterable_of_int(x, name=None):
 
     Parameters
     ----------
-    x : value, or Iterable of values, convertible to int
+    x : value, or sequence of values, convertible to int
     name : str, optional
         Name of the argument being converted, only used in the error message
 
@@ -20,7 +20,7 @@ def _iterable_of_int(x, name=None):
     -------
     y : ``List[int]``
     """
-    if not isinstance(x, Iterable):
+    if isinstance(x, Number):
         x = (x,)
 
     try:
