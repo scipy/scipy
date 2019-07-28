@@ -882,6 +882,7 @@ class TestResample(object):
         # Other degenerate conditions
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, border='')
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
         sig2 = np.tile(np.arange(160), (2, 1))
@@ -919,22 +920,28 @@ class TestResample(object):
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
-        signal.resample_poly(impulse, 5, 1, window=window)
-        assert_array_equal(window, window_orig)
+        for border in ['zero', 'mean', 'edge']:
+            signal.resample_poly(impulse, 5, 1, window=window, border=border)
+            assert_array_equal(window, window_orig)
 
     def test_output_float32(self):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
-        y = signal.resample_poly(x, 1, 2, window=h)
-        assert_(y.dtype == np.float32)
+        for border in ['zero', 'mean', 'edge']:
+            y = signal.resample_poly(x, 1, 2, window=h, border=border)
+            assert_(y.dtype == np.float32)
 
-    @pytest.mark.parametrize('method, ext', [
-        ('fft', False),
-        ('polyphase', False),
-        ('polyphase', True),
+    @pytest.mark.parametrize('method, ext, border', [
+        ('fft', False, None),
+        ('polyphase', False, 'zero'),
+        ('polyphase', True, 'zero'),
+        ('polyphase', False, 'mean'),
+        ('polyphase', True, 'mean'),
+        ('polyphase', False, 'edge'),
+        ('polyphase', True, 'edge'),
     ])
-    def test_resample_methods(self, method, ext):
+    def test_resample_methods(self, method, ext, border):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -960,9 +967,9 @@ class TestResample(object):
                     half_len = 10 * max_rate
                     window = signal.firwin(2 * half_len + 1, f_c,
                                            window=('kaiser', 5.0))
-                    polyargs = {'window': window}
+                    polyargs = {'window': window, 'border': border}
                 else:
-                    polyargs = {}
+                    polyargs = {'border': border}
 
                 y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
                                                  **polyargs)
@@ -986,7 +993,8 @@ class TestResample(object):
             if method == 'fft':
                 y_resamp = signal.resample(x, rate_to)
             else:
-                y_resamp = signal.resample_poly(x, rate_to, rate)
+                y_resamp = signal.resample_poly(x, rate_to, rate,
+                                                border=border)
             assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)

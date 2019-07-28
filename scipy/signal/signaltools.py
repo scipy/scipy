@@ -2315,7 +2315,7 @@ def resample(x, num, t=None, axis=0, window=None):
         return y, new_t
 
 
-def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
+def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     """
     Resample `x` along the given axis using polyphase filtering.
 
@@ -2416,7 +2416,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down //= g_
     if up == down == 1:
         return x.copy()
-    n_out = x.shape[axis] * up
+
+    n_in = x.shape[axis]
+    n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
     if isinstance(window, (list, np.ndarray)):
@@ -2438,18 +2440,46 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     n_post_pad = 0
     n_pre_remove = (half_len + n_pre_pad) // down
     # We should rarely need to do this given our filter lengths...
-    while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
+    while _output_len(len(h) + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
     h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
                         np.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
+    # Remove background depending on the border option
+    if border is 'zero':
+        background_line = None
+    elif border is 'mean':
+        background_line = [np.mean(x, axis=axis), 0]
+    elif border is 'edge':
+        background_line = [x.take(0, axis),
+                           (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
+    else:
+        raise ValueError('border must be zero, mean or edge')
+
+    if background_line is not None:
+        rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
+        background_in = np.stack(
+            [background_line[0] + background_line[1]*l for l in rel_len],
+            axis=axis)
+        x = x - background_in.astype(x.dtype)
+
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
-    return y[tuple(keep)]
+    y_keep = y[tuple(keep)]
+
+    # Add background back
+    if background_line is not None:
+        rel_len = np.linspace(0.0, 1.0, n_out, endpoint=False)
+        background_out = np.stack(
+            [background_line[0] + background_line[1]*l for l in rel_len],
+            axis=axis)
+        y_keep += background_out.astype(x.dtype)
+
+    return y_keep
 
 
 def vectorstrength(events, period):
