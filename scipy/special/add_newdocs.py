@@ -2167,8 +2167,9 @@ add_newdoc("elliprc",
     r"""
     elliprc(x, y)
 
-    Symmetric integral RC as a degenerate case related to elliptic integrals,
-    defined as [1]
+    Degenerate symmetric elliptic integral.
+
+    The function RC is defined as [1]_
 
     .. math:: R_{\mathrm{C}}(x, y) = \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt = R_{\mathrm{F}}(x, y, y)
 
@@ -2187,11 +2188,12 @@ add_newdoc("elliprc",
 
     Notes
     -----
-    RC is a degenerate case of the symmetric integral RF: RC(x, y) = RF(x, y,
-    y). It is an elementary function rather than an elliptic integral.
+    RC is a degenerate case of the symmetric integral RF: ``elliprc(x, y) ==
+    elliprf(x, y, y)``. It is an elementary function rather than an elliptic
+    integral.
 
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2]
+    and series expansion up to the 7th order. [2]_
 
     See Also
     --------
@@ -2215,7 +2217,9 @@ add_newdoc("elliprd",
     r"""
     elliprd(x, y, z)
 
-    Carlson symmetric elliptic integral RD, defined as [1]
+    Symmetric elliptic integral of the second kind.
+
+    The function RD is defined as [1]_
 
     .. math:: R_{\mathrm{D}}(x, y, z) = \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2} dt
 
@@ -2234,11 +2238,11 @@ add_newdoc("elliprd",
 
     Notes
     -----
-    RD is a degenerate case of the elliptic integral RJ: ``elliprd(x, y, z) =
+    RD is a degenerate case of the elliptic integral RJ: ``elliprd(x, y, z) ==
     elliprj(x, y, z, z)``.
 
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2]
+    and series expansion up to the 7th order. [2]_
 
     See Also
     --------
@@ -2262,7 +2266,9 @@ add_newdoc("elliprf",
     r"""
     elliprf(x, y, z)
 
-    Carlson symmetric elliptic integral RF, defined as [1]
+    Completely-symmetric elliptic integral of the first kind.
+
+    The function RF is defined as [1]_
 
     .. math:: R_{\mathrm{F}}(x, y, z) = \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
 
@@ -2282,7 +2288,7 @@ add_newdoc("elliprf",
     Notes
     -----
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2] (Cf.:
+    and series expansion up to the 7th order. [2]_ (Cf.:
     https://dlmf.nist.gov/19.36.i)
 
     See Also
@@ -2307,7 +2313,9 @@ add_newdoc("elliprg",
     r"""
     elliprg(x, y, z)
 
-    Carlson symmetric elliptic integral RG, defined as [1]
+    Completely-symmetric elliptic integral of the second kind.
+
+    The function RG is defined as [1]_
 
     .. math:: R_{\mathrm{G}}(x, y, z) = \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t dt
 
@@ -2325,12 +2333,12 @@ add_newdoc("elliprg",
 
     Notes
     -----
-    The implementation uses the relation [1]
+    The implementation uses the relation [1]_
 
     .. math:: 2 R_{\mathrm{G}}(x, y, z) = z R_{\mathrm{F}}(x, y, z) - \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) + \sqrt{\frac{x y}{z}}
 
     and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
-    be chosen as the pivot. Other special cases are dealt with following [2].
+    be chosen as the pivot. Other special cases are dealt with following. [2]_
 
     See Also
     --------
@@ -2367,7 +2375,9 @@ add_newdoc("elliprj",
     r"""
     elliprj(x, y, z, p)
 
-    Carlson symmetric elliptic integral RJ, defined as [1]
+    Symmetric elliptic integral of the third kind.
+
+    The function RJ is defined as [1]_
 
     .. math:: R_{\mathrm{J}}(x, y, z, p) = \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} (t + p)^{-1} dt
 
@@ -2386,14 +2396,14 @@ add_newdoc("elliprj",
 
         If `p` is real and negative, while `x`, `y`, and `z` are real,
         non-negative, and at most one of them is zero, the Cauchy principal
-        value is returned. [1][3]
+        value is returned. [1]_ [2]_
 
     Notes
     -----
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2] The algorithm is slightly
-    different from its earlier incarnation as it appears in [1], in that the
-    call to `elliprc` (or ``atan``/``atanh``, see [4]) is no longer needed in
+    and series expansion up to the 7th order. [3]_ The algorithm is slightly
+    different from its earlier incarnation as it appears in [1]_, in that the
+    call to `elliprc` (or ``atan``/``atanh``, see [4]_) is no longer needed in
     the inner loop.
 
     See Also
@@ -2409,13 +2419,13 @@ add_newdoc("elliprj",
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
-    .. [2] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
+    .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+           Functions," NIST, US Dept. of Commerce.
+           https://dlmf.nist.gov/19.20.iii
+    .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
            Integrands with the Square Root of Two Quadratic Factors," J.
            Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
            https://doi.org/10.1016/S0377-0427(00)00282-X
-    .. [3] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
-           Functions," NIST, US Dept. of Commerce.
-           https://dlmf.nist.gov/19.20.iii
     .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
            Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
            Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
