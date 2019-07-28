@@ -47,7 +47,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         return c, lower, 0, []
     
     pstrf, = get_lapack_funcs(('pstrf',), (a1,))
-    c, pivot, rank, info=pstrf(x, lower=False, overwrite_a=False, clean=True, tol=piv_tol)
+    c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=piv_tol)
 
     if info > 0:
         raise LinAlgError("%d-th leading minor of the array is not positive "
