@@ -40,9 +40,9 @@ class VisitingDistribution(object):
         makes the algorithm jump to a more distant region.
         The value range is (0, 3]. It's value is fixed for the life of the
         object.
-    rand_state : RandomState object
-        A numpy.random.RandomState object for using the current state of the
-        created random generator container.
+    rand_state : `~numpy.random.mtrand.RandomState` object
+        A `~numpy.random.mtrand.RandomState` object for using the current state
+        of the created random generator container.
     """
     TAIL_LIMIT = 1.e8
     MIN_VISIT_BOUND = 1.e-10
@@ -228,9 +228,9 @@ class StrategyChain(object):
         Instance of `ObjectiveFunWrapper` class.
     minimizer_wrapper: LocalSearchWrapper
         Instance of `LocalSearchWrapper` class.
-    rand_state : RandomState object
-        A numpy.random.RandomState object for using the current state of the
-        created random generator container.
+    rand_state : `~numpy.random.mtrand.RandomState` object
+        A `~numpy.random.mtrand.RandomState` object for using the current state
+        of the created random generator container.
     energy_state: EnergyState
         Instance of `EnergyState` class.
     """
@@ -330,8 +330,8 @@ class StrategyChain(object):
         do_ls = False
         if self.K < 90 * len(self.energy_state.current_location):
             pls = np.exp(self.K * (
-                self.energy_state.ebest - self.energy_state.current_energy
-                ) / self.temperature_step)
+                self.energy_state.ebest - self.energy_state.current_energy) /
+                self.temperature_step)
             if pls >= self._rand_state.random_sample():
                 do_ls = True
         # Global energy not improved, let's see what LS gives
@@ -476,9 +476,9 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState` singleton is
-        used.
+    seed : {int or `~numpy.random.mtrand.RandomState` instance}, optional
+        If `seed` is not specified the `~numpy.random.mtrand.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
         If `seed` is already a ``RandomState`` instance, then that
@@ -503,7 +503,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
-        Coordinates of a single n-dimensional starting point. 
+        Coordinates of a single n-dimensional starting point.
 
     Returns
     -------
@@ -598,7 +598,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
      -6.29151648e-09 -6.53145322e-09 -3.93616815e-09 -6.55623025e-09
     -6.05775280e-09 -5.00668935e-09], f(xmin) = 0.000000
 
-    """
+    """  # noqa: E501
     if x0 is not None and not len(x0) == len(bounds):
         raise ValueError('Bounds size does not match x0')
 
@@ -636,7 +636,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     visit_dist = VisitingDistribution(lower, upper, visit, rand_state)
     # Strategy chain instance
     strategy_chain = StrategyChain(accept, visit_dist, func_wrapper,
-                               minimizer_wrapper, rand_state, energy_state)
+                                   minimizer_wrapper, rand_state, energy_state)
     need_to_stop = False
     iteration = 0
     message = []
@@ -644,7 +644,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     optimize_res = OptimizeResult()
     optimize_res.success = True
     optimize_res.status = 0
-    
+
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
     # Run the search loop
     while(not need_to_stop):
