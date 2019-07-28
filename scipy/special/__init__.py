@@ -645,10 +645,6 @@ from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
-from numpy.dual import register_func
-register_func('i0',i0)
-del register_func
-
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
