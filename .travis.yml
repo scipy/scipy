@@ -71,6 +71,8 @@ matrix:
             - python3.5-dbg
             - python3.5-dev
     - python: 3.8-dev
+      dist: xenial
+      sudo: true
       env:
         - TESTMODE=fast
         - NUMPYSPEC="numpy"
