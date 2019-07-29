@@ -4513,7 +4513,7 @@ def _mgc_stat(x, y, compute_distance):
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')[0]
 
-    m, n = stat_mgc_map.shape
+    n, m = stat_mgc_map.shape
     if m == 1 or n == 1:
         stat = stat_mgc_map[m - 1][n - 1]
         opt_scale = m * n
