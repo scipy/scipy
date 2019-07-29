@@ -1336,9 +1336,13 @@ def yeojohnson(x, lmbda=None):
 
     """
 
-    x = np.asarray(x, dtype=np.float64)
+    x = np.asarray(x)
     if x.size == 0:
         return x
+
+    if not np.issubdtype(x.dtype, np.floating):
+        raise ValueError('Yeo-Johnson transformation must be performed on '
+                         'floats. Convert your data type to float.')
 
     if lmbda is not None:
         return _yeojohnson_transform(x, lmbda)
