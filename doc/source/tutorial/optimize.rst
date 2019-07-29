@@ -1367,17 +1367,15 @@ s.t. each row is assignment to at most one column, and each column to at most on
 
 This function can also solve a generalization of the classic assignment problem where the cost matrix is rectangular. If it has more rows than columns, then not every row needs to be assigned to a column, and vice versa.
 
->>> import scipy.optimize
->>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
 >>> from scipy.optimize import linear_sum_assignment
+>>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
 >>> row_ind, col_ind = linear_sum_assignment(cost)
 >>> col_ind
->>> np.array([1, 0, 2])
+array([1, 0, 2], dtype=int64)
 >>> cost[row_ind, col_ind].sum()
-
 5
 
-Now we will use Hungarian method for solving a an assignment problem using
+Now we will use Hungarian method for solving an assignment problem using
 linear_sum_assignment.
 
 
