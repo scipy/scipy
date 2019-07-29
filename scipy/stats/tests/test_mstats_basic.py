@@ -410,6 +410,12 @@ class TestTrimming(object):
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 
+    def test_trimr(self):
+        x = ma.arange(10)
+        result = mstats.trimr(x, limits=(0.15, 0.14), inclusive=(False, False))
+        expected = [None, None, 2, 3, 4, 5, 6, 7, 8, None]
+        assert_equal(result, expected)
+
     def test_trimmedmean(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
