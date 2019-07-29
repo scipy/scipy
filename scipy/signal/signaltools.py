@@ -2340,9 +2340,11 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
         coefficients to employ. See below for details.
     border : string, optional
         `zero`, `mean` or `line`. Changes assumptions on the values beyond the
-        boundary. If `zero`, assumed to be zero. If `mean`, assumed to be the
-        mean. If `line` assumed to continue a linear trend defined by the
-        first and last points.
+        boundary. If `zero`, assumed to be zero. If `line` assumed to continue
+        a linear trend defined by the first and last points. `mean`, `median`,
+        `maximum` and `minimum` work as in np.pad and assume that the values
+        beyond the boundary are the mean, median, maximum or minimum
+        respectively of the array along the axis.
 
     Returns
     -------
@@ -2380,8 +2382,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
 
     The argument border changes assumptions on the values beyond the
     boundary. The default (border=`zero`) is to assume that they are zero. In
-    other cases, the mean or a linear trend is substracted from the signal
-    prior to resampling, and then reapplied to the output.
+    other cases, a constant (`mean`, `median`, `maximum` or `minimum`), or a
+    linear trend is substracted from the signal prior to resampling, and then
+    reapplied to the output.
 
     The first sample of the returned vector is the same as the first
     sample of the input vector. The spacing between samples is changed
@@ -2389,7 +2392,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
 
     Examples
     --------
-    Note that the end of the resampled data rises to meet the first
+    By default, the end of the resampled data rises to meet the first
     sample of the next cycle for the FFT method, and gets closer to zero
     for the polyphase method:
 
@@ -2407,6 +2410,36 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
     >>> plt.legend(['resample', 'resamp_poly', 'data'], loc='best')
     >>> plt.show()
+
+    This default behaviour can be changed by using the border option:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+
+    >>> N = 5
+    >>> x = np.linspace(0, 1, N, endpoint=False)
+
+    >>> y = 2 + x**2 - 1.7*np.sin(x) + .2*np.cos(11*x)
+    >>> y2 = 1 + x**3 + 0.1*np.sin(x) + .1*np.cos(11*x)
+    >>> Y = np.stack([y, y2], axis=-1)
+    >>> up = 4
+    >>> xr = np.linspace(0, 1, N*up, endpoint=False)
+
+    >>> y2 = signal.resample_poly(Y, up, 1, border='zero')
+    >>> y3 = signal.resample_poly(Y, up, 1, border='mean')
+    >>> y4 = signal.resample_poly(Y, up, 1, border='line')
+
+    >>> import matplotlib.pyplot as plt
+    >>> for i in [0,1]:
+    >>>     plt.figure()
+    >>>     plt.plot(xr, y4[:,i], 'g.', label='line')
+    >>>     plt.plot(xr, y3[:,i], 'y.', label='mean')
+    >>>     plt.plot(xr, y2[:,i], 'r.', label='zero')
+    >>>     plt.plot(x, Y[:,i], 'k-')
+    >>>     plt.legend()
+    >>>
+    >>> plt.show()
+
     """
     x = asarray(x)
     if up != int(up):
