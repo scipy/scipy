@@ -9,7 +9,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
-    'fft'
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',

@@ -370,7 +370,7 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `numpy.random.RandomState` seed. Default is 0, a random
+        Local `numpy.random.mtrand.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
     Returns
