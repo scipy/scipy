@@ -1,7 +1,5 @@
 import scipy._lib.uarray as ua
-import scipy.fftpack as _fftpack
 from . import _pocketfft
-from . import _realtransforms
 
 
 class _ScipyBackend:

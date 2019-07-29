@@ -5,91 +5,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import functools
-from scipy.fft._pocketfft import pypocketfft as pfft
-from scipy.fftpack.helper import (_init_nd_shape_and_axes_impl
-                                  as _init_nd_shape_and_axes)
-
-
-# TODO: Build with OpenMp and add configuration support
-_default_workers = 1
-
-
-def _asfarray(x):
-    """
-    Convert to array with floating or complex dtype.
-
-    float16 values are also promoted to float32.
-    """
-    if not hasattr(x, "dtype"):
-        x = np.asarray(x)
-
-    if x.dtype == np.float16:
-        return np.asarray(x, np.float32)
-    elif x.dtype.kind not in 'fc':
-        return np.asarray(x, np.float64)
-
-    # Always align input
-    return np.array(x, copy=not x.flags['ALIGNED'])
-
-def _datacopied(arr, original):
-    """
-    Strict check for `arr` not sharing any data with `original`,
-    under the assumption that arr = asarray(original)
-    """
-    if arr is original:
-        return False
-    if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
-        return False
-    return arr.base is None
-
-
-def _fix_shape(x, shape, axes):
-    """Internal auxiliary function for _raw_fft, _raw_fftnd."""
-    must_copy = False
-
-    # Build an nd slice with the dimensions to be read from x
-    index = [slice(None)]*x.ndim
-    for n, ax in zip(shape, axes):
-        if x.shape[ax] >= n:
-            index[ax] = slice(0, n)
-        else:
-            index[ax] = slice(0, x.shape[ax])
-            must_copy = True
-
-    index = tuple(index)
-
-    if not must_copy:
-        return x[index], False
-
-    s = list(x.shape)
-    for n, axis in zip(shape, axes):
-        s[axis] = n
-
-    z = np.zeros(s, x.dtype)
-    z[index] = x[index]
-    return z, True
-
-
-def _fix_shape_1d(x, n, axis):
-    if n < 1:
-        raise ValueError(
-            "invalid number of data points ({0}) specified".format(n))
-
-    return _fix_shape(x, (n,), (axis,))
-
-
-def _normalization(norm, forward):
-    """Returns the pypocketfft normalization mode from the norm argument"""
-
-    if norm is None:
-        return 0 if forward else 2
-
-    if norm == 'ortho':
-        return 1
-
-    raise ValueError(
-        "Invalid norm value {}, should be None or \"ortho\".".format(norm))
-
+from . import pypocketfft as pfft
+from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
+                     _fix_shape, _fix_shape_1d, _normalization,
+                     _default_workers)
 
 def c2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
     """ Return discrete Fourier transform of real or complex sequence. """
@@ -296,3 +215,31 @@ hfftn = functools.partial(c2rn, True)
 hfftn.__name__ = 'hfftn'
 irfftn = functools.partial(c2rn, False)
 irfftn.__name__ = 'irfftn'
+
+
+def r2r_fftpack(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
+    """FFT of a real sequence, returning fftpack half complex format"""
+    tmp = _asfarray(x)
+    overwrite_x = overwrite_x or _datacopied(tmp, x)
+    norm = _normalization(norm, forward)
+
+    if tmp.dtype.kind == 'c':
+        raise ValueError('x must be a real sequence')
+
+    if n is not None:
+        tmp, copied = _fix_shape_1d(tmp, n, axis)
+        overwrite_x = overwrite_x or copied
+    elif tmp.shape[axis] < 1:
+        raise ValueError("invalid number of data points ({0}) specified"
+                         .format(tmp.shape[axis]))
+
+    out = (tmp if overwrite_x else None)
+
+    return pfft.r2r_fftpack(tmp, (axis,), forward, forward, norm, out,
+                            _default_workers)
+
+
+rfft_fftpack = functools.partial(r2r_fftpack, True)
+rfft_fftpack.__name__ = 'rfft_fftpack'
+irfft_fftpack = functools.partial(r2r_fftpack, False)
+irfft_fftpack.__name__ = 'irfft_fftpack'

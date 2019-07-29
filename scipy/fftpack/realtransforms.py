@@ -6,23 +6,9 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
-import numpy as np
-from scipy.fftpack import _fftpack
-from scipy.fftpack.basic import _datacopied, _fix_shape, _asfarray
-from scipy.fftpack.helper import _init_nd_shape_and_axes
+from scipy.fft import _pocketfft
 
-import atexit
-atexit.register(_fftpack.destroy_ddct1_cache)
-atexit.register(_fftpack.destroy_ddct2_cache)
-atexit.register(_fftpack.destroy_ddct4_cache)
-atexit.register(_fftpack.destroy_dct1_cache)
-atexit.register(_fftpack.destroy_dct2_cache)
-atexit.register(_fftpack.destroy_dct4_cache)
-
-atexit.register(_fftpack.destroy_ddst1_cache)
-atexit.register(_fftpack.destroy_ddst2_cache)
-atexit.register(_fftpack.destroy_dst1_cache)
-atexit.register(_fftpack.destroy_dst2_cache)
+_inverse_typemap = {1: 1, 2: 3, 3: 2, 4: 4}
 
 
 def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -74,11 +60,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = dct(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
-    return x
+    return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
 def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -130,12 +112,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = idct(x, type=type, n=n, axis=ax, norm=norm,
-                 overwrite_x=overwrite_x)
-    return x
+    type = _inverse_typemap[type]
+    return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
 def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -187,11 +165,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = dst(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
-    return x
+    return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
 def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -243,12 +217,8 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = idst(x, type=type, n=n, axis=ax, norm=norm,
-                 overwrite_x=overwrite_x)
-    return x
+    type = _inverse_typemap[type]
+    return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -395,7 +365,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([ 30.,  -8.,   6.,  -2.])
 
     """
-    return _dct(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
+    return _pocketfft.dct(x, type, n, axis, norm, overwrite_x)
 
 
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -453,97 +423,8 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([  4.,   3.,   5.,  10.])
 
     """
-    # Inverse/forward type table
-    _TP = {1:1, 2:3, 3:2, 4:4}
-    return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
-
-
-def _get_dct_fun(type, dtype):
-    try:
-        name = {'float64':'ddct%d', 'float32':'dct%d'}[dtype.name]
-    except KeyError:
-        raise ValueError("dtype %s not supported" % dtype)
-    try:
-        f = getattr(_fftpack, name % type)
-    except AttributeError as e:
-        raise ValueError(str(e) + ". Type %d not understood" % type)
-    return f
-
-
-def _get_norm_mode(normalize):
-    try:
-        nm = {None:0, 'ortho':1}[normalize]
-    except KeyError:
-        raise ValueError("Unknown normalize mode %s" % normalize)
-    return nm
-
-
-def __fix_shape(x, n, axis, dct_or_dst):
-    tmp = _asfarray(x)
-    copy_made = _datacopied(tmp, x)
-    if n is None:
-        n = tmp.shape[axis]
-    elif n != tmp.shape[axis]:
-        tmp, copy_made2 = _fix_shape(tmp, n, axis)
-        copy_made = copy_made or copy_made2
-    if n < 1:
-        raise ValueError("Invalid number of %s data points "
-                         "(%d) specified." % (dct_or_dst, n))
-    return tmp, n, copy_made
-
-
-def _raw_dct(x0, type, n, axis, nm, overwrite_x):
-    f = _get_dct_fun(type, x0.dtype)
-    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
-
-
-def _raw_dst(x0, type, n, axis, nm, overwrite_x):
-    f = _get_dst_fun(type, x0.dtype)
-    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
-
-
-def _eval_fun(f, tmp, n, axis, nm, overwrite_x):
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return f(tmp, n, nm, overwrite_x)
-
-    tmp = np.swapaxes(tmp, axis, -1)
-    tmp = f(tmp, n, nm, overwrite_x)
-    return np.swapaxes(tmp, axis, -1)
-
-
-def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
-    """
-    Return Discrete Cosine Transform of arbitrary type sequence x.
-
-    Parameters
-    ----------
-    x : array_like
-        input array.
-    n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
-        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
-        default results in ``n = x.shape[axis]``.
-    axis : int, optional
-        Axis along which the dct is computed; the default is over the
-        last axis (i.e., ``axis=-1``).
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-
-    Returns
-    -------
-    z : ndarray
-
-    """
-    x0, n, copy_made = __fix_shape(x, n, axis, 'DCT')
-    if type == 1 and n < 2:
-        raise ValueError("DCT-I is not defined for size < 2")
-    overwrite_x = overwrite_x or copy_made
-    nm = _get_norm_mode(normalize)
-    if np.iscomplexobj(x0):
-        return (_raw_dct(x0.real, type, n, axis, nm, overwrite_x) + 1j *
-                _raw_dct(x0.imag, type, n, axis, nm, overwrite_x))
-    else:
-        return _raw_dct(x0, type, n, axis, nm, overwrite_x)
+    type = _inverse_typemap[type]
+    return _pocketfft.dct(x, type, n, axis, norm, overwrite_x)
 
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -655,7 +536,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
            https://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
-    return _dst(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
+    return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)
 
 
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -700,50 +581,5 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     .. versionadded:: 0.11.0
 
     """
-    # Inverse/forward type table
-    _TP = {1:1, 2:3, 3:2, 4:4}
-    return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
-
-
-def _get_dst_fun(type, dtype):
-    try:
-        name = {'float64':'ddst%d', 'float32':'dst%d'}[dtype.name]
-    except KeyError:
-        raise ValueError("dtype %s not supported" % dtype)
-    try:
-        f = getattr(_fftpack, name % type)
-    except AttributeError as e:
-        raise ValueError(str(e) + ". Type %d not understood" % type)
-    return f
-
-
-def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
-    """
-    Return Discrete Sine Transform of arbitrary type sequence x.
-
-    Parameters
-    ----------
-    x : array_like
-        input array.
-    n : int, optional
-        Length of the transform.
-    axis : int, optional
-        Axis along which the dst is computed. (default=-1)
-    overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
-
-    Returns
-    -------
-    z : real ndarray
-
-    """
-    x0, n, copy_made = __fix_shape(x, n, axis, 'DST')
-    if type == 1 and n < 2:
-        raise ValueError("DST-I is not defined for size < 2")
-    overwrite_x = overwrite_x or copy_made
-    nm = _get_norm_mode(normalize)
-    if np.iscomplexobj(x0):
-        return (_raw_dst(x0.real, type, n, axis, nm, overwrite_x) + 1j *
-                _raw_dst(x0.imag, type, n, axis, nm, overwrite_x))
-    else:
-        return _raw_dst(x0, type, n, axis, nm, overwrite_x)
+    type = _inverse_typemap[type]
+    return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)
