@@ -1513,7 +1513,7 @@ class TestYeojohnson(object):
         assert_allclose(xt1, xt2, rtol=1e-12)
 
     @pytest.mark.parametrize('x', [np.arange(6), np.arange(4) + 1j])
-    def test_input_dtype(x):
+    def test_input_dtype(self, x):
         err_msg = ('Yeo-Johnson transformation must be performed on '
                    'floats. Convert your data type to float.')
         with pytest.raises(ValueError, match=err_msg):
