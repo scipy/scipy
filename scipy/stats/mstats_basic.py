@@ -1988,12 +1988,14 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     >>> from scipy.stats.mstats import winsorize
 
     A shuffled array contains integers from 1 to 10.
-    >>> data = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
+
+    >>> a = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
 
     The 10% of the lowest value (i.e., `1`) and the 20% of the highest
     values (i.e., `9` and `10`) are replaced.
-    >>> winsorize(data, limits=[0.1, 0.2])
-    masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
+
+    >>> winsorize(a, limits=[0.1, 0.2])
+    masked_array(a=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
                  mask=False,
            fill_value=999999)
 
