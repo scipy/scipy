@@ -1,8 +1,8 @@
 import numpy as np
 from . import pypocketfft as pfft
-from .basic import (_asfarray, _init_nd_shape_and_axes, _datacopied,
-                    _fix_shape, _fix_shape_1d, _normalization,
-                    _default_workers)
+from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
+                     _fix_shape, _fix_shape_1d, _normalization,
+                     _default_workers)
 import functools
 
 
