@@ -78,15 +78,6 @@ Convolutions (:mod:`scipy.fftpack.convolve`)
 
 """
 
-# List of possibly useful functions in scipy.fftpack._fftpack:
-#   drfft
-#   zfft
-#   zrfft
-#   zfftnd
-#   destroy_drfft_cache
-#   destroy_zfft_cache
-#   destroy_zfftnd_cache
-
 from __future__ import division, print_function, absolute_import
 
 
