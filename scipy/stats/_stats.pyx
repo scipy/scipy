@@ -333,7 +333,7 @@ cdef _center_distance_matrix(ndarray distx, str global_corr='mgc', is_ranked=Tru
         rank_distx = _rank_distance_matrix(distx)
 
     if global_corr == "rank":
-        distx = np.asarray(rank_distx, dtype=np.float)
+        distx = rank_distx.astype(np.float, copy=False)
 
     # 'mgc' distance transform (col-wise mean) - default
     cdef ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T
@@ -371,8 +371,8 @@ cdef _transform_distance_matrix(ndarray distx, ndarray disty, str global_corr='m
 cdef _local_covariance(ndarray distx, ndarray disty, ndarray rank_distx, ndarray rank_disty):
     # convert float32 numpy array to int, as it will be used as array indices
     # [0 to n-1]
-    rank_distx = np.asarray(rank_distx, dtype=np.int) - 1
-    rank_disty = np.asarray(rank_disty, dtype=np.int) - 1
+    rank_distx = rank_distx.astype(np.int, copy=False) - 1
+    rank_disty = rank_disty.astype(np.int, copy=False) - 1
 
     cdef float64_t[:, :] distx_view = distx
     cdef float64_t[:, :] disty_view = disty
