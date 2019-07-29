@@ -2418,7 +2418,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
 
     >>> N = 5
     >>> x = np.linspace(0, 1, N, endpoint=False)
-
     >>> y = 2 + x**2 - 1.7*np.sin(x) + .2*np.cos(11*x)
     >>> y2 = 1 + x**3 + 0.1*np.sin(x) + .1*np.cos(11*x)
     >>> Y = np.stack([y, y2], axis=-1)
@@ -2437,7 +2436,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     >>>     plt.plot(xr, y2[:,i], 'r.', label='zero')
     >>>     plt.plot(x, Y[:,i], 'k-')
     >>>     plt.legend()
-    >>>
     >>> plt.show()
 
     """
