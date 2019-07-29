@@ -1995,7 +1995,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     values (i.e., `9` and `10`) are replaced.
 
     >>> winsorize(a, limits=[0.1, 0.2])
-    masked_array(a=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
+    masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
                  mask=False,
            fill_value=999999)
 
