@@ -80,7 +80,7 @@ class _UpFIRDn(object):
         self._h_trans_flip = _pad_h(h, self._up)
         self._h_trans_flip = np.ascontiguousarray(self._h_trans_flip)
 
-    def apply_filter(self, x, axis=-1, mode='zero', cval=0):
+    def apply_filter(self, x, axis=-1, mode='constant', cval=0):
         """Apply the prepared filter to the specified axis of a nD signal x"""
         output_len = _output_len(len(self._h_trans_flip), x.shape[axis],
                                  self._up, self._down)
@@ -95,7 +95,7 @@ class _UpFIRDn(object):
         return out
 
 
-def upfirdn(h, x, up=1, down=1, axis=-1, mode="zero", cval=0):
+def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     """Upsample, FIR filter, and downsample
 
     Parameters
@@ -113,7 +113,12 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode="zero", cval=0):
         linear filter. The filter is applied to each subarray along
         this axis. Default is -1.
     mode : str, optional
-        The signal extension mode to use. TODO: details
+        The signal extension mode to use. The set
+        ``{'constant', 'symmetric', 'reflect', 'edge', 'wrap'}`` correspond to
+        modes provided by ``numpy.pad``. ``'smooth'`` implements a smooth
+        extension by extending based on the slope of the last 2 points at each
+        end of the array. ``'antireflect'`` and ``'antisymmetric'`` are
+        anti-symmetric versions of ``'reflect'`` and ``'symmetric'``.
     cval : float, optional
         The constant value to use when ``mode == 'constant'`.
 

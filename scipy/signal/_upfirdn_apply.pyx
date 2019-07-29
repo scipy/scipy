@@ -77,7 +77,7 @@ def _output_len(np.intp_t len_h,
 
 # Signal extension modes
 ctypedef enum MODE:
-    MODE_ZEROPAD = 0
+    MODE_CONSTANT = 0
     MODE_SYMMETRIC = 1       #  3 2 1 | 1 2 3 | 3 2 1
     MODE_CONSTANT_EDGE = 2
     MODE_SMOOTH = 3
@@ -88,15 +88,15 @@ ctypedef enum MODE:
 
 
 cpdef MODE mode_enum(mode):
-    if mode == 'zero':
-        return MODE_ZEROPAD
+    if mode == 'constant':
+        return MODE_CONSTANT
     elif mode == 'symmetric':
         return MODE_SYMMETRIC
-    elif mode == 'constant':
+    elif mode == 'edge':
         return MODE_CONSTANT_EDGE
     elif mode == 'smooth':
         return MODE_SMOOTH
-    elif mode == 'periodic':
+    elif mode == 'wrap':
         return MODE_PERIODIC
     elif mode == 'reflect':
         return MODE_REFLECT
@@ -162,9 +162,9 @@ cdef DTYPE_t _extend_left(DTYPE_t *x, Py_ssize_t idx, Py_ssize_t len_x,
             else:
                 return le - (x[len_x - 1] - x[len_x - 2 - (idx - (len_x - 1))])
     elif mode == MODE_CONSTANT_EDGE:
+        return x[0]
+    elif mode == MODE_CONSTANT:
         return cval
-    elif mode == MODE_ZEROPAD:
-        return 0.
     else:
         return -1.
 
@@ -200,7 +200,7 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, Py_ssize_t idx, Py_ssize_t len_x,
     elif mode == MODE_SMOOTH:
         return x[len_x - 1] + (idx - len_x) * (x[len_x - 1] - x[len_x - 2])
     elif mode == MODE_CONSTANT_EDGE:
-        return cval
+        return x[len_x - 1]
     elif mode == MODE_ANTISYMMETRIC:
         if idx < (2 * len_x):
             return -x[len_x - 1 - (idx - len_x)]
@@ -220,8 +220,8 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, Py_ssize_t idx, Py_ssize_t len_x,
                 return re + (x[idx] - x[0])
             else:
                 return re + (x[len_x - 1] - x[len_x - 1 - (idx - (len_x - 1))])
-    elif mode == MODE_ZEROPAD:
-        return 0.
+    elif mode == MODE_CONSTANT:
+        return cval
     else:
         return -1.
 
@@ -379,7 +379,7 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
     cdef DTYPE_t xval
     cdef bint zpad
 
-    zpad = (mode == MODE_ZEROPAD) or (mode == MODE_CONSTANT_EDGE and cval == 0)
+    zpad = (mode == MODE_CONSTANT and cval == 0)
 
     while x_idx < len_x:
         h_idx = t * h_per_phase
