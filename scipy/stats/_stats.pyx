@@ -371,13 +371,13 @@ cdef _transform_distance_matrix(ndarray distx, ndarray disty, str global_corr='m
 cdef _local_covariance(ndarray distx, ndarray disty, ndarray rank_distx, ndarray rank_disty):
     # convert float32 numpy array to int, as it will be used as array indices
     # [0 to n-1]
-    rank_distx = rank_distx.astype(np.int, copy=False) - 1
-    rank_disty = rank_disty.astype(np.int, copy=False) - 1
+    rank_distx = rank_distx.astype(np.long, copy=False) - 1
+    rank_disty = rank_disty.astype(np.long, copy=False) - 1
 
     cdef float64_t[:, :] distx_view = distx
     cdef float64_t[:, :] disty_view = disty
-    cdef intp_t[:, :] rank_distx_view = rank_distx
-    cdef intp_t[:, :] rank_disty_view = rank_disty
+    cdef long[:, :] rank_distx_view = rank_distx
+    cdef long[:, :] rank_disty_view = rank_disty
 
     cdef int n = distx_view.shape[0]
     cdef int nx = np.max(rank_distx) + 1
