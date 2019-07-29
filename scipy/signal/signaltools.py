@@ -2430,12 +2430,12 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
 
     >>> import matplotlib.pyplot as plt
     >>> for i in [0,1]:
-    >>>     plt.figure()
-    >>>     plt.plot(xr, y4[:,i], 'g.', label='line')
-    >>>     plt.plot(xr, y3[:,i], 'y.', label='mean')
-    >>>     plt.plot(xr, y2[:,i], 'r.', label='zero')
-    >>>     plt.plot(x, Y[:,i], 'k-')
-    >>>     plt.legend()
+    ...     plt.figure()
+    ...     plt.plot(xr, y4[:,i], 'g.', label='line')
+    ...     plt.plot(xr, y3[:,i], 'y.', label='mean')
+    ...     plt.plot(xr, y2[:,i], 'r.', label='zero')
+    ...     plt.plot(x, Y[:,i], 'k-')
+    ...     plt.legend()
     >>> plt.show()
 
     """
