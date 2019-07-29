@@ -74,8 +74,161 @@ def _output_len(np.intp_t len_h,
     return need
 
 
+
+# Signal extension modes
+ctypedef enum MODE:
+    MODE_ZEROPAD = 0
+    MODE_SYMMETRIC = 1       #  3 2 1 | 1 2 3 | 3 2 1
+    MODE_CONSTANT_EDGE = 2
+    MODE_SMOOTH = 3
+    MODE_PERIODIC = 4
+    MODE_REFLECT = 5         #  3 2 | 1 2 3 | 2 1
+    MODE_ANTISYMMETRIC = 6
+    MODE_ANTIREFLECT = 7
+
+
+cpdef MODE mode_enum(mode):
+    if mode == 'zero':
+        return MODE_ZEROPAD
+    elif mode == 'symmetric':
+        return MODE_SYMMETRIC
+    elif mode == 'constant':
+        return MODE_CONSTANT_EDGE
+    elif mode == 'smooth':
+        return MODE_SMOOTH
+    elif mode == 'periodic':
+        return MODE_PERIODIC
+    elif mode == 'reflect':
+        return MODE_REFLECT
+    elif mode == 'antisymmetric':
+        return MODE_ANTISYMMETRIC
+    elif mode == 'antireflect':
+        return MODE_ANTIREFLECT
+    else:
+        raise ValueError("Unknown mode: {}".format(mode))
+
+
+@cython.cdivision(True)  # faster modulo
+@cython.boundscheck(False)  # designed to stay within bounds
+@cython.wraparound(False)  # we don't use negative indexing
+cdef DTYPE_t _extend_left(DTYPE_t *x, Py_ssize_t idx, Py_ssize_t len_x,
+                          MODE mode, DTYPE_t cval) nogil:
+    cdef DTYPE_t le = 0.
+
+    # note: idx will be < 0
+    if mode == MODE_SYMMETRIC:
+        if (-idx) < len_x:
+            return x[-idx - 1]
+        else:
+            # general case for multiple reflections:
+            # the pattern repeats with periodicity 2*len_x
+            idx = (-idx - 1) % (2 * len_x)
+            if idx < len_x:
+                return x[idx]
+            else:
+                return x[len_x - 1 - (idx - len_x)]
+    elif mode == MODE_REFLECT:
+        if (-idx) < (len_x - 1):
+            return x[-idx]
+        else:
+            # general case for multiple reflections:
+            # the pattern repeats with periodicity 2*(len_x - 1)
+            idx = (-idx - 1) % (2 * (len_x - 1))
+            if idx < (len_x - 1):
+                return x[idx + 1]
+            else:
+                return x[len_x - 2 - (idx - (len_x - 1))]
+    elif mode == MODE_PERIODIC:
+        return x[(len_x + idx) % len_x]
+    elif mode == MODE_SMOOTH:
+        return x[0] + idx * (x[1] - x[0])
+    elif mode == MODE_ANTISYMMETRIC:
+        if (-idx) < len_x:
+            return -x[-idx - 1]
+        else:
+            idx = (-idx - 1) % (2 * len_x)
+            if idx < len_x:
+                return -x[idx]
+            else:
+                return x[len_x - 1 - (idx - len_x)]
+    elif mode == MODE_ANTIREFLECT:
+        if (-idx) < len_x:
+            return x[0] - (x[-idx] - x[0])
+        else:
+            le = x[0] + (x[0] - x[len_x - 1]) * ((-(idx) - 1) // (len_x - 1))
+            idx = (-idx - 1) % (2 * (len_x - 1))
+            if idx < (len_x - 1):
+                return le - (x[idx + 1] - x[0])
+            else:
+                return le - (x[len_x - 1] - x[len_x - 2 - (idx - (len_x - 1))])
+    elif mode == MODE_CONSTANT_EDGE:
+        return cval
+    elif mode == MODE_ZEROPAD:
+        return 0.
+    else:
+        return -1.
+
+
+@cython.cdivision(True)  # faster modulo
+@cython.boundscheck(False)  # designed to stay within bounds
+@cython.wraparound(False)  # we don't use negative indexing
+cdef DTYPE_t _extend_right(DTYPE_t *x, Py_ssize_t idx, Py_ssize_t len_x,
+                           MODE mode, DTYPE_t cval) nogil:
+    # note: idx will be >= len_x
+    cdef DTYPE_t re = 0.
+
+    if mode == MODE_SYMMETRIC:
+        if idx < (2 * len_x):
+            return x[len_x - 1 - (idx - len_x)]
+        else:
+            idx = idx % (2 * len_x)
+            if idx < len_x:
+                return x[idx]
+            else:
+                return x[len_x - (idx - len_x)]
+    elif mode == MODE_REFLECT:
+        if idx < (2 * len_x - 1):
+            return x[len_x - 2 - (idx - len_x)]
+        else:
+            idx = idx % (2 * (len_x - 1))
+            if idx < (len_x - 1):
+                return x[idx]
+            else:
+                return x[len_x - 1 - (idx - (len_x - 1))]
+    elif mode == MODE_PERIODIC:
+        return x[(idx - len_x) % len_x]
+    elif mode == MODE_SMOOTH:
+        return x[len_x - 1] + (idx - len_x) * (x[len_x - 1] - x[len_x - 2])
+    elif mode == MODE_CONSTANT_EDGE:
+        return cval
+    elif mode == MODE_ANTISYMMETRIC:
+        if idx < (2 * len_x):
+            return -x[len_x - 1 - (idx - len_x)]
+        else:
+            idx = idx % (2 * len_x)
+            if idx < len_x:
+                return -x[idx]
+            else:
+                return x[len_x - (idx - len_x)]
+    elif mode == MODE_ANTIREFLECT:
+        if idx < (2 * len_x - 1):
+            return x[len_x - 1] - (x[len_x - 2 - (idx - len_x)] - x[len_x - 1])
+        else:
+            re = x[len_x - 1] + (x[len_x - 1] - x[0]) * (idx // (len_x - 1) - 1)
+            idx = idx % (2 * (len_x - 1))
+            if idx < (len_x - 1):
+                return re + (x[idx] - x[0])
+            else:
+                return re + (x[len_x - 1] - x[len_x - 1 - (idx - (len_x - 1))])
+    elif mode == MODE_ZEROPAD:
+        return 0.
+    else:
+        return -1.
+
+
 def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
-           np.intp_t up, np.intp_t down, np.intp_t axis):
+           np.intp_t up, np.intp_t down, np.intp_t axis, np.intp_t mode,
+           DTYPE_t cval):
     cdef ArrayInfo data_info, output_info
     cdef np.intp_t len_h = h_trans_flip.size
     cdef DTYPE_t *data_ptr
@@ -99,7 +252,7 @@ def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
         retval = _apply_axis_inner(data_ptr, data_info,
                                    filter_ptr, len_h,
                                    out_ptr, output_info,
-                                   up, down, axis)
+                                   up, down, axis, <MODE>mode, cval)
     if retval == 1:
         raise ValueError("failure in _apply_axis_inner: data and output arrays"
                          " must have the same number of dimensions.")
@@ -113,11 +266,13 @@ def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
 
 
 @cython.cdivision(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
                            DTYPE_t* h_trans_flip, np.intp_t len_h,
                            DTYPE_t* output, ArrayInfo output_info,
                            np.intp_t up, np.intp_t down,
-                           np.intp_t axis) nogil:
+                           np.intp_t axis, MODE mode, DTYPE_t cval) nogil:
     cdef np.intp_t i
     cdef np.intp_t num_loops = 1
     cdef bint make_temp_data, make_temp_output
@@ -191,7 +346,7 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 
         # call 1D upfirdn
         _apply_impl(data_row, data_info.shape[axis],
-                    h_trans_flip, len_h, output_row, up, down)
+                    h_trans_flip, len_h, output_row, up, down, mode, cval)
 
         # Copy from temporary output if necessary
         if make_temp_output:
@@ -212,7 +367,8 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 @cython.wraparound(False)  # we don't use negative indexing
 cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
                       np.intp_t len_h, DTYPE_t *out,
-                      np.intp_t up, np.intp_t down) nogil:
+                      np.intp_t up, np.intp_t down, MODE mode,
+		      DTYPE_t cval) nogil:
     cdef np.intp_t h_per_phase = len_h / up
     cdef np.intp_t padded_len = len_x + h_per_phase - 1
     cdef np.intp_t x_idx = 0
@@ -220,12 +376,22 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
     cdef np.intp_t h_idx = 0
     cdef np.intp_t t = 0
     cdef np.intp_t x_conv_idx = 0
+    cdef DTYPE_t xval
+    cdef bint zpad
+
+    zpad = (mode == MODE_ZEROPAD) or (mode == MODE_CONSTANT_EDGE and cval == 0)
 
     while x_idx < len_x:
         h_idx = t * h_per_phase
         x_conv_idx = x_idx - h_per_phase + 1
         if x_conv_idx < 0:
-            h_idx -= x_conv_idx
+            if zpad:
+                h_idx -= x_conv_idx
+            else:
+                for x_conv_idx in range(x_conv_idx, 0):
+                    xval = _extend_left(x, x_conv_idx, len_x, mode, cval)
+                    out[y_idx] += xval * h_trans_flip[h_idx]
+                    h_idx += 1
             x_conv_idx = 0
         for x_conv_idx in range(x_conv_idx, x_idx + 1):
             out[y_idx] = out[y_idx] + x[x_conv_idx] * h_trans_flip[h_idx]
@@ -242,8 +408,13 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
         h_idx = t * h_per_phase
         x_conv_idx = x_idx - h_per_phase + 1
         for x_conv_idx in range(x_conv_idx, x_idx + 1):
-            if x_conv_idx < len_x and x_conv_idx >= 0:
-                out[y_idx] = out[y_idx] + x[x_conv_idx] * h_trans_flip[h_idx]
+            if x_conv_idx >= len_x:
+                xval = _extend_right(x, x_conv_idx, len_x, mode, cval)
+            elif x_conv_idx < 0:
+                xval = _extend_left(x, x_conv_idx, len_x, mode, cval)
+            else:
+                xval = x[x_conv_idx]
+            out[y_idx] += xval * h_trans_flip[h_idx]
             h_idx += 1
         y_idx += 1
         t += down
