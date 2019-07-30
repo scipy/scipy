@@ -673,6 +673,7 @@ def signm(A, disp=True):
     else:
         return S0, errest
 
+
 def is_matrix_hermitian(A):
     """
     Returns True if a matrix is hermitian
@@ -688,19 +689,17 @@ def is_matrix_hermitian(A):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_hermitian
-    m = np.array([[0,1j],[-1j,0]])
-    print(is_matrix_hermitian(m))
-    m = np.array([[5,0],[1,3]])
-    print(is_matrix_hermitian(m))
-    References
-    ----------
-    Hermitian matrix. A.L. Onishchik (originator), 
-    Encyclopedia of Mathematics. 
-    URL: http://www.encyclopediaofmath.org/index.php?title=Hermitian_matrix&oldid=14435
+    >>> from scipy.linalg import is_matrix_hermitian
+    >>> m = np.array([[0,1j],[-1j,0]])
+    >>> print(is_matrix_hermitian(m))
+    True
+    >>> m = np.array([[5,0],[1,3]])
+    >>> print(is_matrix_hermitian(m))
+    False
     """
     A = _asarray_square(A)
     return np.sum(A == A.conj().T) == (A.shape[1]**2)
+
 
 def is_matrix_symmetric(A):
     """
@@ -717,19 +716,17 @@ def is_matrix_symmetric(A):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_symmetric
-    m = np.array([[2,3],[3,2]])
-    print(is_matrix_symmetric(m))
-    m = np.array([[5,0],[1,3]])
-    print(is_matrix_symmetric(m))
-    References
-    ----------
-    Hazewinkel, Michiel, ed. (2001) [1994], "Symmetric matrix", Encyclopedia of Mathematics, 
-    Springer Science+Business Media B.V. / Kluwer Academic Publishers, ISBN 978-1-55608-010-4
-    Doug and Martin, is.symmetric.matrix from Package "Matrix"
+    >>> from scipy.linalg import is_matrix_symmetric
+    >>> m = np.array([[2,3],[3,2]])
+    >>> print(is_matrix_symmetric(m))
+    True
+    >>> m = np.array([[5,0],[1,3]])
+    >>> print(is_matrix_symmetric(m))
+    False
     """
     A = _asarray_square(A)
     return np.sum(A == A.T) == (A.shape[1]**2)
+
 
 def is_matrix_positive_definite(A, tol=1e-8):
     """
@@ -748,11 +745,13 @@ def is_matrix_positive_definite(A, tol=1e-8):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_positive_definite
-    m = np.array([[5,1],[1,3]])
-    print(is_matrix_positive_definite(m))
-    m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    print(is_matrix_positive_definite(m))
+    >>> from scipy.linalg import is_matrix_positive_definite
+    >>> m = np.array([[5,1],[1,3]])
+    >>> print(is_matrix_positive_definite(m))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_positive_definite(m))
+    True
 
     References
     ----------
@@ -765,6 +764,7 @@ def is_matrix_positive_definite(A, tol=1e-8):
     eiVal, eiVecR=eig(A)
     eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal>0).all()
+
 
 def is_matrix_positive_semidefinite(A, tol=1e-8):
     """
@@ -783,9 +783,10 @@ def is_matrix_positive_semidefinite(A, tol=1e-8):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_positive_semidefinite
-    m = np.array([[1,-1],[-1,1]])
-    print(is_matrix_positive_semidefinite(m))
+    >>> from scipy.linalg import is_matrix_positive_semidefinite
+    >>> m = np.array([[1,-1],[-1,1]])
+    >>> print(is_matrix_positive_semidefinite(m))
+    True
 
     References
     ----------
@@ -798,6 +799,7 @@ def is_matrix_positive_semidefinite(A, tol=1e-8):
     eiVal, eiVecR=eig(A)
     eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal>=0).all()
+
 
 def is_matrix_negative_definite(A, tol=1e-8):
     """
@@ -816,9 +818,10 @@ def is_matrix_negative_definite(A, tol=1e-8):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_negative_definite
-    m = np.array([[-5,-1],[-1,-3]])
-    print(is_matrix_negative_definite(m))
+    >>> from scipy.linalg import is_matrix_negative_definite
+    >>> m = np.array([[-5,-1],[-1,-3]])
+    >>> print(is_matrix_negative_definite(m))
+    True
 
     References
     ----------
@@ -831,6 +834,7 @@ def is_matrix_negative_definite(A, tol=1e-8):
     eiVal, eiVecR=eig(A)
     eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal<0).all()
+
 
 def is_matrix_negative_semidefinite(A, tol=1e-8):
     """
@@ -849,9 +853,10 @@ def is_matrix_negative_semidefinite(A, tol=1e-8):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_negative_semidefinite
-    m = np.array([[-1,1],[1,-1]])
-    print(is_matrix_negative_semidefinite(m))
+    >>> from scipy.linalg import is_matrix_negative_semidefinite
+    >>> m = np.array([[-1,1],[1,-1]])
+    >>> print(is_matrix_negative_semidefinite(m))
+    True
 
     References
     ----------
@@ -864,6 +869,7 @@ def is_matrix_negative_semidefinite(A, tol=1e-8):
     eiVal, eiVecR=eig(A)
     eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal<=0).all()
+
 
 def is_matrix_indefinite(A, tol=1e-8):
     """
@@ -882,9 +888,10 @@ def is_matrix_indefinite(A, tol=1e-8):
 
     Examples
     --------
-    from scipy.linalg import is_matrix_indefinite
-    m = np.array([[5,1],[1,0]])
-    print(is_matrix_indefinite(m))
+    >>> from scipy.linalg import is_matrix_indefinite
+    >>> m = np.array([[5,1],[1,0]])
+    >>> print(is_matrix_indefinite(m))
+    True
 
     References
     ----------

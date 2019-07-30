@@ -1,6 +1,94 @@
 ! Signatures for f2py-wrappers of FORTRAN LAPACK Positive Definite Matrix functions.
 !
 
+subroutine <prefix2>pstrf(n,a,lda,piv,rank_bn,tol,work,info,lower,clean)
+    ! c,x,info = pstrf(a,b,lower=0,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A is symmetric positive semidefinite
+    ! P**T * A * P = U**T * U ,  if UPLO = 'U',
+    ! P**T * A * P = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular, and
+    ! P is stored as vector PIV.
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_bn,&tol,work,&info); if(clean){int i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
+    callprotoargument char*,int*,<ctype2>*,int*,int*,int*,<ctype2>*,<ctype2>*,int*
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+    integer, optional,check(shape(a,0)==lda),depend(a) :: lda=max(1,shape(a, 0))
+    integer intent(out),dimension(n),depend(n) :: piv
+    integer intent(out) :: rank_bn
+    <ftype2> :: tol
+    <ftype2> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+end subroutine <prefix2>pstrf
+
+subroutine <prefix2c>pstrf(n,a,lda,piv,rank_bn,tol,work,info,lower,clean)
+    ! c,x,info = pstrf(a,b,lower=0,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A is symmetric positive semidefinite
+    ! P**T * A * P = U**T * U ,  if UPLO = 'U',
+    ! P**T * A * P = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular, and
+    ! P is stored as vector PIV.
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_bn,&tol,work,&info); if(clean){int i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
+    callprotoargument char*,int*,<ctype2c>*,int*,int*,int*,<ctype2c>*,<ctype2c>*,int*
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+    integer, optional,check(shape(a,0)==lda),depend(a) :: lda=max(1,shape(a, 0))
+    integer intent(out),dimension(n),depend(n) :: piv
+    integer intent(out) :: rank_bn
+    <ftype2c> :: tol
+    <ftype2c> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+end subroutine <prefix2c>pstrf
+
+subroutine <prefix2>pstf2(n,a,lda,piv,rank_bn,tol,work,info,lower,clean)
+    ! c,x,info = pstf2(a,b,lower=0,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A is symmetric positive semidefinite
+    ! P**T * A * P = U**T * U ,  if UPLO = 'U',
+    ! P**T * A * P = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular, and
+    ! P is stored as vector PIV.
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_bn,&tol,work,&info); if(clean){int i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
+    callprotoargument char*,int*,<ctype2>*,int*,int*,int*,<ctype2>*,<ctype2>*,int*
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+    integer, optional,check(shape(a,0)==lda),depend(a) :: lda=max(1,shape(a, 0))
+    integer intent(out),dimension(n),depend(n) :: piv
+    integer intent(out) :: rank_bn
+    <ftype2> :: tol
+    <ftype2> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+end subroutine <prefix2>pstf2
+
+subroutine <prefix2c>pstf2(n,a,lda,piv,rank_bn,tol,work,info,lower,clean)
+    ! c,x,info = pstf2(a,b,lower=0,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A is symmetric positive semidefinite
+    ! P**T * A * P = U**T * U ,  if UPLO = 'U',
+    ! P**T * A * P = L  * L**T,  if UPLO = 'L',
+    ! where U is an upper triangular matrix and L is lower triangular, and
+    ! P is stored as vector PIV.
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_bn,&tol,work,&info); if(clean){int i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
+    callprotoargument char*,int*,<ctype2c>*,int*,int*,int*,<ctype2c>*,<ctype2c>*,int*
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+    integer, optional,check(shape(a,0)==lda),depend(a) :: lda=max(1,shape(a, 0))
+    integer intent(out),dimension(n),depend(n) :: piv
+    integer intent(out) :: rank_bn
+    <ftype2c> :: tol
+    <ftype2c> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+end subroutine <prefix2c>pstf2
+
 
 subroutine <prefix>posv(n,nrhs,a,b,info,lower)
     ! c,x,info = posv(a,b,lower=0,overwrite_a=0,overwrite_b=0)
