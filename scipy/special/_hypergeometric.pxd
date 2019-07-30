@@ -1,14 +1,13 @@
 from . cimport sf_error
 
+from ._cephes cimport poch
+
 cdef extern from "numpy/npy_math.h":
     double NPY_NAN
     double NPY_INFINITY
 
 cdef extern from 'specfun_wrappers.h':
     double hypU_wrap(double, double, double) nogil
-
-cdef extern from 'c_misc/misc.h':
-    double poch(double, double) nogil
 
 
 cdef inline double hyperu(double a, double b, double x) nogil:

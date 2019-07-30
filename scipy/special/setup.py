@@ -28,23 +28,16 @@ def configuration(parent_package='',top_path=None):
         define_macros.append(('_USE_MATH_DEFINES',None))
 
     curdir = os.path.abspath(os.path.dirname(__file__))
-    inc_dirs = [get_python_inc(), os.path.join(curdir, "c_misc")]
-    if inc_dirs[0] != get_python_inc(plat_specific=1):
-        inc_dirs.append(get_python_inc(plat_specific=1))
-    inc_dirs.insert(0, get_numpy_include_dirs())
+    python_inc_dirs = get_python_inc()
+    plat_specific_python_inc_dirs = get_python_inc(plat_specific=1)
+    inc_dirs = [get_numpy_include_dirs(), python_inc_dirs]
+    if python_inc_dirs != plat_specific_python_inc_dirs:
+        inc_dirs.append(plat_specific_python_inc_dirs)
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
 
     # C libraries
-    c_misc_src = [join('c_misc','*.c')]
-    c_misc_hdr = [join('c_misc','*.h')]
     cephes_src = [join('cephes','*.c')]
     cephes_hdr = [join('cephes', '*.h')]
-    config.add_library('sc_c_misc',sources=c_misc_src,
-                       include_dirs=[curdir] + inc_dirs,
-                       depends=(cephes_hdr + cephes_src
-                                + c_misc_hdr + cephes_hdr
-                                + ['*.h']),
-                       macros=define_macros)
     config.add_library('sc_cephes',sources=cephes_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + ['*.h']),
@@ -70,15 +63,23 @@ def configuration(parent_package='',top_path=None):
                          libraries=['sc_specfun'])
 
     # Extension _ufuncs
-    headers = ['*.h', join('c_misc', '*.h'), join('cephes', '*.h')]
+    headers = ['*.h', join('cephes', '*.h')]
     ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src',
                   "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
-    ufuncs_dep = (headers + ufuncs_src + amos_src + c_misc_src + cephes_src
-                  + mach_src + cdf_src + specfun_src)
+    ufuncs_dep = (
+        headers
+        + ufuncs_src
+        + amos_src
+        + cephes_src
+        + mach_src
+        + cdf_src
+        + specfun_src
+    )
     cfg = dict(get_system_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
-    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
-                                            'sc_cdf', 'sc_specfun'])
+    cfg.setdefault('libraries', []).extend(
+        ['sc_amos', 'sc_cephes', 'sc_mach', 'sc_cdf', 'sc_specfun']
+    )
     cfg.setdefault('define_macros', []).extend(define_macros)
     config.add_extension('_ufuncs',
                          depends=ufuncs_dep,
@@ -107,16 +108,24 @@ def configuration(parent_package='',top_path=None):
 
     # Cython API
     config.add_data_files('cython_special.pxd')
-    
+
     cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
                           "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
-    cython_special_dep = (headers + ufuncs_src + ufuncs_cxx_src + amos_src
-                          + c_misc_src + cephes_src + mach_src + cdf_src
-                          + specfun_src)
+    cython_special_dep = (
+        headers
+        + ufuncs_src
+        + ufuncs_cxx_src
+        + amos_src
+        + cephes_src
+        + mach_src
+        + cdf_src
+        + specfun_src
+    )
     cfg = dict(get_system_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
-    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
-                                            'sc_cdf', 'sc_specfun'])
+    cfg.setdefault('libraries', []).extend(
+        ['sc_amos', 'sc_cephes', 'sc_mach', 'sc_cdf', 'sc_specfun']
+    )
     cfg.setdefault('define_macros', []).extend(define_macros)
     config.add_extension('cython_special',
                          depends=cython_special_dep,
