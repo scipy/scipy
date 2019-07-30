@@ -1317,7 +1317,7 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Compute the N-dimensional inverse discrete Fourier Transform for a real
-    spectum.
+    spectrum.
 
     This function computes the N-dimensional inverse discrete Fourier Transform
     over any number of axes in an M-dimensional real array by means of the Fast

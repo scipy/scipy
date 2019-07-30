@@ -171,7 +171,7 @@ Continuous-Time Linear Systems
    lsim2            -- like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- impulse response of linear, time-invariant (LTI) system.
    impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
-   step             -- step response of continous-time LTI system.
+   step             -- step response of continuous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
    freqresp         -- frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).

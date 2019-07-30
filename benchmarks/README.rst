@@ -81,7 +81,7 @@ Some things to consider:
   when there is any code change in the benchmark routine or in
   setup/setup_cache.
 
-  This can be controlled manually by setting a fixed benchmark verison
+  This can be controlled manually by setting a fixed benchmark version
   number, using the ``version`` attribute. See `ASV documentation`_
   for details.
 
