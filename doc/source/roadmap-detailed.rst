@@ -378,16 +378,14 @@ The following improvements will help SciPy better serve this role.
   - Tukey-Kramer test
   - the various types of analysis of variance (ANOVA):
 
-    - fixed-effects and random-effects ANOVA
     - two-way ANOVA (single replicate, uniform number of replicates, variable
       number of replicates)
     - multiway ANOVA (i.e. generalize two-way ANOVA)
     - nested ANOVA
     - analysis of covariance (ANCOVA)
 
-- Where appropriate, provide more than just a p-value as the result of a
-  statistical test; include also confidence intervals and measures of effect
-  size in the results.
+- Where appropriate, include confidence intervals for the statistic in the
+  results of any statistical test.
 - Enhance the `fit` method of the continuous probability distributions:
 
   - Expand the options for fitting to include:
