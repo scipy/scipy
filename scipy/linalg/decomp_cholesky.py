@@ -13,7 +13,7 @@ __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-              check_finite=True, full_pivot=False, pivot_tol=-1):
+              check_finite=True, full_pivot=False, pivot_tol=1):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a) if check_finite else asarray(a)
@@ -32,6 +32,9 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     if a1.size == 0:
         return a1.copy(), lower
 
+    if not is_matrix_hermitian():
+        raise LinAlgError("Expected symmetric or hermitian matrix")
+
     overwrite_a = overwrite_a or _datacopied(a1, a)
 
     # if the pivot flag is false, return the result
@@ -47,7 +50,9 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         return c, lower
     else: # if the pivot flag is true, return the result plus rank and pivot
 
-        if not is_matrix_positive_semidefinite(a1):
+        # no need to call is_matrix_positive_semidefinite with a tolerance
+        eiVal, eiVecR=eig(a1) # because very small positive numbers  ~ 0
+        if not ((eiVal>=0).all()):
             raise LinAlgError("Matrix is not positive semidefinite")
 
         pstrf, = get_lapack_funcs(('pstrf',), (a1,))
@@ -61,7 +66,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
                          'on entry to "POTRF".'.format(-info))
         return c, lower, rank, pivot
 
-def cholesky(a, lower=False, overwrite_a=False, check_finite=True, full_pivot=False, pivot_tol=-1):
+def cholesky(a, lower=False, overwrite_a=False, check_finite=True, full_pivot=False, pivot_tol=1):
     """
     Compute the Cholesky decomposition of a matrix.
 

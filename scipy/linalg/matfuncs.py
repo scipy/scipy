@@ -5,7 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm','signm','sqrtm',
+           'tanhm','logm','funm','signm','sqrtm','is_matrix_hermitian',
            'expm_frechet', 'expm_cond', 'fractional_matrix_power',
            'is_matrix_symmetric','is_matrix_positive_definite',
            'is_matrix_positive_semidefinite','is_matrix_negative_definite',
@@ -673,18 +673,42 @@ def signm(A, disp=True):
     else:
         return S0, errest
 
+def is_matrix_hermitian(A):
+    """
+    Returns True if a matrix is hermitian
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is hermitian.
 
-def is_matrix_symmetric(A, rtol=1e-05, atol=1e-08):
+    Examples
+    --------
+    from scipy.linalg import is_matrix_hermitian
+    m = np.array([[0,1j],[-1j,0]])
+    print(is_matrix_hermitian(m))
+    m = np.array([[5,0],[1,3]])
+    print(is_matrix_hermitian(m))
+    References
+    ----------
+    Hermitian matrix. A.L. Onishchik (originator), 
+    Encyclopedia of Mathematics. 
+    URL: http://www.encyclopediaofmath.org/index.php?title=Hermitian_matrix&oldid=14435
+    """
+    A = _asarray_square(A)
+    return np.sum(A == A.conj().T) == (A.shape[1]**2)
+
+def is_matrix_symmetric(A):
     """
     Returns True if a matrix is symmetric
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
-    rtol : float
-        Relative tolerance.
-    atol : float
-        Absolute tolerance.
     
     Returns
     -------
@@ -702,19 +726,20 @@ def is_matrix_symmetric(A, rtol=1e-05, atol=1e-08):
     ----------
     Hazewinkel, Michiel, ed. (2001) [1994], "Symmetric matrix", Encyclopedia of Mathematics, 
     Springer Science+Business Media B.V. / Kluwer Academic Publishers, ISBN 978-1-55608-010-4
-    credit to: Nils Werner
-    https://stackoverflow.com/questions/42908334/checking-if-a-matrix-is-symmetric-in-numpy
+    Doug and Martin, is.symmetric.matrix from Package "Matrix"
     """
     A = _asarray_square(A)
-    return np.allclose(A, A.T, rtol=rtol, atol=atol)
+    return np.sum(A == A.T) == (A.shape[1]**2)
 
-def is_matrix_positive_definite(A):
+def is_matrix_positive_definite(A, tol=1e-8):
     """
     Returns True if a matrix is positive definite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
     
     Returns
     -------
@@ -735,18 +760,21 @@ def is_matrix_positive_definite(A):
     https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
     """
     A = _asarray_square(A)
-    if not is_matrix_symmetric(A):
-        raise ValueError('expected symmetric matrix')
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
     eiVal, eiVecR=eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal>0).all()
 
-def is_matrix_positive_semidefinite(A):
+def is_matrix_positive_semidefinite(A, tol=1e-8):
     """
     Returns True if a matrix is positive semidefinite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
     
     Returns
     -------
@@ -765,18 +793,21 @@ def is_matrix_positive_semidefinite(A):
     https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
     """
     A = _asarray_square(A)
-    if not is_matrix_symmetric(A):
-        raise ValueError('expected symmetric matrix')
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
     eiVal, eiVecR=eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal>=0).all()
 
-def is_matrix_negative_definite(A):
+def is_matrix_negative_definite(A, tol=1e-8):
     """
     Returns True if a matrix is negative definite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
     
     Returns
     -------
@@ -795,18 +826,21 @@ def is_matrix_negative_definite(A):
     https://en.wikipedia.org/wiki/positive-definite_matrix#Eigenvalues
     """
     A = _asarray_square(A)
-    if not is_matrix_symmetric(A):
-        raise ValueError('expected symmetric matrix')
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
     eiVal, eiVecR=eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal<0).all()
 
-def is_matrix_negative_semidefinite(A):
+def is_matrix_negative_semidefinite(A, tol=1e-8):
     """
     Returns True if a matrix is negative semidefinite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
     
     Returns
     -------
@@ -825,18 +859,21 @@ def is_matrix_negative_semidefinite(A):
     https://en.wikipedia.org/wiki/positive-definite_matrix#Eigenvalues
     """
     A = _asarray_square(A)
-    if not is_matrix_symmetric(A):
-        raise ValueError('expected symmetric matrix')
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
     eiVal, eiVecR=eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal<=0).all()
 
-def is_matrix_indefinite(A):
+def is_matrix_indefinite(A, tol=1e-8):
     """
     Returns True if a matrix is indefinite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
     
     Returns
     -------
@@ -855,8 +892,9 @@ def is_matrix_indefinite(A):
     https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
     """
     A = _asarray_square(A)
-    if not is_matrix_symmetric(A):
-        raise ValueError('expected symmetric matrix')
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
     eiVal, eiVecR=eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
     return (eiVal<0).any() & (eiVal>0).any()
 
