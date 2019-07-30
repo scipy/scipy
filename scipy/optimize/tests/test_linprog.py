@@ -1312,6 +1312,24 @@ class LinprogCommonTests(object):
                       method=self.method, options=self.options)
         _assert_success(res, desired_x=[10, -3], desired_fun=-22)
 
+    def test_bug_10349(self):
+        """
+        Test for tolerance issue on LPs with equality constraints
+        https://github.com/scipy/scipy/issues/10349
+        """
+        A_eq = np.array([[1, 1, 0, 0, 0, 0],
+                         [0, 0, 1, 1, 0, 0],
+                         [0, 0, 0, 0, 1, 1],
+                         [1, 0, 1, 0, 0, 0],
+                         [0, 0, 0, 1, 1, 0],
+                         [0, 1, 0, 0, 0, 1]])
+        b_eq = np.array([221, 210, 10, 141, 198, 102])
+        c = np.concatenate((0, 1, np.zeros(4)), axis=None)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            res = linprog(c, A_eq=A_eq, b_eq=b_eq)
+        _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
+
 #########################
 # Method-specific Tests #
 #########################
