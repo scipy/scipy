@@ -87,17 +87,6 @@ looks like the best way forward long-term.  Until Flang support materializes,
 we need to streamline and better document the MSVC + gfortran build.
 
 
-Improve benchmark system for ``optimize``
------------------------------------------
-
-``scipy.optimize`` has an extensive set of benchmarks for accuracy and speed of
-the global optimizers. That has allowed adding new optimizers (``shgo`` and
-``dual_annealing``) with significantly better performance than the existing
-ones.  The ``optimize`` benchmark system itself is slow and hard to use
-however; we need to make it faster and make it easier to compare performance of
-optimizers via plotting performance profiles.
-
-
 Statistics enhancements
 -----------------------
 
