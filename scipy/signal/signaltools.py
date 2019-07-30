@@ -94,6 +94,13 @@ def _inputs_swap_needed(mode, shape1, shape2):
 
     return False
 
+def _reshape_nd(x1d, ndim, axis):
+    """
+    Reshape x1d to size 1 along all axes in ``range(ndim)`` except for ``axis``.
+    """
+    shape = [1] * ndim
+    shape[axis] = x1d.size
+    return x1d.reshape(shape)
 
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
@@ -2315,7 +2322,8 @@ def resample(x, num, t=None, axis=0, window=None):
         return y, new_t
 
 
-def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
+def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
+                  padtype='constant', cval=None):
     """
     Resample `x` along the given axis using polyphase filtering.
 
@@ -2338,13 +2346,15 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     window : string, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
-    border : string, optional
-        `zero`, `mean` or `line`. Changes assumptions on the values beyond the
-        boundary. If `zero`, assumed to be zero. If `line` assumed to continue
-        a linear trend defined by the first and last points. `mean`, `median`,
-        `maximum` and `minimum` work as in np.pad and assume that the values
-        beyond the boundary are the mean, median, maximum or minimum
-        respectively of the array along the axis.
+    padtype : string, optional
+        `constant`, `mean` or `line`. Changes assumptions on values beyond the
+        boundary. If `constant`, assumed to be `cval` (default zero). If `line`
+        assumed to continue a linear trend defined by the first and last
+        points. `mean`, `median`, `maximum` and `minimum` work as in np.pad and
+        assume that the values beyond the boundary are the mean, median,
+        maximum or minimum respectively of the array along the axis.
+    cval : float, optional
+        Value to use if `padtype='constant'`. Default is zero
 
     Returns
     -------
@@ -2380,9 +2390,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     and `scipy.signal.firwin` are called to generate the appropriate filter
     coefficients.
 
-    The argument border changes assumptions on the values beyond the
-    boundary. The default (border=`zero`) is to assume that they are zero. In
-    other cases, a constant (`mean`, `median`, `maximum` or `minimum`), or a
+    The argument padtype changes assumptions on the values beyond the
+    boundary. The default (padtype=`constant`) is to assume that they are zero.
+    In other cases, a constant (`mean`, `median`, `maximum` or `minimum`), or a
     linear trend is substracted from the signal prior to resampling, and then
     reapplied to the output.
 
@@ -2411,7 +2421,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     >>> plt.legend(['resample', 'resamp_poly', 'data'], loc='best')
     >>> plt.show()
 
-    This default behaviour can be changed by using the border option:
+    This default behaviour can be changed by using the padtype option:
 
     >>> import numpy as np
     >>> from scipy import signal
@@ -2424,16 +2434,16 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     >>> up = 4
     >>> xr = np.linspace(0, 1, N*up, endpoint=False)
 
-    >>> y2 = signal.resample_poly(Y, up, 1, border='zero')
-    >>> y3 = signal.resample_poly(Y, up, 1, border='mean')
-    >>> y4 = signal.resample_poly(Y, up, 1, border='line')
+    >>> y2 = signal.resample_poly(Y, up, 1, padtype='constant')
+    >>> y3 = signal.resample_poly(Y, up, 1, padtype='mean')
+    >>> y4 = signal.resample_poly(Y, up, 1, padtype='line')
 
     >>> import matplotlib.pyplot as plt
     >>> for i in [0,1]:
     ...     plt.figure()
     ...     plt.plot(xr, y4[:,i], 'g.', label='line')
     ...     plt.plot(xr, y3[:,i], 'y.', label='mean')
-    ...     plt.plot(xr, y2[:,i], 'r.', label='zero')
+    ...     plt.plot(xr, y2[:,i], 'r.', label='constant')
     ...     plt.plot(x, Y[:,i], 'k-')
     ...     plt.legend()
     >>> plt.show()
@@ -2448,6 +2458,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     down = int(down)
     if up < 1 or down < 1:
         raise ValueError('up and down must be >= 1')
+    if cval is not None and padtype != 'constant':
+        raise ValueError('cval has no effect when padtype is ', padtype)
 
     # Determine our up and down factors
     # Use a rational approximation to save computation time on really long
@@ -2487,25 +2499,27 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
                         np.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
-    # Remove background depending on the border option
+    # Remove background depending on the padtype option
     funcs = {'mean': np.mean, 'median': np.median,
              'minimum': np.amin, 'maximum': np.amax}
-    if border == 'zero':
-        background_line = None
-    elif border in funcs:
-        background_line = [funcs[border](x, axis=axis), 0]
-    elif border == 'line':
+    if padtype == 'constant':
+        background_line = cval
+    elif padtype in funcs:
+        background_line = [funcs[padtype](x, axis=axis), 0]
+    elif padtype == 'line':
         background_line = [x.take(0, axis),
                            (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
     else:
-        raise ValueError('border must be line, maximum, mean, median, minimum or zero')
+        raise ValueError('padtype must be line, maximum, mean, median, minimum or constant')
 
-    if background_line is not None:
+    if padtype == 'line' or padtype in funcs:
         rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
-        background_in = np.stack(
-            [background_line[0] + background_line[1]*l for l in rel_len],
-            axis=axis)
+        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
+        background_in = np.expand_dims(background_line[0], axis) +\
+            np.expand_dims(background_line[1], axis) * rel_len_nd
         x = x - background_in.astype(x.dtype)
+    elif padtype == 'constant' and cval is not None:
+        x = x - cval
 
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis)
@@ -2514,12 +2528,14 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0), border='zero'):
     y_keep = y[tuple(keep)]
 
     # Add background back
-    if background_line is not None:
+    if padtype == 'line' or padtype in funcs:
         rel_len = np.linspace(0.0, 1.0, n_out, endpoint=False)
-        background_out = np.stack(
-            [background_line[0] + background_line[1]*l for l in rel_len],
-            axis=axis)
+        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
+        background_out = np.expand_dims(background_line[0], axis) +\
+            np.expand_dims(background_line[1], axis) * rel_len_nd
         y_keep += background_out.astype(x.dtype)
+    elif padtype == 'constant' and cval is not None:
+        y_keep += cval
 
     return y_keep
 
