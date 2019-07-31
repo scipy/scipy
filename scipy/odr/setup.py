@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from os.path import join
+from scipy._build_utils import numpy_nodepr_api
 
 
 def configuration(parent_package='', top_path=None):
@@ -26,6 +27,7 @@ def configuration(parent_package='', top_path=None):
     sources = ['__odrpack.c']
     libraries = ['odrpack'] + blas_info.pop('libraries', [])
     include_dirs = ['.'] + blas_info.pop('include_dirs', [])
+    blas_info['define_macros'].extend(numpy_nodepr_api['define_macros'])
     config.add_extension('__odrpack',
         sources=sources,
         libraries=libraries,
