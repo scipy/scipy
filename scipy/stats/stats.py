@@ -4286,7 +4286,7 @@ def _euclidean_dist(x):
     return cdist(x, x)
 
 
-MGCResult = namedtuple('MGCResult', ('correlation', 'pvalue', 'mgcdict'))
+MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
@@ -4333,12 +4333,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
                 The estimated optimal scale as a :math:`(x, y)` pair.
             - null_dist : list
                 The null distribution derived from the permuted matrices
-
-    Warns
-    -----
-    PermutationReplicationLow
-        Raised if the number of replications is under a 1000. At an alpha level
-        of 0.05, p-values computations may be unreliable.
 
     See Also
     --------
