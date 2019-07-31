@@ -159,7 +159,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
-           full_output=0, per=0, quiet=1, cache=None):
+           full_output=0, per=0, quiet=1):
     """
     Find the B-spline representation of 1-D curve.
 
@@ -217,9 +217,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         Non-zero to suppress messages.
         This parameter is deprecated; use standard Python warning filters
         instead.
-    cache : dict, optional
-        Stores the results of a previous call of bisplrep for the same data, to
-        be used when task==1 after a previous call with task==0 or task==-1.
 
     Returns
     -------
@@ -289,7 +286,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     >>> plt.show()
 
     """
-    res = _impl.splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet, cache)
+    res = _impl.splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet)
     return res
 
 
