@@ -1514,13 +1514,13 @@ class TestYeojohnson(object):
 
     @pytest.mark.parametrize('dtype', [np.int8, np.uint8, np.int16, np.int32])
     def test_input_dtype_integer(self, dtype):
-        x = np.arange(6)
+        x = np.arange(6, dtype=dtype)
         err_msg = ('Yeo-Johnson transformation cannot be performed on '
                    'integers. Convert your data type to float.')
         with pytest.raises(ValueError, match=err_msg):
             stats.yeojohnson(x.astype(dtype))
 
-    def test_input_dtype_complex(self, x):
+    def test_input_dtype_complex(self):
         x = np.arange(8, dtype=np.float64)
         xt1, lmbda1 = stats.yeojohnson(x)
         xt2, lmbda2 = stats.yeojohnson(x + 0 * 1j)
