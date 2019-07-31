@@ -1512,12 +1512,20 @@ class TestYeojohnson(object):
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
 
-    @pytest.mark.parametrize('x', [np.arange(6), np.arange(4) + 1j])
-    def test_input_dtype(self, x):
-        err_msg = ('Yeo-Johnson transformation must be performed on '
-                   'floats. Convert your data type to float.')
+    @pytest.mark.parametrize('dtype', [np.int8, np.uint8, np.int16, np.int32])
+    def test_input_dtype_integer(self, dtype):
+        x = np.arange(6)
+        err_msg = ('Yeo-Johnson transformation cannot be performed on '
+                   'integers. Convert your data type to float.')
         with pytest.raises(ValueError, match=err_msg):
-            stats.yeojohnson(x)
+            stats.yeojohnson(x.astype(dtype))
+
+    def test_input_dtype_complex(self, x):
+        x = np.arange(8, dtype=np.float64)
+        xt1, lmbda1 = stats.yeojohnson(x)
+        xt2, lmbda2 = stats.yeojohnson(x + 0 * 1j)
+        assert_allclose(xt1, xt2, rtol=1e-12)
+        assert_allclose(lmbda1, lmbda2, rtol=1e-12)
 
 
 class TestYeojohnsonNormmax(object):
