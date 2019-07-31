@@ -1340,9 +1340,9 @@ def yeojohnson(x, lmbda=None):
     if x.size == 0:
         return x
 
-    if not np.issubdtype(x.dtype, np.floating):
-        raise ValueError('Yeo-Johnson transformation must be performed on '
-                         'floats. Convert your data type to float.')
+    if np.issubdtype(x.dtype, np.integer):
+        raise ValueError('Yeo-Johnson transformation cannot be performed on '
+                         'integers. Convert your data type to float.')
 
     if lmbda is not None:
         return _yeojohnson_transform(x, lmbda)
