@@ -1314,7 +1314,7 @@ class LinprogCommonTests(object):
 
     def test_bug_10349(self):
         """
-        Test for tolerance issue on LPs with equality constraints
+        Test for redundancy removal tolerance issue
         https://github.com/scipy/scipy/issues/10349
         """
         A_eq = np.array([[1, 1, 0, 0, 0, 0],
