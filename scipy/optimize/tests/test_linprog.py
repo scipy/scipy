@@ -1327,7 +1327,8 @@ class LinprogCommonTests(object):
         c = np.concatenate((0, 1, np.zeros(4)), axis=None)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
-            res = linprog(c, A_eq=A_eq, b_eq=b_eq)
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
 
 #########################
