@@ -5132,10 +5132,40 @@ class TestPoissonETest(object):
         k1, k2 = 10000, 10000
         n1, n2 = 10000, 10000
         pval = stats.poisson_etest(k1, k2, n1, n2)
-        assert_raises(AssertionError, assert_almost_equal, pval, 0.24866994128694545)
+        with assert_raises(AssertionError):
+            assert_almost_equal(pval, 0.24866994128694545, decimal=5)
 
+    # the original code by author does not implement what they said
+    # in the paper
     def test_less_than_zero_lambda_hat2(self):
         k1, k2 = 0, 0
         n1, n2 = 1, 1
         pval = stats.poisson_etest(k1, k2, n1, n2)
-        assert_raises(AssertionError, assert_equal, pval, 0.0)
+        with assert_raises(AssertionError):
+            assert_almost_equal(pval, 0.0, decimal=1)
+
+    def test_less_alternative(self):
+        k1, k2 = 0, 0
+        n1, n2 = 1, 0.7
+        alternative = 'less'
+        with assert_raises(ValueError):
+            stats.poisson_etest(k1, k2, n1, n2, alternative=alternative)
+
+    def test_negative_k(self):
+        k1, k2 = -1, 1
+        n1, n2 = 1, 1
+        with assert_raises(ValueError):
+            stats.poisson_etest(k1, k2, n1, n2)
+
+    def test_zero_n(self):
+        k1, k2 = 0, 0
+        n1, n2 = 0, 0.3
+        with assert_raises(ValueError):
+            stats.poisson_etest(k1, k2, n1, n2)
+
+    def test_diff_less_zero(self):
+        k1, k2 = 0, 0
+        n1, n2 = 0.5, 0.5
+        diff = -1
+        with assert_raises(ValueError):
+            stats.poisson_etest(k1, k2, n1, n2, diff=diff)

@@ -190,6 +190,15 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
     0.08837900929018155
     """
 
+    if k1 < 0 or k2 < 0:
+        raise ValueError('k1 and k2 should have values greater than or equal to 0')
+
+    if n1 <= 0 or n2 <= 0:
+        raise ValueError('n1 and n2 should have values greater than 0')
+
+    if diff < 0:
+        raise ValueError('diff can not have negative values')
+
     lmbd_hat2 = (k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2)
 
     # based on paper explanation, we do not need to calculate p-value
