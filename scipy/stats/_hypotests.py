@@ -3,6 +3,7 @@ from collections import namedtuple
 import numpy as np
 import warnings
 from ._continuous_distns import chi2
+from ._discrete_distns import poisson
 
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
@@ -130,3 +131,124 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     p = chi2.sf(w, r)
 
     return Epps_Singleton_2sampResult(w, p)
+
+
+def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
+    """
+    Calculate E-test for the mean difference of two samples
+
+    The test requires two samples coming from poisson distribution. This is a
+    right-sided and two-sided test.
+
+    Parameters
+    ----------
+    k1, k2 : int or float
+        Count from the first and second samples respectively
+    n1, n2 : int or float
+        Sample size of each sample
+    diff : int of float, optional
+        The difference of mean between two samples under null hypothesis
+    alternative : {'two-sided', 'greater'}, optional
+        Whether to get p-value for two-sided hypothesis or right sided hypothesis.
+        Right-sided test that mean from sample one is greater than sample two
+
+    Returns
+    -------
+    pvalue : float
+        The associated p-value based on estimated p-value of the standardized
+        difference.
+
+    Notes
+    -----
+    The Poisson distribution is commonly used to model many processes such as
+    transactions per user. The usual test to compare difference between two
+    means of Poisson samples is C-test, based on conditional distribution.
+    Meanwhile the E-test is an unconditional test
+
+    Based the author results [1]_, E-test is more powerful than C-test. The E-test
+    is almost exact because the test exceed the nominal value only by negligible
+    amount. Compared to C-test which produce smaller size than nominal value.
+
+    References
+    ----------
+    .. [1]  https://userweb.ucs.louisiana.edu/~kxk4695/JSPI-04.pdf
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    Taken from Przyborowski and Wilenski (1940). Suppose that a purchaser wishes to
+    test the number of dodder seeds (a weed) in a sack of clover seeds that he bought
+    from a seed manufacturing company. A 100 g sample is drawn from a sack of clover
+    seeds prior to being shipped to the purchaser. The sample is analyzed and found to
+    contain no dodder seeds; that is, k1 = 0. Upon arrival, the purchaser also draws
+    a 100 g sample from the sack. This time, three dodder seeds are found in the sample;
+    that is, k2 = 3. The purchaser wishes to determine if the difference between the
+    samples could not be due to chance.
+
+    >>> stats.poisson_etest(0, 3, 100, 100)
+    0.08837900929018155
+    """
+
+    lmbd_hat2 = (k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2)
+
+    # based on paper explanation, we do not need to calculate p-value
+    # if the `lmbd_hat2` less than or equals zero, see paper page 26 below eq. 3.6
+    if lmbd_hat2 <= diff:
+        return 1
+
+    var = k1 / n1 ** 2 + k2 / n2 ** 2
+
+    t_k1k2 = (k1 / n1 - k2 / n2 - diff) / np.sqrt(var)
+
+    nlmbd_hat1 = n1 * (lmbd_hat2 + diff)
+    nlmbd_hat2 = n2 * lmbd_hat2
+
+    x1_lb, x1_ub = poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat1)
+    x2_lb, x2_ub = poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat2)
+
+    x1 = np.repeat(np.arange(x1_lb, x1_ub + 1), x2_ub - x2_lb + 1)
+    x2 = np.resize(np.arange(x2_lb, x2_ub + 1), len(x1))
+
+    prob_x1 = poisson.pmf(x1, nlmbd_hat1)
+    prob_x2 = poisson.pmf(x2, nlmbd_hat2)
+
+    lmbd_hat_x1 = x1 / n1
+    lmbd_hat_x2 = x2 / n2
+
+    diff_lmbd_x1x2 = lmbd_hat_x1 - lmbd_hat_x2 - diff
+    var_x1x2 = lmbd_hat_x1 / n1 + lmbd_hat_x2 / n2
+
+    if alternative == 'two-sided':
+        t_x1x2 = np.divide(
+            diff_lmbd_x1x2,
+            np.sqrt(var_x1x2),
+            out=np.zeros_like(diff_lmbd_x1x2),
+            where=(np.abs(lmbd_hat_x1 - lmbd_hat_x2) > diff)
+        )
+        p_x1x2 = np.multiply(
+            prob_x1,
+            prob_x2,
+            out=np.zeros_like(prob_x1),
+            where=(np.abs(t_x1x2) >= np.abs(t_k1k2))
+        )
+    elif alternative == 'greater':
+        t_x1x2 = np.divide(
+            diff_lmbd_x1x2,
+            np.sqrt(var_x1x2),
+            out=np.zeros_like(diff_lmbd_x1x2),
+            where=(diff_lmbd_x1x2 > 0)
+        )
+        p_x1x2 = np.multiply(
+            prob_x1,
+            prob_x2,
+            out=np.zeros_like(prob_x1),
+            where=(t_x1x2 >= t_k1k2)
+        )
+    else:
+        msg = "`alternative` should be one of {'two-sided', 'greater'}"
+        raise ValueError(msg)
+
+    pvalue = np.sum(p_x1x2)
+
+    return pvalue

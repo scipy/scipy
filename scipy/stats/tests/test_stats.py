@@ -5111,3 +5111,31 @@ class TestEppsSingleton(object):
         res = stats.epps_singleton_2samp(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+
+# i do not run the original fortran code, the test case came from
+# https://github.com/nolanbconaway/poisson-etest/blob/master/test_etest.py
+# the original implementation have limitation for high value, we also test
+# for that falsy behavior
+class TestPoissonETest(object):
+
+    # should return the same value
+    def test_same_results(self):
+        k1, k2 = 20, 20
+        n1, n2 = 10, 10
+        pval = stats.poisson_etest(k1, k2, n1, n2)
+        assert_almost_equal(pval, 0.999999756892963, decimal=5)
+
+    # should return different value, this implementation is free of
+    # limitation in original code
+    def test_different_results(self):
+        k1, k2 = 10000, 10000
+        n1, n2 = 10000, 10000
+        pval = stats.poisson_etest(k1, k2, n1, n2)
+        assert_raises(AssertionError, assert_almost_equal, pval, 0.24866994128694545)
+
+    def test_less_than_zero_lambda_hat2(self):
+        k1, k2 = 0, 0
+        n1, n2 = 1, 1
+        pval = stats.poisson_etest(k1, k2, n1, n2)
+        assert_raises(AssertionError, assert_equal, pval, 0.0)
