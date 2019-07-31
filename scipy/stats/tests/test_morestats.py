@@ -1524,8 +1524,8 @@ class TestYeojohnson(object):
         x = np.arange(8, dtype=np.float64)
         xt1, lmbda1 = stats.yeojohnson(x)
         xt2, lmbda2 = stats.yeojohnson(x + 0 * 1j)
-        assert_allclose(xt1, xt2, rtol=1e-12)
-        assert_allclose(lmbda1, lmbda2, rtol=1e-12)
+        assert_allclose(xt1, xt2, rtol=1e-7)
+        assert_allclose(lmbda1, lmbda2, rtol=1e-7)
 
 
 class TestYeojohnsonNormmax(object):
