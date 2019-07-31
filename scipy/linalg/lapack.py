@@ -632,7 +632,7 @@ All functions
 
 from __future__ import division, print_function, absolute_import
 import numpy as _np
-from .blas import _get_funcs
+from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 try:
     from scipy.linalg import _clapack
@@ -679,6 +679,7 @@ _lapack_alias = {
 }
 
 
+@_memoize_get_funcs
 def get_lapack_funcs(names, arrays=(), dtype=None):
     """Return available LAPACK function objects from names.
 
