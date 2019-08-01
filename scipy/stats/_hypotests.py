@@ -199,6 +199,9 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
     if diff < 0:
         raise ValueError('diff can not have negative values')
 
+    if alternative not in ['two-sided', 'greater']:
+        raise ValueError("alternative should be one of {'two-sided', 'greater'}")
+
     lmbd_hat2 = (k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2)
 
     # based on paper explanation, we do not need to calculate p-value
@@ -241,7 +244,7 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
             out=np.zeros_like(prob_x1),
             where=(np.abs(t_x1x2) >= np.abs(t_k1k2))
         )
-    elif alternative == 'greater':
+    else:
         t_x1x2 = np.divide(
             diff_lmbd_x1x2,
             np.sqrt(var_x1x2),
@@ -254,9 +257,6 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
             out=np.zeros_like(prob_x1),
             where=(t_x1x2 >= t_k1k2)
         )
-    else:
-        msg = "`alternative` should be one of {'two-sided', 'greater'}"
-        raise ValueError(msg)
 
     pvalue = np.sum(p_x1x2)
 
