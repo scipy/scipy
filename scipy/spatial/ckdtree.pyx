@@ -923,11 +923,11 @@ cdef class cKDTree:
             result = np.empty(retshape, dtype=object)
             vout = result.reshape(-1)
 
-        vxx = np.reshape(x, (-1, x.shape[-1]))
-        vrr = np.reshape(r, (-1))
+        vxx = np.ascontiguousarray(x).reshape(-1, x.shape[-1])
+        vrr = np.ascontiguousarray(r).reshape(-1)
 
         def _thread_func(np.intp_t start, np.intp_t stop):
-            cdef: 
+            cdef:
                 vector[np.intp_t] **vvres
                 np.intp_t i
                 np.intp_t *cur
