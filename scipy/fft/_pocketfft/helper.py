@@ -1,6 +1,7 @@
 import numpy as np
 from numbers import Number
 import operator
+from .pypocketfft import good_size
 
 
 # TODO: Build with OpenMp and add configuration support
@@ -144,3 +145,7 @@ def _normalization(norm, forward):
 
     raise ValueError(
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
+
+def next_fast_len(target, type='C2C'):
+    real = {'C2C': False, 'R2C': True, 'C2R': True}[type]
+    return good_size(target, real)

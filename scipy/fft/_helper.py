@@ -1,6 +1,9 @@
 from . import _pocketfft
 from ._pocketfft import helper as _helper
 from bisect import bisect_left
+import sys
+import operator
+import numpy as np
 
 
 def _next_regular_len(target):
@@ -63,14 +66,14 @@ def _next_regular_len(target):
     return match
 
 
-def next_fast_len(target, dtype=None):
+def next_fast_len(target, type='C2C'):
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.
 
     SciPy's FFT algorithms gain their speed by a recursive divide and conquer
     strategy. This relies on efficient functions for small prime factors of the
     input length. Thus, the transforms are fastest when using composites of the
     prime factors handled by the fft implementation. If there are efficient
-    functions for all radices <= `n` then the result is the smallest number `x`
+    functions for all radices <= `n` then the result will be a number `x`
     >= ``target`` with only prime factors < `n`. (Also known as `n`-smooth
     numbers)
 
@@ -78,6 +81,11 @@ def next_fast_len(target, dtype=None):
     ----------
     target : int
         Length to start searching from.  Must be a positive integer.
+    type : {'C2C', 'C2R', 'R2C'}, optional
+        Transform type
+        - 'C2C': Complex to complex (e.g. `fft`, `ifft`)
+        - 'C2R': Complex to real (e.g. `irfft`, `hfft`)
+        - 'R2C': Real to complex (e.g. `rfft`, `ihfft`)
 
     Returns
     -------
@@ -86,7 +94,11 @@ def next_fast_len(target, dtype=None):
 
     Notes
     -----
-    The result of this function may change if new prime factors are added.
+    The result of this function may change in future as performance
+    considerations chage, for example if new prime factors are added.
+
+    Calling `fft` or `ifft` with real input data performs an 'R2C' type
+    transform internally.
 
     Examples
     --------
@@ -110,9 +122,16 @@ def next_fast_len(target, dtype=None):
     >>> b = fft.fft(a, 131072)
 
     """
+    target = operator.index(target)
 
-    # TODO: Complex transforms are also fast for 11-smooth lengths
-    return _next_regular_len(target)
+    if type not in ['C2C', 'R2C', 'C2R']:
+        raise ValueError('Unknown transform type: {}'.format(type))
+
+    # Use python implementation if a size_t would overflow
+    if (target-1)*11 > sys.maxsize:
+        return _next_regular_len(target)
+
+    return _helper.next_fast_len(target, type)
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
