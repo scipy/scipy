@@ -382,6 +382,7 @@ The following improvements will help SciPy better serve this role.
   - Kendall's tau-c
   - Page's L-test
   - Tukey-Kramer test
+  - Dunnett's test
   - the various types of analysis of variance (ANOVA):
 
     - two-way ANOVA (single replicate, uniform number of replicates, variable
@@ -392,6 +393,7 @@ The following improvements will help SciPy better serve this role.
 
 - Where appropriate, include confidence intervals for the statistic in the
   results of any statistical test.
+- Add additional tools for meta-analysis; currently we have just `combine_pvalues`.
 - Enhance the `fit` method of the continuous probability distributions:
 
   - Expand the options for fitting to include:
