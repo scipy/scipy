@@ -2,6 +2,8 @@ import numpy as np
 from numbers import Number
 import operator
 from .pypocketfft import good_size
+import operator
+import sys
 
 
 # TODO: Build with OpenMp and add configuration support
@@ -147,5 +149,15 @@ def _normalization(norm, forward):
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
 
 def next_fast_len(target, type='C2C'):
-    real = {'C2C': False, 'R2C': True, 'C2R': True}[type]
+    try:
+        real = {'C2C': False, 'R2C': True, 'C2R': True}[type]
+    except KeyError:
+        raise ValueError('Unknown transform type: {}'.format(type))
+
+    target = operator.index(target)
+
+    # Error if a size_t result could overflow
+    if (target-1)*11 > sys.maxsize:
+        raise ValueError(
+            'Target length is too large to perform an FFT: {}' .format(target))
     return good_size(target, real)
