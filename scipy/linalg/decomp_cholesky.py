@@ -13,7 +13,7 @@ __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-              check_finite=True, full_pivot=False, pivot_tol=1):
+              check_finite=True, full_pivot=False, pivot_tol=-1):
     """Common code for cholesky() and cho_factor()."""
 
     a1 = asarray_chkfinite(a) if check_finite else asarray(a)
@@ -50,23 +50,23 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         return c, lower
     else: # if the pivot flag is true, return the result plus rank and pivot
 
-        # no need to call is_matrix_positive_semidefinite with a tolerance
-        eiVal, eiVecR=eig(a1) # because very small positive numbers  ~ 0
-        if not ((eiVal>=0).all()):
-            raise LinAlgError("Matrix is not positive semidefinite")
-
         pstrf, = get_lapack_funcs(('pstrf',), (a1,))
         c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=pivot_tol)
 
         if info > 0:
-            raise LinAlgError("%d-th leading minor of the array is not positive "
-                          "definite" % info)
+            if rank == 0:
+                raise LinAlgError("%d-th leading minor of the array is not positive "
+                              "semidefinite" % info)
+            else:
+                raise LinAlgError("The array is rank deficient with "
+                              "computed rank %d" % info)
+
         if info < 0:
             raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         'on entry to "POTRF".'.format(-info))
+                         'on entry to "PSTRF".'.format(-info))
         return c, lower, rank, pivot
 
-def cholesky(a, lower=False, overwrite_a=False, check_finite=True, full_pivot=False, pivot_tol=1):
+def cholesky(a, lower=False, overwrite_a=False, check_finite=True, full_pivot=False, pivot_tol=-1):
     """
     Compute the Cholesky decomposition of a matrix.
 
@@ -86,6 +86,10 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True, full_pivot=Fa
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    full_pivot : bool, optional
+        Whether to use full pivot or not
+    pivot_tol : float, optional
+        Tolerance for the pivot, if < 0 then tolerance = N*U*MAX( A(M,M) )
 
     Returns
     -------

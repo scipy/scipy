@@ -12,15 +12,16 @@ __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'is_matrix_negative_semidefinite','is_matrix_indefinite']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
-        transpose, conjugate, absolute, amax, sign, isfinite, single)
+        transpose, conjugate, absolute, amax, sign, isfinite, single,
+        asarray_chkfinite, asarray, atleast_2d)
 import numpy as np
 
 # Local imports
-from .misc import norm
+from .lapack import get_lapack_funcs
+from .misc import norm, LinAlgError, _datacopied
 from .basic import solve, inv
 from .special_matrices import triu
 from .decomp_svd import svd
-from .decomp import eig
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
@@ -728,15 +729,13 @@ def is_matrix_symmetric(A):
     return np.sum(A == A.T) == (A.shape[1]**2)
 
 
-def is_matrix_positive_definite(A, tol=1e-8):
+def is_matrix_positive_definite(A):
     """
     Returns True if a matrix is positive definite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
-    tol : float
-        Tolerance for the zero value.
     
     Returns
     -------
@@ -752,29 +751,30 @@ def is_matrix_positive_definite(A, tol=1e-8):
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
     >>> print(is_matrix_positive_definite(m))
     True
-
-    References
-    ----------
-    Definiteness of a matrix, From Wikipedia, the free encyclopedia
-    https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
     """
-    A = _asarray_square(A)
     if not is_matrix_hermitian(A):
         raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR=eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal>0).all()
+    a1 = asarray_chkfinite(A)
+    a1 = atleast_2d(a1)
+    overwrite_a = _datacopied(a1, A)
+    potrf, = get_lapack_funcs(('potrf',), (a1,))
+    c, info = potrf(a1, lower=False, overwrite_a=False, clean=True)
+    if info > 0:
+        raise LinAlgError("%d-th leading minor of the array is not positive "
+                            "definite" % info)
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                            'on entry to "POTRF".'.format(-info))
+    return info==0
 
 
-def is_matrix_positive_semidefinite(A, tol=1e-8):
+def is_matrix_positive_semidefinite(A):
     """
     Returns True if a matrix is positive semidefinite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
-    tol : float
-        Tolerance for the zero value.
     
     Returns
     -------
@@ -787,29 +787,35 @@ def is_matrix_positive_semidefinite(A, tol=1e-8):
     >>> m = np.array([[1,-1],[-1,1]])
     >>> print(is_matrix_positive_semidefinite(m))
     True
-
-    References
-    ----------
-    Definiteness of a matrix, From Wikipedia, the free encyclopedia
-    https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
     """
-    A = _asarray_square(A)
     if not is_matrix_hermitian(A):
         raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR=eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal>=0).all()
+    a1 = asarray_chkfinite(A)
+    a1 = atleast_2d(a1)
+    overwrite_a = _datacopied(a1, A)
+    pstrf, = get_lapack_funcs(('pstrf',), (a1,))
+    c, pivot, rank, info=pstrf(a1, lower=False, overwrite_a=False, clean=True, tol=-1)
+    if info > 0:
+        if rank == 0:
+            raise LinAlgError("%d-th leading minor of the array is not positive "
+                            "semidefinite" % info)
+        else:
+            raise LinAlgError("The array is rank deficient with "
+                            "computed rank %d" % info)
+
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         'on entry to "PSTRF".'.format(-info))
+    return info==0
 
 
-def is_matrix_negative_definite(A, tol=1e-8):
+def is_matrix_negative_definite(A):
     """
     Returns True if a matrix is negative definite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
-    tol : float
-        Tolerance for the zero value.
     
     Returns
     -------
@@ -822,29 +828,17 @@ def is_matrix_negative_definite(A, tol=1e-8):
     >>> m = np.array([[-5,-1],[-1,-3]])
     >>> print(is_matrix_negative_definite(m))
     True
-
-    References
-    ----------
-    Definiteness of a matrix, From Wikipedia, the free encyclopedia
-    https://en.wikipedia.org/wiki/positive-definite_matrix#Eigenvalues
     """
-    A = _asarray_square(A)
-    if not is_matrix_hermitian(A):
-        raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR=eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal<0).all()
+    return is_matrix_positive_definite(-A)
 
 
-def is_matrix_negative_semidefinite(A, tol=1e-8):
+def is_matrix_negative_semidefinite(A):
     """
     Returns True if a matrix is negative semidefinite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
-    tol : float
-        Tolerance for the zero value.
     
     Returns
     -------
@@ -857,29 +851,17 @@ def is_matrix_negative_semidefinite(A, tol=1e-8):
     >>> m = np.array([[-1,1],[1,-1]])
     >>> print(is_matrix_negative_semidefinite(m))
     True
-
-    References
-    ----------
-    Definiteness of a matrix, From Wikipedia, the free encyclopedia
-    https://en.wikipedia.org/wiki/positive-definite_matrix#Eigenvalues
     """
-    A = _asarray_square(A)
-    if not is_matrix_hermitian(A):
-        raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR=eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal<=0).all()
+    return is_matrix_positive_semidefinite(-A)
 
 
-def is_matrix_indefinite(A, tol=1e-8):
+def is_matrix_indefinite(A):
     """
     Returns True if a matrix is indefinite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
-    tol : float
-        Tolerance for the zero value.
     
     Returns
     -------
@@ -892,16 +874,6 @@ def is_matrix_indefinite(A, tol=1e-8):
     >>> m = np.array([[5,1],[1,0]])
     >>> print(is_matrix_indefinite(m))
     True
-
-    References
-    ----------
-    Definiteness of a matrix, From Wikipedia, the free encyclopedia
-    https://en.wikipedia.org/wiki/Positive-definite_matrix#Eigenvalues
     """
-    A = _asarray_square(A)
-    if not is_matrix_hermitian(A):
-        raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR=eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal<0).any() & (eiVal>0).any()
+    return not(is_matrix_positive_semidefinite(A) or is_matrix_negative_semidefinite(A))
 
