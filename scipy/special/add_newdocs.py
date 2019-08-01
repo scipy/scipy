@@ -7093,10 +7093,9 @@ add_newdoc("zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
-
-    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
-    `nan` for `x` less than -30.8148.
+    where ``x > 1``.  For ``x < 1`` the analytic continuation is
+    computed. For more information on the Riemann zeta function, see
+    [dlmf]_.
 
     Parameters
     ----------
@@ -7128,6 +7127,11 @@ add_newdoc("zetac",
 
     >>> zetac(60), zeta(60) - 1
     (8.673617380119933e-19, 0.0)
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/25
 
     """)
 
