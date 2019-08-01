@@ -1,7 +1,9 @@
 from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
 from numpy.testing import assert_equal, assert_
 from pytest import raises as assert_raises
+import pytest
 import numpy as np
+import sys
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -63,10 +65,19 @@ class TestNextFastLen(object):
             testN = next_fast_len(x)
             assert_equal(testN, next_fast_len(int(x)))
 
-    def testnext_fast_len_strict(self):
+    def testnext_fast_len_small(self):
         hams = {
             1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 8, 14: 15, 15: 15,
-            16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000,
+            16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000
+        }
+        for x, y in hams.items():
+            assert_equal(next_fast_len(x, 'R2C'), y)
+
+    @pytest.mark.xfail(sys.maxsize < 2**32,
+                       reason="Hamming Numbers too large for 32-bit",
+                       raises=ValueError, strict=True)
+    def testnext_fast_len_big(self):
+        hams = {
             510183360: 510183360, 510183360 + 1: 512000000,
             511000000: 512000000,
             854296875: 854296875, 854296875 + 1: 859963392,
