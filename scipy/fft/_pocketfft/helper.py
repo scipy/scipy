@@ -148,11 +148,11 @@ def _normalization(norm, forward):
     raise ValueError(
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
 
-def next_fast_len(target, type='C2C'):
+def next_fast_len(target, kind='C2C'):
     try:
-        real = {'C2C': False, 'R2C': True, 'C2R': True}[type]
+        real = {'C2C': False, 'R2C': True, 'C2R': True}[kind]
     except KeyError:
-        raise ValueError('Unknown transform type: {}'.format(type))
+        raise ValueError('Unknown transform kind: {}'.format(kind))
 
     target = operator.index(target)
 

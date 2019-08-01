@@ -4,7 +4,7 @@ from bisect import bisect_left
 import numpy as np
 
 
-def next_fast_len(target, type='C2C'):
+def next_fast_len(target, kind='C2C'):
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.
 
     SciPy's FFT algorithms gain their speed by a recursive divide and conquer
@@ -19,8 +19,8 @@ def next_fast_len(target, type='C2C'):
     ----------
     target : int
         Length to start searching from.  Must be a positive integer.
-    type : {'C2C', 'C2R', 'R2C'}, optional
-        Transform type
+    kind : {'C2C', 'C2R', 'R2C'}, optional
+        Kind of transform to be performed
         - 'C2C': Complex to complex (e.g. `fft`, `ifft`)
         - 'C2R': Complex to real (e.g. `irfft`, `hfft`)
         - 'R2C': Real to complex (e.g. `rfft`, `ihfft`)
@@ -35,7 +35,7 @@ def next_fast_len(target, type='C2C'):
     The result of this function may change in future as performance
     considerations change, for example if new prime factors are added.
 
-    Calling `fft` or `ifft` with real input data performs an 'R2C' type
+    Calling `fft` or `ifft` with real input data performs an ``'R2C'``
     transform internally.
 
     Examples
@@ -60,7 +60,7 @@ def next_fast_len(target, type='C2C'):
     >>> b = fft.fft(a, 131072)
 
     """
-    return _helper.next_fast_len(target, type)
+    return _helper.next_fast_len(target, kind)
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
