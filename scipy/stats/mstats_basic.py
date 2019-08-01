@@ -1983,6 +1983,22 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     This function is applied to reduce the effect of possibly spurious outliers
     by limiting the extreme values.
 
+    Examples
+    --------
+    >>> from scipy.stats.mstats import winsorize
+
+    A shuffled array contains integers from 1 to 10.
+
+    >>> a = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
+
+    The 10% of the lowest value (i.e., `1`) and the 20% of the highest
+    values (i.e., `9` and `10`) are replaced.
+
+    >>> winsorize(a, limits=[0.1, 0.2])
+    masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
+                 mask=False,
+           fill_value=999999)
+
     """
     def _winsorize1D(a, low_limit, up_limit, low_include, up_include):
         n = a.count()
