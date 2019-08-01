@@ -372,9 +372,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     s2 = in2.shape
     _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
 
-    if not noaxes:
-        if not len(axes):
-            raise ValueError("when provided, axes cannot be empty")
+    if not noaxes and not len(axes):
+        raise ValueError("when provided, axes cannot be empty")
 
     # Axes of length 1 can rely on broadcasting rules for multipy, no fft needed
     axes = [a for a in axes if in1.shape[a] != 1 and in2.shape[a] != 1]
@@ -394,7 +393,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
-    if axes.size:
+    if len(axes):
         # Speed up FFT by padding to optimal size
         fshape = [sp_fft.next_fast_len(shape[a]) for a in axes]
         fslice = tuple([slice(sz) for sz in shape])
