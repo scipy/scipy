@@ -394,13 +394,16 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         in1, s1, in2, s2 = in2, s2, in1, s1
 
     if len(axes):
-        # Speed up FFT by padding to optimal size
-        fshape = [sp_fft.next_fast_len(shape[a]) for a in axes]
-        fslice = tuple([slice(sz) for sz in shape])
         if not complex_result:
             fft, ifft = sp_fft.rfftn, sp_fft.irfftn
+            kind = 'R2C'
         else:
             fft, ifft = sp_fft.fftn, sp_fft.ifftn
+            kind = 'C2C'
+
+        # Speed up FFT by padding to optimal size
+        fshape = [sp_fft.next_fast_len(shape[a], kind) for a in axes]
+        fslice = tuple([slice(sz) for sz in shape])
         sp1 = fft(in1, fshape, axes=axes)
         sp2 = fft(in2, fshape, axes=axes)
         ret = ifft(sp1 * sp2, fshape, axes=axes)[fslice].copy()
