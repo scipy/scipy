@@ -1,6 +1,5 @@
 from scipy.fft._helper import (next_fast_len, _next_regular_len,
-                               _init_nd_shape_and_axes,
-                               _init_nd_shape_and_axes_sorted)
+                               _init_nd_shape_and_axes)
 from numpy.testing import assert_equal, assert_
 from pytest import raises as assert_raises
 import numpy as np
@@ -128,7 +127,7 @@ class TestNextRegularLen(object):
 class Test_init_nd_shape_and_axes(object):
 
     def test_py_0d_defaults(self):
-        x = 4
+        x = np.array(4)
         shape = None
         axes = None
 
@@ -136,11 +135,6 @@ class Test_init_nd_shape_and_axes(object):
         axes_expected = np.array([])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
 
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
@@ -158,13 +152,8 @@ class Test_init_nd_shape_and_axes(object):
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
 
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
     def test_py_1d_defaults(self):
-        x = [1, 2, 3]
+        x = np.array([1, 2, 3])
         shape = None
         axes = None
 
@@ -172,11 +161,6 @@ class Test_init_nd_shape_and_axes(object):
         axes_expected = np.array([0])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
 
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
@@ -194,14 +178,9 @@ class Test_init_nd_shape_and_axes(object):
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
 
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
     def test_py_2d_defaults(self):
-        x = [[1, 2, 3, 4],
-             [5, 6, 7, 8]]
+        x = np.array([[1, 2, 3, 4],
+                      [5, 6, 7, 8]])
         shape = None
         axes = None
 
@@ -209,11 +188,6 @@ class Test_init_nd_shape_and_axes(object):
         axes_expected = np.array([0, 1])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
 
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
@@ -231,11 +205,6 @@ class Test_init_nd_shape_and_axes(object):
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
 
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
     def test_np_5d_defaults(self):
         x = np.zeros([6, 2, 5, 3, 4])
         shape = None
@@ -245,11 +214,6 @@ class Test_init_nd_shape_and_axes(object):
         axes_expected = np.array([0, 1, 2, 3, 4])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
 
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
@@ -267,11 +231,6 @@ class Test_init_nd_shape_and_axes(object):
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
 
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
     def test_np_5d_set_axes(self):
         x = np.zeros([6, 2, 5, 3, 4])
         shape = None
@@ -281,19 +240,6 @@ class Test_init_nd_shape_and_axes(object):
         axes_expected = np.array([4, 1, 2])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
-    def test_np_5d_set_axes_sorted(self):
-        x = np.zeros([6, 2, 5, 3, 4])
-        shape = None
-        axes = [4, 1, 2]
-
-        shape_expected = np.array([2, 5, 4])
-        axes_expected = np.array([1, 2, 4])
-
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
 
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
@@ -311,49 +257,35 @@ class Test_init_nd_shape_and_axes(object):
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
 
-    def test_np_5d_set_shape_axes_sorted(self):
-        x = np.zeros([6, 2, 5, 3, 4])
-        shape = [10, -1, 2]
-        axes = [1, 0, 3]
-
-        shape_expected = np.array([6, 10, 2])
-        axes_expected = np.array([0, 1, 3])
-
-        shape_res, axes_res = _init_nd_shape_and_axes_sorted(x, shape, axes)
-
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
-
     def test_errors(self):
-        with assert_raises(ValueError,
-                           match="when given, axes values must be a scalar"
-                           " or vector"):
-            _init_nd_shape_and_axes([0], shape=None, axes=[[1, 2], [3, 4]])
+        x = np.zeros(1)
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
+            _init_nd_shape_and_axes(x, shape=None, axes=[[1, 2], [3, 4]])
 
-        with assert_raises(ValueError,
-                           match="when given, axes values must be integers"):
-            _init_nd_shape_and_axes([0], shape=None, axes=[1., 2., 3., 4.])
-
-        with assert_raises(ValueError,
-                           match="axes exceeds dimensionality of input"):
-            _init_nd_shape_and_axes([0], shape=None, axes=[1])
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
+            _init_nd_shape_and_axes(x, shape=None, axes=[1., 2., 3., 4.])
 
         with assert_raises(ValueError,
                            match="axes exceeds dimensionality of input"):
-            _init_nd_shape_and_axes([0], shape=None, axes=[-2])
+            _init_nd_shape_and_axes(x, shape=None, axes=[1])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            _init_nd_shape_and_axes(x, shape=None, axes=[-2])
 
         with assert_raises(ValueError,
                            match="all axes must be unique"):
-            _init_nd_shape_and_axes([0], shape=None, axes=[0, 0])
+            _init_nd_shape_and_axes(x, shape=None, axes=[0, 0])
 
-        with assert_raises(ValueError,
-                           match="when given, shape values must be a scalar "
-                           "or vector"):
-            _init_nd_shape_and_axes([0], shape=[[1, 2], [3, 4]], axes=None)
+        with assert_raises(ValueError, match="shape must be a scalar or "
+                           "iterable of integers"):
+            _init_nd_shape_and_axes(x, shape=[[1, 2], [3, 4]], axes=None)
 
-        with assert_raises(ValueError,
-                           match="when given, shape values must be integers"):
-            _init_nd_shape_and_axes([0], shape=[1., 2., 3., 4.], axes=None)
+        with assert_raises(ValueError, match="shape must be a scalar or "
+                           "iterable of integers"):
+            _init_nd_shape_and_axes(x, shape=[1., 2., 3., 4.], axes=None)
 
         with assert_raises(ValueError,
                            match="when given, axes and shape arguments"
@@ -364,9 +296,9 @@ class Test_init_nd_shape_and_axes(object):
         with assert_raises(ValueError,
                            match="invalid number of data points"
                            r" \(\[0\]\) specified"):
-            _init_nd_shape_and_axes([0], shape=[0], axes=None)
+            _init_nd_shape_and_axes(x, shape=[0], axes=None)
 
         with assert_raises(ValueError,
                            match="invalid number of data points"
                            r" \(\[-2\]\) specified"):
-            _init_nd_shape_and_axes([0], shape=-2, axes=None)
+            _init_nd_shape_and_axes(x, shape=-2, axes=None)

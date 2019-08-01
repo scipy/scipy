@@ -1,8 +1,36 @@
 import numpy as np
+from numbers import Number
+import operator
 
 
 # TODO: Build with OpenMp and add configuration support
 _default_workers = 1
+
+
+def _iterable_of_int(x, name=None):
+    """Convert ``x`` to an iterable sequence of int
+
+    Parameters
+    ----------
+    x : value, or sequence of values, convertible to int
+    name : str, optional
+        Name of the argument being converted, only used in the error message
+
+    Returns
+    -------
+    y : ``List[int]``
+    """
+    if isinstance(x, Number):
+        x = (x,)
+
+    try:
+        x = [operator.index(a) for a in x]
+    except TypeError as e:
+        name = name or "value"
+        raise ValueError("{} must be a scalar or iterable of integers"
+                         .format(name)) from e
+
+    return x
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
@@ -13,16 +41,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     if noaxes:
         axes = range(x.ndim)
     else:
-        axes = np.atleast_1d(axes)
-
-        if axes.size == 0:
-            axes = axes.astype(np.intc)
-
-        if not axes.ndim == 1:
-            raise ValueError("when given, axes values must be a scalar or vector")
-        if not np.issubdtype(axes.dtype, np.integer):
-            raise ValueError("when given, axes values must be integers")
-
+        axes = _iterable_of_int(axes, 'axes')
         axes = [a + x.ndim if a < 0 else a for a in axes]
 
         if any(a >= x.ndim or a < 0 for a in axes):
@@ -31,15 +50,8 @@ def _init_nd_shape_and_axes(x, shape, axes):
             raise ValueError("all axes must be unique")
 
     if not noshape:
-        shape = np.atleast_1d(shape)
+        shape = _iterable_of_int(shape, 'shape')
 
-        if shape.size == 0:
-            shape = shape.astype(np.intc)
-
-        if shape.ndim != 1:
-            raise ValueError("when given, shape values must be a scalar or vector")
-        if not np.issubdtype(shape.dtype, np.integer):
-            raise ValueError("when given, shape values must be integers")
         if len(axes) != len(shape):
             raise ValueError("when given, axes and shape arguments"
                              " have to be of the same length")

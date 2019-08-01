@@ -785,13 +785,12 @@ class TestFFTConvolve(object):
                            match="when provided, axes cannot be empty"):
             fftconvolve([1], [2], axes=[])
 
-        with assert_raises(ValueError,
-                           match="when given, axes values must be a scalar"
-                           " or vector"):
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
             fftconvolve([1], [2], axes=[[1, 2], [3, 4]])
 
-        with assert_raises(ValueError,
-                           match="when given, axes values must be integers"):
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
             fftconvolve([1], [2], axes=[1., 2., 3., 4.])
 
         with assert_raises(ValueError,

@@ -11,7 +11,7 @@ from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy import linalg, fft as sp_fft
-from scipy.fft._helper import _init_nd_shape_and_axes_sorted
+from scipy.fft._helper import _init_nd_shape_and_axes
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
@@ -368,41 +368,34 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.size == 0 or in2.size == 0:  # empty arrays
         return array([])
 
-    _, axes = _init_nd_shape_and_axes_sorted(in1, shape=None, axes=axes)
+    s1 = in1.shape
+    s2 = in2.shape
+    _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
 
-    if not noaxes and not axes.size:
+    if not noaxes and not len(axes):
         raise ValueError("when provided, axes cannot be empty")
 
     # Axes of length 1 can rely on broadcasting rules for multipy, no fft needed
-    axes = np.array([a for a in axes
-                     if in1.shape[a] != 1 and in2.shape[a] != 1], axes.dtype)
+    axes = [a for a in axes if in1.shape[a] != 1 and in2.shape[a] != 1]
 
-    if noaxes:
-        other_axes = array([], dtype=np.intc)
-    else:
-        other_axes = np.setdiff1d(np.arange(in1.ndim), axes)
-
-    s1 = array(in1.shape)
-    s2 = array(in2.shape)
-
-    if not np.all((s1[other_axes] == s2[other_axes])
-                  | (s1[other_axes] == 1) | (s2[other_axes] == 1)):
+    if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
+               for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
                          " {0} and {1}".format(in1.shape, in2.shape))
 
-    complex_result = (np.issubdtype(in1.dtype, np.complexfloating)
-                      or np.issubdtype(in2.dtype, np.complexfloating))
-    shape = np.maximum(s1, s2)
-    shape[axes] = s1[axes] + s2[axes] - 1
+    shape = [max((s1[i], s2[i])) if i not in axes else s1[i] + s2[i] - 1
+             for i in range(in1.ndim)]
+
+    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
 
     # Check that input sizes are compatible with 'valid' mode
     if _inputs_swap_needed(mode, s1, s2):
         # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
-    if axes.size:
+    if len(axes):
         # Speed up FFT by padding to optimal size
-        fshape = [sp_fft.next_fast_len(d) for d in shape[axes]]
+        fshape = [sp_fft.next_fast_len(shape[a]) for a in axes]
         fslice = tuple([slice(sz) for sz in shape])
         if not complex_result:
             fft, ifft = sp_fft.rfftn, sp_fft.irfftn
@@ -419,8 +412,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif mode == "same":
         return _centered(ret, s1)
     elif mode == "valid":
-        shape_valid = shape.copy()
-        shape_valid[axes] = s1[axes] - s2[axes] + 1
+        shape_valid = [shape[a] if a not in axes else s1[a] - s2[a] + 1
+                       for a in range(in1.ndim)]
         return _centered(ret, shape_valid)
     else:
         raise ValueError("acceptable mode flags are 'valid',"

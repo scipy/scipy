@@ -1,7 +1,6 @@
 from . import _pocketfft
 from ._pocketfft import helper as _helper
 from bisect import bisect_left
-import numpy as np
 
 
 def _next_regular_len(target):
@@ -146,45 +145,4 @@ def _init_nd_shape_and_axes(x, shape, axes):
         The shape of the result. It is a 1D integer array.
 
     """
-    s, a = _helper._init_nd_shape_and_axes(np.asarray(x), shape, axes)
-    return np.asarray(s), np.asarray(a)
-
-
-def _init_nd_shape_and_axes_sorted(x, shape, axes):
-    """Handle and sort shape and axes arguments for n-dimensional transforms.
-
-    This is identical to `_init_nd_shape_and_axes`, except the axes are
-    returned in sorted order and the shape is reordered to match.
-
-    Parameters
-    ----------
-    x : array_like
-        The input array.
-    shape : int or array_like of ints or None
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If `shape` is -1, the size of the corresponding dimension of `x` is
-        used.
-    axes : int or array_like of ints or None
-        Axes along which the calculation is computed.
-        The default is over all axes.
-        Negative indices are automatically converted to their positive
-        counterpart.
-
-    Returns
-    -------
-    shape : array
-        The shape of the result. It is a 1D integer array.
-    axes : array
-        The shape of the result. It is a 1D integer array.
-
-    """
-    noaxes = axes is None
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-
-    if not noaxes:
-        shape = shape[axes.argsort()]
-        axes.sort()
-
-    return shape, axes
+    return _helper._init_nd_shape_and_axes(x, shape, axes)
