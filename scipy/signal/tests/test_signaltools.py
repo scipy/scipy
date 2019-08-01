@@ -67,6 +67,16 @@ class _TestConvolve(object):
         c = convolve(a, b)
         assert_equal(c, a * b)
 
+    def test_broadcastable(self):
+        a = np.arange(27).reshape(3, 3, 3)
+        b = np.arange(3)
+        for i in range(3):
+            b_shape = [1]*3
+            b_shape[i] = 3
+            x = convolve(a, b.reshape(b_shape), method='direct')
+            y = convolve(a, b.reshape(b_shape), method='fft')
+            assert_allclose(x, y)
+
     def test_single_element(self):
         a = array([4967])
         b = array([3920])
