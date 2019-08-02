@@ -1,8 +1,9 @@
-from scipy.fft._helper import (next_fast_len, _next_regular_len,
-                               _init_nd_shape_and_axes)
+from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
 from numpy.testing import assert_equal, assert_
 from pytest import raises as assert_raises
+import pytest
 import numpy as np
+import sys
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -16,9 +17,31 @@ def test_next_fast_len():
         assert_equal(next_fast_len(n), n)
 
 
-class TestNextRegularLen(object):
+def _assert_n_smooth(x, n):
+    x_orig = x
+    if n < 2:
+        assert False
 
-    def test_next_regular_len(self):
+    while True:
+        q, r = divmod(x, 2)
+        if r != 0:
+            break
+        x = q
+
+    for d in range(3, n+1, 2):
+        while True:
+            q, r = divmod(x, d)
+            if r != 0:
+                break
+            x = q
+
+    assert x == 1, \
+           'x={} is not {}-smooth, remainder={}'.format(x_orig, n, x)
+
+
+class TestNextFastLen(object):
+
+    def test_next_fast_len(self):
         np.random.seed(1234)
 
         def nums():
@@ -27,33 +50,34 @@ class TestNextRegularLen(object):
             yield 2**5 * 3**5 * 4**5 + 1
 
         for n in nums():
-            m = _next_regular_len(n)
-            msg = "n=%d, m=%d" % (n, m)
+            m = next_fast_len(n)
+            _assert_n_smooth(m, 11)
+            assert m == next_fast_len(n, 'C2C')
 
-            assert_(m >= n, msg)
-
-            # check regularity
-            k = m
-            for d in [2, 3, 5]:
-                while True:
-                    a, b = divmod(k, d)
-                    if b == 0:
-                        k = a
-                    else:
-                        break
-            assert_equal(k, 1, err_msg=msg)
+            m = next_fast_len(n, 'R2C')
+            _assert_n_smooth(m, 5)
+            assert m == next_fast_len(n, 'C2R')
 
     def test_np_integers(self):
         ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
         for ityp in ITYPES:
             x = ityp(12345)
-            testN = _next_regular_len(x)
-            assert_equal(testN, _next_regular_len(int(x)))
+            testN = next_fast_len(x)
+            assert_equal(testN, next_fast_len(int(x)))
 
-    def test_next_regular_len_strict(self):
+    def testnext_fast_len_small(self):
         hams = {
             1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 8, 14: 15, 15: 15,
-            16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000,
+            16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000
+        }
+        for x, y in hams.items():
+            assert_equal(next_fast_len(x, 'R2C'), y)
+
+    @pytest.mark.xfail(sys.maxsize < 2**32,
+                       reason="Hamming Numbers too large for 32-bit",
+                       raises=ValueError, strict=True)
+    def testnext_fast_len_big(self):
+        hams = {
             510183360: 510183360, 510183360 + 1: 512000000,
             511000000: 512000000,
             854296875: 854296875, 854296875 + 1: 859963392,
@@ -82,46 +106,9 @@ class TestNextRegularLen(object):
             288325195312500000 - 1: 288325195312500000,
             288325195312500000: 288325195312500000,
             288325195312500000 + 1: 288555831593533440,
-            # power of 3    3**83
-            3990838394187339929534246675572349035227 - 1:
-                3990838394187339929534246675572349035227,
-            3990838394187339929534246675572349035227:
-                3990838394187339929534246675572349035227,
-            # power of 2     2**135
-            43556142965880123323311949751266331066368 - 1:
-                43556142965880123323311949751266331066368,
-            43556142965880123323311949751266331066368:
-                43556142965880123323311949751266331066368,
-            # power of 5      5**57
-            6938893903907228377647697925567626953125 - 1:
-                6938893903907228377647697925567626953125,
-            6938893903907228377647697925567626953125:
-                6938893903907228377647697925567626953125,
-            # http://www.drdobbs.com/228700538
-            # 2**96 * 3**1 * 5**13
-            290142196707511001929482240000000000000 - 1:
-                290142196707511001929482240000000000000,
-            290142196707511001929482240000000000000:
-                290142196707511001929482240000000000000,
-            290142196707511001929482240000000000000 + 1:
-                290237644800000000000000000000000000000,
-            # 2**36 * 3**69 * 5**7
-            4479571262811807241115438439905203543080960000000 - 1:
-                4479571262811807241115438439905203543080960000000,
-            4479571262811807241115438439905203543080960000000:
-                4479571262811807241115438439905203543080960000000,
-            4479571262811807241115438439905203543080960000000 + 1:
-                4480327901140333639941336854183943340032000000000,
-            # 2**37 * 3**44 * 5**42
-            30774090693237851027531250000000000000000000000000000000000000 - 1:
-                30774090693237851027531250000000000000000000000000000000000000,
-            30774090693237851027531250000000000000000000000000000000000000:
-                30774090693237851027531250000000000000000000000000000000000000,
-            30774090693237851027531250000000000000000000000000000000000000 + 1:
-                30778180617309082445871527002041377406962596539492679680000000,
         }
         for x, y in hams.items():
-            assert_equal(_next_regular_len(x), y)
+            assert_equal(next_fast_len(x, 'R2C'), y)
 
 
 class Test_init_nd_shape_and_axes(object):

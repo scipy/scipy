@@ -4,13 +4,13 @@ pypocketfft version
 
 SciPy currently vendors [pypocketfft][repo] at:
 
-    commit 656b2373624bfb83ad1bc9388fa6c561eb2bb9e0
-    Merge: 0276f55 20f3b84
+    commit 869e68d243138c188cafa8334d92f94ded600a90
+    Merge: 6f1bba7 140e68f
     Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Sat Jul 20 13:16:46 2019 +0200
+    Date:   Thu Aug 1 13:33:46 2019 +0200
 
-        Merge branch 'sincos' into 'master'
+        Merge branch 'tweak_codelet_8' into 'master'
 
-        DCT/DST support
+        Tweak length-8 codelet
 
 repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

@@ -377,6 +377,12 @@ py::array genuine_hartley(const py::array &in, const py::object &axes_,
   DISPATCH(in, f64, f32, flong, complex2hartley, (in, tmp, axes_, out_))
   }
 
+size_t good_size(size_t n, bool real)
+  {
+  using namespace pocketfft::detail;
+  return real ? util::good_size_real(n) : util::good_size_cmplx(n);
+  }
+
 const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
 
 This module supports
@@ -662,6 +668,22 @@ numpy.ndarray (same shape and data type as `a`)
     The transformed data
 )""";
 
+const char * good_size_DS = R"""(Returns a good length to pad an FFT to.
+
+Parameters
+----------
+n : int
+    Minimum transform length
+real : bool, optional
+    True if either input or output of FFT should be fully real.
+
+Returns
+-------
+out : int
+    The smallest fast size >= n
+
+)""";
+
 } // unnamed namespace
 
 PYBIND11_MODULE(pypocketfft, m)
@@ -685,4 +707,5 @@ PYBIND11_MODULE(pypocketfft, m)
     "out"_a=None, "nthreads"_a=1);
   m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
     "out"_a=None, "nthreads"_a=1);
+  m.def("good_size", good_size, good_size_DS, "n"_a, "real"_a=false);
   }
