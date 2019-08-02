@@ -13,12 +13,19 @@
 #include "ellint_carlson.hh"
 
 
+/* Reference for asymptotic approximations:
+ *   B. C. Carlson, J. L. Gustafson, "Asymptotic approximations for symmetric
+ *   elliptic integrals," SIAM J. Math. Anls., vol. 25, no. 2, pp. 288-303,
+ *   1994. */
+
+
 /* Forward declaration */
 namespace ellint_carlson
 {
 template<typename T>
 ExitStatus
-rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res);
+rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
+   bool noasymp = false);
 
 
 template<typename T>
@@ -211,13 +218,12 @@ rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
     T xct1[4] = {x, y, -p, z};
     T xct2[4];
 
-    double r = rerr / 3.0;
-    T xy = xct1[0] * xct1[1];
-    xct2[3] = xct1[2] / xct1[3] + (T)1.0;
+    T xy = x * y;
+    xct2[3] = (T)1.0 - p / z;
     T pn = (arithmetic::nsum2(xct1, 3) - xy / xct1[3]) / xct2[3];
 
     status = ExitStatus::success;
-    status_tmp = rj(xct1[0], xct1[1], xct1[3], pn, r, xct2[0]);
+    status_tmp = rj(x, y, z, pn, rerr, xct2[0]);
     if ( is_horrible(status_tmp) )
     {
 	return status_tmp;
@@ -225,7 +231,7 @@ rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
 	status = status_tmp;
     }
 
-    status_tmp = rf(xct1[0], xct1[1], xct1[3], r, xct2[1]);
+    status_tmp = rf(x, y, z, rerr, xct2[1]);
     if ( is_horrible(status_tmp) )
     {
 	return status_tmp;
@@ -235,21 +241,19 @@ rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
 
     T pq = pn * xct1[2];
     T xypq = xy + pq;
-    status_tmp = rc(xypq, pq, r, xct2[2]);
+    status_tmp = rc(xypq, pq, rerr, xct2[2]);
     if ( is_horrible(status_tmp) )
     {
 	return status_tmp;
     } else if ( is_troublesome(status_tmp) ) {
 	status = status_tmp;
     }
-    xct1[0] = pn / xct1[3] - (T)1.0;
-    xct1[1] = -(T)3.0 / xct1[3];
-    xct1[2] = (T)3.0 * std::sqrt(xy / (xypq * xct1[3]));
+    xct1[0] = pn - z;
+    xct1[1] = -(T)3.0;
+    xct1[2] = (T)3.0 * std::sqrt(xy * z / xypq);
 
-    /* tmpres = (pn - zz) * rjv - 3.0 * (rfv - sqrt(xy * zz / xypq) * rcv); */
     T tmpres = arithmetic::ndot2(xct1, xct2, 3);
-    /* tmpres /= q + zz */
-    tmpres /= xct2[3];
+    tmpres /= (z - p);
     res = (Tres)tmpres;
 
     return status;
@@ -379,7 +383,8 @@ safe_atan_sqrt_div(T x)
 
 template<typename T>
 ExitStatus
-rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res)
+rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
+   bool noasymp)
 {
     typedef typing::decplx_t<T> RT;
 
@@ -439,7 +444,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res)
 	}
     }
 
-    if ( classify.maybe_asymp )
+    if ( classify.maybe_asymp && !noasymp )
     {
 	/* might be dealt with by asymptotic expansion of real-arg RJ */
 	RT tmpres;
@@ -514,44 +519,37 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res)
 		status = rc((RT)1.0, pr / zr, rerr, tx);
 		tmpres = std::log((RT)8.0 * zr / (config.a + config.g)) -
 		         (RT)2.0 * tx;
-		tx = std::log((RT)2.0 * pr / (config.a + config.g)) /
-		     (tmpres * pr);
-		RT r_est_l = tx * config.g / ((RT)1.0 - config.g / pr);
-		RT r_est_h = tx * config.a *
-		             ((RT)1.0 + (RT)0.5 * pr / zr) / ((RT)1.0 -
-			                                      config.a / pr);
-		/* if asymptotic expansion found to violate error bound
-		 * after the fact */
-		if ( r_est_h - r_est_l >= 2.0 * rerr )
-		{
-		    cres = rjimpl::AsymFlag::nothing;
-		    status = ExitStatus::success;
-		    break;
-		} else {
-		    tmpres += r_est_l;
-		    tmpres *= (RT)1.5 / (std::sqrt(zr) * pr);
-		}
+		tx = std::log((RT)2.0 * pr / (config.a + config.g)) / pr;
+		RT rt_h = tx * config.a *
+		          ((RT)1.0 + (RT)0.5 * pr / zr) / ((RT)1.0 -
+			                                   config.a / pr);
+		tx = (RT)1.5 / (std::sqrt(zr) * pr);
+		tmpres *= tx;
+		tmpres += rt_h * tx;
 		break;
 	    }
 	    case rjimpl::AsymFlag::hugez :
 	    {
 		RT tt = config.h + pr;
 		tt *= tt;
-		status = rc(tt, (RT)2.0 * (config.b + config.h) * pr, rerr,
-		            tmpres);
-		RT r_est = (RT)0.25 *
-			   ((RT)0.5 + std::log1p((RT)2.0 * zr /
-			                         std::sqrt(config.h * pr))) /
-			   (tmpres * zr);
-		/* if asymptotic expansion found to violate error bound
-		 * after the fact */
-		if ( r_est >= rerr )
+		RT tm = config.b + config.h;
+		status = rc(tt, (RT)2.0 * tm * pr, rerr, tmpres);
+		tt = std::log((RT)2.0 * zr / tm);
+		RT rt_h = (RT)0.75 * ((RT)2.0 * pr * tmpres / zr -
+		                      tt / (zr - config.h));
+		tt = (RT)3.0 / std::sqrt(zr);
+		tmpres *= tt;
+		/* Also try if direct computation gives reasonable approx. */
+		RT tmp_direct;
+		ExitStatus status_direct = rj(xr, yr, zr, pr, rerr, tmp_direct,
+		                              true);
+		if ( (tmp_direct > tmpres) ||
+		     (tmp_direct < tmpres + rt_h * tt) )
 		{
-		    cres = rjimpl::AsymFlag::nothing;
-		    status = ExitStatus::success;
-		    break;
+		    tmpres += tt * (RT)0.3 * rt_h;
 		} else {
-		    tmpres *= (RT)3.0 / std::sqrt(zr);
+		    tmpres = tmp_direct;
+		    status = status_direct;
 		}
 		break;
 	    }

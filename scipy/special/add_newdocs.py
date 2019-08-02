@@ -2404,7 +2404,8 @@ add_newdoc("elliprj",
     and series expansion up to the 7th order. [3]_ The algorithm is slightly
     different from its earlier incarnation as it appears in [1]_, in that the
     call to `elliprc` (or ``atan``/``atanh``, see [4]_) is no longer needed in
-    the inner loop.
+    the inner loop. Asymptotic approximations are used where arguments differ
+    widely in the order of magnitude. [5]_
 
     See Also
     --------
@@ -2433,6 +2434,11 @@ add_newdoc("elliprj",
            Switzerland: Springer Nature Switzerland)
            https://arxiv.org/abs/1806.06725
            https://doi.org/10.1007/978-3-030-04480-0
+    .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
+           Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
+           pp. 288-303, 1994.
+           https://arxiv.org/abs/math/9310223
+           https://doi.org/10.1137/S0036141092228477
     """)
 
 add_newdoc("entr",

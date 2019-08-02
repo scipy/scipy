@@ -35,6 +35,7 @@ namespace ellint_carlson
     namespace constants
     {
 	static constexpr long double pi = 3.14159265358979323846264338327950288419716939937510582097494459230781640628620899863L;
+	static constexpr long double ln4 = 1.38629436111989061883446424291635313615100026872051050824136L;
 
 	static constexpr double RC_C[8] =
 	{

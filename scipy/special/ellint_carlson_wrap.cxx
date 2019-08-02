@@ -15,7 +15,7 @@
 #include "sf_error.h"
 
 
-static constexpr double ellip_rerr = 2.5e-14;
+static constexpr double ellip_rerr = 5e-15;
 
 
 _BEGIN_EXTERN_C
