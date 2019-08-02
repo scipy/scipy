@@ -1699,6 +1699,21 @@ class TestEllipCarlson(object):
         for i, arr in enumerate(args):
             assert_allclose(elliprj(*arr), expected_results[i])
 
+    @pytest.mark.xfail(reason="Insufficient accuracy on 32-bit")
+    def test_elliprj_hard(self):
+        assert_allclose(elliprj(6.483625725195452e-08,
+                                1.1649136528196886e-27,
+                                3.6767340167168e+13,
+                                0.493704617023468),
+                        8.63426920644241857617477551054e-6,
+                        rtol=5e-15, atol=1e-20)
+        assert_allclose(elliprj(14.375105857849121,
+                                9.993988969725365e-11,
+                                1.72844262269944e-26,
+                                5.898871222598245e-06),
+                        829774.1424801627252574054378691828,
+                        rtol=5e-15, atol=1e-20)
+
 
 class TestErf(object):
 
