@@ -42,6 +42,12 @@ matrix:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
         - NUMPYSPEC="numpy==1.15.4"
+    - python: 3.8-dev
+      dist: xenial
+      sudo: true
+      env:
+        - TESTMODE=fast
+        - NUMPYSPEC="numpy"
     - python: 3.6
       env:
         - TESTMODE=fast
