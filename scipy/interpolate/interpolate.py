@@ -154,7 +154,7 @@ class interp2d(object):
     fill_value : number, optional
         If provided, the value to use for points outside of the
         interpolation domain. If omitted (None), values outside
-        the domain are extrapolated.
+        the domain are extrapolated via nearest-neighbor extrapolation.
 
     See Also
     --------
