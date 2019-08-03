@@ -631,20 +631,47 @@ from __future__ import division, print_function, absolute_import
 
 from .sf_error import SpecialFunctionWarning, SpecialFunctionError
 
+from . import _ufuncs
 from ._ufuncs import *
 
-from .basic import *
+from . import _basic
+from ._basic import *
+
 from ._logsumexp import logsumexp, softmax
-from . import specfun
+
 from . import orthogonal
 from .orthogonal import *
-from .spfun_stats import multigammaln
-from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
-from .lambertw import lambertw
-from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
-                                spherical_kn)
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+from .spfun_stats import multigammaln
+from ._ellip_harm import (
+    ellip_harm,
+    ellip_harm_2,
+    ellip_normal
+)
+from .lambertw import lambertw
+from ._spherical_bessel import (
+    spherical_jn,
+    spherical_yn,
+    spherical_in,
+    spherical_kn
+)
+
+__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+    'SpecialFunctionWarning',
+    'SpecialFunctionError',
+    'orthogonal',  # Not public, but kept in __all__ for back-compat
+    'logsumexp',
+    'softmax',
+    'multigammaln',
+    'ellip_harm',
+    'ellip_harm_2',
+    'ellip_normal',
+    'lambertw',
+    'spherical_jn',
+    'spherical_yn',
+    'spherical_in',
+    'spherical_kn',
+]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
