@@ -9,7 +9,7 @@ The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 /*! @file sp_preorder.c
- * \brief Permute and performs functions on columns of original matrix
+ * \brief Permute and performs functions on columns of orginal matrix
  */
 #include "slu_ddefs.h"
 

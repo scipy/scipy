@@ -85,7 +85,7 @@ arpack-ng - 3.1.2
 
    * Wrong call to pdlamch was causing segfaults
      Thanks to Kyrre Sjøbæk for finding the bug and the fix.
-   * Get rid of the mpif.h occurrences in the source code (Closes: #782)
+   * Get rid of the mpif.h occurences in the source code (Closes: #782)
    * Compile also PARPACK / MPI example (Closes: #783)
    * Configure detected built-in LAPACK and BLAS, but refused to use them
      (Closes: #784)

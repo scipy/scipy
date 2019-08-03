@@ -2823,7 +2823,7 @@ PRIVATE void detect_super_cols
 
 /*
     Defragments and compacts columns and rows in the workspace A.  Used when
-    all available memory has been used while performing row merging.  Returns
+    all avaliable memory has been used while performing row merging.  Returns
     the index of the first free position in A, after garbage collection.  The
     time taken by this routine is linear is the size of the array A, which is
     itself linear in the number of nonzeros in the input matrix.
