@@ -73,6 +73,7 @@ cdef extern from "cephes.h" nogil:
     double poch(double x, double m)
     double psi(double x)
     double rgamma(double x)
+    double riemann_zeta(double x)
     double round(double x)
     int shichi(double x, double *si, double *ci)
     int sici(double x, double *si, double *ci)
