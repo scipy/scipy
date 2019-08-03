@@ -2,9 +2,8 @@ from __future__ import division, print_function, absolute_import
 
 import operator
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
-from scipy.fft._helper import _next_regular_len
+import scipy.fft._pocketfft.helper as _helper
 import numpy as np
-
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
 
 
@@ -95,4 +94,5 @@ def next_fast_len(target):
     >>> b = fftpack.fft(a, 16384)
 
     """
-    return _next_regular_len(target)
+    # Real transforms use regular sizes so this is backwards compatible
+    return _helper.next_fast_len(target, 'R2C')

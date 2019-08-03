@@ -190,7 +190,7 @@ cdef class coo_entries:
         res_dtype = np.dtype(_dtype, align = True)
         n = <np.intp_t> self.buf.size()
         if NPY_LIKELY(n > 0):
-            pr = &self.buf.front()
+            pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.uint8)
             self.__array_interface__ = dict(
@@ -213,7 +213,7 @@ cdef class coo_entries:
             dict res_dict
         n = <np.intp_t> self.buf.size()
         if NPY_LIKELY(n > 0):
-            pr = &self.buf.front()
+            pr = self.buf.data()
             res_dict = dict()
             for k in range(n):
                 i = pr[k].i
@@ -263,7 +263,7 @@ cdef class ordered_pairs:
             np.intp_t n
         n = <np.intp_t> self.buf.size()
         if NPY_LIKELY(n > 0):
-            pr = &self.buf.front()
+            pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.intp)
             self.__array_interface__ = dict(
@@ -284,7 +284,7 @@ cdef class ordered_pairs:
             np.intp_t i, n
             set results
         results = set()
-        pair = &self.buf.front()
+        pair = self.buf.data()
         n = <np.intp_t> self.buf.size()
         if sizeof(long) < sizeof(np.intp_t):
             # Needed for Python 2.x on Win64
@@ -593,7 +593,7 @@ cdef class cKDTree:
         cself = self.cself
         # finalize the tree points, this calls _post_init_traverse
 
-        cself.ctree = &cself.tree_buffer.front()
+        cself.ctree = cself.tree_buffer.data()
 
         # set the size attribute after tree_buffer is built
         cself.size = cself.tree_buffer.size()
@@ -971,7 +971,7 @@ cdef class cKDTree:
                     m = <np.intp_t> (vvres[i].size())
                     tmp = m * [None]
 
-                    cur = &vvres[i].front()
+                    cur = vvres[i].data()
                     for j in range(m):
                         tmp[j] = cur[0]
                         cur += 1
@@ -1067,7 +1067,7 @@ cdef class cKDTree:
                     tmp = m * [None]
                     with nogil:
                         sort(vvres[i].begin(), vvres[i].end())
-                    cur = &vvres[i].front()
+                    cur = vvres[i].data()
                     for j in range(m):
                         tmp[j] = cur[0]
                         cur += 1
@@ -1492,7 +1492,7 @@ cdef class cKDTree:
         cdef ckdtree * cself = self.cself
         size = cself.tree_buffer.size() * sizeof(ckdtreenode)
 
-        cdef np.ndarray tree = np.asarray(<char[:size]> <char*> &cself.tree_buffer.front())
+        cdef np.ndarray tree = np.asarray(<char[:size]> <char*> cself.tree_buffer.data())
 
         state = (tree.copy(), self.data.copy(), self.n, self.m, self.leafsize,
                       self.maxes, self.mins, self.indices.copy(),
@@ -1511,7 +1511,7 @@ cdef class cKDTree:
         cself.tree_buffer = new vector[ckdtreenode]()
         cself.tree_buffer.resize(tree.size // sizeof(ckdtreenode))
 
-        mytree = np.asarray(<char[:tree.size]> <char*> &cself.tree_buffer.front())
+        mytree = np.asarray(<char[:tree.size]> <char*> cself.tree_buffer.data())
 
         # set raw pointers
         self._pre_init()

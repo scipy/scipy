@@ -88,26 +88,22 @@ class Convolve2D(Benchmark):
 
 
 class FFTConvolve(Benchmark):
-    param_names = ['mode']
+    param_names = ['mode', 'size']
     params = [
-        ['full', 'valid', 'same']
+        ['full', 'valid', 'same'],
+        [(a,b) for a,b in product((1, 2, 8, 36, 60, 150, 200, 500), repeat=2)
+         if b <= a]
     ]
 
-    def setup(self, mode):
+    def setup(self, mode, size):
         np.random.seed(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
-        for ma, nb in product((1, 2, 8, 13, 30, 36, 50, 75), repeat=2):
-            a = np.random.randn(ma)
-            b = np.random.randn(nb)
-            pairs.append((a, b))
-        self.pairs = pairs
+        self.a = np.random.randn(size[0])
+        self.b = np.random.randn(size[1])
 
-    def time_convolve2d(self, mode):
-        for a, b in self.pairs:
-            if b.shape[0] > a.shape[0]:
-                continue
-            signal.fftconvolve(a, b, mode=mode)
+    def time_convolve2d(self, mode, size):
+        signal.fftconvolve(self.a, self.b, mode=mode)
 
 
 class Convolve(Benchmark):

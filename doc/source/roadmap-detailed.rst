@@ -232,6 +232,12 @@ things that are needed:
   (e.g. with summary plots).
 - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
   preferred.
+- ``scipy.optimize`` has an extensive set of benchmarks for accuracy and speed of
+  the global optimizers. That has allowed adding new optimizers (``shgo`` and
+  ``dual_annealing``) with significantly better performance than the existing
+  ones.  The ``optimize`` benchmark system itself is slow and hard to use
+  however; we need to make it faster and make it easier to compare performance of
+  optimizers via plotting performance profiles.
 
 
 signal
@@ -355,15 +361,69 @@ functions, and spheroidal wave functions. Three possible ways to handle this:
 stats
 `````
 
-This module is in good shape overall.  New functionality that's similar to
-what's already present can continue to be added; more advanced statistical
-routines may fit better in ``statsmodels``.  Some ideas for new contributions
-are:
+The ``scipy.stats`` subpackage aims to provide fundamental statistical
+methods as might be covered in standard statistics texts such as Johnson's
+"Miller & Freund's Probability and Statistics for Engineers", Sokal & Rohlf's
+"Biometry", or Zar's "Biostatistical Analysis".  It does not seek to duplicate
+the advanced functionality of downstream packages (e.g. StatsModels,
+LinearModels, PyMC3); instead, it can provide a solid foundation on which
+they can build.  (Note that these are rough guidelines, not strict rules.
+"Advanced" is an ill-defined and subjective term, and "advanced" methods
+may also be included in SciPy, especially if no other widely used and
+well-supported package covers the topic.  Also note that *some* duplication
+with downstream projects is inevitable and not necessarily a bad thing.)
 
-- Implementing (well-known) distributions to the ``stats.distributions``
-  framework is always welcome.
-- Continuing work on making the function signatures of ``stats`` and
-  ``stats.mstats`` more consistent, and adding tests to ensure that that
+The following improvements will help SciPy better serve this role.
+
+- Add fundamental and widely used hypothesis tests:
+
+  - Alexander-Govern test
+  - Somers' D
+  - Kendall's tau-c
+  - Page's L-test
+  - Tukey-Kramer test
+  - Dunnett's test
+  - the various types of analysis of variance (ANOVA):
+
+    - two-way ANOVA (single replicate, uniform number of replicates, variable
+      number of replicates)
+    - multiway ANOVA (i.e. generalize two-way ANOVA)
+    - nested ANOVA
+    - analysis of covariance (ANCOVA)
+
+- Where appropriate, include confidence intervals for the statistic in the
+  results of any statistical test.
+- Add additional tools for meta-analysis; currently we have just `combine_pvalues`.
+- Enhance the `fit` method of the continuous probability distributions:
+
+  - Expand the options for fitting to include:
+
+    - method of moments
+    - maximal product spacings
+    - method of L-moments / probability weighted moments
+
+  - Include measures of goodness-of-fit in the results
+  - Handle censored data
+
+- Implement additional widely used continuous and discrete probability
+  distributions:
+
+  - noncentral hypergeometric distribution (both Fisher's and Wallenius')
+  - negative hypergeometric distribution
+  - multivariate hypergeometric distribution
+  - multivariate t distribution
+  - mixture distributions
+
+- Improve the core calculations provided by SciPy's probability distributions 
+  so they can robustly handle wide ranges of parameter values.  Specifically,
+  replace many of the PDF and CDF methods from the Fortran library CDFLIB
+  used in scipy.special with better code, perhaps ported from the Boost C++
+  library.
+  
+In addition, we should:
+
+- Continue work on making the function signatures of ``stats`` and
+  ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.
 - Return ``Bunch`` objects from functions that now return many values, and for
   functions for which extra return values are desired (see
@@ -372,5 +432,5 @@ are:
   example implement an exact two-sided KS test (see
   `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
   Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
-- There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
-  PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
+- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the 
+  stalled PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__.
