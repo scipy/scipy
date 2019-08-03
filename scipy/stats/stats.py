@@ -663,9 +663,17 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
@@ -725,9 +733,17 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
@@ -1015,9 +1031,17 @@ def variation(a, axis=0, nan_policy='propagate'):
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
@@ -1071,9 +1095,17 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
@@ -1175,9 +1207,17 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
@@ -2230,9 +2270,17 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         for bias in limited samples relative to the population estimate
         of variance. Defaults to 1.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
@@ -2556,9 +2604,17 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         depend on the input array, `x`, the `axis` argument, and the
         `keepdims` flag.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        - 'propagate': returns nan for 1-D array. For 2-D array, if
-           nan is present at `m, n`, nan is returned in the result ndarray
-           at the position of `n` for `axis=0` or `m` for `axis=1`
+        - 'propagate': ndarray of dimension `N-1` is returned for the input
+          ndarray of dimension `N`. The dimension deduction is due to that
+          the computation axis is taken away.
+          Given the computation axis `axis=n`, if any nan is found in the
+          hyperplane (`x_1=y_1, x_2=y_2,..., x_n-1=y_n-1,
+          x_n+1=y_n+1,..., x_N=y_N`), nan is placed at
+          `(y_1, y_2,...,y_n-1, y_n+1,..., y_N)` in the result ndarray.
+          For 1-D array, if any nan is found, nan is returned.
+          For 2-D array, if nan is present at `m, n`, nan is returned in the
+          result ndarray at the position of `n` for `axis=0` or `m` for
+          `axis=1`.
         - 'raise': throws an error
         - 'omit': performs the calculations ignoring nan values
 
