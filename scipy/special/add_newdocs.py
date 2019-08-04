@@ -3401,10 +3401,74 @@ add_newdoc("hyp0f1",
     """)
 
 add_newdoc("hyp1f1",
-    """
-    hyp1f1(a, b, x)
+    r"""
+    hyp1f1(a, b, x, out=None)
 
-    Confluent hypergeometric function 1F1(a, b; x)
+    Confluent hypergeometric function 1F1.
+
+    The confluent hypergeometric function is defined by the series
+
+    .. math::
+
+       {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
+
+    See [dlmf]_ for more details. Here :math:`(\cdot)_k` is the
+    Pochhammer symbol; see `poch`.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real parameters
+    x : array_like
+        Real or complex argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the confluent hypergeometric function
+
+    See also
+    --------
+    hyperu : another confluent hypergeometric function
+    hyp0f1 : confluent hypergeometric limit function
+    hyp2f1 : Gaussian hypergeometric function
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/13.2#E2
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is one when `x` is zero:
+
+    >>> sc.hyp1f1(0.5, 0.5, 0)
+    1.0
+
+    It is singular when `b` is a nonpositive integer.
+
+    >>> sc.hyp1f1(0.5, -1, 0)
+    inf
+
+    It is a polynomial when `a` is a nonpositive integer.
+
+    >>> a, b, x = -1, 0.5, np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.hyp1f1(a, b, x)
+    array([-1., -3., -5., -7.])
+    >>> 1 + (a / b) * x
+    array([-1., -3., -5., -7.])
+
+    It reduces to the exponential function when `a = b`.
+
+    >>> sc.hyp1f1(2, 2, [1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+    >>> np.exp([1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+
     """)
 
 add_newdoc("hyp2f1",
