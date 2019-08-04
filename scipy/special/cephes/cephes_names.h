@@ -5,6 +5,7 @@
 #define bdtrc cephes_bdtrc
 #define bdtr cephes_bdtr
 #define bdtri cephes_bdtri
+#define besselpoly cephes_besselpoly
 #define beta cephes_beta
 #define lbeta cephes_lbeta
 #define btdtr cephes_btdtr
@@ -30,6 +31,7 @@
 #define Gamma cephes_Gamma
 #define lgam cephes_lgam
 #define lgam_sgn cephes_lgam_sgn
+#define gammasgn cephes_gammasgn
 #define gdtr cephes_gdtr
 #define gdtrc cephes_gdtrc
 #define gdtri cephes_gdtri
@@ -66,6 +68,7 @@
 #define pdtrc cephes_pdtrc
 #define pdtr cephes_pdtr
 #define pdtri cephes_pdtri
+#define poch cephes_poch
 #define psi cephes_psi
 #define rgamma cephes_rgamma
 #define round cephes_round
@@ -78,6 +81,11 @@
 #define spence cephes_spence
 #define stdtr cephes_stdtr
 #define stdtri cephes_stdtri
+#define struve_h cephes_struve_h
+#define struve_l cephes_struve_l
+#define struve_power_series cephes_struve_power_series
+#define struve_asymp_large_z cephes_struve_asymp_large_z
+#define struve_bessel_series cephes_struve_bessel_series
 #define yv cephes_yv
 #define tandg cephes_tandg
 #define cotdg cephes_cotdg
