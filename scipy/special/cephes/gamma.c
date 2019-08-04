@@ -173,7 +173,7 @@ double Gamma(double x)
 	    p = floor(q);
 	    if (p == q) {
 	      gamnan:
-		mtherr("Gamma", OVERFLOW);
+		sf_error("Gamma", SF_ERROR_OVERFLOW, NULL);
 		return (NPY_INFINITY);
 	    }
 	    i = p;
@@ -294,7 +294,7 @@ double lgam_sgn(double x, int *sign)
 	p = floor(q);
 	if (p == q) {
 	  lgsing:
-	    mtherr("lgam", SING);
+	    sf_error("lgam", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}
 	i = p;

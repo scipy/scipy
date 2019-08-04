@@ -188,12 +188,12 @@ static double struve_hl(double v, double z, int is_h)
         tmp = fabs(tmp);
     }
     if (tmp > 700) {
-        mtherr("struve", OVERFLOW);
+        sf_error("struve", SF_ERROR_OVERFLOW, NULL);
         return NPY_INFINITY * gammasgn(v + 1.5);
     }
 
     /* Failure */
-    mtherr("struve", TLOSS);
+    sf_error("struve", SF_ERROR_NO_RESULT, NULL);
     return NPY_NAN;
 }
 
