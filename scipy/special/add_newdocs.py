@@ -726,14 +726,62 @@ add_newdoc("besselpoly",
     """)
 
 add_newdoc("beta",
-    """
-    beta(a, b)
+    r"""
+    beta(a, b, out=None)
 
     Beta function.
+    
+    This function is defined in [1]_ as
+    
+    .. math::
+    
+        B(a, b) = \int_0^1 t^{a-1}(1-t)^{b-1}dt 
+                = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)},
+    
+    where :math:`\Gamma` is the gamma function.
+    
+    Parameters
+    ----------
+    a, b : array-like
+        Real-valued arguments
+    out : ndarray, optional
+        Optional output array for the function result
+    
+    Returns
+    -------
+    scalar or ndarray
+        Value of the beta function
+    
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions,
+           Eq. 5.12.1. https://dlmf.nist.gov/5.12
+    
+    Examples
+    --------
+    >>> import scipy.special as sc
+    
+    The beta function relates to the gamma function by the
+    definition given above:
+    
+    >>> sc.beta(2, 3)
+    0.08333333333333333
+    >>> sc.gamma(2)*sc.gamma(3)/sc.gamma(2 + 3)     
+    0.08333333333333333
+    
+    As this relationship demonstrates, the beta function
+    is symmetric:
+    
+    >>> sc.beta(1.7, 2.4)
+    0.16567527689031739
+    >>> sc.beta(2.4, 1.7)
+    0.16567527689031739
+    
+    This function satisfies :math:`B(1, b) = 1/b`:
+    
+    >>> sc.beta(1, 4)
+    0.25
 
-    ::
-
-        beta(a, b) =  gamma(a) * gamma(b) / gamma(a+b)
     """)
 
 add_newdoc("betainc",
