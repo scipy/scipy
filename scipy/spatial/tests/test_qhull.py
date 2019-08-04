@@ -1145,14 +1145,15 @@ class Test_HalfspaceIntersection(object):
             [0, 0, -2],
             [0, 0, 2]])
         qhalf_facets = [
+            [3, 5, 0],
+            [5, 3, 1],
+            [4, 3, 0],
+            [3, 4, 1],
+            [2, 5, 1],
+            [5, 2, 0],
             [2, 4, 0],
             [4, 2, 1],
-            [5, 2, 0],
-            [2, 5, 1],
-            [3, 4, 1],
-            [4, 3, 0],
-            [5, 3, 1],
-            [3, 5, 0]]
+        ]
 
         assert len(qhalf_facets) == len(hs.dual_facets)
         for a, b in zip(qhalf_facets, hs.dual_facets):
