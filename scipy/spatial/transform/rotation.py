@@ -706,7 +706,7 @@ class Rotation(object):
         chosen to be the basis vectors.
 
         The three rotations can either be in a global frame of reference
-        (extrinsic) or in a body centred frame of refernce (intrinsic), which
+        (extrinsic) or in a body centred frame of reference (intrinsic), which
         is attached to, and moves with, the object under rotation [1]_.
 
         Parameters

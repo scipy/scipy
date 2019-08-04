@@ -1,6 +1,6 @@
 """Revised simplex method for linear programming
 
-The *revised simplex* method uses the method decribed in [1]_, except
+The *revised simplex* method uses the method described in [1]_, except
 that a factorization [2]_ of the basis matrix, rather than its inverse,
 is efficiently maintained and used to solve the linear systems at each
 iteration of the algorithm.
@@ -137,7 +137,7 @@ def _get_more_basis_columns(A, basis):
 def _generate_auxiliary_problem(A, b, x0, tol):
     """
     Modifies original problem to create an auxiliary problem with a trivial
-    intial basic feasible solution and an objective that minimizes
+    initial basic feasible solution and an objective that minimizes
     infeasibility in the original problem.
 
     Conceptually this is done by stacking an identity matrix on the right of
@@ -493,7 +493,7 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
     pivot : "mrc" or "bland"
         Pivot rule: Minimum Reduced Cost (default) or Bland's rule. Choose
         Bland's rule if iteration limit is reached and cycling is suspected.
-    unkown_options : dict
+    unknown_options : dict
         Optional arguments not used by this particular solver. If
         `unknown_options` is non-empty a warning is issued listing all
         unused options.

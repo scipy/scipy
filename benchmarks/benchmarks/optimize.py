@@ -125,12 +125,12 @@ class _BenchOptimizers(Benchmark):
     # for basinhopping
     def accept_test(self, x_new=None, *args, **kwargs):
         """
-        Does the new candidate vector lie inbetween the bounds?
+        Does the new candidate vector lie in between the bounds?
 
         Returns
         -------
         accept_test : bool
-            The candidate vector lies inbetween the bounds
+            The candidate vector lies in between the bounds
         """
         if not hasattr(self.function, "xmin"):
             return True

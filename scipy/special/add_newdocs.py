@@ -4505,7 +4505,7 @@ add_newdoc("kolmogorov",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distrubution.
+    `stats.kstwobign` distribution.
 
     See Also
     --------
@@ -6522,7 +6522,7 @@ add_newdoc("smirnov",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distrubution.
+    `stats.ksone` distribution.
 
     See Also
     --------
@@ -6616,7 +6616,7 @@ add_newdoc("smirnovi",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distrubution.
+    `stats.ksone` distribution.
 
     See Also
     --------

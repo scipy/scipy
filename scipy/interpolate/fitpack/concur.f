@@ -350,7 +350,7 @@ c  with zero derivative constraints.
   50  continue
 c  evaluate the polynomial curve
       call curev(idim,wrk,nmin,cp,np,k,u,m,xx,mxx,ier)
-c  substract from the old data, the values of the polynomial curve
+c  subtract from the old data, the values of the polynomial curve
       do 60 i=1,mxx
         xx(i) = x(i)-xx(i)
   60  continue
