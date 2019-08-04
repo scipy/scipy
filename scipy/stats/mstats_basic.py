@@ -1309,8 +1309,8 @@ def trima(a, limits=None, inclusive=(True,True)):
 
     >>> a = np.arange(10)
 
-    The interval is left-end-closed, i.e., `[2, 8)`. Any value falling into
-    this interval is kept.
+    The interval is left-closed and right-open, i.e., `[2, 8)`.
+    Trim the array by keeping only values in the interval.
 
     >>> trima(a, limits=(2, 8), inclusive=(True, False))
     masked_array(data=[--, --, 2, 3, 4, 5, 6, 7, --, --],
