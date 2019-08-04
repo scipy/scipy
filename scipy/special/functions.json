@@ -112,6 +112,11 @@
             "struve_power_series": "ddi*d->d"
         }
     },
+    "_voigt" : {
+        "_faddeeva.h++" : {
+            "faddeeva_voigt": "dddd->d"
+        }
+    },
     "_zeta": {
         "cephes.h": {
             "zeta": "dd->d"

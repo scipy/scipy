@@ -316,6 +316,7 @@ Error Function and Fresnel Integrals
    fresnel_zeros -- Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
    modfresnelp   -- Modified Fresnel positive integrals
    modfresnelm   -- Modified Fresnel negative integrals
+   voigt         -- Voigt profile.
 
 These are not universal functions:
 
