@@ -13,8 +13,8 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    extract, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1, wofz, _voigt)
+                      psi, hankel1, hankel2, yv, kv, ndtri,
+                      poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
@@ -2246,7 +2246,7 @@ def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Voigt_profile
     """
-    return _voigt(x, sigma, gamma, mu)
+    return ufuncs._voigt(x, sigma, gamma, mu)
 
 
 def zeta(x, q=None, out=None):
@@ -2302,5 +2302,6 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        q = 1
-    return _zeta(x, q, out)
+        return ufuncs._riemann_zeta(x, out)
+    else:
+        return ufuncs._zeta(x, q, out)

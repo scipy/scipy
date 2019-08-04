@@ -1387,5 +1387,10 @@
         "cephes.h": {
             "zetac": "d->d"
         }
+    },
+    "_riemann_zeta": {
+	"cephes.h": {
+	    "riemann_zeta": "d->d"
+	}
     }
 }

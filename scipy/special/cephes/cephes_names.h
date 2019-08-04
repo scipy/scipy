@@ -71,6 +71,7 @@
 #define poch cephes_poch
 #define psi cephes_psi
 #define rgamma cephes_rgamma
+#define riemann_zeta cephes_riemann_zeta
 #define round cephes_round
 #define shichi cephes_shichi
 #define sici cephes_sici
