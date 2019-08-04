@@ -1537,13 +1537,17 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
 
     %s
 
-    """ % trimdoc
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
         return trimr(a,limits=limits,inclusive=inclusive,axis=axis).mean(axis=axis)
     else:
         return trima(a,limits=limits,inclusive=inclusive).mean(axis=axis)
+
+
+if trimmed_mean.__doc__ is not None:
+    trimmed_mean.__doc__ = trimmed_mean.__doc__ % trimdoc
 
 
 def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
@@ -1556,7 +1560,7 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """ % trimdoc
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -1565,6 +1569,10 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         out = trima(a,limits=limits,inclusive=inclusive)
 
     return out.var(axis=axis, ddof=ddof)
+
+
+if trimmed_var.__doc__ is not None:
+    trimmed_var.__doc__ = trimmed_var.__doc__ % trimdoc
 
 
 def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
@@ -1577,7 +1585,7 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """ % trimdoc
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -1585,6 +1593,10 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     else:
         out = trima(a,limits=limits,inclusive=inclusive)
     return out.std(axis=axis,ddof=ddof)
+
+
+if trimmed_std.__doc__ is not None:
+    trimmed_std.__doc__ = trimmed_std.__doc__ % trimdoc
 
 
 def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
