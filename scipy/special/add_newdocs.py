@@ -2288,8 +2288,9 @@ add_newdoc("elliprf",
     Notes
     -----
     The code implements Carlson's algorithm based on the duplication theorems
-    and series expansion up to the 7th order. [2]_ (Cf.:
-    https://dlmf.nist.gov/19.36.i)
+    and series expansion up to the 7th order (cf.:
+    https://dlmf.nist.gov/19.36.i) and the AGM algorithm for the complete
+    integral. [2]_
 
     See Also
     --------
@@ -2338,7 +2339,9 @@ add_newdoc("elliprg",
     .. math:: 2 R_{\mathrm{G}}(x, y, z) = z R_{\mathrm{F}}(x, y, z) - \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) + \sqrt{\frac{x y}{z}}
 
     and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
-    be chosen as the pivot. Other special cases are dealt with following. [2]_
+    be chosen as the pivot. When one of the arguments is close to zero, the AGM
+    method is applied instead. Other special cases are computed following Ref.
+    [2]_
 
     See Also
     --------
