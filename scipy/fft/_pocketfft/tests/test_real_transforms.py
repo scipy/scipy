@@ -793,11 +793,6 @@ class Test_DCTN_IDCTN(object):
         with assert_raises(ValueError,
                            match="when given, axes and shape arguments"
                            " have to be of the same length"):
-            fforward(self.data, s=self.data.shape[0], axes=None)
-
-        with assert_raises(ValueError,
-                           match="when given, axes and shape arguments"
-                           " have to be of the same length"):
             fforward(self.data, s=self.data.shape, axes=0)
 
     @pytest.mark.parametrize('fforward', [dctn, dstn])

@@ -740,8 +740,7 @@ class TestFftn(object):
     def test_shape_argument_more(self):
         x = zeros((4, 4, 2))
         with assert_raises(ValueError,
-                           match="when given, axes and shape arguments"
-                           " have to be of the same length"):
+                           match="shape requires more axes than are present"):
             fftn(x, s=(8, 8, 2, 1))
 
     def test_invalid_sizes(self):
