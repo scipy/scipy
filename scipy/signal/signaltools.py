@@ -2353,6 +2353,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         points. `mean`, `median`, `maximum` and `minimum` work as in np.pad and
         assume that the values beyond the boundary are the mean, median,
         maximum or minimum respectively of the array along the axis.
+
+        .. versionadded:: 1.4.0
     cval : float, optional
         Value to use if `padtype='constant'`. Default is zero.
 
