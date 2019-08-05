@@ -10,6 +10,7 @@ from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
     )
 
+
 def _check_sparse_inputs(options, A_ub, A_eq):
     """
     Check the provided ``A_ub`` and ``A_eq`` matrices conform to the specified
