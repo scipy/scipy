@@ -2354,7 +2354,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         assume that the values beyond the boundary are the mean, median,
         maximum or minimum respectively of the array along the axis.
     cval : float, optional
-        Value to use if `padtype='constant'`. Default is zero
+        Value to use if `padtype='constant'`. Default is zero.
+
+        .. versionadded:: 1.4.0
 
     Returns
     -------
