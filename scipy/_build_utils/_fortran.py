@@ -20,7 +20,7 @@ def uses_mkl(info):
 
 def needs_g77_abi_wrapper(info):
     """Returns True if g77 ABI wrapper must be used."""
-    return uses_mkl(info)
+    return str(os.getenv("SCIPY_USE_G77_ABI_WRAPPER", uses_mkl(info))) == "True"
 
 
 def get_g77_abi_wrappers(info):
