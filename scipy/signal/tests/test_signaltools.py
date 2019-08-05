@@ -866,9 +866,9 @@ class TestWiener(object):
         assert_array_almost_equal(signal.wiener(g), h, decimal=6)
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
+padtype_options = ["constant", "mean", "median", "minimum", "maximum", "line"]
 
 class TestResample(object):
-
     def test_basic(self):
         # Some basic tests
 
@@ -917,34 +917,32 @@ class TestResample(object):
         y = signal.resample(x, ny)
         assert_allclose(y, [1] * ny)
 
-    def test_mutable_window(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
-        for padtype in ['constant', 'mean', 'median', 'maximum', 'minimum', 'line']:
-            signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
-            assert_array_equal(window, window_orig)
+        signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
+        assert_array_equal(window, window_orig)
 
-    def test_output_float32(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_output_float32(self, padtype):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
-        for padtype in ['constant', 'mean', 'median', 'maximum', 'minimum', 'line']:
-            y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-            assert_(y.dtype == np.float32)
+        y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
+        assert(y.dtype == np.float32)
 
-    @pytest.mark.parametrize('method, ext, padtype', [
-        ('fft', False, None),
-        ('polyphase', False, 'constant'),
-        ('polyphase', True, 'constant'),
-        ('polyphase', False, 'mean'),
-        ('polyphase', True, 'mean'),
-        ('polyphase', False, 'median'),
-        ('polyphase', True, 'median'),
-        ('polyphase', False, 'line'),
-        ('polyphase', True, 'line'),
-    ])
+    @pytest.mark.parametrize(
+        "method, ext, padtype",
+        [("fft", False, None)]
+        + list(
+            product(
+                ["polyphase"], [False, True], padtype_options,
+            )
+        ),
+    )
     def test_resample_methods(self, method, ext, padtype):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
@@ -981,7 +979,10 @@ class TestResample(object):
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
-                    assert_allclose(y_resamp, y_to, atol=1e-3)
+                    if padtype in ['minimum', 'maximum']:
+                        assert_allclose(y_resamp, y_to, atol=3e-1)
+                    else:
+                        assert_allclose(y_resamp, y_to, atol=1e-3)
                 else:
                     assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
