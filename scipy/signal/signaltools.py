@@ -272,7 +272,7 @@ def _centered(arr, newshape):
     return arr[tuple(myslice)]
 
 
-def fftconvolve(in1, in2, mode="full", axes=None):
+def fftconvolve(in1, in2, mode="full", axes=None, fshape=None):
     """Convolve two N-dimensional arrays using FFT.
 
     Convolve `in1` and `in2` using the fast Fourier transform method, with
@@ -308,6 +308,12 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
+    fshape : int or array_like of ints or None, optional
+        The number of samples to use for the FFT along the dimesions
+        specified by `axes`. If `axes` is not specified, all axes.
+        `fshape[dim]` must be greater than or equal to
+        `in1.shape[dim]+in2.shape[dim]-1`.
+        By default, the next size that can be quickly calculated is used.
 
 
     Returns
@@ -360,6 +366,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     in1 = asarray(in1)
     in2 = asarray(in2)
     noaxes = axes is None
+    nofshape = fshape is None
 
     if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
@@ -370,12 +377,18 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
     s1 = in1.shape
     s2 = in2.shape
-    _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
-
+    if nofshape:
+        _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
+    else:
+        fshape, axes = _init_nd_shape_and_axes(in1, shape=fshape, axes=axes,
+                                               keep_neg1=True)
     if not noaxes and not len(axes):
         raise ValueError("when provided, axes cannot be empty")
+    if not nofshape and not len(fshape):
+        raise ValueError("when provided, fshape cannot be empty")
 
-    # Axes of length 1 can rely on broadcasting rules for multipy, no fft needed
+    # Axes of length 1 can rely on broadcasting rules for multipy,
+    # no fft needed
     axes = [a for a in axes if in1.shape[a] != 1 and in2.shape[a] != 1]
 
     if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
@@ -402,7 +415,17 @@ def fftconvolve(in1, in2, mode="full", axes=None):
             kind = 'C2C'
 
         # Speed up FFT by padding to optimal size
-        fshape = [sp_fft.next_fast_len(shape[a], kind) for a in axes]
+        if nofshape:
+            fshape = [sp_fft.next_fast_len(shape[a], kind) for a in axes]
+        else:
+            fshape = [sp_fft.next_fast_len(shape[a], kind) if ifshape == -1
+                      else ifshape for ifshape, a in zip(fshape, axes)]
+
+        if not nofshape and any(ifshape < shape[a] for ifshape, a in
+                                zip(fshape, axes)):
+            raise ValueError("fshape must be at least as large as the"
+                             " convolved size")
+
         fslice = tuple([slice(sz) for sz in shape])
         sp1 = fft(in1, fshape, axes=axes)
         sp2 = fft(in2, fshape, axes=axes)

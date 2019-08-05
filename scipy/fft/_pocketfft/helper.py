@@ -36,7 +36,7 @@ def _iterable_of_int(x, name=None):
     return x
 
 
-def _init_nd_shape_and_axes(x, shape, axes):
+def _init_nd_shape_and_axes(x, shape, axes, keep_neg1=False):
     """Handles shape and axes arguments for nd transforms"""
     noshape = shape is None
     noaxes = axes is None
@@ -59,13 +59,15 @@ def _init_nd_shape_and_axes(x, shape, axes):
             raise ValueError("when given, axes and shape arguments"
                              " have to be of the same length")
 
-        shape = [x.shape[a] if s == -1 else s for s, a in zip(shape, axes)]
+        if not keep_neg1:
+            shape = [x.shape[a] if s == -1 else s for s, a in
+                     zip(shape, axes)]
     elif noaxes:
         shape = list(x.shape)
     else:
         shape = [x.shape[a] for a in axes]
 
-    if any(s < 1 for s in shape):
+    if not all(s > 0 or (keep_neg1 and s == -1) for s in shape):
         raise ValueError(
             "invalid number of data points ({0}) specified".format(shape))
 

@@ -63,7 +63,7 @@ def next_fast_len(target, kind='C2C'):
     return _helper.next_fast_len(target, kind)
 
 
-def _init_nd_shape_and_axes(x, shape, axes):
+def _init_nd_shape_and_axes(x, shape, axes, keep_neg1=False):
     """Handle shape and axes arguments for n-dimensional transforms.
 
     Returns the shape and axes in a standard form, taking into account negative
@@ -78,12 +78,16 @@ def _init_nd_shape_and_axes(x, shape, axes):
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If `shape` is -1, the size of the corresponding dimension of `x` is
-        used.
+        used if `keep_neg` is `False`, otherwise it is kept as-is.
     axes : int or array_like of ints or None
         Axes along which the calculation is computed.
         The default is over all axes.
         Negative indices are automatically converted to their positive
         counterpart.
+    keep_neg1 : bool, optional
+        If `False` (default), `shape` values of `-1` are converted to
+        ``scipy.take(x.shape, axes, axis=0)``.
+        If `True`, they are kept as `-1`.
 
     Returns
     -------
@@ -93,4 +97,4 @@ def _init_nd_shape_and_axes(x, shape, axes):
         The shape of the result. It is a 1D integer array.
 
     """
-    return _helper._init_nd_shape_and_axes(x, shape, axes)
+    return _helper._init_nd_shape_and_axes(x, shape, axes, keep_neg1=keep_neg1)

@@ -414,14 +414,19 @@ class TestConvolve2d(_TestConvolve2d):
 class TestFFTConvolve(object):
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_real(self, axes):
+    @pytest.mark.parametrize('fshape', ['', None, 7, [7], 20, [20], -1, [-1]])
+    def test_real(self, axes, fshape):
         a = array([1, 2, 3])
         expected = array([1, 4, 10, 12, 9.])
 
-        if axes == '':
+        if axes == '' and fshape == '':
             out = fftconvolve(a, a)
-        else:
+        elif axes == '':
+            out = fftconvolve(a, a, fshape=fshape)
+        elif fshape == '':
             out = fftconvolve(a, a, axes=axes)
+        else:
+            out = fftconvolve(a, a, axes=axes, fshape=fshape)
 
         assert_array_almost_equal(out, expected)
 
@@ -437,14 +442,20 @@ class TestFFTConvolve(object):
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_complex(self, axes):
+    @pytest.mark.parametrize('fshape', ['', None, 7, [7], 20, [20], -1, [-1]])
+    def test_complex(self, axes, fshape):
         a = array([1 + 1j, 2 + 2j, 3 + 3j])
         expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
 
-        if axes == '':
+        if axes == '' and fshape == '':
             out = fftconvolve(a, a)
-        else:
+        elif axes == '':
+            out = fftconvolve(a, a, fshape=fshape)
+        elif fshape == '':
             out = fftconvolve(a, a, axes=axes)
+        else:
+            out = fftconvolve(a, a, axes=axes, fshape=fshape)
+
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
@@ -468,17 +479,33 @@ class TestFFTConvolve(object):
                                       [1, -2],
                                       [-2, -1],
                                       [-1, -2]])
-    def test_2d_real_same(self, axes):
+    @pytest.mark.parametrize('fshape', ['',
+                                        None,
+                                        [7, 7],
+                                        [20, 20],
+                                        [7, 20],
+                                        [20, 7],
+                                        [-1, -1],
+                                        [-1, 7],
+                                        [7, -1],
+                                        [-1, 20],
+                                        [20, -1]])
+    def test_2d_real_same(self, axes, fshape):
         a = array([[1, 2, 3],
                    [4, 5, 6]])
         expected = array([[1, 4, 10, 12, 9],
                           [8, 26, 56, 54, 36],
                           [16, 40, 73, 60, 36]])
 
-        if axes == '':
+        if axes == '' and fshape == '':
             out = fftconvolve(a, a)
-        else:
+        elif axes == '':
+            out = fftconvolve(a, a, fshape=fshape)
+        elif fshape == '':
             out = fftconvolve(a, a, axes=axes)
+        else:
+            out = fftconvolve(a, a, axes=axes, fshape=fshape)
+
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('axes', [[1, 2],
@@ -512,7 +539,18 @@ class TestFFTConvolve(object):
                                       [1, -2],
                                       [-2, -1],
                                       [-1, -2]])
-    def test_2d_complex_same(self, axes):
+    @pytest.mark.parametrize('fshape', ['',
+                                        None,
+                                        [7, 7],
+                                        [20, 20],
+                                        [7, 20],
+                                        [20, 7],
+                                        [-1, -1],
+                                        [-1, 7],
+                                        [7, -1],
+                                        [-1, 20],
+                                        [20, -1]])
+    def test_2d_complex_same(self, axes, fshape):
         a = array([[1 + 2j, 3 + 4j, 5 + 6j],
                    [2 + 1j, 4 + 3j, 6 + 5j]])
         expected = array([
@@ -521,10 +559,14 @@ class TestFFTConvolve(object):
             [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
             ])
 
-        if axes == '':
+        if axes == '' and fshape == '':
             out = fftconvolve(a, a)
-        else:
+        elif axes == '':
+            out = fftconvolve(a, a, fshape=fshape)
+        elif fshape == '':
             out = fftconvolve(a, a, axes=axes)
+        else:
+            out = fftconvolve(a, a, axes=axes, fshape=fshape)
 
         assert_array_almost_equal(out, expected)
 
@@ -552,23 +594,34 @@ class TestFFTConvolve(object):
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_real_same_mode(self, axes):
+    @pytest.mark.parametrize('fshape', ['', None,
+                                        11, [11], 20, [20], -1, [-1]])
+    def test_real_same_mode(self, axes, fshape):
         a = array([1, 2, 3])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected_1 = array([35., 41., 47.])
         expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-        if axes == '':
-            out = fftconvolve(a, b, 'same')
+        if axes == '' and fshape == '':
+            out_1 = fftconvolve(a, b, 'same')
+        elif axes == '':
+            out_1 = fftconvolve(a, b, 'same', fshape=fshape)
+        elif fshape == '':
+            out_1 = fftconvolve(a, b, 'same', axes=axes)
         else:
-            out = fftconvolve(a, b, 'same', axes=axes)
-        assert_array_almost_equal(out, expected_1)
+            out_1 = fftconvolve(a, b, 'same', axes=axes, fshape=fshape)
 
-        if axes == '':
-            out = fftconvolve(b, a, 'same')
+        if axes == '' and fshape == '':
+            out_2 = fftconvolve(b, a, 'same')
+        elif axes == '':
+            out_2 = fftconvolve(b, a, 'same', fshape=fshape)
+        elif fshape == '':
+            out_2 = fftconvolve(b, a, 'same', axes=axes)
         else:
-            out = fftconvolve(b, a, 'same', axes=axes)
-        assert_array_almost_equal(out, expected_2)
+            out_2 = fftconvolve(b, a, 'same', axes=axes, fshape=fshape)
+
+        assert_array_almost_equal(out_1, expected_1)
+        assert_array_almost_equal(out_2, expected_2)
 
     @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
     def test_real_same_mode_axes(self, axes):
@@ -589,23 +642,34 @@ class TestFFTConvolve(object):
         assert_array_almost_equal(out, expected_2)
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_valid_mode_real(self, axes):
+    @pytest.mark.parametrize('fshape', ['', None,
+                                        11, [11], 20, [20], -1, [-1]])
+    def test_valid_mode_real(self, axes, fshape):
         # See gh-5897
         a = array([3, 2, 1])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = array([24., 31., 41., 43., 49., 25., 12.])
 
-        if axes == '':
-            out = fftconvolve(a, b, 'valid')
+        if axes == '' and fshape == '':
+            out_1 = fftconvolve(a, b, 'valid')
+        elif axes == '':
+            out_1 = fftconvolve(a, b, 'valid', fshape=fshape)
+        elif fshape == '':
+            out_1 = fftconvolve(a, b, 'valid', axes=axes)
         else:
-            out = fftconvolve(a, b, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+            out_1 = fftconvolve(a, b, 'valid', axes=axes, fshape=fshape)
 
-        if axes == '':
-            out = fftconvolve(b, a, 'valid')
+        if axes == '' and fshape == '':
+            out_2 = fftconvolve(b, a, 'valid')
+        elif axes == '':
+            out_2 = fftconvolve(b, a, 'valid', fshape=fshape)
+        elif fshape == '':
+            out_2 = fftconvolve(b, a, 'valid', axes=axes)
         else:
-            out = fftconvolve(b, a, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+            out_2 = fftconvolve(b, a, 'valid', axes=axes, fshape=fshape)
+
+        assert_array_almost_equal(out_1, expected)
+        assert_array_almost_equal(out_2, expected)
 
     @pytest.mark.parametrize('axes', [1, [1]])
     def test_valid_mode_real_axes(self, axes):
@@ -622,22 +686,32 @@ class TestFFTConvolve(object):
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_valid_mode_complex(self, axes):
+    @pytest.mark.parametrize('fshape', ['', None, 7, [7], 20, [20], -1, [-1]])
+    def test_valid_mode_complex(self, axes, fshape):
         a = array([3 - 1j, 2 + 7j, 1 + 0j])
         b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
         expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        if axes == '':
-            out = fftconvolve(a, b, 'valid')
+        if axes == '' and fshape == '':
+            out_1 = fftconvolve(a, b, 'valid')
+        elif axes == '':
+            out_1 = fftconvolve(a, b, 'valid', fshape=fshape)
+        elif fshape == '':
+            out_1 = fftconvolve(a, b, 'valid', axes=axes)
         else:
-            out = fftconvolve(a, b, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+            out_1 = fftconvolve(a, b, 'valid', axes=axes, fshape=fshape)
 
-        if axes == '':
-            out = fftconvolve(b, a, 'valid')
+        if axes == '' and fshape == '':
+            out_2 = fftconvolve(b, a, 'valid')
+        elif axes == '':
+            out_2 = fftconvolve(b, a, 'valid', fshape=fshape)
+        elif fshape == '':
+            out_2 = fftconvolve(b, a, 'valid', axes=axes)
         else:
-            out = fftconvolve(b, a, 'valid', axes=axes)
-        assert_array_almost_equal(out, expected)
+            out_2 = fftconvolve(b, a, 'valid', axes=axes, fshape=fshape)
+
+        assert_array_almost_equal(out_1, expected)
+        assert_array_almost_equal(out_2, expected)
 
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_valid_mode_complex_axes(self, axes):
@@ -674,17 +748,34 @@ class TestFFTConvolve(object):
         assert_equal(out, a * b)
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
-    def test_random_data(self, axes):
+    @pytest.mark.parametrize('fshape', ['', None,
+                                        2553, [2553], 2592, [2592], -1, [-1]])
+    def test_random_data(self, axes, fshape):
         np.random.seed(1234)
         a = np.random.rand(1233) + 1j * np.random.rand(1233)
         b = np.random.rand(1321) + 1j * np.random.rand(1321)
         expected = np.convolve(a, b, 'full')
 
-        if axes == '':
-            out = fftconvolve(a, b, 'full')
+        if axes == '' and fshape == '':
+            out_1 = fftconvolve(a, b, 'full')
+        elif axes == '':
+            out_1 = fftconvolve(a, b, 'full', fshape=fshape)
+        elif fshape == '':
+            out_1 = fftconvolve(a, b, 'full', axes=axes)
         else:
-            out = fftconvolve(a, b, 'full', axes=axes)
-        assert_(np.allclose(out, expected, rtol=1e-10))
+            out_1 = fftconvolve(a, b, 'full', axes=axes, fshape=fshape)
+
+        if axes == '' and fshape == '':
+            out_2 = fftconvolve(b, a, 'full')
+        elif axes == '':
+            out_2 = fftconvolve(b, a, 'full', fshape=fshape)
+        elif fshape == '':
+            out_2 = fftconvolve(b, a, 'full', axes=axes)
+        else:
+            out_2 = fftconvolve(b, a, 'full', axes=axes, fshape=fshape)
+
+        assert_(np.allclose(out_1, expected, rtol=1e-10))
+        assert_(np.allclose(out_2, expected, rtol=1e-10))
 
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_random_data_axes(self, axes):
@@ -764,6 +855,14 @@ class TestFFTConvolve(object):
                            r" \(5L?, 6L?, 2L?, 1L?\) and"
                            r" \(5L?, 6L?, 3L?, 1L?\)"):
             fftconvolve(a, b, axes=[0, 1])
+
+    def test_invalid_shapes_fshape(self):
+        a = np.zeros([5, 6, 2, 1])
+        b = np.zeros([5, 6, 3, 1])
+        with assert_raises(ValueError,
+                           match=r"fshape must be at least as large as"
+                           " the convolved size"):
+            fftconvolve(a, b, fshape=[2, 15, 15, 15])
 
     @pytest.mark.parametrize('a,b',
                              [([1], 2),
