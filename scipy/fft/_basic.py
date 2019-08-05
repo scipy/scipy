@@ -561,8 +561,6 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     axes : sequence of ints, optional
         Axes over which to compute the FFT.  If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-        Repeated indices in `axes` means that the transform over that axis is
-        performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
@@ -665,8 +663,6 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     axes : sequence of ints, optional
         Axes over which to compute the IFFT.  If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
-        Repeated indices in `axes` means that the inverse transform over that
-        axis is performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
@@ -750,10 +746,8 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         if `s` is not given, the shape of the input along the axes specified
         by `axes` is used.
     axes : sequence of ints, optional
-        Axes over which to compute the FFT.  If not given, the last two
-        axes are used.  A repeated index in `axes` means the transform over
-        that axis is performed multiple times.  A one-element sequence means
-        that a one-dimensional FFT is performed.
+        Axes over which to compute the FFT. If not given, the last two axes are
+        used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
@@ -849,9 +843,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
         by `axes` is used.  See notes for issue on `ifft` zero padding.
     axes : sequence of ints, optional
         Axes over which to compute the FFT.  If not given, the last two
-        axes are used.  A repeated index in `axes` means the transform over
-        that axis is performed multiple times.  A one-element sequence means
-        that a one-dimensional FFT is performed.
+        axes are used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
@@ -1067,8 +1059,6 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
-        Repeated indices in `axes` means that the inverse transform over that
-        axis is performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional
@@ -1200,8 +1190,6 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
-        Repeated indices in `axes` means that the inverse transform over that
-        axis is performed multiple times.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
     overwrite_x : bool, optional

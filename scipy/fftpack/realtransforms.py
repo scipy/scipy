@@ -7,6 +7,7 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 from scipy.fft import _pocketfft
+from .helper import _good_shape
 
 _inverse_typemap = {1: 1, 2: 3, 3: 2, 4: 4}
 
@@ -60,6 +61,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
+    shape = _good_shape(x, shape, axes)
     return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
@@ -113,6 +115,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
     """
     type = _inverse_typemap[type]
+    shape = _good_shape(x, shape, axes)
     return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
@@ -165,6 +168,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
+    shape = _good_shape(x, shape, axes)
     return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
@@ -218,6 +222,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
     """
     type = _inverse_typemap[type]
+    shape = _good_shape(x, shape, axes)
     return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 

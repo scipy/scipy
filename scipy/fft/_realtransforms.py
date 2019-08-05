@@ -26,8 +26,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the DCT is computed.
-        The default is over all axes.
+        Axes over which the DCT is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -79,8 +79,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the IDCT is computed.
-        The default is over all axes.
+        Axes over which the IDCT is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -132,8 +132,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         If any element of `shape` is -1, the size of the corresponding dimension
         of `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the DCT is computed.
-        The default is over all axes.
+        Axes over which the DST is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -185,8 +185,8 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the IDST is computed.
-        The default is over all axes.
+        Axes over which the IDST is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional

@@ -41,9 +41,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     noshape = shape is None
     noaxes = axes is None
 
-    if noaxes:
-        axes = range(x.ndim)
-    else:
+    if not noaxes:
         axes = _iterable_of_int(axes, 'axes')
         axes = [a + x.ndim if a < 0 else a for a in axes]
 
@@ -55,13 +53,18 @@ def _init_nd_shape_and_axes(x, shape, axes):
     if not noshape:
         shape = _iterable_of_int(shape, 'shape')
 
-        if len(axes) != len(shape):
+        if axes and len(axes) != len(shape):
             raise ValueError("when given, axes and shape arguments"
                              " have to be of the same length")
+        if noaxes:
+            if len(shape) > x.ndim:
+                raise ValueError("shape requires more axes than are present")
+            axes = range(x.ndim - len(shape), x.ndim)
 
         shape = [x.shape[a] if s == -1 else s for s, a in zip(shape, axes)]
     elif noaxes:
         shape = list(x.shape)
+        axes = range(x.ndim)
     else:
         shape = [x.shape[a] for a in axes]
 
