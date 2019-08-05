@@ -11,6 +11,65 @@ from scipy.optimize._remove_redundancy import (
     )
 
 
+class LPProblem(dict):
+    """ Represents a linear-programming problem.
+
+    Attributes
+    ----------
+    c : 1D array
+        The coefficients of the linear objective function to be minimized.
+    A_ub : 2D array, optional
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
+    b_ub : 1D array, optional
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
+    b_eq : 1D array, optional
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
+    bounds : sequence, optional
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None`` to
+        indicate that there is no bound. By default, bounds are ``(0, None)``
+        (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
+    x0 : 1D array, optional
+        Guess values of the decision variables, which will be refined by
+        the optimization algorithm. This argument is currently used only by the
+        'revised simplex' method, and can only be used if `x0` represents a
+        basic feasible solution.
+    """
+
+    def __init__(self, *args, **kwargs):
+        for key in ['A_ub', 'b_ub', 'A_eq', 'b_eq', 'bounds', 'x0']:
+            self[key] = None
+        dict.__init__(self, *args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, list(self.keys()))) + 1
+            return '\n'.join([k.rjust(m) + ': ' + repr(v)
+                              for k, v in sorted(self.items())])
+        else:
+            return self.__class__.__name__ + "()"
+
+    def __dir__(self):
+        return list(self.keys())
+
+
 def _check_sparse_inputs(options, A_ub, A_eq):
     """
     Check the provided ``A_ub`` and ``A_eq`` matrices conform to the specified
