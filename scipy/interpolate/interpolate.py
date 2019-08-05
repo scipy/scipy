@@ -1310,6 +1310,10 @@ class PPoly(_PPolyBase):
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
         """
+        if not isinstance(bp, BPoly):
+            raise TypeError(".from_bernstein_basis only accepts BPoly instances. "
+                            "Got %s instead." % type(bp))
+
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
 
@@ -1614,6 +1618,10 @@ class BPoly(_PPolyBase):
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
         """
+        if not isinstance(pp, PPoly):
+            raise TypeError(".from_power_basis only accepts PPoly instances. "
+                            "Got %s instead." % type(pp))
+
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
 
