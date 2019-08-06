@@ -61,8 +61,9 @@ class LPProblem(dict):
     def __repr__(self):
         if self.keys():
             m = max(map(len, list(self.keys()))) + 1
-            return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in sorted(self.items())])
+            return self.__class__.__name__ + '\n' + \
+                '\n'.join([k.rjust(m) + ': ' + repr(v)
+                           for k, v in sorted(self.items())])
         else:
             return self.__class__.__name__ + "()"
 
