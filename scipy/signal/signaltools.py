@@ -2396,12 +2396,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     and `scipy.signal.firwin` are called to generate the appropriate filter
     coefficients.
 
-    The argument padtype changes assumptions on the values beyond the
-    boundary. The default (padtype=`constant`) is to assume that they are zero.
-    In other cases, a constant (`mean`, `median`, `maximum` or `minimum`), or a
-    linear trend is substracted from the signal prior to resampling, and then
-    reapplied to the output.
-
     The first sample of the returned vector is the same as the first
     sample of the input vector. The spacing between samples is changed
     from ``dx`` to ``dx * down / float(up)``.
