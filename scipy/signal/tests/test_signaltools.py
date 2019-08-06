@@ -866,7 +866,9 @@ class TestWiener(object):
         assert_array_almost_equal(signal.wiener(g), h, decimal=6)
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
+
 padtype_options = ["constant", "mean", "median", "minimum", "maximum", "line"]
+
 
 class TestResample(object):
     def test_basic(self):
@@ -1006,13 +1008,14 @@ class TestResample(object):
 
         # More tests of fft method (Master 0.18.1 fails these)
         if method == 'fft':
-            x1 = np.array([1.+0.j,0.+0.j])
-            y1_test = signal.resample(x1,4)
-            y1_true = np.array([1.+0.j,0.5+0.j,0.+0.j,0.5+0.j])  # upsampling a complex array
+            x1 = np.array([1.+0.j, 0.+0.j])
+            y1_test = signal.resample(x1, 4)
+            # upsampling a complex array
+            y1_true = np.array([1.+0.j, 0.5+0.j, 0.+0.j, 0.5+0.j])
             assert_allclose(y1_test, y1_true, atol=1e-12)
-            x2 = np.array([1.,0.5,0.,0.5])
-            y2_test = signal.resample(x2,2)  # downsampling a real array
-            y2_true = np.array([1.,0.])
+            x2 = np.array([1., 0.5, 0., 0.5])
+            y2_test = signal.resample(x2, 2)  # downsampling a real array
+            y2_true = np.array([1., 0.])
             assert_allclose(y2_test, y2_true, atol=1e-12)
 
     def test_poly_vs_filtfilt(self):
@@ -1050,7 +1053,8 @@ class TestResample(object):
                     x = np.random.random((nx,))
                     weights = np.random.random((nweights,))
                     y_g = correlate1d(x, weights[::-1], mode='constant')
-                    y_s = signal.resample_poly(x, up=1, down=down, window=weights)
+                    y_s = signal.resample_poly(
+                        x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
 
 

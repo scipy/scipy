@@ -94,6 +94,7 @@ def _inputs_swap_needed(mode, shape1, shape2):
 
     return False
 
+
 def _reshape_nd(x1d, ndim, axis):
     """
     Reshape x1d to size 1 along all axes in ``range(ndim)`` except for ``axis``.
@@ -101,6 +102,7 @@ def _reshape_nd(x1d, ndim, axis):
     shape = [1] * ndim
     shape[axis] = x1d.size
     return x1d.reshape(shape)
+
 
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
@@ -2514,7 +2516,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         background_line = [x.take(0, axis),
                            (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
     else:
-        raise ValueError('padtype must be line, maximum, mean, median, minimum or constant')
+        raise ValueError(
+            'padtype must be line, maximum, mean, median, minimum or constant')
 
     if padtype == 'line' or padtype in funcs:
         rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
