@@ -229,7 +229,7 @@ def _add_reverse_edges(a):
     Returns
     -------
     res : csr_matrix
-        A new matrix in CSR format in which the missing edges are represeted
+        A new matrix in CSR format in which the missing edges are represented
         by explicit zeros.
 
     """
