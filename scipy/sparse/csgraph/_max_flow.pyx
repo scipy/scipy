@@ -23,7 +23,10 @@ class MaximumFlowResult:
 
 
 def maximum_flow(csgraph, source, sink):
-    r"""Maximize the flow between two vertices in a graph.
+    r"""
+    maximum_flow(csgraph, source, sink)
+                  
+    Maximize the flow between two vertices in a graph.
 
     .. versionadded:: 1.4.0
 
