@@ -432,7 +432,7 @@ def _remove_redundancy(A, b):
                        "off redundancy removal, or try turning off presolve "
                        "altogether.")
             break
-        if np.any(np.abs(v.dot(b)) > tol * 10):  # factor of 10 to fix 10038
+        if np.any(np.abs(v.dot(b)) > tol * 100):  # factor of 100 to fix 10038 and 10349
             status = 2
             message = ("There is a linear combination of rows of A_eq that "
                        "results in zero, suggesting a redundant constraint. "

@@ -123,4 +123,16 @@ npy_cdouble faddeeva_log_ndtr(npy_cdouble zp)
     return npy_cpack(real(result), im);
 }
 
+double faddeeva_voigt(double x, double sigma, double gamma, double mu)
+{
+    const double INV_SQRT_2 = 0.707106781186547524401;
+    const double SQRT_2PI = 2.5066282746310002416123552393401042;
+
+    double zreal = (x-mu) / sigma * INV_SQRT_2;
+    double zimag = gamma / sigma * INV_SQRT_2;
+    std::complex<double> z(zreal, zimag);
+    std::complex<double> w = Faddeeva::w(z);
+    return real(w) / sigma / SQRT_2PI;
+}
+
 EXTERN_C_END

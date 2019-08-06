@@ -24,7 +24,7 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
---------------------------
+===========================
 
 - 1-D root finding improvements with a new solver, ``toms748``, and a new
   unified interface, ``root_scalar``

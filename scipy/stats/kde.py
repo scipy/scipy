@@ -28,8 +28,9 @@ from scipy import linalg, special
 from scipy.special import logsumexp
 from scipy._lib._numpy_compat import cov
 
-from numpy import (atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt,
-                   ravel, power, atleast_1d, squeeze, sum, transpose, ones)
+from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
+                   sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
+                   ones)
 import numpy as np
 from numpy.random import choice, multivariate_normal
 
@@ -190,7 +191,7 @@ class gaussian_kde(object):
 
     """
     def __init__(self, dataset, bw_method=None, weights=None):
-        self.dataset = atleast_2d(dataset)
+        self.dataset = atleast_2d(asarray(dataset))
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
 
@@ -227,7 +228,7 @@ class gaussian_kde(object):
                      the dimensionality of the KDE.
 
         """
-        points = atleast_2d(points)
+        points = atleast_2d(asarray(points))
 
         d, m = points.shape
         if d != self.d:

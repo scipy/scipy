@@ -3085,7 +3085,7 @@ class TestKSTwoSamples(object):
             self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
             self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
 
-    def testNamedAtributes(self):
+    def testNamedAttributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
         res = stats.ks_2samp([1, 2], [3])

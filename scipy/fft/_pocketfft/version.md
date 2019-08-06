@@ -4,12 +4,13 @@ pypocketfft version
 
 SciPy currently vendors [pypocketfft][repo] at:
 
-    commit d77cdeb516459c0b5b62f618a96a6ca13b9db0de
+    commit 869e68d243138c188cafa8334d92f94ded600a90
+    Merge: 6f1bba7 140e68f
     Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Tue Jun 4 21:21:01 2019 +0200
+    Date:   Thu Aug 1 13:33:46 2019 +0200
 
-        drop GIL when possible
+        Merge branch 'tweak_codelet_8' into 'master'
 
-With the modifications given in `scipychanges.patch`
+        Tweak length-8 codelet
 
 repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

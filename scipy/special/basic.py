@@ -12,8 +12,8 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
-from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
+from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
+                      psi, hankel1, hankel2, yv, kv, ndtri,
                       poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
@@ -23,7 +23,7 @@ from ._comb import _comb_int
 __all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros',
            'bessel_diff_formula', 'bi_zeros', 'clpmn', 'comb',
-           'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
+           'digamma', 'diric', 'erf_zeros', 'erfcinv',
            'erfinv', 'euler', 'factorial', 'factorialk', 'factorial2',
            'fresnel_zeros', 'fresnelc_zeros', 'fresnels_zeros',
            'gamma', 'h1vp', 'h2vp', 'hankel1', 'hankel2', 'hyp0f1',
@@ -34,8 +34,8 @@ __all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef',
            'ndtri', 'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
            'perm', 'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn',
-           'riccati_yn', 'sinc', 'y0_zeros', 'y1_zeros', 'y1p_zeros',
-           'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+           'riccati_yn', 'sinc', 'voigt', 'y0_zeros', 'y1_zeros',
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
@@ -858,7 +858,7 @@ def erf_zeros(nt):
     array([1.45061616+1.880943j])
 
     Check that erf is (close to) zero for the value returned by erf_zeros
-    
+
     >>> special.erf(special.erf_zeros(1))
     array([4.95159469e-14-1.16407394e-16j])
 
@@ -1446,7 +1446,7 @@ def ai_zeros(nt):
         Values of Ai(x) evaluated at first `nt` zeros of Ai'(x)
     aip : ndarray
         Values of Ai'(x) evaluated at first `nt` zeros of Ai(x)
-        
+
     Examples
     --------
     >>> from scipy import special
@@ -1459,7 +1459,7 @@ def ai_zeros(nt):
     array([ 0.53565666, -0.41901548,  0.38040647])
     >>> aip
     array([ 0.70121082, -0.80311137,  0.86520403])
-    
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -1497,7 +1497,7 @@ def bi_zeros(nt):
         Values of Bi(x) evaluated at first `nt` zeros of Bi'(x)
     bip : ndarray
         Values of Bi'(x) evaluated at first `nt` zeros of Bi(x)
-    
+
     Examples
     --------
     >>> from scipy import special
@@ -1510,7 +1510,7 @@ def bi_zeros(nt):
     array([-0.45494438,  0.39652284, -0.36796916])
     >>> bip
     array([ 0.60195789, -0.76031014,  0.83699101])
-    
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -1870,51 +1870,6 @@ def obl_cv_seq(m, n, c):
     return specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def ellipk(m):
-    r"""Complete elliptic integral of the first kind.
-
-    This function is defined as
-
-    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
-
-    Parameters
-    ----------
-    m : array_like
-        The parameter of the elliptic integral.
-
-    Returns
-    -------
-    K : array_like
-        Value of the elliptic integral.
-
-    Notes
-    -----
-    For more precision around point m = 1, use `ellipkm1`, which this
-    function calls.
-
-    The parameterization in terms of :math:`m` follows that of section
-    17.2 in [1]_. Other parameterizations in terms of the
-    complementary parameter :math:`1 - m`, modular angle
-    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
-    used, so be careful that you choose the correct parameter.
-
-    See Also
-    --------
-    ellipkm1 : Complete elliptic integral of the first kind around m = 1
-    ellipkinc : Incomplete elliptic integral of the first kind
-    ellipe : Complete elliptic integral of the second kind
-    ellipeinc : Incomplete elliptic integral of the second kind
-
-    References
-    ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-
-    """
-    return ellipkm1(1 - asarray(m))
-
-
 def comb(N, k, exact=False, repetition=False):
     """The number of combinations of N things taken k at a time.
 
@@ -1945,7 +1900,7 @@ def comb(N, k, exact=False, repetition=False):
     Notes
     -----
     - Array arguments accepted only for exact=False case.
-    - If N < 0, or k < 0, then 0 is returned.    
+    - If N < 0, or k < 0, then 0 is returned.
     - If k > N and repetition=False, then 0 is returned.
 
     Examples
@@ -2247,6 +2202,53 @@ def factorialk(n, k, exact=True):
         raise NotImplementedError
 
 
+def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
+    r"""
+    Voigt profile.
+
+    The Voigt profile is a convolution of a 1D Normal distribution with
+    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    half-maximum ``gamma``.
+
+    Parameters
+    ----------
+    x : array_like
+        Input argument.
+    sigma : array_like, optional
+        The standard deviation of the Normal distribution part. The default is
+        1.0.
+    gamma : array_like, optional
+        The half-width at half-maximum of the Cauchy distribution part. The
+        default is 1.0.
+    mu : array_like, optional
+        The location of the peak profile. The default is 0.0.
+
+    Returns
+    -------
+    y : array_like
+        The Voigt profile at the given position. It will have the same shape as
+        `x`.
+
+    Notes
+    -----
+    It can be expressed in terms of Faddeeva function
+
+    .. math:: V(x;\sigma,\gamma,\mu) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: z = \frac{x-\mu+i\gamma}{\sqrt{2}\sigma}
+
+    where :math:`w(z)` is the Faddeeva function.
+
+    See Also
+    --------
+    wofz : Faddeeva function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
+    """
+    return ufuncs._voigt(x, sigma, gamma, mu)
+
+
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -2300,6 +2302,6 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        q = 1
-    return _zeta(x, q, out)
-
+        return ufuncs._riemann_zeta(x, out)
+    else:
+        return ufuncs._zeta(x, q, out)

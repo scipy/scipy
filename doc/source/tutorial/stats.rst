@@ -34,8 +34,8 @@ for encapsulating :ref:`continuous random variables
 <continuous-random-variables>` and :ref:`discrete random variables
 <discrete-random-variables>` . Over 80 continuous random variables
 (RVs) and 10 discrete random variables have been implemented using
-these classes. Besides this, new routines and distributions can easily
-added by the end user. (If you create one, please contribute it).
+these classes. Besides this, new routines and distributions can be
+easily added by the end user. (If you create one, please contribute it).
 
 All of the statistics functions are located in the sub-package
 :mod:`scipy.stats` and a fairly complete listing of these functions
@@ -170,8 +170,8 @@ you can explicitly seed a global variable
 
 Relying on a global state is not recommended though. A better way is to use
 the `random_state` parameter which accepts an instance of
-`numpy.random.RandomState` class, or an integer which is then used to seed
-an internal `RandomState` object:
+`numpy.random.mtrand.RandomState` class, or an integer which is then used to
+seed an internal ``RandomState`` object:
 
     >>> norm.rvs(size=5, random_state=1234)
     array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])
@@ -1069,4 +1069,3 @@ the individual data points on top.
 .. plot:: tutorial/stats/plots/kde_plot5.py
    :align: center
    :include-source: 0
-

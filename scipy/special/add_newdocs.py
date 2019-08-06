@@ -104,6 +104,11 @@ add_newdoc("_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
+add_newdoc("_voigt",
+    """
+    Internal function, use `voigt` instead.
+    """)
+
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
@@ -1400,6 +1405,52 @@ add_newdoc("ellipkm1",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    """)
+
+add_newdoc("ellipk",
+    r"""
+    ellipk(m)
+
+    Complete elliptic integral of the first kind.
+
+    This function is defined as
+
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        The parameter of the elliptic integral.
+
+    Returns
+    -------
+    K : array_like
+        Value of the elliptic integral.
+
+    Notes
+    -----
+    For more precision around point m = 1, use `ellipkm1`, which this
+    function calls.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind around m = 1
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("ellipkinc",
@@ -4459,7 +4510,7 @@ add_newdoc("kolmogorov",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distrubution.
+    `stats.kstwobign` distribution.
 
     See Also
     --------
@@ -6476,7 +6527,7 @@ add_newdoc("smirnov",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distrubution.
+    `stats.ksone` distribution.
 
     See Also
     --------
@@ -6570,7 +6621,7 @@ add_newdoc("smirnovi",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distrubution.
+    `stats.ksone` distribution.
 
     See Also
     --------
@@ -7047,10 +7098,9 @@ add_newdoc("zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
-
-    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
-    `nan` for `x` less than -30.8148.
+    where ``x > 1``.  For ``x < 1`` the analytic continuation is
+    computed. For more information on the Riemann zeta function, see
+    [dlmf]_.
 
     Parameters
     ----------
@@ -7083,6 +7133,16 @@ add_newdoc("zetac",
     >>> zetac(60), zeta(60) - 1
     (8.673617380119933e-19, 0.0)
 
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/25
+
+    """)
+
+add_newdoc("_riemann_zeta",
+    """
+    Internal function, use `zeta` instead.
     """)
 
 add_newdoc("_struve_asymp_large_z",

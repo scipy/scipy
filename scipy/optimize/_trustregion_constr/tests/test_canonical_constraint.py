@@ -158,7 +158,7 @@ def test_nonlinear_constraint():
 def test_concatenation():
     rng = np.random.RandomState(0)
     n = 4
-    x0 = np.random.rand(n)
+    x0 = rng.rand(n)
 
     f1 = x0
     J1 = np.eye(n)

@@ -6,7 +6,6 @@ local power basis.
 
 from __future__ import absolute_import
 
-from scipy.interpolate.polyint import _Interpolator1D
 import numpy as np
 
 cimport cython
@@ -14,17 +13,13 @@ cimport cython
 cimport libc.stdlib
 cimport libc.math
 
+from scipy.linalg.cython_lapack cimport dgeev
+
 ctypedef double complex double_complex
 
 ctypedef fused double_or_complex:
     double
     double complex
-
-cdef extern from "blas_defs.h":
-    void c_dgeev(char *jobvl, char *jobvr, int *n, double *a,
-                 int *lda, double *wr, double *wi, double *vl, int *ldvl,
-                 double *vr, int *ldvr, double *work, int *lwork,
-                 int *info)
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
@@ -567,7 +562,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_ascending(double *x,
+cdef int find_interval_ascending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
@@ -652,7 +647,7 @@ cdef int find_interval_ascending(double *x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_descending(double *x,
+cdef int find_interval_descending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
@@ -930,8 +925,8 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
 
     # Compute companion matrix eigenvalues
     info = 0
-    c_dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
-            NULL, &order, NULL, &order, work, &lwork, &info)
+    dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
+          NULL, &order, NULL, &order, work, &lwork, &info)
     if info != 0:
         # Failure
         return -2
