@@ -140,7 +140,7 @@ class Rectangle(object):
         return minkowski_distance(0, np.maximum(0,np.maximum(self.mins-x,x-self.maxes)),p)
     
     def center(self):
-        return np.sum(self.maxes, self.mins)/2
+        return np.add(self.maxes, self.mins)/2
 
     def contains(self, x):
         if self.min_distance_point(x) == 0:
