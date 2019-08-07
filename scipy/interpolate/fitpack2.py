@@ -77,7 +77,8 @@ class UnivariateSpline(object):
     Parameters
     ----------
     x : (N,) array_like
-        1-D array of independent input data. Must be increasing.
+        1-D array of independent input data. Must be increasing;
+        must be strictly increasing if `s` is 0.
     y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
@@ -173,8 +174,12 @@ class UnivariateSpline(object):
                     not w_finite):
                 raise ValueError("x and y array must not contain "
                                  "NaNs or infs.")
-        if not np.all(diff(x) > 0.0):
-            raise ValueError('x must be strictly increasing')
+        if s is None or s > 0:
+            if not np.all(diff(x) >= 0.0):
+                raise ValueError("x must be increasing if s > 0")
+        else:
+            if not np.all(diff(x) > 0.0):
+                raise ValueError("x must be strictly increasing if s = 0")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -531,7 +536,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     Parameters
     ----------
     x : (N,) array_like
-        Input dimension of data points -- must be increasing
+        Input dimension of data points -- must be strictly increasing
     y : (N,) array_like
         input dimension of data points
     w : (N,) array_like, optional
@@ -738,8 +743,8 @@ class LSQUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
-        if not np.all(diff(x) > 0.0):
-            raise ValueError('x must be strictly increasing')
+        if not np.all(diff(x) >= 0.0):
+            raise ValueError('x must be increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
