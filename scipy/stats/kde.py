@@ -526,7 +526,7 @@ class gaussian_kde(object):
 
         >>> import matplotlib.pyplot as plt
         >>> fig, ax = plt.subplots()
-        >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
+        >>> ax.plot(x1, np.full(x1.shape, 1 / (4. * x1.size)), 'bo',
         ...         label='Data points (rescaled)')
         >>> ax.plot(xs, y1, label='Scott (default)')
         >>> ax.plot(xs, y2, label='Silverman')

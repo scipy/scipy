@@ -113,7 +113,7 @@ class TestSphericalYn:
         # https://dlmf.nist.gov/10.52.E2
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0
-        assert_allclose(spherical_yn(n, x), -inf*np.ones(shape=n.shape))
+        assert_allclose(spherical_yn(n, x), np.full(n.shape, -inf))
 
     def test_spherical_yn_at_zero_complex(self):
         # Consistently with numpy:
@@ -123,7 +123,7 @@ class TestSphericalYn:
         # (-inf + nan*j)
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0 + 0j
-        assert_allclose(spherical_yn(n, x), nan*np.ones(shape=n.shape))
+        assert_allclose(spherical_yn(n, x), np.full(n.shape, nan))
 
 
 class TestSphericalJnYnCrossProduct:
@@ -232,13 +232,13 @@ class TestSphericalKn:
         # https://dlmf.nist.gov/10.52.E2
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0
-        assert_allclose(spherical_kn(n, x), inf*np.ones(shape=n.shape))
+        assert_allclose(spherical_kn(n, x), np.full(n.shape, inf))
 
     def test_spherical_kn_at_zero_complex(self):
         # https://dlmf.nist.gov/10.52.E2
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0 + 0j
-        assert_allclose(spherical_kn(n, x), nan*np.ones(shape=n.shape))
+        assert_allclose(spherical_kn(n, x), np.full(n.shape, nan))
 
 
 class SphericalDerivativesTestCase:
