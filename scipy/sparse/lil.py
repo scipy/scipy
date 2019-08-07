@@ -13,7 +13,7 @@ import numpy as np
 
 from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
-from ._index import IndexMixin, INT_TYPES
+from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                       get_index_dtype, check_shape, check_reshape_kwargs,
                       asmatrix)
@@ -267,7 +267,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
     def _get_columnXarray(self, row, col):
         # outer indexing
-        row, col = np.broadcast_arrays(row[:,None], col)
+        row, col = _broadcast_arrays(row[:,None], col)
         return self._get_arrayXarray(row, col)
 
     def _get_arrayXarray(self, row, col):
@@ -330,7 +330,7 @@ class lil_matrix(spmatrix, IndexMixin):
             return
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, row)
+        x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
     def __setitem__(self, key, x):

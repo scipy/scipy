@@ -90,7 +90,8 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     if ma.count() == 0:
         return False, np.nan
     if bland:
-        return True, np.nonzero(ma.mask == False)[0][0]
+        # ma.mask is sometimes 0d
+        return True, np.nonzero(np.logical_not(np.atleast_1d(ma.mask)))[0][0]
     return True, np.ma.nonzero(ma == ma.min())[0][0]
 
 

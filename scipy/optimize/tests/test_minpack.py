@@ -410,7 +410,9 @@ class TestCurveFit(object):
         assert_almost_equal(pcov[0,0], 0.0016, decimal=4)
 
         # Test if we get the same with full_output. Regression test for #1415.
-        res = curve_fit(func, self.x, self.y, full_output=1)
+        # Also test if check_finite can be turned off.
+        res = curve_fit(func, self.x, self.y,
+                        full_output=1, check_finite=False)
         (popt2, pcov2, infodict, errmsg, ier) = res
         assert_array_almost_equal(popt, popt2)
 
@@ -549,6 +551,11 @@ class TestCurveFit(object):
     def test_function_zero_params(self):
         # Fit args is zero, so "Unable to determine number of fit parameters."
         assert_raises(ValueError, curve_fit, lambda x: x, [1, 2], [3, 4])
+
+    def test_None_x(self):  # Added in GH10196
+        popt, pcov = curve_fit(lambda _, a: a * np.arange(10),
+                               None, 2 * np.arange(10))
+        assert_allclose(popt, [2.])
 
     def test_method_argument(self):
         def f(x, a, b):

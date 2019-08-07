@@ -1389,6 +1389,60 @@ def test_query_ball_point_length():
     assert_array_equal(length, length3)
     assert_array_equal(length, length4)
 
+def test_discontiguous():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    d_contiguous = np.arange(100) * 0.04
+    d_discontiguous = np.ascontiguousarray(
+                          np.arange(100)[::-1] * 0.04)[::-1]
+    query_contiguous = np.random.normal(size=(100, 3))
+    query_discontiguous = np.ascontiguousarray(query_contiguous.T).T
+    assert query_discontiguous.strides[-1] != query_contiguous.strides[-1]
+    assert d_discontiguous.strides[-1] != d_contiguous.strides[-1]
+
+    tree = cKDTree(data)
+
+    length1 = tree.query_ball_point(query_contiguous,
+                                    d_contiguous, return_length=True)
+    length2 = tree.query_ball_point(query_discontiguous,
+                                    d_discontiguous, return_length=True)
+
+    assert_array_equal(length1, length2)
+
+    d1, i1 = tree.query(query_contiguous, 1)
+    d2, i2 = tree.query(query_discontiguous, 1)
+
+    assert_array_equal(d1, d2)
+    assert_array_equal(i1, i2)
+
+@pytest.mark.parametrize("balanced_tree, compact_nodes",
+    [(True, False),
+     (True, True),
+     (False, False),
+     (False, True)])
+def test_cdktree_empty_input(balanced_tree, compact_nodes):
+    # https://github.com/scipy/scipy/issues/5040
+    np.random.seed(1234)
+    empty_v3 = np.empty(shape=(0, 3))
+    query_v3 = np.ones(shape=(1, 3))
+    query_v2 = np.ones(shape=(2, 3))
+
+    tree = cKDTree(empty_v3, balanced_tree=balanced_tree, compact_nodes=compact_nodes)
+    length = tree.query_ball_point(query_v3, 0.3, return_length=True)
+    assert length == 0
+
+    dd, ii = tree.query(query_v2, 2)
+    assert ii.shape == (2, 2)
+    assert dd.shape == (2, 2)
+    assert np.isinf(dd).all()
+
+    N = tree.count_neighbors(tree, [0, 1])
+    assert_array_equal(N, [0, 0])
+
+    M = tree.sparse_distance_matrix(tree, 0.3)
+    assert M.shape == (0, 0)
+
 class Test_sorted_query_ball_point(object):
 
     def setup_method(self):

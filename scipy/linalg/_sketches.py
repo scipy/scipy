@@ -28,7 +28,7 @@ def cwt_matrix(n_rows, n_columns, seed=None):
         Number of rows of S
     n_columns: int
         Number of columns of S
-    seed : None or int or `numpy.random.RandomState` instance, optional
+    seed : None or int or `numpy.random.mtrand.RandomState` instance, optional
         This parameter defines the ``RandomState`` object to use for drawing
         random variates.
         If None (or ``np.random``), the global ``np.random`` state is used.
@@ -72,7 +72,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
         Input matrix, of shape ``(n, d)``.
     sketch_size: int
         Number of rows for the sketch.
-    seed : None or int or `numpy.random.RandomState` instance, optional
+    seed : None or int or `numpy.random.mtrand.RandomState` instance, optional
         This parameter defines the ``RandomState`` object to use for drawing
         random variates.
         If None (or ``np.random``), the global ``np.random`` state is used.
@@ -93,7 +93,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     precise, observe the following result which is adapted from the
     proof of Theorem 14 of [2]_ via Markov's Inequality. If we have
     a sketch size ``sketch_size=k`` which is at least
-    
+
     .. math:: k \geq \frac{2}{\epsilon^2\delta}
 
     Then for any fixed vector ``x``,

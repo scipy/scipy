@@ -3347,7 +3347,7 @@ def pearsonr(x, y):
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
-    to abs(r).  In terms of the object `dist` shown above, the p-value
+    to abs(r).  In terms of the object ``dist`` shown above, the p-value
     for a given r and length n can be computed as::
 
         p = 2*dist.cdf(-abs(r))

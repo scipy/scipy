@@ -1795,6 +1795,18 @@ class TestPolyConversions(object):
         assert_allclose(bp(xp), pp(xp))
         assert_allclose(bp(xp), bp1(xp))
 
+    def test_broken_conversions(self):
+        # regression test for gh-10597: from_power_basis only accepts PPoly etc
+        x = [0, 1, 3]
+        c = [[3, 3], [1, 1], [4, 2]]        
+        pp = PPoly(c, x)
+        with assert_raises(TypeError):
+            PPoly.from_bernstein_basis(pp)
+
+        bp = BPoly(c, x)
+        with assert_raises(TypeError):
+            BPoly.from_power_basis(bp)
+
 
 class TestBPolyFromDerivatives(object):
     def test_make_poly_1(self):

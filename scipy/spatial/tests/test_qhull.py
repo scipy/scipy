@@ -1123,3 +1123,40 @@ class Test_HalfspaceIntersection(object):
             self.assert_unordered_allclose(inc_hs.intersections, hs.intersections)
 
         inc_hs.close()
+
+    def test_cube(self):
+        # Halfspaces of the cube:
+        halfspaces = np.array([[-1., 0., 0., 0.],  # x >= 0
+                               [1., 0., 0., -1.],  # x <= 1
+                               [0., -1., 0., 0.],  # y >= 0
+                               [0., 1., 0., -1.],  # y <= 1
+                               [0., 0., -1., 0.],  # z >= 0
+                               [0., 0., 1., -1.]])  # z <= 1
+        point = np.array([0.5, 0.5, 0.5])
+
+        hs = qhull.HalfspaceIntersection(halfspaces, point)
+
+        # qhalf H0.5,0.5,0.5 o < input.txt
+        qhalf_points = np.array([
+            [-2, 0, 0],
+            [2, 0, 0],
+            [0, -2, 0],
+            [0, 2, 0],
+            [0, 0, -2],
+            [0, 0, 2]])
+        qhalf_facets = [
+            [3, 5, 0],
+            [5, 3, 1],
+            [4, 3, 0],
+            [3, 4, 1],
+            [2, 5, 1],
+            [5, 2, 0],
+            [2, 4, 0],
+            [4, 2, 1],
+        ]
+
+        assert len(qhalf_facets) == len(hs.dual_facets)
+        for a, b in zip(qhalf_facets, hs.dual_facets):
+            assert set(a) == set(b)  # facet orientation can differ
+
+        assert_allclose(hs.dual_points, qhalf_points)

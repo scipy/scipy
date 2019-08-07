@@ -2143,6 +2143,8 @@ class _TestGetSet(object):
                 for j in range(-N, N):
                     assert_equal(A[i,j], D[i,j])
 
+            assert_equal(type(A[1,1]), dtype)
+
             for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
                 assert_raises((IndexError, TypeError), A.__getitem__, ij)
 

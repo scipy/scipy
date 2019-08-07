@@ -12,6 +12,21 @@ except NameError:
     INT_TYPES = (int, np.integer)
 
 
+def _broadcast_arrays(a, b):
+    """
+    Same as np.broadcast_arrays(a, b) but old writeability rules.
+
+    Numpy >= 1.17.0 transitions broadcast_arrays to return
+    read-only arrays. Set writeability explicitly to avoid warnings.
+    Retain the old writeability rules, as our Cython code assumes
+    the old behavior.
+    """
+    x, y = np.broadcast_arrays(a, b)
+    x.flags.writeable = a.flags.writeable
+    y.flags.writeable = b.flags.writeable
+    return x, y
+
+
 class IndexMixin(object):
     """
     This class provides common dispatching and validation logic for indexing.
@@ -52,7 +67,7 @@ class IndexMixin(object):
                 return self._get_columnXarray(row[:,0], col)
 
         # The only remaining case is inner (fancy) indexing
-        row, col = np.broadcast_arrays(row, col)
+        row, col = _broadcast_arrays(row, col)
         if row.shape != col.shape:
             raise IndexError('number of row and column indices differ')
         if row.size == 0:
@@ -81,7 +96,7 @@ class IndexMixin(object):
         else:
             col = np.atleast_1d(col)
 
-        i, j = np.broadcast_arrays(row, col)
+        i, j = _broadcast_arrays(row, col)
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
@@ -104,7 +119,7 @@ class IndexMixin(object):
         else:
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
-            x, _ = np.broadcast_arrays(x, i)
+            x, _ = _broadcast_arrays(x, i)
             if x.shape != i.shape:
                 raise ValueError("shape mismatch in assignment")
             if x.size == 0:
@@ -226,7 +241,7 @@ class IndexMixin(object):
     def _set_arrayXarray_sparse(self, row, col, x):
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, row)
+        x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
 
