@@ -178,7 +178,10 @@ class TestUnivariateSpline(object):
                     **dict(x=x, y=y, t=t, w=w, check_finite=True))
 
     def test_strictly_increasing_x(self):
-        # Test the x is not required to be strictly increasing, see ticket #8535
+        # Test the x is required to be strictly increasing for
+        # UnivariateSpline if s=0 and for InterpolatedUnivariateSpline,
+        # but merely increasing for UnivariateSpline if s>0
+        # and for LSQUnivariateSpline; see ticket #8535
         xx = np.arange(10, dtype=float)
         yy = xx**3
         x = np.arange(10, dtype=float)
@@ -188,10 +191,13 @@ class TestUnivariateSpline(object):
         # also test LSQUnivariateSpline [which needs explicit knots]
         spl = UnivariateSpline(xx, yy, check_finite=True)
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
-        spl2 = UnivariateSpline(x=x, y=y, w=w, check_finite=True)
-        spl3 = InterpolatedUnivariateSpline(x=x, y=y, check_finite=True)
-        spl4 = LSQUnivariateSpline(x=x, y=y, t=t, w=w, check_finite=True)
-    
+        spl2 = UnivariateSpline(x=x, y=y, w=w, s=1, check_finite=True)
+        spl3 = LSQUnivariateSpline(x=x, y=y, t=t, w=w, check_finite=True)
+        assert_raises(ValueError, UnivariateSpline,
+                **dict(x=x, y=y, s=0, check_finite=True))
+        assert_raises(ValueError, InterpolatedUnivariateSpline,
+                **dict(x=x, y=y, check_finite=True))
+
     def test_increasing_x(self):
         # Test that x is required to be increasing, see ticket #8535
         xx = np.arange(10, dtype=float)
