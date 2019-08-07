@@ -181,7 +181,7 @@ class TestUnivariateSpline(object):
         # Test the x is required to be strictly increasing for
         # UnivariateSpline if s=0 and for InterpolatedUnivariateSpline,
         # but merely increasing for UnivariateSpline if s>0
-        # and for LSQUnivariateSpline; see ticket #8535
+        # and for LSQUnivariateSpline; see gh-8535
         xx = np.arange(10, dtype=float)
         yy = xx**3
         x = np.arange(10, dtype=float)
@@ -199,7 +199,7 @@ class TestUnivariateSpline(object):
                 **dict(x=x, y=y, check_finite=True))
 
     def test_increasing_x(self):
-        # Test that x is required to be increasing, see ticket #8535
+        # Test that x is required to be increasing, see gh-8535
         xx = np.arange(10, dtype=float)
         yy = xx**3
         x = np.arange(10, dtype=float)
