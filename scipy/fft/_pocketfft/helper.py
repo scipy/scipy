@@ -156,10 +156,10 @@ def _workers(workers):
     if workers is None:
         return _default_workers
 
-    if workers < 0:
-        raise ValueError("workers must be >= 0")
+    if workers == 0 or workers < -1:
+        raise ValueError("workers must be > 0, or -1")
 
-    return workers
+    return workers if workers != -1 else 0
 
 
 def next_fast_len(target, kind='C2C'):

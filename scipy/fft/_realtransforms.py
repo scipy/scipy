@@ -35,7 +35,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -92,7 +92,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -149,7 +149,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -206,7 +206,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -257,7 +257,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -407,7 +407,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -469,7 +469,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------
@@ -586,7 +586,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
         If True, the contents of `x` can be destroyed; the default is False.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater. See `fft` for more details.
+        unlimited. Must be -1 or >0. See `fft` for more details.
 
     Returns
     -------

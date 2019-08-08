@@ -17,7 +17,7 @@ def x():
     fft.dct, fft.idct, fft.dctn, fft.idctn,
     fft.dst, fft.idst, fft.dstn, fft.idstn,
 ])
-@pytest.mark.parametrize("workers", [2, 0])
+@pytest.mark.parametrize("workers", [2, -1])
 def test_threaded_same(x, func, workers):
     expected = func(x, workers=1)
     actual = func(x, workers=workers)
@@ -39,3 +39,11 @@ def test_mixed_threads_processes(x):
         assert_allclose(r, expect)
 
     fft.fft(x, workers=2)
+
+def test_invalid_workers(x):
+
+    with pytest.raises(ValueError, match='workers must be'):
+        fft.fft(x, workers=0)
+
+    with pytest.raises(ValueError, match='workers must be'):
+        fft.ifft(x, workers=-2)
