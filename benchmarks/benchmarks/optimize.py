@@ -228,7 +228,7 @@ class _BenchOptimizers(Benchmark):
             methods = ["COBYLA", 'Powell', 'nelder-mead',
                        'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
                        "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-                       'trust-krylov']
+                       'trust-krylov', 'trust-constr']
 
         # L-BFGS-B, BFGS can use gradients, but examine performance when
         # numerical differentiation is used.
@@ -254,7 +254,7 @@ class _BenchOptimizers(Benchmark):
                 self.add_result(res, t1-t0, method)
 
         hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov']
+                           'trust-exact', 'trust-krylov', 'trust-constr']
         if self.hess is not None:
             for method in hessian_methods:
                 if method not in methods:
@@ -276,7 +276,7 @@ class BenchSmoothUnbounded(Benchmark):
         ["COBYLA", 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-         'trust-krylov'],
+         'trust-krylov', 'trust-constr'],
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
