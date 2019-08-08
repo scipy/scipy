@@ -437,17 +437,17 @@ class TestDpstr(object):
                 np.random.seed(42)
                 x = np.random.normal(size=(3, 3))
                 a = x.dot(x.T)
-                a[0,:]=a[1,:]+a[2,:] # make it rank-deficient
-                a = a.dot(a.T) # A * At is PSD if A is rank-deficient
+                a[0,:] = a[1, :]+a[2, :]
+                a = a.dot(a.T)
 
-                pstrf, = get_lapack_funcs(('pstrf',), (a,))
+                pstrf, = get_lapack_funcs(("pstrf",), (a, ))
 
-                c, pivot, rank, info= pstrf(a, tol=-1,lower=False,  \
+                c, pivot, rank, info= pstrf(a, tol=-1, lower=False, \
                                             overwrite_a=False, clean=True)
-                c2, pivot2, rank2, info2 = pstrf(a, tol=-1,lower=True,  \
-                                                 overwrite_a=False, clean=True)
-                r=c2.dot(c)[:,pivot-1]
-                r=r[pivot-1,:]
+                c2, pivot2, rank2, info2 = pstrf(a, tol=-1, lower=True, \
+                                            overwrite_a=False, clean=True)
+                r = c2.dot(c)[:, pivot-1]
+                r = r[pivot-1, :]
                 assert_allclose(a, r)
 
 
@@ -458,17 +458,17 @@ class TestDpstf(object):
                 np.random.seed(42)
                 x = np.random.normal(size=(3, 3))
                 a = x.dot(x.T)
-                a[0,:]=a[1,:]+a[2,:] # make it rank-deficient
-                a = a.dot(a.T) # A * At is PSD if A is rank-deficient
+                a[0,:] = a[1, :]+a[2, :]
+                a = a.dot(a.T)
 
-                pstf2, = get_lapack_funcs(('pstf2',), (a,))
+                pstf2, = get_lapack_funcs(("pstf2",), (a, ))
 
-                c, pivot, rank, info= pstf2(a, tol=-1,lower=False,  \
+                c, pivot, rank, info= pstf2(a, tol=-1, lower=False, \
                                             overwrite_a=False, clean=True)
-                c2, pivot2, rank2, info2 = pstf2(a, tol=-1,lower=True,  \
-                                                 overwrite_a=False, clean=True)
-                r=c2.dot(c)[:,pivot-1]
-                r=r[pivot-1,:]
+                c2, pivot2, rank2, info2 = pstf2(a, tol=-1, lower=True, \
+                                            overwrite_a=False, clean=True)
+                r = c2.dot(c)[:, pivot-1]
+                r = r[pivot-1, :]
                 assert_allclose(a, r)
 
 
