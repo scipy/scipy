@@ -3095,16 +3095,17 @@ POCKETFFT_NOINLINE void general_nd(const cndarr<T> &in, ndarr<T> &out,
 
   for (size_t iax=0; iax<axes.size(); ++iax)
     {
-    constexpr auto vlen = VLEN<T0>::val;
     size_t len=in.shape(axes[iax]);
     if ((!plan) || (len!=plan->length()))
       plan = get_plan<Tplan>(len);
 
-    threading::thread_map(util::thread_count(nthreads, in.shape(), axes[iax], vlen),
+    threading::thread_map(
+      util::thread_count(nthreads, in.shape(), axes[iax], VLEN<T>::val),
       [&] {
+        constexpr auto vlen = VLEN<T0>::val;
         auto storage = alloc_tmp<T0>(in.shape(), len, sizeof(T));
         const auto &tin(iax==0? in : out);
-        multi_iter<vlen> it(tin, out, axes[iax]);
+        multi_iter<VLEN<T0>::val> it(tin, out, axes[iax]);
 #ifndef POCKETFFT_NO_VECTORS
         if (vlen>1)
           while (it.remaining()>=vlen)
@@ -3204,10 +3205,11 @@ template<typename T> POCKETFFT_NOINLINE void general_r2c(
   size_t nthreads)
   {
   auto plan = get_plan<pocketfft_r<T>>(in.shape(axis));
-  constexpr auto vlen = VLEN<T>::val;
   size_t len=in.shape(axis);
-  threading::thread_map(util::thread_count(nthreads, in.shape(), axis, vlen),
+  threading::thread_map(
+    util::thread_count(nthreads, in.shape(), axis, VLEN<T>::val),
     [&] {
+    constexpr auto vlen = VLEN<T>::val;
     auto storage = alloc_tmp<T>(in.shape(), len, sizeof(T));
     multi_iter<vlen> it(in, out, axis);
 #ifndef POCKETFFT_NO_VECTORS
@@ -3258,10 +3260,11 @@ template<typename T> POCKETFFT_NOINLINE void general_c2r(
   size_t nthreads)
   {
   auto plan = get_plan<pocketfft_r<T>>(out.shape(axis));
-  constexpr auto vlen = VLEN<T>::val;
   size_t len=out.shape(axis);
-  threading::thread_map(util::thread_count(nthreads, in.shape(), axis, vlen),
+  threading::thread_map(
+    util::thread_count(nthreads, in.shape(), axis, VLEN<T>::val),
     [&] {
+      constexpr auto vlen = VLEN<T>::val;
       auto storage = alloc_tmp<T>(out.shape(), len, sizeof(T));
       multi_iter<vlen> it(in, out, axis);
 #ifndef POCKETFFT_NO_VECTORS
