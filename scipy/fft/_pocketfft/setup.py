@@ -1,7 +1,7 @@
 
 def pre_build_hook(build_ext, ext):
-    from scipy._build_utils.compiler_helper import (get_cxx_std_flag,
-                                                    try_add_flag, try_compile)
+    from scipy._build_utils.compiler_helper import (
+        get_cxx_std_flag, try_add_flag, try_compile, has_flag)
     cc = build_ext._cxx_compiler
     args = ext.extra_compile_args
 
@@ -19,10 +19,11 @@ def pre_build_hook(build_ext, ext):
         if has_pthreads:
             ext.define_macros.append(('POCKETFFT_PTHREADS', None))
 
+        min_macos_flag = '-mmacosx-version-min=10.9'
         import sys
-        if sys.platform == 'darwin':
-            args.append('-mmacosx-version-min=10.7')
-            try_add_flag(args, cc, '-stdlib=libc++')
+        if sys.platform == 'darwin' and has_flag(cc, min_macos_flag):
+            args.append(min_macos_flag)
+            ext.extra_link_args.append(min_macos_flag)
 
 
 def configuration(parent_package='', top_path=None):
