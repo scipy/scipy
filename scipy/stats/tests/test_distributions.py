@@ -1313,15 +1313,15 @@ class TestRvDiscrete(object):
         # tests added for gh-9565
 
         # mismatch of 2d inputs
-        xk, pk = np.arange(4).reshape((2, 2)), np.ones((2, 3)) / 6
+        xk, pk = np.arange(4).reshape((2, 2)), np.full((2, 3), 1/6)
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
         # same number of elements, but shapes not compatible
-        xk, pk = np.arange(6).reshape((3, 2)), np.ones((2, 3)) / 6
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((2, 3), 1/6)
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
         # same shapes => no error
-        xk, pk = np.arange(6).reshape((3, 2)), np.ones((3, 2)) / 6
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((3, 2), 1/6)
         assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
 
 

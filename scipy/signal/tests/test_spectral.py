@@ -42,7 +42,7 @@ class TestPeriodogram(object):
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = np.ones(16)/16.0
+        q = np.full(16, 1/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -80,7 +80,7 @@ class TestPeriodogram(object):
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = np.ones(16)/16.0
+        q = np.full(16, 1/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -89,7 +89,7 @@ class TestPeriodogram(object):
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = 5.0*np.ones(16)/16.0
+        q = np.full(16, 5.0/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -203,7 +203,7 @@ class TestPeriodogram(object):
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = np.ones(16, 'f')/16.0
+        q = np.full(16, 1/16.0, 'f')
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
@@ -213,7 +213,7 @@ class TestPeriodogram(object):
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftfreq(16, 1.0))
-        q = 5.0*np.ones(16, 'f')/16.0
+        q = np.full(16, 5.0/16.0, 'f')
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)

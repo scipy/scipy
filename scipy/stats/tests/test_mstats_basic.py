@@ -1079,8 +1079,8 @@ class TestCompareWithStats(object):
         np.random.seed(1234567)
         x = np.random.randn(n)
         y = x + np.random.randn(n)
-        xm = np.ones(len(x) + 5) * 1e16
-        ym = np.ones(len(y) + 5) * 1e16
+        xm = np.full(len(x) + 5, 1e16)
+        ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x
         ym[0:len(y)] = y
         mask = xm > 9e15
@@ -1089,10 +1089,10 @@ class TestCompareWithStats(object):
         return x, y, xm, ym
 
     def generate_xy_sample2D(self, n, nx):
-        x = np.ones((n, nx)) * np.nan
-        y = np.ones((n, nx)) * np.nan
-        xm = np.ones((n+5, nx)) * np.nan
-        ym = np.ones((n+5, nx)) * np.nan
+        x = np.full((n, nx), np.nan)
+        y = np.full((n, nx), np.nan)
+        xm = np.full((n+5, nx), np.nan)
+        ym = np.full((n+5, nx), np.nan)
 
         for i in range(nx):
             x[:, i], y[:, i], dx, dy = self.generate_xy_sample(n)

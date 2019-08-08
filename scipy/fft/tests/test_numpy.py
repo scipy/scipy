@@ -279,11 +279,11 @@ class TestFFTThreadSafe(object):
                 'Function returned wrong value in multithreaded context')
 
     def test_fft(self):
-        a = np.ones(self.input_shape) * 1+0j
+        a = np.ones(self.input_shape, dtype=np.complex128)
         self._test_mtsame(fft.fft, a)
 
     def test_ifft(self):
-        a = np.ones(self.input_shape) * 1+0j
+        a = np.full(self.input_shape, 1+0j)
         self._test_mtsame(fft.ifft, a)
 
     def test_rfft(self):
@@ -291,7 +291,7 @@ class TestFFTThreadSafe(object):
         self._test_mtsame(fft.rfft, a)
 
     def test_irfft(self):
-        a = np.ones(self.input_shape) * 1+0j
+        a = np.full(self.input_shape, 1+0j)
         self._test_mtsame(fft.irfft, a)
 
     def test_hfft(self):

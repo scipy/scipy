@@ -72,7 +72,7 @@ def test_cont_fit(distname, arg):
 
     truearg = np.hstack([arg, [0.0, 1.0]])
     diffthreshold = np.max(np.vstack([truearg*thresh_percent,
-                                      np.ones(distfn.numargs+2)*thresh_min]),
+                                      np.full(distfn.numargs+2, thresh_min)]),
                            0)
 
     for fit_size in fit_sizes:
