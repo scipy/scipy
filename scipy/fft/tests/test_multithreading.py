@@ -41,9 +41,13 @@ def test_mixed_threads_processes(x):
     fft.fft(x, workers=2)
 
 def test_invalid_workers(x):
+    import os
+    cpus = os.cpu_count()
 
-    with pytest.raises(ValueError, match='workers must be'):
+    fft.ifft([1], workers=-cpus)
+
+    with pytest.raises(ValueError, match='workers value out of range'):
         fft.fft(x, workers=0)
 
-    with pytest.raises(ValueError, match='workers must be'):
-        fft.ifft(x, workers=-2)
+    with pytest.raises(ValueError, match='workers value out of range'):
+        fft.ifft(x, workers=-cpus-1)

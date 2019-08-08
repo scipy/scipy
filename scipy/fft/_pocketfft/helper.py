@@ -4,10 +4,12 @@ import operator
 from .pypocketfft import good_size
 import operator
 import sys
+import os
 
 
 # TODO: Add configuration support
 _default_workers = 1
+_cpu_count = os.cpu_count()
 
 
 def _iterable_of_int(x, name=None):
@@ -156,10 +158,13 @@ def _workers(workers):
     if workers is None:
         return _default_workers
 
-    if workers == 0 or workers < -1:
-        raise ValueError("workers must be > 0, or -1")
+    if workers < 0:
+        workers += 1 + _cpu_count
 
-    return workers if workers != -1 else 0
+    if workers <= 0:
+        raise ValueError("workers value out of range")
+
+    return workers
 
 
 def next_fast_len(target, kind='C2C'):
