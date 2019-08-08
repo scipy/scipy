@@ -621,6 +621,25 @@ def test_inv_single_rotation():
     assert_array_almost_equal(result2, eye3d)
 
 
+def test_magnitude():
+    r = Rotation.from_quat(np.eye(4))
+    result = r.magnitude()
+    assert_array_almost_equal(result, [np.pi, np.pi, np.pi, 0])
+
+    r = Rotation.from_quat(-np.eye(4))
+    result = r.magnitude()
+    assert_array_almost_equal(result, [np.pi, np.pi, np.pi, 0])
+
+
+def test_magnitude_single_rotation():
+    r = Rotation.from_quat(np.eye(4))
+    result1 = r[0].magnitude()
+    assert_allclose(result1, np.pi)
+
+    result2 = r[3].magnitude()
+    assert_allclose(result2, 0)
+
+
 def test_apply_single_rotation_single_point():
     dcm = np.array([
         [0, -1, 0],

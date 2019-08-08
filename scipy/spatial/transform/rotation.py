@@ -210,6 +210,7 @@ class Rotation(object):
     apply
     __mul__
     inv
+    magnitude
     __getitem__
     random
     match_vectors
@@ -1427,6 +1428,38 @@ class Rotation(object):
         if self._single:
             quat = quat[0]
         return self.__class__(quat, normalized=True, copy=False)
+
+    def magnitude(self):
+        """Get the magnitude(s) of the rotation(s).
+
+        Returns
+        -------
+        magnitude : ndarray or float
+            Angle(s) in radians, float if object contains a single rotation
+            and ndarray if object contains multiple rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r = R.from_quat(np.eye(4))
+        >>> r.magnitude()
+        array([3.14159265, 3.14159265, 3.14159265, 0.        ])
+
+        Magnitude of a single rotation:
+
+        >>> r[0].magnitude()
+        3.141592653589793
+        """
+
+        quat = self._quat.reshape((len(self), 4))
+        s = np.linalg.norm(quat[:, :3], axis=1)
+        c = np.abs(quat[:, 3])
+        angles = 2 * np.arctan2(s, c)
+
+        if self._single:
+            return angles[0]
+        else:
+            return angles
 
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
