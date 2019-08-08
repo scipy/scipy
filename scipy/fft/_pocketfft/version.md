@@ -2,15 +2,13 @@
 pypocketfft version
 -------------------
 
-SciPy currently vendors [pypocketfft][repo] at:
+SciPy currently vendors [pypocketfft] at:
 
-    commit 869e68d243138c188cafa8334d92f94ded600a90
-    Merge: 6f1bba7 140e68f
-    Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Thu Aug 1 13:33:46 2019 +0200
+    commit e551513b9f3d1368459d446e393c205a6056f1c4
+    Author: Peter Bell <peterbell10@live.co.uk>
+    Date:   Thu Aug 8 13:33:21 2019 +0100
 
-        Merge branch 'tweak_codelet_8' into 'master'
+        Handle exceptions thrown in parallel regions
 
-        Tweak length-8 codelet
 
-repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
+pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

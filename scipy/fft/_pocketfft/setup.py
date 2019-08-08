@@ -1,7 +1,7 @@
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import (get_cxx_std_flag,
-                                                    try_add_flag)
+                                                    try_add_flag, try_compile)
     cc = build_ext._cxx_compiler
     args = ext.extra_compile_args
 
@@ -13,6 +13,11 @@ def pre_build_hook(build_ext, ext):
         args.append('/EHsc')
     else:
         try_add_flag(args, cc, '-fvisibility=hidden')
+
+        has_pthreads = try_compile(cc, code='#include <pthread.h>\n'
+                                   'int main(int argc, char **argv) {}')
+        if has_pthreads:
+            ext.define_macros.append(('POCKETFFT_PTHREADS', None))
 
         import sys
         if sys.platform == 'darwin':
