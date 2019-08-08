@@ -43,16 +43,13 @@ from libc.stdlib cimport malloc, free
 from libc.string cimport memset
 
 
-ctypedef double complex double_complex
-ctypedef float complex float_complex
-
 ctypedef fused DTYPE_t:
     # Eventually we could add "object", too, but then we'd lose the "nogil"
     # on the _apply_impl function.
     float
-    float_complex
+    float complex
     double
-    double_complex
+    double complex
 
 cdef struct ArrayInfo:
     np.intp_t * shape
