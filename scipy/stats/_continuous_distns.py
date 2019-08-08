@@ -24,7 +24,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray)
+                                    rv_continuous, _skew, valarray,
+                                    _get_fixed_fit_value)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
@@ -34,6 +35,24 @@ try:
     float_power = np.float_power
 except AttributeError:
     float_power = np.power
+
+
+def _remove_optimizer_parameters(kwds):
+    """
+    Remove the optimizer-related keyword arguments 'loc', 'scale' and
+    'optimizer' from `kwds`.  Then check that `kwds` is empty, and
+    raise `TypeError("Unknown arguments: %s." % kwds)` if it is not.
+
+    This function is used in the fit method of distributions that override
+    the default method and do not use the default optimization code.
+
+    `kwds` is modified in-place.
+    """
+    kwds.pop('loc', None)
+    kwds.pop('scale', None)
+    kwds.pop('optimizer', None)
+    if kwds:
+        raise TypeError("Unknown arguments: %s." % kwds)
 
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
@@ -252,8 +271,10 @@ class norm_gen(rv_continuous):
         estimation of the normal distribution parameters, so the
         `optimizer` argument is ignored.\n\n""")
     def fit(self, data, **kwds):
-        floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -528,16 +549,21 @@ class beta_gen(rv_continuous):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
-        f1 = (kwds.get('f1', None) or kwds.get('fb', None) or
-              kwds.get('fix_b', None))
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
         if floc is None or fscale is None:
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
+
+        # We already got these from kwds, so just pop them.
+        kwds.pop('floc', None)
+        kwds.pop('fscale', None)
+
+        f0 = _get_fixed_fit_value(kwds, ['f0', 'fa', 'fix_a'])
+        f1 = _get_fixed_fit_value(kwds, ['f1', 'fb', 'fix_b'])
+
+        _remove_optimizer_parameters(kwds)
 
         if f0 is not None and f1 is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -1398,12 +1424,7 @@ class expon_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        # Ignore the optimizer-related keyword arguments, if given.
-        kwds.pop('loc', None)
-        kwds.pop('scale', None)
-        kwds.pop('optimizer', None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -2668,14 +2689,19 @@ class gamma_gen(rv_continuous):
         problem than the full ML optimization problem.  So in that case,
         the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
         floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
 
         if floc is None:
             # loc is not fixed.  Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
+
+        # We already have this value, so just pop it from kwds.
+        kwds.pop('floc', None)
+
+        f0 = _get_fixed_fit_value(kwds, ['f0', 'fa', 'fix_a'])
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
 
         # Special case: loc is fixed.
 
@@ -6724,12 +6750,7 @@ class uniform_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        # Ignore the optimizer-related keyword arguments, if given.
-        kwds.pop('loc', None)
-        kwds.pop('scale', None)
-        kwds.pop('optimizer', None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.

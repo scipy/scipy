@@ -90,55 +90,55 @@ irfft = functools.partial(c2r, False)
 irfft.__name__ = 'irfft'
 
 
-def fft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+def fft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete Fourier transform.
     """
-    return fftn(x, shape, axes, norm, overwrite_x)
+    return fftn(x, s, axes, norm, overwrite_x)
 
 
-def ifft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+def ifft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of real or complex sequence.
     """
-    return ifftn(x, shape, axes, norm, overwrite_x)
+    return ifftn(x, s, axes, norm, overwrite_x)
 
 
-def rfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+def rfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete Fourier transform of a real sequence
     """
-    return rfftn(x, shape, axes, norm, overwrite_x)
+    return rfftn(x, s, axes, norm, overwrite_x)
 
 
-def irfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+def irfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of a real sequence
     """
-    return irfftn(x, shape, axes, norm, overwrite_x)
+    return irfftn(x, s, axes, norm, overwrite_x)
 
 
-def hfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+def hfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete Fourier transform of a Hermitian sequence
     """
-    return hfftn(x, shape, axes, norm, overwrite_x)
+    return hfftn(x, s, axes, norm, overwrite_x)
 
 
-def ihfft2(x, shape=None, axes=(-2,-1), norm=None, overwrite_x=False):
+def ihfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of a Hermitian sequence
     """
-    return ihfftn(x, shape, axes, norm, overwrite_x)
+    return ihfftn(x, s, axes, norm, overwrite_x)
 
 
-def c2cn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
+def c2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional discrete Fourier transform.
     """
     tmp = _asfarray(x)
 
-    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
+    shape, axes = _init_nd_shape_and_axes(tmp, s, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
 
     if len(axes) == 0:
@@ -158,14 +158,14 @@ fftn.__name__ = 'fftn'
 ifftn = functools.partial(c2cn, False)
 ifftn.__name__ = 'ifftn'
 
-def r2cn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
+def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False):
     """Return multi-dimensional discrete Fourier transform of real input"""
     tmp = _asfarray(x)
 
     if not np.isrealobj(tmp):
         raise TypeError("x must be a real sequence")
 
-    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
+    shape, axes = _init_nd_shape_and_axes(tmp, s, axes)
     tmp, _ = _fix_shape(tmp, shape, axes)
     norm = _normalization(norm, forward)
 
@@ -182,7 +182,7 @@ ihfftn = functools.partial(r2cn, False)
 ihfftn.__name__ = 'ihfftn'
 
 
-def c2rn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
+def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False):
     """Multi-dimensional inverse discrete fourier transform with real output"""
     tmp = _asfarray(x)
 
@@ -190,8 +190,8 @@ def c2rn(forward, x, shape=None, axes=None, norm=None, overwrite_x=False):
     if np.isrealobj(tmp):
         tmp = tmp + 0.j
 
-    noshape = shape is None
-    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
+    noshape = s is None
+    shape, axes = _init_nd_shape_and_axes(tmp, s, axes)
 
     if len(axes) == 0:
         raise ValueError("at least 1 axis must be transformed")

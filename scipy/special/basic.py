@@ -13,7 +13,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    extract, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
+                      psi, hankel1, hankel2, yv, kv, ndtri,
                       poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
@@ -34,8 +34,8 @@ __all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef',
            'ndtri', 'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
            'perm', 'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn',
-           'riccati_yn', 'sinc', 'y0_zeros', 'y1_zeros', 'y1p_zeros',
-           'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+           'riccati_yn', 'sinc', 'voigt', 'y0_zeros', 'y1_zeros',
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
@@ -2202,6 +2202,53 @@ def factorialk(n, k, exact=True):
         raise NotImplementedError
 
 
+def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
+    r"""
+    Voigt profile.
+
+    The Voigt profile is a convolution of a 1D Normal distribution with
+    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    half-maximum ``gamma``.
+
+    Parameters
+    ----------
+    x : array_like
+        Input argument.
+    sigma : array_like, optional
+        The standard deviation of the Normal distribution part. The default is
+        1.0.
+    gamma : array_like, optional
+        The half-width at half-maximum of the Cauchy distribution part. The
+        default is 1.0.
+    mu : array_like, optional
+        The location of the peak profile. The default is 0.0.
+
+    Returns
+    -------
+    y : array_like
+        The Voigt profile at the given position. It will have the same shape as
+        `x`.
+
+    Notes
+    -----
+    It can be expressed in terms of Faddeeva function
+
+    .. math:: V(x;\sigma,\gamma,\mu) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: z = \frac{x-\mu+i\gamma}{\sqrt{2}\sigma}
+
+    where :math:`w(z)` is the Faddeeva function.
+
+    See Also
+    --------
+    wofz : Faddeeva function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
+    """
+    return ufuncs._voigt(x, sigma, gamma, mu)
+
+
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -2255,5 +2302,6 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        q = 1
-    return _zeta(x, q, out)
+        return ufuncs._riemann_zeta(x, out)
+    else:
+        return ufuncs._zeta(x, q, out)

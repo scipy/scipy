@@ -1,8 +1,39 @@
 import numpy as np
+from numbers import Number
+import operator
+from .pypocketfft import good_size
+import operator
+import sys
 
 
 # TODO: Build with OpenMp and add configuration support
 _default_workers = 1
+
+
+def _iterable_of_int(x, name=None):
+    """Convert ``x`` to an iterable sequence of int
+
+    Parameters
+    ----------
+    x : value, or sequence of values, convertible to int
+    name : str, optional
+        Name of the argument being converted, only used in the error message
+
+    Returns
+    -------
+    y : ``List[int]``
+    """
+    if isinstance(x, Number):
+        x = (x,)
+
+    try:
+        x = [operator.index(a) for a in x]
+    except TypeError as e:
+        name = name or "value"
+        raise ValueError("{} must be a scalar or iterable of integers"
+                         .format(name)) from e
+
+    return x
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
@@ -10,19 +41,8 @@ def _init_nd_shape_and_axes(x, shape, axes):
     noshape = shape is None
     noaxes = axes is None
 
-    if noaxes:
-        axes = range(x.ndim)
-    else:
-        axes = np.atleast_1d(axes)
-
-        if axes.size == 0:
-            axes = axes.astype(np.intc)
-
-        if not axes.ndim == 1:
-            raise ValueError("when given, axes values must be a scalar or vector")
-        if not np.issubdtype(axes.dtype, np.integer):
-            raise ValueError("when given, axes values must be integers")
-
+    if not noaxes:
+        axes = _iterable_of_int(axes, 'axes')
         axes = [a + x.ndim if a < 0 else a for a in axes]
 
         if any(a >= x.ndim or a < 0 for a in axes):
@@ -31,22 +51,20 @@ def _init_nd_shape_and_axes(x, shape, axes):
             raise ValueError("all axes must be unique")
 
     if not noshape:
-        shape = np.atleast_1d(shape)
+        shape = _iterable_of_int(shape, 'shape')
 
-        if shape.size == 0:
-            shape = shape.astype(np.intc)
-
-        if shape.ndim != 1:
-            raise ValueError("when given, shape values must be a scalar or vector")
-        if not np.issubdtype(shape.dtype, np.integer):
-            raise ValueError("when given, shape values must be integers")
-        if len(axes) != len(shape):
+        if axes and len(axes) != len(shape):
             raise ValueError("when given, axes and shape arguments"
                              " have to be of the same length")
+        if noaxes:
+            if len(shape) > x.ndim:
+                raise ValueError("shape requires more axes than are present")
+            axes = range(x.ndim - len(shape), x.ndim)
 
         shape = [x.shape[a] if s == -1 else s for s, a in zip(shape, axes)]
     elif noaxes:
         shape = list(x.shape)
+        axes = range(x.ndim)
     else:
         shape = [x.shape[a] for a in axes]
 
@@ -132,3 +150,17 @@ def _normalization(norm, forward):
 
     raise ValueError(
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
+
+def next_fast_len(target, kind='C2C'):
+    try:
+        real = {'C2C': False, 'R2C': True, 'C2R': True}[kind]
+    except KeyError:
+        raise ValueError('Unknown transform kind: {}'.format(kind))
+
+    target = operator.index(target)
+
+    # Error if a size_t result could overflow
+    if (target-1)*11 > sys.maxsize:
+        raise ValueError(
+            'Target length is too large to perform an FFT: {}' .format(target))
+    return good_size(target, real)

@@ -57,7 +57,7 @@ idst = functools.partial(_r2r, False, pfft.dst)
 idst.__name__ = 'idst'
 
 
-def _r2rn(forward, transform, x, type=2, shape=None, axes=None, norm=None,
+def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
           overwrite_x=False):
     """Forward or backward nd DCT/DST
 
@@ -70,7 +70,7 @@ def _r2rn(forward, transform, x, type=2, shape=None, axes=None, norm=None,
     """
     tmp = _asfarray(x)
 
-    shape, axes = _init_nd_shape_and_axes(tmp, shape, axes)
+    shape, axes = _init_nd_shape_and_axes(tmp, s, axes)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
 
     if len(axes) == 0:

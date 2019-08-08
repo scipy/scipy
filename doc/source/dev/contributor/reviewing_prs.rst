@@ -6,6 +6,58 @@
 Reviewing Pull Requests
 =======================
 
+.. _pull-request-workflow-features:
+
+Using workflow features
+-----------------------
+
+When reviewing pull requests, please use workflow tracking features on
+Github as appropriate:
+
+1. After you have finished reviewing, and want to ask for the submitter
+   to make the changes:
+
+   - Change your review status to "Changes requested".
+
+     This can be done on Github, PR page, ``Files changed`` tab,
+     ``Review changes`` (button on top right).
+
+   - Alternatively: add the ``needs-work`` label.
+
+     This can be done on the PR page, ``Labels`` menu on the right.
+
+2. When you re-review the same pull request again, and want to request
+   more changes:
+
+   - Do the "Changes requested" thing again, even if the previous status
+     was also 'Changes requested'.
+
+   - Alternatively:
+     Remove the existing ``needs-work`` label, and then re-add the label
+     back again. (Github will add a notice on the page that you did so.)
+
+3. If you're happy about the current status:
+
+   - Mark the pull request as Approved (same way as Changes requested).
+
+   - Alternatively: remove the ``needs-work`` label.
+
+   - Alternatively (for core developers): merge the pull request, if
+     you think it is ready to be merged.
+
+This allows automatically tracking which PRs are in need of attention.
+
+The review status is listed at: https://pav.iki.fi/scipy-needs-work/
+The page can also be generated using https://github.com/pv/github-needs-work
+
+Some of the information is also visible on Github directly, although
+(as of Aug 2019) Github does not show which pull requests have been
+updated since the last review.
+
+
+Code from pull request
+----------------------
+
 When you review a pull request created by someone else, it's helpful to have a
 copy of their code on your own machine so that you can play with it locally.
 
