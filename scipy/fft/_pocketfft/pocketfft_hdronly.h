@@ -2990,8 +2990,10 @@ class rev_iter
     size_t remaining() const { return rem; }
   };
 
-#ifndef POCKETFFT_NO_VECTORS
 template<typename T> struct VTYPE {};
+template <typename T> using vtype_t = typename VTYPE<T>::type;
+
+#ifndef POCKETFFT_NO_VECTORS
 template<> struct VTYPE<float>
   {
   using type = float __attribute__ ((vector_size (VLEN<float>::val*sizeof(float))));
@@ -3004,8 +3006,6 @@ template<> struct VTYPE<long double>
   {
   using type = long double __attribute__ ((vector_size (VLEN<long double>::val*sizeof(long double))));
   };
-
-template <typename T> using vtype_t = typename VTYPE<T>::type;
 #endif
 
 template<typename T> arr<char> alloc_tmp(const shape_t &shape,
