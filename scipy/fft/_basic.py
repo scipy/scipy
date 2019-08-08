@@ -112,6 +112,12 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     rely on the contents of ``x`` after the transform as this may change in
     future without warning.
 
+    The ``workers`` argument specifies the maximum number of parallel jobs to
+    split the FFT computation into. This will execute independent 1-dimensional
+    FFTs within ``x``. So, ``x`` must be at least 2-dimensional and the
+    non-transformed axes must be large enough to split into chunks. If ``x`` is
+    too small, fewer jobs may be used than requested.
+
     References
     ----------
     .. [1] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
@@ -188,7 +194,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -272,7 +278,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -367,7 +373,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -451,7 +457,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See `fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -524,7 +530,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See `fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -589,7 +595,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -694,7 +700,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -782,7 +788,7 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -881,7 +887,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -965,7 +971,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1043,7 +1049,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1105,7 +1111,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1186,7 +1192,7 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1243,7 +1249,7 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1332,7 +1338,7 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See `fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1386,7 +1392,7 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
@@ -1462,7 +1468,7 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation, or 0 for
-        unlimited. Must be 0 or greater.
+        unlimited. Must be 0 or greater. See `fft` for more details.
 
     Returns
     -------
