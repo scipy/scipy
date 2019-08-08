@@ -442,9 +442,9 @@ class TestDpstr(object):
 
                 pstrf, = get_lapack_funcs(("pstrf",), (a, ))
 
-                c, pivot, rank, info= pstrf(a, tol=-1, lower=False, \
+                c, pivot, rank, info = pstrf(a, tol=-1, lower=False,
                                             overwrite_a=False, clean=True)
-                c2, pivot2, rank2, info2 = pstrf(a, tol=-1, lower=True, \
+                c2, pivot2, rank2, info2 = pstrf(a, tol=-1, lower=True,
                                             overwrite_a=False, clean=True)
                 r = c2.dot(c)[:, pivot-1]
                 r = r[pivot-1, :]
@@ -463,9 +463,9 @@ class TestDpstf(object):
 
                 pstf2, = get_lapack_funcs(("pstf2",), (a, ))
 
-                c, pivot, rank, info= pstf2(a, tol=-1, lower=False, \
+                c, pivot, rank, info = pstf2(a, tol=-1, lower=False,
                                             overwrite_a=False, clean=True)
-                c2, pivot2, rank2, info2 = pstf2(a, tol=-1, lower=True, \
+                c2, pivot2, rank2, info2 = pstf2(a, tol=-1, lower=True,
                                             overwrite_a=False, clean=True)
                 r = c2.dot(c)[:, pivot-1]
                 r = r[pivot-1, :]
