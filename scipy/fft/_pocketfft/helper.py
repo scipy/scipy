@@ -6,7 +6,7 @@ import operator
 import sys
 
 
-# TODO: Build with OpenMp and add configuration support
+# TODO: Add configuration support
 _default_workers = 1
 
 
@@ -150,6 +150,17 @@ def _normalization(norm, forward):
 
     raise ValueError(
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
+
+
+def _workers(workers):
+    if workers is None:
+        return _default_workers
+
+    if workers < 0:
+        raise ValueError("workers must be >= 0")
+
+    return workers
+
 
 def next_fast_len(target, kind='C2C'):
     try:

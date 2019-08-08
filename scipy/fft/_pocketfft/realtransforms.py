@@ -1,13 +1,12 @@
 import numpy as np
 from . import pypocketfft as pfft
 from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
-                     _fix_shape, _fix_shape_1d, _normalization,
-                     _default_workers)
+                     _fix_shape, _fix_shape_1d, _normalization, _workers)
 import functools
 
 
 def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
-         overwrite_x=False):
+         overwrite_x=False, workers=None):
     """Forward or backward 1d DCT/DST
 
     Parameters
@@ -20,6 +19,7 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
     tmp = _asfarray(x)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
     norm = _normalization(norm, forward)
+    workers = _workers(workers)
 
     if not forward:
         if type == 2:
@@ -39,11 +39,11 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
     # For complex input, transform real and imaginary components seperably
     if np.iscomplexobj(x):
         out = out or np.empty_like(tmp)
-        transform(tmp.real, type, (axis,), norm, out.real, _default_workers)
-        transform(tmp.imag, type, (axis,), norm, out.imag, _default_workers)
+        transform(tmp.real, type, (axis,), norm, out.real, workers)
+        transform(tmp.imag, type, (axis,), norm, out.imag, workers)
         return out
 
-    return transform(tmp, type, (axis,), norm, out, _default_workers)
+    return transform(tmp, type, (axis,), norm, out, workers)
 
 
 dct = functools.partial(_r2r, True, pfft.dct)
@@ -58,7 +58,7 @@ idst.__name__ = 'idst'
 
 
 def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
-          overwrite_x=False):
+          overwrite_x=False, workers=None):
     """Forward or backward nd DCT/DST
 
     Parameters
@@ -86,16 +86,17 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
             type = 2
 
     norm = _normalization(norm, forward)
+    workers = _workers(workers)
     out = (tmp if overwrite_x else None)
 
     # For complex input, transform real and imaginary components seperably
     if np.iscomplexobj(x):
         out = out or np.empty_like(tmp)
-        transform(tmp.real, type, axes, norm, out.real, _default_workers)
-        transform(tmp.imag, type, axes, norm, out.imag, _default_workers)
+        transform(tmp.real, type, axes, norm, out.real, workers)
+        transform(tmp.imag, type, axes, norm, out.imag, workers)
         return out
 
-    return transform(tmp, type, axes, norm, out, _default_workers)
+    return transform(tmp, type, axes, norm, out, workers)
 
 
 dctn = functools.partial(_r2rn, True, pfft.dct)
