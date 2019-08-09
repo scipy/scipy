@@ -230,9 +230,10 @@ class _BenchOptimizers(Benchmark):
                        "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
                        'trust-krylov', 'trust-constr']
 
-        # L-BFGS-B, BFGS can use gradients, but examine performance when
-        # numerical differentiation is used.
-        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS']
+        # L-BFGS-B, BFGS, trust-constr can use gradients, but examine
+        # performance when numerical differentiation is used.
+        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS',
+                         'trust-constr']
         for method in fonly_methods:
             if method not in methods:
                 continue
