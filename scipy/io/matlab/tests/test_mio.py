@@ -1233,3 +1233,9 @@ def test_filenotfound():
     # Check the correct error is thrown
     assert_raises(IOError, loadmat, "NotExistentFile00.mat")
     assert_raises(IOError, loadmat, "NotExistentFile00")
+
+
+def test_appendmat():
+    # Example from https://github.com/scipy/scipy/issues/10478.
+    savemat('foo', {'bar': 123}, appendmat=True)
+    assert_('foo.mat' in os.listdir('.'))

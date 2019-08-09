@@ -35,16 +35,15 @@ def _open_file(file_like, appendmat, mode='rb'):
     if reqs.issubset(dir(file_like)):
         return file_like, False
 
+    # Append ".mat" if file_like is string before it is passed to open().
+    if isinstance(file_like, string_types):
+        if appendmat and not file_like.endswith('.mat'):
+            file_like += '.mat'
+
     try:
         return open(file_like, mode), True
     except IOError:
-        # Probably "not found"
-        if isinstance(file_like, string_types):
-            if appendmat and not file_like.endswith('.mat'):
-                file_like += '.mat'
-            return open(file_like, mode), True
-        else:
-            raise IOError('Reader needs file name or open file-like object')
+        raise IOError('Reader needs file name or open file-like object')
 
 
 @docfiller
