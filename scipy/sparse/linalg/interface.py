@@ -498,6 +498,7 @@ class _AdjointLinearOperator(LinearOperator):
         shape = (A.shape[1], A.shape[0])
         super(_AdjointLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
         self.A = A
+        self.args = (A,)
 
     def _matvec(self, x):
         return self.A._rmatvec(x)
@@ -512,6 +513,7 @@ class _TransposedLinearOperator(LinearOperator):
         shape = (A.shape[1], A.shape[0])
         super(_TransposedLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
         self.A = A
+        self.args = (A,)
 
     def _matvec(self, x):
         # NB. np.conj works also on sparse matrices

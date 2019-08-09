@@ -170,7 +170,7 @@ class TestAsLinearOperator(object):
         def make_cases(original, dtype):
             cases = []
 
-            cases.append((np.matrix(original, dtype=dtype), original))
+            cases.append((matrix(original, dtype=dtype), original))
             cases.append((np.array(original, dtype=dtype), original))
             cases.append((sparse.csr_matrix(original, dtype=dtype), original))
 
@@ -186,6 +186,8 @@ class TestAsLinearOperator(object):
                 return original.T.conj().dot(x)
 
             class BaseMatlike(interface.LinearOperator):
+                args = ()
+
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
                     self.shape = original.shape
@@ -194,10 +196,14 @@ class TestAsLinearOperator(object):
                     return mv(x, self.dtype)
 
             class HasRmatvec(BaseMatlike):
+                args = ()
+
                 def _rmatvec(self,x):
                     return rmv(x, self.dtype)
 
             class HasAdjoint(BaseMatlike):
+                args = ()
+
                 def _adjoint(self):
                     shape = self.shape[1], self.shape[0]
                     matvec = partial(rmv, dtype=self.dtype)
@@ -215,17 +221,17 @@ class TestAsLinearOperator(object):
         self.cases += make_cases(original, np.int32)
         self.cases += make_cases(original, np.float32)
         self.cases += make_cases(original, np.float64)
-        self.cases += [(M.T, A.T) for M, A in make_cases(original.T, np.float64)
-                       if isinstance(M, interface.LinearOperator)]
-        self.cases += [(M.H, A.T.conj()) for M, A in make_cases(original.T, np.float64)
-                       if isinstance(M, interface.LinearOperator)]
+        self.cases += [(interface.aslinearoperator(M).T, A.T)
+                       for M, A in make_cases(original.T, np.float64)]
+        self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
+                       for M, A in make_cases(original.T, np.float64)]
 
         original = np.array([[1, 2j, 3j], [4j, 5j, 6]])
         self.cases += make_cases(original, np.complex_)
-        self.cases += [(M.T, A.T) for M, A in make_cases(original.T, np.complex_)
-                       if isinstance(M, interface.LinearOperator)]
-        self.cases += [(M.H, A.T.conj()) for M, A in make_cases(original.T, np.complex_)
-                       if isinstance(M, interface.LinearOperator)]
+        self.cases += [(interface.aslinearoperator(M).T, A.T)
+                       for M, A in make_cases(original.T, np.complex_)]
+        self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
+                       for M, A in make_cases(original.T, np.complex_)]
 
     def test_basic(self):
 
@@ -258,6 +264,8 @@ class TestAsLinearOperator(object):
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
+
+            assert_(hasattr(A, 'args'))
 
     def test_dot(self):
 
