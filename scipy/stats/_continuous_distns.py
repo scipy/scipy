@@ -308,7 +308,7 @@ class alpha_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `alpha` is:
+    The probability density function for `alpha` ([1]_, [2]_) is:
 
     .. math::
 
@@ -320,6 +320,15 @@ class alpha_gen(rv_continuous):
     `alpha` takes ``a`` as a shape parameter.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons,
+           p. 173 (1994).
+    .. [2] Anthony A. Salvia, "Reliability applications of the Alpha
+           Distribution", IEEE Transactions on Reliability, Vol. R-34,
+           No. 3, pp. 251-252 (1985).
 
     %(example)s
 
