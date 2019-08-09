@@ -243,7 +243,8 @@ class _BenchOptimizers(Benchmark):
             t1 = time.time()
             self.add_result(res, t1-t0, method)
 
-        gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP']
+        gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
+                            'trust-constr']
         if self.der is not None:
             for method in gradient_methods:
                 if method not in methods:
