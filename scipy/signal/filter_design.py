@@ -3524,8 +3524,8 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         wp = 2*wp/fs
         ws = 2*ws/fs
 
-    filter_type = 2 * (len(wp) - 1)
-    filter_type += 1
+    # 1 = lp, 2 = hp, 3 = bs, 4 = bp
+    filter_type = 2 * len(wp) - 1
     if wp[0] >= ws[0]:
         filter_type += 1
 
@@ -3557,6 +3557,8 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 4:          # pass
         nat = ((stopb ** 2 - passb[0] * passb[1]) /
                (stopb * (passb[0] - passb[1])))
+    else:
+        raise ValueError("Bad filter type: %s" % filter_type)
 
     nat = min(abs(nat))
 
@@ -3592,8 +3594,6 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
               sqrt(W0 ** 2 / 4.0 * (passb[1] - passb[0]) ** 2 +
                    passb[0] * passb[1]))
         WN = numpy.sort(abs(WN))
-    else:
-        raise ValueError("Bad type: %s" % filter_type)
 
     if not analog:
         wn = (2.0 / pi) * arctan(WN)
@@ -3692,11 +3692,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
         wp = 2*wp/fs
         ws = 2*ws/fs
 
-    filter_type = 2 * (len(wp) - 1)
-    if wp[0] < ws[0]:
+    # 1 = lp, 2 = hp, 3 = bs, 4 = bp
+    filter_type = 2 * len(wp) - 1
+    if wp[0] >= ws[0]:
         filter_type += 1
-    else:
-        filter_type += 2
 
     # Pre-warp frequencies for digital filter design
     if not analog:
@@ -3724,6 +3723,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 4:  # pass
         nat = ((stopb ** 2 - passb[0] * passb[1]) /
                (stopb * (passb[0] - passb[1])))
+    else:
+        raise ValueError("Bad filter type: %s" % filter_type)
 
     nat = min(abs(nat))
 
@@ -3832,11 +3833,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
         wp = 2*wp/fs
         ws = 2*ws/fs
 
-    filter_type = 2 * (len(wp) - 1)
-    if wp[0] < ws[0]:
+    # 1 = lp, 2 = hp, 3 = bs, 4 = bp
+    filter_type = 2 * len(wp) - 1
+    if wp[0] >= ws[0]:
         filter_type += 1
-    else:
-        filter_type += 2
 
     # Pre-warp frequencies for digital filter design
     if not analog:
@@ -3864,6 +3864,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 4:  # pass
         nat = ((stopb ** 2 - passb[0] * passb[1]) /
                (stopb * (passb[0] - passb[1])))
+    else:
+        raise ValueError("Bad filter type: %s" % filter_type)
 
     nat = min(abs(nat))
 
@@ -3992,8 +3994,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
         wp = 2*wp/fs
         ws = 2*ws/fs
 
-    filter_type = 2 * (len(wp) - 1)
-    filter_type += 1
+    # 1 = lp, 2 = hp, 3 = bs, 4 = bp
+    filter_type = 2 * len(wp) - 1
     if wp[0] >= ws[0]:
         filter_type += 1
 
@@ -4023,6 +4025,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 4:  # pass
         nat = ((stopb ** 2 - passb[0] * passb[1]) /
                (stopb * (passb[0] - passb[1])))
+    else:
+        raise ValueError("Bad filter type: %s" % filter_type)
 
     nat = min(abs(nat))
 
