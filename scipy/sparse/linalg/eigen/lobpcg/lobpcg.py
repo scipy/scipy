@@ -93,15 +93,15 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
             blockVectorBV = blockVectorV  # Shared data!!!
     else:
         blockVectorBV = blockVectorBV / normalization
-    VBV = blockVectorV.T.conj() @ blockVectorBV
+    VBV = np.matmul(blockVectorV.T.conj(), blockVectorBV)
     try:
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
-        blockVectorV = blockVectorV @ VBV
+        blockVectorV = np.matmul(blockVectorV, VBV)
         # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
         if B is not None:
-            blockVectorBV = blockVectorBV @ VBV
+            blockVectorBV = np.matmul(blockVectorBV, VBV)
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
         else:
             blockVectorBV = None
@@ -143,7 +143,7 @@ def lobpcg(A, X,
     A : {sparse matrix, dense matrix, LinearOperator}
         The symmetric linear operator of the problem, usually a
         sparse matrix.  Often called the "stiffness matrix".
-    X : array_like
+    X : np array, float32 or float64, non-sparse
         Initial approximation to the k eigenvectors. If A has
         shape=(n,n) then X should have shape shape=(n,k).
     B : {dense matrix, sparse matrix, LinearOperator}, optional
@@ -153,7 +153,7 @@ def lobpcg(A, X,
     M : {dense matrix, sparse matrix, LinearOperator}, optional
         preconditioner to A; by default M = Identity
         M should approximate the inverse of A
-    Y : array_like, optional
+    Y : np array, float32 or float64, non-sparse, optional
         n-by-sizeY matrix of constraints, sizeY < n
         The iterations will be performed in the B-orthogonal complement
         of the column-space of Y. Y must be full rank.
@@ -188,10 +188,11 @@ def lobpcg(A, X,
 
     Solve A x = lambda B x with constraints and preconditioning.
 
+    >>> import numpy as np
     >>> from scipy.sparse import spdiags, issparse
     >>> from scipy.sparse.linalg import lobpcg, LinearOperator
     >>> n = 100
-    >>> vals = [np.arange(n, dtype=np.float64) + 1]
+    >>> vals = np.arange(1, n + 1)
     >>> A = spdiags(vals, 0, n, n)
     >>> A.toarray()
     array([[  1.,   0.,   0., ...,   0.,   0.,   0.],
@@ -213,9 +214,9 @@ def lobpcg(A, X,
 
     Preconditioner -- inverse of A (as an abstract linear operator).
 
-    >>> invA = spdiags([1./vals[0]], 0, n, n)
+    >>> invA = spdiags([1./vals], 0, n, n)
     >>> def precond( x ):
-    ...     return invA  * x
+    ...     return invA * x
     >>> M = LinearOperator(matvec=precond, shape=(n, n), dtype=float)
 
     Here, ``invA`` could of course have been used directly as a preconditioner.
@@ -365,15 +366,15 @@ def lobpcg(A, X,
         else:
             blockVectorBY = blockVectorY
 
-        # YBY is a dense array.
-        YBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
+        # gramYBY is a dense array.
+        gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
         try:
-            # YBY is a Cholesky factor from now on...
-            YBY = cho_factor(YBY)
+            # gramYBY is a Cholesky factor from now on...
+            gramYBY = cho_factor(gramYBY)
         except LinAlgError:
             raise ValueError('cannot handle linearly dependent constraints')
 
-        _applyConstraints(blockVectorX, YBY, blockVectorBY, blockVectorY)
+        _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)
 
     ##
     # B-orthonormalize X.
@@ -382,9 +383,9 @@ def lobpcg(A, X,
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
     blockVectorAX = A(blockVectorX)
-    XAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
-    _lambda, eigBlockVector = eigh(XAX, check_finite=False)
+    _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
 
@@ -467,7 +468,7 @@ def lobpcg(A, X,
         # Apply constraints to the preconditioned residuals.
         if blockVectorY is not None:
             _applyConstraints(activeBlockVectorR,
-                              YBY, blockVectorBY, blockVectorY)
+                              gramYBY, blockVectorBY, blockVectorY)
 
         ##
         # B-orthogonalize the preconditioned residuals to X.
@@ -491,7 +492,7 @@ def lobpcg(A, X,
             if B is not None:
                 aux = _b_orthonormalize(B, activeBlockVectorP,
                                         activeBlockVectorBP, retInvR=True)
-                activeBlockVectorP, activeBlockVectorBP, invR, normal= aux
+                activeBlockVectorP, activeBlockVectorBP, invR, normal = aux
             else:
                 aux = _b_orthonormalize(B, activeBlockVectorP, retInvR=True)
                 activeBlockVectorP, _, invR, normal = aux
