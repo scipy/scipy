@@ -3574,8 +3574,7 @@ add_newdoc("hyp2f1",
     >>> sc.hyp2f1(a, b, c, z)
     array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
     >>> 1 + a * b * z / c
-    array([1.        , 0.83333333, 0.66666667, 0.5       ,
-    >>> 0.33333333])
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
 
     It is symmetric in `a` and `b`.
 
@@ -3664,7 +3663,7 @@ add_newdoc("hyperu",
     It satisfies Kummer's transformation.
 
     >>> a, b, x = 2, 1, 1
-    >>> sc.hyperu(a, b, z)
+    >>> sc.hyperu(a, b, x)
     0.1926947246463881
     >>> x**(1 - b) * sc.hyperu(a - b + 1, 2 - b, x)
     0.1926947246463881
