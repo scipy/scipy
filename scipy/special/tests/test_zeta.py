@@ -43,3 +43,9 @@ def test_riemann_zeta_special_cases():
 
     assert_allclose(sc.zeta(2), np.pi**2/6, rtol=1e-12)
     assert_allclose(sc.zeta(4), np.pi**4/90, rtol=1e-12)
+
+
+def test_riemann_zeta_avoid_overflow():
+    s = -260.00000000001
+    desired = -5.6966307844402683127e+297  # Computed with Mpmath
+    assert_allclose(sc.zeta(s), desired, atol=0, rtol=5e-14)
