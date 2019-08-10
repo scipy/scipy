@@ -20,7 +20,7 @@ modified BSD (or compatible) license.  If the original author agrees,
 add a comment saying so to the source files and forward the relevant
 communication to the scipy-dev mailing list.
 
-Another common occurence is for code to be translated or derived from code in
+Another common occurrence is for code to be translated or derived from code in
 R, Octave (both GPL-licensed) or a commercial application.  Such code also
 cannot be included in SciPy.  Simply implementing functionality with the same
 API as found in R/Octave/... is fine though, as long as the author doesn't look

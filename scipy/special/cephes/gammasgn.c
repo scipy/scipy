@@ -1,7 +1,4 @@
-#include <Python.h>
-#include <math.h>
-#include <numpy/npy_math.h>
-#include "misc.h"
+#include "mconf.h"
 
 double gammasgn(double x)
 {

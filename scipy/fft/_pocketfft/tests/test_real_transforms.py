@@ -788,21 +788,16 @@ class Test_DCTN_IDCTN(object):
         with assert_raises(ValueError,
                            match="when given, axes and shape arguments"
                            " have to be of the same length"):
-            fforward(self.data, shape=self.data.shape[0], axes=(0, 1))
+            fforward(self.data, s=self.data.shape[0], axes=(0, 1))
 
         with assert_raises(ValueError,
                            match="when given, axes and shape arguments"
                            " have to be of the same length"):
-            fforward(self.data, shape=self.data.shape[0], axes=None)
-
-        with assert_raises(ValueError,
-                           match="when given, axes and shape arguments"
-                           " have to be of the same length"):
-            fforward(self.data, shape=self.data.shape, axes=0)
+            fforward(self.data, s=self.data.shape, axes=0)
 
     @pytest.mark.parametrize('fforward', [dctn, dstn])
     def test_shape(self, fforward):
-        tmp = fforward(self.data, shape=(128, 128), axes=None)
+        tmp = fforward(self.data, s=(128, 128), axes=None)
         assert_equal(tmp.shape, (128, 128))
 
     @pytest.mark.parametrize('fforward,finverse', [(dctn, idctn),
@@ -810,6 +805,6 @@ class Test_DCTN_IDCTN(object):
     @pytest.mark.parametrize('axes', [1, (1,), [1],
                                       0, (0,), [0]])
     def test_shape_is_none_with_axes(self, fforward, finverse, axes):
-        tmp = fforward(self.data, shape=None, axes=axes, norm='ortho')
-        tmp = finverse(tmp, shape=None, axes=axes, norm='ortho')
+        tmp = fforward(self.data, s=None, axes=axes, norm='ortho')
+        tmp = finverse(tmp, s=None, axes=axes, norm='ortho')
         assert_array_almost_equal(self.data, tmp, decimal=self.dec)

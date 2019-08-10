@@ -129,6 +129,7 @@ scipy/cluster/_hierarchy.c
 scipy/cluster/_optimal_leaf_ordering.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
+scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
 scipy/integrate/_dopmodule.c

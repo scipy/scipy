@@ -389,7 +389,7 @@ class TestModifiedDogleg(TestCase):
         z = cauchy_point
         d = newton_point-cauchy_point
         t = ((x-z)/(d))
-        assert_array_almost_equal(t, 0.40807330*np.ones(3))
+        assert_array_almost_equal(t, np.full(3, 0.40807330))
         assert_array_almost_equal(np.linalg.norm(x), 2)
 
         # line between cauchy_point and newton_point contains best point
@@ -399,7 +399,7 @@ class TestModifiedDogleg(TestCase):
         z = cauchy_point
         d = newton_point-cauchy_point
         t = ((x-z)/(d))
-        assert_array_almost_equal(t, 0.7498195*np.ones(3))
+        assert_array_almost_equal(t, np.full(3, 0.7498195))
         assert_array_almost_equal(x[0], -1)
 
         # line between origin and cauchy_point contains best point
@@ -409,7 +409,7 @@ class TestModifiedDogleg(TestCase):
         z = origin
         d = cauchy_point
         t = ((x-z)/(d))
-        assert_array_almost_equal(t, 0.573936265*np.ones(3))
+        assert_array_almost_equal(t, np.full(3, 0.573936265))
         assert_array_almost_equal(np.linalg.norm(x), 1)
 
         # line between origin and newton_point contains best point
@@ -419,7 +419,7 @@ class TestModifiedDogleg(TestCase):
         z = origin
         d = newton_point
         t = ((x-z)/(d))
-        assert_array_almost_equal(t, 0.4478827364*np.ones(3))
+        assert_array_almost_equal(t, np.full(3, 0.4478827364))
         assert_array_almost_equal(x[1], 1)
 
 

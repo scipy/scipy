@@ -1,10 +1,8 @@
 from . cimport sf_error
+from ._cephes cimport poch
 
 cdef extern from "specfun_wrappers.h":
     double pmv_wrap(double, double, double) nogil
-
-cdef extern from "c_misc/misc.h":
-    double poch(double x, double m) nogil
 
 from ._complexstuff cimport *
 from libc.math cimport cos, sqrt, fabs

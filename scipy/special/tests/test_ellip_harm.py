@@ -160,7 +160,7 @@ def test_ellip_norm():
     points = []
     for n in range(4):
         for p in range(1, 2*n+2):
-            points.append((h2, k2, n*np.ones(h2.size), p*np.ones(h2.size)))
+            points.append((h2, k2, np.full(h2.size, n), np.full(h2.size, p)))
     points = np.array(points)
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error")

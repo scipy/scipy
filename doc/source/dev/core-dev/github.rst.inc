@@ -15,7 +15,7 @@ nature of the issue or pull request (``enhancement``, ``maintenance``,
 
 - ``easy-fix``: for issues suitable to be tackled by new contributors.
 - ``needs-work``: for pull requests that have review comments that haven't been
-  addressed for a while.
+  addressed.
 - ``needs-decision``: for issues or pull requests that need a decision.
 - ``needs-champion``: for pull requests that were not finished by the original
   author, but are worth resurrecting.
@@ -28,6 +28,14 @@ particular release should be set to the corresponding milestone.  After a pull
 request is merged, its milestone (and that of the issue it closes) should be
 set to the next upcoming release - this makes it easy to get an overview of
 changes and to add a complete list of those to the release notes.
+
+
+Pull request review workflow
+----------------------------
+
+When reviewing pull requests, please make use of pull request workflow
+features, see :ref:`pull-request-workflow-features`.
+
 
 Dealing with pull requests
 --------------------------
