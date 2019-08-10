@@ -492,8 +492,8 @@ def test_rot():
         c = 0.6
         s = 0.8
 
-        u = np.ones(4, dtype) * 3
-        v = np.ones(4, dtype) * 4
+        u = np.full(4, 3, dtype)
+        v = np.full(4, 4, dtype)
         atol = 10**-(np.finfo(dtype).precision-1)
 
         if dtype in 'fd':

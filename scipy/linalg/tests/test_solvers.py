@@ -533,7 +533,7 @@ def test_solve_discrete_are():
     A = np.triu(np.ones((3, 3)))
     A[0, 1] = -1
     B = np.array([[1, 1, 0], [0, 0, 1]]).T
-    Q = -2*np.ones_like(A) + np.diag([8, -1, -1.9])
+    Q = np.full_like(A, -2) + np.diag([8, -1, -1.9])
     R = np.diag([-10, 0.1])
     assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
 
@@ -685,7 +685,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sym, sym, sym, nsym)
 
     def test_singularity():
-        sing = 1e12 * np.ones((3, 3))
+        sing = np.full((3, 3), 1e12)
         sing[2, 2] -= 1
         sq = np.eye(3)
         for x in (solve_continuous_are, solve_discrete_are):
@@ -694,7 +694,7 @@ def test_are_validate_args():
         assert_raises(ValueError, solve_continuous_are, sq, sq, sq, sing)
 
     def test_finiteness():
-        nm = np.ones((2, 2)) * np.nan
+        nm = np.full((2, 2), np.nan)
         sq = np.eye(2)
         for x in (solve_continuous_are, solve_discrete_are):
             assert_raises(ValueError, x, nm, sq, sq, sq)

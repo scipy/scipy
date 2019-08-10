@@ -104,6 +104,11 @@ add_newdoc("_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
+add_newdoc("_voigt",
+    """
+    Internal function, use `voigt` instead.
+    """)
+
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
@@ -4505,7 +4510,7 @@ add_newdoc("kolmogorov",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.kstwobign` distrubution.
+    `stats.kstwobign` distribution.
 
     See Also
     --------
@@ -6522,7 +6527,7 @@ add_newdoc("smirnov",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distrubution.
+    `stats.ksone` distribution.
 
     See Also
     --------
@@ -6616,7 +6621,7 @@ add_newdoc("smirnovi",
     Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
-    `stats.ksone` distrubution.
+    `stats.ksone` distribution.
 
     See Also
     --------
@@ -7093,10 +7098,9 @@ add_newdoc("zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
-
-    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
-    `nan` for `x` less than -30.8148.
+    where ``x > 1``.  For ``x < 1`` the analytic continuation is
+    computed. For more information on the Riemann zeta function, see
+    [dlmf]_.
 
     Parameters
     ----------
@@ -7129,6 +7133,16 @@ add_newdoc("zetac",
     >>> zetac(60), zeta(60) - 1
     (8.673617380119933e-19, 0.0)
 
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/25
+
+    """)
+
+add_newdoc("_riemann_zeta",
+    """
+    Internal function, use `zeta` instead.
     """)
 
 add_newdoc("_struve_asymp_large_z",

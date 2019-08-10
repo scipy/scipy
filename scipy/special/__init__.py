@@ -316,6 +316,7 @@ Error Function and Fresnel Integrals
    fresnel_zeros -- Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
    modfresnelp   -- Modified Fresnel positive integrals
    modfresnelm   -- Modified Fresnel negative integrals
+   voigt         -- Voigt profile.
 
 These are not universal functions:
 
@@ -644,10 +645,6 @@ from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
                                 spherical_kn)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-
-from numpy.dual import register_func
-register_func('i0',i0)
-del register_func
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

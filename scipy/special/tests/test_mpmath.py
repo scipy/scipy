@@ -1849,11 +1849,20 @@ class TestSystematic(object):
                             lambda z: _mpmath_wrightomega(z, 25),
                             [ComplexArg()], rtol=1e-14, nan_ok=False)
 
-    def test_zeta(self):
+    def test_hurwitz_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_riemann_zeta(self):
+        assert_mpmath_equal(
+            sc.zeta,
+            mpmath.zeta,
+            [Arg(-100, 100)],
+            nan_ok=False,
+            rtol=1e-13,
+        )
 
     def test_zetac(self):
         assert_mpmath_equal(sc.zetac,

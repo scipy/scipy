@@ -680,8 +680,8 @@ class DifferentialEvolutionSolver(object):
                                  self.parameter_count)
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0

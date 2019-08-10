@@ -307,17 +307,8 @@ def check_shape(args, current_shape=None):
         else:
             raise ValueError('can only specify one unknown dimension')
 
-        # Add and remove ones like numpy.matrix.reshape
-        if len(new_shape) != 2:
-            new_shape = tuple(arg for arg in new_shape if arg != 1)
-
-            if len(new_shape) == 0:
-                new_shape = (1, 1)
-            elif len(new_shape) == 1:
-                new_shape = (1, new_shape[0])
-
-    if len(new_shape) > 2:
-        raise ValueError('shape too large to be a matrix')
+    if len(new_shape) != 2:
+        raise ValueError('matrix shape must be two-dimensional')
 
     return new_shape
 

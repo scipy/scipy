@@ -127,7 +127,7 @@ def test_sg_coeffs_deriv():
     i = np.array([-2.0, 0.0, 2.0, 4.0, 6.0])
     x = i ** 2 / 4
     dx = i / 2
-    d2x = 0.5 * np.ones_like(i)
+    d2x = np.full_like(i, 0.5)
     for pos in range(x.size):
         coeffs0 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot')
         assert_allclose(coeffs0.dot(x), x[pos], atol=1e-10)
@@ -227,7 +227,7 @@ def test_sg_filter_interp_edges():
                    6 * t,
                    3 * t ** 2 - 1.0])
     d2x = np.array([np.zeros_like(t),
-                    6 * np.ones_like(t),
+                    np.full_like(t, 6),
                     6 * t])
 
     window_length = 7

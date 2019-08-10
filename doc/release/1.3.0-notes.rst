@@ -20,7 +20,7 @@ This release requires Python 3.5+ and NumPy 1.13.3 or greater.
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
---------------------------
+==========================
 
 - Three new ``stats`` functions, a rewrite of ``pearsonr``, and an exact
   computation of the Kolmogorov-Smirnov two-sample test

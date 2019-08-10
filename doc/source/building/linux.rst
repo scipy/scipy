@@ -186,3 +186,23 @@ If you build NumPy for ia32 bit platforms:
 ::
 
    $export LD_LIBRARY_PATH=/opt/intel/composer_xe_2013/mkl/lib/ia32: /opt/intel/composer_xe_2013/compiler/lib/ia32:$LD_LIBRARY_PATH
+
+
+====================
+Fortran ABI mismatch
+====================
+
+Some linear algebra libraries are built with G77 ABI and others with
+GFortran ABI and these two ABIs are incompatible. Therefore if you
+build scipy with `gfortran` and link to a linear algebra library like
+MKL which is built with G77 ABI then there'll be an exception or a
+segfault. SciPy fixes this by using the CBLAS API for the few
+functions in the BLAS API that suffers from this issue.
+
+Note that SciPy needs to know at build time, what needs to be done and
+the build system will automatically check whether linear algebra
+library is MKL and if so use the CBLAS API instead of the BLAS API.
+If autodetection fails or if the user wants to override this
+autodetection mechanism, setting the environment variable
+`SCIPY_USE_G77_ABI_WRAPPER` to 0 or 1 to disable or enable using CBLAS
+API.

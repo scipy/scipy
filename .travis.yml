@@ -70,6 +70,12 @@ matrix:
             - *common_packages
             - python3.5-dbg
             - python3.5-dev
+    - python: 3.8-dev
+      dist: xenial
+      sudo: true
+      env:
+        - TESTMODE=fast
+        - NUMPYSPEC="numpy"
     - python: 3.6
       env:
         - TESTMODE=fast

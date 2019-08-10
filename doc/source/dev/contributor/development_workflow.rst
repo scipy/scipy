@@ -274,8 +274,6 @@ Checklist before submitting a PR
 -  Is the code style correct? See :ref:`pep8-scipy`.
 -  Are there benchmarks? See :ref:`benchmarking-with-asv`.
 -  Is the commit message `formatted correctly`_?
--  Is the new functionality mentioned in the release notes of the next
-   release? An editable draft of the most recent notes is on `the wiki`_.
 -  Is the docstring of the new functionality tagged with
    ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
    next release? See the ``updating``, ``workers``, and ``constraints``

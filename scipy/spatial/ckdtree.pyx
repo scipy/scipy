@@ -190,7 +190,7 @@ cdef class coo_entries:
         res_dtype = np.dtype(_dtype, align = True)
         n = <np.intp_t> self.buf.size()
         if NPY_LIKELY(n > 0):
-            pr = &self.buf.front()
+            pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.uint8)
             self.__array_interface__ = dict(
@@ -213,7 +213,7 @@ cdef class coo_entries:
             dict res_dict
         n = <np.intp_t> self.buf.size()
         if NPY_LIKELY(n > 0):
-            pr = &self.buf.front()
+            pr = self.buf.data()
             res_dict = dict()
             for k in range(n):
                 i = pr[k].i
@@ -263,7 +263,7 @@ cdef class ordered_pairs:
             np.intp_t n
         n = <np.intp_t> self.buf.size()
         if NPY_LIKELY(n > 0):
-            pr = &self.buf.front()
+            pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.intp)
             self.__array_interface__ = dict(
@@ -284,7 +284,7 @@ cdef class ordered_pairs:
             np.intp_t i, n
             set results
         results = set()
-        pair = &self.buf.front()
+        pair = self.buf.data()
         n = <np.intp_t> self.buf.size()
         if sizeof(long) < sizeof(np.intp_t):
             # Needed for Python 2.x on Win64
@@ -593,7 +593,7 @@ cdef class cKDTree:
         cself = self.cself
         # finalize the tree points, this calls _post_init_traverse
 
-        cself.ctree = &cself.tree_buffer.front()
+        cself.ctree = cself.tree_buffer.data()
 
         # set the size attribute after tree_buffer is built
         cself.size = cself.tree_buffer.size()
@@ -741,16 +741,21 @@ cdef class cKDTree:
         cdef:
             np.intp_t n, i, j
             int overflown
+            const np.float64_t [:, ::1] xx
 
-        x_arr = np.asarray(x, dtype=np.float64)
-        if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
+        xshape = np.shape(x)
+
+        if len(xshape) == 0 or xshape[-1] != self.m:
             raise ValueError("x must consist of vectors of length %d but "
-                             "has shape %s" % (int(self.m), np.shape(x)))
+                             "has shape %s" % (int(self.m), xshape))
+
+        n = <np.intp_t> np.prod(xshape[:-1])
+        xx = np.ascontiguousarray(x, dtype=np.float64).reshape(n, self.m)
+
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
-        if x_arr.ndim == 1:
+        if len(xshape) == 1:
             single = True
-            x_arr = x_arr[np.newaxis,:]
         else:
             single = False
 
@@ -760,9 +765,7 @@ cdef class cKDTree:
                 nearest = True
             k = np.arange(1, k + 1)
 
-        retshape = np.shape(x)[:-1]
-        n = <np.intp_t> np.prod(retshape)
-        cdef np.float64_t [:, ::1] xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
+        retshape = xshape[:-1]
 
         # The C++ function touches all dd and ii entries,
         # setting the missing values.
@@ -778,9 +781,9 @@ cdef class cKDTree:
             cdef:
                 np.float64_t *pdd = &dd[start,0]
                 np.intp_t *pii = &ii[start,0]
-                np.float64_t *pxx = &xx[start,0]
-                np.intp_t *pkk = &kk[0]                
-            with nogil:         
+                const np.float64_t *pxx = &xx[start,0]
+                np.intp_t *pkk = &kk[0]
+            with nogil:
                 query_knn(self.cself, pdd, pii,
                     pxx, stop-start, pkk, kk.shape[0], kmax, eps, p, distance_upper_bound)
 
@@ -892,26 +895,27 @@ cdef class cKDTree:
         """
 
         cdef:
-            np.float64_t[::1] vrr
-            np.float64_t[:, ::1] vxx
+            const np.float64_t[::1] vrr
+            const np.float64_t[:, ::1] vxx
             object[::1] vout
             np.intp_t[::1] vlen
             list tmp
             np.intp_t i, j, n, m
             np.intp_t xndim
 
-        x = np.asarray(x, dtype=np.float64)
-        if x.shape[-1] != self.m:
+        xshape = np.shape(x)
+        if xshape[-1] != self.m:
             raise ValueError("Searching for a %d-dimensional point in a "
                              "%d-dimensional KDTree" %
-                                 (int(x.shape[-1]), int(self.m)))
+                                 (int(xshape[-1]), int(self.m)))
 
-        r = np.array(np.broadcast_to(r, x.shape[:-1]), order='C', dtype=np.float64)
+        vxx = np.ascontiguousarray(x, dtype=np.float64).reshape(-1, self.m)
+        vrr = np.ascontiguousarray(np.broadcast_to(r, xshape[:-1]), dtype=np.float64).reshape(-1)
 
-        retshape = x.shape[:-1]
+        retshape = xshape[:-1]
 
         # scalar query if xndim == 1
-        xndim = x.ndim
+        xndim = len(xshape)
 
         # allocate an array of std::vector<npy_intp>
         n = np.prod(retshape)
@@ -923,20 +927,17 @@ cdef class cKDTree:
             result = np.empty(retshape, dtype=object)
             vout = result.reshape(-1)
 
-        vxx = np.reshape(x, (-1, x.shape[-1]))
-        vrr = np.reshape(r, (-1))
-
         def _thread_func(np.intp_t start, np.intp_t stop):
-            cdef: 
+            cdef:
                 vector[np.intp_t] **vvres
                 np.intp_t i
                 np.intp_t *cur
                 int rlen
-                np.float64_t *pvxx
-                np.float64_t *pvrr
-            
+                const np.float64_t *pvxx
+                const np.float64_t *pvrr
+
             rlen = <int> return_length
-            
+
             try:
                 vvres = (<vector[np.intp_t] **>
                     PyMem_Malloc((stop-start) * sizeof(void*)))
@@ -971,7 +972,7 @@ cdef class cKDTree:
                     m = <np.intp_t> (vvres[i].size())
                     tmp = m * [None]
 
-                    cur = &vvres[i].front()
+                    cur = vvres[i].data()
                     for j in range(m):
                         tmp[j] = cur[0]
                         cur += 1
@@ -1067,7 +1068,7 @@ cdef class cKDTree:
                     tmp = m * [None]
                     with nogil:
                         sort(vvres[i].begin(), vvres[i].end())
-                    cur = &vvres[i].front()
+                    cur = vvres[i].data()
                     for j in range(m):
                         tmp[j] = cur[0]
                         cur += 1
@@ -1492,7 +1493,7 @@ cdef class cKDTree:
         cdef ckdtree * cself = self.cself
         size = cself.tree_buffer.size() * sizeof(ckdtreenode)
 
-        cdef np.ndarray tree = np.asarray(<char[:size]> <char*> &cself.tree_buffer.front())
+        cdef np.ndarray tree = np.asarray(<char[:size]> <char*> cself.tree_buffer.data())
 
         state = (tree.copy(), self.data.copy(), self.n, self.m, self.leafsize,
                       self.maxes, self.mins, self.indices.copy(),
@@ -1511,7 +1512,7 @@ cdef class cKDTree:
         cself.tree_buffer = new vector[ckdtreenode]()
         cself.tree_buffer.resize(tree.size // sizeof(ckdtreenode))
 
-        mytree = np.asarray(<char[:tree.size]> <char*> &cself.tree_buffer.front())
+        mytree = np.asarray(<char[:tree.size]> <char*> cself.tree_buffer.data())
 
         # set raw pointers
         self._pre_init()
