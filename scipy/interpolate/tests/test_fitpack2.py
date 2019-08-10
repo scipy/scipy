@@ -151,6 +151,16 @@ class TestUnivariateSpline(object):
         x = [-1, 0, -0.5, 9, 9.5, 10]
         assert_allclose(f.derivative()(x), 0, atol=1e-15)
 
+    def test_integral_out_of_bounds(self):
+        # Regression test for gh-7906: .integral(a, b) is wrong if both 
+        # a and b are out-of-bounds
+        x = np.linspace(0., 1., 7)
+        for ext in range(4):
+            f = UnivariateSpline(x, x, s=0, ext=ext)
+            for (a, b) in [(1, 1), (1, 5), (2, 5),
+                           (0, 0), (-2, 0), (-2, -1)]:
+                assert_allclose(f.integral(a, b), 0, atol=1e-15)
+
     def test_nan(self):
         # bail out early if the input data contains nans
         x = np.arange(10, dtype=float)
