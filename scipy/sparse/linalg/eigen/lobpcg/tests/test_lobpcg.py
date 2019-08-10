@@ -160,7 +160,6 @@ def _check_fiedler(n, p):
     assert_array_less(np.abs([eigh_w[0], analytic_w[0]]), 1e-14)
     assert_allclose(eigh_w[1:], analytic_w[1:])
 
-
     # Check small lobpcg eigenvalues.
     X = analytic_V[:, :p]
     lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
@@ -169,7 +168,6 @@ def _check_fiedler(n, p):
     _check_eigen(L, lobpcg_w, lobpcg_V)
     assert_array_less(np.abs(np.min(lobpcg_w)), 1e-14)
     assert_allclose(np.sort(lobpcg_w)[1:], analytic_w[1:p])
-
 
     # Check large lobpcg eigenvalues.
     X = analytic_V[:, -p:]
@@ -310,18 +308,22 @@ def test_diagonal_data_types():
 
     # Define the preconditioner function as LinearOperator.
     Ms64 = diags([1./vals], [0], (n, n))
+
     def Ms64precond(x):
         return Ms64 * x
     Ms64precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=float)
     Mf64 = Ms64.toarray()
+
     def Mf64precond(x):
         return Mf64 * x
     Mf64precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=float)
     Ms32 = Ms64.astype(np.float32)
+
     def Ms32precond(x):
         return Ms64 * x
     Ms32precondLO = LinearOperator(matvec=Ms32precond, shape=(n, n), dtype=np.float32)
     Mf32 = Ms32.toarray()
+
     def Mf32precond(x):
         return Mf32 * x
     Mf32precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=np.float32)
