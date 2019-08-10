@@ -269,7 +269,7 @@ def test_verbosity():
                   verbosityLevel=11)
 
 
-def test_tolerance():
+def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
     np.random.seed(1234)
@@ -280,9 +280,23 @@ def test_tolerance():
     A = A.astype(np.float32)
     X = np.random.rand(n, m)
     X = X.astype(np.float32)
-    for tol in [1e-4, 1-5, 1e-8, 1e-10]:
-        eigvals, _ = lobpcg(A, X, tol=tol, maxiter=50, verbosityLevel=0)
-        assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
+    eigvals, _ = lobpcg(A, X, tol=1e-9, maxiter=50, verbosityLevel=0)
+    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
+
+
+def test_random_initial_float32():
+    """Check lobpcg in float32 for specific initial.
+    """
+    np.random.seed(3)
+    n = 50
+    m = 4
+    vals = -np.arange(1, n + 1)
+    A = diags([vals], [0], (n, n))
+    A = A.astype(np.float32)
+    X = np.random.rand(n, m)
+    X = X.astype(np.float32)
+    eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
+    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
 def test_diagonal_data_types():
