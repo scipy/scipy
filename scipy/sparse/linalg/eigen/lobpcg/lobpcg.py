@@ -32,19 +32,20 @@ def _save(ar, fileName):
     np.savetxt(fileName, ar)
 
 
-def _report_nonhermitian(M, a, b, name):
+def _report_nonhermitian(M, name):
     """
-    Report if `M` is not a hermitian matrix given the tolerances `a`, `b`.
+    Report if `M` is not a hermitian matrix given its type.
     """
     from scipy.linalg import norm
 
     md = M - M.T.conj()
 
     nmd = norm(md, 1)
-    tol = np.spacing(max(10**a, (10**b)*norm(M, 1)))
+    tol = 10 * np.finfo(M.dtype).eps
+    tol = max(tol, tol * norm(M, 1))
     if nmd > tol:
-        print('matrix %s is not sufficiently Hermitian for a=%d, b=%d:'
-              % (name, a, b))
+        print('matrix %s of the type %s is not sufficiently Hermitian:'
+              % (name, M.dtype))
         print('condition: %.e < %e' % (nmd, tol))
 
 
@@ -84,7 +85,8 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
 
 
 def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
-    normalization = blockVectorV.max(axis=0)
+    """B-orthonormalize the given block vector using Cholesky."""
+    normalization = blockVectorV.max(axis=0)+np.finfo(blockVectorV.dtype).eps
     blockVectorV = blockVectorV / normalization
     if blockVectorBV is None:
         if B is not None:
@@ -536,7 +538,7 @@ def lobpcg(A, X,
             gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
             gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
             gramRBR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBR)
-            gramXBR = np.dot(blockVectorX.T.conj(), blockVectorBR)
+            gramXBR = np.dot(blockVectorX.T.conj(), activeBlockVectorBR)
         else:
             gramXAX = np.diag(_lambda)
             gramXBX = ident0
@@ -562,8 +564,8 @@ def lobpcg(A, X,
                           [gramXBR.T.conj(), gramRBR, gramRBP],
                           [gramXBP.T.conj(), gramRBP.T.conj(), gramPBP]])
             if verbosityLevel > 0:
-                _report_nonhermitian(gramA, 3, -1, 'gramA')
-                _report_nonhermitian(gramB, 3, -1, 'gramB')
+                _report_nonhermitian(gramA, 'gramA')
+                _report_nonhermitian(gramB, 'gramB')
             if verbosityLevel > 10:
                 _save(gramA, 'gramA')
                 _save(gramB, 'gramB')
@@ -581,8 +583,8 @@ def lobpcg(A, X,
             gramB = bmat([[gramXBX, gramXBR],
                           [gramXBR.T.conj(), gramRBR]])
             if verbosityLevel > 0:
-                _report_nonhermitian(gramA, 3, -1, 'gramA')
-                _report_nonhermitian(gramB, 3, -1, 'gramB')
+                _report_nonhermitian(gramA, 'gramA')
+                _report_nonhermitian(gramB, 'gramB')
             if verbosityLevel > 10:
                 _save(gramA, 'gramA')
                 _save(gramB, 'gramB')
