@@ -3558,6 +3558,52 @@ add_newdoc("hyp2f1",
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has poles when `c` is a negative integer.
+
+    >>> sc.hyp2f1(1, 1, -2, 1)
+    inf
+
+    It is a polynomial when `a` or `b` is a negative integer.
+
+    >>> a, b, c = -1, 1, 1.5
+    >>> z = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, c, z)
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+    >>> 1 + a * b * z / c
+    array([1.        , 0.83333333, 0.66666667, 0.5       ,
+    >>> 0.33333333])
+
+    It is symmetric in `a` and `b`.
+
+    >>> a = np.linspace(0, 1, 5)
+    >>> b = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+    >>> sc.hyp2f1(b, a, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+
+    It contains many other functions as special cases.
+
+    >>> z = 0.5
+    >>> sc.hyp2f1(1, 1, 2, z)
+    1.3862943611198901
+    >>> -np.log(1 - z) / z
+    1.3862943611198906
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, z**2)
+    1.098612288668109
+    >>> np.log((1 + z) / (1 - z)) / (2 * z)
+    1.0986122886681098
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, -z**2)
+    0.9272952180016117
+    >>> np.arctan(z) / z
+    0.9272952180016123
+
     """)
 
 add_newdoc("hyperu",
