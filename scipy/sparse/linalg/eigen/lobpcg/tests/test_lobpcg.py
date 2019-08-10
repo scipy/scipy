@@ -8,17 +8,18 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
-from scipy import ones, rand, r_, diag, linalg, eye
-from scipy.linalg import eig, eigh, toeplitz
-import scipy.sparse
-from scipy.sparse.linalg.eigen.lobpcg import lobpcg
-from scipy.sparse.linalg import eigs
-from scipy.sparse import spdiags
-
 import pytest
 
+from scipy import (ones, rand, r_, diag)
+from scipy.linalg import (eig, eigh, toeplitz, orth)
+from scipy.sparse import (spdiags, diags, eye, random)
+from scipy.sparse.linalg import (eigs, LinearOperator)
+from scipy.sparse.linalg.eigen.lobpcg import lobpcg
+
 def ElasticRod(n):
-    # Fixed-free elastic rod
+    """Build the matrices for the generalized eigenvalue problem of the
+    fixed-free elastic rod vibration model.
+    """
     L = 1.0
     le = L/n
     rho = 7.85e3
@@ -26,73 +27,69 @@ def ElasticRod(n):
     E = 2.1e11
     mass = rho*S*le/6.
     k = E*S/le
-    A = k*(diag(r_[2.*ones(n-1),1])-diag(ones(n-1),1)-diag(ones(n-1),-1))
-    B = mass*(diag(r_[4.*ones(n-1),2])+diag(ones(n-1),1)+diag(ones(n-1),-1))
-    return A,B
+    A = k*(diag(r_[2.*ones(n-1), 1])-diag(ones(n-1), 1)-diag(ones(n-1), -1))
+    B = mass*(diag(r_[4.*ones(n-1), 2])+diag(ones(n-1), 1)+diag(ones(n-1), -1))
+    return A, B
 
 
 def MikotaPair(n):
-    # Mikota pair acts as a nice test since the eigenvalues
-    # are the squares of the integers n, n=1,2,...
-    x = np.arange(1,n+1)
+    """Build a pair of full diagonal matrices for the generalized eigenvalue
+    problem. The Mikota pair acts as a nice test since the eigenvalues are the
+    squares of the integers n, n=1,2,...
+    """
+    x = np.arange(1, n+1)
     B = diag(1./x)
-    y = np.arange(n-1,0,-1)
-    z = np.arange(2*n-1,0,-2)
-    A = diag(z)-diag(y,-1)-diag(y,1)
-    return A,B
+    y = np.arange(n-1, 0, -1)
+    z = np.arange(2*n-1, 0, -2)
+    A = diag(z)-diag(y, -1)-diag(y, 1)
+    return A, B
 
 
-def compare_solutions(A,B,m):
+def compare_solutions(A, B, m):
+    """Check eig vs. lobpcg consistency.
+    """
     n = A.shape[0]
-
     np.random.seed(0)
-
-    V = rand(n,m)
-    X = linalg.orth(V)
-
-    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False)
-    eigs.sort()
-
-    w,v = eig(A,b=B)
+    V = rand(n, m)
+    X = orth(V)
+    eigvals, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False)
+    eigvals.sort()
+    w, _ = eig(A, b=B)
     w.sort()
-
-    assert_almost_equal(w[:int(m/2)],eigs[:int(m/2)],decimal=2)
+    assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
 
 
 def test_Small():
-    A,B = ElasticRod(10)
-    compare_solutions(A,B,10)
-    A,B = MikotaPair(10)
-    compare_solutions(A,B,10)
+    A, B = ElasticRod(10)
+    compare_solutions(A, B, 10)
+    A, B = MikotaPair(10)
+    compare_solutions(A, B, 10)
 
 
 def test_ElasticRod():
-    A,B = ElasticRod(100)
-    compare_solutions(A,B,20)
+    A, B = ElasticRod(100)
+    compare_solutions(A, B, 20)
 
 
 def test_MikotaPair():
-    A,B = MikotaPair(100)
-    compare_solutions(A,B,20)
-
-
-def test_trivial():
-    n = 5
-    X = ones((n, 1))
-    A = eye(n)
-    compare_solutions(A, None, n)
+    A, B = MikotaPair(100)
+    compare_solutions(A, B, 20)
 
 
 def test_regression():
+    """Check the eigenvalue of the identity matrix is one.
+    """
     # https://mail.python.org/pipermail/scipy-user/2010-October/026944.html
     n = 10
     X = np.ones((n, 1))
     A = np.identity(n)
-    w, V = lobpcg(A, X)
+    w, _ = lobpcg(A, X)
     assert_allclose(w, [1])
 
 
 def test_diagonal():
+    """Check for diagonal matrices.
+    """
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
     # required to reproduce arpack bug
@@ -112,11 +109,11 @@ def test_diagonal():
     # and where we choose A to be the diagonal matrix whose entries are 1..n
     # and where B is chosen to be the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
-    A = scipy.sparse.diags([vals], [0], (n, n))
-    B = scipy.sparse.eye(n)
+    A = diags([vals], [0], (n, n))
+    B = eye(n)
 
     # Let the preconditioner M be the inverse of A.
-    M = scipy.sparse.diags([np.reciprocal(vals)], [0], (n, n))
+    M = diags([1./vals], [0], (n, n))
 
     # Pick random initial vectors.
     X = np.random.rand(n, m)
@@ -126,19 +123,23 @@ def test_diagonal():
     m_excluded = 3
     Y = np.eye(n, m_excluded)
 
-    eigs, vecs = lobpcg(A, X, B, M=M, Y=Y, tol=1e-4, maxiter=40, largest=False)
+    eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y, tol=1e-4, maxiter=40, largest=False)
 
-    assert_allclose(eigs, np.arange(1+m_excluded, 1+m_excluded+m))
-    _check_eigen(A, eigs, vecs, rtol=1e-3, atol=1e-3)
+    assert_allclose(eigvals, np.arange(1+m_excluded, 1+m_excluded+m))
+    _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
 
 
 def _check_eigen(M, w, V, rtol=1e-8, atol=1e-14):
+    """Check if the eigenvalue residual is small.
+    """
     mult_wV = np.multiply(w, V)
     dot_MV = M.dot(V)
     assert_allclose(mult_wV, dot_MV, rtol=rtol, atol=atol)
 
 
 def _check_fiedler(n, p):
+    """Check the Fiedler vector computation.
+    """
     # This is not necessarily the recommended way to find the Fiedler vector.
     np.random.seed(1234)
     col = np.zeros(n)
@@ -159,6 +160,7 @@ def _check_fiedler(n, p):
     assert_array_less(np.abs([eigh_w[0], analytic_w[0]]), 1e-14)
     assert_allclose(eigh_w[1:], analytic_w[1:])
 
+
     # Check small lobpcg eigenvalues.
     X = analytic_V[:, :p]
     lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
@@ -167,6 +169,7 @@ def _check_fiedler(n, p):
     _check_eigen(L, lobpcg_w, lobpcg_V)
     assert_array_less(np.abs(np.min(lobpcg_w)), 1e-14)
     assert_allclose(np.sort(lobpcg_w)[1:], analytic_w[1:p])
+
 
     # Check large lobpcg eigenvalues.
     X = analytic_V[:, -p:]
@@ -179,7 +182,7 @@ def _check_fiedler(n, p):
     # Look for the Fiedler vector using good but not exactly correct guesses.
     fiedler_guess = np.concatenate((np.ones(n//2), -np.ones(n-n//2)))
     X = np.vstack((np.ones(n), fiedler_guess)).T
-    lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
+    lobpcg_w, _ = lobpcg(L, X, largest=False)
     # Mathematically, the smaller eigenvalue should be zero
     # and the larger should be the algebraic connectivity.
     lobpcg_w = np.sort(lobpcg_w)
@@ -187,16 +190,22 @@ def _check_fiedler(n, p):
 
 
 def test_fiedler_small_8():
+    """Check the dense workaround path for small matrices.
+    """
     # This triggers the dense path because 8 < 2*5.
     _check_fiedler(8, 2)
 
 
 def test_fiedler_large_12():
+    """Check the dense workaround path avoided for non-small matrices.
+    """
     # This does not trigger the dense path, because 2*5 <= 12.
     _check_fiedler(12, 2)
 
 
 def test_hermitian():
+    """Check complex-value Hermitian cases.
+    """
     np.random.seed(1234)
 
     sizes = [3, 10, 50]
@@ -215,12 +224,12 @@ def test_hermitian():
         if not gen:
             B = np.eye(size)
             w, v = lobpcg(H, X, maxiter=5000)
-            w0, v0 = eigh(H)
+            w0, _ = eigh(H)
         else:
             B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
             B = 10 * np.eye(size) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
-            w0, v0 = eigh(H, B)
+            w0, _ = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
             # Check eigenvector
@@ -232,30 +241,106 @@ def test_hermitian():
             j = np.argmin(abs(w0 - wx))
             assert_allclose(wx, w0[j], rtol=1e-4)
 
+
 # The n=5 case tests the alternative small matrix code path that uses eigh().
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
 def test_eigs_consistency(n, atol):
+    """Check eigs vs. lobpcg consistency.
+    """
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     np.random.seed(345678)
     X = np.random.rand(n, 2)
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
-    vals, vecs = eigs(A, k=2)
+    vals, _ = eigs(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
+
 
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
     A, B = ElasticRod(100)
-
     n = A.shape[0]
     m = 20
-
     np.random.seed(0)
-    V = rand(n,m)
-    X = linalg.orth(V)
+    V = rand(n, m)
+    X = orth(V)
+    _, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
+                  verbosityLevel=11)
 
-    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                       verbosityLevel=11)
+
+def test_tolerance():
+    """Check lobpcg for attainable tolerance in float32.
+    """
+    np.random.seed(1234)
+    n = 50
+    m = 4
+    vals = -np.arange(1, n + 1)
+    A = diags([vals], [0], (n, n))
+    A = A.astype(np.float32)
+    X = np.random.rand(n, m)
+    X = X.astype(np.float32)
+    for tol in [1e-4, 1-5, 1e-8, 1e-10]:
+        eigvals, _ = lobpcg(A, X, tol=tol, maxiter=50, verbosityLevel=0)
+        assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
+
+
+def test_diagonal_data_types():
+    """Check lobpcg for diagonal matrices using all possible input types.
+    """
+    np.random.seed(1234)
+    n = 50
+    m = 4
+    # Define the generalized eigenvalue problem Av = cBv
+    # where (c, v) is a generalized eigenpair,
+    # and where we choose A  and B to be diagonal.
+    vals = np.arange(1, n + 1)
+
+    As64 = diags([vals * vals], [0], (n, n))
+    As32 = As64.astype(np.float32)
+    Af64 = As64.toarray()
+    Af32 = Af64.astype(np.float32)
+    listA = [Af64, As64, Af32, As32]
+
+    Bs64 = diags([vals], [0], (n, n))
+    Bf64 = Bs64.toarray()
+    listB = [Bf64, Bs64]
+
+    # Define the preconditioner function as LinearOperator.
+    Ms64 = diags([1./vals], [0], (n, n))
+    def Ms64precond(x):
+        return Ms64 * x
+    Ms64precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=float)
+    Mf64 = Ms64.toarray()
+    def Mf64precond(x):
+        return Mf64 * x
+    Mf64precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=float)
+    Ms32 = Ms64.astype(np.float32)
+    def Ms32precond(x):
+        return Ms64 * x
+    Ms32precondLO = LinearOperator(matvec=Ms32precond, shape=(n, n), dtype=np.float32)
+    Mf32 = Ms32.toarray()
+    def Mf32precond(x):
+        return Mf32 * x
+    Mf32precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=np.float32)
+    listM = [None, Ms64precondLO, Mf64precondLO, Ms32precondLO, Mf32precondLO]
+
+    # Setup matrix of the initial approximation to the eigenvectors
+    # (cannot be sparse array).
+    Xf64 = np.random.rand(n, m)
+    Xf32 = Xf64.astype(np.float32)
+    listX = [Xf64, Xf32]
+
+    # Require that the returned eigenvectors be in the orthogonal complement
+    # of the first few standard basis vectors (cannot be sparse array).
+    m_excluded = 3
+    Yf64 = np.eye(n, m_excluded, dtype=float)
+    Yf32 = np.eye(n, m_excluded, dtype=np.float32)
+    listY = [Yf64, Yf32]
+
+    for A, B, M, X, Y in itertools.product(listA, listB, listM, listX, listY):
+        eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4, maxiter=100,
+                            largest=False)
+        assert_allclose(eigvals, np.arange(1 + m_excluded, 1 + m_excluded + m))
