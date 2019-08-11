@@ -1,4 +1,6 @@
 import numpy as np
+from numpy.testing import assert_allclose
+from numpy.testing import assert_equal
 
 import scipy.special as sc
 
@@ -15,3 +17,44 @@ class TestHyperu:
 
     def test_special_cases(self):
         assert sc.hyperu(0, 1, 1) == 1.0
+
+
+class TestHyp1f1:
+
+    def test_special_cases(self):
+        assert all(np.isnan([
+            sc.hyp1f1(np.nan, 1, 1),
+            sc.hyp1f1(1, np.nan, 1),
+            sc.hyp1f1(1, 1, np.nan)
+        ]))
+        assert_equal(sc.hyp1f1(1, [0, -1, -2, -3, -4], 0.5), np.infty)
+
+        # Hit all the special case branches at the beginning of the
+        # function. Desired answers computed using Mpmath.
+        points = (
+            ((-1, 1, 0.5), 0.5),
+            ((1, 1, 0.5), 1.6487212707001281468),
+            ((2, 1, 0.5), 2.4730819060501922203),
+            ((1, 2, 0.5), 1.2974425414002562937),
+            ((-10, 1, 0.5), -0.38937441413785204475)
+        )
+        for point, result in points:
+            assert_allclose(sc.hyp1f1(*point), result, atol=0, rtol=1e-15)
+
+    def test_gh_3492(self):
+        desired = 0.99973683897677527773  # Computed using Mpmath
+        assert_allclose(
+            sc.hyp1f1(0.01, 150, -4),
+            desired,
+            atol=0,
+            rtol=1e-15
+        )
+
+    def test_gh_3593(self):
+        desired = 1.0020033381011970966  # Computed using Mpmath
+        assert_allclose(
+            sc.hyp1f1(1, 5, 0.01),
+            desired,
+            atol=0,
+            rtol=1e-15
+        )
