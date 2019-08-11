@@ -6,7 +6,13 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+           'is_matrix_hermitian', 'is_matrix_symmetric',
+           'is_matrix_skew_symmetric', 'is_matrix_nonsingular',
+           'is_matrix_singular', 'is_matrix_idempotent',
+           'is_matrix_positive_definite', 'is_matrix_positive_semidefinite',
+           'is_matrix_negative_definite', 'is_matrix_negative_semidefinite',
+           'is_matrix_indefinite']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single)
@@ -14,8 +20,9 @@ import numpy as np
 
 # Local imports
 from .misc import norm
-from .basic import solve, inv
+from .basic import solve, inv, det
 from .special_matrices import triu
+from .decomp import eig
 from .decomp_svd import svd
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
@@ -668,3 +675,329 @@ def signm(A, disp=True):
         return S0
     else:
         return S0, errest
+
+
+def is_matrix_hermitian(A):
+    """
+    Returns True if a matrix is hermitian
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is hermitian.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_hermitian
+    >>> m = np.array([[0,1j],[-1j,0]])
+    >>> print(is_matrix_hermitian(m))
+    True
+    >>> m = np.array([[5,0],[1,3]])
+    >>> print(is_matrix_hermitian(m))
+    False
+    """
+    A = _asarray_square(A)
+    return np.sum(A == A.conj().T) == (A.shape[1]**2)
+
+
+def is_matrix_symmetric(A):
+    """
+    Returns True if a matrix is symmetric
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is symmetric.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_symmetric
+    >>> m = np.array([[2,3],[3,2]])
+    >>> print(is_matrix_symmetric(m))
+    True
+    >>> m = np.array([[5,0],[1,3]])
+    >>> print(is_matrix_symmetric(m))
+    False
+    """
+    A = _asarray_square(A)
+    return np.sum(A == A.T) == (A.shape[1]**2)
+
+
+def is_matrix_skew_symmetric(A, tol=1e-8):
+    """
+    Returns True if a matrix is skew symmetric
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is skew symmetric.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_skew_symmetric
+    >>> m = np.array([[5,1],[1,3]])
+    >>> print(is_matrix_skew_symmetric(m))
+    True
+    >>> m = np.array([[0, 2, -1],[-2, 0, -4],[-1, -4, 0]])
+    >>> print(is_matrix_skew_symmetric(m))
+    True
+    """
+    A = _asarray_square(A)
+    return (np.absolute(A - A.T) < tol).all()
+
+
+def is_matrix_nonsingular(A, tol=1e-8):
+    """
+    Returns True if a matrix is nonsingular
+    AKA invertible or nondegenerate
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is nonsingular.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_nonsingular
+    >>> m = np.array([[-1,1.5],[1,-1]])
+    >>> print(is_matrix_nonsingular(m))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_nonsingular(m))
+    True
+    """
+    A = _asarray_square(A)
+    detA = det(A)
+    return (np.absolute(detA) >= tol).all()
+
+
+def is_matrix_singular(A, tol=1e-8):
+    """
+    Returns True if a matrix is singular
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is singular.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_singular
+    >>> m = np.array([[-1,1.5],[1.5,-1]])
+    >>> print(is_matrix_singular(m))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_singular(m))
+    True
+    """
+    A = _asarray_square(A)
+    detA = det(A)
+    return (np.absolute(detA) < tol).all()
+
+
+def is_matrix_idempotent(A, tol=1e-8):
+    """
+    Returns True if a matrix is idempotent
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is idempotent.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_idempotent
+    >>> m = np.array([[3,-6],[1,-2]])
+    >>> print(is_matrix_idempotent(m))
+    True
+    >>> m = np.array([[2, -2, 4],[-1, 3, 4],[1, -2, -3]])
+    >>> print(is_matrix_idempotent(m))
+    False
+    """
+    A = _asarray_square(A)
+    return (np.absolute(np.matmul(A, A) - A) < tol).all()
+
+
+def is_matrix_positive_definite(A, tol=1e-8):
+    """
+    Returns True if a matrix is positive definite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is positive definite.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_positive_definite
+    >>> m = np.array([[5,1],[1,3]])
+    >>> print(is_matrix_positive_definite(m))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_positive_definite(m))
+    True
+    """
+    A = _asarray_square(A)
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
+    eiVal, eiVecR = eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
+    return (eiVal > 0).all()
+
+
+def is_matrix_positive_semidefinite(A, tol=1e-8):
+    """
+    Returns True if a matrix is positive semidefinite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is positive semidefinite.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_positive_semidefinite
+    >>> m = np.array([[1,-1],[-1,1]])
+    >>> print(is_matrix_positive_semidefinite(m))
+    True
+    """
+    A = _asarray_square(A)
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
+    eiVal, eiVecR = eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
+    return (eiVal >= 0).all()
+
+
+def is_matrix_negative_definite(A, tol=1e-8):
+    """
+    Returns True if a matrix is negative definite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is negative definite.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_negative_definite
+    >>> m = np.array([[-5,-1],[-1,-3]])
+    >>> print(is_matrix_negative_definite(m))
+    True
+    """
+    A = _asarray_square(A)
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
+    eiVal, eiVecR = eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
+    return (eiVal < 0).all()
+
+
+def is_matrix_negative_semidefinite(A, tol=1e-8):
+    """
+    Returns True if a matrix is negative semidefinite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is negative semidefinite.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_negative_semidefinite
+    >>> m = np.array([[-1,1],[1,-1]])
+    >>> print(is_matrix_negative_semidefinite(m))
+    True
+    """
+    A = _asarray_square(A)
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
+    eiVal, eiVecR = eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
+    return (eiVal <= 0).all()
+
+
+def is_matrix_indefinite(A, tol=1e-8):
+    """
+    Returns True if a matrix is indefinite
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix to evaluate.
+    tol : float
+        Tolerance for the zero value.
+    
+    Returns
+    -------
+    X : boolean
+        True if a matrix A is indefinite.
+
+    Examples
+    --------
+    >>> from scipy.linalg import is_matrix_indefinite
+    >>> m = np.array([[5,1],[1,0]])
+    >>> print(is_matrix_indefinite(m))
+    True
+    """
+    A = _asarray_square(A)
+    if not is_matrix_hermitian(A):
+        raise ValueError('expected symmetric or hermitian matrix')
+    eiVal, eiVecR = eig(A)
+    eiVal[np.absolute(eiVal) < tol] = 0
+    return (eiVal < 0).any() & (eiVal > 0).any()

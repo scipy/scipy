@@ -834,3 +834,61 @@ class TestExpmConditionNumber(object):
             # eps times the condition number kappa.
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
+
+
+class TestIsMatrix(object):
+
+    def test_is_matrix_hermitian(self):
+        a = np.array([[0,1j],[-1j,0]])
+        r = test_is_matrix_hermitian(a)
+        assert_(r == True)
+
+    def test_is_matrix_symmetric(self):
+        a = np.array([[2,3],[3,2]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_skew_symmetric(self):
+        a = np.array([[0, 2, -1],[-2, 0, -4],[-1, -4, 0]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_nonsingular(self):
+        a = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_singular(self):
+        a = np.array([[-1,1.5],[1.5,-1]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_idempotent(self):
+        a = np.array([[3,-6],[1,-2]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_positive_definite(self):
+        a = np.array([[5,1],[1,3]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_positive_semidefinite(self):
+        a = np.array([[1,-1],[-1,1]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_negative_definite(self):
+        a = np.array([[-5,-1],[-1,-3]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_negative_semidefinite(self):
+        a = np.array([[-1,1],[1,-1]])
+        r = signm(a)
+        assert_(r == True)
+
+    def test_is_matrix_indefinite(self):
+        a = np.array([[5,1],[1,0]])
+        r = signm(a)
+        assert_(r == True)
