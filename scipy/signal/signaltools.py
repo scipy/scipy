@@ -8,7 +8,7 @@ import sys
 import timeit
 
 from . import sigtools, dlti
-from ._upfirdn import upfirdn, _output_len
+from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy._lib.six import callable
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
@@ -2505,16 +2505,22 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     # Remove background depending on the padtype option
     funcs = {'mean': np.mean, 'median': np.median,
              'minimum': np.amin, 'maximum': np.amax}
-    if padtype == 'constant':
-        background_line = cval
-    elif padtype in funcs:
+    upfirdn_kwargs = {'mode': 'constant', 'cval': 0}
+    if padtype in funcs:
         background_line = [funcs[padtype](x, axis=axis), 0]
     elif padtype == 'line':
         background_line = [x.take(0, axis),
                            (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
+    elif padtype in _upfirdn_modes:
+        upfirdn_kwargs = {'mode': padtype}
+        if padtype == 'constant':
+            if cval is None:
+                cval = 0
+            upfirdn_kwargs['cval'] = cval
     else:
         raise ValueError(
-            'padtype must be line, maximum, mean, median, minimum or constant')
+            'padtype must be one of: line, maximum, mean, median, minimum, ' +
+            ', '.join(_upfirdn_modes))
 
     if padtype == 'line' or padtype in funcs:
         rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
@@ -2522,11 +2528,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         background_in = np.expand_dims(background_line[0], axis) +\
             np.expand_dims(background_line[1], axis) * rel_len_nd
         x = x - background_in.astype(x.dtype)
-    elif padtype == 'constant' and cval is not None:
-        x = x - cval
 
     # filter then remove excess
-    y = upfirdn(h, x, up, down, axis=axis)
+    y = upfirdn(h, x, up, down, axis=axis, **upfirdn_kwargs)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
     y_keep = y[tuple(keep)]
@@ -2538,8 +2542,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         background_out = np.expand_dims(background_line[0], axis) +\
             np.expand_dims(background_line[1], axis) * rel_len_nd
         y_keep += background_out.astype(x.dtype)
-    elif padtype == 'constant' and cval is not None:
-        y_keep += cval
 
     return y_keep
 
