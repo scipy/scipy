@@ -52,7 +52,7 @@ cdef inline double hyp1f1(double a, double b, double x) nogil:
         return hyp1f1_series(a, b, x)
 
     if b > 0 and (fabs(a) + 1) * fabs(x) < 0.9 * b:
-        # At for the kth term of the series we are multiplying by
+        # For the kth term of the series we are multiplying by
         #
         # t_k = (a + b) * x / ((b + k) * (k + 1))
         #
