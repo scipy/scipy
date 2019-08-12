@@ -3376,7 +3376,7 @@ add_newdoc("huber",
 
 add_newdoc("hyp0f1",
     r"""
-    hyp0f1(v, x, out=None)
+    hyp0f1(v, z, out=None)
 
     Confluent hypergeometric limit function 0F1.
 
