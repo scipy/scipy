@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 cimport cython
 import numpy as np
 cimport numpy as np
