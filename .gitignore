@@ -203,6 +203,7 @@ scipy/sparse/csgraph/_shortest_path.c
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
 scipy/sparse/csgraph/_flow.c
+scipy/sparse/csgraph/_matching.c
 scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c
