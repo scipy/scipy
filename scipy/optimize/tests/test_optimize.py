@@ -226,6 +226,52 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
+
+    def test_bounded_powell(self):
+        # Powell (direction set) optimization routine
+        # same as test_powell above, but with bounds
+        bounds = [(-np.pi, np.pi) for _ in self.startparams]
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
+                    'return_all': False}
+            res = optimize.minimize(self.func, self.startparams, args=(),
+                                    bounds=bounds, 
+                                    method='Powell', options=opts)
+            params, fopt, direc, numiter, func_calls, warnflag = (
+                    res['x'], res['fun'], res['direc'], res['nit'],
+                    res['nfev'], res['status'])
+        else:
+            retval = optimize.fmin_powell(self.func, self.startparams,
+                                          args=(), bounds=bounds,
+                                          maxiter=self.maxiter,
+                                          full_output=True, disp=self.disp,
+                                          retall=False)
+            (params, fopt, direc, numiter, func_calls, warnflag) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # SciPy 0.7.0. Don't allow them to increase.
+        #
+        # However, some leeway must be added: the exact evaluation
+        # count is sensitive to numerical error, and floating-point
+        # computations are not bit-for-bit reproducible across
+        # machines, and when using e.g. MKL, data alignment
+        # etc. affect the rounding error.
+        #
+        assert_(self.funccalls <= 116 + 20, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
+
+        # Ensure that the function behaves the same; this is from SciPy 0.7.0
+        assert_allclose(self.trace[34:39],
+                        [[0.72949016, -0.44156936, 0.47100962],
+                         [0.72949016, -0.44156936, 0.48052496],
+                         [1.45898031, -0.88313872, 0.95153458],
+                         [0.72949016, -0.44156936, 0.47576729],
+                         [1.72949016, -0.44156936, 0.47576729]],
+                        atol=1e-14, rtol=1e-7)
+
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
         if self.use_wrapper:
