@@ -5,10 +5,10 @@ from .pypocketfft import good_size
 import operator
 import sys
 import os
+import threading
+import contextlib
 
-
-# TODO: Add configuration support
-_default_workers = 1
+_config = threading.local()
 _cpu_count = os.cpu_count()
 
 
@@ -156,7 +156,7 @@ def _normalization(norm, forward):
 
 def _workers(workers):
     if workers is None:
-        return _default_workers
+        return getattr(_config, 'default_workers', 1)
 
     if workers < 0:
         workers += 1 + _cpu_count
@@ -165,6 +165,46 @@ def _workers(workers):
         raise ValueError("workers value out of range")
 
     return workers
+
+
+@contextlib.contextmanager
+def set_workers(workers):
+    """Context manager for the default number of workers used in `scipy.fft`
+
+    Parameters
+    ----------
+    workers : int
+        The default number of workers to use
+
+    Examples
+    --------
+    >>> from scipy import fft, signal
+    >>> x = np.random.randn(128, 64)
+    >>> with fft.set_workers(4):
+    ...     y = signal.fftconvolve(x, x)
+
+    """
+    old_workers = get_workers()
+    _config.default_workers = _workers(operator.index(workers))
+    try:
+        yield
+    finally:
+        _config.default_workers = old_workers
+
+
+def get_workers():
+    """Returns the default number of workers within the current context
+
+    Examples
+    --------
+    >>> from scipy import fft
+    >>> fft.get_workers()
+    1
+    >>> with fft.set_workers(4):
+    ...     fft.get_workers()
+    4
+    """
+    return getattr(_config, 'default_workers', 1)
 
 
 def next_fast_len(target, kind='C2C'):
