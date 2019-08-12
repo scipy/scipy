@@ -136,7 +136,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and `args` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for L-BFGS-B, TNC, SLSQP and
+        Bounds on variables for L-BFGS-B, TNC, SLSQP, Powell, and
         trust-constr methods. There are two ways to specify the bounds:
 
             1. Instance of `Bounds` class.
@@ -510,9 +510,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ('nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
+    if (meth in ('nelder-mead', 'cg', 'bfgs', 'newton-cg', 'dogleg',
                  'trust-ncg') and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
+             RuntimeWarning)
+    if meth == "powell" and np.any(constraints):
+        warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth in ('l-bfgs-b', 'tnc') and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
@@ -587,7 +590,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, callback, **options)
+        return _minimize_powell(fun, x0, args, bounds, callback, **options)
     elif meth == 'cg':
         return _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
@@ -790,7 +793,7 @@ def standardize_bounds(bounds, x0, meth):
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp', 'powell'):
         if isinstance(bounds, Bounds):
             bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds
