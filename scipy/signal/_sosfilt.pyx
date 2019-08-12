@@ -1,4 +1,3 @@
-import numpy as np
 cimport numpy as np
 cimport cython
 
@@ -15,16 +14,17 @@ ctypedef fused DTYPE_t:
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _sosfilt(DTYPE_t [:, :] sos,
-             DTYPE_t [:, :] x,
-             DTYPE_t [:, :, :] zi):
+def _sosfilt(DTYPE_t [:, ::1] sos,
+             DTYPE_t [:, ::1] x,
+             DTYPE_t [:, :, ::1] zi):
     # Modifies x and zi in place
     cdef Py_ssize_t n_signals = x.shape[0]
     cdef Py_ssize_t n_samples = x.shape[1]
     cdef Py_ssize_t n_sections = sos.shape[0]
+    cdef Py_ssize_t i, n, s
     cdef DTYPE_t x_n
-    cdef DTYPE_t [:, :] b = sos[:, :3]
-    cdef DTYPE_t [:, :] a = sos[:, 4:]
+    cdef DTYPE_t [:, ::1] b = sos[:, :3]
+    cdef DTYPE_t [:, ::1] a = sos[:, 4:]
     with nogil:
         for i in range(n_signals):
             for n in range(n_samples):
