@@ -112,7 +112,5 @@ possible.
 """
 
 from ._backend import *
-from ._version import get_versions  # type: ignore
 
-__version__ = get_versions()["version"]
-del get_versions
+__version__ = '0.5.1+5.ga864a57.scipy'
