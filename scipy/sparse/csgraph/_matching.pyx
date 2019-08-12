@@ -59,11 +59,13 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     labelled a, b, and c. Suppose that there are edges connecting 0 and c,
     1 and a, and 1 and b. This graph would then be represented by the following
     sparse matrix:
+
     >>> graph = csr_matrix([[0, 0, 1], [1, 1, 0]])
 
     Here, the 1s could be anything, as long as they end up being stored as
     elements in the sparse matrix. We can now calculate matximum matchings as
     follows:
+
     >>> print(maximum_bipartite_matching(graph, perm_type='column'))
     [2 0]
     >>> print(maximum_bipartite_matching(graph, perm_type='row'))
@@ -88,6 +90,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     When one or both of the partitions are empty, the matching is empty as
     well:
+
     >>> graph = csr_matrix((2, 0))
     >>> print(maximum_bipartite_matching(graph, perm_type='column'))
     [-1 -1]
@@ -99,6 +102,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     belongs to some edge in the matching, then one can view the output as the
     permutation of rows (or columns) turning the input matrix into one with the
     property that all diagonal elements are non-empty:
+
     >>> a = [[0, 1, 2, 0], [1, 0, 0, 1], [2, 0, 0, 3], [0, 1, 3, 0]]
     >>> graph = csr_matrix(a)
     >>> perm = maximum_bipartite_matching(graph, perm_type='row')
