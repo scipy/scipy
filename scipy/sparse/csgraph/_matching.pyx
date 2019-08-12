@@ -57,14 +57,14 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     As a simple example, consider a bipartite graph in which the partitions
     contain 2 and 3 elements respectively. Suppose that one partition contains
     vertices labelled 0 and 1, and that the other partition contains vertices
-    labelled a, b, and c. Suppose that there are edges connecting 0 and c,
-    1 and a, and 1 and b. This graph would then be represented by the following
+    labelled A, B, and C. Suppose that there are edges connecting 0 and C,
+    1 and A, and 1 and B. This graph would then be represented by the following
     sparse matrix:
 
     >>> graph = csr_matrix([[0, 0, 1], [1, 1, 0]])
 
     Here, the 1s could be anything, as long as they end up being stored as
-    elements in the sparse matrix. We can now calculate matximum matchings as
+    elements in the sparse matrix. We can now calculate maximum matchings as
     follows:
 
     >>> print(maximum_bipartite_matching(graph, perm_type='column'))
@@ -72,8 +72,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     >>> print(maximum_bipartite_matching(graph, perm_type='row'))
     [ 1 -1  0]
 
-    The first output tells us that 1 and 2 are matched with c and a
-    respectively, and the second output tells us that a, b, and c are matched
+    The first output tells us that 1 and 2 are matched with C and A
+    respectively, and the second output tells us that A, B, and C are matched
     with 1, nothing, and 0 respectively.
 
     Note that explicit zeros are still converted to edges. This means that a
