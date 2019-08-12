@@ -37,7 +37,6 @@ from ._upfirdn_apply import _output_len, _apply, mode_enum
 
 __all__ = ['upfirdn', '_output_len']
 
-
 _upfirdn_modes = [
     'constant', 'wrap', 'edge', 'smooth', 'symmetric', 'reflect',
     'antisymmetric', 'antireflect'
