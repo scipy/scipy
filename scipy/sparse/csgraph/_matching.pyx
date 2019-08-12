@@ -41,7 +41,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     asymmetry between rows and columns means that it can be more efficient to
     transpose the input if it contains more columns than rows.
 
-    By König's theorem, the cardinality of the matching is also the number of
+    By Konig's theorem, the cardinality of the matching is also the number of
     vertices appearing in a minimum vertex cover of the graph.
 
     Note that if the sparse representation contains explicit zeros, these are
@@ -116,7 +116,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     ----------
     .. [1] John E. Hopcroft and Richard M. Karp. "An n^{5 / 2} Algorithm for
            Maximum Matchings in Bipartite Graphs" In: SIAM Journal of Computing
-           2.4 (1973), pp. 225–231. <https://dx.doi.org/10.1137/0202019>.
+           2.4 (1973), pp. 225--231. <https://dx.doi.org/10.1137/0202019>.
 
     """
     if isspmatrix_csc(graph) or isspmatrix_coo(graph):
