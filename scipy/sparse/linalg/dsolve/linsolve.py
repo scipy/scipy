@@ -137,7 +137,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
-    
+
     # sum duplicates for non-canonical format
     A.sum_duplicates()
     A = A.asfptype()  # upcast to a floating point format
@@ -443,7 +443,8 @@ def factorized(A):
         return splu(A).solve
 
 
-def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
+def spsolve_triangular(A, b, lower=True, unit_diagonal=False,
+                       overwrite_A=False, overwrite_b=False):
     """
     Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
 
@@ -456,6 +457,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
+    unit_diagonal : bool, optional
+        If True, diagonal elements of `a` are assumed to be 1 and will not be
+        referenced.
     overwrite_A : bool, optional
         Allow changing `A`. The indices of `A` are going to be sorted and zero
         entries are going to be removed.
@@ -469,7 +473,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     Returns
     -------
     x : (M,) or (M, N) ndarray
-        Solution to the system `A x = b`.  Shape of return matches shape of `b`.
+        Solution to the system `A x = b`. Shape of return matches shape of `b`.
 
     Raises
     ------
@@ -551,7 +555,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
             A_off_diagonal_indices_row_i = slice(indptr_start + 1, indptr_stop)
 
         # Check regularity and triangularity of A.
-        if indptr_stop <= indptr_start or A.indices[A_diagonal_index_row_i] < i:
+        if not unit_diagonal and (indptr_stop <= indptr_start
+                                  or A.indices[A_diagonal_index_row_i] < i):
             raise LinAlgError(
                 'A is singular: diagonal {} is zero.'.format(i))
         if A.indices[A_diagonal_index_row_i] > i:
@@ -565,6 +570,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
 
         # Compute i-th entry of x.
-        x[i] /= A.data[A_diagonal_index_row_i]
+        if not unit_diagonal:
+            x[i] /= A.data[A_diagonal_index_row_i]
 
     return x
