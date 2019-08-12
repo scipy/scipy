@@ -46,6 +46,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     Note that if the sparse representation contains explicit zeros, these are
     still counted as edges.
+
     .. versionadded:: 0.15.0
 
     Examples
