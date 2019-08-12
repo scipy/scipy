@@ -2397,7 +2397,51 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     return xa, xb, xc, fa, fb, fc, funcalls
 
 
-def _linesearch_powell(func, p, xi, tol=1e-3):
+def _m_min(a, b):
+    """ Return min(a, b) """
+    if a is None: return b
+    elif b is None: return a
+    else: return min(a, b)
+
+
+def _m_max(a, b):
+    """ Return max(a, b) """
+    if a is None: return b
+    elif b is None: return a
+    else: return max(a, b)
+
+
+def _line_for_search(x0, alpha, lower_bound, upper_bound):
+    """
+    x0 is the vector representing the current location
+    alpha is the unit vector representing the direction
+    
+    ie the direction is along the line from x0 to alpha
+
+    lower_bound is a list/array of the lower bounds for each parameter in x0.
+    upper_bound is a list/array of the upper bounds for each parameter in x0.
+    
+    returns (lmin, lmax), the bounds for 
+            lower_bound[i] <= x0_i+alpha_i*l <= upper_bound[i] 
+        for all i.
+    """
+    # figure out how far forward we can go before we are out of bounds
+    # for one of the params
+    lmin, lmax = None, None
+    for i in range(len(alpha)):
+        if alpha[i] > 0:
+            lmin = _m_max(lmin, (lower_bound[i]-x0[i])/alpha[i])
+            lmax = _m_min(lmax, (upper_bound[i]-x0[i])/alpha[i])
+        elif alpha[i] < 0:
+            lmin = _m_max(lmin, (upper_bound[i]-x0[i])/alpha[i])
+            lmax = _m_min(lmax, (lower_bound[i]-x0[i])/alpha[i])
+
+    if lmin is None: lmin = 0
+    if lmax is None: lmax = 0
+    return lmin, lmax
+
+
+def _linesearch_powell(func, p, xi, bounds, tol=1e-3):
     """Line-search algorithm using fminbound.
 
     Find the minimium of the function ``func(x0+ alpha*direc)``.
@@ -2405,12 +2449,21 @@ def _linesearch_powell(func, p, xi, tol=1e-3):
     """
     def myfunc(alpha):
         return func(p + alpha*xi)
-    alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
-    xi = alpha_min*xi
-    return squeeze(fret), p + xi, xi
+
+    if bounds is None:
+        alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
+        xi = alpha_min*xi
+        return squeeze(fret), p + xi, xi
+    else:
+        lower_bound = [x[0] for x in bounds]
+        upper_bound = [x[1] for x in bounds]
+        bound = _line_for_search(p, xi, lower_bound, upper_bound)
+        res = _minimize_scalar_bounded(myfunc, bound, xatol=tol/100)
+        xi = res.x * xi
+        return res.fun, p + xi, xi
 
 
-def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
+def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
     """
@@ -2426,6 +2479,8 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func.
+    bounds: Bounds object or sequence of tuples, optional.
+        Bounds on the parameters.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
@@ -2534,7 +2589,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
-    res = _minimize_powell(func, x0, args, callback=callback, **opts)
+    res = _minimize_powell(func, x0, args, bounds, callback=callback, **opts)
 
     if full_output:
         retlist = (res['x'], res['fun'], res['direc'], res['nit'],
@@ -2549,7 +2604,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             return res['x']
 
 
-def _minimize_powell(func, x0, args=(), callback=None,
+def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
                      xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
                      disp=False, direc=None, return_all=False,
                      **unknown_options):
@@ -2619,7 +2674,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
             direc1 = direc[i]
             fx2 = fval
             fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                 tol=xtol * 100)
+                                                 bounds, tol=xtol * 100)
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
@@ -2650,7 +2705,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
             t -= delta*temp*temp
             if t < 0.0:
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                     tol=xtol*100)
+                                                     bounds, tol=xtol*100)
                 direc[bigind] = direc[-1]
                 direc[-1] = direc1
 
