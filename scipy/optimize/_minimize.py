@@ -225,14 +225,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     information might be preferred for their better performance in
     general.
 
-    Method :ref:`Powell <optimize.minimize-powell>` is a modification
-    of Powell's method [3]_, [4]_ which is a conjugate direction
-    method. It performs sequential one-dimensional minimizations along
-    each vector of the directions set (`direc` field in `options` and
-    `info`), which is updated at each iteration of the main
-    minimization loop. The function need not be differentiable, and no
-    derivatives are taken.
-
     Method :ref:`CG <optimize.minimize-cg>` uses a nonlinear conjugate
     gradient algorithm by Polak and Ribiere, a variant of the
     Fletcher-Reeves method described in [5]_ pp.  120-122. Only the
@@ -280,6 +272,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
+    
+    Method :ref:`Powell <optimize.minimize-powell>` is a modification
+    of Powell's method [3]_, [4]_ which is a conjugate direction
+    method. It performs sequential one-dimensional minimizations along
+    each vector of the directions set (`direc` field in `options` and
+    `info`), which is updated at each iteration of the main
+    minimization loop. The function need not be differentiable, and no
+    derivatives are taken. If bounds are provided, they will be
+    respected at every iteration, and a bounded line search method will
+    be used.
 
     Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
     algorithm [6]_, [7]_ for bound constrained minimization.
