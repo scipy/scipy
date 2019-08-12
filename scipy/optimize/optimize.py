@@ -2480,7 +2480,8 @@ def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=No
     args : tuple, optional
         Extra arguments passed to func.
     bounds: Bounds object or sequence of tuples, optional.
-        Bounds on the parameters.
+        Bounds on the parameters. Bounds will be respected
+        at every iteration.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
@@ -2610,7 +2611,8 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
                      **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
-    modified Powell algorithm.
+    modified Powell algorithm. Note that bounds will be respected at
+    every iteration.
 
     Options
     -------
