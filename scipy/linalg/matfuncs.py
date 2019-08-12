@@ -15,14 +15,16 @@ __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'is_matrix_indefinite']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
-        transpose, conjugate, absolute, amax, sign, isfinite, single)
+        transpose, conjugate, absolute, amax, sign, isfinite, single,
+        asarray_chkfinite, atleast_1d, atleast_2d)
 import numpy as np
 
 # Local imports
-from .misc import norm
-from .basic import solve, inv, det
+from .misc import norm, LinAlgError, _datacopied
+from .basic import solve, inv, det, _get_axis_len
 from .special_matrices import triu
 from .decomp import eig
+from .lapack import get_lapack_funcs
 from .decomp_svd import svd
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
@@ -850,13 +852,18 @@ def is_matrix_idempotent(A, tol=1e-8):
     return (np.absolute(np.matmul(A, A) - A) < tol).all()
 
 
-def is_matrix_positive_definite(A, tol=1e-8):
+def is_matrix_positive_definite(A, robust_level=0, tol=None):
     """
     Returns True if a matrix is positive definite
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to evaluate.
+    robust_level : int
+        0 => evaluate only necessary (but not sufficient) conditions (default)
+        1 => necessary conditions and cholesky decomposition
+        2 => necessary conditions and eigen values
+        3 => necessary conditions and Sylvester's criterion
     tol : float
         Tolerance for the zero value.
     
@@ -874,13 +881,93 @@ def is_matrix_positive_definite(A, tol=1e-8):
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
     >>> print(is_matrix_positive_definite(m))
     True
+    >>> m = np.array([[5,1],[1,3]])
+    >>> print(is_matrix_positive_definite(m, robust_level=1))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_positive_definite(m, robust_level=1))
+    True
+    >>> m = np.array([[5,1],[1,3]])
+    >>> print(is_matrix_positive_definite(m, robust_level=2))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_positive_definite(m, robust_level=2))
+    True
+    >>> m = np.array([[5,1],[1,3]])
+    >>> print(is_matrix_positive_definite(m, robust_level=3))
+    True
+    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> print(is_matrix_positive_definite(m, robust_level=3))
+    True
     """
+    A = np.atleast_1d(A)
+    caxis = -1
+    nc = _get_axis_len("c", A, caxis)
+    fc = np.fft.fft(np.rollaxis(A, caxis, A.ndim), axis=-1)
+    abs_fc = np.abs(fc)
+    if tol is None:
+        # This is the same tolerance as used in np.linalg.matrix_rank.
+        tol = abs_fc.max(axis=-1) * nc * np.finfo(np.float64).eps
+        if tol.shape != ():
+            tol.shape = tol.shape + (1,)
+        else:
+            tol = np.atleast_1d(tol)
+    tol = np.max(tol)
     A = _asarray_square(A)
     if not is_matrix_hermitian(A):
         raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR = eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal > 0).all()
+    if (robust_level < 0) | (robust_level > 4):
+        raise ValueError('expected robust_level between 0 and 4')
+    n = A.shape[0]
+    m = np.max(A)
+    x, y = np.where(A == m)
+    if all(x != y):
+        print('failed necessary condition for definitness: Largest element lies in the main diagonal')
+        return False
+    if det(A) <= 0:
+        print('failed necessary condition for definitness: det(A) > 0')
+        return False
+    for i in range(n):
+        if A[i, i] <= 0:
+            print('failed necessary condition for definitness: aii > 0 for all i')
+            return False
+        for j in range(n):
+            if j != i:
+                if A[i, i] + A[j, j] <= 2 * np.absolute(np.real(A[i, j])):
+                    print('failed necessary condition for definitness: aii + ajj > 2|R[aij]|, for i != j')
+                    return False
+    if robust_level == 0:
+        return True
+    if robust_level == 1:
+        a1 = asarray_chkfinite(A)
+        a1 = atleast_2d(a1)
+        overwrite_a = _datacopied(a1, A)
+        potrf, = get_lapack_funcs(('potrf',), (a1,))
+        c, info = potrf(a1, lower=True, overwrite_a=overwrite_a, clean=True)
+        if info > 0:
+            print("%d-th leading minor of the array is not positive "
+                                "definite" % info)
+            return False
+        if info < 0:
+            print('LAPACK reported an illegal value in {}-th argument'
+                                'on entry to "POTRF".'.format(-info))
+            return False
+        return True
+    if robust_level == 2:
+        eiVal, eiVecR = eig(A)
+        eiVal[np.absolute(eiVal) < tol] = 0
+        return (eiVal > 0).all()
+    if robust_level == 3:
+        if A[0,0] <= 0:
+            return False
+        elif n > 1:
+            if A[0,0] * A[1,1] - A[0,1] * A[1,0] <= 0:
+                return False
+        elif n > 2:
+            for i in range(2,n):
+                if det(A[0:i,0:i]) <= 0:
+                    return False
+        return True
 
 
 def is_matrix_positive_semidefinite(A, tol=1e-8):
