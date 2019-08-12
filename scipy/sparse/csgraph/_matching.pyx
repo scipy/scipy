@@ -107,7 +107,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     >>> a = [[0, 1, 2, 0], [1, 0, 0, 1], [2, 0, 0, 3], [0, 1, 3, 0]]
     >>> graph = csr_matrix(a)
     >>> perm = maximum_bipartite_matching(graph, perm_type='row')
-    >>> graph[perm].toarray()
+    >>> print(graph[perm].toarray())
     [[1 0 0 1]
      [0 1 2 0]
      [0 1 3 0]
