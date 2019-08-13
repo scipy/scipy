@@ -443,8 +443,8 @@ def factorized(A):
         return splu(A).solve
 
 
-def spsolve_triangular(A, b, lower=True, unit_diagonal=False,
-                       overwrite_A=False, overwrite_b=False):
+def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
+                       unit_diagonal=False):
     """
     Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
 
@@ -457,9 +457,6 @@ def spsolve_triangular(A, b, lower=True, unit_diagonal=False,
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
-    unit_diagonal : bool, optional
-        If True, diagonal elements of `a` are assumed to be 1 and will not be
-        referenced.
     overwrite_A : bool, optional
         Allow changing `A`. The indices of `A` are going to be sorted and zero
         entries are going to be removed.
@@ -469,6 +466,10 @@ def spsolve_triangular(A, b, lower=True, unit_diagonal=False,
         Enabling gives a performance gain. Default is False.
         If `overwrite_b` is True, it should be ensured that
         `b` has an appropriate dtype to be able to store the result.
+    unit_diagonal : bool, optional
+        If True, diagonal elements of `a` are assumed to be 1 and will not be
+        referenced.
+        .. versionadded:: 1.4.0
 
     Returns
     -------
