@@ -10,7 +10,6 @@ ctypedef fused DTYPE_t:
     long double complex
 
 
-
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -32,5 +31,7 @@ def _sosfilt(DTYPE_t [:, ::1] sos,
                     x_n = x[i, n]  # make a temporary copy
                     # Use direct II transposed structure:
                     x[i, n] = b[s, 0] * x_n + zi[i, s, 0]
-                    zi[i, s, 0] = b[s, 1] * x_n - a[s, 0] * x[i, n] + zi[i, s, 1]
-                    zi[i, s, 1] = b[s, 2] * x_n - a[s, 1] * x[i, n]
+                    zi[i, s, 0] = \
+                        b[s, 1] * x_n - a[s, 0] * x[i, n] + zi[i, s, 1]
+                    zi[i, s, 1] = \
+                        b[s, 2] * x_n - a[s, 1] * x[i, n]
