@@ -403,14 +403,14 @@ def test_seed():
         )
         # Use integer seed
         seed = 831
-        samp1 = gkde_trail.resample(n_sample, seed = seed)
-        samp2 = gkde_trail.resample(n_sample, seed = seed)
+        samp1 = gkde_trail.resample(n_sample, seed=seed)
+        samp2 = gkde_trail.resample(n_sample, seed=seed)
         assert_allclose(samp1, samp2, atol=1e-13)
         # Use RandomState
-        rstate1 = np.random.RandomState(seed = 138)
-        samp1 = gkde_trail.resample(n_sample, seed = rstate1)
-        rstate2 = np.random.RandomState(seed = 138)
-        samp2 = gkde_trail.resample(n_sample, seed = rstate2)
+        rstate1 = np.random.RandomState(seed=138)
+        samp1 = gkde_trail.resample(n_sample, seed=rstate1)
+        rstate2 = np.random.RandomState(seed=138)
+        samp2 = gkde_trail.resample(n_sample, seed=rstate2)
         assert_allclose(samp1, samp2, atol=1e-13)
 
     np.random.seed(8765678)
