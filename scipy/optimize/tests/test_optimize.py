@@ -250,8 +250,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
-        # Ensure that function call counts are 'known good'; these are from
-        # SciPy 0.7.0. Don't allow them to increase.
+        # Ensure that function call counts are 'known good'.
         #
         # However, some leeway must be added: the exact evaluation
         # count is sensitive to numerical error, and floating-point
@@ -259,7 +258,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         # machines, and when using e.g. MKL, data alignment
         # etc. affect the rounding error.
         #
-        assert_(self.funccalls <= 116 + 20, self.funccalls)
+        assert_(self.funccalls <= 131 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
     def test_neldermead(self):
