@@ -2398,73 +2398,76 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
 
 
 def _m_min(a, b):
-    """ Return min(a, b) """
-    if a is None:
-        return b
-    elif b is None:
-        return a
-    else:
+    """ Return min(a, b), support if a or b is None """
+    try:
         return min(a, b)
+    except TypeError:
+        return a or b
 
 
 def _m_max(a, b):
-    """ Return max(a, b) """
-    if a is None:
-        return b
-    elif b is None:
-        return a
-    else:
+    """ Return max(a, b), support if a or b is None """
+    try:
         return max(a, b)
+    except TypeError:
+        return a or b
 
 
 def _line_for_search(x0, alpha, lower_bound, upper_bound):
     """
-    x0 is the vector representing the current location
-    alpha is the unit vector representing the direction
-    
+    x0 is the vector representing the current location (np.array)
+    alpha is the vector representing the direction (np.array)
+
     ie the direction is along the line from x0 to alpha
 
-    lower_bound is a list/array of the lower bounds for each parameter in x0.
-    upper_bound is a list/array of the upper bounds for each parameter in x0.
-    
-    returns (lmin, lmax), the bounds for 
-            lower_bound[i] <= x0_i+alpha_i*l <= upper_bound[i] 
+    lower_bound is a np.array of the lower bounds for each parameter in x0.
+    upper_bound is a np.array of the upper bounds for each parameter in x0.
+
+    returns (lmin, lmax), the bounds for l such that
+            lower_bound[i] <= x0_i+alpha_i * l <= upper_bound[i]
         for all i.
     """
-    # figure out how far forward we can go before we are out of bounds
-    # for one of the params
-    lmin, lmax = None, None
-    for i in range(len(alpha)):
-        if alpha[i] > 0:
-            lmin = _m_max(lmin, (lower_bound[i]-x0[i])/alpha[i])
-            lmax = _m_min(lmax, (upper_bound[i]-x0[i])/alpha[i])
-        elif alpha[i] < 0:
-            lmin = _m_max(lmin, (upper_bound[i]-x0[i])/alpha[i])
-            lmax = _m_min(lmax, (lower_bound[i]-x0[i])/alpha[i])
+    # get nonzero indices of alpha so we don't get any zero division errors.
+    nonzero, = alpha.nonzero()
+    lower_bound, upper_bound = lower_bound[nonzero], upper_bound[nonzero]
+    x0, alpha = x0[nonzero], alpha[nonzero]
+    low = (lower_bound - x0) / alpha
+    high = (upper_bound - x0) / alpha
 
-    if lmin is None:
-        lmin = 0
-    if lmax is None:
-        lmax = 0
+    pos, = np.nonzero(alpha > 0)  # positive indices
+    neg, = np.nonzero(alpha < 0)  # negative indices
+
+    lmin = _m_max(
+        np.max(low[pos]) if pos.shape[0] else None,
+        np.max(high[neg]) if neg.shape[0] else None
+    )
+    lmax = _m_min(
+        np.min(low[neg]) if neg.shape[0] else None,
+        np.min(high[pos]) if pos.shape[0] else None
+    )
+
     return lmin, lmax
 
 
-def _linesearch_powell(func, p, xi, bounds, tol=1e-3):
+def _linesearch_powell(func, p, xi, 
+                       lower_bound=None, upper_bound=None, tol=1e-3):
     """Line-search algorithm using fminbound.
 
     Find the minimium of the function ``func(x0+ alpha*direc)``.
+    
+    lower_bound and upper_bound should be np.arrays, where
+    lower_bound[i] is the lower bounds on the i^th parameter,
+    etc.
 
     """
     def myfunc(alpha):
         return func(p + alpha*xi)
 
-    if bounds is None:
+    if lower_bound is None and upper_bound is None:
         alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
         xi = alpha_min*xi
         return squeeze(fret), p + xi, xi
     else:
-        lower_bound = [x[0] for x in bounds]
-        upper_bound = [x[1] for x in bounds]
         bound = _line_for_search(p, xi, lower_bound, upper_bound)
         res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
         xi = res.x * xi
@@ -2672,6 +2675,12 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
     else:
         direc = asarray(direc, dtype=float)
 
+    if bounds is None:
+        lower_bounds, upper_bound = None, None
+    else:
+        bounds_array = np.array(bounds)
+        lower_bound, upper_bound = bounds_array[:, 0], bounds_array[:, 1]
+
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0
@@ -2684,7 +2693,8 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
             direc1 = direc[i]
             fx2 = fval
             fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                 bounds, tol=xtol * 100)
+                                                 lower_bound, upper_bound,
+                                                 tol=xtol * 100)
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
@@ -2715,7 +2725,8 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
             t -= delta*temp*temp
             if t < 0.0:
                 fval, x, direc1 = _linesearch_powell(func, x, direc1,
-                                                     bounds, tol=xtol * 100)
+                                                     lower_bound, upper_bound,
+                                                     tol=xtol * 100)
                 direc[bigind] = direc[-1]
                 direc[-1] = direc1
 
