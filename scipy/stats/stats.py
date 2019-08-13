@@ -4240,9 +4240,8 @@ def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
 
     Parameters
     ----------
-    x, y : array_like
-        `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
-        matrices.
+    x, y : ndarray
+        `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
     ind_test : callable
@@ -4291,36 +4290,38 @@ MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     r"""
-    Computes the Multiscale Graph Correlation (MGC) test statistic, a high
-    dimensional measure of independence between arbitrary data matrices.
+    Computes the Multiscale Graph Correlation (MGC) test statistic.
 
-    Building upon the ideas of nearest neighbor methods and distance-based
-    statistical methods, MGC achieves higher statistical power compared with
-    comparable distance based statistics while also providing a map that
-    characterizes the latent geometry of the relationship [1]_.
+    MGC combines the mechanisms specified in nearest neighbor and distance
+    methods [1]_. For each point, the :math:`k`-nearest neighbors of one
+    property and the :math:`l`-nearest neighbors of another property are
+    calculated as a :math:`(k, l)` scale. The local correlations (described in
+    the notes) specifically illustrate which scales are informative. This
+    allows MGC to uniquely characterize the strength of the dependency across
+    all the scales, which helps characterize the statistical relationship.
     Characterizations of this implementation in particular have been
-    benchmarked extensively [2]_.
+    benchmarked extensively in [2]_.
 
     Parameters
     ----------
     x, y : array_like
         Input data or distance matrices with the same number of samples. That
-        is, if `x` is :math:`n \times p`, `y` must be :math:`n \times q` where
-        n is the number of samples and p and q are the number of dimensions.
-        Alternatively, `x` and `y` can be :math:`n \times n` distance or
-        similarity matrices.
+        is, `x` and `y` must have shapes `(n, p)` and `(n, q)` where `n` is the
+        number of samples and `p` and `q` are the number of dimensions.
+        Alternatively, `x` and `y` can be `(n, n)` distance or similarity
+        matrices.
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
-        within each data matrix. Set to ``None`` if `x` and `y` are already
+        within each data matrix. Set to `None` if `x` and `y` are already
         distance matrices. The default uses the euclidean norm metric.
     reps : int, optional
         The number of replications used to estimate the null when using the
-        permutation test. The default is 1000 repelications.
+        permutation test. The default is 1000 replications.
 
     Returns
     -------
     stat : float
-        The sample MGC test statistic within :math:`[-1, 1]`.
+        The sample MGC test statistic within `[-1, 1]`.
     pvalue : float
         The p-value obtained via permutation.
     mgc_dict : dict
@@ -4330,7 +4331,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
             - mgc_map : ndarray
                 A 2D representation of the latent geometry of the relationship.
             - opt_scale : (int, int)
-                The estimated optimal scale as a :math:`(x, y)` pair.
+                The estimated optimal scale as a `(x, y)` pair.
             - null_dist : list
                 The null distribution derived from the permuted matrices
 
@@ -4388,7 +4389,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     statistic.
 
     MGC requires at least 5 samples to run with reliable results. It can also
-    handle multidimensional arrays.
+    handle high-dimensional data sets.
 
     .. versionadded:: 1.4.0
 
@@ -4408,18 +4409,25 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     Examples
     --------
     >>> from scipy.stats import multiscale_graphcorr
-    >>> x = np.array([0.07487683, -0.18073412, 0.37266440, 0.06074847,
-    ...               0.76899045, 0.51862516, -0.13480764, -0.54368083,
-    ...               -0.73812644, 0.54910974])
-    >>> y = np.array([-1.31741173, -0.41634224, 2.24021815, 0.88317196,
-    ...               2.00149312, 1.35857623, -0.06729464, 0.16168344,
-    ...               -0.61048226, 0.41711113])
+    >>> np.random.seed(12345678)
+    >>> x = np.linspace(-1, 1, num=100)
+    >>> y = x + 0.3 * np.random.random(x.size)
     >>> stat, pvalue, _ = multiscale_graphcorr(x, y)
     >>> round(stat, 1), round(pvalue, 1)
     (0.4, 0.0)
+
+    Alternatively,
+
+    >>> from scipy.stats import multiscale_graphcorr
+    >>> np.random.seed(12345678)
+    >>> x = np.linspace(-1, 1, num=100)
+    >>> y = x + 0.3 * np.random.random(x.size)
+    >>> mgc = multiscale_graphcorr(x, y)
+    >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
+    (0.4, 0.0)
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
-        raise ValueError("x and/or why must be ndarrays")
+        raise ValueError("x and y why must be ndarrays")
 
     # check for NaNs
     _contains_nan(x, nan_policy='raise')
@@ -4481,8 +4489,8 @@ def _mgc_stat(x, y, compute_distance):
     Parameters
     ----------
     x, y : array_like
-        `x` and `y` are be :math:`n \times p` and :math:`n \times q` data
-        matrices.
+        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+        if distance matrices.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to ``None`` if `x` and `y` are already
@@ -4491,18 +4499,23 @@ def _mgc_stat(x, y, compute_distance):
     Returns
     -------
     stat : float
-        The sample MGC test statistic within :math:`[-1, 1]`.
+        The sample MGC test statistic within `[-1, 1]`.
     stat_dict : dict
         Contains additional useful additional returns containing the following
         keys:
             - stat_mgc_map : ndarray
                 MGC-map of the statistics.
             - opt_scale : (float, float)
-                The estimated optimal scale as a :math:`(x, y)` pair.
+                The estimated optimal scale as a `(x, y)` pair.
     """
-    # compute distance matrices for x and y
-    distx = compute_distance(x)
-    disty = compute_distance(y)
+    # set distx and disty to x and y when compute_distance = None
+    distx = x
+    disty = y
+
+    if compute_distance is not None:
+        # compute distance matrices for x and y
+        distx = compute_distance(x)
+        disty = compute_distance(y)
 
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')[0]
@@ -4533,7 +4546,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     Parameters
     ----------
     stat_mgc_map : ndarray
-        All local correlations within :math:`[-1,1]`.
+        All local correlations within `[-1,1]`.
     samp_size : int
         The sample size of original data.
 
@@ -4580,14 +4593,14 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
     sig_connect: ndarray
         A binary matrix with 1's indicating the significant region.
     stat_mgc_map: ndarray
-        All local correlations within :math:`[-1,1]`.
+        All local correlations within `[-1,1]`.
 
     Returns
     -------
     stat : float
-        The sample MGC statistic within :math:`[-1, 1]`.
+        The sample MGC statistic within `[-1, 1]`.
     opt_scale: (float, float)
-        The estimated optimal scale as an :math:``(x, y)`` pair.
+        The estimated optimal scale as an `(x, y)` pair.
     """
 
     m, n = stat_mgc_map.shape

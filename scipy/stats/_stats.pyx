@@ -416,7 +416,7 @@ cdef _local_covariance(ndarray distx, ndarray disty, ndarray rank_distx, ndarray
             cov_xy_view[k+1, l+1] += (cov_xy_view[k+1, l] + cov_xy_view[k, l+1] - cov_xy_view[k, l])
 
     # centering the covariances
-    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) / n**2)  # caveat when porting from R (reshape)
+    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) / n**2)
 
     return cov_xy
 
@@ -451,14 +451,12 @@ cpdef _local_correlations(ndarray distx, ndarray disty, str global_corr='mgc'):
 
     # normalizing the covariances yields the local family of correlations
 
-    warnings.filterwarnings("ignore")
-    # 2 caveats when porting from R (np.sqrt and reshape)
-    corr_mat = cov_mat / np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
-    # avoid computational issues that may cause a few local correlations
-    # to be negligebly larger than 1
-    corr_mat[corr_mat > 1] = 1
-
-    warnings.filterwarnings("default")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        corr_mat = cov_mat / np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
+        # avoid computational issues that may cause a few local correlations
+        # to be negligibly larger than 1
+        corr_mat[corr_mat > 1] = 1
 
     # set any local correlation to 0 if any corresponding local variance is
     # less than or equal to 0
