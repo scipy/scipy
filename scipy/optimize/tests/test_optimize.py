@@ -226,7 +226,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
-    def test_bounded_powell(self):
+    def test_powell_bounded(self):
         # Powell (direction set) optimization routine
         # same as test_powell above, but with bounds
         bounds = [(-np.pi, np.pi) for _ in self.startparams]
@@ -261,15 +261,6 @@ class CheckOptimizeParameterized(CheckOptimize):
         #
         assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
-
-        # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[34:39],
-                        [[0.72949016, -0.44156936, 0.47100962],
-                         [0.72949016, -0.44156936, 0.48052496],
-                         [1.45898031, -0.88313872, 0.95153458],
-                         [0.72949016, -0.44156936, 0.47576729],
-                         [1.72949016, -0.44156936, 0.47576729]],
-                        atol=1e-14, rtol=1e-7)
 
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
