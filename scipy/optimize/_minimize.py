@@ -517,10 +517,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                  'trust-ncg') and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
-    if meth == "powell" and np.any(constraints):
-        warn('Method %s cannot handle constraints.' % method,
-             RuntimeWarning)
-    if meth in ('l-bfgs-b', 'tnc') and np.any(constraints):
+    if meth in ('l-bfgs-b', 'tnc', 'powell') and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth == 'cobyla' and bounds is not None:
