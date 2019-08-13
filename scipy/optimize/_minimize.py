@@ -272,7 +272,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
-    
+
     Method :ref:`Powell <optimize.minimize-powell>` is a modification
     of Powell's method [3]_, [4]_ which is a conjugate direction
     method. It performs sequential one-dimensional minimizations along
@@ -281,7 +281,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     minimization loop. The function need not be differentiable, and no
     derivatives are taken. If bounds are provided, they will be
     respected at every iteration, and a bounded line search method will
-    be used.
+    be used. If bounds are not provided, then an unbounded line search
+    method will be used.
 
     Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
     algorithm [6]_, [7]_ for bound constrained minimization.
