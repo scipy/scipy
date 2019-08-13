@@ -223,4 +223,4 @@ class TestUpfirdn(object):
         ypad = upfirdn(h, xpad, up=1, down=1, mode='constant')
         y_expected = ypad[npad:-npad]
 
-        assert_allclose(y, y_expected)
+        assert_allclose(y, y_expected, atol=1e-6, rtol=1e-6)
