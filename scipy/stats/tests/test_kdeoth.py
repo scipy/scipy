@@ -399,20 +399,19 @@ def test_seed():
         samp1 = gkde_trail.resample(n_sample)
         samp2 = gkde_trail.resample(n_sample)
         assert_raises(
-            AssertionError, assert_array_almost_equal,
-            samp1, samp2, decimal = 13
+            AssertionError, assert_allclose, samp1, samp2, atol=1e-13
         )
         # Use integer seed
         seed = 831
         samp1 = gkde_trail.resample(n_sample, seed = seed)
         samp2 = gkde_trail.resample(n_sample, seed = seed)
-        assert_array_almost_equal(samp1, samp2, decimal = 13)
+        assert_allclose(samp1, samp2, atol=1e-13)
         # Use RandomState
         rstate1 = np.random.RandomState(seed = 138)
         samp1 = gkde_trail.resample(n_sample, seed = rstate1)
         rstate2 = np.random.RandomState(seed = 138)
         samp2 = gkde_trail.resample(n_sample, seed = rstate2)
-        assert_array_almost_equal(samp1, samp2, decimal = 13)
+        assert_allclose(samp1, samp2, atol=1e-13)
 
     np.random.seed(8765678)
     n_basesample = 500
