@@ -9,9 +9,12 @@ from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
     )
+from collections import namedtuple
 
 
-class LPProblem(dict):
+_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
+_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
     Attributes
@@ -42,33 +45,16 @@ class LPProblem(dict):
         the optimization algorithm. This argument is currently used only by the
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
+
+    Notes
+    ----------
+    This namedtuple supports 2 ways of initialization:
+    >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
+    >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
+
+    Note that only c is an required argument here, whereas all other arguments 
+    A_ub, b_ub, A_eq, b_eq, bounds, x0 are optional with default value of None.
     """
-
-    def __init__(self, *args, **kwargs):
-        for key in ['A_ub', 'b_ub', 'A_eq', 'b_eq', 'bounds', 'x0']:
-            self[key] = None
-        dict.__init__(self, *args, **kwargs)
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __repr__(self):
-        if self.keys():
-            m = max(map(len, list(self.keys()))) + 1
-            return self.__class__.__name__ + '\n' + \
-                '\n'.join([k.rjust(m) + ': ' + repr(v)
-                           for k, v in sorted(self.items())])
-        else:
-            return self.__class__.__name__ + "()"
-
-    def __dir__(self):
-        return list(self.keys())
 
 
 def _check_sparse_inputs(options, A_ub, A_eq):
