@@ -25,7 +25,7 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
-    _parse_linprog, _presolve, _get_Abc, _postprocess
+    _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem
     )
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -496,8 +496,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0 = _parse_linprog(
-        c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0)
+    lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    lp, solver_options = _parse_linprog(lp, options)
     tol = solver_options.get('tol', 1e-9)
 
     iteration = 0
@@ -506,21 +506,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # Keep the original arrays to calculate slack/residuals for original
     # problem.
-    c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o = c.copy(
-    ), A_ub.copy(), b_ub.copy(), A_eq.copy(), b_eq.copy()
+    lp_o = lp
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc...
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
-        (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, x0, undo, complete, status,
-            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol)
+        (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr, tol)
 
-    postsolve_args = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
+    postsolve_args = (lp_o.c, lp_o.A_ub, lp_o.b_ub, lp_o.A_eq, lp_o.b_eq, lp.bounds, undo)
 
     if not complete:
-        A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
-                                   b_eq, bounds, x0, undo)
+        A, b, c, c0, x0 = _get_Abc(lp, c0, undo)
 
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
