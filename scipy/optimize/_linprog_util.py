@@ -9,6 +9,52 @@ from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
     )
+from collections import namedtuple
+
+
+_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
+_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem.__doc__ = \
+    """ Represents a linear-programming problem.
+
+    Attributes
+    ----------
+    c : 1D array
+        The coefficients of the linear objective function to be minimized.
+    A_ub : 2D array, optional
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
+    b_ub : 1D array, optional
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
+    b_eq : 1D array, optional
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
+    bounds : sequence, optional
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None`` to
+        indicate that there is no bound. By default, bounds are ``(0, None)``
+        (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
+    x0 : 1D array, optional
+        Guess values of the decision variables, which will be refined by
+        the optimization algorithm. This argument is currently used only by the
+        'revised simplex' method, and can only be used if `x0` represents a
+        basic feasible solution.
+
+    Notes
+    ----------
+    This namedtuple supports 2 ways of initialization:
+    >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
+    >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
+
+    Note that only c is an required argument here, whereas all other arguments 
+    A_ub, b_ub, A_eq, b_eq, bounds, x0 are optional with default value of None.
+    """
 
 
 def _check_sparse_inputs(options, A_ub, A_eq):
