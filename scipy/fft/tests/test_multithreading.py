@@ -11,7 +11,6 @@ def x():
     return np.random.randn(512, 128)  # Must be large enough to qualify for mt
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize("func", [
     fft.fft, fft.ifft, fft.fft2, fft.ifft2, fft.fftn, fft.ifftn,
     fft.rfft, fft.irfft, fft.rfft2, fft.irfft2, fft.rfftn, fft.irfftn,
