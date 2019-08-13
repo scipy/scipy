@@ -4424,7 +4424,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     >>> y = x + 0.3 * np.random.random(x.size)
     >>> mgc = multiscale_graphcorr(x, y)
     >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
-    (0.4, 0.0)
+    (1.0, 0.0)
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise ValueError("x and y why must be ndarrays")
