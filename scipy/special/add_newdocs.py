@@ -3376,19 +3376,23 @@ add_newdoc("huber",
 
 add_newdoc("hyp0f1",
     r"""
-    hyp0f1(v, x)
+    hyp0f1(v, z, out=None)
 
     Confluent hypergeometric limit function 0F1.
 
     Parameters
     ----------
-    v, z : array_like
-        Input values.
+    v : array_like
+        Real valued parameter
+    z : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    hyp0f1 : ndarray
-        The confluent hypergeometric limit function.
+    scalar or ndarray
+        The confluent hypergeometric limit function
 
     Notes
     -----
@@ -3397,14 +3401,114 @@ add_newdoc("hyp0f1",
     .. math:: _0F_1(v, z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
 
     It's also the limit as :math:`q \to \infty` of :math:`_1F_1(q; v; z/q)`,
-    and satisfies the differential equation :math:`f''(z) + vf'(z) = f(z)`.
+    and satisfies the differential equation :math:`f''(z) + vf'(z) =
+    f(z)`. See [1]_ for more information.
+
+    References
+    ----------
+    .. [1] Wolfram MathWorld, "Confluent Hypergeometric Limit Function",
+           http://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is one when `z` is zero.
+
+    >>> sc.hyp0f1(1, 0)
+    1.0
+
+    It is the limit of the confluent hypergeometric function as `q`
+    goes to infinity.
+
+    >>> q = np.array([1, 10, 100, 1000])
+    >>> v = 1
+    >>> z = 1
+    >>> sc.hyp1f1(q, v, z / q)
+    array([2.71828183, 2.31481985, 2.28303778, 2.27992985])
+    >>> sc.hyp0f1(v, z)
+    2.2795853023360673
+
+    It is related to Bessel functions.
+
+    >>> n = 1
+    >>> x = np.linspace(0, 1, 5)
+    >>> sc.jv(n, x)
+    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+    >>> (0.5 * x)**n / sc.factorial(n) * sc.hyp0f1(n + 1, -0.25 * x**2)
+    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+
     """)
 
 add_newdoc("hyp1f1",
-    """
-    hyp1f1(a, b, x)
+    r"""
+    hyp1f1(a, b, x, out=None)
 
-    Confluent hypergeometric function 1F1(a, b; x)
+    Confluent hypergeometric function 1F1.
+
+    The confluent hypergeometric function is defined by the series
+
+    .. math::
+
+       {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
+
+    See [dlmf]_ for more details. Here :math:`(\cdot)_k` is the
+    Pochhammer symbol; see `poch`.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real parameters
+    x : array_like
+        Real or complex argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the confluent hypergeometric function
+
+    See also
+    --------
+    hyperu : another confluent hypergeometric function
+    hyp0f1 : confluent hypergeometric limit function
+    hyp2f1 : Gaussian hypergeometric function
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/13.2#E2
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is one when `x` is zero:
+
+    >>> sc.hyp1f1(0.5, 0.5, 0)
+    1.0
+
+    It is singular when `b` is a nonpositive integer.
+
+    >>> sc.hyp1f1(0.5, -1, 0)
+    inf
+
+    It is a polynomial when `a` is a nonpositive integer.
+
+    >>> a, b, x = -1, 0.5, np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.hyp1f1(a, b, x)
+    array([-1., -3., -5., -7.])
+    >>> 1 + (a / b) * x
+    array([-1., -3., -5., -7.])
+
+    It reduces to the exponential function when `a = b`.
+
+    >>> sc.hyp1f1(2, 2, [1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+    >>> np.exp([1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+
     """)
 
 add_newdoc("hyp2f1",
@@ -3454,13 +3558,116 @@ add_newdoc("hyp2f1",
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has poles when `c` is a negative integer.
+
+    >>> sc.hyp2f1(1, 1, -2, 1)
+    inf
+
+    It is a polynomial when `a` or `b` is a negative integer.
+
+    >>> a, b, c = -1, 1, 1.5
+    >>> z = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, c, z)
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+    >>> 1 + a * b * z / c
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+
+    It is symmetric in `a` and `b`.
+
+    >>> a = np.linspace(0, 1, 5)
+    >>> b = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+    >>> sc.hyp2f1(b, a, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+
+    It contains many other functions as special cases.
+
+    >>> z = 0.5
+    >>> sc.hyp2f1(1, 1, 2, z)
+    1.3862943611198901
+    >>> -np.log(1 - z) / z
+    1.3862943611198906
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, z**2)
+    1.098612288668109
+    >>> np.log((1 + z) / (1 - z)) / (2 * z)
+    1.0986122886681098
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, -z**2)
+    0.9272952180016117
+    >>> np.arctan(z) / z
+    0.9272952180016123
+
     """)
 
 add_newdoc("hyperu",
-    """
-    hyperu(a, b, x)
+    r"""
+    hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U(a, b, x) of the second kind
+    Confluent hypergeometric function U
+
+    It is defined as the solution to the equation
+
+    .. math::
+
+       x \frac{d^2w}{dx^2} + (b - x) \frac{dw}{dx} - aw = 0
+
+    which satisfies the property
+
+    .. math::
+
+       U(a, b, x) \sim x^{-a}
+
+    as :math:`x \to \infty`. See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real valued parameters
+    x : array_like
+        Real valued argument
+    out : ndarray
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of `U`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematics Functions
+              https://dlmf.nist.gov/13.2#E6
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has a branch cut along the negative `x` axis.
+
+    >>> x = np.linspace(-0.1, -10, 5)
+    >>> sc.hyperu(1, 1, x)
+    array([nan, nan, nan, nan, nan])
+
+    It approaches zero as `x` goes to infinity.
+
+    >>> x = np.array([1, 10, 100])
+    >>> sc.hyperu(1, 1, x)
+    array([0.59634736, 0.09156333, 0.00990194])
+
+    It satisfies Kummer's transformation.
+
+    >>> a, b, x = 2, 1, 1
+    >>> sc.hyperu(a, b, x)
+    0.1926947246463881
+    >>> x**(1 - b) * sc.hyperu(a - b + 1, 2 - b, x)
+    0.1926947246463881
+
     """)
 
 add_newdoc("i0",
