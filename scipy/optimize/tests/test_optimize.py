@@ -226,7 +226,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
-
     def test_bounded_powell(self):
         # Powell (direction set) optimization routine
         # same as test_powell above, but with bounds
