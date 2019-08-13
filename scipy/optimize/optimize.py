@@ -2676,7 +2676,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         direc = asarray(direc, dtype=float)
 
     if bounds is None:
-        lower_bounds, upper_bound = None, None
+        lower_bound, upper_bound = None, None
     else:
         bounds_array = np.array(bounds)
         lower_bound, upper_bound = bounds_array[:, 0], bounds_array[:, 1]
