@@ -1088,22 +1088,23 @@ Let's use a custom plotting function to plot the data relationship:
     ...     """Plot sim and MGC-plot"""
     ...     if not only_mgc:
     ...         # simulation
-    ...         fig = plt.figure(figsize=(8,8))
-    ...         plt.title(sim_name + " Simulation", fontsize=17)
-    ...         plt.scatter(x, y)
-    ...         plt.xlabel('X', fontsize=15)
-    ...         plt.ylabel('Y', fontsize=15)
-    ...         plt.axis('equal')
-    ...         plt.xticks(fontsize=15)
-    ...         plt.yticks(fontsize=15)
+    ...         plt.figure(figsize=(8, 8))
+    ...         ax = plt.gca()
+    ...         ax.set_title(sim_name + " Simulation", fontsize=20)
+    ...         ax.scatter(x, y)
+    ...         ax.set_xlabel('X', fontsize=15)
+    ...         ax.set_ylabel('Y', fontsize=15)
+    ...         ax.axis('equal')
+    ...         ax.tick_params(axis="x", labelsize=15)
+    ...         ax.tick_params(axis="y", labelsize=15)
     ...         plt.show()
     ...     if not only_viz:
     ...         # local correlation map
     ...         plt.figure(figsize=(8,8))
-    ...         mgc_map = mgc_dict["mgc_map"]
     ...         ax = plt.gca()
+    ...         mgc_map = mgc_dict["mgc_map"]
     ...         # draw heatmap
-    ...         plt.title("Local Correlation Map", fontsize=17)
+    ...         ax.set_title("Local Correlation Map", fontsize=20)
     ...         im = ax.imshow(mgc_map, cmap='YlGnBu')
     ...         # colorbar
     ...         cbar = ax.figure.colorbar(im, ax=ax)
@@ -1120,43 +1121,17 @@ Let's use a custom plotting function to plot the data relationship:
     ...         ax.tick_params(bottom="off", left="off")
     ...         ax.set_xlabel('#Neighbors for X', fontsize=15)
     ...         ax.set_ylabel('#Neighbors for Y', fontsize=15)
-    ...         ax.set_xlim(0, 60)
-    ...         ax.set_ylim(0, 60)
+    ...         ax.tick_params(axis="x", labelsize=15)
+    ...         ax.tick_params(axis="y", labelsize=15)
+    ...         ax.set_xlim(0, 100)
+    ...         ax.set_ylim(0, 100)
     ...         plt.show()
 
 Let's look at some linear data first:
 
-    >>> x = np.array([-0.69198779, 0.18236784, -0.55349325, -0.29817661,
-    ...               -0.18634447, -0.87385644, -0.01675855, 0.54961639,
-    ...               0.94876906, 0.84360142, -0.31630326, 0.26506057,
-    ...               -0.46969755, 0.17495724, 0.55487294, 0.7197614,
-    ...               0.6877137, -0.71202396, -0.8485548, -0.15804884,
-    ...               0.35631348, 0.69911379, 0.62262905, -0.35320649,
-    ...               -0.22129935, -0.40791716, -0.794978, -0.69907243,
-    ...               -0.05848131, -0.51222227, 0.44514037, -0.23736801,
-    ...               0.46391126, -0.49347417, 0.38685186, 0.37943616,
-    ...               -0.60447922, -0.38036988, -0.53064025, 0.53489706,
-    ...               0.5080103, 0.56439519, 0.0677455, -0.49572507,
-    ...               0.37072501, -0.29463516, -0.70315084, -0.67595525,
-    ...               0.70258537, -0.58428249, 0.14102167, -0.8983592,
-    ...               -0.78810629, -0.38004984, -0.23656869, 0.65481118,
-    ...               -0.30425405, 0.11929743, -0.49289453, -0.67434041])
-
-    >>> y = np.array([-0.6908471, 0.16075167, -0.67384637, -0.34711818,
-    ...               -0.26276349, -0.9370918, -0.06475708, 0.54963171,
-    ...               0.92910889, 0.66925604, -0.42844048, 0.27750248,
-    ...               -0.38895249, 0.24754639, 0.69432075, 0.8844475,
-    ...               0.67773753, -0.72245891, -0.90505028, -0.15128523,
-    ...               0.6783898, 0.58426834, 0.52803583, -0.58496232,
-    ...               -0.08003326, -0.54283684, -0.72224492, -0.84101252,
-    ...               -0.13234972, -0.46774943, 0.37698692, -0.20006398,
-    ...               0.53392985, -0.56931348, 0.43570656, 0.3181415,
-    ...               -0.87795924, -0.34648145, -0.6360669, 0.52274641,
-    ...               0.38759297, 0.74337648, 0.11119666, -0.68673302,
-    ...               0.27804636, -0.38563257, -0.6312467, -0.6512263,
-    ...               0.73456059, -0.58419793, 0.18944069, -0.84614839,
-    ...               -0.81814372, -0.37322543, -0.27000976, 0.65305384,
-    ...               -0.35459847, 0.30447249, -0.55376159, -0.82961632])
+    >>> np.random.seed(12345678)
+    >>> x = np.linspace(-1, 1, num=100)
+    >>> y = x + 0.3 * np.random.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1180,40 +1155,20 @@ optimal scale is shown on the map as a red "x"::
    :align: center
    :include-source: 0
 
+It is clear from here, that MGC is able to determine a relationship between the
+input data matrices because the p-value is very low and the MGC test statistic
+is relatively high. The MGC-map indicates a **strongly linear relationship**.
+Intuitively, this is because having more neighbors will help in identifying a
+linear relationship between :math:`x` and :math:`y`. The optimal scale in this
+case is **equivalent to the global scale**, marked by a red spot on the map.
+
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
 
-    >>> x = np.array([-0.57765724, -2.9276214, -1.04262652, 1.2582997,
-    ...               2.02245107, 0.17284193, 0.32260546, 3.57466422,
-    ...               -4.48283493, -1.54766131, 1.04438668, -2.75866533,
-    ...               -0.69001856, -2.88075929, 3.64557631, 2.5336397,
-    ...               3.25705372, -0.45880268, 0.14090932, 1.99165555,
-    ...               -1.14072871, 3.0244705, 3.99267301, 0.58097879,
-    ...               1.91957596, -0.09198175, -0.0202113, -0.53583113,
-    ...               1.04351052, -0.94095353, 1.25420529, 1.82505601,
-    ...               1.76087592, -0.84837026, -0.35739805, -0.55455663,
-    ...               -0.98819013, 0.23788301, -1.00355776, 3.34646196,
-    ...               2.82813969, 3.75906558, -1.35422137, -0.86101343,
-    ...               -0.78098675, 1.29833785, -0.51161473, -0.6701878,
-    ...               2.94804317, -1.0313851, -2.55195402, 0.17734692,
-    ...               -0.0494121, 0.24185469, 1.83039907, 3.75957814,
-    ...               1.18814491, -2.25471647, -0.84504751, -0.67927423])
-
-    >>> y = np.array([0.51031563, 0.38642023, -0.51907824, -1.27170782,
-    ...               0.14132488, 0.20053897, 2.38884352, -1.49329281,
-    ...               1.88817141, 4.16704358, -1.46519457, -1.53420917,
-    ...               -1.05129013, 0.64661363, -1.20961109, 3.63823477,
-    ...               2.67217981, 0.54437479, 0.29491934, 0.68780628,
-    ...               -2.8710651, 2.86781294, 0.62258443, -1.74076219,
-    ...               -0.18287893, -1.61226611, 0.58488943, 0.38614018,
-    ...               2.03597632, -0.73118874, -3.45631826, -0.51425533,
-    ...               -3.13829749, -1.01595659, -3.39980512, -3.46500481,
-    ...               -0.23870139, -1.49681269, -0.71348741, -1.88981505,
-    ...               -2.61335135, -0.90048746, 2.3437962, -1.11187083,
-    ...               -3.42930925, -1.28428743, 0.60948834, 0.47984385,
-    ...               3.10223942, -0.12788552, 1.32301543, 0.23418854,
-    ...               0.49738729, -1.52406425, -0.5740983, 1.72467609,
-    ...               -1.32066007, 1.84240793, -1.00591703, 0.29352814])
+    >>> np.random.seed(12345678)
+    >>> unif = np.array(np.random.uniform(0, 5, size=100))
+    >>> x = unif * np.cos(np.pi * unif)
+    >>> y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1236,3 +1191,9 @@ optimal scale is shown on the map as a red "x":
 .. plot:: tutorial/stats/plots/mgc_plot4.py
    :align: center
    :include-source: 0
+
+It is clear from here, that MGC is able to determine a relationship again
+because the p-value is very low and the MGC test statistic is relatively high.
+The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
+in this case is **equivalent to the local scale**, marked by a red spot on the
+map.
