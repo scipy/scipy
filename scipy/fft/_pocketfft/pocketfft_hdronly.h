@@ -63,6 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #endif
 
+#ifndef POCKETFFT_NO_MULTITHREADING
 #include <mutex>
 #include <condition_variable>
 #include <thread>
@@ -73,7 +74,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef POCKETFFT_PTHREADS
 #  include <pthread.h>
 #endif
-
+#endif
 
 #if defined(__GNUC__)
 #define POCKETFFT_NOINLINE __attribute__((noinline))
@@ -266,49 +267,178 @@ template<bool fwd, typename T> void ROTX90(cmplx<T> &a)
 // twiddle factor section
 //
 
+/** Approximate sin(pi*a) within the range [-0.25, 0.25] */
+inline float sinpi0(float a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  float s = a * a;
+  float r =      -5.957031250000000000e-01f;
+  r = fma (r, s,  2.550399541854858398e+00f);
+  r = fma (r, s, -5.167724132537841797e+00f);
+  r = (a * s) * r;
+  return fma (a, 3.141592741012573242e+00f, r);
+  }
+
+/** Approximate sin(pi*a) within the range [-0.25, 0.25] */
+inline double sinpi0(double a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  double s = a * a;
+  double r =      4.6151442520157035e-4;
+  r = fma (r, s, -7.3700183130883555e-3);
+  r = fma (r, s,  8.2145868949323936e-2);
+  r = fma (r, s, -5.9926452893214921e-1);
+  r = fma (r, s,  2.5501640398732688e+0);
+  r = fma (r, s, -5.1677127800499516e+0);
+  s = s * a;
+  r = r * s;
+  return fma (a, 3.1415926535897931e+0, r);
+  }
+
+/** Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
+inline float cosm1pi0(float a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  float s = a * a;
+  float r =        2.313842773437500000e-01f;
+  r = fmaf (r, s, -1.335021972656250000e+00f);
+  r = fmaf (r, s,  4.058703899383544922e+00f);
+  r = fmaf (r, s, -4.934802055358886719e+00f);
+  return r*s;
+  }
+
+/** Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
+inline double cosm1pi0(double a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  double s = a * a;
+  double r =     -1.0369917389758117e-4;
+  r = fma (r, s,  1.9294935641298806e-3);
+  r = fma (r, s, -2.5806887942825395e-2);
+  r = fma (r, s,  2.3533063028328211e-1);
+  r = fma (r, s, -1.3352627688538006e+0);
+  r = fma (r, s,  4.0587121264167623e+0);
+  r = fma (r, s, -4.9348022005446790e+0);
+  return r*s;
+  }
+
+template <typename T> void sincosm1pi0(T a_, T *POCKETFFT_RESTRICT res)
+  {
+  if (sizeof(T)>sizeof(double)) // don't have the code for long double
+    {
+    constexpr T pi = T(3.141592653589793238462643383279502884197L);
+    auto s = sin(pi*a_);
+    res[1] = s;
+    res[0] = (s*s)/(-sqrt((1-s)*(1+s))-1);
+    return;
+    }
+  res[0] = T(cosm1pi0(double(a_)));
+  res[1] = T(sinpi0(double(a_)));
+  }
+
+template <typename T> T sinpi(T a)
+  {
+  // reduce argument to primary approximation interval (-0.25, 0.25)
+  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
+  auto i = (int64_t)r;
+  auto t = fma (T(-0.5), r, a);
+
+  switch (i%4)
+    {
+    case 0:
+      return sinpi0(t);
+    case 1: case -3:
+      return cosm1pi0(t) + T(1.);
+    case 2: case -2:
+      return T(0.) - sinpi0(t);
+    case 3: case -1:
+      return T(-1.) - cosm1pi0(t);
+    }
+  throw runtime_error("cannot happen");
+  }
+
+template <typename T> T cospi(T a)
+  {
+  // reduce argument to primary approximation interval (-0.25, 0.25)
+  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
+  auto i = (int64_t)r;
+  auto t = fma (T(-0.5), r, a);
+
+  switch (i%4)
+    {
+    case 0:
+      return cosm1pi0(t) + T(1.);
+    case 1: case -3:
+      return T(0.) - sinpi0(t);
+    case 2: case -2:
+      return T(-1.) - cosm1pi0(t);
+    case 3: case -1:
+      return sinpi0(t);
+    }
+  throw runtime_error("cannot happen");
+  }
+
+inline long double cospi(long double a)
+  {
+  constexpr auto pi = 3.141592653589793238462643383279502884197L;
+  return sizeof(long double) > sizeof(double) ? cos(a * pi) :
+    static_cast<long double>(cospi(static_cast<double>(a)));
+  }
+
+inline long double sinpi(long double a)
+  {
+  constexpr auto pi = 3.141592653589793238462643383279502884197L;
+  return sizeof(long double) > sizeof(double) ? sin(a * pi) :
+    static_cast<long double>(sinpi(static_cast<double>(a)));
+  }
+
+template <typename T> void sincospi(T a, T *POCKETFFT_RESTRICT res)
+  {
+  // reduce argument to primary approximation interval (-0.25, 0.25)
+  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
+  auto i = (int64_t)r;
+  auto t = fma (T(-0.5), r, a);
+
+  auto c=cosm1pi0(t)+T(1.);
+  auto s=sinpi0(t);
+
+  // map results according to quadrant
+  if (i & 2)
+    {
+    s = T(0.)-s;
+    c = T(0.)-c;
+    }
+  if (i & 1)
+    {
+    swap(s, c);
+    c = T(0.)-c;
+    }
+  res[0]=c;
+  res[1]=s;
+  }
+
+inline void sincospi(long double a, long double *POCKETFFT_RESTRICT res)
+  {
+  if (sizeof(long double) > sizeof(double))
+    {
+    constexpr auto pi = 3.141592653589793238462643383279502884197L;
+    res[0] = cos(pi * a);
+    res[1] = sin(pi * a);
+    }
+  else
+    {
+    double sincos[2];
+    sincospi(static_cast<double>(a), sincos);
+    res[0] = static_cast<long double>(sincos[0]);
+    res[1] = static_cast<long double>(sincos[1]);
+    }
+  }
+
 template<typename T> class sincos_2pibyn
   {
   private:
     using Thigh = typename conditional<(sizeof(T)>sizeof(double)), T, double>::type;
     arr<T> data;
-
-    void my_sincosm1pi (Thigh a_, Thigh *POCKETFFT_RESTRICT res)
-      {
-      if (sizeof(Thigh)>sizeof(double)) // don't have the code for long double
-        {
-        constexpr Thigh pi = Thigh(3.141592653589793238462643383279502884197L);
-        auto s = sin(pi*a_);
-        res[1] = s;
-        res[0] = (s*s)/(-sqrt((1-s)*(1+s))-1);
-        return;
-        }
-      // adapted from https://stackoverflow.com/questions/42792939/
-      // CAUTION: this function only works for arguments in the range
-      //          [-0.25; 0.25]!
-      double a = double(a_);
-      double s = a * a;
-      /* Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
-      double r =     -1.0369917389758117e-4;
-      r = fma (r, s,  1.9294935641298806e-3);
-      r = fma (r, s, -2.5806887942825395e-2);
-      r = fma (r, s,  2.3533063028328211e-1);
-      r = fma (r, s, -1.3352627688538006e+0);
-      r = fma (r, s,  4.0587121264167623e+0);
-      r = fma (r, s, -4.9348022005446790e+0);
-      double c = r*s;
-      /* Approximate sin(pi*x) for x in [-0.25,0.25] */
-      r =             4.6151442520157035e-4;
-      r = fma (r, s, -7.3700183130883555e-3);
-      r = fma (r, s,  8.2145868949323936e-2);
-      r = fma (r, s, -5.9926452893214921e-1);
-      r = fma (r, s,  2.5501640398732688e+0);
-      r = fma (r, s, -5.1677127800499516e+0);
-      s = s * a;
-      r = r * s;
-      s = fma (a, 3.1415926535897931e+0, r);
-      res[0] = c;
-      res[1] = s;
-      }
 
     POCKETFFT_NOINLINE void calc_first_octant(size_t den,
       T * POCKETFFT_RESTRICT res)
@@ -321,7 +451,7 @@ template<typename T> class sincos_2pibyn
       arr<Thigh> tmp(2*l1);
       for (size_t i=1; i<l1; ++i)
         {
-        my_sincosm1pi(Thigh(2*i)/Thigh(den),&tmp[2*i]);
+        sincosm1pi0(Thigh(2*i)/Thigh(den),&tmp[2*i]);
         res[2*i  ] = T(tmp[2*i]+1);
         res[2*i+1] = T(tmp[2*i+1]);
         }
@@ -329,7 +459,7 @@ template<typename T> class sincos_2pibyn
       while(start<n)
         {
         Thigh cs[2];
-        my_sincosm1pi((Thigh(2*start))/Thigh(den),cs);
+        sincosm1pi0((Thigh(2*start))/Thigh(den),cs);
         res[2*start] = T(cs[0]+1);
         res[2*start+1] = T(cs[1]);
         size_t end = l1;
@@ -565,23 +695,43 @@ struct util // hack to avoid duplicate symbols
     if (axis>=shape.size()) throw invalid_argument("bad axis number");
     }
 
-    static size_t thread_count (size_t nthreads, const shape_t &shape,
-      size_t axis, size_t vlen)
-      {
-      if (nthreads==1) return 1;
-      size_t size = prod(shape);
-      size_t parallel = size / (shape[axis] * vlen);
-      if (shape[axis] < 1000)
-        parallel /= 4;
-      size_t max_threads = nthreads == 0 ?
-        thread::hardware_concurrency() : nthreads;
-      return max(size_t(1), min(parallel, max_threads));
-      }
+#ifdef POCKETFFT_NO_MULTITHREADING
+  static size_t thread_count (size_t /*nthreads*/, const shape_t &/*shape*/,
+    size_t /*axis*/, size_t /*vlen*/)
+    { return 1; }
+#else
+  static size_t thread_count (size_t nthreads, const shape_t &shape,
+    size_t axis, size_t vlen)
+    {
+    if (nthreads==1) return 1;
+    size_t size = prod(shape);
+    size_t parallel = size / (shape[axis] * vlen);
+    if (shape[axis] < 1000)
+      parallel /= 4;
+    size_t max_threads = nthreads == 0 ?
+      thread::hardware_concurrency() : nthreads;
+    return max(size_t(1), min(parallel, max_threads));
+    }
+#endif
   };
 
 namespace threading {
+
+#ifdef POCKETFFT_NO_MULTITHREADING
+
+constexpr size_t thread_id = 0;
+constexpr size_t num_threads = 1;
+constexpr size_t max_threads = 1;
+
+template <typename Func>
+void thread_map(size_t /* nthreads */, Func f)
+  { f(); }
+
+#else
+
 thread_local size_t thread_id = 0;
 thread_local size_t num_threads = 1;
+static const size_t max_threads = max(1u, thread::hardware_concurrency());
 
 class latch
   {
@@ -595,11 +745,9 @@ class latch
 
     void count_down()
       {
-      {
       lock_t lock(mut_);
       if (--num_left_)
         return;
-      }
       completed_.notify_all();
       }
 
@@ -688,7 +836,7 @@ class thread_pool
       threads_(nthreads)
       { create_threads(); }
 
-    thread_pool(): thread_pool(thread::hardware_concurrency()) {}
+    thread_pool(): thread_pool(max_threads) {}
 
     ~thread_pool() { shutdown(); }
 
@@ -735,7 +883,7 @@ template <typename Func>
 void thread_map(size_t nthreads, Func f)
   {
   if (nthreads == 0)
-    nthreads = thread::hardware_concurrency();
+    nthreads = max_threads;
 
   if (nthreads == 1)
     { f(); return; }
@@ -763,6 +911,9 @@ void thread_map(size_t nthreads, Func f)
   if (ex)
     rethrow_exception(ex);
   }
+
+#endif
+
 }
 
 //
@@ -2561,9 +2712,9 @@ template<typename T0> class T_dcst23
     POCKETFFT_NOINLINE T_dcst23(size_t length)
       : fftplan(length), twiddle(length)
       {
-      constexpr T0 pi = T0(3.141592653589793238462643383279502884197L);
+      const auto oo2n = T0(0.5)/T0(length);
       for (size_t i=0; i<length; ++i)
-        twiddle[i] = T0(cos(0.5*pi*T0(i+1)/T0(length)));
+        twiddle[i] = cospi(oo2n*T0(i+1));
       }
 
     template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool ortho,
@@ -2623,8 +2774,6 @@ template<typename T0> class T_dcst23
 
 template<typename T0> class T_dcst4
   {
-  // even length algorithm from
-  // https://www.appletonaudio.com/blog/2013/derivation-of-fast-dct-4-algorithm-based-on-dft/
   private:
     size_t N;
     unique_ptr<pocketfft_c<T0>> fft;
@@ -2638,12 +2787,13 @@ template<typename T0> class T_dcst4
         rfft((N&1)? new pocketfft_r<T0>(N) : nullptr),
         C2((N&1) ? 0 : N/2)
       {
-      constexpr T0 pi = T0(3.141592653589793238462643383279502884197L);
+      const auto oon = -T0(1.)/T0(N);
       if ((N&1)==0)
         for (size_t i=0; i<N/2; ++i)
           {
-          T0 ang = -pi/T0(N)*(T0(i)+T0(0.125));
-          C2[i].Set(cos(ang), sin(ang));
+          T0 sincos[2];
+          sincospi(oon*(T0(i)+T0(0.125)), sincos);
+          C2[i].Set(sincos[0], sincos[1]);
           }
       }
 
@@ -2659,9 +2809,8 @@ template<typename T0> class T_dcst4
         {
         // The following code is derived from the FFTW3 function apply_re11()
         // and is released under the 3-clause BSD license with friendly
-        // permission of Matteo Frigo.
+        // permission of Matteo Frigo and Steven G. Johnson.
 
-        auto SGN_SET = [](T x, size_t i) {return (i%2) ? -x : x;};
         arr<T> y(N);
         {
         size_t i=0, m=n2;
@@ -2673,30 +2822,27 @@ template<typename T0> class T_dcst4
           y[i] = -c[m-2*N];
         for (; m<4*N; ++i, m+=4)
           y[i] = c[4*N-m-1];
-        m -= 4*N;
         for (; i<N; ++i, m+=4)
-          y[i] = c[m];
+          y[i] = c[m-4*N];
         }
         rfft->exec(y.data(), fct, true);
         {
-        size_t i=0;
-        for (; i+i+1<n2; ++i)
+        auto SGN = [sqrt2](size_t i) {return (i&2) ? -sqrt2 : sqrt2;};
+        c[n2] = y[0]*SGN(n2+1);
+        size_t i=0, i1=1, k=1;
+        for (; k<n2; ++i, ++i1, k+=2)
           {
-          size_t k = i+i+1;
-          T c1=y[2*k-1], s1=y[2*k], c2=y[2*k+1], s2=y[2*k+2];
-          c[i] = sqrt2 * (SGN_SET(c1, (i+1)/2) + SGN_SET(s1, i/2));
-          c[N-(i+1)] = sqrt2 * (SGN_SET(c1, (N-i)/2) - SGN_SET(s1, (N-(i+1))/2));
-          c[n2-(i+1)] = sqrt2 * (SGN_SET(c2, (n2-i)/2) - SGN_SET(s2, (n2-(i+1))/2));
-          c[n2+(i+1)] = sqrt2 * (SGN_SET(c2, (n2+i+2)/2) + SGN_SET(s2, (n2+(i+1))/2));
+          c[i    ] = y[2*k-1]*SGN(i1)     + y[2*k  ]*SGN(i);
+          c[N -i1] = y[2*k-1]*SGN(N -i)   - y[2*k  ]*SGN(N -i1);
+          c[n2-i1] = y[2*k+1]*SGN(n2-i)   - y[2*k+2]*SGN(n2-i1);
+          c[n2+i1] = y[2*k+1]*SGN(n2+i+2) + y[2*k+2]*SGN(n2+i1);
           }
-        if (i+i+1 == n2)
+        if (k == n2)
           {
-          T cx=y[2*n2-1], sx=y[2*n2];
-          c[i] = sqrt2 * (SGN_SET(cx, (i+1)/2) + SGN_SET(sx, i/2));
-          c[N-(i+1)] = sqrt2 * (SGN_SET(cx, (i+2)/2) + SGN_SET(sx, (i+1)/2));
+          c[i   ] = y[2*k-1]*SGN(i+1) + y[2*k]*SGN(i);
+          c[N-i1] = y[2*k-1]*SGN(i+2) + y[2*k]*SGN(i1);
           }
         }
-        c[n2] = sqrt2 * SGN_SET(y[0], (n2+1)/2);
 
         // FFTW-derived code ends here
         }
@@ -3105,7 +3251,7 @@ POCKETFFT_NOINLINE void general_nd(const cndarr<T> &in, ndarr<T> &out,
         constexpr auto vlen = VLEN<T0>::val;
         auto storage = alloc_tmp<T0>(in.shape(), len, sizeof(T));
         const auto &tin(iax==0? in : out);
-        multi_iter<VLEN<T0>::val> it(tin, out, axes[iax]);
+        multi_iter<vlen> it(tin, out, axes[iax]);
 #ifndef POCKETFFT_NO_VECTORS
         if (vlen>1)
           while (it.remaining()>=vlen)
