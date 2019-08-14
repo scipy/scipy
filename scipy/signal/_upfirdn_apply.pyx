@@ -40,6 +40,7 @@ cimport numpy as np
 import numpy as np
 from cython import bint  # boolean integer type
 from libc.stdlib cimport malloc, free
+from libc.string cimport memset
 
 
 ctypedef double complex double_complex
@@ -72,7 +73,6 @@ def _output_len(np.intp_t len_h,
     if nt % down > 0:
         need += 1
     return need
-
 
 
 # Signal extension modes
@@ -320,6 +320,7 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
     cdef bint make_temp_data, make_temp_output
     cdef DTYPE_t* temp_data = NULL
     cdef DTYPE_t* temp_output = NULL
+    cdef size_t row_size_bytes
 
     if data_info.ndim != output_info.ndim:
         return 1
@@ -334,7 +335,8 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
             free(temp_data)
             return 3
     if make_temp_output:
-        temp_output = <DTYPE_t*>malloc(output_info.shape[axis] * sizeof(DTYPE_t))
+        row_size_bytes = output_info.shape[axis] * sizeof(DTYPE_t)
+        temp_output = <DTYPE_t*>malloc(row_size_bytes)
         if not temp_output:
             free(temp_data)
             free(temp_output)
@@ -343,6 +345,10 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
     for i in range(output_info.ndim):
         if i != axis:
             num_loops *= output_info.shape[i]
+
+    # strides in number of elements rather than number of bytes
+    cdef np.intp_t idx_stride = data_info.strides[axis] / sizeof(DTYPE_t)
+    cdef np.intp_t idx_stride_out = output_info.strides[axis] / sizeof(DTYPE_t)
 
     cdef np.intp_t j
     cdef np.intp_t data_offset
@@ -368,11 +374,10 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 
         # Copy to temporary data if necessary
         if make_temp_data:
+            # Offsets are byte offsets, so need to cast to char and back
+            tmp_ptr = <DTYPE_t *>((<char *> data) + data_offset)
             for j in range(data_info.shape[axis]):
-                # Offsets are byte offsets, to need to cast to char and back
-                tmp_ptr = <DTYPE_t *>((<char *> data) + data_offset +
-                                      j * data_info.strides[axis])
-                temp_data[j] = tmp_ptr[0]
+                temp_data[j] = tmp_ptr[idx_stride*j]
 
         # Select temporary or direct output and data
         if make_temp_data:
@@ -381,8 +386,7 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
             data_row = <DTYPE_t *>((<char *>data) + data_offset)
         if make_temp_output:
             output_row = temp_output
-            for j in range(output_info.shape[axis]):
-                output_row[j] = 0.0  # initialize as zeros
+            memset(output_row, 0, row_size_bytes)
         else:
             output_row = <DTYPE_t *>((<char *>output) + output_offset)
 
@@ -392,11 +396,9 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 
         # Copy from temporary output if necessary
         if make_temp_output:
+            tmp_ptr = <DTYPE_t *>((<char *>output) + output_offset)
             for j in range(output_info.shape[axis]):
-                # Offsets are byte offsets, to need to cast to char and back
-                tmp_ptr = <DTYPE_t *>((<char *>output) + output_offset +
-                                      j * output_info.strides[axis])
-                tmp_ptr[0] = output_row[j]
+                tmp_ptr[idx_stride_out*j] = output_row[j]
 
     # cleanup
     free(temp_data)
