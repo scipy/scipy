@@ -152,6 +152,7 @@ def test_cont_basic(distname, arg):
             sup.filter(RuntimeWarning, "invalid value")
             check_entropy_vect_scale(distfn, arg)
 
+        check_retrieving_support(distfn, args)
         check_edge_support(distfn, arg)
 
         check_meth_dtype(distfn, arg, meths)
@@ -539,3 +540,10 @@ def check_ppf_private(distfn, arg, msg):
     ppfs = distfn._ppf(np.array([0.1, 0.5, 0.9]), *arg)
     npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
 
+
+def check_retrieving_support(distfn, args):
+    loc, scale = 1, 2
+    supp = distfn.support(*args)
+    supp_loc_scale = distfn.support(*args, loc=loc, scale=scale)
+    npt.assert_almost_equal(np.array(supp)*scale + loc,
+                            np.array(supp_loc_scale))
