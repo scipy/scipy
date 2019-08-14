@@ -4414,7 +4414,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     >>> y = x + 0.3 * np.random.random(x.size)
     >>> stat, pvalue, _ = multiscale_graphcorr(x, y)
     >>> round(stat, 1), round(pvalue, 1)
-    (0.4, 0.0)
+    (1.0, 0.0)
 
     Alternatively,
 
