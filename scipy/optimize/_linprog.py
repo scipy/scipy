@@ -27,6 +27,7 @@ from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
     _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem
     )
+from copy import deepcopy
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 
@@ -506,7 +507,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # Keep the original arrays to calculate slack/residuals for original
     # problem.
-    lp_o = lp
+    lp_o = deepcopy(lp)
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc...
     c0 = 0  # we might get a constant term in the objective
