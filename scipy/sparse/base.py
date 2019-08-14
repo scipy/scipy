@@ -1103,7 +1103,7 @@ class spmatrix(object):
         Parameters
         ----------
         k : int, optional
-            Which diagonal to set, corresponding to elements a[i, i+k].
+            Which diagonal to get, corresponding to elements a[i, i+k].
             Default: 0 (the main diagonal).
 
             .. versionadded:: 1.0
