@@ -152,7 +152,7 @@ def test_cont_basic(distname, arg):
             sup.filter(RuntimeWarning, "invalid value")
             check_entropy_vect_scale(distfn, arg)
 
-        check_retrieving_support(distfn, args)
+        check_retrieving_support(distfn, arg)
         check_edge_support(distfn, arg)
 
         check_meth_dtype(distfn, arg, meths)
