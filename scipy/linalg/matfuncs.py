@@ -7,10 +7,10 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
            'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-           'is__hermitian', 'is__symmetric',
-           'is__skew_symmetric', 'is__nonsingular',
-           'is__singular', 'is__positive_definite',
-           'is__negative_definite']
+           'is_hermitian', 'is_symmetric',
+           'is_skew_symmetric', 'is_nonsingular',
+           'is_singular', 'is_positive_definite',
+           'is_negative_definite']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single,
@@ -678,7 +678,23 @@ def signm(A, disp=True):
         return S0, errest
 
 
-def is__hermitian(A):
+def __estimate_tolerance(A):
+    A = np.atleast_1d(A)
+    caxis = -1
+    nc = _get_axis_len("c", A, caxis)
+    fc = np.fft.fft(np.rollaxis(A, caxis, A.ndim), axis=-1)
+    abs_fc = np.abs(fc)
+    # This is the same tolerance as used in np.linalg.matrix_rank.
+    tol = abs_fc.max(axis=-1) * nc * np.finfo(np.float64).eps
+    if tol.shape != ():
+        tol.shape = tol.shape + (1,)
+    else:
+        tol = np.atleast_1d(tol)
+    tol = np.max(tol)
+    return tol
+
+
+def is_hermitian(A, tol=None):
     """
     Returns True if a matrix is hermitian
     Parameters
@@ -691,21 +707,32 @@ def is__hermitian(A):
     X : boolean
         True if a matrix A is hermitian.
 
+    References
+    ----------
+    A. S. Hodel, Octave scripts, linear algebra
+
     Examples
     --------
-    >>> from scipy.linalg import is__hermitian
+    >>> from scipy.linalg import is_hermitian
     >>> m = np.array([[0,1j],[-1j,0]])
-    >>> print(is__hermitian(m))
+    >>> print(is_hermitian(m))
     True
     >>> m = np.array([[5,0],[1,3]])
-    >>> print(is__hermitian(m))
+    >>> print(is_hermitian(m))
     False
     """
     A = _asarray_square(A)
-    return np.sum(A == A.conj().T) == (A.shape[1]**2)
+    if tol is None:
+        tol = __estimate_tolerance(A)
+    print('tol',tol)
+    if tol == 0:
+        return (A == A.T).all()
+    else:
+        norm_A = norm(A, Inf)
+        return (norm_A == 0) or (norm(A - A.T, Inf) / norm_A <= tol)
 
 
-def is__symmetric(A):
+def is_symmetric(A, tol=None):
     """
     Returns True if a matrix is symmetric
     Parameters
@@ -720,19 +747,28 @@ def is__symmetric(A):
 
     Examples
     --------
-    >>> from scipy.linalg import is__symmetric
+    >>> from scipy.linalg import is_symmetric
     >>> m = np.array([[2,3],[3,2]])
-    >>> print(is__symmetric(m))
+    >>> print(is_symmetric(m))
     True
     >>> m = np.array([[5,0],[1,3]])
-    >>> print(is__symmetric(m))
+    >>> print(is_symmetric(m))
     False
     """
     A = _asarray_square(A)
-    return np.sum(A == A.T) == (A.shape[1]**2)
+    if np.iscomplexobj(A):
+        print('iscomplexobj')
+        return False
+    if tol is None:
+        tol = __estimate_tolerance(A)
+    if tol == 0:
+        return (A == A.T).all()
+    else:
+        norm_A = norm(A, Inf)
+        return (norm_A == 0) or (norm(A - A.T, Inf) / norm_A <= tol)
 
 
-def is__skew_symmetric(A, tol=1e-8):
+def is_skew_symmetric(A, tol=None):
     """
     Returns True if a matrix is skew symmetric
     Parameters
@@ -749,19 +785,27 @@ def is__skew_symmetric(A, tol=1e-8):
 
     Examples
     --------
-    >>> from scipy.linalg import is__skew_symmetric
+    >>> from scipy.linalg import is_skew_symmetric
     >>> m = np.array([[5,1],[1,3]])
-    >>> print(is__skew_symmetric(m))
+    >>> print(is_skew_symmetric(m))
     True
     >>> m = np.array([[0, 2, -1],[-2, 0, -4],[-1, -4, 0]])
-    >>> print(is__skew_symmetric(m))
+    >>> print(is_skew_symmetric(m))
     True
     """
     A = _asarray_square(A)
-    return (np.absolute(A - A.T) < tol).all()
+    if np.iscomplexobj(A):
+        return False
+    if tol is None:
+        tol = __estimate_tolerance(A)
+    if tol == 0:
+        return (A == -A.T).all()
+    else:
+        norm_A = norm(A, Inf)
+        return (norm_A == 0) or (norm(A + A.T, Inf) / norm_A <= tol)
 
 
-def is__nonsingular(A, tol=1e-8):
+def is_nonsingular(A):
     """
     Returns True if a matrix is nonsingular
     AKA invertible or nondegenerate
@@ -779,20 +823,20 @@ def is__nonsingular(A, tol=1e-8):
 
     Examples
     --------
-    >>> from scipy.linalg import is__nonsingular
+    >>> from scipy.linalg import is_nonsingular
     >>> m = np.array([[-1,1.5],[1,-1]])
-    >>> print(is__nonsingular(m))
+    >>> print(is_nonsingular(m))
     True
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    >>> print(is__nonsingular(m))
+    >>> print(is_nonsingular(m))
     True
     """
     A = _asarray_square(A)
     c = cond(A)
-    return (c != np.inf)
+    return (c != Inf)
 
 
-def is__singular(A, tol=1e-8):
+def is_singular(A):
     """
     Returns True if a matrix is singular
     Parameters
@@ -809,20 +853,20 @@ def is__singular(A, tol=1e-8):
 
     Examples
     --------
-    >>> from scipy.linalg import is__singular
+    >>> from scipy.linalg import is_singular
     >>> m = np.array([[-1,1.5],[1.5,-1]])
-    >>> print(is__singular(m))
+    >>> print(is_singular(m))
     True
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    >>> print(is__singular(m))
+    >>> print(is_singular(m))
     True
     """
     A = _asarray_square(A)
     c = cond(A)
-    return (c == np.inf)
+    return (c == Inf)
 
 
-def is__positive_definite(A, robust_level=0, tol=None):
+def is_positive_definite(A, robust_level=0, tol=None):
     """
     Returns True if a matrix is positive definite
     Parameters
@@ -844,54 +888,43 @@ def is__positive_definite(A, robust_level=0, tol=None):
 
     Examples
     --------
-    >>> from scipy.linalg import is__positive_definite
+    >>> from scipy.linalg import is_positive_definite
     >>> m = np.array([[5,1],[1,3]])
-    >>> print(is__positive_definite(m))
+    >>> print(is_positive_definite(m))
     True
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    >>> print(is__positive_definite(m))
+    >>> print(is_positive_definite(m))
     True
     >>> m = np.array([[5,1],[1,3]])
-    >>> print(is__positive_definite(m, robust_level=1))
+    >>> print(is_positive_definite(m, robust_level=1))
     True
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    >>> print(is__positive_definite(m, robust_level=1))
+    >>> print(is_positive_definite(m, robust_level=1))
     True
     >>> m = np.array([[5,1],[1,3]])
-    >>> print(is__positive_definite(m, robust_level=2))
+    >>> print(is_positive_definite(m, robust_level=2))
     True
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    >>> print(is__positive_definite(m, robust_level=2))
+    >>> print(is_positive_definite(m, robust_level=2))
     True
     >>> m = np.array([[5,1],[1,3]])
-    >>> print(is__positive_definite(m, robust_level=3))
+    >>> print(is_positive_definite(m, robust_level=3))
     True
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-    >>> print(is__positive_definite(m, robust_level=3))
+    >>> print(is_positive_definite(m, robust_level=3))
     True
     """
-    A = np.atleast_1d(A)
-    caxis = -1
-    nc = _get_axis_len("c", A, caxis)
-    fc = np.fft.fft(np.rollaxis(A, caxis, A.ndim), axis=-1)
-    abs_fc = np.abs(fc)
-    if tol is None:
-        # This is the same tolerance as used in np.linalg.matrix_rank.
-        tol = abs_fc.max(axis=-1) * nc * np.finfo(np.float64).eps
-        if tol.shape != ():
-            tol.shape = tol.shape + (1,)
-        else:
-            tol = np.atleast_1d(tol)
-    tol = np.max(tol)
     A = _asarray_square(A)
-    if not is__hermitian(A):
+    if not is_hermitian(A):
         raise ValueError('expected symmetric or hermitian matrix')
     if (robust_level < 0) | (robust_level > 4):
         raise ValueError('expected robust_level between 0 and 4')
+    if tol is None:
+        tol = __estimate_tolerance(A)
     n = A.shape[0]
     m = np.max(A)
     x, y = np.where(A == m)
-    if all(x != y):
+    if (x != y).all():
         print('failed necessary condition for definitness: Largest element lies in the main diagonal')
         return False
     if det(A) <= 0:
@@ -940,7 +973,7 @@ def is__positive_definite(A, robust_level=0, tol=None):
         return True
 
 
-def is__negative_definite(A, tol=1e-8):
+def is_negative_definite(A, robust_level=0, tol=None):
     """
     Returns True if a matrix is negative definite
     Parameters
@@ -957,14 +990,9 @@ def is__negative_definite(A, tol=1e-8):
 
     Examples
     --------
-    >>> from scipy.linalg import is__negative_definite
+    >>> from scipy.linalg import is_negative_definite
     >>> m = np.array([[-5,-1],[-1,-3]])
-    >>> print(is__negative_definite(m))
+    >>> print(is_negative_definite(m))
     True
     """
-    A = _asarray_square(A)
-    if not is__hermitian(A):
-        raise ValueError('expected symmetric or hermitian matrix')
-    eiVal, eiVecR = eig(A)
-    eiVal[np.absolute(eiVal) < tol] = 0
-    return (eiVal < 0).all()
+    return is_positive_definite(-A, robust_level, tol)
