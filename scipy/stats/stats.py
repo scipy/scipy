@@ -4292,22 +4292,22 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
-    Specifically, for each point, MGC finds the k-nearest neighbors for one
-    property (e.g. cloud density), and the l-nearest neighbors for the other
-    property (e.g. grass wetness) [1]_. This pair (k,l) is called the ‘scale’.
-    A priori, however, it is not know which scales will be most informative.
-    So, MGC computes all distance pairs, and then efficiently computes the
-    distance correlations for all scales. The local correlations illustrate
-    which scales are relatively informative about the relationship. The key,
-    therefore, to successfully discover and decipher relationships between
-    disparate data modalities is to adaptively determine which scales are the
-    most informative, and the geometric implication for the most informative
-    scales. Doing so not only provides an estimate of whether the modalities
-    are related, but also provides insight into how the determination was made.
-    This is especially important in high-dimensional data, where simple
-    visualizations do not reveal relationships to the unaided human eye.
-    Characterizations of this implementation in particular have been
-    benchmarked extensively in [2]_.
+    Specifically, for each point, MGC finds the :math:`k`-nearest neighbors for
+    one property (e.g. cloud density), and the :math:`l`-nearest neighbors for
+    the other property (e.g. grass wetness) [1]_. This pair :math:`(k, l)` is
+    called the "scale". A priori, however, it is not know which scales will be
+    most informative. So, MGC computes all distance pairs, and then efficiently
+    computes the distance correlations for all scales. The local correlations
+    illustrate which scales are relatively informative about the relationship.
+    The key, therefore, to successfully discover and decipher relationships
+    between disparate data modalities is to adaptively determine which scales
+    are the most informative, and the geometric implication for the most
+    informative scales. Doing so not only provides an estimate of whether the
+    modalities are related, but also provides insight into how the
+    determination was made. This is especially important in high-dimensional
+    data, where simple visualizations do not reveal relationships to the
+    unaided human eye. Characterizations of this implementation in particular
+    have been benchmarked extensively in [2]_.
 
     Parameters
     ----------
@@ -4500,7 +4500,7 @@ def _mgc_stat(x, y, compute_distance):
         if distance matrices.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
-        within each data matrix. Set to ``None`` if `x` and `y` are already
+        within each data matrix. Set to `None` if `x` and `y` are already
         distance.
 
     Returns
