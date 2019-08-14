@@ -447,12 +447,14 @@ class gaussian_kde(object):
             The number of samples to draw.  If not provided, then the size is
             the same as the effective number of samples in the underlying
             dataset.
-        seed : None or int or ``numpy.random.RandomState`` instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance.
-            Default is None.
+        seed : None or int or `np.random.RandomState`, optional
+            If `seed` is None, random variates are drawn by the RandomState
+            singleton used by np.random.
+            If `seed` is an int, a new `np.random.RandomState` instance is used,
+            seeded with seed.
+            If `seed` is already a `np.random.RandomState instance`, then that
+            `np.random.RandomState` instance is used.
+            Specify `seed` for reproducible drawing of random variates.
 
         Returns
         -------
