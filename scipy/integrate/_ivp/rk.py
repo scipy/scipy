@@ -465,7 +465,7 @@ class DOP853(RungeKutta):
     order = 8
     error_estimator_order = 7
     A = dop853_coefficients.A[:n_stages, :n_stages]
-    B = dop853_coefficients.A[n_stages, :n_stages]
+    B = dop853_coefficients.B
     C = dop853_coefficients.C[:n_stages]
     E3 = dop853_coefficients.E3
     E5 = dop853_coefficients.E5
