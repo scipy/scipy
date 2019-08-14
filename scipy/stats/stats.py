@@ -4292,13 +4292,20 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
-    MGC combines the mechanisms specified in nearest neighbor and distance
-    methods [1]_. For each point, the :math:`k`-nearest neighbors of one
-    property and the :math:`l`-nearest neighbors of another property are
-    calculated as a :math:`(k, l)` scale. The local correlations (described in
-    the notes) specifically illustrate which scales are informative. This
-    allows MGC to uniquely characterize the strength of the dependency across
-    all the scales, which helps characterize the statistical relationship.
+    Specifically, for each point, MGC finds the k-nearest neighbors for one
+    property (e.g. cloud density), and the l-nearest neighbors for the other
+    property (e.g. grass wetness) [1]_. This pair (k,l) is called the ‘scale’.
+    A priori, however, it is not know which scales will be most informative.
+    So, MGC computes all distance pairs, and then efficiently computes the
+    distance correlations for all scales. The local correlations illustrate
+    which scales are relatively informative about the relationship. The key,
+    therefore, to successfully discover and decipher relationships between
+    disparate data modalities is to adaptively determine which scales are the
+    most informative, and the geometric implication for the most informative
+    scales. Doing so not only provides an estimate of whether the modalities
+    are related, but also provides insight into how the determination was made.
+    This is especially important in high-dimensional data, where simple
+    visualizations do not reveal relationships to the unaided human eye.
     Characterizations of this implementation in particular have been
     benchmarked extensively in [2]_.
 
