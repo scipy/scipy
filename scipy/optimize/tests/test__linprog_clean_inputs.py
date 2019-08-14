@@ -21,12 +21,12 @@ def test_aliasing():
 
     lp_cleaned = _clean_inputs(lp)
 
-    assert_(lp_cleaned.c == lp.c, "c modified by _clean_inputs")
-    assert_(lp_cleaned.A_ub == lp.A_ub, "A_ub modified by _clean_inputs")
-    assert_(lp_cleaned.b_ub == lp.b_ub, "b_ub modified by _clean_inputs")
-    assert_(lp_cleaned.A_eq == lp.A_eq, "A_eq modified by _clean_inputs")
-    assert_(lp_cleaned.b_eq == lp.b_eq, "b_eq modified by _clean_inputs")
-    assert_(lp_cleaned.bounds == lp.bounds, "bounds modified by _clean_inputs")
+    assert_(lp_cleaned.c == lp.c, "c incorrectly returned by _clean_inputs")
+    assert_(lp_cleaned.A_ub == lp.A_ub, "A_ub incorrectly returned by _clean_inputs")
+    assert_(lp_cleaned.b_ub == lp.b_ub, "b_ub incorrectly returned by _clean_inputs")
+    assert_(lp_cleaned.A_eq == lp.A_eq, "A_eq incorrectly returned by _clean_inputs")
+    assert_(lp_cleaned.b_eq == lp.b_eq, "b_eq incorrectly returned by _clean_inputs")
+    assert_(lp_cleaned.bounds == [(None, None)], "bounds incorrectly returned by _clean_inputs")
 
 
 def test_aliasing2():
@@ -41,12 +41,12 @@ def test_aliasing2():
 
     lp_cleaned = _clean_inputs(lp)
 
-    assert_allclose(lp_cleaned.c, lp.c, err_msg="c modified by _clean_inputs")
-    assert_allclose(lp_cleaned.A_ub, lp.A_ub, err_msg="A_ub modified by _clean_inputs")
-    assert_allclose(lp_cleaned.b_ub, lp.b_ub, err_msg="b_ub modified by _clean_inputs")
-    assert_allclose(lp_cleaned.A_eq, lp.A_eq, err_msg="A_eq modified by _clean_inputs")
-    assert_allclose(lp_cleaned.b_eq, lp.b_eq, err_msg="b_eq modified by _clean_inputs")
-    assert_(lp_cleaned.bounds == lp.bounds, "bounds modified by _clean_inputs")
+    assert_allclose(lp_cleaned.c, lp.c, err_msg="c incorrectly returned by _clean_inputs")
+    assert_allclose(lp_cleaned.A_ub, lp.A_ub, err_msg="A_ub incorrectly returned by _clean_inputs")
+    assert_allclose(lp_cleaned.b_ub, [1, 1], err_msg="b_ub incorrectly returned by _clean_inputs")
+    assert_allclose(lp_cleaned.A_eq, lp.A_eq, err_msg="A_eq incorrectly returned by _clean_inputs")
+    assert_allclose(lp_cleaned.b_eq, lp.b_eq, err_msg="b_eq incorrectly returned by _clean_inputs")
+    assert_(lp_cleaned.bounds == [(None, None), (None, 1)], "bounds incorrectly returned by _clean_inputs")
 
 
 def test_missing_inputs():
