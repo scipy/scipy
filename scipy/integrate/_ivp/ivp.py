@@ -348,6 +348,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     t_events : list of ndarray or None
         Contains for each event type a list of arrays at which an event of
         that type event was detected. None if `events` was None.
+    y_events : list of ndarray or None
+        For each value of `t_events`, the corresponding value of the solution.
+        None if `events` was None.
     nfev : int
         Number of evaluations of the right-hand side.
     njev : int
@@ -456,9 +459,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     of the cannonball's trajectory. Apex is not defined as terminal, so both
     apex and hit_ground are found. There is no information at t=20, so the sol
     attribute is used to evaluate the solution. The sol attribute is returned
-    by setting ``dense_output=True``.
+    by setting ``dense_output=True``. Alternatively, the `y_events` attribute
+    can be used to access the solution at the time of the event.
 
-    >>> def apex(t,y): return y[1]
+    >>> def apex(t, y): return y[1]
     >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
     ...                 events=(hit_ground, apex), dense_output=True)
     >>> print(sol.t_events)
@@ -468,6 +472,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
     >>> print(sol.sol(sol.t_events[1][0]))
     [100.   0.]
+    >>> print(sol.y_events)
+    [array([[-5.68434189e-14, -1.00000000e+01]]), array([[1.00000000e+02, 1.77635684e-15]])]
 
     As an example of a system with additional parameters, we'll implement
     the Lotka-Volterra equations [12]_.
@@ -561,8 +567,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                       for event in events]
         g = [event(t0, y0) for event in events]
         t_events = [[] for _ in range(len(events))]
+        y_events = [[] for _ in range(len(events))]
     else:
         t_events = None
+        y_events = None
 
     status = None
     while status is None:
@@ -596,6 +604,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
                 for e, te in zip(root_indices, roots):
                     t_events[e].append(te)
+                    y_events[e].append(sol(te))
 
                 if terminate:
                     status = 1
@@ -633,6 +642,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if t_events is not None:
         t_events = [np.asarray(te) for te in t_events]
+        y_events = [np.asarray(ye) for ye in y_events]
 
     if t_eval is None:
         ts = np.array(ts)
@@ -649,6 +659,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     else:
         sol = None
 
-    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, nfev=solver.nfev,
-                     njev=solver.njev, nlu=solver.nlu, status=status,
-                     message=message, success=status >= 0)
+    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
+                     nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu,
+                     status=status, message=message, success=status >= 0)
