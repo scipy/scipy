@@ -138,10 +138,10 @@ def test_non_finite_errors():
         b_eq=np.array([1, 1]),
         bounds=[(0, 1)]
     )
-    assert_raises (ValueError, _clean_inputs, lp._replace(c=[0, None]))
-    assert_raises (ValueError, _clean_inputs, lp._replace(c=[np.inf, 0]))
-    assert_raises (ValueError, _clean_inputs, lp._replace(c=[0, -np.inf]))
-    assert_raises (ValueError, _clean_inputs, lp._replace(c=[np.nan, 0]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(c=[0, None]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(c=[np.inf, 0]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(c=[0, -np.inf]))
+    assert_raises(ValueError, _clean_inputs, lp._replace(c=[np.nan, 0]))
 
     assert_raises(ValueError, _clean_inputs, lp._replace(A_ub=[[1, 2], [None, 1]]))
     assert_raises(ValueError, _clean_inputs, lp._replace(b_ub=[np.inf, 1]))
@@ -226,7 +226,7 @@ def test__clean_inputs3():
 def test_bad_bounds():
     lp = _LPProblem(c=[1, 2])
 
-    assert_raises (ValueError, _clean_inputs, lp._replace(bounds=(1, -2)))
+    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, -2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2)]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, -2), (1, 2)]))
 
