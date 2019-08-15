@@ -158,585 +158,268 @@ def naive_dst4(x, norm=None):
     return y
 
 
-class TestComplex(object):
-    def test_dct_complex64(self):
-        y = dct(1j*np.arange(5, dtype=np.complex64))
-        x = 1j*dct(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_dct_complex(self):
-        y = dct(np.arange(5)*1j)
-        x = 1j*dct(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_idct_complex(self):
-        y = idct(np.arange(5)*1j)
-        x = 1j*idct(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_dst_complex64(self):
-        y = dst(np.arange(5, dtype=np.complex64)*1j)
-        x = 1j*dst(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_dst_complex(self):
-        y = dst(np.arange(5)*1j)
-        x = 1j*dst(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_idst_complex(self):
-        y = idst(np.arange(5)*1j)
-        x = 1j*idst(np.arange(5))
-        assert_array_almost_equal(x, y)
+@pytest.mark.parametrize('dtype', [np.complex64, np.complex128, np.longcomplex])
+@pytest.mark.parametrize('transform', [dct, dst, idct, idst])
+def test_complex(transform, dtype):
+    y = transform(1j*np.arange(5, dtype=dtype))
+    x = 1j*transform(np.arange(5))
+    assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(object):
-    def setup_method(self):
-        self.rdt = None
-        self.dec = 14
-        self.type = None
+# map (tranform, dtype, type) -> decimal
+dec_map = {
+    # DCT
+    (dct, np.double, 1): 10,
+    (dct, np.float32, 1): 4,
+    (dct, int, 1): 5,
 
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            x, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
-            y = dct(x, type=self.type)
-            assert_equal(y.dtype, dt)
-            # XXX: we divide by np.max(y) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
+    (dct, np.double, 2): 10,
+    (dct, np.float32, 2): 5,
+    (dct, int, 2): 5,
 
-    def test_axis(self):
+    (dct, np.double, 3): 14,
+    (dct, np.float32, 3): 5,
+    (dct, int, 3): 5,
+
+    (dct, np.double, 4): 12,
+    (dct, np.float32, 4): 5,
+    (dct, int, 4): 5,
+
+    # IDCT
+    (idct, np.double, 1): 10,
+    (idct, np.float32, 1): 4,
+    (idct, int, 1): 4,
+
+    (idct, np.double, 2): 10,
+    (idct, np.float32, 2): 5,
+    (idct, int, 2): 5,
+
+    (idct, np.double, 3): 14,
+    (idct, np.float32, 3): 5,
+    (idct, int, 3): 5,
+
+    (idct, np.double, 4): 12,
+    (idct, np.float32, 4): 5,
+    (idct, int, 4): 5,
+
+    # DST
+    (dst, np.double, 1): 12,
+    (dst, np.float32, 1): 4,
+    (dst, int, 1): 5,
+
+    (dst, np.double, 2): 14,
+    (dst, np.float32, 2): 6,
+    (dst, int, 2): 6,
+
+    (dst, np.double, 3): 14,
+    (dst, np.float32, 3): 7,
+    (dst, int, 3): 7,
+
+    (dst, np.double, 4): 12,
+    (dst, np.float32, 4): 4,
+    (dst, int, 4): 5,
+
+    # IDST
+    (idst, np.double, 1): 12,
+    (idst, np.float32, 1): 4,
+    (idst, int, 1): 4,
+
+    (idst, np.double, 2): 14,
+    (idst, np.float32, 2): 6,
+    (idst, int, 2): 6,
+
+    (idst, np.double, 3): 14,
+    (idst, np.float32, 3): 6,
+    (idst, int, 3): 6,
+
+    (idst, np.double, 4): 12,
+    (idst, np.float32, 4): 6,
+    (idst, int, 4): 6,
+}
+
+
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+class TestDCT:
+    @pytest.mark.parametrize('size', FFTWDATA_SIZES)
+    def test_definition(self, rdt, type, size):
+        x, yr, dt = fftw_dct_ref(type, size, rdt)
+        y = dct(x, type=type)
+        assert_equal(y.dtype, dt)
+        dec = dec_map[(dct, rdt, type)]
+        # XXX: we divide by np.max(y) because the tests fail otherwise. We
+        # should really use something like assert_array_approx_equal. The
+        # difference is due to fftw using a better algorithm w.r.t error
+        # propagation compared to the ones from fftpack.
+        assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=dec,
+                                  err_msg="Size %d failed" % size)
+
+    @pytest.mark.parametrize('size', [7, 8, 9, 16, 32, 64])
+    def test_axis(self, rdt, type, size):
         nt = 2
-        for i in [7, 8, 9, 16, 32, 64]:
-            x = np.random.randn(nt, i)
-            y = dct(x, type=self.type)
-            for j in range(nt):
-                assert_array_almost_equal(y[j], dct(x[j], type=self.type),
-                        decimal=self.dec)
-
-            x = x.T
-            y = dct(x, axis=0, type=self.type)
-            for j in range(nt):
-                assert_array_almost_equal(y[:,j], dct(x[:,j], type=self.type),
-                        decimal=self.dec)
-
-
-class _TestDCTIBase(_TestDCTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, norm='ortho', type=1)
-            y2 = naive_dct1(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
-class _TestDCTIIBase(_TestDCTBase):
-    def test_definition_matlab(self):
-        # Test correspondence with matlab (orthornomal mode).
-        for i in range(len(X)):
-            dt = np.result_type(np.float32, self.rdt)
-            x = np.array(X[i], dtype=dt)
-
-            yr = Y[i]
-            y = dct(x, norm="ortho", type=2)
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y, yr, decimal=self.dec)
-
-
-class _TestDCTIIIBase(_TestDCTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, norm='ortho', type=2)
-            xi = dct(y, norm="ortho", type=3)
-            assert_equal(xi.dtype, dt)
-            assert_array_almost_equal(xi, x, decimal=self.dec)
-
-class _TestDCTIVBase(_TestDCTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, norm='ortho', type=4)
-            y2 = naive_dct4(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
-
-class TestDCTIDouble(_TestDCTIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 1
-
-
-class TestDCTIFloat(_TestDCTIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestDCTIInt(_TestDCTIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 1
-
-
-class TestDCTIIDouble(_TestDCTIIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 2
-
-
-class TestDCTIIFloat(_TestDCTIIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 2
-
-
-class TestDCTIIInt(_TestDCTIIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 2
-
-
-class TestDCTIIIDouble(_TestDCTIIIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestDCTIIIFloat(_TestDCTIIIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 3
-
-
-class TestDCTIIIInt(_TestDCTIIIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 3
-
-
-class TestDCTIVDouble(_TestDCTIVBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 3
-
-
-class TestDCTIVFloat(_TestDCTIVBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 3
-
-
-class TestDCTIVInt(_TestDCTIVBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 3
-
-
-class _TestIDCTBase(object):
-    def setup_method(self):
-        self.rdt = None
-        self.dec = 14
-        self.type = None
-
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
-            x = idct(yr, type=self.type)
-            assert_equal(x.dtype, dt)
-            # XXX: we divide by np.max(y) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
-
-
-class TestIDCTIDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 1
-
-
-class TestIDCTIFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDCTIInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDCTIIDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 2
-
-
-class TestIDCTIIFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 2
-
-
-class TestIDCTIIInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 2
-
-
-class TestIDCTIIIDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestIDCTIIIFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 3
-
-
-class TestIDCTIIIInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 3
-
-class TestIDCTIVDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 4
-
-
-class TestIDCTIVFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 4
-
-
-class TestIDCTIVInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 4
-
-class _TestDSTBase(object):
-    def setup_method(self):
-        self.rdt = None  # dtype
-        self.dec = None  # number of decimals to match
-        self.type = None  # dst type
-
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
-            y = dst(xr, type=self.type)
-            assert_equal(y.dtype, dt)
-            # XXX: we divide by np.max(y) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
-
-
-class _TestDSTIBase(_TestDSTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dst(x, norm='ortho', type=1)
-            y2 = naive_dst1(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
-class _TestDSTIVBase(_TestDSTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dst(x, norm='ortho', type=4)
-            y2 = naive_dst4(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y, y2, decimal=self.dec)
-
-class TestDSTIDouble(_TestDSTIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 1
-
-
-class TestDSTIFloat(_TestDSTIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestDSTIInt(_TestDSTIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 1
-
-
-class TestDSTIIDouble(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 2
-
-
-class TestDSTIIFloat(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 2
-
-
-class TestDSTIIInt(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 2
-
-
-class TestDSTIIIDouble(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestDSTIIIFloat(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 7
-        self.type = 3
-
-
-class TestDSTIIIInt(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 7
-        self.type = 3
-
-
-class TestDSTIVDouble(_TestDSTIVBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 4
-
-
-class TestDSTIVFloat(_TestDSTIVBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 4
-
-
-class TestDSTIVInt(_TestDSTIVBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 4
-
-
-class _TestIDSTBase(object):
-    def setup_method(self):
-        self.rdt = None
-        self.dec = None
-        self.type = None
-
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
-            x = idst(yr, type=self.type)
-            assert_equal(x.dtype, dt)
-            # XXX: we divide by np.max(x) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
-
-
-class TestIDSTIDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 1
-
-
-class TestIDSTIFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDSTIInt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDSTIIDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 2
-
-
-class TestIDSTIIFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 2
-
-
-class TestIDSTIIInt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 2
-
-
-class TestIDSTIIIDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestIDSTIIIFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 3
-
-
-class TestIDSTIIIInt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 3
-
-
-class TestIDSTIVDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 4
-
-
-class TestIDSTIVFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 4
-
-
-class TestIDSTIVnt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 4
-
-
-class TestOverwrite(object):
-    """Check input overwrite behavior."""
-
-    real_dtypes = [np.float32, np.float64]
-
-    def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
-               should_overwrite, **kw):
-        x2 = x.copy()
-        routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
-
-        sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
-            routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
-        if not should_overwrite:
-            assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
-
-    def _check_1d(self, routine, dtype, shape, axis):
-        np.random.seed(1234)
-        if np.issubdtype(dtype, np.complexfloating):
-            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
-        else:
-            data = np.random.randn(*shape)
-        data = data.astype(dtype)
-
-        for type in [1, 2, 3, 4]:
-            for overwrite_x in [True, False]:
-                for norm in [None, 'ortho']:
-                    should_overwrite = overwrite_x
-                    self._check(data, routine, type, None, axis, norm,
-                                overwrite_x, should_overwrite)
-
-    def test_dct(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(dct, dtype, (16,), -1)
-            self._check_1d(dct, dtype, (16, 2), 0)
-            self._check_1d(dct, dtype, (2, 16), 1)
-
-    def test_idct(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(idct, dtype, (16,), -1)
-            self._check_1d(idct, dtype, (16, 2), 0)
-            self._check_1d(idct, dtype, (2, 16), 1)
-
-    def test_dst(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(dst, dtype, (16,), -1)
-            self._check_1d(dst, dtype, (16, 2), 0)
-            self._check_1d(dst, dtype, (2, 16), 1)
-
-    def test_idst(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(idst, dtype, (16,), -1)
-            self._check_1d(idst, dtype, (16, 2), 0)
-            self._check_1d(idst, dtype, (2, 16), 1)
+        dec = dec_map[(dct, rdt, type)]
+        x = np.random.randn(nt, size)
+        y = dct(x, type=type)
+        for j in range(nt):
+            assert_array_almost_equal(y[j], dct(x[j], type=type),
+                                      decimal=dec)
+
+        x = x.T
+        y = dct(x, axis=0, type=type)
+        for j in range(nt):
+            assert_array_almost_equal(y[:,j], dct(x[:,j], type=type),
+                                      decimal=dec)
+
+
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('data', X)
+def test_dct1_definition_ortho(rdt, data):
+    # Test orthornomal mode.
+    dec = dec_map[(dct, rdt, 1)]
+    x = np.array(data, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dct(x, norm='ortho', type=1)
+    y2 = naive_dct1(x, norm='ortho')
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=dec)
+
+
+@pytest.mark.parametrize('data, ref', zip(X, Y))
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+def test_dct2_definition_matlab(data, ref, rdt):
+    # Test correspondence with matlab (orthornomal mode).
+    dt = np.result_type(np.float32, rdt)
+    x = np.array(data, dtype=dt)
+
+    yr = ref
+    y = dct(x, norm="ortho", type=2)
+    dec = dec_map[(dct, rdt, 2)]
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y, yr, decimal=dec)
+
+
+@pytest.mark.parametrize('data', X)
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+def test_dct3_definition_ortho(data, rdt):
+    # Test orthornomal mode.
+    x = np.array(data, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dct(x, norm='ortho', type=2)
+    xi = dct(y, norm="ortho", type=3)
+    dec = dec_map[(dct, rdt, 3)]
+    assert_equal(xi.dtype, dt)
+    assert_array_almost_equal(xi, x, decimal=dec)
+
+
+@pytest.mark.parametrize('data', X)
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+def test_dct4_definition_ortho(data, rdt):
+    # Test orthornomal mode.
+    x = np.array(data, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dct(x, norm='ortho', type=4)
+    y2 = naive_dct4(x, norm='ortho')
+    dec = dec_map[(dct, rdt, 4)]
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=dec)
+
+
+@pytest.mark.parametrize('size', FFTWDATA_SIZES)
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+def test_idct_definition(size, rdt, type):
+    xr, yr, dt = fftw_dct_ref(type, size, rdt)
+    x = idct(yr, type=type)
+    dec = dec_map[(idct, rdt, type)]
+    assert_equal(x.dtype, dt)
+    # XXX: we divide by np.max(y) because the tests fail otherwise. We
+    # should really use something like assert_array_approx_equal. The
+    # difference is due to fftw using a better algorithm w.r.t error
+    # propagation compared to the ones from fftpack.
+    assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=dec,
+                              err_msg="Size %d failed" % size)
+
+
+@pytest.mark.parametrize('size', FFTWDATA_SIZES)
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+def test_definition(size, rdt, type):
+    xr, yr, dt = fftw_dst_ref(type, size, rdt)
+    y = dst(xr, type=type)
+    dec = dec_map[(dst, rdt, type)]
+    assert_equal(y.dtype, dt)
+    # XXX: we divide by np.max(y) because the tests fail otherwise. We
+    # should really use something like assert_array_approx_equal. The
+    # difference is due to fftw using a better algorithm w.r.t error
+    # propagation compared to the ones from fftpack.
+    assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=dec,
+                              err_msg="Size %d failed" % size)
+
+
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('data', X)
+def test_dst1_definition_ortho(rdt, data):
+    # Test orthornomal mode.
+    dec = dec_map[(dst, rdt, 1)]
+    x = np.array(data, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dst(x, norm='ortho', type=1)
+    y2 = naive_dst1(x, norm='ortho')
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=dec)
+
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('data', X)
+def test_dst4_definition_ortho(rdt, data):
+    # Test orthornomal mode.
+    dec = dec_map[(dst, rdt, 4)]
+    x = np.array(data, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dst(x, norm='ortho', type=4)
+    y2 = naive_dst4(x, norm='ortho')
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y, y2, decimal=dec)
+
+
+@pytest.mark.parametrize('size', FFTWDATA_SIZES)
+@pytest.mark.parametrize('rdt', [np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+def test_idst_definition(size, rdt, type):
+    xr, yr, dt = fftw_dst_ref(type, size, rdt)
+    x = idst(yr, type=type)
+    dec = dec_map[(idst, rdt, type)]
+    assert_equal(x.dtype, dt)
+    # XXX: we divide by np.max(x) because the tests fail otherwise. We
+    # should really use something like assert_array_approx_equal. The
+    # difference is due to fftw using a better algorithm w.r.t error
+    # propagation compared to the ones from fftpack.
+    assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=dec,
+                              err_msg="Size %d failed" % size)
+
+
+@pytest.mark.parametrize('routine', [dct, dst, idct, idst])
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.longfloat])
+@pytest.mark.parametrize('shape, axis', [
+    ((16,), -1), ((16, 2), 0), ((2, 16), 1)
+])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+@pytest.mark.parametrize('overwrite_x', [True, False])
+@pytest.mark.parametrize('norm', [None, 'ortho'])
+def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
+    # Check input overwrite behavior
+    np.random.seed(1234)
+    if np.issubdtype(dtype, np.complexfloating):
+        x = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+    else:
+        x = np.random.randn(*shape)
+    x = x.astype(dtype)
+    x2 = x.copy()
+    routine(x2, type, None, axis, norm, overwrite_x=overwrite_x)
+
+    sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+        routine.__name__, x.dtype, x.shape, None, axis, overwrite_x)
+    if not overwrite_x:
+        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 
 
 class Test_DCTN_IDCTN(object):
