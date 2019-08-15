@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
 from os.path import join, dirname
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_equal
+from numpy.testing import (
+    assert_array_almost_equal, assert_equal, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -238,12 +239,7 @@ class TestDCT:
         y = dct(x, type=type)
         assert_equal(y.dtype, dt)
         dec = dec_map[(dct, rdt, type)]
-        # XXX: we divide by np.max(y) because the tests fail otherwise. We
-        # should really use something like assert_array_approx_equal. The
-        # difference is due to fftw using a better algorithm w.r.t error
-        # propagation compared to the ones from fftpack.
-        assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=dec,
-                                  err_msg="Size %d failed" % size)
+        assert_allclose(y, yr, rtol=0., atol=np.max(yr)*10**(-dec))
 
     @pytest.mark.parametrize('size', [7, 8, 9, 16, 32, 64])
     def test_axis(self, rdt, type, size):
@@ -272,7 +268,7 @@ def test_dct1_definition_ortho(rdt, data):
     y = dct(x, norm='ortho', type=1)
     y2 = naive_dct1(x, norm='ortho')
     assert_equal(y.dtype, dt)
-    assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=dec)
+    assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
 
 
 @pytest.mark.parametrize('data, ref', zip(X, Y))
@@ -312,7 +308,7 @@ def test_dct4_definition_ortho(data, rdt):
     y2 = naive_dct4(x, norm='ortho')
     dec = dec_map[(dct, rdt, 4)]
     assert_equal(y.dtype, dt)
-    assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=dec)
+    assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
 
 
 @pytest.mark.parametrize('size', FFTWDATA_SIZES)
@@ -323,12 +319,7 @@ def test_idct_definition(size, rdt, type):
     x = idct(yr, type=type)
     dec = dec_map[(idct, rdt, type)]
     assert_equal(x.dtype, dt)
-    # XXX: we divide by np.max(y) because the tests fail otherwise. We
-    # should really use something like assert_array_approx_equal. The
-    # difference is due to fftw using a better algorithm w.r.t error
-    # propagation compared to the ones from fftpack.
-    assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=dec,
-                              err_msg="Size %d failed" % size)
+    assert_allclose(x, xr, rtol=0., atol=np.max(xr)*10**(-dec))
 
 
 @pytest.mark.parametrize('size', FFTWDATA_SIZES)
@@ -339,12 +330,7 @@ def test_definition(size, rdt, type):
     y = dst(xr, type=type)
     dec = dec_map[(dst, rdt, type)]
     assert_equal(y.dtype, dt)
-    # XXX: we divide by np.max(y) because the tests fail otherwise. We
-    # should really use something like assert_array_approx_equal. The
-    # difference is due to fftw using a better algorithm w.r.t error
-    # propagation compared to the ones from fftpack.
-    assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=dec,
-                              err_msg="Size %d failed" % size)
+    assert_allclose(y, yr, rtol=0., atol=np.max(yr)*10**(-dec))
 
 
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
@@ -357,7 +343,8 @@ def test_dst1_definition_ortho(rdt, data):
     y = dst(x, norm='ortho', type=1)
     y2 = naive_dst1(x, norm='ortho')
     assert_equal(y.dtype, dt)
-    assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=dec)
+    assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
+
 
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
 @pytest.mark.parametrize('data', X)
@@ -380,12 +367,7 @@ def test_idst_definition(size, rdt, type):
     x = idst(yr, type=type)
     dec = dec_map[(idst, rdt, type)]
     assert_equal(x.dtype, dt)
-    # XXX: we divide by np.max(x) because the tests fail otherwise. We
-    # should really use something like assert_array_approx_equal. The
-    # difference is due to fftw using a better algorithm w.r.t error
-    # propagation compared to the ones from fftpack.
-    assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=dec,
-                              err_msg="Size %d failed" % size)
+    assert_allclose(x, xr, rtol=0., atol=np.max(xr)*10**(-dec))
 
 
 @pytest.mark.parametrize('routine', [dct, dst, idct, idst])
