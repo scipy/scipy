@@ -860,7 +860,7 @@ Here we consider "Analysis of an Enzyme Reaction" problem formulated in [1]_.
 There are 11 residuals defined as
 
 .. math::
-    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x3} - y_i, \quad i = 0, \ldots, 10,
+    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x_3} - y_i, \quad i = 0, \ldots, 10,
 
 where :math:`y_i` are measurement values and :math:`u_i` are values of
 the independent variable. The unknown vector of parameters is
