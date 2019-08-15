@@ -46,7 +46,7 @@ def test_invalid_workers(x):
 
     fft.ifft([1], workers=-cpus)
 
-    with pytest.raises(ValueError, match='workers value out of range'):
+    with pytest.raises(ValueError, match='workers must not be zero'):
         fft.fft(x, workers=0)
 
     with pytest.raises(ValueError, match='workers value out of range'):
@@ -73,7 +73,7 @@ def test_set_get_workers():
 def test_set_workers_invalid():
     cpus = os.cpu_count()
 
-    with pytest.raises(ValueError, match='workers value out of range'):
+    with pytest.raises(ValueError, match='workers must not be zero'):
         with fft.set_workers(0):
             pass
 

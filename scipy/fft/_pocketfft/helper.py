@@ -159,10 +159,13 @@ def _workers(workers):
         return getattr(_config, 'default_workers', 1)
 
     if workers < 0:
-        workers += 1 + _cpu_count
-
-    if workers <= 0:
-        raise ValueError("workers value out of range")
+        if workers >= -_cpu_count:
+            workers += 1 + _cpu_count
+        else:
+            raise ValueError("workers value out of range; got {}, must not be"
+                             " less than {}".format(workers, -_cpu_count))
+    elif workers == 0:
+        raise ValueError("workers must not be zero")
 
     return workers
 
