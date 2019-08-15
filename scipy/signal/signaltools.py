@@ -1764,7 +1764,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         a = np.asarray(a)
         if b.ndim != 1 and a.ndim != 1:
             raise ValueError('object of too small depth for desired array')
-        x = np.asarray(x)
+        x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
             # _linear_filter does not broadcast zi, but does do expansion of
@@ -3773,6 +3773,13 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
     return edge, ext
 
 
+def _validate_x(x):
+    x = np.asarray(x)
+    if x.ndim == 0:
+        raise ValueError('x must be at least 1D')
+    return x
+
+
 def sosfilt(sos, x, axis=-1, zi=None):
     """
     Filter data along one dimension using cascaded second-order sections.
@@ -3844,7 +3851,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    x = np.asarray(x)
+    x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
     x_zi_shape = list(x.shape)
     x_zi_shape[axis] = 2
@@ -3866,7 +3873,6 @@ def sosfilt(sos, x, axis=-1, zi=None):
     else:
         zi = np.zeros(x_zi_shape, dtype=dtype)
         return_zi = False
-    sos = np.array(sos, dtype=dtype)  # make a copy
     axis = axis % x.ndim  # make positive
     x = np.moveaxis(x, axis, -1)
     zi = np.moveaxis(zi, [0, axis + 1], [-2, -1])
@@ -3874,7 +3880,6 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
-    sos /= sos[:, 3:4]
     _sosfilt(sos, x, zi)
     x.shape, zi.shape = x_shape, zi_shape
     x = np.moveaxis(x, -1, axis)
@@ -3972,6 +3977,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     """
     sos, n_sections = _validate_sos(sos)
+    x = _validate_x(x)
 
     # `method` is "pad"...
     ntaps = 2 * n_sections + 1
