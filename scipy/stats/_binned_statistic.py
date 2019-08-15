@@ -108,20 +108,19 @@ def binned_statistic(x, values, statistic='mean',
 
     >>> values = [1.0, 1.0, 2.0, 1.5, 3.0]
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
-    (array([ 4. ,  4.5]), array([ 1.,  4.,  7.]), array([1, 1, 1, 2, 2]))
+    BinnedStatisticResult(statistic=array([4. , 4.5]), bin_edges=array([1., 4., 7.]), binnumber=array([1, 1, 1, 2, 2]))
 
     Multiple arrays of values can also be passed.  The statistic is calculated
     on each set independently:
 
     >>> values = [[1.0, 1.0, 2.0, 1.5, 3.0], [2.0, 2.0, 4.0, 3.0, 6.0]]
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
-    (array([[ 4. ,  4.5], [ 8. ,  9. ]]), array([ 1.,  4.,  7.]),
-        array([1, 1, 1, 2, 2]))
+    BinnedStatisticResult(statistic=array([[4. , 4.5],
+           [8. , 9. ]]), bin_edges=array([1., 4., 7.]), binnumber=array([1, 1, 1, 2, 2]))
 
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
     ...                        bins=3)
-    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]),
-        array([1, 2, 1, 2, 3]))
+    BinnedStatisticResult(statistic=array([1., 2., 4.]), bin_edges=array([1., 2., 3., 4.]), binnumber=array([1, 2, 1, 2, 3]))
 
     As a second example, we now generate some random data of sailing boat speed
     as a function of wind speed, and then determine how fast our boat is for
@@ -310,10 +309,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     >>> y = [2.1, 2.6, 2.1, 2.1]
     >>> binx = [0.0, 0.5, 1.0]
     >>> biny = [2.0, 2.5, 3.0]
-    >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx,biny])
+    >>> ret = stats.binned_statistic_2d(x, y, x, 'count', bins=[binx,biny])
     >>> ret.statistic
-    array([[ 2.,  1.],
-           [ 1.,  0.]])
+    array([[2., 1.],
+           [1., 0.]])
 
     The bin in which each sample is placed is given by the `binnumber`
     returned parameter.  By default, these are the linearized bin indices:
@@ -324,7 +323,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     The bin indices can also be expanded into separate entries for each
     dimension using the `expand_binnumbers` parameter:
 
-    >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx,biny],
+    >>> ret = stats.binned_statistic_2d(x, y, x, 'count', bins=[binx,biny],
     ...                                 expand_binnumbers=True)
     >>> ret.binnumber
     array([[1, 1, 1, 2],
@@ -401,7 +400,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             values, and outputs a single numerical statistic. This function
             will be called on the values in each bin.  Empty bins will be
             represented by function([]), or NaN if this returns an error.
-    bins : sequence or int, optional
+    bins : sequence or positive int, optional
         The bin specification must be in one of the following forms:
 
           * A sequence of arrays describing the bin edges along each dimension.
@@ -516,6 +515,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
     known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
         raise ValueError('invalid statistic %r' % (statistic,))
+
+    if not np.isfinite(values).all() or not np.isfinite(sample).all:
+        raise ValueError('%r or %r contains non-finite values.' % (sample, values,))
 
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.

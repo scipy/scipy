@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
+from numpy.testing import assert_allclose, assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 
@@ -51,6 +52,16 @@ class TestBinnedStatistic(object):
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
 
         assert_allclose(stat1, stat2)
+
+    def test_non_finite_inputs(self):
+        # if either `values` or `sample` contain np.inf or np.nan throw
+        # see issue gh-9010 for more
+        x = self.x
+        u = self.u
+        u[0] = np.inf
+        assert_raises(ValueError, binned_statistic, x, u, 'std', bins=10)
+        u[0] = np.nan
+        assert_raises(ValueError, binned_statistic, x, u, 'count', bins=10)
 
     def test_1d_result_attributes(self):
         x = self.x
