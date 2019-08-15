@@ -211,6 +211,7 @@ class Rotation(object):
     __mul__
     inv
     magnitude
+    proper
     __getitem__
     random
     match_vectors
@@ -361,8 +362,12 @@ class Rotation(object):
     output formats supported, consult the individual method's examples.
 
     """
-    def __init__(self, quat, normalized=False, copy=True):
+    def __init__(self, quat, normalized=False, copy=True, proper=True):
         self._single = False
+        if proper is True:
+            self._proper = np.array([True])
+        else:
+            self._proper = proper
         quat = np.asarray(quat, dtype=float)
 
         if quat.ndim not in [1, 2] or quat.shape[-1] != 4:
@@ -576,6 +581,10 @@ class Rotation(object):
             dcm = dcm.reshape((1, 3, 3))
             is_single = True
 
+        proper = np.linalg.det(dcm) > 0
+        indices = np.where(~proper)[0]
+        dcm[indices] *= -1
+
         num_rotations = dcm.shape[0]
 
         decision_matrix = np.empty((num_rotations, 4))
@@ -604,9 +613,9 @@ class Rotation(object):
         quat /= np.linalg.norm(quat, axis=1)[:, None]
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalized=True, copy=False, proper=proper)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalized=True, copy=False, proper=proper)
 
     @classmethod
     def from_rotvec(cls, rotvec):
@@ -896,6 +905,9 @@ class Rotation(object):
         (2, 4)
 
         """
+        if (~self._proper).any():
+            raise Exception("Improper rotation")
+
         if self._single:
             return self._quat[0].copy()
         else:
@@ -986,6 +998,9 @@ class Rotation(object):
         dcm[:, 1, 2] = 2 * (yz - xw)
         dcm[:, 2, 2] = - x2 - y2 + z2 + w2
 
+        indices = np.where(~self._proper)[0]
+        dcm[indices] *= -1
+
         if self._single:
             return dcm[0]
         else:
@@ -1037,6 +1052,9 @@ class Rotation(object):
         (2, 3)
 
         """
+        if (~self._proper).any():
+            raise Exception("Improper rotation")
+
         quat = self._quat.copy()
         # w > 0 to ensure 0 <= angle <= pi
         quat[quat[:, 3] < 0] *= -1
@@ -1144,6 +1162,9 @@ class Rotation(object):
         (3, 3)
 
         """
+        if (~self._proper).any():
+            raise Exception("Improper rotation")
+
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
 
@@ -1390,7 +1411,14 @@ class Rotation(object):
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalized=True, copy=False)
+
+        improper = self._proper ^ other._proper
+        if type(improper) == bool:
+            proper = not improper
+        else:
+            proper = ~improper
+        return self.__class__(result, normalized=True, copy=False,
+                              proper=proper)
 
     def inv(self):
         """Invert this rotation.
@@ -1427,7 +1455,8 @@ class Rotation(object):
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, normalized=True, copy=False)
+        return self.__class__(quat, normalized=True, copy=False,
+                              proper=self._proper)
 
     def magnitude(self):
         """Get the magnitude(s) of the rotation(s).
@@ -1450,6 +1479,8 @@ class Rotation(object):
         >>> r[0].magnitude()
         3.141592653589793
         """
+        if (~self._proper).any():
+            raise Exception("Improper rotation")
 
         quat = self._quat.reshape((len(self), 4))
         s = np.linalg.norm(quat[:, :3], axis=1)
@@ -1460,6 +1491,20 @@ class Rotation(object):
             return angles[0]
         else:
             return angles
+
+    def proper(self):
+        """Determines if the rotation(s) are proper.
+
+        Returns
+        -------
+        proper : ndarray or bool
+            bool if object contains a single rotation
+            and boolean ndarray if object contains multiple rotations.
+        """
+        if self._single:
+            return self._proper[0]
+        else:
+            return self._proper
 
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
@@ -1507,10 +1552,11 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         """
-        return self.__class__(self._quat[indexer], normalized=True)
+        return self.__class__(self._quat[indexer], normalized=True,
+                              proper=self._proper)
 
     @classmethod
-    def random(cls, num=None, random_state=None):
+    def random(cls, num=None, random_state=None, allow_improper=False):
         """Generate uniformly distributed rotations.
 
         Parameters
@@ -1522,6 +1568,8 @@ class Rotation(object):
             Accepts an integer as a seed for the random generator or a
             RandomState object. If None (default), uses global `numpy.random`
             random state.
+        allow_improper: bool
+            Whether to allow improper rotations
 
         Returns
         -------
@@ -1555,10 +1603,14 @@ class Rotation(object):
         else:
             sample = random_state.normal(size=(num, 4))
 
-        return Rotation.from_quat(sample)
+        if not allow_improper:
+            proper = True
+        else:
+            proper = random_state.choice([False, True], size=num)
+        return cls(sample, normalized=True, proper=proper)
 
     @classmethod
-    def match_vectors(cls, a, b, weights=None, normalized=False):
+    def match_vectors(cls, a, b, weights=None, normalized=False, allow_improper=False):
         """Estimate a rotation to match two sets of vectors.
 
         Find a rotation between frames A and B which best matches a set of unit
@@ -1591,6 +1643,8 @@ class Rotation(object):
             If True, assume input vectors `a` and `b` to have unit norm. If
             False, normalize `a` and `b` before estimating rotation. Default
             is False.
+        allow_improper: bool
+            Whether to allow improper rotations
 
         Returns
         -------
@@ -1655,7 +1709,7 @@ class Rotation(object):
         u, s, vh = np.linalg.svd(B)
 
         # Correct improper rotation if necessary (as in Kabsch algorithm)
-        if np.linalg.det(u @ vh) < 0:
+        if not allow_improper and np.linalg.det(u @ vh) < 0:
             s[-1] = -s[-1]
             u[:, -1] = -u[:, -1]
 

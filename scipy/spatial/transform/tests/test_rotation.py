@@ -865,6 +865,35 @@ def test_random_rotation_shape():
     assert_equal(Rotation.random(5).as_quat().shape, (5, 4))
 
 
+def test_improper_rotations():
+
+    proper = Rotation.from_dcm(np.eye(3))
+    improper = Rotation.from_dcm(-np.eye(3))
+
+    assert_allclose(proper.as_dcm(), np.eye(3))
+    assert_allclose(improper.as_dcm(), -np.eye(3))
+
+    assert_allclose(proper.inv().as_dcm(), np.eye(3))
+    assert_allclose(improper.inv().as_dcm(), -np.eye(3))
+
+    assert proper.proper() == True
+    assert improper.proper() == False
+    assert (proper * improper).proper() == False
+    assert (improper * improper).proper() == True
+
+    with pytest.raises(Exception, match="Improper rotation"):
+        improper.as_quat()
+
+    with pytest.raises(Exception, match="Improper rotation"):
+        improper.as_rotvec()
+
+    with pytest.raises(Exception, match="Improper rotation"):
+        improper.as_euler('xyz')
+
+    with pytest.raises(Exception, match="Improper rotation"):
+        improper.magnitude()
+
+
 def test_slerp():
     np.random.seed(0)
 
