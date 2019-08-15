@@ -436,7 +436,7 @@ def test_obj_func_returns_scalar():
              "objective function must "
              "return a scalar value.")
     with assert_raises(ValueError, match=match):
-        optimize.minimize(lambda x: x, np.array([1, 1]))
+        optimize.minimize(lambda x: x, np.array([1, 1]), method='BFGS')
     
 
 def test_neldermead_xatol_fatol():
@@ -525,6 +525,15 @@ class TestOptimizeSimple(CheckOptimize):
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
+
+    def test_finite_differences(self):
+        methods = ['BFGS', 'CG', 'TNC']
+        jacs = ['2-point', '3-point', None]
+        for method, jac in itertools.product(methods, jacs):
+            result = optimize.minimize(self.func, self.startparams,
+                                       method=method, jac=jac)
+            assert_allclose(self.func(result.x), self.func(self.solution),
+                            atol=1e-6)
 
     def test_bfgs_gh_2169(self):
         def f(x):
@@ -625,13 +634,25 @@ class TestOptimizeSimple(CheckOptimize):
                               options=opts)
         assert_allclose(self.func(r.x), self.func(self.solution),
                         atol=1e-6)
+        assert self.gradcalls == r.njev
+
+        self.funccalls = self.gradcalls = 0
         # approximate jacobian
         ra = optimize.minimize(self.func, self.startparams,
                                method='L-BFGS-B', options=opts)
-        assert_allclose(self.func(ra.x), self.func(self.solution),
-                        atol=1e-6)
         # check that function evaluations in approximate jacobian are counted
         assert_(ra.nfev > r.nfev)
+        assert self.funccalls == ra.nfev
+        assert_allclose(self.func(ra.x), self.func(self.solution),
+                        atol=1e-6)
+
+        self.funccalls = self.gradcalls = 0
+        # approximate jacobian
+        ra = optimize.minimize(self.func, self.startparams, jac='3-point',
+                               method='L-BFGS-B', options=opts)
+        assert self.funccalls == ra.nfev
+        assert_allclose(self.func(ra.x), self.func(self.solution),
+                        atol=1e-6)
 
     def test_minimize_l_bfgs_b_ftol(self):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
@@ -968,6 +989,21 @@ class TestLBFGSBBounds(object):
                                 jac=self.jac, bounds=self.bounds)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
+
+    def test_minimize_l_bfgs_b_bounds_FD(self):
+        # test that initial starting value outside bounds doesn't raise
+        # an error (done with clipping).
+        # test all different finite differences combos, with and without args
+
+        jacs = ['2-point', '3-point', None]
+        argss = [(2.,), ()]
+        for jac, args in itertools.product(jacs, argss):
+            res = optimize.minimize(self.fun, [0, -1], args=args,
+                                    method='L-BFGS-B',
+                                    jac=jac, bounds=self.bounds,
+                                    options={'finite_diff_rel_step': None})
+            assert_(res['success'], res['message'])
+            assert_allclose(res.x, self.solution, atol=1e-6)
 
 
 class TestOptimizeScalar(object):

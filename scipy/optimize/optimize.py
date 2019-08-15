@@ -37,8 +37,10 @@ import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
+from ._numdiff import approx_derivative
 from scipy._lib._util import getargspec_no_self as _getargspec
 from scipy._lib._util import MapWrapper
+from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
 # standard status messages of optimizers
@@ -681,31 +683,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     return result
 
 
-def _approx_fprime_helper(xk, f, epsilon, args=(), f0=None):
-    """
-    See ``approx_fprime``.  An optional initial function value arg is added.
-
-    """
-    if f0 is None:
-        f0 = f(*((xk,) + args))
-    grad = numpy.zeros((len(xk),), float)
-    ei = numpy.zeros((len(xk),), float)
-    for k in range(len(xk)):
-        ei[k] = 1.0
-        d = epsilon * ei
-        df = (f(*((xk + d,) + args)) - f0) / d[k]
-        if not np.isscalar(df):
-            try:
-                df = df.item()
-            except (ValueError, AttributeError):
-                raise ValueError("The user-provided "
-                                 "objective function must "
-                                 "return a scalar value.")
-        grad[k] = df
-        ei[k] = 0.0
-    return grad
-
-
 def approx_fprime(xk, f, epsilon, *args):
     """Finite-difference approximation of the gradient of a scalar function.
 
@@ -761,7 +738,19 @@ def approx_fprime(xk, f, epsilon, *args):
     array([   2.        ,  400.00004198])
 
     """
-    return _approx_fprime_helper(xk, f, epsilon, args=args)
+    xk = np.asarray(xk, float)
+
+    f0 = f(xk, *args)
+    if not np.isscalar(f0):
+        try:
+            f0 = f0.item()
+        except (ValueError, AttributeError):
+            raise ValueError("The user-provided "
+                             "objective function must "
+                             "return a scalar value.")
+
+    return approx_derivative(f, xk, method='2-point', abs_step=epsilon,
+                             args=args, f0=f0)
 
 
 def check_grad(func, grad, x0, *args, **kwargs):
@@ -964,7 +953,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
-                   disp=False, return_all=False,
+                   disp=False, return_all=False, finite_diff_rel_step=None,
                    **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -982,13 +971,18 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     norm : float
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
-        If `jac` is approximated, use this value for the step size.
+        If `jac is None` the absolute step size used for numerical
+        approximation of the jacobian via forward differences.
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of the jacobian. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
 
     """
     _check_unknown_options(unknown_options)
-    f = fun
-    fprime = jac
-    epsilon = eps
     retall = return_all
 
     x0 = asarray(x0).flatten()
@@ -996,15 +990,54 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         x0.shape = (1,)
     if maxiter is None:
         maxiter = len(x0) * 200
-    func_calls, f = wrap_function(f, args)
 
-    old_fval = f(x0)
+    func_calls, f = wrap_function(fun, args)
 
-    if fprime is None:
-        grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
-    else:
-        grad_calls, myfprime = wrap_function(fprime, args)
-    gfk = myfprime(x0)
+    if jac is None:
+        def grad(x, f0=None):
+            g = approx_derivative(f, x, abs_step=eps, f0=f0,
+                                  method='2-point')
+            return g
+
+        grad_calls, myfprime = wrap_function(grad, ())
+        # code would be simplified by calculating old_fval, gfk outside these
+        # if clauses. However, for this specific case we can save some function
+        # evaluations.
+        old_fval = f(x0)
+        gfk = grad(x0, f0=old_fval)
+        grad_calls[0] += 1
+
+    elif callable(jac):
+        grad_calls, myfprime = wrap_function(jac, args)
+        old_fval = f(x0)
+        gfk = myfprime(x0)
+
+    elif jac in FD_METHODS:
+        def fake_hess(x, *args):
+            return x
+
+        # ScalarFunction caches. Reuse of fun(x) during grad
+        # calculation reduces overall function evaluations.
+        sf = ScalarFunction(f, x0, (), jac, fake_hess,
+                            finite_diff_rel_step, (-np.inf, np.inf))
+
+        f = sf.fun
+
+        old_fval = f(x0)
+        gfk = sf.grad(x0)
+        grad_calls, myfprime = wrap_function(sf.grad, ())
+
+        grad_calls[0] += 1
+        assert sf.nfev == func_calls[0]
+
+    if not np.isscalar(old_fval):
+        try:
+            old_fval = old_fval.item()
+        except (ValueError, AttributeError):
+            raise ValueError("The user-provided "
+                             "objective function must "
+                             "return a scalar value.")
+
     k = 0
     N = len(x0)
     I = numpy.eye(N, dtype=int)
@@ -1270,7 +1303,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
                  gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
-                 disp=False, return_all=False,
+                 disp=False, return_all=False, finite_diff_rel_step=None,
                  **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -1288,29 +1321,74 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     norm : float
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
-        If `jac` is approximated, use this value for the step size.
-
+        If `jac is None` the absolute step size used for numerical
+        approximation of the jacobian via forward differences.
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of the jacobian. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
     """
     _check_unknown_options(unknown_options)
-    f = fun
-    fprime = jac
-    epsilon = eps
+
     retall = return_all
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
         maxiter = len(x0) * 200
-    func_calls, f = wrap_function(f, args)
-    if fprime is None:
-        grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
-    else:
-        grad_calls, myfprime = wrap_function(fprime, args)
-    gfk = myfprime(x0)
+
+    func_calls, f = wrap_function(fun, args)
+
+    if jac is None:
+        def grad(x, f0=None):
+            g = approx_derivative(f, x, abs_step=eps, f0=f0,
+                                  method='2-point')
+            return g
+
+        grad_calls, myfprime = wrap_function(grad, ())
+        # code would be simplified by calculating old_fval, gfk outside these
+        # if clauses. However, for this specific case we can save some function
+        # evaluations.
+        old_fval = f(x0)
+        gfk = grad(x0, f0=old_fval)
+        grad_calls[0] += 1
+
+    elif callable(jac):
+        grad_calls, myfprime = wrap_function(jac, args)
+        old_fval = f(x0)
+        gfk = myfprime(x0)
+
+    elif jac in FD_METHODS:
+        def fake_hess(x, *args):
+            return x
+
+        # ScalarFunction caches. Reuse of fun(x) during grad
+        # calculation reduces overall function evaluations.
+        sf = ScalarFunction(f, x0, (), jac, fake_hess,
+                            finite_diff_rel_step, (-np.inf, np.inf))
+
+        f = sf.fun
+
+        old_fval = f(x0)
+        gfk = sf.grad(x0)
+        grad_calls, myfprime = wrap_function(sf.grad, ())
+
+        grad_calls[0] += 1
+        assert sf.nfev == func_calls[0]
+
+    if not np.isscalar(old_fval):
+        try:
+            old_fval = old_fval.item()
+        except (ValueError, AttributeError):
+            raise ValueError("The user-provided "
+                             "objective function must "
+                             "return a scalar value.")
+
     k = 0
     xk = x0
-
     # Sets the initial step guess to dx ~ 1
-    old_fval = f(xk)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
 
     if retall:

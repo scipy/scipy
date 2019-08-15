@@ -280,6 +280,8 @@ def new_bounds_to_old(lb, ub, n):
     The new representation is a tuple (lb, ub) and the old one is a list
     containing n tuples, i-th containing lower and upper bound on a i-th
     variable.
+    If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
+    None.
     """
     lb = np.asarray(lb)
     ub = np.asarray(ub)
@@ -300,6 +302,8 @@ def old_bound_to_new(bounds):
     The new representation is a tuple (lb, ub) and the old one is a list
     containing n tuples, i-th containing lower and upper bound on a i-th
     variable.
+    If any of the entries in lb/ub are None they are replaced by
+    -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
     lb = np.array([x if x is not None else -np.inf for x in lb])

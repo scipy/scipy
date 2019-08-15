@@ -37,7 +37,7 @@ from .slsqp import _minimize_slsqp
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
-
+from ._differentiable_functions import FD_METHODS
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -51,7 +51,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where x is an 1-D array with shape (n,) and `args`
+        where ``x`` is an 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -85,20 +85,24 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
-        trust-exact and trust-constr. If it is a callable, it should be a
-        function that returns the gradient vector:
+        trust-exact and trust-constr.
+        If it is a callable, it should be a function that returns the gradient
+        vector:
 
             ``jac(x, *args) -> array_like, shape (n,)``
 
-        where x is an array with shape (n,) and `args` is a tuple with
-        the fixed parameters. Alternatively, the keywords
-        {'2-point', '3-point', 'cs'} select a finite
-        difference scheme for numerical estimation of the gradient. Options
-        '3-point' and 'cs' are available only to 'trust-constr'.
+        where ``x`` is an array with shape (n,) and ``args`` is a tuple with
+        the fixed parameters. Methods 'Newton-CG', 'trust-ncg', 'dogleg',
+        'trust-exact', 'trust-krylov' require that a callable be supplied.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
-        gradient along with the objective function. If False, the gradient
-        will be estimated using '2-point' finite difference estimation.
-    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy},  optional
+        gradient along with the objective function. If None or False, the
+        gradient will be estimated using 2-point finite difference
+        estimation with an absolute step size.
+        Alternatively, the keywords  {'2-point', '3-point', 'cs'} can be used
+        to select a finite difference scheme for numerical estimation of the
+        gradient with a relative step size. These finite difference schemes
+        obey any specified `bounds`.
+    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is
         callable, it should return the  Hessian matrix:
@@ -531,29 +535,25 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              RuntimeWarning)
 
     # check gradient vector
-    if meth == 'trust-constr':
-        if type(jac) is bool:
-            if jac:
-                fun = MemoizeJac(fun)
-                jac = fun.derivative
-            else:
-                jac = '2-point'
-        elif jac is None:
-            jac = '2-point'
-        elif not callable(jac) and jac not in ('2-point', '3-point', 'cs'):
-            raise ValueError("Unsupported jac definition.")
+    if callable(jac):
+        pass
+    elif jac is True:
+        # fun returns func and grad
+        fun = MemoizeJac(fun)
+        jac = fun.derivative
+    elif (jac in FD_METHODS and
+          meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc']):
+        # finite differences
+        pass
+    elif meth in ['trust-constr']:
+        # default jac calculation for this method
+        jac = '2-point'
+    elif jac is None or bool(jac) is False:
+        # this will cause e.g. LBFGS to use forward difference, absolute step
+        jac = None
     else:
-        if jac in ('2-point', '3-point', 'cs'):
-            if jac in ('3-point', 'cs'):
-                warn("Only 'trust-constr' method accept %s "
-                     "options for 'jac'. Using '2-point' instead." % jac)
-            jac = None
-        elif not callable(jac):
-            if bool(jac):
-                fun = MemoizeJac(fun)
-                jac = fun.derivative
-            else:
-                jac = None
+        # default if jac option is not understood
+        jac = None
 
     # set default tolerances
     if tol is not None:

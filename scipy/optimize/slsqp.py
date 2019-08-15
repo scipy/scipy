@@ -22,6 +22,10 @@ from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import wrap_function, OptimizeResult, _check_unknown_options
+from ._numdiff import approx_derivative
+from ._differentiable_functions import ScalarFunction, FD_METHODS
+from ._constraints import old_bound_to_new
+
 
 __docformat__ = "restructuredtext en"
 
@@ -215,7 +219,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
-                    eps=_epsilon, callback=None,
+                    eps=_epsilon, callback=None, finite_diff_rel_step=None,
                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
@@ -232,7 +236,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         `verbosity` is ignored and set to 0.
     maxiter : int
         Maximum number of iterations.
-
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of `jac`. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
     """
     _check_unknown_options(unknown_options)
     fprime = jac
@@ -270,6 +280,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check Jacobian
         cjac = con.get('jac')
         if cjac is None:
+            # TODO use approx_derivative instead of approx_jacobian
             # approximate Jacobian function.  The factory function is needed
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
@@ -298,14 +309,42 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # Wrap func
     feval, func = wrap_function(func, args)
 
-    # Wrap fprime, if provided, or approx_jacobian if not
-    if fprime:
-        geval, fprime = wrap_function(fprime, args)
-    else:
-        geval, fprime = wrap_function(approx_jacobian, (func, epsilon))
-
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
+
+    # jacobian function for the minimizer
+    # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
+    # approx_derivative and ScalarFunction
+    if bounds is None or len(bounds) == 0:
+        new_bounds = (-np.inf, np.inf)
+    else:
+        new_bounds = old_bound_to_new(bounds)
+
+    # clip the initial guess to bounds, otherwise approx_derivative and
+    # ScalarFunction don't work
+    x = np.clip(x, new_bounds[0], new_bounds[1])
+
+    if jac is None:
+        def grad(x, f0=None):
+            g = approx_derivative(func, x, abs_step=eps, f0=f0,
+                                  method='2-point', bounds=new_bounds)
+            return g
+
+        geval, fprime = wrap_function(grad, ())
+
+    elif callable(jac):
+        geval, fprime = wrap_function(jac, args)
+
+    elif jac in FD_METHODS:
+        def fake_hess(x, *args):
+            return x
+
+        # ScalarFunction caches. Reuse of fun(x) during grad
+        # calculation reduces overall function evaluations.
+        sf = ScalarFunction(func, x, (), jac, fake_hess,
+                            finite_diff_rel_step, new_bounds)
+        func = sf.fun
+        geval, fprime = wrap_function(sf.grad, ())
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
@@ -353,13 +392,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         infbnd = ~isfinite(bnds)
         xl[infbnd[:, 0]] = np.nan
         xu[infbnd[:, 1]] = np.nan
-
-    # Clip initial guess to bounds (SLSQP may fail with bounds-infeasible
-    # initial point)
-    have_bound = np.isfinite(xl)
-    x[have_bound] = np.clip(x[have_bound], xl[have_bound], np.inf)
-    have_bound = np.isfinite(xu)
-    x[have_bound] = np.clip(x[have_bound], -np.inf, xu[have_bound])
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)

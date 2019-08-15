@@ -34,8 +34,13 @@ value of the function, and whose second argument is the gradient of the function
 
 from __future__ import division, print_function, absolute_import
 
-from scipy.optimize import moduleTNC, approx_fprime
-from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
+from scipy.optimize import moduleTNC
+from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
+                       wrap_function)
+from ._differentiable_functions import ScalarFunction, FD_METHODS
+from ._numdiff import approx_derivative
+from ._constraints import old_bound_to_new
+
 from numpy import inf, array, zeros, asfarray
 
 __all__ = ['fmin_tnc']
@@ -281,15 +286,16 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
                   maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
-                  callback=None, **unknown_options):
+                  callback=None, finite_diff_rel_step=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
 
     Options
     -------
-    eps : float
-        Step size used for numerical approximation of the jacobian.
+    eps : float or ndarray
+        If `jac is None` the absolute step size used for numerical
+        approximation of the jacobian via forward differences.
     scale : list of floats
         Scaling factors to apply to each variable.  If None, the
         factors are up-low for interval bounded variables and
@@ -337,10 +343,15 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         Scaling factor (in log10) used to trigger f value
         rescaling.  If 0, rescale at each iteration.  If a large
         value, never rescale.  If < 0, rescale is set to 1.3.
-
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of the jacobian. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
     """
     _check_unknown_options(unknown_options)
-    epsilon = eps
     maxfun = maxiter
     fmin = minfev
     pgtol = gtol
@@ -352,6 +363,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         bounds = [(None,None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
+    new_bounds = old_bound_to_new(bounds)
 
     if mesg_num is not None:
         messages = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
@@ -361,15 +373,26 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     else:
         messages = MSG_NONE
 
+    fun_calls, func = wrap_function(fun, args)
     if jac is None:
         def func_and_grad(x):
-            f = fun(x, *args)
-            g = approx_fprime(x, fun, epsilon, *args)
+            f = func(x)
+            g = approx_derivative(func, x, abs_step=eps, f0=f,
+                                  method='2-point', bounds=new_bounds)
             return f, g
-    else:
+
+    elif callable(jac):
         def func_and_grad(x):
-            f = fun(x, *args)
-            g = jac(x, *args)
+            return func(x), jac(x, *args)
+
+    elif jac in FD_METHODS:
+        def fake_hess(x):
+            return x
+        sf = ScalarFunction(func, x0, (), jac, fake_hess, finite_diff_rel_step,
+                            new_bounds)
+
+        def func_and_grad(x):
+            f, g = sf.fun_and_grad(x)
             return f, g
 
     """
@@ -410,8 +433,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     funv, jacv = func_and_grad(x)
 
-    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
-                          message=RCSTRINGS[rc], success=(-1 < rc < 3))
+    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=fun_calls[0],
+                          nit=nit, status=rc, message=RCSTRINGS[rc],
+                          success=(-1 < rc < 3))
 
 
 if __name__ == '__main__':
