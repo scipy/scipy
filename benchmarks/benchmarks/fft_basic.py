@@ -3,8 +3,10 @@
 from __future__ import division, absolute_import, print_function
 
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
-
 from numpy.random import rand
+import numpy as np
+from concurrent import futures
+import os
 
 import scipy.fftpack
 import numpy.fft
@@ -289,3 +291,43 @@ class FftnBackends(Benchmark):
 
     def time_ifft(self, size, cmplx, module):
         self.ifftn(self.x)
+
+
+class FftThreading(Benchmark):
+    params = [
+        ['100x100', '1000x100', '256x256', '512x512'],
+        [1, 8, 32, 100],
+        ['workers', 'threading']
+    ]
+    param_names = ['size', 'num_transforms', 'method']
+
+    def setup(self, size, num_transforms, method):
+        if not has_scipy_fft:
+            raise NotImplementedError
+
+        size = list(map(int, size.split("x")))
+        self.xs = [(random(size)+1j*random(size)).astype(np.complex128)
+                   for _ in range(num_transforms)]
+
+        if method == 'threading':
+            self.pool = futures.ThreadPoolExecutor(os.cpu_count())
+
+    def map_thread(self, func):
+        f = []
+        for x in self.xs:
+            f.append(self.pool.submit(func, x))
+        futures.wait(f)
+
+    def time_fft(self, size, num_transforms, method):
+        if method == 'threading':
+            self.map_thread(scipy_fft.fft)
+        else:
+            for x in self.xs:
+                scipy_fft.fft(x, workers=-1)
+
+    def time_fftn(self, size, num_transforms, method):
+        if method == 'threading':
+            self.map_thread(scipy_fft.fftn)
+        else:
+            for x in self.xs:
+                scipy_fft.fftn(x, workers=-1)
