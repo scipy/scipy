@@ -53,43 +53,13 @@ def fftw_dst_ref(type, size, dt):
     return x, y, dt
 
 
-def dct_2d_ref(x, **kwargs):
-    """Calculate reference values for testing dct2."""
+def ref_2d(func, x, **kwargs):
+    """Calculate 2d reference data from a 1d transform"""
     x = np.array(x, copy=True)
     for row in range(x.shape[0]):
-        x[row, :] = dct(x[row, :], **kwargs)
+        x[row, :] = func(x[row, :], **kwargs)
     for col in range(x.shape[1]):
-        x[:, col] = dct(x[:, col], **kwargs)
-    return x
-
-
-def idct_2d_ref(x, **kwargs):
-    """Calculate reference values for testing idct2."""
-    x = np.array(x, copy=True)
-    for row in range(x.shape[0]):
-        x[row, :] = idct(x[row, :], **kwargs)
-    for col in range(x.shape[1]):
-        x[:, col] = idct(x[:, col], **kwargs)
-    return x
-
-
-def dst_2d_ref(x, **kwargs):
-    """Calculate reference values for testing dst2."""
-    x = np.array(x, copy=True)
-    for row in range(x.shape[0]):
-        x[row, :] = dst(x[row, :], **kwargs)
-    for col in range(x.shape[1]):
-        x[:, col] = dst(x[:, col], **kwargs)
-    return x
-
-
-def idst_2d_ref(x, **kwargs):
-    """Calculate reference values for testing idst2."""
-    x = np.array(x, copy=True)
-    for row in range(x.shape[0]):
-        x[row, :] = idst(x[row, :], **kwargs)
-    for col in range(x.shape[1]):
-        x[:, col] = idst(x[:, col], **kwargs)
+        x[:, col] = func(x[:, col], **kwargs)
     return x
 
 
@@ -444,25 +414,21 @@ class Test_DCTN_IDCTN(object):
         tmp = finverse(tmp, type=dct_type, axes=axes, norm=norm)
         assert_array_almost_equal(self.data, tmp, decimal=12)
 
-    @pytest.mark.parametrize('fforward,fforward_ref', [(dctn, dct_2d_ref),
-                                                       (dstn, dst_2d_ref)])
+    @pytest.mark.parametrize('funcn,func', [(dctn, dct), (dstn, dst)])
     @pytest.mark.parametrize('dct_type', dct_type)
     @pytest.mark.parametrize('norm', norms)
-    def test_dctn_vs_2d_reference(self, fforward, fforward_ref,
-                                  dct_type, norm):
-        y1 = fforward(self.data, type=dct_type, axes=None, norm=norm)
-        y2 = fforward_ref(self.data, type=dct_type, norm=norm)
+    def test_dctn_vs_2d_reference(self, funcn, func, dct_type, norm):
+        y1 = funcn(self.data, type=dct_type, axes=None, norm=norm)
+        y2 = ref_2d(func, self.data, type=dct_type, norm=norm)
         assert_array_almost_equal(y1, y2, decimal=11)
 
-    @pytest.mark.parametrize('finverse,finverse_ref', [(idctn, idct_2d_ref),
-                                                       (idstn, idst_2d_ref)])
+    @pytest.mark.parametrize('funcn,func', [(idctn, idct), (idstn, idst)])
     @pytest.mark.parametrize('dct_type', dct_type)
     @pytest.mark.parametrize('norm', [None, 'ortho'])
-    def test_idctn_vs_2d_reference(self, finverse, finverse_ref,
-                                   dct_type, norm):
+    def test_idctn_vs_2d_reference(self, funcn, func, dct_type, norm):
         fdata = dctn(self.data, type=dct_type, norm=norm)
-        y1 = finverse(fdata, type=dct_type, norm=norm)
-        y2 = finverse_ref(fdata, type=dct_type, norm=norm)
+        y1 = funcn(fdata, type=dct_type, norm=norm)
+        y2 = ref_2d(func, fdata, type=dct_type, norm=norm)
         assert_array_almost_equal(y1, y2, decimal=11)
 
     @pytest.mark.parametrize('fforward,finverse', [(dctn, idctn),
