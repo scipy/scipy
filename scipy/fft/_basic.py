@@ -50,7 +50,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See the notes below for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
+        the value wraps around from ``os.cpu_count()``. See below for more
         details.
 
     Returns
@@ -195,8 +195,8 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -280,8 +280,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -376,8 +376,8 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -461,8 +461,8 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See `fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -535,8 +535,8 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         See `fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -601,8 +601,8 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -707,8 +707,8 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -796,8 +796,8 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -896,8 +896,8 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -981,8 +981,8 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1060,8 +1060,8 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1123,8 +1123,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1205,8 +1205,8 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1263,8 +1263,8 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1353,8 +1353,8 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
         See `fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1408,8 +1408,8 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1485,8 +1485,8 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
         See :func:`fft` for more details.
     workers : int, optional
         Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See `fft` for more
-        details.
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
