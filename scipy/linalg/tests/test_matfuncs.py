@@ -838,57 +838,75 @@ class TestExpmConditionNumber(object):
 
 class TestIsMatrix(object):
 
-    def test_is_matrix_hermitian(self):
-        a = np.array([[0,1j],[-1j,0]])
-        r = test_is_matrix_hermitian(a)
+    def test_is_hermitian(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A = A + (np.random.rand(n, n) > 0.5) * 1j
+            A = 0.5 * (A + A.T)
+            r = r and is_hermitian(A)
         assert_(r == True)
 
-    def test_is_matrix_symmetric(self):
-        a = np.array([[2,3],[3,2]])
-        r = signm(a)
+    def test_is_symmetric(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A = 0.5 * (A + A.T)
+            r = r and is_symmetric(A)
         assert_(r == True)
 
-    def test_is_matrix_skew_symmetric(self):
-        a = np.array([[0, 2, -1],[-2, 0, -4],[-1, -4, 0]])
-        r = signm(a)
+    def test_is_skew_symmetric(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A = 0.5 * (A - A.T)
+            r = r and is_skew_symmetric(A)
         assert_(r == True)
 
-    def test_is_matrix_nonsingular(self):
-        a = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
-        r = signm(a)
+    def test_is_nonsingular(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A = np.cross(A, A)
+            r = r and is_nonsingular(A)
         assert_(r == True)
 
-    def test_is_matrix_singular(self):
-        a = np.array([[-1,1.5],[1.5,-1]])
-        r = signm(a)
+    def test_is_singular(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A[n-1,:] = np.zeros(n)
+            r = r and is_singular(A)
         assert_(r == True)
 
-    def test_is_matrix_idempotent(self):
-        a = np.array([[3,-6],[1,-2]])
-        r = signm(a)
+    def test_is_positive_definite(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A = 0.5 * (A + A.T)
+            A = A + n * np.eye(n)
+            r = r and is_positive_definite(A)
         assert_(r == True)
 
-    def test_is_matrix_positive_definite(self):
-        a = np.array([[5,1],[1,3]])
-        r = signm(a)
-        assert_(r == True)
-
-    def test_is_matrix_positive_semidefinite(self):
-        a = np.array([[1,-1],[-1,1]])
-        r = signm(a)
-        assert_(r == True)
-
-    def test_is_matrix_negative_definite(self):
-        a = np.array([[-5,-1],[-1,-3]])
-        r = signm(a)
-        assert_(r == True)
-
-    def test_is_matrix_negative_semidefinite(self):
-        a = np.array([[-1,1],[1,-1]])
-        r = signm(a)
-        assert_(r == True)
-
-    def test_is_matrix_indefinite(self):
-        a = np.array([[5,1],[1,0]])
-        r = signm(a)
+    def test_is_negative_definite(self):
+        np.random.seed(1234)
+        r = True
+        for i in range(10):
+            n = random.randrange(30, 100)
+            A = np.random.randn(n, n)
+            A = 0.5 * (A + A.T)
+            A = A + n * np.eye(n)
+            r = r and is_negative_definite(-A)
         assert_(r == True)

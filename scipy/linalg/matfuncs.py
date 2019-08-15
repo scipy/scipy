@@ -678,7 +678,7 @@ def signm(A, disp=True):
         return S0, errest
 
 
-def __estimate_tolerance(A):
+def _estimate_tolerance(A):
     A = np.atleast_1d(A)
     caxis = -1
     nc = _get_axis_len("c", A, caxis)
@@ -707,10 +707,6 @@ def is_hermitian(A, tol=None):
     X : boolean
         True if a matrix A is hermitian.
 
-    References
-    ----------
-    A. S. Hodel, Octave scripts, linear algebra
-
     Examples
     --------
     >>> from scipy.linalg import is_hermitian
@@ -723,7 +719,7 @@ def is_hermitian(A, tol=None):
     """
     A = _asarray_square(A)
     if tol is None:
-        tol = __estimate_tolerance(A)
+        tol = _estimate_tolerance(A)
     print('tol',tol)
     if tol == 0:
         return (A == A.T).all()
@@ -760,7 +756,7 @@ def is_symmetric(A, tol=None):
         print('iscomplexobj')
         return False
     if tol is None:
-        tol = __estimate_tolerance(A)
+        tol = _estimate_tolerance(A)
     if tol == 0:
         return (A == A.T).all()
     else:
@@ -797,7 +793,7 @@ def is_skew_symmetric(A, tol=None):
     if np.iscomplexobj(A):
         return False
     if tol is None:
-        tol = __estimate_tolerance(A)
+        tol = _estimate_tolerance(A)
     if tol == 0:
         return (A == -A.T).all()
     else:
@@ -920,7 +916,7 @@ def is_positive_definite(A, robust_level=0, tol=None):
     if (robust_level < 0) | (robust_level > 4):
         raise ValueError('expected robust_level between 0 and 4')
     if tol is None:
-        tol = __estimate_tolerance(A)
+        tol = _estimate_tolerance(A)
     n = A.shape[0]
     m = np.max(A)
     x, y = np.where(A == m)
