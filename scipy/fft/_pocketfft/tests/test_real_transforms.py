@@ -145,89 +145,63 @@ def test_complex(transform, dtype):
 # map (tranform, dtype, type) -> decimal
 dec_map = {
     # DCT
-    (dct, np.longfloat, 1): 10,
-    (dct, np.double, 1): 10,
-    (dct, np.float32, 1): 4,
-    (dct, int, 1): 5,
+    (dct, np.double, 1): 13,
+    (dct, np.float32, 1): 6,
 
-    (dct, np.longfloat, 2): 10,
-    (dct, np.double, 2): 10,
+    (dct, np.double, 2): 14,
     (dct, np.float32, 2): 5,
-    (dct, int, 2): 5,
 
-    (dct, np.longfloat, 3): 14,
     (dct, np.double, 3): 14,
     (dct, np.float32, 3): 5,
-    (dct, int, 3): 5,
 
-    (dct, np.longfloat, 4): 12,
-    (dct, np.double, 4): 12,
-    (dct, np.float32, 4): 5,
-    (dct, int, 4): 5,
+    (dct, np.double, 4): 13,
+    (dct, np.float32, 4): 6,
 
     # IDCT
-    (idct, np.longfloat, 1): 10,
-    (idct, np.double, 1): 10,
-    (idct, np.float32, 1): 4,
-    (idct, int, 1): 4,
+    (idct, np.double, 1): 14,
+    (idct, np.float32, 1): 6,
 
-    (idct, np.longfloat, 2): 10,
-    (idct, np.double, 2): 10,
+    (idct, np.double, 2): 14,
     (idct, np.float32, 2): 5,
-    (idct, int, 2): 5,
 
-    (idct, np.longfloat, 3): 14,
     (idct, np.double, 3): 14,
     (idct, np.float32, 3): 5,
-    (idct, int, 3): 5,
 
-    (idct, np.longfloat, 4): 12,
-    (idct, np.double, 4): 12,
-    (idct, np.float32, 4): 5,
-    (idct, int, 4): 5,
+    (idct, np.double, 4): 14,
+    (idct, np.float32, 4): 6,
 
     # DST
-    (dst, np.longfloat, 1): 12,
-    (dst, np.double, 1): 12,
-    (dst, np.float32, 1): 4,
-    (dst, int, 1): 5,
+    (dst, np.double, 1): 13,
+    (dst, np.float32, 1): 6,
 
-    (dst, np.longfloat, 2): 14,
     (dst, np.double, 2): 14,
     (dst, np.float32, 2): 6,
-    (dst, int, 2): 6,
 
-    (dst, np.longfloat, 3): 14,
     (dst, np.double, 3): 14,
     (dst, np.float32, 3): 7,
-    (dst, int, 3): 7,
 
-    (dst, np.longfloat, 4): 12,
-    (dst, np.double, 4): 12,
-    (dst, np.float32, 4): 4,
-    (dst, int, 4): 5,
+    (dst, np.double, 4): 13,
+    (dst, np.float32, 4): 6,
 
     # IDST
-    (idst, np.longfloat, 1): 12,
-    (idst, np.double, 1): 12,
-    (idst, np.float32, 1): 4,
-    (idst, int, 1): 4,
+    (idst, np.double, 1): 14,
+    (idst, np.float32, 1): 6,
 
-    (idst, np.longfloat, 2): 14,
     (idst, np.double, 2): 14,
     (idst, np.float32, 2): 6,
-    (idst, int, 2): 6,
 
-    (idst, np.longfloat, 3): 14,
     (idst, np.double, 3): 14,
     (idst, np.float32, 3): 6,
-    (idst, int, 3): 6,
 
-    (idst, np.longfloat, 4): 12,
-    (idst, np.double, 4): 12,
+    (idst, np.double, 4): 14,
     (idst, np.float32, 4): 6,
-    (idst, int, 4): 6,
 }
+
+for k,v in dec_map.copy().items():
+    if k[1] == np.double:
+        dec_map[(k[0], np.longdouble, k[2])] = v
+    elif k[1] == np.float32:
+        dec_map[(k[0], int, k[2])] = v
 
 
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
