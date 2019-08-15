@@ -13,31 +13,70 @@ from scipy.fft._pocketfft.realtransforms import (
 
 fftpack_test_dir = join(dirname(__file__), '..', '..', '..', 'fftpack', 'tests')
 
-# Matlab reference data
-MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
-X = [MDATA['x%d' % i] for i in range(8)]
-Y = [MDATA['y%d' % i] for i in range(8)]
+MDATA_COUNT = 8
+FFTWDATA_COUNT = 14
 
-# FFTW reference data: the data are organized as follows:
-#    * SIZES is an array containing all available sizes
-#    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
-#    contains the output of the DCT applied to the input np.linspace(0, size-1,
-#    size)
-FFTWDATA_LONGDOUBLE = np.load(join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
-FFTWDATA_DOUBLE = np.load(join(fftpack_test_dir, 'fftw_double_ref.npz'))
-FFTWDATA_SINGLE = np.load(join(fftpack_test_dir, 'fftw_single_ref.npz'))
-FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
+def get_reference_data():
+    ref = getattr(globals(), '__reference_data', None)
+    if ref is not None:
+        return ref
+
+    # Matlab reference data
+    MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
+    X = [MDATA['x%d' % i] for i in range(MDATA_COUNT)]
+    Y = [MDATA['y%d' % i] for i in range(MDATA_COUNT)]
+
+    # FFTW reference data: the data are organized as follows:
+    #    * SIZES is an array containing all available sizes
+    #    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
+    #    contains the output of the DCT applied to the input np.linspace(0, size-1,
+    #    size)
+    FFTWDATA_LONGDOUBLE = np.load(join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
+    FFTWDATA_DOUBLE = np.load(join(fftpack_test_dir, 'fftw_double_ref.npz'))
+    FFTWDATA_SINGLE = np.load(join(fftpack_test_dir, 'fftw_single_ref.npz'))
+    FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
+
+    assert len(FFTWDATA_SIZES) == FFTWDATA_COUNT
+
+    ref = {
+        'FFTWDATA_LONGDOUBLE': FFTWDATA_LONGDOUBLE,
+        'FFTWDATA_DOUBLE': FFTWDATA_DOUBLE,
+        'FFTWDATA_SINGLE': FFTWDATA_SINGLE,
+        'FFTWDATA_SIZES': FFTWDATA_SIZES,
+        'X': X,
+        'Y': Y
+    }
+
+    globals()['__reference_data'] = ref
+    return ref
+
+
+@pytest.fixture(params=range(FFTWDATA_COUNT))
+def fftwdata_size(request):
+    return get_reference_data()['FFTWDATA_SIZES'][request.param]
+
+@pytest.fixture(params=range(MDATA_COUNT))
+def mdata_x(request):
+    return get_reference_data()['X'][request.param]
+
+
+@pytest.fixture(params=range(MDATA_COUNT))
+def mdata_xy(request):
+    ref = get_reference_data()
+    y = ref['Y'][request.param]
+    x = ref['X'][request.param]
+    return x, y
 
 
 def fftw_dct_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
     if dt == np.double:
-        data = FFTWDATA_DOUBLE
+        data = get_reference_data()['FFTWDATA_DOUBLE']
     elif dt == np.float32:
-        data = FFTWDATA_SINGLE
+        data = get_reference_data()['FFTWDATA_SINGLE']
     elif dt == np.longfloat:
-        data = FFTWDATA_LONGDOUBLE
+        data = get_reference_data()['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
     y = (data['dct_%d_%d' % (type, size)]).astype(dt)
@@ -48,11 +87,11 @@ def fftw_dst_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
     if dt == np.double:
-        data = FFTWDATA_DOUBLE
+        data = get_reference_data()['FFTWDATA_DOUBLE']
     elif dt == np.float32:
-        data = FFTWDATA_SINGLE
+        data = get_reference_data()['FFTWDATA_SINGLE']
     elif dt == np.longfloat:
-        data = FFTWDATA_LONGDOUBLE
+        data = get_reference_data()['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
     y = (data['dst_%d_%d' % (type, size)]).astype(dt)
@@ -207,9 +246,8 @@ for k,v in dec_map.copy().items():
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 class TestDCT:
-    @pytest.mark.parametrize('size', FFTWDATA_SIZES)
-    def test_definition(self, rdt, type, size):
-        x, yr, dt = fftw_dct_ref(type, size, rdt)
+    def test_definition(self, rdt, type, fftwdata_size):
+        x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
         y = dct(x, type=type)
         assert_equal(y.dtype, dt)
         dec = dec_map[(dct, rdt, type)]
@@ -233,11 +271,10 @@ class TestDCT:
 
 
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
-@pytest.mark.parametrize('data', X)
-def test_dct1_definition_ortho(rdt, data):
+def test_dct1_definition_ortho(rdt, mdata_x):
     # Test orthornomal mode.
     dec = dec_map[(dct, rdt, 1)]
-    x = np.array(data, dtype=rdt)
+    x = np.array(mdata_x, dtype=rdt)
     dt = np.result_type(np.float32, rdt)
     y = dct(x, norm='ortho', type=1)
     y2 = naive_dct1(x, norm='ortho')
@@ -245,25 +282,23 @@ def test_dct1_definition_ortho(rdt, data):
     assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
 
 
-@pytest.mark.parametrize('data, ref', zip(X, Y))
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
-def test_dct2_definition_matlab(data, ref, rdt):
+def test_dct2_definition_matlab(mdata_xy, rdt):
     # Test correspondence with matlab (orthornomal mode).
     dt = np.result_type(np.float32, rdt)
-    x = np.array(data, dtype=dt)
+    x = np.array(mdata_xy[0], dtype=dt)
 
-    yr = ref
+    yr = mdata_xy[1]
     y = dct(x, norm="ortho", type=2)
     dec = dec_map[(dct, rdt, 2)]
     assert_equal(y.dtype, dt)
     assert_array_almost_equal(y, yr, decimal=dec)
 
 
-@pytest.mark.parametrize('data', X)
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
-def test_dct3_definition_ortho(data, rdt):
+def test_dct3_definition_ortho(mdata_x, rdt):
     # Test orthornomal mode.
-    x = np.array(data, dtype=rdt)
+    x = np.array(mdata_x, dtype=rdt)
     dt = np.result_type(np.float32, rdt)
     y = dct(x, norm='ortho', type=2)
     xi = dct(y, norm="ortho", type=3)
@@ -272,11 +307,10 @@ def test_dct3_definition_ortho(data, rdt):
     assert_array_almost_equal(xi, x, decimal=dec)
 
 
-@pytest.mark.parametrize('data', X)
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
-def test_dct4_definition_ortho(data, rdt):
+def test_dct4_definition_ortho(mdata_x, rdt):
     # Test orthornomal mode.
-    x = np.array(data, dtype=rdt)
+    x = np.array(mdata_x, dtype=rdt)
     dt = np.result_type(np.float32, rdt)
     y = dct(x, norm='ortho', type=4)
     y2 = naive_dct4(x, norm='ortho')
@@ -285,22 +319,20 @@ def test_dct4_definition_ortho(data, rdt):
     assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
 
 
-@pytest.mark.parametrize('size', FFTWDATA_SIZES)
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idct_definition(size, rdt, type):
-    xr, yr, dt = fftw_dct_ref(type, size, rdt)
+def test_idct_definition(fftwdata_size, rdt, type):
+    xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
     x = idct(yr, type=type)
     dec = dec_map[(idct, rdt, type)]
     assert_equal(x.dtype, dt)
     assert_allclose(x, xr, rtol=0., atol=np.max(xr)*10**(-dec))
 
 
-@pytest.mark.parametrize('size', FFTWDATA_SIZES)
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_definition(size, rdt, type):
-    xr, yr, dt = fftw_dst_ref(type, size, rdt)
+def test_definition(fftwdata_size, rdt, type):
+    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
     y = dst(xr, type=type)
     dec = dec_map[(dst, rdt, type)]
     assert_equal(y.dtype, dt)
@@ -308,11 +340,10 @@ def test_definition(size, rdt, type):
 
 
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
-@pytest.mark.parametrize('data', X)
-def test_dst1_definition_ortho(rdt, data):
+def test_dst1_definition_ortho(rdt, mdata_x):
     # Test orthornomal mode.
     dec = dec_map[(dst, rdt, 1)]
-    x = np.array(data, dtype=rdt)
+    x = np.array(mdata_x, dtype=rdt)
     dt = np.result_type(np.float32, rdt)
     y = dst(x, norm='ortho', type=1)
     y2 = naive_dst1(x, norm='ortho')
@@ -321,11 +352,10 @@ def test_dst1_definition_ortho(rdt, data):
 
 
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
-@pytest.mark.parametrize('data', X)
-def test_dst4_definition_ortho(rdt, data):
+def test_dst4_definition_ortho(rdt, mdata_x):
     # Test orthornomal mode.
     dec = dec_map[(dst, rdt, 4)]
-    x = np.array(data, dtype=rdt)
+    x = np.array(mdata_x, dtype=rdt)
     dt = np.result_type(np.float32, rdt)
     y = dst(x, norm='ortho', type=4)
     y2 = naive_dst4(x, norm='ortho')
@@ -333,11 +363,10 @@ def test_dst4_definition_ortho(rdt, data):
     assert_array_almost_equal(y, y2, decimal=dec)
 
 
-@pytest.mark.parametrize('size', FFTWDATA_SIZES)
 @pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idst_definition(size, rdt, type):
-    xr, yr, dt = fftw_dst_ref(type, size, rdt)
+def test_idst_definition(fftwdata_size, rdt, type):
+    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
     x = idst(yr, type=type)
     dec = dec_map[(idst, rdt, type)]
     assert_equal(x.dtype, dt)
