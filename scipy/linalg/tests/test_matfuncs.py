@@ -844,72 +844,135 @@ class TestIsMatrix(object):
     def test_is_hermitian(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A = A + (np.random.rand(n, n) > 0.5) * 1j
-            A = 0.5 * (A + A.T)
-            r = r and is_hermitian(A)
+        if not is_hermitian(np.array([])):
+            r = False
+        elif not is_hermitian(np.zeros((10, 10))):
+            r = False
+        elif not is_hermitian(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A = A + (np.random.rand(n, n) > 0.5) * 1j
+                A = 0.5 * (A + A.T)
+                r = r and is_hermitian(A)
+                if not r:
+                    break
         assert_(r == True)
 
     def test_is_symmetric(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A = 0.5 * (A + A.T)
-            r = r and is_symmetric(A)
+        if not is_symmetric(np.array([])):
+            r = False
+        elif not is_symmetric(np.zeros((10, 10))):
+            r = False
+        elif not is_symmetric(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A = 0.5 * (A + A.T)
+                r = r and is_symmetric(A)
+                if not r:
+                    break
         assert_(r == True)
 
     def test_is_skew_symmetric(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A = 0.5 * (A - A.T)
-            r = r and is_skew_symmetric(A)
+        if not is_skew_symmetric(np.array([])):
+            r = False
+        elif is_skew_symmetric(np.zeros((10, 10))):
+            r = False
+        elif not is_skew_symmetric(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A = 0.5 * (A - A.T)
+                r = r and is_skew_symmetric(A)
+                if not r:
+                    break
         assert_(r == True)
 
     def test_is_nonsingular(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A = np.cross(A, A)
-            r = r and is_nonsingular(A)
+        if not is_nonsingular(np.array([])):
+            r = False
+        elif not is_nonsingular(np.zeros((10, 10))):
+            r = False
+        elif is_nonsingular(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A = np.dot(A, A)
+                r = r and is_nonsingular(A)
+                if not r:
+                    break
         assert_(r == True)
 
     def test_is_singular(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A[n-1,:] = np.zeros(n)
-            r = r and is_singular(A)
+        if not is_singular(np.array([])):
+            r = False
+        elif is_singular(np.zeros((10, 10))):
+            r = False
+        elif not is_singular(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A[n-1,:] = np.zeros(n)
+                r = r and is_singular(A)
+                if not r:
+                    break
         assert_(r == True)
 
     def test_is_positive_definite(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A = 0.5 * (A + A.T)
-            A = A + n * np.eye(n)
-            r = r and is_positive_definite(A)
+        if not is_positive_definite(np.array([])):
+            r = False
+        elif not is_positive_definite(np.zeros((10, 10))):
+            r = False
+        elif not is_positive_definite(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A = 0.5 * (A + A.T)
+                A = A + n * np.eye(n)
+                r = r and is_positive_definite(A)
+                if not r:
+                    break
         assert_(r == True)
 
     def test_is_negative_definite(self):
         np.random.seed(1234)
         r = True
-        for i in range(10):
-            n = random.randrange(30, 100)
-            A = np.random.randn(n, n)
-            A = 0.5 * (A + A.T)
-            A = A + n * np.eye(n)
-            r = r and is_negative_definite(-A)
+        if not is_negative_definite(np.array([])):
+            r = False
+        elif is_negative_definite(np.zeros((10, 10))):
+            r = False
+        elif is_negative_definite(eye(10)):
+            r = False
+        else:
+            for i in range(10):
+                n = random.randrange(30, 100)
+                A = np.random.randn(n, n)
+                A = 0.5 * (A + A.T)
+                A = A + n * np.eye(n)
+                r = r and is_negative_definite(-A)
+                if not r:
+                    break
         assert_(r == True)

@@ -717,10 +717,11 @@ def is_hermitian(A, tol=None):
     >>> print(is_hermitian(m))
     False
     """
+    if len(A) == 0:
+        return False
     A = _asarray_square(A)
     if tol is None:
         tol = _estimate_tolerance(A)
-    print('tol',tol)
     if tol == 0:
         return (A == A.T).all()
     else:
@@ -751,9 +752,10 @@ def is_symmetric(A, tol=None):
     >>> print(is_symmetric(m))
     False
     """
+    if len(A) == 0:
+        return False
     A = _asarray_square(A)
     if np.iscomplexobj(A):
-        print('iscomplexobj')
         return False
     if tol is None:
         tol = _estimate_tolerance(A)
@@ -789,6 +791,8 @@ def is_skew_symmetric(A, tol=None):
     >>> print(is_skew_symmetric(m))
     True
     """
+    if len(A) == 0:
+        return False
     A = _asarray_square(A)
     if np.iscomplexobj(A):
         return False
@@ -827,6 +831,8 @@ def is_nonsingular(A):
     >>> print(is_nonsingular(m))
     True
     """
+    if len(A) == 0:
+        return False
     A = _asarray_square(A)
     c = cond(A)
     return (c != Inf)
@@ -857,6 +863,8 @@ def is_singular(A):
     >>> print(is_singular(m))
     True
     """
+    if len(A) == 0:
+        return False
     A = _asarray_square(A)
     c = cond(A)
     return (c == Inf)
@@ -910,6 +918,8 @@ def is_positive_definite(A, robust_level=0, tol=None):
     >>> print(is_positive_definite(m, robust_level=3))
     True
     """
+    if len(A) == 0:
+        return False
     A = _asarray_square(A)
     if not is_hermitian(A):
         raise ValueError('expected symmetric or hermitian matrix')
