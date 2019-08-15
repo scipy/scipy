@@ -533,7 +533,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr, tol)
 
     C, b_scale = 1, 1  # for trivial unscaling if autoscale is not used
-    postsolve_args = (lp_o.c, lp_o.A_ub, lp_o.b_ub, lp_o.A_eq, lp_o.b_eq, lp.bounds, undo)
+    postsolve_args = (lp_o._replace(bounds=lp.bounds), undo)
 
     if not complete:
         A, b, c, c0, x0 = _get_Abc(lp, c0, undo)
