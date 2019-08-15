@@ -1264,7 +1264,7 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # we need these modified values to undo the variable substitutions
     # in retrospect, perhaps this could have been simplified if the "undo"
     # variable also contained information for undoing variable substitutions
-    c, A_ub, b_ub, A_eq, b_eq, bounds, undo = postsolve_args
+    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), undo = postsolve_args
 
     n_x = len(c)
 
