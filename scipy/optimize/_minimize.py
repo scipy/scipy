@@ -91,10 +91,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             ``jac(x, *args) -> array_like, shape (n,)``
 
         where x is an array with shape (n,) and `args` is a tuple with
-        the fixed parameters. Alternatively, the keywords
-        {'2-point', '3-point', 'cs'} select a finite
-        difference scheme for numerical estimation of the gradient. Options
-        '3-point' and 'cs' are available only to 'trust-constr'.
+        the fixed parameters. Newton-CG and trust-ncg require that a callable
+        be supplied.
+        Alternatively, the keywords {'2-point', '3-point', 'cs'} select a
+        finite difference scheme for numerical estimation of the gradient.
+        Options '3-point' and 'cs' are available only to 'trust-constr'.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         gradient along with the objective function. If False, the gradient
         will be estimated using '2-point' finite difference estimation.
