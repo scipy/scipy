@@ -12,6 +12,17 @@
 #include "ellint_carlson.hh"
 
 
+/* References
+ * [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+ *     Functions," NIST, US Dept. of Commerce.
+ *     https://dlmf.nist.gov/19.16.E1
+ * [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+ *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+ *     https://arxiv.org/abs/math/9409227
+ *     https://doi.org/10.1007/BF02198293
+ */
+
+
 namespace ellint_carlson {
 
 template<typename T>
@@ -101,8 +112,10 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	    return status;
 	} else {
 	    T tmpres;
-	    status = rf0(ym, zm, rerr, tmpres);
-	    res = tmpres - (std::sqrt(xm) / std::sqrt(ym * zm));
+	    status = rf0(ym, zm, rerr * (RT)0.5, tmpres);
+	    /* Correction for non-zero x, see Eq. 19.27.3 in
+	     * https://dlmf.nist.gov/19.27.E3 */
+	    res = tmpres - std::sqrt(xm / (ym * zm));
 	    return status;
 	}
     }
@@ -143,9 +156,13 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
     Am = arithmetic::sum2(cct1) / (RT)3.0;
     xxm /= Am;
     yym /= Am;
+    /* Prepare the E_2 and E_3 terms used in the expansion */
     T zzm = -(xxm + yym);
     T e2 = xxm * yym - zzm * zzm;
     T e3 = xxm * (yym * zzm);
+    /* Evaluate the 7th-degree expansion using the E_2 and E3 terms, following
+     * Eq. 19.36.1 of [1], https://dlmf.nist.gov/19.36.E1
+     * The order of expansion is higher than that in Eq. (14) of Ref. [2]. */
     T s = arithmetic::comp_horner(e2, constants::RF_C1);
     s += e3 * (arithmetic::comp_horner(e2, constants::RF_C2) +
                e3 * (RT)(constants::RF_c33));
