@@ -719,11 +719,12 @@ def is_hermitian(A, tol=None):
     """
     if len(A) == 0:
         return False
-    if not np.iscomplexobj(A):
-        return False
     A = _asarray_square(A)
     if tol is None:
         tol = _estimate_tolerance(A)
+    for i in range(A.shape[0]):
+        if np.imag(A[i, i]) > tol:
+            return False
     if tol == 0:
         return (A == A.T).all()
     else:
@@ -757,8 +758,6 @@ def is_symmetric(A, tol=None):
     if len(A) == 0:
         return False
     A = _asarray_square(A)
-    if np.iscomplexobj(A):
-        return False
     if tol is None:
         tol = _estimate_tolerance(A)
     if tol == 0:
@@ -796,10 +795,11 @@ def is_skew_symmetric(A, tol=None):
     if len(A) == 0:
         return False
     A = _asarray_square(A)
-    if np.iscomplexobj(A):
-        return False
     if tol is None:
         tol = _estimate_tolerance(A)
+    for i in range(A.shape[0]):
+        if A[i, i] > tol:
+            return False
     if tol == 0:
         return (A == -A.T).all()
     else:
