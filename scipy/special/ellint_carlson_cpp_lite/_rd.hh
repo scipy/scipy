@@ -11,6 +11,17 @@
 #include "ellint_carlson.hh"
 
 
+/* References
+ * [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+ *     Functions," NIST, US Dept. of Commerce.
+ *     https://dlmf.nist.gov/19.16.E5
+ * [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+ *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+ *     https://arxiv.org/abs/math/9409227
+ *     https://doi.org/10.1007/BF02198293
+ */
+
+
 namespace ellint_carlson {
 
 template<typename T>
@@ -88,6 +99,9 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	cct1[2] = cct2[1] = std::sqrt(zm);
 	T lam = arithmetic::ndot2(cct1, cct2, 3);
 
+	/* The cumulative sum term in Ref. [2], Eq. (41), implemented by
+	 * accumulating the summation term into adt with compensation
+	 * term ade */
 	tmp = d4m / (cct1[2] * (zm + lam));
 	arithmetic::sum2_acc(tmp, adt, ade);
 
@@ -112,6 +126,7 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     xxm /= Am;
     yym /= Am;
     T zzm = (xxm + yym) / (RT)(-3.0);
+    /* Prepare the "elementary" terms E_n as in Eqs. (39-40) in Ref. [2] */
     T xy = xxm * yym;
     T zz2 = zzm * zzm;
     T e2 = xy - zz2 * (RT)6.0;
@@ -120,6 +135,9 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     T e5 = xy * zz2 * zzm;
     T t = std::sqrt(Am);
     tmp = d4m / (t * t * t);
+    /* Evaluate the 7th-degree expansion using the E_n terms, following
+     * Eq. 19.36.2 of [1], https://dlmf.nist.gov/19.36#E2
+     * The order of expansion is higher than that in Eq. (41) of Ref. [2]. */
     cct1[0] = arithmetic::comp_horner(e2, constants::RDJ_C1);
     cct1[1] = arithmetic::comp_horner(e3, constants::RDJ_C2);
     cct1[2] = arithmetic::comp_horner(e2, constants::RDJ_C3);
@@ -127,17 +145,23 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     cct1[4] = arithmetic::comp_horner(e2, constants::RDJ_C5);
     cct1[5] = e3 * (RT)(constants::RDJ_C5[1]);
 
-    cct2[0] = T(1.0);
-    cct2[1] = T(1.0);
+    cct2[0] = (T)1.0;
+    cct2[1] = (T)1.0;
     cct2[2] = e3;
     cct2[3] = e4;
     cct2[4] = e5;
     cct2[5] = e4;
-    t = arithmetic::dot2(cct1, cct2) / (RT)(constants::RDJ_DENOM) + 1.0;
-    tmp *= t;
-    tmp += adt * (RT)3.0;
+    t = arithmetic::dot2(cct1, cct2) / (RT)(constants::RDJ_DENOM) + (T)1.0;
 
-    res = tmp;
+    /* Combine in to final result using compensated dot. See Eq. (41) of Ref.
+     * [2]. */
+    cct1[0] = tmp;
+    cct1[1] = (T)3.0;
+    cct1[2] = (T)3.0;
+    cct2[0] = t;
+    cct2[1] = adt;
+    cct2[2] = ade;
+    res = arithmetic::ndot2(cct1, cct2, 3);
     return status;
 }
 
