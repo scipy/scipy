@@ -31,12 +31,17 @@ def get_reference_data():
     #    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
     #    contains the output of the DCT applied to the input np.linspace(0, size-1,
     #    size)
-    FFTWDATA_LONGDOUBLE = np.load(join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
     FFTWDATA_DOUBLE = np.load(join(fftpack_test_dir, 'fftw_double_ref.npz'))
     FFTWDATA_SINGLE = np.load(join(fftpack_test_dir, 'fftw_single_ref.npz'))
     FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
-
     assert len(FFTWDATA_SIZES) == FFTWDATA_COUNT
+
+    if np.longfloat().itemsize == 16:
+        FFTWDATA_LONGDOUBLE = np.load(
+            join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
+    else:
+        FFTWDATA_LONGDOUBLE = {k: v.astype(np.longfloat)
+                               for k,v in FFTWDATA_DOUBLE.items()}
 
     ref = {
         'FFTWDATA_LONGDOUBLE': FFTWDATA_LONGDOUBLE,
