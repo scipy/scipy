@@ -258,6 +258,17 @@ class CheckOptimizeParameterized(CheckOptimize):
         # machines, and when using e.g. MKL, data alignment
         # etc. affect the rounding error.
         #
+        # Generally, this takes 131 function calls. However, without
+        # the +20 leeway, one of Travis-CI checks
+        # (TESTMODE=fast COVERAGE=NUMPYSPEC="--upgrade numpy"
+        # MB_PYTHON_VERSION=3.7)
+        # fails, it finds 138 funccalls. All the rest of the Travis-CI
+        # checks find 131 funccalls. I am not sure why this is, but this
+        # leeway was also included in the test_powell function
+        # (right above where I put my test_bounded_powell function).
+        # Whoever included that test also included a 20 funccall leeway.
+        # I just did as they did.
+        #
         assert_(self.funccalls <= 131 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
@@ -497,6 +508,78 @@ def test_neldermead_adaptive():
     res = optimize.minimize(func, p0, method='Nelder-Mead',
                     options={'adaptive':True})
     assert_equal(res.success, True)
+
+def test_bounded_powell_outsidebounds():
+    # One cool feature of the bounded Powell method is that if you
+    # start outside the bounds, the final answer will still be
+    # within the bounds (provided that the user doesn't make a bad
+    # choice for the `direc` argument). 
+    func = lambda x: np.sum(x**2)
+    bounds = (-1, 1), (-1, 1), (-1, 1)
+    x0 = [-4, .5, -.8]
+
+    # we're starting outside the bounds, so we should get a warning
+    with assert_warns(optimize.OptimizeWarning):
+        res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
+    assert_allclose(res.x, np.array([0.] * len(x0)))
+    assert_equal(res.success, True)
+    assert_equal(res.warnflag, 0)
+
+    # However, now if we change the `direc` argument such that the
+    # set of vectors does not span the parameter space, then we may
+    # not end up back within the bounds. Here we see that the first
+    # parameter cannot be updated!
+    direc = [[0, 0, 0], [0, 1, 0], [0, 0, 1]]
+    # we're starting outside the bounds, so we should get a warning
+    with assert_warns(optimize.OptimizeWarning):
+        res = optimize.minimize(func, x0, 
+                                bounds=bounds, method="Powell"
+                                options=dict(direc=direc))
+    assert_allclose(res.x, np.array([-4., 0, 0]))
+    assert_equal(res.success, False)
+    assert_equal(res.warnflag, 3)
+
+def test_bounded_powell_vs_powell():
+    # here we test an example where the bounded Powell method
+    # will return a different result than the standard Powell
+    # method.
+
+    # first we test a simple example where the minimum is at
+    # the origin and the minimum that is within the bounds is
+    # larger than the minimum at the origin.
+    func = lambda x: np.sum(x**2)
+    bounds = (-5, -1), (-10, -.1), (1, 9.2), (-4, 7.6), (-15.9, -2)
+    x0 = [-2.1, -5.2, 1.9, 0, -2]
+
+    options = dict(ftol=1e-10, xtol=1e-10)
+
+    res_powell = optimize.minimize(func, x0, method="Powell", options=options)
+    assert_allclose(np.array([0.]*len(x0)), res_powell.x, atol=1e-6)
+    assert_allclose(0., res_powell.fun, atol=1e-6)
+
+    res_bounded_powell = optimize.minimize(func, x0, options=options,
+                                           bounds=bounds,
+                                           method="Powell")
+    p = np.array([-1, -.1, 1, 0, -2])
+    assert_allclose(p, res_bounded_powell.x, atol=1e-6)
+    assert_allclose(func(p), res_bounded_powell.fun, atol=1e-6)
+
+    # next we test an example where the global minimum is within
+    # the bounds, but the bounded Powell method performs better
+    # than the standard Powell method.
+    func = lambda x: (
+        np.sin(-x[0])*np.cos(x[1])*np.sin(-x[0]*x[1])*np.cos(x[1]) -
+        np.cos(np.sin(x[1]*x[2]) * np.cos(x[2]))
+    )**2
+    bounds = tuple((-2, 5) for _ in range(3))
+    x0 = [-.5]*len(bounds)
+
+    res_powell = optimize.minimize(func, x0, method="Powell")
+    res_bounded_powell = optimize.minimize(func, x0,
+                                           bounds=bounds,
+                                           method="Powell")
+    assert_allclose(res_powell.fun, 0.007136253919761627, atol=1e-6)
+    assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
 
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = True

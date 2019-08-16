@@ -48,7 +48,9 @@ _status_message = {'success': 'Optimization terminated successfully.',
                    'maxiter': 'Maximum number of iterations has been '
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
-                              'to precision loss.'}
+                              'to precision loss.',
+                   'out_of_bounds': 'The result is outside of the provided '
+                                    'bounds.'}
 
 
 class MemoizeJac(object):
@@ -2428,23 +2430,18 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
         for all i.
     """
     # get nonzero indices of alpha so we don't get any zero division errors.
+    # alpha will not be all zero, since it is called from _linesearch_powell
+    # where we have a check for this.
     nonzero, = alpha.nonzero()
     lower_bound, upper_bound = lower_bound[nonzero], upper_bound[nonzero]
     x0, alpha = x0[nonzero], alpha[nonzero]
     low = (lower_bound - x0) / alpha
     high = (upper_bound - x0) / alpha
 
-    pos, = np.nonzero(alpha > 0)  # positive indices
-    neg, = np.nonzero(alpha < 0)  # negative indices
-
-    lmin = _m_max(
-        np.max(low[pos]) if pos.shape[0] else None,
-        np.max(high[neg]) if neg.shape[0] else None
-    )
-    lmax = _m_min(
-        np.min(low[neg]) if neg.shape[0] else None,
-        np.min(high[pos]) if pos.shape[0] else None
-    )
+    pos = alpha > 0  # positive indices
+    neg = alpha < 0  # negative indices
+    lmin = np.max(low*pos + high*neg)
+    lmax = np.min(low*neg + high*pos)
 
     return lmin, lmax
 
@@ -2463,7 +2460,10 @@ def _linesearch_powell(func, p, xi,
     def myfunc(alpha):
         return func(p + alpha*xi)
 
-    if lower_bound is None and upper_bound is None:
+    # if xi is zero, then don't optimize
+    if not np.any(xi):
+        return func(p), p, xi
+    elif lower_bound is None and upper_bound is None:
         alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
         xi = alpha_min*xi
         return squeeze(fret), p + xi, xi
@@ -2538,6 +2538,7 @@ def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=No
         Integer warning flag:
             1 : Maximum number of function evaluations.
             2 : Maximum number of iterations.
+            3 : The result is out of the provided bounds.
     allvecs : list
         List of solutions at each iteration.
 
@@ -2680,6 +2681,9 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
     else:
         bounds_array = np.array(bounds)
         lower_bound, upper_bound = bounds_array[:, 0], bounds_array[:, 1]
+        if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
+            warnings.warn("Initial guess is not within the specified bounds.",
+                          OptimizeWarning, 3)
 
     fval = squeeze(func(x))
     x1 = x.copy()
@@ -2731,7 +2735,15 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
                 direc[-1] = direc1
 
     warnflag = 0
-    if fcalls[0] >= maxfun:
+    # out of bounds is more urgent than exceeding function evals or iters,
+    # but I don't want to cause inconsistencies by changing the
+    # established warning flags for maxfev and maxiter, so the out of bounds
+    # warning flag becomes 3, but is checked for first.
+    if (bounds is not None and
+        (np.any(lower_bound > x) or np.any(x > upper_bound))):
+        warnflag = 3
+        msg = _status_message['out_of_bounds']
+    elif fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
