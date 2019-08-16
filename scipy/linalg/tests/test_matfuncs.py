@@ -844,11 +844,11 @@ class TestIsMatrix(object):
     def test_is_hermitian(self):
         np.random.seed(1234)
         r = True
-        if not is_hermitian(np.array([])):
+        if is_hermitian(np.array([])):
             r = False
         elif not is_hermitian(np.zeros((10, 10))):
             r = False
-        elif not is_hermitian(eye(10)):
+        elif not is_hermitian(np.eye(10)):
             r = False
         else:
             for i in range(10):
@@ -864,11 +864,11 @@ class TestIsMatrix(object):
     def test_is_symmetric(self):
         np.random.seed(1234)
         r = True
-        if not is_symmetric(np.array([])):
+        if is_symmetric(np.array([])):
             r = False
         elif not is_symmetric(np.zeros((10, 10))):
             r = False
-        elif not is_symmetric(eye(10)):
+        elif not is_symmetric(np.eye(10)):
             r = False
         else:
             for i in range(10):
@@ -883,11 +883,11 @@ class TestIsMatrix(object):
     def test_is_skew_symmetric(self):
         np.random.seed(1234)
         r = True
-        if not is_skew_symmetric(np.array([])):
+        if is_skew_symmetric(np.array([])):
             r = False
-        elif is_skew_symmetric(np.zeros((10, 10))):
+        elif not is_skew_symmetric(np.zeros((10, 10))):
             r = False
-        elif not is_skew_symmetric(eye(10)):
+        elif is_skew_symmetric(np.eye(10)):
             r = False
         else:
             for i in range(10):
@@ -902,11 +902,11 @@ class TestIsMatrix(object):
     def test_is_nonsingular(self):
         np.random.seed(1234)
         r = True
-        if not is_nonsingular(np.array([])):
+        if is_nonsingular(np.array([])):
             r = False
-        elif not is_nonsingular(np.zeros((10, 10))):
+        elif is_nonsingular(np.zeros((10, 10))):
             r = False
-        elif is_nonsingular(eye(10)):
+        elif not is_nonsingular(np.eye(10)):
             r = False
         else:
             for i in range(10):
@@ -921,11 +921,11 @@ class TestIsMatrix(object):
     def test_is_singular(self):
         np.random.seed(1234)
         r = True
-        if not is_singular(np.array([])):
+        if is_singular(np.array([])):
             r = False
-        elif is_singular(np.zeros((10, 10))):
+        elif not is_singular(np.zeros((10, 10))):
             r = False
-        elif not is_singular(eye(10)):
+        elif is_singular(np.eye(10)):
             r = False
         else:
             for i in range(10):
@@ -940,11 +940,11 @@ class TestIsMatrix(object):
     def test_is_positive_definite(self):
         np.random.seed(1234)
         r = True
-        if not is_positive_definite(np.array([])):
+        if is_positive_definite(np.array([])):
             r = False
-        elif not is_positive_definite(np.zeros((10, 10))):
+        elif is_positive_definite(np.zeros((10, 10))):
             r = False
-        elif not is_positive_definite(eye(10)):
+        elif not is_positive_definite(np.eye(10)):
             r = False
         else:
             for i in range(10):
@@ -960,11 +960,11 @@ class TestIsMatrix(object):
     def test_is_negative_definite(self):
         np.random.seed(1234)
         r = True
-        if not is_negative_definite(np.array([])):
+        if is_negative_definite(np.array([])):
             r = False
         elif is_negative_definite(np.zeros((10, 10))):
             r = False
-        elif is_negative_definite(eye(10)):
+        elif is_negative_definite(np.eye(10)):
             r = False
         else:
             for i in range(10):
