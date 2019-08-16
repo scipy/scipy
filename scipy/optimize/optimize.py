@@ -2740,7 +2740,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
     # established warning flags for maxfev and maxiter, so the out of bounds
     # warning flag becomes 3, but is checked for first.
     if (bounds is not None and
-        (np.any(lower_bound > x) or np.any(x > upper_bound))):
+            (np.any(lower_bound > x) or np.any(x > upper_bound))):
         warnflag = 3
         msg = _status_message['out_of_bounds']
     elif fcalls[0] >= maxfun:
