@@ -2714,10 +2714,12 @@ add_newdoc("gamma",
 
     Notes
     -----
-    The gamma function is often referred to as the generalized
+    The Gamma function is often referred to as the generalized
     factorial since :math:`\Gamma(n + 1) = n!` for natural numbers
-    :math:`n`. It also satisfies the recurrence relation
-    :math:`\Gamma(z + 1) = z \cdot \Gamma(z)`.
+    :math:`n`. More generally it satisfies the recurrence relation
+    :math:`\Gamma(z + 1) = z \cdot \Gamma(z)` for complex :math:`z`,
+    which, combined with the fact that :math:`\Gamma(1) = 1`, implies
+    the above identity for :math:`z = n`.
 
     References
     ----------
