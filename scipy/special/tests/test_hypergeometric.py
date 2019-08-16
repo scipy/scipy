@@ -6,7 +6,7 @@ from numpy.testing import assert_equal
 import scipy.special as sc
 
 
-class TestHyperu:
+class TestHyperu(object):
 
     def test_negative_x(self):
         a, b, x = np.meshgrid(
@@ -20,7 +20,7 @@ class TestHyperu:
         assert sc.hyperu(0, 1, 1) == 1.0
 
 
-class TestHyp1f1:
+class TestHyp1f1(object):
 
     @pytest.mark.parametrize('a, b, x', [
         (np.nan, 1, 1),
