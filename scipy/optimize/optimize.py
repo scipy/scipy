@@ -2446,12 +2446,14 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     return lmin, lmax
 
 
-def _linesearch_powell(func, p, xi, 
+def _linesearch_powell(func, p, xi, fval,
                        lower_bound=None, upper_bound=None, tol=1e-3):
     """Line-search algorithm using fminbound.
 
     Find the minimium of the function ``func(x0+ alpha*direc)``.
     
+    fval = func(p), might as well avoid recomputing it (limit fevals).
+
     lower_bound and upper_bound should be np.arrays, where
     lower_bound[i] is the lower bounds on the i^th parameter,
     etc.
@@ -2462,7 +2464,7 @@ def _linesearch_powell(func, p, xi,
 
     # if xi is zero, then don't optimize
     if not np.any(xi):
-        return func(p), p, xi
+        return fval, p, np.zeros(xi.shape)
     elif lower_bound is None and upper_bound is None:
         alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
         xi = alpha_min*xi
@@ -2471,7 +2473,10 @@ def _linesearch_powell(func, p, xi,
         bound = _line_for_search(p, xi, lower_bound, upper_bound)
         res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
         xi = res.x * xi
-        return res.fun, p + xi, xi
+        if res.fun <= fval:
+            return squeeze(res.fun), p + xi, xi
+        else:  # if we didn't find a better minimum, then keep the old one.
+            return fval, p, np.zeros(xi.shape)
 
 
 def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=None,
@@ -2680,7 +2685,12 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         lower_bound, upper_bound = None, None
     else:
         bounds_array = np.array(bounds)
-        lower_bound, upper_bound = bounds_array[:, 0], bounds_array[:, 1]
+        if len(bounds_array.shape) > 1:
+            lower_bound, upper_bound = bounds_array[:, 0], bounds_array[:, 1]
+        else:
+            lower_bound = np.array([bounds[0]] * N)
+            upper_bound = np.array([bounds[1]] * N)
+
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds.",
                           OptimizeWarning, 3)
@@ -2696,7 +2706,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         for i in ilist:
             direc1 = direc[i]
             fx2 = fval
-            fval, x, direc1 = _linesearch_powell(func, x, direc1,
+            fval, x, direc1 = _linesearch_powell(func, x, direc1, fval,
                                                  lower_bound, upper_bound,
                                                  tol=xtol * 100)
             if (fx2 - fval) > delta:
@@ -2728,7 +2738,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
             temp = fx - fx2
             t -= delta*temp*temp
             if t < 0.0:
-                fval, x, direc1 = _linesearch_powell(func, x, direc1,
+                fval, x, direc1 = _linesearch_powell(func, x, direc1, fval,
                                                      lower_bound, upper_bound,
                                                      tol=xtol * 100)
                 direc[bigind] = direc[-1]
