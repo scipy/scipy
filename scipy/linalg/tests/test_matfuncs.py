@@ -848,7 +848,7 @@ class TestIsMatrix(object):
             r = False
         elif not is_hermitian(np.zeros((10, 10))):
             r = False
-        elif not is_hermitian(np.eye(10)):
+        elif is_hermitian(np.eye(10)):
             r = False
         else:
             for i in range(10):

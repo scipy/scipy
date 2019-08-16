@@ -719,6 +719,8 @@ def is_hermitian(A, tol=None):
     """
     if len(A) == 0:
         return False
+    if not np.iscomplexobj(A):
+        return False
     A = _asarray_square(A)
     if tol is None:
         tol = _estimate_tolerance(A)
