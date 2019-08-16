@@ -4307,7 +4307,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     determination was made. This is especially important in high-dimensional
     data, where simple visualizations do not reveal relationships to the
     unaided human eye. Characterizations of this implementation in particular
-    have been benchmarked extensively in [2]_.
+    have been derived from and benchmarked within in [2]_.
 
     Parameters
     ----------
