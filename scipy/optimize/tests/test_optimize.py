@@ -521,7 +521,7 @@ def test_bounded_powell_outsidebounds():
     # we're starting outside the bounds, so we should get a warning
     with assert_warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
-    assert_allclose(res.x, np.array([0.] * len(x0)))
+    assert_allclose(res.x, np.array([0.] * len(x0)), atol=1e-6)
     assert_equal(res.success, True)
     assert_equal(res.warnflag, 0)
 
@@ -535,7 +535,7 @@ def test_bounded_powell_outsidebounds():
         res = optimize.minimize(func, x0, 
                                 bounds=bounds, method="Powell",
                                 options=dict(direc=direc))
-    assert_allclose(res.x, np.array([-4., 0, 0]))
+    assert_allclose(res.x, np.array([-4., 0, 0]), atol=1e-6)
     assert_equal(res.success, False)
     assert_equal(res.warnflag, 3)
 
