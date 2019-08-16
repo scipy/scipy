@@ -2693,22 +2693,38 @@ add_newdoc("gamma",
 
     Gamma function.
 
+    The Gamma function is defined as
+
     .. math::
 
-          \Gamma(z) = \int_0^\infty x^{z-1} e^{-x} dx = (z - 1)!
+       \Gamma(z) = \int_0^\infty t^{z-1} e^{-t} dt
 
-    The gamma function is often referred to as the generalized
-    factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
-    n!`` for natural number *n*.
+    for :math:`\Re(z) > 0` and is extended to the rest of the complex
+    plane by analytic continuation. See [dlmf]_ for more details.
 
     Parameters
     ----------
-    z : float or complex array_like
+    z : array_like
+        Real or complex valued argument
 
     Returns
     -------
-    float or complex
-        The value(s) of gamma(z)
+    scalar or ndarray
+        Values of the Gamma function
+
+    Notes
+    -----
+    The Gamma function is often referred to as the generalized
+    factorial since :math:`\Gamma(n + 1) = n!` for natural numbers
+    :math:`n`. More generally it satisfies the recurrence relation
+    :math:`\Gamma(z + 1) = z \cdot \Gamma(z)` for complex :math:`z`,
+    which, combined with the fact that :math:`\Gamma(1) = 1`, implies
+    the above identity for :math:`z = n`.
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5.2#E1
 
     Examples
     --------
@@ -2857,15 +2873,73 @@ add_newdoc("gammaln",
     """)
 
 add_newdoc("gammasgn",
-    """
+    r"""
     gammasgn(x)
 
     Sign of the gamma function.
 
+    It is defined as
+
+    .. math::
+
+       \text{gammasgn}(x) =
+       \begin{cases}
+         +1 & \Gamma(x) > 0 \\
+         -1 & \Gamma(x) < 0
+       \end{cases}
+
+    where :math:`\Gamma` is the Gamma function; see `gamma`. This
+    definition is complete since the Gamma function is never zero;
+    see the discussion after [dlmf]_.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Sign of the Gamma function
+
+    Notes
+    -----
+    The Gamma function can be computed as ``gammasgn(x) *
+    np.exp(gammaln(x))``.
+
     See Also
     --------
-    gammaln
-    loggamma
+    gamma : the Gamma function
+    gammaln : log of the absolute value of the Gamma function
+    loggamma : analytic continuation of the log of the Gamma function
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5.2#E1
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is 1 for `x > 0`.
+
+    >>> sc.gammasgn([1, 2, 3, 4])
+    array([1., 1., 1., 1.])
+
+    It alternates between -1 and 1 for negative integers.
+
+    >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
+    array([-1.,  1., -1.,  1.])
+
+    It can be used to compute the Gamma function.
+
+    >>> x = [1.5, 0.5, -0.5, -1.5]
+    >>> sc.gammasgn(x) * np.exp(sc.gammaln(x))
+    array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
+    >>> sc.gamma(x)
+    array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
+
     """)
 
 add_newdoc("gdtr",
