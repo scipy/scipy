@@ -713,9 +713,9 @@ def is_hermitian(A, tol=None):
     >>> m = np.array([[1,1j],[-1j,1]])
     >>> print(is_hermitian(m))
     True
-    >>> m = np.array([[5,0],[1,3]])
+    >>> m = np.array([[2, 2+1j, 4], [2-1j, 3, 1j], [4, -1j, 1]])
     >>> print(is_hermitian(m))
-    False
+    True
     """
     if len(A) == 0:
         return False
@@ -723,7 +723,7 @@ def is_hermitian(A, tol=None):
     if tol is None:
         tol = _estimate_tolerance(A)
     for i in range(A.shape[0]):
-        if np.imag(A[i, i]) > tol:
+        if np.imag(A[i, i]) < tol:
             return False
     if tol == 0:
         return (A == A.T).all()
@@ -798,7 +798,7 @@ def is_skew_symmetric(A, tol=None):
     if tol is None:
         tol = _estimate_tolerance(A)
     for i in range(A.shape[0]):
-        if A[i, i] > tol:
+        if A[i, i] < tol:
             return False
     if tol == 0:
         return (A == -A.T).all()
