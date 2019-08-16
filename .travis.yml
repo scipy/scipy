@@ -183,6 +183,12 @@ before_install:
   - travis_retry pip install cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
   - travis_retry pip install --upgrade pytest pytest-xdist mpmath argparse Pillow codecov
+  - |
+    if [ -n "${USE_DEBUG}" ]; then
+        # see gh-10676; need to pin pytest version with debug
+        # Python 3.5
+        travis_retry pip install pytest==5.0.1
+    fi
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - travis_retry pip install pybind11
   - |
