@@ -710,7 +710,7 @@ def is_hermitian(A, tol=None):
     Examples
     --------
     >>> from scipy.linalg import is_hermitian
-    >>> m = np.array([[0,1j],[-1j,0]])
+    >>> m = np.array([[1,1j],[-1j,1]])
     >>> print(is_hermitian(m))
     True
     >>> m = np.array([[5,0],[1,3]])
@@ -785,10 +785,10 @@ def is_skew_symmetric(A, tol=None):
     Examples
     --------
     >>> from scipy.linalg import is_skew_symmetric
-    >>> m = np.array([[5,1],[1,3]])
+    >>> m = np.array([[5,1],[-1,5]])
     >>> print(is_skew_symmetric(m))
     True
-    >>> m = np.array([[0, 2, -1],[-2, 0, -4],[-1, -4, 0]])
+    >>> m = np.array([[0, 2, -1],[-2, 0, -4],[1, 4, 0]])
     >>> print(is_skew_symmetric(m))
     True
     """
@@ -858,10 +858,13 @@ def is_singular(A):
     Examples
     --------
     >>> from scipy.linalg import is_singular
-    >>> m = np.array([[-1,1.5],[1.5,-1]])
+    >>> m = np.array([[0, 0],[1, 1]])
     >>> print(is_singular(m))
     True
-    >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
+    >>> m = np.array([[1, -2],[-3, 6]])
+    >>> print(is_singular(m))
+    True
+    >>> m = np.array([[1, 1, 1],[0, 1, 0],[1, 0, 1]])
     >>> print(is_singular(m))
     True
     """
