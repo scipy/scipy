@@ -13,10 +13,34 @@
 #include "ellint_carlson.hh"
 
 
-/* Reference for asymptotic approximations:
- *   B. C. Carlson, J. L. Gustafson, "Asymptotic approximations for symmetric
- *   elliptic integrals," SIAM J. Math. Anls., vol. 25, no. 2, pp. 288-303,
- *   1994. */
+/* References
+ * [1] B. C. Carlson, "Numerical computation of real or complex elliptic
+ *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+ *     https://arxiv.org/abs/math/9409227
+ *     https://doi.org/10.1007/BF02198293
+ * [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+ *     Functions," NIST, US Dept. of Commerce.
+ *     https://dlmf.nist.gov/19.20.iii
+ * [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
+ *     Integrands with the Square Root of Two Quadratic Factors," J.
+ *     Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
+ *     https://doi.org/10.1016/S0377-0427(00)00282-X
+ * [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
+ *     Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
+ *     Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
+ *     Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
+ *     Switzerland: Springer Nature Switzerland)
+ *     https://arxiv.org/abs/1806.06725
+ *     https://doi.org/10.1007/978-3-030-04480-0
+ * [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
+ *     Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
+ *     pp. 288-303, 1994.
+ *     https://arxiv.org/abs/math/9310223
+ *     https://doi.org/10.1137/S0036141092228477
+ * [6] J. L. Gustafson, "Asymptotic Formulas for Elliptic Integrals", Doctoral
+ *     dissertataion, Dept. of Mathematics, Iowa State University, 1982
+ *     http://johngustafson.net/pubs/pub03/JGDissertation.pdf
+ */
 
 
 /* Forward declaration */
@@ -152,7 +176,8 @@ good_args(const T& x, const T& y, const T& z, const T& p,
     RT pr = std::real(p);
     RT pi = std::imag(p);
 
-    /* "If x, y, z are real and nonnegative, at most one of them is 0, and the
+    /* In the text above Eq. 2.26 of Ref[1]:
+     * "If x, y, z are real and nonnegative, at most one of them is 0, and the
      * fourth variable of RJ is negative, the Cauchy principal value ..." */
     bool xyzreal_nonneg_atmost1z = ( argcheck::too_small(xi) &&
                                      argcheck::too_small(yi) &&
@@ -164,17 +189,19 @@ good_args(const T& x, const T& y, const T& z, const T& p,
 	{
 	    return false;
 	}
-	/* "Assume x, y, and z are real and nonnegative, at most one of them is
+	/* Ref[2], Sec. 19.27 <https://dlmf.nist.gov/19.27.iv>:
+	 * "Assume x, y, and z are real and nonnegative, at most one of them is
 	 * 0, and p > 0" */
 	if ( (classify.maybe_asymp = ( pr > 0.0 )) )
 	{
 	    return true;
 	}
     }
-    /* "Let x, y, z have nonnegative real part and at most one of them [1] be
+    /* Ref[1], in text above Eq. 2.17 ("Algorithm for RJ")
+     * "Let x, y, z have nonnegative real part and at most one of them* be
      * 0, while Re p > 0."
-     *     [1] By "them", Carlson seems to have meant the numbers x, y, z
-     *         themselves, rather than their "real parts". */
+     *     * By "them", Carlson seems to have meant the numbers x, y, z
+     *       themselves, rather than their "real parts". */
     bool x0 = argcheck::too_small(x);
     bool y0 = argcheck::too_small(y);
     bool z0 = argcheck::too_small(z);
@@ -207,7 +234,8 @@ good_args(const T& x, const T& y, const T& z, const T& p,
 }
 
 
-/* Cauchy principal value dispatcher */
+/* Cauchy principal value dispatcher
+ * Ref[1], Eq. 2.26 */
 template<typename T, typename Tres>
 static ExitStatus
 rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
@@ -260,6 +288,9 @@ rj_cpv_dispatch(const T& x, const T& y, const T& z, const T& p,
 }
 
 
+/* The notation follows the one used in the DLMF:
+ * https://dlmf.nist.gov/19.27.i
+ */
 template<typename T>
 struct AsymConfig
 {
@@ -459,6 +490,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 	    case rjimpl::AsymFlag::nothing : break;
 	    case rjimpl::AsymFlag::hugep :
 	    {
+		/* Ref[2], Eq. 19.27.11 <https://dlmf.nist.gov/19.27.E11> */
 		status = rf(xr, yr, zr, rerr, tmpres);
 		tmpres = 3.0 * (tmpres -
 			        0.5 * (RT)(constants::pi) / std::sqrt(pr)) / pr;
@@ -466,6 +498,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 	    }
 	    case rjimpl::AsymFlag::tinyp :
 	    {
+		/* Ref[6], Table 2 and Theorem 11 (Eq. 4.12) */
 		ExitStatus status_tmp;
 		RT xct1[3];
 		RT xct2[3];
@@ -494,6 +527,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 	    }
 	    case rjimpl::AsymFlag::hugey :
 	    {
+		/* Ref[2], Eq. 19.27.14 <https://dlmf.nist.gov/19.27.E14> */
 		ExitStatus status_tmp;
 		RT t1, t2;
 		double r = rerr / 3.0;
@@ -509,12 +543,16 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 	    }
 	    case rjimpl::AsymFlag::tinyx :
 	    {
+		/* Ref[2], Eq. 18.27.15 <https://dlmf.nist.gov/19.27.E15> */
 		status = rj((RT)0.0, yr, zr, pr, rerr, tmpres);
 		tmpres -= (RT)3.0 * std::sqrt(xr) / (config.h * pr);
 		break;
 	    }
 	    case rjimpl::AsymFlag::tinyy :
 	    {
+		/* Ref[5], Proposition J3
+		 * The bounds given in the ref is better than the one in
+		 * Ref[6]. */
 		RT tx;
 		status = rc((RT)1.0, pr / zr, rerr, tx);
 		tmpres = std::log((RT)8.0 * zr / (config.a + config.g)) -
@@ -530,6 +568,8 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 	    }
 	    case rjimpl::AsymFlag::hugez :
 	    {
+		/* Try to switch between Ref[5], Propositino J6 and direct
+		 * computation without asymptotics */
 		RT tt = config.h + pr;
 		tt *= tt;
 		RT tm = config.b + config.h;
@@ -570,6 +610,9 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
     T zzm = Am - zm;
     RT fterm = std::max({std::abs(xxm), std::abs(yym), std::abs(zzm),
 			 std::abs(Am - p)}) / arithmetic::ocrt(rerr / 5.0);
+    /* The algorithm is a direct implementation of Ref[3], Theorem A.1., where
+     * a purely arithmetic recurrence relation is used instead of evaluating
+     * special functions in the inner loop. */
 
     /* m = 0; */
     RT d4m = 1.0;
@@ -645,6 +688,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
     t = arithmetic::dot2(cct1, cct2) / (RT)(constants::RDJ_DENOM) + (RT)1.0;
     tmp *= t;
     t = delta * d4m / (sm * sm);
+    /* Use the library atan function, following Ref[4], Sec. 1.6.1. */
     tmp += rjimpl::safe_atan_sqrt_div(t) * (RT)3.0 / sm;
 
     res = tmp;

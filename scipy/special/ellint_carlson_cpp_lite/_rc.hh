@@ -10,6 +10,17 @@
 #include "ellint_carlson.hh"
 
 
+/* References:
+ * [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+ *     Functions," NIST, US Dept. of Commerce.
+ *     https://dlmf.nist.gov/19.16.E6
+ * [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+ *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+ *     https://arxiv.org/abs/math/9409227
+ *     https://doi.org/10.1007/BF02198293
+ */
+
+
 namespace ellint_carlson {
 
 template<typename T>
@@ -32,6 +43,7 @@ rc(const T& x, const T& y, const double& rerr, T& res)
         ( std::real(y) < 0.0 ) )
     {
 	T tmpres;
+	/* Ref[2], Eq. 2.14 */
 	status = ellint_carlson::rc(x - y, -y, rerr, tmpres);
 	if ( is_horrible(status) )
 	{

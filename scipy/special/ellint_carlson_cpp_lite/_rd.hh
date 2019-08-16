@@ -11,6 +11,17 @@
 #include "ellint_carlson.hh"
 
 
+/* References
+ * [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+ *     Functions," NIST, US Dept. of Commerce.
+ *     https://dlmf.nist.gov/19.16.E5
+ * [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+ *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+ *     https://arxiv.org/abs/math/9409227
+ *     https://doi.org/10.1007/BF02198293
+ */
+
+
 namespace ellint_carlson {
 
 template<typename T>
@@ -88,6 +99,8 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	cct1[2] = cct2[1] = std::sqrt(zm);
 	T lam = arithmetic::ndot2(cct1, cct2, 3);
 
+	/* Ref[2], Eq. 2.34, accumulating the summation term into adt
+	 * with compensation term ade */
 	tmp = d4m / (cct1[2] * (zm + lam));
 	arithmetic::sum2_acc(tmp, adt, ade);
 

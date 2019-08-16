@@ -33,6 +33,8 @@ namespace ellint_carlson { namespace typing
 				std::is_floating_point<T>::value ||
 				is_complex<T>::value > {};
 
+    /* The decplx struct "de-complexifies" a complex type and obtains the
+     * underlying real type, while doing nothing for an already real type. */
     template<typename T>
     struct decplx
     {
@@ -70,6 +72,7 @@ namespace ellint_carlson { namespace typing
 	typedef std::complex<T> type;
     };
 
+    /* "Promote" to complex if one and only one of the types is real. */
     template<typename T, typename U>
     using Promote = typename pm_impl<T, U>::type;
 

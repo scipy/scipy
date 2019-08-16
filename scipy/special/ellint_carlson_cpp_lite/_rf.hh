@@ -12,6 +12,17 @@
 #include "ellint_carlson.hh"
 
 
+/* References
+ * [1] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
+ *     Functions," NIST, US Dept. of Commerce.
+ *     https://dlmf.nist.gov/19.16.E1
+ * [2] B. C. Carlson, "Numerical computation of real or complex elliptic
+ *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+ *     https://arxiv.org/abs/math/9409227
+ *     https://doi.org/10.1007/BF02198293
+ */
+
+
 namespace ellint_carlson {
 
 template<typename T>
@@ -102,6 +113,8 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	} else {
 	    T tmpres;
 	    status = rf0(ym, zm, rerr, tmpres);
+	    /* Correction for non-zero x, see Eq. 19.27.3 in
+	     * https://dlmf.nist.gov/19.27.E3 */
 	    res = tmpres - (std::sqrt(xm) / std::sqrt(ym * zm));
 	    return status;
 	}
