@@ -523,7 +523,7 @@ def test_bounded_powell_outsidebounds():
         res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
     assert_allclose(res.x, np.array([0.] * len(x0)), atol=1e-6)
     assert_equal(res.success, True)
-    assert_equal(res.warnflag, 0)
+    assert_equal(res.status, 0)
 
     # However, now if we change the `direc` argument such that the
     # set of vectors does not span the parameter space, then we may
@@ -537,7 +537,7 @@ def test_bounded_powell_outsidebounds():
                                 options=dict(direc=direc))
     assert_allclose(res.x, np.array([-4., 0, 0]), atol=1e-6)
     assert_equal(res.success, False)
-    assert_equal(res.warnflag, 3)
+    assert_equal(res.status, 3)
 
 def test_bounded_powell_vs_powell():
     # here we test an example where the bounded Powell method
