@@ -23,7 +23,7 @@ from .misc import norm, LinAlgError, _datacopied
 from .basic import solve, inv, det, _get_axis_len
 from .special_matrices import triu
 from .decomp import eig
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp_svd import svd
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
@@ -837,9 +837,18 @@ def is_nonsingular(A):
         return False
     if (A == A[0]).all():
         return False
-    A = _asarray_square(A)
-    c = cond(A)
-    return (c < 1e16)
+    #A = _asarray_square(A)
+    #c = cond(A)
+    #return (c < 1e16)
+    getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
+                                                  'getri_lwork'),
+                                                 (A,))
+    lu, piv, info = getrf(A, overwrite_a=True)
+    if info == 0:
+        lwork = _compute_lwork(getri_lwork, A.shape[0])
+        lwork = int(1.01 * lwork)
+        inv_a, info = getri(lu, piv, lwork=lwork, overwrite_lu=1)
+    return info <= 0
 
 
 def is_singular(A):
@@ -874,9 +883,18 @@ def is_singular(A):
         return False
     if (A == A[0]).all():
         return True
-    A = _asarray_square(A)
-    c = cond(A)
-    return (c > 1e16)
+    #A = _asarray_square(A)
+    #c = cond(A)
+    #return (c > 1e16)
+    getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
+                                                  'getri_lwork'),
+                                                 (A,))
+    lu, piv, info = getrf(A, overwrite_a=True)
+    if info == 0:
+        lwork = _compute_lwork(getri_lwork, A.shape[0])
+        lwork = int(1.01 * lwork)
+        inv_a, info = getri(lu, piv, lwork=lwork, overwrite_lu=1)
+    return info > 0
 
 
 def is_positive_definite(A, robust_level=0, tol=None):
