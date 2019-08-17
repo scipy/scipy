@@ -737,22 +737,72 @@ add_newdoc("beta",
     """)
 
 add_newdoc("betainc",
-    """
-    betainc(a, b, x)
+    r"""
+    betainc(a, b, x, out=None)
 
-    Incomplete beta integral.
+    Incomplete beta function.
 
-    Compute the incomplete beta integral of the arguments, evaluated
-    from zero to `x`::
+    Computes the incomplete beta function, defined as [1]_:
+    
+    .. math::
 
-        gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).
+        I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x 
+        t^{a-1}(1-t)^{b-1}dt,
+        
+    for :math:`0 \leq x \leq 1`.
 
+    Parameters
+    ----------
+    a, b : array-like
+           Positive, real-valued parameters
+    x : array-like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    out : ndarray, optional
+        Optional output array for the function values
+    
+    Returns
+    -------
+    array-like
+        Value of the incomplete beta function
+    
     Notes
     -----
-    The incomplete beta is also sometimes defined without the terms
-    in gamma, in which case the above definition is the so-called regularized
-    incomplete beta. Under this definition, you can get the incomplete beta by
-    multiplying the result of the scipy function by beta(a, b).
+    The incomplete beta function is also sometimes defined 
+    without the terms in gamma, in which case the above
+    definition is the so-called regularized incomplete beta 
+    function. Under this definition, you can get the incomplete
+    beta function by multiplying the result of the SciPy
+    function by `beta(a, b)`.
+    
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    
+    Examples
+    --------
+    >>> import scipy.special as sc
+    
+    The coefficient in terms of `gamma` is equal to
+    `1/beta(a, b)`. Also, when :math:`x=1` the integral
+    is equal to `beta(a, b)`. Therefore, :math:`I_x(a, b) = 1`
+    whenever :math:`x = 1`.
+    
+    >>> sc.betainc(0.2, 3.5, 1.0)
+    1.0
+    >>> sc.betainc(9, 0.1, 1.0)
+    1.0
+    >>> sc.betainc(0.0003, 7.4, 1.0)
+    1.0
+    
+    This functions satisfies the relationship
+    :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
+    
+    >>> sc.betainc(2.2, 3.1, 0.4)
+    0.49339638807619446
+    >>> 1 - sc.betainc(3.1, 2.2, 1 - 0.4)
+    0.49339638807619446
 
     """)
 
