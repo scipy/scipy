@@ -695,7 +695,8 @@ def _estimate_tolerance(A):
 
 def is_hermitian(A, tol=None):
     """
-    Returns True if a matrix is hermitian
+    Returns True if a matrix is hermitian.
+
     Parameters
     ----------
     A : (N, N) array_like
@@ -734,7 +735,8 @@ def is_hermitian(A, tol=None):
 
 def is_symmetric(A, tol=None):
     """
-    Returns True if a matrix is symmetric
+    Returns True if a matrix is symmetric.
+
     Parameters
     ----------
     A : (N, N) array_like
@@ -770,7 +772,8 @@ def is_symmetric(A, tol=None):
 
 def is_skew_symmetric(A, tol=None):
     """
-    Returns True if a matrix is skew symmetric
+    Returns True if a matrix is skew symmetric.
+
     Parameters
     ----------
     A : (N, N) array_like
@@ -811,8 +814,10 @@ def is_skew_symmetric(A, tol=None):
 
 def is_nonsingular(A):
     """
-    Returns True if a matrix is nonsingular
-    AKA invertible or nondegenerate
+    Returns True if a matrix is nonsingular.
+
+    AKA invertible or nondegenerate.
+
     Parameters
     ----------
     A : (N, N) array_like
@@ -856,7 +861,8 @@ def is_nonsingular(A):
 
 def is_singular(A):
     """
-    Returns True if a matrix is singular
+    Returns True if a matrix is singular.
+
     Parameters
     ----------
     A : (N, N) array_like
@@ -903,7 +909,8 @@ def is_singular(A):
 
 def is_positive_definite(A, robust_level=0, tol=None):
     """
-    Returns True if a matrix is positive definite
+    Returns True if a matrix is positive definite.
+
     Parameters
     ----------
     A : (N, N) array_like
@@ -1013,7 +1020,8 @@ def is_positive_definite(A, robust_level=0, tol=None):
 
 def is_negative_definite(A, robust_level=0, tol=None):
     """
-    Returns True if a matrix is negative definite
+    Returns True if a matrix is negative definite.
+
     Parameters
     ----------
     A : (N, N) array_like
