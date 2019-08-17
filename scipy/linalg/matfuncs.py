@@ -7,10 +7,9 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
            'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-           'is_hermitian', 'is_symmetric',
-           'is_skew_symmetric', 'is_nonsingular',
-           'is_singular', 'is_positive_definite',
-           'is_negative_definite']
+           'is_hermitian', 'is_negative_definite', 'is_nonsingular',
+           'is_positive_definite', 'is_singular', 'is_skew_symmetric',
+           'is_symmetric']
 
 from numpy import (Inf, dot, diag, prod, logical_not, ravel,
         transpose, conjugate, absolute, amax, sign, isfinite, single,
@@ -704,7 +703,7 @@ def is_hermitian(A, tol=None):
     
     Returns
     -------
-    X : boolean
+    is_hermitian : bool
         True if a matrix A is hermitian.
 
     Examples
@@ -716,6 +715,7 @@ def is_hermitian(A, tol=None):
     >>> m = np.array([[2, 2+1j, 4], [2-1j, 3, 1j], [4, -1j, 1]])
     >>> print(is_hermitian(m))
     True
+
     """
     if len(A) == 0:
         return False
@@ -742,7 +742,7 @@ def is_symmetric(A, tol=None):
     
     Returns
     -------
-    X : boolean
+    is_symmetric : bool
         True if a matrix A is symmetric.
 
     Examples
@@ -754,6 +754,7 @@ def is_symmetric(A, tol=None):
     >>> m = np.array([[5,0],[1,3]])
     >>> print(is_symmetric(m))
     False
+
     """
     if len(A) == 0:
         return False
@@ -779,7 +780,7 @@ def is_skew_symmetric(A, tol=None):
     
     Returns
     -------
-    X : boolean
+    is_skew_symmetric : bool
         True if a matrix A is skew symmetric.
 
     Examples
@@ -791,6 +792,7 @@ def is_skew_symmetric(A, tol=None):
     >>> m = np.array([[0, 2, -1],[-2, 0, -4],[1, 4, 0]])
     >>> print(is_skew_symmetric(m))
     True
+
     """
     if len(A) == 0:
         return False
@@ -820,7 +822,7 @@ def is_nonsingular(A):
     
     Returns
     -------
-    X : boolean
+    is_nonsingular : bool
         True if a matrix A is nonsingular.
 
     Examples
@@ -832,6 +834,7 @@ def is_nonsingular(A):
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
     >>> print(is_nonsingular(m))
     True
+
     """
     if len(A) == 0:
         return False
@@ -863,7 +866,7 @@ def is_singular(A):
     
     Returns
     -------
-    X : boolean
+    is_singular : bool
         True if a matrix A is singular.
 
     Examples
@@ -878,6 +881,7 @@ def is_singular(A):
     >>> m = np.array([[1, 1, 1],[0, 1, 0],[1, 0, 1]])
     >>> print(is_singular(m))
     True
+
     """
     if len(A) == 0:
         return False
@@ -914,7 +918,7 @@ def is_positive_definite(A, robust_level=0, tol=None):
     
     Returns
     -------
-    X : boolean
+    is_positive_definite : bool
         True if a matrix A is positive definite.
 
     Examples
@@ -944,6 +948,7 @@ def is_positive_definite(A, robust_level=0, tol=None):
     >>> m = np.array([[1, -1, 0],[-1, 5, 0],[0, 0, 7]])
     >>> print(is_positive_definite(m, robust_level=3))
     True
+
     """
     if len(A) == 0:
         return False
@@ -1018,7 +1023,7 @@ def is_negative_definite(A, robust_level=0, tol=None):
     
     Returns
     -------
-    X : boolean
+    is_negative_definite : bool
         True if a matrix A is negative definite.
 
     Examples
@@ -1027,5 +1032,6 @@ def is_negative_definite(A, robust_level=0, tol=None):
     >>> m = np.array([[-5,-1],[-1,-3]])
     >>> print(is_negative_definite(m))
     True
+
     """
     return is_positive_definite(-A, robust_level, tol)
