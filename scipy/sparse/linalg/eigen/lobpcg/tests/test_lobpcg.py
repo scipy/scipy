@@ -300,7 +300,7 @@ def test_random_initial_float32():
 
 
 def test_diagonal_data_types():
-    """Check lobpcg for diagonal matrices using all possible input types.
+    """Check lobpcg for diagonal matrices for all matrix types.
     """
     np.random.seed(1234)
     n = 50
@@ -310,53 +310,67 @@ def test_diagonal_data_types():
     # and where we choose A  and B to be diagonal.
     vals = np.arange(1, n + 1)
 
-    As64 = diags([vals * vals], [0], (n, n))
-    As32 = As64.astype(np.float32)
-    Af64 = As64.toarray()
-    Af32 = Af64.astype(np.float32)
-    listA = [Af64, As64, Af32, As32]
+    list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
+    for s_f in list_sparse_format:
 
-    Bs64 = diags([vals], [0], (n, n))
-    Bf64 = Bs64.toarray()
-    listB = [Bf64, Bs64]
+        As64 = diags([vals * vals], [0], (n, n), format=s_f)
+        As32 = As64.astype(np.float32)
+        Af64 = As64.toarray()
+        Af32 = Af64.astype(np.float32)
+        listA = [Af64, As64, Af32, As32]
 
-    # Define the preconditioner function as LinearOperator.
-    Ms64 = diags([1./vals], [0], (n, n))
+        Bs64 = diags([vals], [0], (n, n), format=s_f)
+        Bf64 = Bs64.toarray()
+        listB = [Bf64, Bs64]
 
-    def Ms64precond(x):
-        return Ms64 * x
-    Ms64precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=float)
-    Mf64 = Ms64.toarray()
+        # Define the preconditioner function as LinearOperator.
+        Ms64 = diags([1./vals], [0], (n, n), format=s_f)
 
-    def Mf64precond(x):
-        return Mf64 * x
-    Mf64precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=float)
-    Ms32 = Ms64.astype(np.float32)
+        def Ms64precond(x):
+            return Ms64 @ x
+        Ms64precondLO = LinearOperator(matvec=Ms64precond,
+                                    matmat=Ms64precond,
+                                    shape=(n, n), dtype=float)
+        Mf64 = Ms64.toarray()
 
-    def Ms32precond(x):
-        return Ms64 * x
-    Ms32precondLO = LinearOperator(matvec=Ms32precond, shape=(n, n), dtype=np.float32)
-    Mf32 = Ms32.toarray()
+        def Mf64precond(x):
+            return Mf64 @ x
+        Mf64precondLO = LinearOperator(matvec=Mf64precond,
+                                    matmat=Mf64precond,
+                                    shape=(n, n), dtype=float)
+        Ms32 = Ms64.astype(np.float32)
 
-    def Mf32precond(x):
-        return Mf32 * x
-    Mf32precondLO = LinearOperator(matvec=Ms64precond, shape=(n, n), dtype=np.float32)
-    listM = [None, Ms64precondLO, Mf64precondLO, Ms32precondLO, Mf32precondLO]
+        def Ms32precond(x):
+            return Ms32 @ x
+        Ms32precondLO = LinearOperator(matvec=Ms32precond,
+                                    matmat=Ms32precond,
+                                    shape=(n, n), dtype=np.float32)
+        Mf32 = Ms32.toarray()
 
-    # Setup matrix of the initial approximation to the eigenvectors
-    # (cannot be sparse array).
-    Xf64 = np.random.rand(n, m)
-    Xf32 = Xf64.astype(np.float32)
-    listX = [Xf64, Xf32]
+        def Mf32precond(x):
+            return Mf32 @ x
+        Mf32precondLO = LinearOperator(matvec=Mf32precond,
+                                    matmat=Mf32precond,
+                                    shape=(n, n), dtype=np.float32)
+        listM = [None, Ms64precondLO, Mf64precondLO,
+                 Ms32precondLO, Mf32precondLO]
 
-    # Require that the returned eigenvectors be in the orthogonal complement
-    # of the first few standard basis vectors (cannot be sparse array).
-    m_excluded = 3
-    Yf64 = np.eye(n, m_excluded, dtype=float)
-    Yf32 = np.eye(n, m_excluded, dtype=np.float32)
-    listY = [Yf64, Yf32]
+        # Setup matrix of the initial approximation to the eigenvectors
+        # (cannot be sparse array).
+        Xf64 = np.random.rand(n, m)
+        Xf32 = Xf64.astype(np.float32)
+        listX = [Xf64, Xf32]
 
-    for A, B, M, X, Y in itertools.product(listA, listB, listM, listX, listY):
-        eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4, maxiter=100,
-                            largest=False)
-        assert_allclose(eigvals, np.arange(1 + m_excluded, 1 + m_excluded + m))
+        # Require that the returned eigenvectors be in the orthogonal complement
+        # of the first few standard basis vectors (cannot be sparse array).
+        m_excluded = 3
+        Yf64 = np.eye(n, m_excluded, dtype=float)
+        Yf32 = np.eye(n, m_excluded, dtype=np.float32)
+        listY = [Yf64, Yf32]
+
+        for A, B, M, X, Y in itertools.product(listA, listB, listM, listX,
+                                               listY):
+            eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4,
+                                maxiter=100, largest=False)
+            assert_allclose(eigvals,
+                            np.arange(1 + m_excluded, 1 + m_excluded + m))
