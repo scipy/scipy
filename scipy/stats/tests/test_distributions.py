@@ -1804,53 +1804,6 @@ class TestFitMethod(object):
     def setup_method(self):
         np.random.seed(1234)
 
-    @pytest.mark.slow
-    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-    def test_fit(self, dist, args, alpha):
-        if dist in self.skip:
-            pytest.skip("%s fit known to fail" % dist)
-        distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
-            res = distfunc.rvs(*args, **{'size': 200})
-            vals = distfunc.fit(res)
-            vals2 = distfunc.fit(res, optimizer='powell')
-        # Only check the length of the return
-        # FIXME: should check the actual results to see if we are 'close'
-        #   to what was created --- but what is 'close' enough
-        assert_(len(vals) == 2+len(args))
-        assert_(len(vals2) == 2+len(args))
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-    def test_fix_fit(self, dist, args, alpha):
-        # Not sure why 'ncf', and 'beta' are failing
-        # frechet has different len(args) than distfunc.numargs
-        if dist in self.skip + ['frechet']:
-            pytest.skip("%s fit known to fail" % dist)
-        distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
-            res = distfunc.rvs(*args, **{'size': 200})
-            vals = distfunc.fit(res, floc=0)
-            vals2 = distfunc.fit(res, fscale=1)
-            assert_(len(vals) == 2+len(args))
-            assert_(vals[-2] == 0)
-            assert_(vals2[-1] == 1)
-            assert_(len(vals2) == 2+len(args))
-            if len(args) > 0:
-                vals3 = distfunc.fit(res, f0=args[0])
-                assert_(len(vals3) == 2+len(args))
-                assert_(vals3[0] == args[0])
-            if len(args) > 1:
-                vals4 = distfunc.fit(res, f1=args[1])
-                assert_(len(vals4) == 2+len(args))
-                assert_(vals4[1] == args[1])
-            if len(args) > 2:
-                vals5 = distfunc.fit(res, f2=args[2])
-                assert_(len(vals5) == 2+len(args))
-                assert_(vals5[2] == args[2])
-
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
         np.random.seed(12345)
