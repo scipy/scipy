@@ -723,13 +723,13 @@ def is_hermitian(A, tol=None):
     if tol is None:
         tol = _estimate_tolerance(A)
     for i in range(A.shape[0]):
-        if np.imag(A[i, i]) < tol:
-            return False
+        if np.imag(A[i, i]) > tol:
+            return False    
     if tol == 0:
-        return (A == A.T).all()
+        return (A == A.conj().T).all()
     else:
         norm_A = norm(A, Inf)
-        return (norm_A == 0) or (norm(A - A.T, Inf) / norm_A <= tol)
+        return (norm(A - A.conj().T, Inf) / norm_A <= tol)
 
 
 def is_symmetric(A, tol=None):
@@ -764,7 +764,7 @@ def is_symmetric(A, tol=None):
         return (A == A.T).all()
     else:
         norm_A = norm(A, Inf)
-        return (norm_A == 0) or (norm(A - A.T, Inf) / norm_A <= tol)
+        return (norm(A - A.T, Inf) / norm_A <= tol)
 
 
 def is_skew_symmetric(A, tol=None):
@@ -785,7 +785,7 @@ def is_skew_symmetric(A, tol=None):
     Examples
     --------
     >>> from scipy.linalg import is_skew_symmetric
-    >>> m = np.array([[5,1],[-1,5]])
+    >>> m = np.array([[0,1],[-1,0]])
     >>> print(is_skew_symmetric(m))
     True
     >>> m = np.array([[0, 2, -1],[-2, 0, -4],[1, 4, 0]])
@@ -798,13 +798,13 @@ def is_skew_symmetric(A, tol=None):
     if tol is None:
         tol = _estimate_tolerance(A)
     for i in range(A.shape[0]):
-        if A[i, i] < tol:
+        if A[i, i] > tol:
             return False
     if tol == 0:
         return (A == -A.T).all()
     else:
         norm_A = norm(A, Inf)
-        return (norm_A == 0) or (norm(A + A.T, Inf) / norm_A <= tol)
+        return (norm(A + A.T, Inf) / norm_A <= tol)
 
 
 def is_nonsingular(A):
@@ -837,7 +837,7 @@ def is_nonsingular(A):
         return False
     A = _asarray_square(A)
     c = cond(A)
-    return (c != Inf)
+    return (c < 1e16)
 
 
 def is_singular(A):
@@ -872,7 +872,7 @@ def is_singular(A):
         return False
     A = _asarray_square(A)
     c = cond(A)
-    return (c == Inf)
+    return (c > 1e16)
 
 
 def is_positive_definite(A, robust_level=0, tol=None):
