@@ -120,7 +120,13 @@ Matrix Functions
    expm_frechet - Frechet derivative of the matrix exponential
    expm_cond - Relative condition number of expm in the Frobenius norm
    fractional_matrix_power - Fractional matrix power
-
+   is_hermitian - check hermitian matrix
+   is_negative_definite - check negative definite matrix
+   is_nonsingular - check nonsingular matrix
+   is_positive_definite - check positive definite matrix
+   is_singular - check singular matrix
+   is_skew_symmetric - check skew symmetric matrix
+   is_symmetric - check symmetric matrix
 
 Matrix Equation Solvers
 =======================
