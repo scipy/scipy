@@ -1705,28 +1705,10 @@ def find(sub=None, disp=False):
     else:
         return result
 
-
-# Table is lacking some digits for exact values: calculate from definition
-c = value('speed of light in vacuum')
-mu0 = 4e-7 * pi
-epsilon0 = 1 / (mu0 * c * c)
-
-exact_values = {
-    'vacuum mag. permeability': (mu0, 'N A^-2', 0.0),
-    'vacuum electric permittivity': (epsilon0, 'F m^-1', 0.0),
-    'atomic unit of permittivity': (4 * epsilon0 * pi, 'F m^-1', 0.0),
-    'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
-    'kilogram-joule relationship': (c * c, 'J', 0.0),
-    'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0)
-}
-
-# sanity check
-for key in exact_values:
-    val = _current_constants[key][0]
-    if abs(exact_values[key][0] - val) / val > 1e-9:
-        raise ValueError("Constants.codata: exact values too far off.")
-
-physical_constants.update(exact_values)
+exact_values = dict()
+for key, item in physical_constants:
+    if item[2] == 0.0:
+        exact_values[key] = item
 
 # finally, insert aliases for values
 for k, v in list(_aliases.items()):
