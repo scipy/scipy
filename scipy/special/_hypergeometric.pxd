@@ -1,7 +1,7 @@
 from libc.math cimport fabs, exp, floor, M_PI
 
 from . cimport sf_error
-from ._cephes cimport poch
+from ._cephes cimport expm1, poch
 
 cdef extern from "numpy/npy_math.h":
     double npy_isnan(double x) nogil
@@ -13,6 +13,7 @@ cdef extern from 'specfun_wrappers.h':
     double hyp1f1_wrap(double, double, double) nogil
 
 DEF EPS = 2.220446049250313e-16
+DEF ACCEPTABLE_RTOL = 1e-7
 
 
 cdef inline double hyperu(double a, double b, double x) nogil:
@@ -46,15 +47,14 @@ cdef inline double hyp1f1(double a, double b, double x) nogil:
     elif a - b == 1:
         return (1 + x / b) * exp(x)
     elif a == 1 and b == 2:
-        return (exp(x) - 1) / x
+        return expm1(x) / x
     elif a <= 0 and a == floor(a):
-        # For `a` a negative integer the series is finite.
-        return hyp1f1_series(a, b, x)
+        return hyp1f1_negative_int_a(a, b, x)
 
     if b > 0 and (fabs(a) + 1) * fabs(x) < 0.9 * b:
         # For the kth term of the series we are multiplying by
         #
-        # t_k = (a + b) * x / ((b + k) * (k + 1))
+        # t_k = (a + k) * x / ((b + k) * (k + 1))
         #
         # We have that
         #
@@ -65,6 +65,36 @@ cdef inline double hyp1f1(double a, double b, double x) nogil:
         return hyp1f1_series(a, b, x)
 
     return hyp1f1_wrap(a, b, x)
+
+
+cdef inline double hyp1f1_negative_int_a(double a, double b, double x) nogil:
+    # For `a` a negative integer the hypergeometric series is
+    # finite. The finite series could, however, still have a
+    # prohibitive number of terms or experience cancellation, so
+    # monitor those conditions.
+    cdef int k
+    cdef double a_plus_k
+    cdef double term = 1
+    cdef double result = 1
+    cdef double abssum = result
+    for k in range(1000):
+        a_plus_k = a + k
+        if a_plus_k == 0:
+            break
+        term *= a_plus_k * x / (b + k) / (k + 1)
+
+        abssum += fabs(term)
+        result += term
+        if fabs(term) <= EPS * fabs(result):
+            break
+    else:
+        sf_error.error("hyp1f1", sf_error.NO_RESULT, NULL)
+        return NPY_NAN
+
+    if k * EPS * abssum <= ACCEPTABLE_RTOL * fabs(result):
+        return result
+    sf_error.error("hyp1f1", sf_error.NO_RESULT, NULL)
+    return NPY_NAN
 
 
 cdef inline double hyp1f1_series(double a, double b, double x) nogil:

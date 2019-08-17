@@ -45,6 +45,35 @@ class TestHyp1f1(object):
         # function. Desired answers computed using Mpmath.
         assert_allclose(sc.hyp1f1(a, b, x), result, atol=0, rtol=1e-15)
 
+    @pytest.mark.parametrize('a, b, x, result', [
+        (1, 1, 0.44, 1.5527072185113360455),
+        (-1, 1, 0.44, 0.55999999999999999778),
+        (100, 100, 0.89, 2.4351296512898745592),
+        (-100, 100, 0.89, 0.40739062490768104667),
+        (1.5, 100, 59.99, 3.8073513625965598107),
+        (-1.5, 100, 59.99, 0.25099240047125826943)
+    ])
+    def test_geometric_convergence(self, a, b, x, result):
+        # Test the region where we are relying on the ratio of
+        #
+        # (|a| + 1) * |x| / |b|
+        #
+        # being small. Desired answers computed using Mpmath
+        assert_allclose(sc.hyp1f1(a, b, x), result, atol=0, rtol=1e-15)
+
+    @pytest.mark.parametrize('a, b, x, result', [
+        (-1, 1, 1.5, -0.5),
+        (-10, 1, 1.5, 0.41801777430943080357),
+        (-25, 1, 1.5, 0.25114491646037839809),
+        (-50, 1, 1.5, -0.25683643975194756115),
+        (-51, 1, 1.5, -0.19843162753845452972)
+    ])
+    def test_a_negative_integer(self, a, b, x, result):
+        # Desired answers computed using Mpmath. After -51 the
+        # relative error becomes unsatisfactory and we start returning
+        # NaN.
+        assert_allclose(sc.hyp1f1(a, b, x), result, atol=0, rtol=1e-9)
+
     def test_gh_3492(self):
         desired = 0.99973683897677527773  # Computed using Mpmath
         assert_allclose(
