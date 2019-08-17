@@ -835,7 +835,7 @@ def is_nonsingular(A):
     """
     if len(A) == 0:
         return False
-    if (A==A[0]).all():
+    if (A == A[0]).all():
         return False
     A = _asarray_square(A)
     c = cond(A)
@@ -872,7 +872,7 @@ def is_singular(A):
     """
     if len(A) == 0:
         return False
-    if (A==A[0]).all():
+    if (A == A[0]).all():
         return True
     A = _asarray_square(A)
     c = cond(A)
