@@ -231,7 +231,7 @@ def lobpcg(A, X,
 
     The preconditioner function is passed to lobpcg as a Linear Operator.
 
-    >>> M = LinearOperator(matvec=precond, matmat=precond
+    >>> M = LinearOperator(matvec=precond, matmat=precond,
     ...                    shape=(n, n), dtype=float)
 
     Let us now solve the eigenvalue problem for the matrix A:
