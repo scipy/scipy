@@ -2438,10 +2438,10 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     low = (lower_bound - x0) / alpha
     high = (upper_bound - x0) / alpha
 
-    pos = alpha > 0  # positive indices
-    neg = alpha < 0  # negative indices
-    lmin = np.max(low*pos + high*neg)
-    lmax = np.min(low*neg + high*pos)
+    # positive and negative indicies
+    pos, neg = alpha > 0, alpha < 0
+    lmin = np.max(low * pos + high * neg)
+    lmax = np.min(low * neg + high * pos)
 
     return lmin, lmax
 
