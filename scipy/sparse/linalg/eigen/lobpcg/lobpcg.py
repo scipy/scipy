@@ -14,7 +14,7 @@ References
        in hypre and PETSc.  https://arxiv.org/abs/0705.2626
 
 .. [3] A. V. Knyazev's C and MATLAB implementations:
-       https://bitbucket.org/joseroman/blopex
+       https://github.com/lobpcg/blopex
 """
 
 from __future__ import division, print_function, absolute_import
@@ -188,7 +188,10 @@ def lobpcg(A, X,
     Examples
     --------
 
-    Solve A x = lambda B x with constraints and preconditioning.
+        Examples
+    --------
+
+    Example 1. Solve A x = lambda x with constraints and preconditioning.
 
     >>> import numpy as np
     >>> from scipy.sparse import spdiags, issparse
@@ -214,20 +217,29 @@ def lobpcg(A, X,
 
     >>> X = np.random.rand(n, 3)
 
-    Preconditioner -- inverse of A (as an abstract linear operator).
+    Preconditioner in the inverse of A in this example.
 
     >>> invA = spdiags([1./vals], 0, n, n)
+
+    The preconditiner must be defined by a function.
+
     >>> def precond( x ):
-    ...     return invA * x
-    >>> M = LinearOperator(matvec=precond, shape=(n, n), dtype=float)
+    ...     return invA @ x
 
-    Here, ``invA`` could of course have been used directly as a preconditioner.
-    Let us then solve the problem:
+    The argument x of the preconditioner function is a matrix inside lobpcg,
+    thus the use of matrix-matrix product @. 
 
-    >>> eigs, vecs = lobpcg(A, X, Y=Y, M=M, largest=False)
+    The preconditioner function is passed to lobpcg as a Linear Operator.
+
+    >>> M = LinearOperator(matvec=precond, matmat=precond
+    ...                    shape=(n, n), dtype=float)
+
+    Let us now solve the eigenvalue problem for the matrix A:
+
+    >>> eigs, _ = lobpcg(A, X, Y=Y, M=M, largest=False)
     >>> eigs
     array([4., 5., 6.])
-
+    
     Note that the vectors passed in Y are the eigenvectors of the 3 smallest
     eigenvalues. The results returned are orthogonal to those.
 
@@ -269,9 +281,8 @@ def lobpcg(A, X,
 
     *Acknowledgements*
 
-    lobpcg.py code was written by Robert Cimrman.
-    Many thanks belong to Andrew Knyazev, the author of the algorithm,
-    for lots of advice and support.
+    lobpcg.py code was originally written by Robert Cimrman.
+    Andrew Knyazev, the author of the algorithm, provides updates and support.
 
     References
     ----------
