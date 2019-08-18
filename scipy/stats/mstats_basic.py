@@ -1303,6 +1303,21 @@ def trima(a, limits=None, inclusive=(True,True)):
         Tuple of (lower flag, upper flag), indicating whether values exactly
         equal to the lower (upper) limit are allowed.
 
+    Examples
+    --------
+    >>> from scipy.stats.mstats import trima
+
+    >>> a = np.arange(10)
+
+    The interval is left-closed and right-open, i.e., `[2, 8)`.
+    Trim the array by keeping only values in the interval.
+
+    >>> trima(a, limits=(2, 8), inclusive=(True, False))
+    masked_array(data=[--, --, 2, 3, 4, 5, 6, 7, --, --],
+                 mask=[ True,  True, False, False, False, False, False, False,
+                        True,  True],
+           fill_value=999999)
+
     """
     a = ma.asarray(a)
     a.unshare_mask()
@@ -1361,13 +1376,13 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
             if low_inclusive:
                 lowidx = int(low_limit*n)
             else:
-                lowidx = np.round(low_limit*n)
+                lowidx = int(np.round(low_limit*n))
             a[idx[:lowidx]] = masked
         if up_limit is not None:
             if up_inclusive:
                 upidx = n - int(n*up_limit)
             else:
-                upidx = n - np.round(n*up_limit)
+                upidx = n - int(np.round(n*up_limit))
             a[idx[upidx:]] = masked
         return a
 
@@ -1537,13 +1552,17 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
 
     %s
 
-    """ % trimdoc
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
         return trimr(a,limits=limits,inclusive=inclusive,axis=axis).mean(axis=axis)
     else:
         return trima(a,limits=limits,inclusive=inclusive).mean(axis=axis)
+
+
+if trimmed_mean.__doc__ is not None:
+    trimmed_mean.__doc__ = trimmed_mean.__doc__ % trimdoc
 
 
 def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
@@ -1556,7 +1575,7 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """ % trimdoc
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -1565,6 +1584,10 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         out = trima(a,limits=limits,inclusive=inclusive)
 
     return out.var(axis=axis, ddof=ddof)
+
+
+if trimmed_var.__doc__ is not None:
+    trimmed_var.__doc__ = trimmed_var.__doc__ % trimdoc
 
 
 def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
@@ -1577,7 +1600,7 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
         biased estimate of the variance.
 
-    """ % trimdoc
+    """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
         limits = (limits, limits)
     if relative:
@@ -1585,6 +1608,10 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     else:
         out = trima(a,limits=limits,inclusive=inclusive)
     return out.std(axis=axis,ddof=ddof)
+
+
+if trimmed_std.__doc__ is not None:
+    trimmed_std.__doc__ = trimmed_std.__doc__ % trimdoc
 
 
 def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):

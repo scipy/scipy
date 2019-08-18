@@ -461,20 +461,20 @@ columns. The initial conditions are therefore given in the first output column.
 ...
 >>> t_span = [0, 4]
 >>> sol1 = solve_ivp(func, t_span, y0)
->>> print("sol1.t:    {}".format(sol1.t))
-sol1.t:    [0.         0.10097672 1.04643602 1.86341289 2.45798743 2.99814154
-     3.54800133 4.        ]
+>>> print("sol1.t: {}".format(sol1.t))
+sol1.t:    [0.         0.10097672 1.04643602 1.91060117 2.49872472 3.08684827
+ 3.62692846 4.        ]
 
 As it can be seen `solve_ivp` determines its time steps automatically if not
 specified otherwise. To compare the solution of `solve_ivp` with the `airy` 
 function the time vector created by `solve_ivp` is passed to the `airy` function.
 
 >>> print("sol1.y[1]: {}".format(sol1.y[1]))
-sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04296455 0.01710117 0.00714538
-     0.00371189 0.00410178]
+sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04008508 0.01601291 0.00623879
+ 0.00356316 0.00405982]
 >>> print("airy(sol.t)[0]:  {}".format(airy(sol1.t)[0]))
-airy(sol.t)[0]:  [0.35502805 0.328952   0.12804768 0.04285786 0.01686411 0.00661331
- 0.00235403 0.00095156]
+airy(sol.t)[0]: [0.35502805 0.328952   0.12804768 0.03995804 0.01575943 0.00562799
+ 0.00201689 0.00095156]
  
 The solution of `solve_ivp` with its standard parameters shows a big deviation
 to the airy function. To minimize this deviation, relative and absolute
@@ -483,9 +483,9 @@ tolerances can be used.
 >>> rtol, atol = (1e-8, 1e-8)
 >>> sol2 = solve_ivp(func, t_span, y0, rtol=rtol, atol=atol)
 >>> print("sol2.y[1][::6]: {}".format(sol2.y[1][0::6]))
-sol2.y[1][::6]: [0.35502805 0.19133491 0.06422892 0.01908572 0.00469766 0.00095159]
+sol2.y[1][::6]: [0.35502805 0.19145234 0.06368989 0.0205917  0.00554734 0.00106409]
 >>> print("airy(sol2.t)[0][::6]: {}".format(airy(sol2.t)[0][::6]))
-airy(sol2.t)[0][::6]: [0.35502805 0.19133491 0.06422892 0.01908572 0.00469765 0.00095156]
+airy(sol2.t)[0][::6]: [0.35502805 0.19145234 0.06368989 0.0205917  0.00554733 0.00106406]
  
 To specify user defined time points for the solution of `solve_ivp`, `solve_ivp`
 offers two possibilites that can also be used complementarily. By passing the `t_eval`

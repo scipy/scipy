@@ -1227,7 +1227,7 @@ class DiagBroyden(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.d = np.ones((self.shape[0],), dtype=self.dtype) / self.alpha
+        self.d = np.full((self.shape[0],), 1 / self.alpha, dtype=self.dtype) 
 
     def solve(self, f, tol=0):
         return -f / self.d

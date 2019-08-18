@@ -876,8 +876,10 @@ class TestWiener(object):
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
-class TestResample(object):
+padtype_options = ["constant", "mean", "median", "minimum", "maximum", "line"]
 
+
+class TestResample(object):
     def test_basic(self):
         # Some basic tests
 
@@ -891,6 +893,9 @@ class TestResample(object):
         # Other degenerate conditions
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, padtype='')
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1,
+                      padtype='mean', cval=10)
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
         sig2 = np.tile(np.arange(160), (2, 1))
@@ -923,27 +928,33 @@ class TestResample(object):
         y = signal.resample(x, ny)
         assert_allclose(y, [1] * ny)
 
-    def test_mutable_window(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
-        signal.resample_poly(impulse, 5, 1, window=window)
+        signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
         assert_array_equal(window, window_orig)
 
-    def test_output_float32(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_output_float32(self, padtype):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
-        y = signal.resample_poly(x, 1, 2, window=h)
-        assert_(y.dtype == np.float32)
+        y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
+        assert(y.dtype == np.float32)
 
-    @pytest.mark.parametrize('method, ext', [
-        ('fft', False),
-        ('polyphase', False),
-        ('polyphase', True),
-    ])
-    def test_resample_methods(self, method, ext):
+    @pytest.mark.parametrize(
+        "method, ext, padtype",
+        [("fft", False, None)]
+        + list(
+            product(
+                ["polyphase"], [False, True], padtype_options,
+            )
+        ),
+    )
+    def test_resample_methods(self, method, ext, padtype):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -969,9 +980,9 @@ class TestResample(object):
                     half_len = 10 * max_rate
                     window = signal.firwin(2 * half_len + 1, f_c,
                                            window=('kaiser', 5.0))
-                    polyargs = {'window': window}
+                    polyargs = {'window': window, 'padtype': padtype}
                 else:
-                    polyargs = {}
+                    polyargs = {'padtype': padtype}
 
                 y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
                                                  **polyargs)
@@ -979,7 +990,10 @@ class TestResample(object):
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
-                    assert_allclose(y_resamp, y_to, atol=1e-3)
+                    if padtype in ['minimum', 'maximum']:
+                        assert_allclose(y_resamp, y_to, atol=3e-1)
+                    else:
+                        assert_allclose(y_resamp, y_to, atol=1e-3)
                 else:
                     assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
@@ -995,20 +1009,22 @@ class TestResample(object):
             if method == 'fft':
                 y_resamp = signal.resample(x, rate_to)
             else:
-                y_resamp = signal.resample_poly(x, rate_to, rate)
+                y_resamp = signal.resample_poly(x, rate_to, rate,
+                                                padtype=padtype)
             assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
         # More tests of fft method (Master 0.18.1 fails these)
         if method == 'fft':
-            x1 = np.array([1.+0.j,0.+0.j])
-            y1_test = signal.resample(x1,4)
-            y1_true = np.array([1.+0.j,0.5+0.j,0.+0.j,0.5+0.j])  # upsampling a complex array
+            x1 = np.array([1.+0.j, 0.+0.j])
+            y1_test = signal.resample(x1, 4)
+            # upsampling a complex array
+            y1_true = np.array([1.+0.j, 0.5+0.j, 0.+0.j, 0.5+0.j])
             assert_allclose(y1_test, y1_true, atol=1e-12)
-            x2 = np.array([1.,0.5,0.,0.5])
-            y2_test = signal.resample(x2,2)  # downsampling a real array
-            y2_true = np.array([1.,0.])
+            x2 = np.array([1., 0.5, 0., 0.5])
+            y2_test = signal.resample(x2, 2)  # downsampling a real array
+            y2_true = np.array([1., 0.])
             assert_allclose(y2_test, y2_true, atol=1e-12)
 
     def test_poly_vs_filtfilt(self):
@@ -1046,7 +1062,8 @@ class TestResample(object):
                     x = np.random.random((nx,))
                     weights = np.random.random((nweights,))
                     y_g = correlate1d(x, weights[::-1], mode='constant')
-                    y_s = signal.resample_poly(x, up=1, down=down, window=weights)
+                    y_s = signal.resample_poly(
+                        x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
 
 

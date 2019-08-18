@@ -807,7 +807,8 @@ def least_squares(
     f0 = fun_wrapped(x0)
 
     if f0.ndim != 1:
-        raise ValueError("`fun` must return at most 1-d array_like.")
+        raise ValueError("`fun` must return at most 1-d array_like. "
+                         "f0.shape: {0}".format(f0.shape))
 
     if not np.all(np.isfinite(f0)):
         raise ValueError("Residuals are not finite in the initial point.")

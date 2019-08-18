@@ -1896,10 +1896,10 @@ class TestIQR(object):
         y = np.ones((4, 5, 6)) * np.arange(6)
         assert_array_equal(stats.iqr(y, axis=0), np.zeros((5, 6)))
         assert_array_equal(stats.iqr(y, axis=1), np.zeros((4, 6)))
-        assert_array_equal(stats.iqr(y, axis=2), 2.5 * np.ones((4, 5)))
+        assert_array_equal(stats.iqr(y, axis=2), np.full((4, 5), 2.5))
         assert_array_equal(stats.iqr(y, axis=(0, 1)), np.zeros(6))
-        assert_array_equal(stats.iqr(y, axis=(0, 2)), 3. * np.ones(5))
-        assert_array_equal(stats.iqr(y, axis=(1, 2)), 3. * np.ones(4))
+        assert_array_equal(stats.iqr(y, axis=(0, 2)), np.full(5, 3.))
+        assert_array_equal(stats.iqr(y, axis=(1, 2)), np.full(4, 3.))
 
     def test_scalarlike(self):
         x = np.arange(1) + 7.0
@@ -1916,8 +1916,8 @@ class TestIQR(object):
     def test_2D(self):
         x = np.arange(15).reshape((3, 5))
         assert_equal(stats.iqr(x), 7.0)
-        assert_array_equal(stats.iqr(x, axis=0), 5. * np.ones(5))
-        assert_array_equal(stats.iqr(x, axis=1), 2. * np.ones(3))
+        assert_array_equal(stats.iqr(x, axis=0), np.full(5, 5.))
+        assert_array_equal(stats.iqr(x, axis=1), np.full(3, 2.))
         assert_array_equal(stats.iqr(x, axis=(0, 1)), 7.0)
         assert_array_equal(stats.iqr(x, axis=(1, 0)), 7.0)
 
@@ -2110,7 +2110,7 @@ class TestIQR(object):
                 _check_warnings(w, RuntimeWarning, 3)
             else:
                 assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
-                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), 5 * np.ones(5))
+                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
                 assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
 
         assert_raises(ValueError, stats.iqr, x, nan_policy='raise')
@@ -3085,7 +3085,7 @@ class TestKSTwoSamples(object):
             self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
             self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
 
-    def testNamedAtributes(self):
+    def testNamedAttributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
         res = stats.ks_2samp([1, 2], [3])
@@ -3476,7 +3476,7 @@ class TestDescribe(object):
         assert_array_almost_equal(kurt, -3.0, decimal=13)
 
     def test_describe_numbers(self):
-        x = np.vstack((np.ones((3,4)), 2 * np.ones((2,4))))
+        x = np.vstack((np.ones((3,4)), np.full((2, 4), 2)))
         nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
         mc = np.array([1.4, 1.4, 1.4, 1.4])
         vc = np.array([0.3, 0.3, 0.3, 0.3])
@@ -3523,7 +3523,7 @@ class TestDescribe(object):
         check_named_results(actual, attributes)
 
     def test_describe_ddof(self):
-        x = np.vstack((np.ones((3, 4)), 2 * np.ones((2, 4))))
+        x = np.vstack((np.ones((3, 4)), np.full((2, 4), 2)))
         nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
         mc = np.array([1.4, 1.4, 1.4, 1.4])
         vc = np.array([0.24, 0.24, 0.24, 0.24])
@@ -3538,7 +3538,7 @@ class TestDescribe(object):
         assert_array_almost_equal(kurt, kurtc, decimal=13)
 
     def test_describe_axis_none(self):
-        x = np.vstack((np.ones((3, 4)), 2 * np.ones((2, 4))))
+        x = np.vstack((np.ones((3, 4)), np.full((2, 4), 2)))
 
         # expected values
         e_nobs, e_minmax = (20, (1.0, 2.0))

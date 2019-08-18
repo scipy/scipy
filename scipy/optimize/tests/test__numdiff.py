@@ -45,7 +45,7 @@ def test_group_columns():
 class TestAdjustSchemeToBounds(object):
     def test_no_bounds(self):
         x0 = np.zeros(3)
-        h = np.ones(3) * 1e-2
+        h = np.full(3, 1e-2)
         inf_lower = np.empty_like(x0)
         inf_upper = np.empty_like(x0)
         inf_lower.fill(-np.inf)
@@ -438,7 +438,7 @@ class TestApproxDerivativeSparse(object):
             assert_(isinstance(J, csr_matrix))
             assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
 
-            rel_step = 1e-8 * np.ones_like(self.x0)
+            rel_step = np.full_like(self.x0, 1e-8)
             rel_step[::2] *= -1
             J = approx_derivative(self.fun, self.x0, method=method,
                                   rel_step=rel_step, sparsity=(A, groups))

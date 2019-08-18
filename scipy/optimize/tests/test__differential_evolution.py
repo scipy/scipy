@@ -1083,7 +1083,7 @@ class TestDifferentialEvolutionSolver(object):
                     1294.8
                     ]
         L = LinearConstraint(A, b, np.inf)
-        N = NonlinearConstraint(c1, -0.001*np.ones(3), 0.001*np.ones(3))
+        N = NonlinearConstraint(c1, np.full(3, -0.001), np.full(3, 0.001))
 
         bounds = [(0, 1200)]*2+[(-.55, .55)]*2
         constraints = (L, N)

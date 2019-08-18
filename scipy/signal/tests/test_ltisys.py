@@ -888,7 +888,7 @@ class TestStateSpace(object):
         assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
 
-        # Test substraction
+        # Test subtraction
         assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
 

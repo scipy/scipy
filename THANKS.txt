@@ -213,6 +213,7 @@ Aidan Dang for block QR wrappers in scipy.linalg.lapack.
 Clement Ng for modifying tests in scipy.stats.
 Fletcher H. Easton for a bug fix in scipy.linalg.interpolative.
 Christian Brueffer for improvements to code readability/style and documentation.
+Timothy C. Willard for contributions to x-value requirements in scipy.interpolate.
 
 
 Institutions

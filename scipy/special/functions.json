@@ -98,18 +98,23 @@
         }
     },
     "_struve_asymp_large_z": {
-        "misc.h": {
+        "cephes.h": {
             "struve_asymp_large_z": "ddi*d->d"
         }
     },
     "_struve_bessel_series": {
-        "misc.h": {
+        "cephes.h": {
             "struve_bessel_series": "ddi*d->d"
         }
     },
     "_struve_power_series": {
-        "misc.h": {
+        "cephes.h": {
             "struve_power_series": "ddi*d->d"
+        }
+    },
+    "_voigt" : {
+        "_faddeeva.h++" : {
+            "faddeeva_voigt": "dddd->d"
         }
     },
     "_zeta": {
@@ -189,7 +194,7 @@
         }
     },
     "besselpoly": {
-        "c_misc/misc.h": {
+        "cephes.h": {
             "besselpoly": "ddd->d"
         }
     },
@@ -590,7 +595,7 @@
         }
     },
     "gammasgn": {
-        "c_misc/misc.h": {
+        "cephes.h": {
             "gammasgn": "d->d"
         }
     },
@@ -955,7 +960,7 @@
         }
     },
     "modstruve": {
-        "misc.h": {
+        "cephes.h": {
             "struve_l": "dd->d"
         }
     },
@@ -1146,7 +1151,7 @@
         }
     },
     "poch": {
-        "c_misc/misc.h": {
+        "cephes.h": {
             "poch": "dd->d"
         }
     },
@@ -1312,7 +1317,7 @@
         }
     },
     "struve": {
-        "misc.h": {
+        "cephes.h": {
             "struve_h": "dd->d"
         }
     },
@@ -1382,5 +1387,10 @@
         "cephes.h": {
             "zetac": "d->d"
         }
+    },
+    "_riemann_zeta": {
+	"cephes.h": {
+	    "riemann_zeta": "d->d"
+	}
     }
 }

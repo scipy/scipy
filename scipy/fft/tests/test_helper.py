@@ -1,5 +1,5 @@
 from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
-from numpy.testing import assert_equal, assert_
+from numpy.testing import assert_equal, assert_, assert_array_equal
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
@@ -243,6 +243,13 @@ class Test_init_nd_shape_and_axes(object):
 
         assert_equal(shape_res, shape_expected)
         assert_equal(axes_res, axes_expected)
+
+    def test_shape_axes_subset(self):
+        x = np.zeros((2, 3, 4, 5))
+        shape, axes = _init_nd_shape_and_axes(x, shape=(5, 5, 5), axes=None)
+
+        assert_array_equal(shape, [5, 5, 5])
+        assert_array_equal(axes, [1, 2, 3])
 
     def test_errors(self):
         x = np.zeros(1)

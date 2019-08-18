@@ -21,7 +21,8 @@ _msgs = {2: "Integration successful.",
          -4: "Repeated error test failures (internal error).",
          -5: "Repeated convergence failures (perhaps bad Jacobian or tolerances).",
          -6: "Error weight became zero during problem.",
-         -7: "Internal workspace insufficient to finish (internal error)."
+         -7: "Internal workspace insufficient to finish (internal error).",
+         -8: "Run terminated (internal error)."
          }
 
 
