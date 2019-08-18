@@ -45,7 +45,7 @@ Before starting SciPy's docker container, you should create a copy of the
 SciPy source code on your computer. That way, you'll be able to access the
 same files both from your native operating system and within the container.
 
-*Note: here and below we will use* terminal window *as a
+*Note: below we will use* terminal window *as a
 collective term that includes the Windows Command Prompt.*
 
 #. Browse to the `SciPy repository on GitHub`_ and `create your own fork`_.
@@ -140,15 +140,24 @@ other than the SciPy root, you may want to add SciPy to the Python path::
    source ~/.bashrc
 
 Otherwise, SciPy may not be visible to Python.
+
 You can make changes to files in the ``scipy`` directory in a text editor/IDE
 in your host OS, and those changes will be reflected
 within the container. Alternatively, you can use the ``vi``
 text editor within the container to make changes. No changes made
 within the container are retained when the container is exited; only
 changes made to files/folders within mounted volumes are kept.
-
 If you would like to contribute changes to the SciPy project, please see
 :ref:`development-workflow`.
+
+Finally, although Python and pip are pre-installed on the provided
+Docker image, you are welcome to to install a different
+Python distribution and package manager, such as Anaconda. In this case, you
+can adapt the instructions from :ref:`quickstart-ubuntu`, using the
+container as you would any other Linux terminal. You've already cloned
+SciPy on your computer, and git and all required compilers are already
+installed, so you can simply skip the corresponding steps
+(:ref:`quickstart-ubuntu-build` 2-7, 9, 10, and 13).
 
 .. _NumPy: https://docs.scipy.org/doc/numpy/dev/gitwash/
 .. _here: https://docs.docker.com/get-started/
