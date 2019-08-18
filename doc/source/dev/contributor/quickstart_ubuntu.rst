@@ -2,9 +2,9 @@
 
 .. _quickstart-ubuntu:
 
-=========================================================
-Development Environment Quickstart Guide (Ubuntu/Windows)
-=========================================================
+=======================================================
+Development Environment Quickstart Guide (Ubuntu 16.04)
+=======================================================
 
 This quickstart guide will cover:
 
@@ -32,7 +32,7 @@ Building SciPy
 
 #. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the Spyder integrated development environment (IDE), the ``conda`` package manager, and tools for managing virtual environments.
 
- `In a terminal, navigate <https://help.ubuntu.com/community/UsingTheTerminal>`_ to the location in which you'd like to install Anaconda. You can download the file using the terminal command ``curl -O URL_OF_FILE``, where ``URL_OF_FILE`` is to be replaced by the URL of the Anaconda installer ``.sh`` file found at the Anaconda Distribution website. When the download is complete, enter ``chmod +x file.sh``, where ``file.sh`` is to be replaced with the full name of the downloaded file. This ensures that the file's permissions allow it to be executed. Next, enter ``./file.sh``, where ``file.sh`` is again to be replaced with the full name of the downloaded file. This starts the installation process. From there, simply follow the prompts, including the "Next Steps" at the end after the installer finishes.
+ `In a terminal, navigate <https://help.ubuntu.com/community/UsingTheTerminal>`_ to the location in which you'd like to install Anaconda. You can download the file using the terminal command ``curl -O URL_OF_FILE``, where ``URL_OF_FILE`` is to be replaced by the URL of the Anaconda installer ``.sh`` file found at the Anaconda Distribution website. Run the installer by entering ``bash file.sh``, where ``file.sh`` is again to be replaced with the full name of the downloaded file. This starts the installation process. From there, simply follow the prompts, including the "Next Steps" at the end after the installer finishes.
 
 #. `Rename the file`_ ``anaconda3/lib/libgfortran.so`` to ``anaconda3/lib/libgfortran.so_backup``, where ``anaconda3`` is to be replaced with the full path of your Anaconda installation. This file provides an incorrect Fortran shared library; renaming it forces the system to find the right one.
 
@@ -62,7 +62,7 @@ Building SciPy
 
 	If ``conda`` is not a recognized command, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
 
-#. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``/scipy`` directory, not in a directory ending ``/scipy/scipy``.
+#. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``..../scipy`` directory, not in a directory ending ``..../scipy/scipy``.
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 
