@@ -15,7 +15,9 @@ This quickstart guide will cover:
 * creating a virtual environment that adds this development version of SciPy to the Python path
 
 in Ubuntu 16.04. *Users running Windows can follow these
-instructions after setting up* `Windows Subsystem for Linux`_ *or an Amazon EC2 instance with Ubuntu 16.04 LTS.*
+instructions after setting up* `Windows Subsystem for Linux`_ *or an Amazon EC2
+instance with Ubuntu 16.04 LTS. However, the instructions for setting up a
+development environment with Docker may be more reliable.*
 
 .. note::
 
