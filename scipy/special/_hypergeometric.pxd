@@ -49,7 +49,9 @@ cdef inline double hyp1f1(double a, double b, double x) nogil:
     elif a == 1 and b == 2:
         return expm1(x) / x
     elif a <= 0 and a == floor(a):
-        return hyp1f1_negative_int_a(a, b, x)
+        # The geometric series is finite in this case, but it could
+        # still suffer from cancellation.
+        return hyp1f1_series_track_convergence(a, b, x)
 
     if b > 0 and (fabs(a) + 1) * fabs(x) < 0.9 * b:
         # For the kth term of the series we are multiplying by
@@ -67,22 +69,20 @@ cdef inline double hyp1f1(double a, double b, double x) nogil:
     return hyp1f1_wrap(a, b, x)
 
 
-cdef inline double hyp1f1_negative_int_a(double a, double b, double x) nogil:
-    # For `a` a negative integer the hypergeometric series is
-    # finite. The finite series could, however, still have a
-    # prohibitive number of terms or experience cancellation, so
-    # monitor those conditions.
+cdef inline double hyp1f1_series_track_convergence(
+    double a,
+    double b,
+    double x
+) nogil:
+    # The hypergeometric series can suffer from cancelation or take a
+    # prohibitive number of terms to converge. This function computes
+    # the series while monitoring those conditions.
     cdef int k
-    cdef double a_plus_k
     cdef double term = 1
     cdef double result = 1
     cdef double abssum = result
     for k in range(1000):
-        a_plus_k = a + k
-        if a_plus_k == 0:
-            break
-        term *= a_plus_k * x / (b + k) / (k + 1)
-
+        term *= (a + k) * x / (b + k) / (k + 1)
         abssum += fabs(term)
         result += term
         if fabs(term) <= EPS * fabs(result):
