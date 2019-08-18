@@ -752,6 +752,13 @@ add_newdoc("beta",
     scalar or ndarray
         Value of the beta function
     
+    See Also
+    --------
+    gamma : the gamma function
+    betainc :  the incomplete beta function
+    betaln : the natural logarithm of the absolute
+             value of the beta function
+    
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions,
