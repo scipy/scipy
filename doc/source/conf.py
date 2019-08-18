@@ -21,9 +21,9 @@ needs_sphinx = '1.6'
 # ua._Function should not be treated as an attribute
 from sphinx.util import inspect
 import scipy._lib.uarray as ua
-old_isattrdesc = inspect.isattributedescriptor
-inspect.isattributedescriptor = (lambda obj: old_isattrdesc(obj)
-                                 and not isinstance(obj, ua._Function))
+old_isdesc = inspect.isdescriptor
+inspect.isdescriptor = (lambda obj: old_isdesc(obj)
+                        and not isinstance(obj, ua._Function))
 
 # -----------------------------------------------------------------------------
 # General configuration
