@@ -105,7 +105,7 @@ def test_hyp0f1_gh_1609():
 # hyperu
 # ------------------------------------------------------------------------------
 
-@check_version(mpmath, '0.19')
+@check_version(mpmath, '1.1.0')
 def test_hyperu_around_0():
     dataset = []
     # DLMF 13.2.14-15 test points.
