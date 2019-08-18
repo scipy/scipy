@@ -236,8 +236,8 @@ def lobpcg(A, X,
 
     Let us now solve the eigenvalue problem for the matrix A:
 
-    >>> eigs, _ = lobpcg(A, X, Y=Y, M=M, largest=False)
-    >>> eigs
+    >>> eigenvalues, _ = lobpcg(A, X, Y=Y, M=M, largest=False)
+    >>> eigenvalues
     array([4., 5., 6.])
     
     Note that the vectors passed in Y are the eigenvectors of the 3 smallest
