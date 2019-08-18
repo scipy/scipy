@@ -5950,6 +5950,7 @@ class rdist_gen(rv_continuous):
     special cases::
 
         c = 2:  uniform
+        c = 3:  `semicircular`
         c = 4:  Epanechnikov (parabolic)
         c = 6:  quartic (biweight)
         c = 8:  triweight
@@ -5961,13 +5962,13 @@ class rdist_gen(rv_continuous):
     """
     # use relation to the beta distribution for pdf, cdf, etc
     def _pdf(self, x, c):
-        return 0.5*beta._pdf((x+1)/2, c/2, c/2)
+        return 0.5*beta._pdf((x + 1)/2, c/2, c/2)
 
     def _logpdf(self, x, c):
-        return -np.log(2) + beta._logpdf((x+1)/2, c/2, c/2)
+        return -np.log(2) + beta._logpdf((x + 1)/2, c/2, c/2)
 
     def _cdf(self, x, c):
-        return beta._cdf((x+1)/2, c/2, c/2)
+        return beta._cdf((x + 1)/2, c/2, c/2)
 
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
@@ -6222,7 +6223,13 @@ class semicircular_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`.
 
+    The distribution is a special case of `rdist` with `c = 3`.
+
     %(after_notes)s
+
+    See Also
+    --------
+    rdist
 
     References
     ----------
@@ -6235,8 +6242,14 @@ class semicircular_gen(rv_continuous):
     def _pdf(self, x):
         return 2.0/np.pi*np.sqrt(1-x*x)
 
+    def _logpdf(self, x):
+        return np.log(2/np.pi) + 0.5*np.log1p(-x*x)
+
     def _cdf(self, x):
         return 0.5+1.0/np.pi*(x*np.sqrt(1-x*x) + np.arcsin(x))
+
+    def _ppf(self, q):
+        return rdist._ppf(q, 3)
 
     def _rvs(self):
         # generate values uniformly distributed on the area under the pdf

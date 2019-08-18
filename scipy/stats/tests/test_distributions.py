@@ -2754,7 +2754,7 @@ class TestRdist(object):
         # rdist is a special case of stats.beta
         x = np.linspace(-0.99, 0.99, 10)
         c = 2.7
-        assert_almost_equal(0.5*stats.beta(c/2, c/2).pdf((x+1)/2),
+        assert_almost_equal(0.5*stats.beta(c/2, c/2).pdf((x + 1)/2),
                             stats.rdist(c).pdf(x))
 
 
