@@ -1364,7 +1364,8 @@ class LinprogCommonTests(object):
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
-        _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
+        _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10],
+                        desired_fun=92, atol=2e-6)
 
 #########################
 # Method-specific Tests #
