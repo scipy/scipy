@@ -270,6 +270,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 Maximum number of iterations to perform.
             disp : bool
                 Set to ``True`` to print convergence messages.
+            autoscale : bool
+                Set to ``True`` to automatically perform equilibration.
+                Consider this this option the numerical values of
+                constraints are separated by several orders of magnitude.
+            presolve : bool
+                Set to ``False`` to disable automatic presolve.
+            rr : bool
+                Set to ``False`` to disable automatic redundancy removal.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
@@ -398,8 +406,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     the (tightened) simple bounds to upper bound constraints, introducing
     non-negative slack variables for inequality constraints, and expressing
     unbounded variables as the difference between two non-negative variables.
+    Optionally, the problem is automatically scaled via equilibration [12]_.
     The selected algorithm solves the standard form problem, and a
-    postprocessing routine converts this to a solution to the original problem.
+    postprocessing routine converts the result to a solution to the original
+    problem.
 
     References
     ----------
@@ -433,6 +443,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Geneve, 1996.
     .. [11] Bartels, Richard H. "A stabilization of the simplex method."
             Journal in  Numerische Mathematik 16.5 (1971): 414-434.
+    .. [12] Tomlin, J. A. "On scaling linear programming problems."
+            Mathematical Programming Study 4 (1975): 146-166.
 
     Examples
     --------
