@@ -2399,24 +2399,13 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     return xa, xb, xc, fa, fb, fc, funcalls
 
 
-def _m_min(a, b):
-    """ Return min(a, b), support if a or b is None """
-    try:
-        return min(a, b)
-    except TypeError:
-        return a or b
-
-
-def _m_max(a, b):
-    """ Return max(a, b), support if a or b is None """
-    try:
-        return max(a, b)
-    except TypeError:
-        return a or b
-
-
 def _line_for_search(x0, alpha, lower_bound, upper_bound):
     """
+    Given an n-dimensional parameter vector x0 and an n-dimensional
+    direction vector alpha, and lower and upper bounds on each of
+    the n parameters, what are the bounds on a scalar l such that
+    lower_bound <= x0 + alpha * l <= upper_bound.
+
     x0 is the vector representing the current location (np.array)
     alpha is the vector representing the direction (np.array)
 
