@@ -51,7 +51,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where x is an 1-D array with shape (n,) and `args`
+        where ``x`` is an 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -90,16 +90,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``jac(x, *args) -> array_like, shape (n,)``
 
-        where x is an array with shape (n,) and `args` is a tuple with
-        the fixed parameters. Newton-CG and trust-ncg require that a callable
-        be supplied.
+        where ``x`` is an array with shape (n,) and ``args`` is a tuple with
+        the fixed parameters. Methods 'Newton-CG', 'trust-ncg', 'dogleg',
+        'trust-exact', 'trust-krylov' require that a callable be supplied.
         Alternatively, the keywords {'2-point', '3-point', 'cs'} select a
         finite difference scheme for numerical estimation of the gradient.
         Options '3-point' and 'cs' are available only to 'trust-constr'.
-        If `jac` is a Boolean and is True, `fun` is assumed to return the
+        If ``jac`` is a Boolean and is True, `fun` is assumed to return the
         gradient along with the objective function. If False, the gradient
         will be estimated using '2-point' finite difference estimation.
-    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy},  optional
+    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is
         callable, it should return the  Hessian matrix:
