@@ -766,14 +766,19 @@ add_newdoc("betainc",
     array-like
         Value of the incomplete beta function
     
+    See Also
+    --------
+    beta : beta function
+    betaincinv : inverse of the incomplete beta function
+    
     Notes
     -----
     The incomplete beta function is also sometimes defined 
-    without the terms in gamma, in which case the above
+    without the `gamma` terms, in which case the above
     definition is the so-called regularized incomplete beta 
     function. Under this definition, you can get the incomplete
     beta function by multiplying the result of the SciPy
-    function by `beta(a, b)`.
+    function by `beta`.
     
     References
     ----------
@@ -782,19 +787,28 @@ add_newdoc("betainc",
     
     Examples
     --------
+    
+    Let :math:`B(a, b)` be the `beta` function.
+    
     >>> import scipy.special as sc
     
     The coefficient in terms of `gamma` is equal to
-    `1/beta(a, b)`. Also, when :math:`x=1` the integral
-    is equal to `beta(a, b)`. Therefore, :math:`I_x(a, b) = 1`
-    whenever :math:`x = 1`.
+    :math:`1/B(a, b)`. Also, when :math:`x=1`
+    the integral is equal to :math:`B(a, b)`.
+    Therefore, :math:`I_{x=1}(a, b) = 1` for any :math:`a, b`.
     
     >>> sc.betainc(0.2, 3.5, 1.0)
     1.0
-    >>> sc.betainc(9, 0.1, 1.0)
-    1.0
-    >>> sc.betainc(0.0003, 7.4, 1.0)
-    1.0
+    
+    It satisfies 
+    :math:`I_x(a, b) = x^a F(a, 1-b, a+1, x)/ (aB(a, b))`,
+    where :math:`F` is the hypergeometric function `hyp2f1`:
+    
+    >>> a, b, x = 1.4, 3.1, 0.5
+    >>> x**a * sc.hyp2f1(a, 1 - b, a + 1, x)/(a * sc.beta(a, b))
+    0.8148904036225295
+    >>> sc.betainc(a, b, x)
+    0.8148904036225296
     
     This functions satisfies the relationship
     :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
