@@ -1090,7 +1090,8 @@ def _round_to_power_of_two(x):
     """
     Round elements of the array to the nearest power of two.
     """
-    return 2**np.round(np.log2(x))
+    return 2**np.around(np.log2(x))
+
 
 def _autoscale(A, b, c, x0):
     """
@@ -1098,50 +1099,35 @@ def _autoscale(A, b, c, x0):
     """
     m, n = A.shape
 
-#    with warnings.catch_warnings():
-#    warnings.simplefilter("ignore")
     C = 1
     R = 1
 
     if A.size > 0:
+
+        R = np.max(np.abs(A), axis=1)
         if sps.issparse(A):
-            R = np.max(np.abs(A), axis=1).toarray().flatten()
-            R[R == 0] = 1
-            R = _round_to_power_of_two(R)
-            b = b/R
-            R = sps.diags(1/R)
-            A = R*A
+            R = R.toarray().flatten()
+        R[R == 0] = 1
+        R = 1/_round_to_power_of_two(R)
+        A = sps.diags(R)*A if sps.issparse(A) else A*R.reshape(m, 1)
+        b = b*R
 
-            C = np.max(np.abs(A), axis=0).toarray().flatten()
-            C[C == 0] = 1
-            C = _round_to_power_of_two(C)
-            c = c/C
-            C = sps.diags(1/C)
-            A = A*C
+        C = np.max(np.abs(A), axis=0)
+        if sps.issparse(A):
+            C = C.toarray().flatten()
+        C[C == 0] = 1
+        C = 1/_round_to_power_of_two(C)
+        A = A*sps.diags(C) if sps.issparse(A) else A*C
+        c = c*C
 
-        else:
-            R = np.max(np.abs(A), axis=1)  # problematic with sparse arrays
-            R[R == 0] = 1  # no good when array is sparse
-            R = 1/_round_to_power_of_two(R)
-            A = A*R.reshape(m, 1)
-            b = b*R
-
-            C = np.max(np.abs(A), axis=0)
-            C[C == 0] = 1
-            C = 1/_round_to_power_of_two(C)
-            A = A*C
-            c = c*C
-
-    b_scale = 1
-    if b.size > 0:
-        b_scale = np.max(np.abs(b))
+    b_scale = np.max(np.abs(b)) if b.size > 0 else 1
     if b_scale == 0:
         b_scale = 1.
     b = b/b_scale
 
     if x0 is not None:
         x0 = x0/b_scale*(1/C)
-    return A, b, c, x0, R, C, b_scale
+    return A, b, c, x0, C, b_scale
 
 
 def _unscale(x, C, b_scale):
@@ -1252,7 +1238,7 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # we need these modified values to undo the variable substitutions
     # in retrospect, perhaps this could have been simplified if the "undo"
     # variable also contained information for undoing variable substitutions
-    c, A_ub, b_ub, A_eq, b_eq, bounds, undo, R, C, b_scale = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, undo, C, b_scale = postsolve_args
     x = _unscale(x, C, b_scale)
 
     n_x = len(c)
