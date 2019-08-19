@@ -1,7 +1,5 @@
 import scipy._lib.uarray as ua
-import scipy.fftpack as _fftpack
 from . import _pocketfft
-from . import _realtransforms
 
 
 class _ScipyBackend:
@@ -10,27 +8,15 @@ class _ScipyBackend:
     Notes
     -----
     We use the domain ``numpy.scipy`` rather than ``scipy`` because in the
-    future ``uarray`` will treat the domain as a heirarchy. This means the user
+    future ``uarray`` will treat the domain as a hierarchy. This means the user
     can install a single backend for ``numpy`` and have it implement
     ``numpy.scipy.fft`` as well.
     """
     __ua_domain__ = "numpy.scipy.fft"
 
-    realtransforms = {
-        'dct': _fftpack.dct,
-        'dst': _fftpack.dst,
-        'dctn': _fftpack.dctn,
-        'dstn': _fftpack.dstn,
-        'idct': _realtransforms._idct,
-        'idst': _realtransforms._idst,
-        'idctn': _realtransforms._idctn,
-        'idstn': _realtransforms._idstn,
-    }
-
     @staticmethod
     def __ua_function__(method, args, kwargs):
-        fn = (getattr(_pocketfft, method.__name__, None)
-              or _ScipyBackend.realtransforms.get(method.__name__, None))
+        fn = getattr(_pocketfft, method.__name__, None)
 
         if fn is None:
             return NotImplemented

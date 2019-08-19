@@ -24,7 +24,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     csgraph : array_like or sparse matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
-        If True, then compute normalized Laplacian.
+        If True, then compute symmetric normalized Laplacian.
     return_diag : bool, optional
         If True, then also return an array related to vertex degrees.
     use_out_degree : bool, optional

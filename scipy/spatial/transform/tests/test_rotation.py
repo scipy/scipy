@@ -621,6 +621,25 @@ def test_inv_single_rotation():
     assert_array_almost_equal(result2, eye3d)
 
 
+def test_magnitude():
+    r = Rotation.from_quat(np.eye(4))
+    result = r.magnitude()
+    assert_array_almost_equal(result, [np.pi, np.pi, np.pi, 0])
+
+    r = Rotation.from_quat(-np.eye(4))
+    result = r.magnitude()
+    assert_array_almost_equal(result, [np.pi, np.pi, np.pi, 0])
+
+
+def test_magnitude_single_rotation():
+    r = Rotation.from_quat(np.eye(4))
+    result1 = r[0].magnitude()
+    assert_allclose(result1, np.pi)
+
+    result2 = r[3].magnitude()
+    assert_allclose(result2, 0)
+
+
 def test_apply_single_rotation_single_point():
     dcm = np.array([
         [0, -1, 0],
@@ -789,6 +808,17 @@ def test_match_vectors_no_noise():
 
     est, cov = Rotation.match_vectors(a, b)
     assert_allclose(c.as_quat(), est.as_quat())
+
+
+def test_match_vectors_improper_rotation():
+    # Tests correct logic for issue #10444
+    x = np.array([[0.89299824, -0.44372674, 0.0752378],
+                  [0.60221789, -0.47564102, -0.6411702]])
+    y = np.array([[0.02386536, -0.82176463, 0.5693271],
+                  [-0.27654929, -0.95191427, -0.1318321]])
+
+    est, cov = Rotation.match_vectors(x, y)
+    assert_allclose(x, est.apply(y), atol=1e-6)
 
 
 def test_match_vectors_noise():

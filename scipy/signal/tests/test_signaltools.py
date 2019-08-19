@@ -67,6 +67,16 @@ class _TestConvolve(object):
         c = convolve(a, b)
         assert_equal(c, a * b)
 
+    def test_broadcastable(self):
+        a = np.arange(27).reshape(3, 3, 3)
+        b = np.arange(3)
+        for i in range(3):
+            b_shape = [1]*3
+            b_shape[i] = 3
+            x = convolve(a, b.reshape(b_shape), method='direct')
+            y = convolve(a, b.reshape(b_shape), method='fft')
+            assert_allclose(x, y)
+
     def test_single_element(self):
         a = array([4967])
         b = array([3920])
@@ -213,7 +223,7 @@ class TestConvolve(_TestConvolve):
                 kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
                 # atol is default for np.allclose
-                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
+                kwargs = {'rtol': 1e-3, 'atol': 1e-3}
             else:
                 # defaults for np.allclose (different from assert_allclose)
                 kwargs = {'rtol': 1e-5, 'atol': 1e-8}
@@ -699,9 +709,10 @@ class TestFFTConvolve(object):
                                       [-4, -1],
                                       [-1, -4]])
     def test_random_data_multidim_axes(self, axes):
+        a_shape, b_shape = (123, 22), (132, 11)
         np.random.seed(1234)
-        a = np.random.rand(123, 222) + 1j * np.random.rand(123, 222)
-        b = np.random.rand(132, 111) + 1j * np.random.rand(132, 111)
+        a = np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape)
+        b = np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape)
         expected = convolve2d(a, b, 'full')
 
         a = a[:, :, None, None, None]
@@ -718,7 +729,7 @@ class TestFFTConvolve(object):
         expected = np.tile(expected, [2, 1, 3, 4, 1])
 
         out = fftconvolve(a, b, 'full', axes=axes)
-        assert_(np.allclose(out, expected, rtol=1e-10))
+        assert_allclose(out, expected, rtol=1e-10, atol=1e-10)
 
     @pytest.mark.slow
     @pytest.mark.parametrize(
@@ -774,13 +785,12 @@ class TestFFTConvolve(object):
                            match="when provided, axes cannot be empty"):
             fftconvolve([1], [2], axes=[])
 
-        with assert_raises(ValueError,
-                           match="when given, axes values must be a scalar"
-                           " or vector"):
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
             fftconvolve([1], [2], axes=[[1, 2], [3, 4]])
 
-        with assert_raises(ValueError,
-                           match="when given, axes values must be integers"):
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
             fftconvolve([1], [2], axes=[1., 2., 3., 4.])
 
         with assert_raises(ValueError,
@@ -866,8 +876,10 @@ class TestWiener(object):
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
-class TestResample(object):
+padtype_options = ["constant", "mean", "median", "minimum", "maximum", "line"]
 
+
+class TestResample(object):
     def test_basic(self):
         # Some basic tests
 
@@ -881,40 +893,68 @@ class TestResample(object):
         # Other degenerate conditions
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, padtype='')
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1,
+                      padtype='mean', cval=10)
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
-        sig2 = np.tile(np.arange(160), (2,1))
+        sig2 = np.tile(np.arange(160), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert_(win.shape == (160,))
 
-    def test_fft(self):
-        # Test FFT-based resampling
-        self._test_data(method='fft')
+    @pytest.mark.parametrize('window', (None, 'hamming'))
+    @pytest.mark.parametrize('N', (20, 19))
+    @pytest.mark.parametrize('num', (100, 101, 10, 11))
+    def test_rfft(self, N, num, window):
+        # Make sure the speed up using rfft gives the same result as the normal
+        # way using fft
+        x = np.linspace(0, 10, N, endpoint=False)
+        y = np.cos(-x**2/6.0)
+        assert_allclose(signal.resample(y, num, window=window),
+                        signal.resample(y + 0j, num, window=window).real)
 
-    def test_polyphase(self):
-        # Test polyphase resampling
-        self._test_data(method='polyphase')
+        y = np.array([np.cos(-x**2/6.0), np.sin(-x**2/6.0)])
+        y_complex = y + 0j
+        assert_allclose(
+            signal.resample(y, num, axis=1, window=window),
+            signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
 
-    def test_polyphase_extfilter(self):
-        # Test external specification of downsampling filter
-        self._test_data(method='polyphase', ext=True)
+    @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('dtype', ('float', 'complex'))
+    def test_dc(self, nx, ny, dtype):
+        x = np.array([1] * nx, dtype)
+        y = signal.resample(x, ny)
+        assert_allclose(y, [1] * ny)
 
-    def test_mutable_window(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
-        signal.resample_poly(impulse, 5, 1, window=window)
+        signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
         assert_array_equal(window, window_orig)
 
-    def test_output_float32(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_output_float32(self, padtype):
         # Test that float32 inputs yield a float32 output
         x = np.arange(10, dtype=np.float32)
-        h = np.array([1,1,1], dtype=np.float32)
-        y = signal.resample_poly(x, 1, 2, window=h)
-        assert_(y.dtype == np.float32)
+        h = np.array([1, 1, 1], dtype=np.float32)
+        y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
+        assert(y.dtype == np.float32)
 
-    def _test_data(self, method, ext=False):
+    @pytest.mark.parametrize(
+        "method, ext, padtype",
+        [("fft", False, None)]
+        + list(
+            product(
+                ["polyphase"], [False, True], padtype_options,
+            )
+        ),
+    )
+    def test_resample_methods(self, method, ext, padtype):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -940,9 +980,9 @@ class TestResample(object):
                     half_len = 10 * max_rate
                     window = signal.firwin(2 * half_len + 1, f_c,
                                            window=('kaiser', 5.0))
-                    polyargs = {'window': window}
+                    polyargs = {'window': window, 'padtype': padtype}
                 else:
-                    polyargs = {}
+                    polyargs = {'padtype': padtype}
 
                 y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
                                                  **polyargs)
@@ -950,7 +990,10 @@ class TestResample(object):
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
-                    assert_allclose(y_resamp, y_to, atol=1e-3)
+                    if padtype in ['minimum', 'maximum']:
+                        assert_allclose(y_resamp, y_to, atol=3e-1)
+                    else:
+                        assert_allclose(y_resamp, y_to, atol=1e-3)
                 else:
                     assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
@@ -966,20 +1009,22 @@ class TestResample(object):
             if method == 'fft':
                 y_resamp = signal.resample(x, rate_to)
             else:
-                y_resamp = signal.resample_poly(x, rate_to, rate)
+                y_resamp = signal.resample_poly(x, rate_to, rate,
+                                                padtype=padtype)
             assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
         # More tests of fft method (Master 0.18.1 fails these)
         if method == 'fft':
-            x1 = np.array([1.+0.j,0.+0.j])
-            y1_test = signal.resample(x1,4)
-            y1_true = np.array([1.+0.j,0.5+0.j,0.+0.j,0.5+0.j])  # upsampling a complex array
+            x1 = np.array([1.+0.j, 0.+0.j])
+            y1_test = signal.resample(x1, 4)
+            # upsampling a complex array
+            y1_true = np.array([1.+0.j, 0.5+0.j, 0.+0.j, 0.5+0.j])
             assert_allclose(y1_test, y1_true, atol=1e-12)
-            x2 = np.array([1.,0.5,0.,0.5])
-            y2_test = signal.resample(x2,2)  # downsampling a real array
-            y2_true = np.array([1.,0.])
+            x2 = np.array([1., 0.5, 0., 0.5])
+            y2_test = signal.resample(x2, 2)  # downsampling a real array
+            y2_true = np.array([1., 0.])
             assert_allclose(y2_test, y2_true, atol=1e-12)
 
     def test_poly_vs_filtfilt(self):
@@ -1017,7 +1062,8 @@ class TestResample(object):
                     x = np.random.random((nx,))
                     weights = np.random.random((nweights,))
                     y_g = correlate1d(x, weights[::-1], mode='constant')
-                    y_s = signal.resample_poly(x, up=1, down=down, window=weights)
+                    y_s = signal.resample_poly(
+                        x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
 
 
@@ -1060,6 +1106,7 @@ class TestOrderFilt(object):
 
 
 class _TestLinearFilter(object):
+
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
         return self.convert_dtype(x)
@@ -2272,6 +2319,7 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(object):
+
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
@@ -2655,7 +2703,7 @@ class TestDeconvolve(object):
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
 
-        
+
 class TestDetrend(object):
 
     def test_basic(self):
@@ -2664,7 +2712,7 @@ class TestDetrend(object):
         assert_array_almost_equal(detrended, detrended_exact)
 
     def test_copy(self):
-        x = array([1, 1.2, 1.5, 1.6, 2.4]) 
+        x = array([1, 1.2, 1.5, 1.6, 2.4])
         copy_array = detrend(x, overwrite_data=False)
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)

@@ -209,7 +209,7 @@ class TestExpmActionInterval(object):
     
         # Test A int, B complex
         A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
-        B = 1j*np.ones(5, dtype=complex)
+        B = np.full(5, 1j, dtype=complex)
         Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
 

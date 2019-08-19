@@ -755,6 +755,10 @@ class _TestCommon(object):
         x.shape = (2, 6)
         assert_array_equal(x.A, desired)
 
+        # Reshape to bad ndim
+        assert_raises(ValueError, x.reshape, (x.size,))
+        assert_raises(ValueError, x.reshape, (1, x.size, 1))
+
     @pytest.mark.slow
     def test_setdiag_comprehensive(self):
         def dense_setdiag(a, v, k):

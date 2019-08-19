@@ -1,4 +1,3 @@
-import scipy.fftpack as _fftpack
 from ._basic import _dispatch
 from scipy._lib.uarray import Dispatchable
 import numpy as np
@@ -6,37 +5,8 @@ import numpy as np
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
-def _normalize_inverse(x, kind, type, axes):
-    """Normalizes the inverse transform inplace
-
-    Parameters
-    ----------
-    x : array_like
-        The output array of the unnormalized inverse transform, modified inplace
-    kind : {'s', 'c'}
-        Whether the trasform is discrete sine or cosine
-    type : {1, 2, 3, 4}
-        Type of DCT/DST
-    axes : int or array_like of ints or None
-        Axes along which the DCT/DST has been computed
-    """
-    if axes is None:
-        shape = np.array(x.shape)
-    else:
-        shape = np.take(x.shape, axes)
-
-    if type == 1:
-        if kind == 'c':
-            shape -= 1
-        else:
-            shape += 1
-
-    N = np.prod(2 * shape)
-    x /= N
-
-
 @_dispatch
-def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -46,18 +16,18 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are None,
+        `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
+        ``scipy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        ``s[i]``.
+        If any element of `s` is -1, the size of the corresponding dimension of
+        `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the DCT is computed.
-        The default is over all axes.
+        Axes over which the DCT is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -89,7 +59,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -99,18 +69,18 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are
+        None, `s` is ``x.shape``; if `s` is None but `axes` is
+        not None, then `s` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        ``s[i]``.
+        If any element of `s` is -1, the size of the corresponding dimension of
+        `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the IDCT is computed.
-        The default is over all axes.
+        Axes over which the IDCT is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -141,15 +111,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     return (Dispatchable(x, np.ndarray),)
 
 
-def _idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
-    y = _fftpack.idctn(x, type, shape, axes, norm, overwrite_x)
-    if norm is None:
-        _normalize_inverse(y, 'c', type, axes)
-    return y
-
-
 @_dispatch
-def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -159,18 +122,18 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are None,
+        `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
+        ``scipy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        ``s[i]``.
+        If any element of `shape` is -1, the size of the corresponding dimension
+        of `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the DCT is computed.
-        The default is over all axes.
+        Axes over which the DST is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -202,7 +165,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -212,18 +175,18 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are None,
+        `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
+        ``scipy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        ``s[i]``.
+        If any element of `s` is -1, the size of the corresponding dimension of
+        `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the IDST is computed.
-        The default is over all axes.
+        Axes over which the IDST is computed.  If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -252,13 +215,6 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
     """
     return (Dispatchable(x, np.ndarray),)
-
-
-def _idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
-    y = _fftpack.idstn(x, type, shape, axes, norm, overwrite_x)
-    if norm is None:
-        _normalize_inverse(y, 's', type, axes)
-    return y
 
 
 @_dispatch
@@ -466,13 +422,6 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     return (Dispatchable(x, np.ndarray),)
 
 
-def _idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    y = _fftpack.idct(x, type, n, axis, norm, overwrite_x)
-    if norm is None:
-        _normalize_inverse(y, 'c', type, axis)
-    return y
-
-
 @_dispatch
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     r"""
@@ -629,10 +578,3 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
     return (Dispatchable(x, np.ndarray),)
-
-
-def _idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    y = _fftpack.idst(x, type, n, axis, norm, overwrite_x)
-    if norm is None:
-        _normalize_inverse(y, 's', type, axis)
-    return y

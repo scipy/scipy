@@ -210,6 +210,7 @@ class Rotation(object):
     apply
     __mul__
     inv
+    magnitude
     __getitem__
     random
     match_vectors
@@ -706,7 +707,7 @@ class Rotation(object):
         chosen to be the basis vectors.
 
         The three rotations can either be in a global frame of reference
-        (extrinsic) or in a body centred frame of refernce (intrinsic), which
+        (extrinsic) or in a body centred frame of reference (intrinsic), which
         is attached to, and moves with, the object under rotation [1]_.
 
         Parameters
@@ -1428,6 +1429,38 @@ class Rotation(object):
             quat = quat[0]
         return self.__class__(quat, normalized=True, copy=False)
 
+    def magnitude(self):
+        """Get the magnitude(s) of the rotation(s).
+
+        Returns
+        -------
+        magnitude : ndarray or float
+            Angle(s) in radians, float if object contains a single rotation
+            and ndarray if object contains multiple rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r = R.from_quat(np.eye(4))
+        >>> r.magnitude()
+        array([3.14159265, 3.14159265, 3.14159265, 0.        ])
+
+        Magnitude of a single rotation:
+
+        >>> r[0].magnitude()
+        3.141592653589793
+        """
+
+        quat = self._quat.reshape((len(self), 4))
+        s = np.linalg.norm(quat[:, :3], axis=1)
+        c = np.abs(quat[:, 3])
+        angles = 2 * np.arctan2(s, c)
+
+        if self._single:
+            return angles[0]
+        else:
+            return angles
+
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
 
@@ -1620,6 +1653,12 @@ class Rotation(object):
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
+
+        # Correct improper rotation if necessary (as in Kabsch algorithm)
+        if np.linalg.det(u @ vh) < 0:
+            s[-1] = -s[-1]
+            u[:, -1] = -u[:, -1]
+
         C = np.dot(u, vh)
 
         zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])

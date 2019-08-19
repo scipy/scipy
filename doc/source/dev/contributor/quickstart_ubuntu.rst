@@ -57,7 +57,7 @@ Building SciPy
 
 #. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``/scipy`` directory, not in a directory ending ``/scipy/scipy``.
 
-#. Rename the file ``anaconda3/lib/libgfortran.so`` to ``anaconda3/lib/libgfortran.so_backup``. This file provides an incorrect Fortran complier; renaming it forces the system to find the Fortran compiler included with ``gcc`` instead.
+#. Rename the file ``anaconda3/lib/libgfortran.so`` to ``anaconda3/lib/libgfortran.so_backup``. This file provides an incorrect Fortran compiler; renaming it forces the system to find the Fortran compiler included with ``gcc`` instead.
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 
@@ -82,7 +82,7 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no packages installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
 
-#. Again rename the file ``anaconda3/lib/libgfortran.so`` to ``anaconda3/lib/libgfortran.so_backup``. This file provides an incorrect Fortran complier; renaming it forces the system to find the Fortran compiler included with ``gcc`` instead. *Note: this needs to be repeated whenever you create a new virtual environment in which you want to build SciPy.*
+#. Again rename the file ``anaconda3/lib/libgfortran.so`` to ``anaconda3/lib/libgfortran.so_backup``. This file provides an incorrect Fortran compiler; renaming it forces the system to find the Fortran compiler included with ``gcc`` instead. *Note: this needs to be repeated whenever you create a new virtual environment in which you want to build SciPy.*
 
 #. Enter ``conda install cython numpy matplotlib pytest spyder pybind11``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
 

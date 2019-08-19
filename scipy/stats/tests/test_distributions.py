@@ -728,6 +728,12 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
+class TestNorm(object):
+    def test_bad_keyword_arg(self):
+        x = [1, 2, 3]
+        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
+
+
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
@@ -1307,15 +1313,15 @@ class TestRvDiscrete(object):
         # tests added for gh-9565
 
         # mismatch of 2d inputs
-        xk, pk = np.arange(4).reshape((2, 2)), np.ones((2, 3)) / 6
+        xk, pk = np.arange(4).reshape((2, 2)), np.full((2, 3), 1/6)
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
         # same number of elements, but shapes not compatible
-        xk, pk = np.arange(6).reshape((3, 2)), np.ones((2, 3)) / 6
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((2, 3), 1/6)
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
         # same shapes => no error
-        xk, pk = np.arange(6).reshape((3, 2)), np.ones((3, 2)) / 6
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((3, 2), 1/6)
         assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
 
 
@@ -1518,6 +1524,17 @@ class TestBeta(object):
         assert_allclose(b.logpdf(x).sum(), -1201.699061824062)
         assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
+    def test_fit_bad_keyword_args(self):
+        x = [0.1, 0.5, 0.6]
+        assert_raises(TypeError, stats.beta.fit, x, floc=0, fscale=1,
+                      plate="shrimp")
+
+    def test_fit_duplicated_fixed_parameter(self):
+        # At most one of 'f0', 'fa' or 'fix_a' can be given to the fit method.
+        # More than one raises a ValueError.
+        x = [0.1, 0.5, 0.6]
+        assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
+
 
 class TestBetaPrime(object):
     def test_logpdf(self):
@@ -1558,6 +1575,10 @@ class TestGamma(object):
         # situation
         logpdf = stats.gamma.logpdf(0, 1)
         assert_almost_equal(logpdf, 0)
+
+    def test_fit_bad_keyword_args(self):
+        x = [0.1, 0.5, 0.6]
+        assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
 
 
 class TestChi2(object):
@@ -3261,7 +3282,8 @@ def test_ncx2_tails_pdf():
 @pytest.mark.parametrize('method, expected', [
     ('cdf', np.array([2.497951336e-09, 3.437288941e-10])),
     ('pdf', np.array([1.238579980e-07, 1.710041145e-08])),
-    ('logpdf', np.array([-15.90413011, -17.88416331]))
+    ('logpdf', np.array([-15.90413011, -17.88416331])),
+    ('ppf', np.array([4.865182052, 7.017182271]))
 ])
 def test_ncx2_zero_nc(method, expected):
     # gh-5441
@@ -3271,6 +3293,7 @@ def test_ncx2_zero_nc(method, expected):
     # > pchisq(0.1, df=10, ncp=c(0,4))
     # > dchisq(0.1, df=10, ncp=c(0,4))
     # > dchisq(0.1, df=10, ncp=c(0,4), log=TRUE)
+    # > qchisq(0.1, df=10, ncp=c(0,4))
 
     result = getattr(stats.ncx2, method)(0.1, nc=[0, 4], df=10)
     assert_allclose(result, expected, atol=1e-15)
@@ -3787,6 +3810,17 @@ def test_argus_function():
         assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
         assert_equal(stats.argus.cdf(1.0, chi=i),
                      1.0 - stats.argus.sf(1.0, chi=i))
+
+
+def test_ncf_variance():
+    # Regression test for gh-10658 (incorrect variance formula for ncf).
+    # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
+    # example, Wolfram Alpha with the expression
+    #     Variance[NoncentralFRatioDistribution[2, 6, 4]]
+    # or with the implementation of the noncentral F distribution in the C++
+    # library Boost.
+    v = stats.ncf.var(2, 6, 4)
+    assert_allclose(v, 42.75, rtol=1e-14)
 
 
 class TestHistogram(object):

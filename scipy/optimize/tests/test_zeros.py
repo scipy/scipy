@@ -661,7 +661,7 @@ def test_gh_9608_preserve_array_shape():
         )
 
     def fpp_array(x):
-        return 2*np.ones(np.shape(x), dtype=np.float32)
+        return np.full(np.shape(x), 2, dtype=np.float32)
 
     result = zeros.newton(
         f, x0_array, fprime=fp, fprime2=fpp_array, full_output=True

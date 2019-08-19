@@ -343,7 +343,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. versionadded:: 1.0.0
 
-    Method *revised simplex* uses the revised simplex method as decribed in
+    Method *revised simplex* uses the revised simplex method as described in
     [9]_, except that a factorization [11]_ of the basis matrix, rather than
     its inverse, is efficiently maintained and used to solve the linear systems
     at each iteration of the algorithm.

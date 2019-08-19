@@ -2,7 +2,13 @@
 This file is part of pocketfft.
 
 Copyright (C) 2010-2019 Max-Planck-Society
-Author: Martin Reinecke
+Copyright (C) 2019 Peter Bell
+
+For the odd-sized DCT-IV transforms:
+  Copyright (C) 2003, 2007-14 Matteo Frigo
+  Copyright (C) 2003, 2007-14 Massachusetts Institute of Technology
+
+Authors: Martin Reinecke, Peter Bell
 
 All rights reserved.
 
@@ -192,17 +198,32 @@ template<typename T> struct cmplx {
   cmplx(T r_, T i_) : r(r_), i(i_) {}
   void Set(T r_, T i_) { r=r_; i=i_; }
   void Set(T r_) { r=r_; i=T(0); }
+  void Split(T &r_, T &i_) const { r_=r; i_=i; }
+  void SplitConj(T &r_, T &i_) const { r_=r; i_=-i; }
   cmplx &operator+= (const cmplx &other)
     { r+=other.r; i+=other.i; return *this; }
   template<typename T2>cmplx &operator*= (T2 other)
     { r*=other; i*=other; return *this; }
-  cmplx operator+ (const cmplx &other) const
-    { return cmplx(r+other.r, i+other.i); }
-  cmplx operator- (const cmplx &other) const
-    { return cmplx(r-other.r, i-other.i); }
+  template<typename T2>cmplx &operator*= (const cmplx<T2> &other)
+    {
+    T tmp = r*other.r - i*other.i;
+    i = r*other.i + i*other.r;
+    r = tmp;
+    return *this;
+    }
+  template<typename T2>cmplx &operator+= (const cmplx<T2> &other)
+    { r+=other.r; i+=other.i; return *this; }
+  template<typename T2>cmplx &operator-= (const cmplx<T2> &other)
+    { r-=other.r; i-=other.i; return *this; }
   template<typename T2> auto operator* (const T2 &other) const
     -> cmplx<decltype(r*other)>
     { return {r*other, i*other}; }
+  template<typename T2> auto operator+ (const cmplx<T2> &other) const
+    -> cmplx<decltype(r+other.r)>
+    { return {r+other.r, i+other.i}; }
+  template<typename T2> auto operator- (const cmplx<T2> &other) const
+    -> cmplx<decltype(r+other.r)>
+    { return {r-other.r, i-other.i}; }
   template<typename T2> auto operator* (const cmplx<T2> &other) const
     -> cmplx<decltype(r+other.r)>
     { return {r*other.r-i*other.i, r*other.i + i*other.r}; }
@@ -214,8 +235,11 @@ template<typename T> struct cmplx {
                : Tres(r*other.r-i*other.i, r*other.i+i*other.r);
     }
 };
-template<typename T> void PMC(cmplx<T> &a, cmplx<T> &b,
-  const cmplx<T> &c, const cmplx<T> &d)
+template<typename T> inline void PMINPLACE(T &a, T &b)
+  { T t = a; a+=b; b=t-b; }
+template<typename T> inline void MPINPLACE(T &a, T &b)
+  { T t = a; a-=b; b=t+b; }
+template<typename T> void PMC(T &a, T &b, const T &c, const T &d)
   { a = c+d; b = c-d; }
 template<typename T> cmplx<T> conj(const cmplx<T> &a)
   { return {a.r, -a.i}; }
@@ -432,17 +456,58 @@ struct util // hack to avoid duplicate symbols
     }
 
   /* returns the smallest composite of 2, 3, 5, 7 and 11 which is >= n */
-  static POCKETFFT_NOINLINE size_t good_size(size_t n)
+  static POCKETFFT_NOINLINE size_t good_size_cmplx(size_t n)
     {
     if (n<=12) return n;
 
     size_t bestfac=2*n;
-    for (size_t f2=1; f2<bestfac; f2*=2)
-      for (size_t f23=f2; f23<bestfac; f23*=3)
-        for (size_t f235=f23; f235<bestfac; f235*=5)
-          for (size_t f2357=f235; f2357<bestfac; f2357*=7)
-            for (size_t f235711=f2357; f235711<bestfac; f235711*=11)
-              if (f235711>=n) bestfac=f235711;
+    for (size_t f11=1; f11<bestfac; f11*=11)
+      for (size_t f117=f11; f117<bestfac; f117*=7)
+        for (size_t f1175=f117; f1175<bestfac; f1175*=5)
+          {
+          size_t x=f1175;
+          while (x<n) x*=2;
+          for (;;)
+            {
+            if (x<n)
+              x*=3;
+            else if (x>n)
+              {
+              if (x<bestfac) bestfac=x;
+              if (x&1) break;
+              x>>=1;
+              }
+            else
+              return n;
+            }
+          }
+    return bestfac;
+    }
+
+  /* returns the smallest composite of 2, 3, 5 which is >= n */
+  static POCKETFFT_NOINLINE size_t good_size_real(size_t n)
+    {
+    if (n<=6) return n;
+
+    size_t bestfac=2*n;
+    for (size_t f5=1; f5<bestfac; f5*=5)
+      {
+      size_t x = f5;
+      while (x<n) x *= 2;
+      for (;;)
+        {
+        if (x<n)
+          x*=3;
+        else if (x>n)
+          {
+          if (x<bestfac) bestfac=x;
+          if (x&1) break;
+          x>>=1;
+          }
+        else
+          return n;
+        }
+      }
     return bestfac;
     }
 
@@ -474,8 +539,8 @@ struct util // hack to avoid duplicate symbols
     shape_t tmp(ndim,0);
     for (auto ax : axes)
       {
-      if (ax>=ndim) throw runtime_error("bad axis number");
-      if (++tmp[ax]>1) throw runtime_error("axis specified repeatedly");
+      if (ax>=ndim) throw invalid_argument("bad axis number");
+      if (++tmp[ax]>1) throw invalid_argument("axis specified repeatedly");
       }
     }
 
@@ -484,7 +549,7 @@ struct util // hack to avoid duplicate symbols
     size_t axis)
     {
     sanity_check(shape, stride_in, stride_out, inplace);
-    if (axis>=shape.size()) throw runtime_error("bad axis number");
+    if (axis>=shape.size()) throw invalid_argument("bad axis number");
     }
 
 #ifdef POCKETFFT_OPENMP
@@ -832,8 +897,6 @@ template <bool fwd, typename T> void ROTX135(T &a)
   else
     { auto tmp_=a.r; a.r=hsqt2*(-a.r-a.i); a.i=hsqt2*(tmp_-a.i); }
   }
-template<typename T> inline void PMINPLACE(T &a, T &b)
-  { T t = a; a.r+=b.r; a.i+=b.i; b.r=t.r-b.r; b.i=t.i-b.i; }
 
 template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
@@ -852,74 +915,71 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
     for (size_t k=0; k<l1; ++k)
       {
       T a0, a1, a2, a3, a4, a5, a6, a7;
-      PMC(a0,a4,CC(0,0,k),CC(0,4,k));
       PMC(a1,a5,CC(0,1,k),CC(0,5,k));
-      PMC(a2,a6,CC(0,2,k),CC(0,6,k));
       PMC(a3,a7,CC(0,3,k),CC(0,7,k));
-      ROTX90<fwd>(a6);
-      ROTX90<fwd>(a7);
-      PMINPLACE(a0,a2);
       PMINPLACE(a1,a3);
-      PMINPLACE(a4,a6);
+      ROTX90<fwd>(a3);
+
+      ROTX90<fwd>(a7);
       PMINPLACE(a5,a7);
       ROTX45<fwd>(a5);
-      ROTX90<fwd>(a3);
       ROTX135<fwd>(a7);
-      PMC(CH(0,k,0),CH(0,k,4),a0,a1);
-      PMC(CH(0,k,1),CH(0,k,5),a4,a5);
-      PMC(CH(0,k,2),CH(0,k,6),a2,a3);
-      PMC(CH(0,k,3),CH(0,k,7),a6,a7);
+
+      PMC(a0,a4,CC(0,0,k),CC(0,4,k));
+      PMC(a2,a6,CC(0,2,k),CC(0,6,k));
+      PMC(CH(0,k,0),CH(0,k,4),a0+a2,a1);
+      PMC(CH(0,k,2),CH(0,k,6),a0-a2,a3);
+      ROTX90<fwd>(a6);
+      PMC(CH(0,k,1),CH(0,k,5),a4+a6,a5);
+      PMC(CH(0,k,3),CH(0,k,7),a4-a6,a7);
       }
   else
     for (size_t k=0; k<l1; ++k)
       {
+      {
       T a0, a1, a2, a3, a4, a5, a6, a7;
-      PMC(a0,a4,CC(0,0,k),CC(0,4,k));
       PMC(a1,a5,CC(0,1,k),CC(0,5,k));
-      PMC(a2,a6,CC(0,2,k),CC(0,6,k));
       PMC(a3,a7,CC(0,3,k),CC(0,7,k));
-      ROTX90<fwd>(a6);
-      ROTX90<fwd>(a7);
-      PMINPLACE(a0,a2);
       PMINPLACE(a1,a3);
-      PMINPLACE(a4,a6);
+      ROTX90<fwd>(a3);
+
+      ROTX90<fwd>(a7);
       PMINPLACE(a5,a7);
       ROTX45<fwd>(a5);
-      ROTX90<fwd>(a3);
       ROTX135<fwd>(a7);
-      PMC(CH(0,k,0),CH(0,k,4),a0,a1);
-      PMC(CH(0,k,1),CH(0,k,5),a4,a5);
-      PMC(CH(0,k,2),CH(0,k,6),a2,a3);
-      PMC(CH(0,k,3),CH(0,k,7),a6,a7);
 
+      PMC(a0,a4,CC(0,0,k),CC(0,4,k));
+      PMC(a2,a6,CC(0,2,k),CC(0,6,k));
+      PMC(CH(0,k,0),CH(0,k,4),a0+a2,a1);
+      PMC(CH(0,k,2),CH(0,k,6),a0-a2,a3);
+      ROTX90<fwd>(a6);
+      PMC(CH(0,k,1),CH(0,k,5),a4+a6,a5);
+      PMC(CH(0,k,3),CH(0,k,7),a4-a6,a7);
+      }
       for (size_t i=1; i<ido; ++i)
         {
         T a0, a1, a2, a3, a4, a5, a6, a7;
-        PMC(a0,a4,CC(i,0,k),CC(i,4,k));
         PMC(a1,a5,CC(i,1,k),CC(i,5,k));
-        PMC(a2,a6,CC(i,2,k),CC(i,6,k));
         PMC(a3,a7,CC(i,3,k),CC(i,7,k));
-        ROTX90<fwd>(a6);
         ROTX90<fwd>(a7);
-        PMINPLACE(a0,a2);
         PMINPLACE(a1,a3);
-        PMINPLACE(a4,a6);
+        ROTX90<fwd>(a3);
         PMINPLACE(a5,a7);
         ROTX45<fwd>(a5);
-        ROTX90<fwd>(a3);
         ROTX135<fwd>(a7);
-        PMINPLACE(a0,a1);
-        PMINPLACE(a2,a3);
-        PMINPLACE(a4,a5);
-        PMINPLACE(a6,a7);
-        CH(i,k,0) = a0;
-        CH(i,k,1) = a4.template special_mul<fwd>(WA(0,i));
-        CH(i,k,2) = a2.template special_mul<fwd>(WA(1,i));
-        CH(i,k,3) = a6.template special_mul<fwd>(WA(2,i));
-        CH(i,k,4) = a1.template special_mul<fwd>(WA(3,i));
-        CH(i,k,5) = a5.template special_mul<fwd>(WA(4,i));
-        CH(i,k,6) = a3.template special_mul<fwd>(WA(5,i));
-        CH(i,k,7) = a7.template special_mul<fwd>(WA(6,i));
+        PMC(a0,a4,CC(i,0,k),CC(i,4,k));
+        PMC(a2,a6,CC(i,2,k),CC(i,6,k));
+        PMINPLACE(a0,a2);
+        CH(i,k,0) = a0+a1;
+        CH(i,k,4) = (a0-a1).template special_mul<fwd>(WA(3,i));
+        CH(i,k,2) = (a2+a3).template special_mul<fwd>(WA(1,i));
+        CH(i,k,6) = (a2-a3).template special_mul<fwd>(WA(5,i));
+        ROTX90<fwd>(a6);
+        PMINPLACE(a4,a6);
+        CH(i,k,1) = (a4+a5).template special_mul<fwd>(WA(0,i));
+        CH(i,k,5) = (a4-a5).template special_mul<fwd>(WA(4,i));
+        CH(i,k,3) = (a6+a7).template special_mul<fwd>(WA(2,i));
+        CH(i,k,7) = (a6-a7).template special_mul<fwd>(WA(6,i));
         }
       }
    }
@@ -1245,7 +1305,7 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct)
     POCKETFFT_NOINLINE cfftp(size_t length_)
       : length(length_)
       {
-      if (length==0) throw runtime_error("zero length FFT requested");
+      if (length==0) throw runtime_error("zero-length FFT requested");
       if (length==1) return;
       factorize();
       mem.resize(twsize());
@@ -2085,7 +2145,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
     POCKETFFT_NOINLINE rfftp(size_t length_)
       : length(length_)
       {
-      if (length==0) throw runtime_error("zero-sized FFT");
+      if (length==0) throw runtime_error("zero-length FFT requested");
       if (length==1) return;
       factorize();
       mem.resize(twsize());
@@ -2132,7 +2192,7 @@ template<typename T0> class fftblue
 
   public:
     POCKETFFT_NOINLINE fftblue(size_t length)
-      : n(length), n2(util::good_size(n*2-1)), plan(n2), mem(n+n2),
+      : n(length), n2(util::good_size_cmplx(n*2-1)), plan(n2), mem(n+n2),
         bk(mem.data()), bkf(mem.data()+n)
       {
       /* initialize b_k */
@@ -2213,7 +2273,7 @@ template<typename T0> class pocketfft_c
         return;
         }
       double comp1 = util::cost_guess(length);
-      double comp2 = 2*util::cost_guess(util::good_size(2*length-1));
+      double comp2 = 2*util::cost_guess(util::good_size_cmplx(2*length-1));
       comp2*=1.5; /* fudge factor that appears to give good overall performance */
       if (comp2<comp1) // use Bluestein
         blueplan=unique_ptr<fftblue<T0>>(new fftblue<T0>(length));
@@ -2221,10 +2281,10 @@ template<typename T0> class pocketfft_c
         packplan=unique_ptr<cfftp<T0>>(new cfftp<T0>(length));
       }
 
-    template<typename T> POCKETFFT_NOINLINE void backward(cmplx<T> c[], T0 fct)
+    template<typename T> POCKETFFT_NOINLINE void backward(cmplx<T> c[], T0 fct) const
       { packplan ? packplan->backward(c,fct) : blueplan->backward(c,fct); }
 
-    template<typename T> POCKETFFT_NOINLINE void forward(cmplx<T> c[], T0 fct)
+    template<typename T> POCKETFFT_NOINLINE void forward(cmplx<T> c[], T0 fct) const
       { packplan ? packplan->forward(c,fct) : blueplan->forward(c,fct); }
 
     size_t length() const { return len; }
@@ -2253,7 +2313,7 @@ template<typename T0> class pocketfft_r
         return;
         }
       double comp1 = 0.5*util::cost_guess(length);
-      double comp2 = 2*util::cost_guess(util::good_size(2*length-1));
+      double comp2 = 2*util::cost_guess(util::good_size_cmplx(2*length-1));
       comp2*=1.5; /* fudge factor that appears to give good overall performance */
       if (comp2<comp1) // use Bluestein
         blueplan=unique_ptr<fftblue<T0>>(new fftblue<T0>(length));
@@ -2261,13 +2321,13 @@ template<typename T0> class pocketfft_r
         packplan=unique_ptr<rfftp<T0>>(new rfftp<T0>(length));
       }
 
-    template<typename T> POCKETFFT_NOINLINE void backward(T c[], T0 fct)
+    template<typename T> POCKETFFT_NOINLINE void backward(T c[], T0 fct) const
       {
       packplan ? packplan->backward(c,fct)
                : blueplan->backward_r(c,fct);
       }
 
-    template<typename T> POCKETFFT_NOINLINE void forward(T c[], T0 fct)
+    template<typename T> POCKETFFT_NOINLINE void forward(T c[], T0 fct) const
       {
       packplan ? packplan->forward(c,fct)
                : blueplan->forward_r(c,fct);
@@ -2275,6 +2335,242 @@ template<typename T0> class pocketfft_r
 
     size_t length() const { return len; }
   };
+
+
+//
+// sine/cosine transforms
+//
+
+template<typename T0> class T_dct1
+  {
+  private:
+    pocketfft_r<T0> fftplan;
+
+  public:
+    POCKETFFT_NOINLINE T_dct1(size_t length)
+      : fftplan(2*(length-1)) {}
+
+    template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool ortho,
+      int /*type*/, bool /*cosine*/) const
+      {
+      constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
+      size_t N=fftplan.length(), n=N/2+1;
+      if (ortho)
+        { c[0]*=sqrt2; c[n-1]*=sqrt2; }
+      arr<T> tmp(N);
+      tmp[0] = c[0];
+      for (size_t i=1; i<n; ++i)
+        tmp[i] = tmp[N-i] = c[i];
+      fftplan.forward(tmp.data(), fct);
+      c[0] = tmp[0];
+      for (size_t i=1; i<n; ++i)
+        c[i] = tmp[2*i-1];
+      if (ortho)
+        { c[0]/=sqrt2; c[n-1]/=sqrt2; }
+      }
+
+    size_t length() const { return fftplan.length()/2+1; }
+  };
+
+template<typename T0> class T_dst1
+  {
+  private:
+    pocketfft_r<T0> fftplan;
+
+  public:
+    POCKETFFT_NOINLINE T_dst1(size_t length)
+      : fftplan(2*(length+1)) {}
+
+    template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct,
+      bool /*ortho*/, int /*type*/, bool /*cosine*/) const
+      {
+      size_t N=fftplan.length(), n=N/2-1;
+      arr<T> tmp(N);
+      tmp[0] = tmp[n+1] = c[0]*0;
+      for (size_t i=0; i<n; ++i)
+        { tmp[i+1]=c[i]; tmp[N-1-i]=-c[i]; }
+      fftplan.forward(tmp.data(), fct);
+      for (size_t i=0; i<n; ++i)
+        c[i] = -tmp[2*i+2];
+      }
+
+    size_t length() const { return fftplan.length()/2-1; }
+  };
+
+template<typename T0> class T_dcst23
+  {
+  private:
+    pocketfft_r<T0> fftplan;
+    vector<T0> twiddle;
+
+  public:
+    POCKETFFT_NOINLINE T_dcst23(size_t length)
+      : fftplan(length), twiddle(length)
+      {
+      constexpr T0 pi = T0(3.141592653589793238462643383279502884197L);
+      for (size_t i=0; i<length; ++i)
+        twiddle[i] = T0(cos(0.5*pi*T0(i+1)/T0(length)));
+      }
+
+    template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool ortho,
+      int type, bool cosine) const
+      {
+      constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
+      size_t N=length();
+      size_t NS2 = (N+1)/2;
+      if (type==2)
+        {
+        if (!cosine)
+          for (size_t k=1; k<N; k+=2)
+            c[k] = -c[k];
+        c[0] *= 2;
+        if ((N&1)==0) c[N-1]*=2;
+        for (size_t k=1; k<N-1; k+=2)
+          MPINPLACE(c[k+1], c[k]);
+        fftplan.backward(c, fct);
+        for (size_t k=1, kc=N-1; k<NS2; ++k, --kc)
+          {
+          T t1 = twiddle[k-1]*c[kc]+twiddle[kc-1]*c[k];
+          T t2 = twiddle[k-1]*c[k]-twiddle[kc-1]*c[kc];
+          c[k] = T0(0.5)*(t1+t2); c[kc]=T0(0.5)*(t1-t2);
+          }
+        if ((N&1)==0)
+          c[NS2] *= twiddle[NS2-1];
+        if (!cosine)
+          for (size_t k=0, kc=N-1; k<kc; ++k, --kc)
+            swap(c[k], c[kc]);
+        if (ortho) c[0]/=sqrt2;
+        }
+      else
+        {
+        if (ortho) c[0]*=sqrt2;
+        if (!cosine)
+          for (size_t k=0, kc=N-1; k<NS2; ++k, --kc)
+            swap(c[k], c[kc]);
+        for (size_t k=1, kc=N-1; k<NS2; ++k, --kc)
+          {
+          T t1=c[k]+c[kc], t2=c[k]-c[kc];
+          c[k] = twiddle[k-1]*t2+twiddle[kc-1]*t1;
+          c[kc]= twiddle[k-1]*t1-twiddle[kc-1]*t2;
+          }
+        if ((N&1)==0)
+          c[NS2] *= 2*twiddle[NS2-1];
+        fftplan.forward(c, fct);
+        for (size_t k=1; k<N-1; k+=2)
+          MPINPLACE(c[k], c[k+1]);
+        if (!cosine)
+          for (size_t k=1; k<N; k+=2)
+            c[k] = -c[k];
+        }
+      }
+
+    size_t length() const { return fftplan.length(); }
+  };
+
+template<typename T0> class T_dcst4
+  {
+  // even length algorithm from
+  // https://www.appletonaudio.com/blog/2013/derivation-of-fast-dct-4-algorithm-based-on-dft/
+  private:
+    size_t N;
+    unique_ptr<pocketfft_c<T0>> fft;
+    unique_ptr<pocketfft_r<T0>> rfft;
+    arr<cmplx<T0>> C2;
+
+  public:
+    POCKETFFT_NOINLINE T_dcst4(size_t length)
+      : N(length),
+        fft((N&1) ? nullptr : new pocketfft_c<T0>(N/2)),
+        rfft((N&1)? new pocketfft_r<T0>(N) : nullptr),
+        C2((N&1) ? 0 : N/2)
+      {
+      constexpr T0 pi = T0(3.141592653589793238462643383279502884197L);
+      if ((N&1)==0)
+        for (size_t i=0; i<N/2; ++i)
+          {
+          T0 ang = -pi/T0(N)*(T0(i)+T0(0.125));
+          C2[i].Set(cos(ang), sin(ang));
+          }
+      }
+
+    template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct,
+      bool /*ortho*/, int /*type*/, bool cosine) const
+      {
+      constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
+      size_t n2 = N/2;
+      if (!cosine)
+        for (size_t k=0, kc=N-1; k<n2; ++k, --kc)
+          swap(c[k], c[kc]);
+      if (N&1)
+        {
+        // The following code is derived from the FFTW3 function apply_re11()
+        // and is released under the 3-clause BSD license with friendly
+        // permission of Matteo Frigo.
+
+        auto SGN_SET = [](T x, size_t i) {return (i%2) ? -x : x;};
+        arr<T> y(N);
+        {
+        size_t i=0, m=n2;
+        for (; m<N; ++i, m+=4)
+          y[i] = c[m];
+        for (; m<2*N; ++i, m+=4)
+          y[i] = -c[2*N-m-1];
+        for (; m<3*N; ++i, m+=4)
+          y[i] = -c[m-2*N];
+        for (; m<4*N; ++i, m+=4)
+          y[i] = c[4*N-m-1];
+        m -= 4*N;
+        for (; i<N; ++i, m+=4)
+          y[i] = c[m];
+        }
+        rfft->forward(y.data(), fct);
+        {
+        size_t i=0;
+        for (; i+i+1<n2; ++i)
+          {
+          size_t k = i+i+1;
+          T c1=y[2*k-1], s1=y[2*k], c2=y[2*k+1], s2=y[2*k+2];
+          c[i] = sqrt2 * (SGN_SET(c1, (i+1)/2) + SGN_SET(s1, i/2));
+          c[N-(i+1)] = sqrt2 * (SGN_SET(c1, (N-i)/2) - SGN_SET(s1, (N-(i+1))/2));
+          c[n2-(i+1)] = sqrt2 * (SGN_SET(c2, (n2-i)/2) - SGN_SET(s2, (n2-(i+1))/2));
+          c[n2+(i+1)] = sqrt2 * (SGN_SET(c2, (n2+i+2)/2) + SGN_SET(s2, (n2+(i+1))/2));
+          }
+        if (i+i+1 == n2)
+          {
+          T cx=y[2*n2-1], sx=y[2*n2];
+          c[i] = sqrt2 * (SGN_SET(cx, (i+1)/2) + SGN_SET(sx, i/2));
+          c[N-(i+1)] = sqrt2 * (SGN_SET(cx, (i+2)/2) + SGN_SET(sx, (i+1)/2));
+          }
+        }
+        c[n2] = sqrt2 * SGN_SET(y[0], (n2+1)/2);
+
+        // FFTW-derived code ends here
+        }
+      else
+        {
+        // even length algorithm from
+        // https://www.appletonaudio.com/blog/2013/derivation-of-fast-dct-4-algorithm-based-on-dft/
+        arr<cmplx<T>> y(n2);
+        for(size_t i=0; i<n2; ++i)
+          {
+          y[i].Set(c[2*i],c[N-1-2*i]);
+          y[i] *= C2[i];
+          }
+        fft->forward(y.data(), fct);
+        for(size_t i=0, ic=n2-1; i<n2; ++i, --ic)
+          {
+          c[2*i  ] =  2*(y[i ].r*C2[i ].r-y[i ].i*C2[i ].i);
+          c[2*i+1] = -2*(y[ic].i*C2[ic].r+y[ic].r*C2[ic].i);
+          }
+        }
+      if (!cosine)
+        for (size_t k=1; k<N; k+=2)
+          c[k] = -c[k];
+      }
+
+    size_t length() const { return N; }
+  };
+
 
 //
 // multi-D infrastructure
@@ -2626,25 +2922,16 @@ template<typename T> POCKETFFT_NOINLINE void general_c(
     while (it.remaining()>0)
       {
       it.advance(1);
-      auto tdata = reinterpret_cast<cmplx<T> *>(storage.data());
-      if ((&tin[0]==&out[0]) && (it.stride_out()==sizeof(cmplx<T>))) // fully in-place
-        forward ? plan->forward (&out[it.oofs(0)], fct)
-                : plan->backward(&out[it.oofs(0)], fct);
-      else if (it.stride_out()==sizeof(cmplx<T>)) // compute FFT in output location
-        {
+      auto buf = it.stride_out() == sizeof(cmplx<T>) ?
+        &out[it.oofs(0)] : reinterpret_cast<cmplx<T> *>(storage.data());
+
+      if (buf != &tin[it.iofs(0)])
         for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = tin[it.iofs(i)];
-        forward ? plan->forward (&out[it.oofs(0)], fct)
-                : plan->backward(&out[it.oofs(0)], fct);
-        }
-      else
-        {
+          buf[i] = tin[it.iofs(i)];
+      forward ? plan->forward (buf, fct) : plan->backward(buf, fct);
+      if (buf != &out[it.oofs(0)])
         for (size_t i=0; i<len; ++i)
-          tdata[i] = tin[it.iofs(i)];
-        forward ? plan->forward (tdata, fct) : plan->backward(tdata, fct);
-        for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = tdata[i];
-        }
+          out[it.oofs(i)] = buf[i];
       }
 } // end of parallel region
     fct = T(1); // factor has been applied, use 1 for remaining axes
@@ -2713,6 +3000,61 @@ template<typename T> POCKETFFT_NOINLINE void general_hartley(
         }
       if (i<len)
         out[it.oofs(i1)] = tdata[i];
+      }
+} // end of parallel region
+    fct = T(1); // factor has been applied, use 1 for remaining axes
+    }
+  }
+
+template<typename Trafo, typename T> POCKETFFT_NOINLINE void general_dcst(
+  const cndarr<T> &in, ndarr<T> &out, const shape_t &axes,
+  T fct, bool ortho, int type, bool cosine, size_t POCKETFFT_NTHREADS)
+  {
+  shared_ptr<Trafo> plan;
+
+  for (size_t iax=0; iax<axes.size(); ++iax)
+    {
+    constexpr auto vlen = VLEN<T>::val;
+    size_t len=in.shape(axes[iax]);
+    if ((!plan) || (len!=plan->length()))
+      plan = get_plan<Trafo>(len);
+
+#ifdef POCKETFFT_OPENMP
+#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axes[iax]))
+#endif
+{
+    auto storage = alloc_tmp<T>(in.shape(), len, sizeof(T));
+    const auto &tin(iax==0 ? in : out);
+    multi_iter<vlen> it(tin, out, axes[iax]);
+#ifndef POCKETFFT_NO_VECTORS
+    if (vlen>1)
+      while (it.remaining()>=vlen)
+        {
+        using vtype = typename VTYPE<T>::type;
+        it.advance(vlen);
+        auto tdatav = reinterpret_cast<vtype *>(storage.data());
+        for (size_t i=0; i<len; ++i)
+          for (size_t j=0; j<vlen; ++j)
+            tdatav[i][j] = tin[it.iofs(j,i)];
+        plan->exec(tdatav, fct, ortho, type, cosine);
+        for (size_t i=0; i<len; ++i)
+          for (size_t j=0; j<vlen; ++j)
+            out[it.oofs(j,i)] = tdatav[i][j];
+        }
+#endif
+    while (it.remaining()>0)
+      {
+      it.advance(1);
+      auto buf = it.stride_out() == sizeof(T) ? &out[it.oofs(0)]
+        : reinterpret_cast<T *>(storage.data());
+
+      if (buf != &tin[it.iofs(0)])
+        for (size_t i=0; i<len; ++i)
+          buf[i] = tin[it.iofs(i)];
+      plan->exec(buf, fct, ortho, type, cosine);
+      if (buf != &out[it.oofs(0)])
+        for (size_t i=0; i<len; ++i)
+          out[it.oofs(i)] = buf[i];
       }
 } // end of parallel region
     fct = T(1); // factor has been applied, use 1 for remaining axes
@@ -2806,17 +3148,11 @@ template<typename T> POCKETFFT_NOINLINE void general_c2r(
       if (forward)
         for (; i<len-1; i+=2, ++ii)
           for (size_t j=0; j<vlen; ++j)
-            {
-            tdatav[i  ][j] = in[it.iofs(j,ii)].r;
-            tdatav[i+1][j] = -in[it.iofs(j,ii)].i;
-            }
+            in[it.iofs(j,ii)].SplitConj(tdatav[i][j], tdatav[i+1][j]);
       else
         for (; i<len-1; i+=2, ++ii)
           for (size_t j=0; j<vlen; ++j)
-            {
-            tdatav[i  ][j] = in[it.iofs(j,ii)].r;
-            tdatav[i+1][j] = in[it.iofs(j,ii)].i;
-            }
+            in[it.iofs(j,ii)].Split(tdatav[i][j], tdatav[i+1][j]);
       if (i<len)
         for (size_t j=0; j<vlen; ++j)
           tdatav[i][j] = in[it.iofs(j,ii)].r;
@@ -2836,16 +3172,10 @@ template<typename T> POCKETFFT_NOINLINE void general_c2r(
     size_t i=1, ii=1;
     if (forward)
       for (; i<len-1; i+=2, ++ii)
-        {
-        tdata[i  ] =  in[it.iofs(ii)].r;
-        tdata[i+1] = -in[it.iofs(ii)].i;
-        }
+        in[it.iofs(ii)].SplitConj(tdata[i], tdata[i+1]);
     else
       for (; i<len-1; i+=2, ++ii)
-        {
-        tdata[i  ] = in[it.iofs(ii)].r;
-        tdata[i+1] = in[it.iofs(ii)].i;
-        }
+        in[it.iofs(ii)].Split(tdata[i], tdata[i+1]);
     if (i<len)
       tdata[i] = in[it.iofs(ii)].r;
     }
@@ -2888,14 +3218,12 @@ template<typename T> POCKETFFT_NOINLINE void general_r(
             tdatav[i][j] = tin[it.iofs(j,i)];
         if ((!r2c) && forward)
           for (size_t i=2; i<len; i+=2)
-            for (size_t j=0; j<vlen; ++j)
-              tdatav[i][j] = -tdatav[i][j];
+            tdatav[i] = -tdatav[i];
         forward ? plan->forward (tdatav, fct)
                 : plan->backward(tdatav, fct);
         if (r2c && (!forward))
           for (size_t i=2; i<len; i+=2)
-            for (size_t j=0; j<vlen; ++j)
-              tdatav[i][j] = -tdatav[i][j];
+            tdatav[i] = -tdatav[i];
         for (size_t i=0; i<len; ++i)
           for (size_t j=0; j<vlen; ++j)
             out[it.oofs(j,i)] = tdatav[i][j];
@@ -2904,45 +3232,22 @@ template<typename T> POCKETFFT_NOINLINE void general_r(
     while (it.remaining()>0)
       {
       it.advance(1);
-      auto tdata = reinterpret_cast<T *>(storage.data());
-      if ((&tin[0]==&out[0]) && (it.stride_out()==sizeof(T))) // fully in-place
-        {
-        if ((!r2c) && forward)
-          for (size_t i=2; i<len; i+=2)
-            out[it.oofs(i)] = -out[it.oofs(i)];
-        forward ? plan->forward (&out[it.oofs(0)], fct)
-                : plan->backward(&out[it.oofs(0)], fct);
-        if (r2c && (!forward))
-          for (size_t i=2; i<len; i+=2)
-            out[it.oofs(i)] = -out[it.oofs(i)];
-        }
-      else if (it.stride_out()==sizeof(T)) // compute FFT in output location
-        {
+      auto buf = it.stride_out() == sizeof(T) ?
+        &out[it.oofs(0)] : reinterpret_cast<T *>(storage.data());
+
+      if (buf != &tin[it.iofs(0)])
         for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = tin[it.iofs(i)];
-        if ((!r2c) && forward)
-          for (size_t i=2; i<len; i+=2)
-            out[it.oofs(i)] = -out[it.oofs(i)];
-        forward ? plan->forward (&out[it.oofs(0)], fct)
-                : plan->backward(&out[it.oofs(0)], fct);
-        if (r2c && (!forward))
-          for (size_t i=2; i<len; i+=2)
-            out[it.oofs(i)] = -out[it.oofs(i)];
-        }
-      else
-        {
+          buf[i] = tin[it.iofs(i)];
+      if ((!r2c) && forward)
+        for (size_t i=2; i<len; i+=2)
+          buf[i] = -buf[i];
+      forward ? plan->forward(buf, fct) : plan->backward(buf, fct);
+      if (r2c && (!forward))
+        for (size_t i=2; i<len; i+=2)
+          buf[i] = -buf[i];
+      if (buf != &out[it.oofs(0)])
         for (size_t i=0; i<len; ++i)
-          tdata[i] = tin[it.iofs(i)];
-        if ((!r2c) && forward)
-          for (size_t i=2; i<len; i+=2)
-            tdata[i] = -tdata[i];
-        forward ? plan->forward (tdata, fct) : plan->backward(tdata, fct);
-        if (r2c && (!forward))
-          for (size_t i=2; i<len; i+=2)
-            tdata[i] = -tdata[i];
-        for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = tdata[i];
-        }
+          out[it.oofs(i)] = buf[i];
       }
 } // end of parallel region
     fct = T(1); // factor has been applied, use 1 for remaining axes
@@ -2961,6 +3266,40 @@ template<typename T> void c2c(const shape_t &shape, const stride_t &stride_in,
   cndarr<cmplx<T>> ain(data_in, shape, stride_in);
   ndarr<cmplx<T>> aout(data_out, shape, stride_out);
   general_c(ain, aout, axes, forward, fct, nthreads);
+  }
+
+template<typename T> void dct(const shape_t &shape,
+  const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
+  int type, const T *data_in, T *data_out, T fct, bool ortho, size_t nthreads=1)
+  {
+  if ((type<1) || (type>4)) throw invalid_argument("invalid DCT type");
+  if (util::prod(shape)==0) return;
+  util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
+  cndarr<T> ain(data_in, shape, stride_in);
+  ndarr<T> aout(data_out, shape, stride_out);
+  if (type==1)
+    general_dcst<T_dct1<T>>(ain, aout, axes, fct, ortho, type, true, nthreads);
+  else if (type==4)
+    general_dcst<T_dcst4<T>>(ain, aout, axes, fct, ortho, type, true, nthreads);
+  else
+    general_dcst<T_dcst23<T>>(ain, aout, axes, fct, ortho, type, true, nthreads);
+  }
+
+template<typename T> void dst(const shape_t &shape,
+  const stride_t &stride_in, const stride_t &stride_out, const shape_t &axes,
+  int type, const T *data_in, T *data_out, T fct, bool ortho, size_t nthreads=1)
+  {
+  if ((type<1) || (type>4)) throw invalid_argument("invalid DST type");
+  if (util::prod(shape)==0) return;
+  util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
+  cndarr<T> ain(data_in, shape, stride_in);
+  ndarr<T> aout(data_out, shape, stride_out);
+  if (type==1)
+    general_dcst<T_dst1<T>>(ain, aout, axes, fct, ortho, type, false, nthreads);
+  else if (type==4)
+    general_dcst<T_dcst4<T>>(ain, aout, axes, fct, ortho, type, false, nthreads);
+  else
+    general_dcst<T_dcst23<T>>(ain, aout, axes, fct, ortho, type, false, nthreads);
   }
 
 template<typename T> void r2c(const shape_t &shape_in,
@@ -3069,6 +3408,8 @@ using detail::c2r;
 using detail::r2c;
 using detail::r2r_fftpack;
 using detail::r2r_separable_hartley;
+using detail::dct;
+using detail::dst;
 
 } // namespace pocketfft
 

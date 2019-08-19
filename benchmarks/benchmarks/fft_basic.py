@@ -124,6 +124,39 @@ class RFft(Benchmark):
         self.irfft(self.y)
 
 
+class RealTransforms1D(Benchmark):
+    params = [
+        [75, 100, 135, 256, 313, 512, 675, 1024, 2025, 2048],
+        ['I', 'II', 'III', 'IV'],
+        ['scipy.fftpack', 'scipy.fft']
+    ]
+    param_names = ['size', 'type', 'module']
+
+    def setup(self, size, type, module):
+        module = get_module(module)
+        self.dct = getattr(module, 'dct')
+        self.dst = getattr(module, 'dst')
+        self.type = {'I':1, 'II':2, 'III':3, 'IV':4}[type]
+
+        # The "logical" transform size should be smooth, which for dct/dst
+        # type 1 is offset by -1/+1 respectively
+
+        if self.type == 1:
+            size += 1
+
+        self.x = random([size]).astype(double)
+
+        if self.type == 1:
+            self.x_dst = self.x[:-2].copy()
+
+    def time_dct(self, size, type, module):
+        self.dct(self.x, self.type)
+
+    def time_dst(self, size, type, module):
+        x = self.x if self.type != 1 else self.x_dst
+        self.dst(x, self.type)
+
+
 class Fftn(Benchmark):
     params = [
         ["100x100", "313x100", "1000x100", "256x256", "512x512"],
@@ -144,6 +177,38 @@ class Fftn(Benchmark):
 
     def time_fftn(self, size, cmplx, module):
         self.fftn(self.x)
+
+
+class RealTransformsND(Benchmark):
+    params = [
+        ['75x75', '100x100', '135x135', '313x363', '1000x100', '256x256'],
+        ['I', 'II', 'III', 'IV'],
+        ['scipy.fftpack', 'scipy.fft']
+    ]
+    param_names = ['size', 'type', 'module']
+
+    def setup(self, size, type, module):
+        self.dctn = getattr(get_module(module), 'dctn')
+        self.dstn = getattr(get_module(module), 'dstn')
+        self.type = {'I':1, 'II':2, 'III':3, 'IV':4}[type]
+
+        # The "logical" transform size should be smooth, which for dct/dst
+        # type 1 is offset by -1/+1 respectively
+
+        size = list(map(int, size.split('x')))
+        if self.type == 1:
+            size = (s + 1 for s in size)
+
+        self.x = random(size).astype(double)
+        if self.type == 1:
+            self.x_dst = self.x[:-2,:-2].copy()
+
+    def time_dctn(self, size, type, module):
+        self.dctn(self.x, self.type)
+
+    def time_dstn(self, size, type, module):
+        x = self.x if self.type != 1 else self.x_dst
+        self.dstn(x, self.type)
 
 
 class FftBackends(Benchmark):
