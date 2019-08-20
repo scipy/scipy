@@ -405,14 +405,14 @@ class VectorFunction(object):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = x
+                self.x = np.copy(x)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.copy(x)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False

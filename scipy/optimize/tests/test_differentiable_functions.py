@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+import pytest
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
@@ -578,6 +579,49 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
+
+    def test_x_storage_overlap(self):
+        # VectorFunction should not store references to arrays, it should
+        # store copies - this checks that updating an array in-place causes
+        # Scalar_Function.x to be updated.
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+
+        vf = VectorFunction(ex.fun, x0, '3-point', ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+
+        assert x0 is not vf.x
+        assert_equal(vf.fun(x0), ex.fun(x0))
+        assert x0 is not vf.x
+
+        x0[0] = 2.
+        assert_equal(vf.fun(x0), ex.fun(x0))
+        assert x0 is not vf.x
+
+        x0[0] = 1.
+        assert_equal(vf.fun(x0), ex.fun(x0))
+        assert x0 is not vf.x
+
+        # now test with a HessianUpdate strategy specified
+        hess = BFGS()
+        x0 = np.array([1.0, 0.0])
+        vf = VectorFunction(ex.fun, x0, '3-point', hess, None, None,
+                            (-np.inf, np.inf), None)
+
+        with pytest.warns(UserWarning):
+            # filter UserWarning because ExVectorialFunction is linear and
+            # a quasi-Newton approximation is used for the Hessian.
+            assert x0 is not vf.x
+            assert_equal(vf.fun(x0), ex.fun(x0))
+            assert x0 is not vf.x
+
+            x0[0] = 2.
+            assert_equal(vf.fun(x0), ex.fun(x0))
+            assert x0 is not vf.x
+
+            x0[0] = 1.
+            assert_equal(vf.fun(x0), ex.fun(x0))
+            assert x0 is not vf.x
 
 
 def test_LinearVectorFunction():
