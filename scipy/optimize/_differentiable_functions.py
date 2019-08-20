@@ -490,7 +490,7 @@ class LinearVectorFunction(object):
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = x
+            self.x = np.copy(x)
             self.f_updated = False
 
     def fun(self, x):
