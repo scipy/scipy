@@ -91,7 +91,13 @@ def process_pyx(fromfile, tofile, cwd):
 
     try:
         try:
-            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile], cwd=cwd)
+            if os.path.exists(os.path.join(cwd, 'six.py')):
+                r = subprocess.call(['cython'] + flags +
+                                    ["-o", os.path.join(cwd, tofile),
+                                     os.path.join(cwd, fromfile)])
+            else:
+                r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile],
+                                    cwd=cwd)
             if r != 0:
                 raise Exception('Cython failed')
         except OSError:
