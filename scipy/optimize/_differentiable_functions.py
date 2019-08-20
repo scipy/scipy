@@ -192,6 +192,13 @@ class ScalarFunction(object):
         self._update_hess()
         return self.H
 
+    def fun_and_grad(self, x):
+        if not np.array_equal(x, self.x):
+            self._update_x_impl(x)
+        self._update_fun()
+        self._update_grad()
+        return self.f, self.g
+
 
 class VectorFunction(object):
     """Vector function and its derivatives.
