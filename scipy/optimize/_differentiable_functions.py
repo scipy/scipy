@@ -146,14 +146,14 @@ class ScalarFunction(object):
                 self.x_prev = self.x
                 self.g_prev = self.g
 
-                self.x = x
+                self.x = np.copy(x)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.copy(x)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
