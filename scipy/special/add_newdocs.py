@@ -2774,7 +2774,7 @@ add_newdoc("gammainc",
 
         P(a, x) = \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
 
-    for :math:`a > 0` and :math:`x \geq 0`. See [1]_ for details.
+    for :math:`a > 0` and :math:`x \geq 0`. See [dlmf]_ for details.
 
     Parameters
     ----------
@@ -2794,7 +2794,7 @@ add_newdoc("gammainc",
     gammaincc(a, x) = 1`` where `gammaincc` is the regularized upper
     incomplete gamma function.
 
-    The implementation largely follows that of [2]_.
+    The implementation largely follows that of [boost]_.
 
     See also
     --------
@@ -2806,9 +2806,9 @@ add_newdoc("gammainc",
 
     References
     ----------
-    .. [1] NIST Digital Library of Mathematical functions
-           https://dlmf.nist.gov/8.2#E4
-    .. [2] Maddock et. al., "Incomplete Gamma Functions",
+    .. [dlmf] NIST Digital Library of Mathematical functions
+              https://dlmf.nist.gov/8.2#E4
+    .. [boost] Maddock et. al., "Incomplete Gamma Functions",
        https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
 
     Examples
@@ -2843,7 +2843,7 @@ add_newdoc("gammaincc",
 
         Q(a, x) = \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
 
-    for :math:`a > 0` and :math:`x \geq 0`. See [1]_ for details.
+    for :math:`a > 0` and :math:`x \geq 0`. See [dlmf]_ for details.
 
     Parameters
     ----------
@@ -2863,7 +2863,7 @@ add_newdoc("gammaincc",
     gammaincc(a, x) = 1`` where `gammainc` is the regularized lower
     incomplete gamma function.
 
-    The implementation largely follows that of [2]_.
+    The implementation largely follows that of [boost]_.
 
     See also
     --------
@@ -2875,9 +2875,9 @@ add_newdoc("gammaincc",
 
     References
     ----------
-    .. [1] NIST Digital Library of Mathematical functions
-           https://dlmf.nist.gov/8.2#E4
-    .. [2] Maddock et. al., "Incomplete Gamma Functions",
+    .. [dlmf] NIST Digital Library of Mathematical functions
+              https://dlmf.nist.gov/8.2#E4
+    .. [boost] Maddock et. al., "Incomplete Gamma Functions",
        https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
 
     Examples
@@ -2891,7 +2891,7 @@ add_newdoc("gammaincc",
     array([1.00000000e+00, 1.57299207e-01, 7.74421643e-06, 2.08848758e-45,
            0.00000000e+00])
 
-    It is equal to one minus the lower incomplete gamma function
+    It is equal to one minus the lower incomplete gamma function.
 
     >>> a, x = 0.5, 0.4
     >>> sc.gammaincc(a, x)
