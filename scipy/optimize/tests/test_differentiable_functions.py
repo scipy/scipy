@@ -1,13 +1,15 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_, assert_allclose)
+                           assert_array_equal, assert_, assert_allclose,
+                           assert_equal)
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       VectorFunction,
                                                       LinearVectorFunction,
                                                       IdentityVectorFunction)
+from scipy.optimize._hessian_update_strategy import BFGS
 
 
 class ExScalarFunction:
@@ -283,6 +285,48 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
+
+    def test_x_storage_overlap(self):
+        # Scalar_Function should not store references to arrays, it should
+        # store copies - this checks that updating an array in-place causes
+        # Scalar_Function.x to be updated.
+
+        def f(x):
+            return np.sum(np.asarray(x) ** 2)
+
+        x = np.array([1., 2., 3.])
+        sf = ScalarFunction(f, x, (), '3-point', lambda x: x, None, (-np.inf, np.inf))
+
+        assert x is not sf.x
+        assert_equal(sf.fun(x), 14.0)
+        assert x is not sf.x
+
+        x[0] = 0.
+        f1 = sf.fun(x)
+        assert_equal(f1, 13.0)
+
+        x[0] = 1
+        f2 = sf.fun(x)
+        assert_equal(f2, 14.0)
+        assert x is not sf.x
+
+        # now test with a HessianUpdate strategy specified
+        hess = BFGS()
+        x = np.array([1., 2., 3.])
+        sf = ScalarFunction(f, x, (), '3-point', hess, None, (-np.inf, np.inf))
+
+        assert x is not sf.x
+        assert_equal(sf.fun(x), 14.0)
+        assert x is not sf.x
+
+        x[0] = 0.
+        f1 = sf.fun(x)
+        assert_equal(f1, 13.0)
+
+        x[0] = 1
+        f2 = sf.fun(x)
+        assert_equal(f2, 14.0)
+        assert x is not sf.x
 
 
 class ExVectorialFunction:
