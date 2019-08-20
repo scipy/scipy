@@ -146,14 +146,14 @@ class ScalarFunction(object):
                 self.x_prev = self.x
                 self.g_prev = self.g
 
-                self.x = np.copy(x)
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = np.copy(x)
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -405,14 +405,14 @@ class VectorFunction(object):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = np.copy(x)
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = np.copy(x)
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -490,7 +490,7 @@ class LinearVectorFunction(object):
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = np.copy(x)
+            self.x = np.atleast_1d(x).astype(float)
             self.f_updated = False
 
     def fun(self, x):
