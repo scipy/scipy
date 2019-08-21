@@ -219,7 +219,7 @@ PyObject * set_global_backend(PyObject * /* self */, PyObject * args)
 PyObject * register_backend(PyObject * /* self */, PyObject * args)
 {
   PyObject * backend;
-  if (!PyArg_ParseTuple(args, "O", 
+  if (!PyArg_ParseTuple(args, "O",
     &backend))
     return nullptr;
 
@@ -242,7 +242,7 @@ void clear_single(const std::string& domain, bool registered, bool global)
       global_domain_map.erase(domain_globals);
       return;
     }
-  
+
   if (registered)
   {
     domain_globals->second.registered.clear();
@@ -258,7 +258,7 @@ PyObject * clear_backends(PyObject * /* self */, PyObject * args)
 {
   PyObject* domain = nullptr;
   int registered = true, global = false;
-  if (!PyArg_ParseTuple(args, "O|pp", 
+  if (!PyArg_ParseTuple(args, "O|pp",
     &domain, &registered, &global))
     return nullptr;
 
@@ -889,9 +889,11 @@ int Function::clear(Function * self)
 }
 
 
+// getset takes mutable char * in python < 3.7
+static char dict__[] = "__dict__";
 PyGetSetDef Function_getset[] =
 {
-  {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+  {dict__, PyObject_GenericGetDict, PyObject_GenericSetDict},
   {NULL} /* Sentinel */
 };
 

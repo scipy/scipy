@@ -310,7 +310,7 @@ static NPY_INLINE double zetac_smallneg(double x)
  */
 static NPY_INLINE double zeta_reflection(double x)
 {
-    double s, hx, x_shift;
+    double base, large_term, small_term, hx, x_shift;
 
     hx = x / 2;
     if (hx == floor(hx)) {
@@ -318,11 +318,28 @@ static NPY_INLINE double zeta_reflection(double x)
 	return 0;
     }
 
-    /* Group large terms together to prevent overflow */
-    s = pow((x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E), x + 0.5);
     /* Reduce the argument to sine */
     x_shift = fmod(x, 4);
-    s *= -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
-    s *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
-    return s;
+    small_term = -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
+    small_term *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
+
+    /* Group large terms together to prevent overflow */
+    base = (x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E);
+    large_term = pow(base, x + 0.5);
+    if (npy_isfinite(large_term)) {
+      return large_term * small_term;
+    }
+    /*
+     * We overflowed, but we might be able to stave off overflow by
+     * factoring in the small term earlier. To do this we compute
+     *
+     * (sqrt(large_term) * small_term) * sqrt(large_term)
+     *
+     * Since we only call this method for negative x bounded away from
+     * zero, the small term can only be as small sine on that region;
+     * i.e. about machine epsilon. This means that if the above still
+     * overflows, then there was truly no avoiding it.
+     */
+    large_term = pow(base, 0.5 * x + 0.25);
+    return (large_term * small_term) * large_term;
 }

@@ -656,9 +656,11 @@
         }
     },
     "hyp1f1": {
+	"_hypergeometric.pxd": {
+	    "hyp1f1": "ddd->d"
+	},
         "specfun_wrappers.h": {
-            "chyp1f1_wrap": "ddD->D",
-            "hyp1f1_wrap": "ddd->d"
+            "chyp1f1_wrap": "ddD->D"
         }
     },
     "hyp2f1": {

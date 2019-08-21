@@ -449,10 +449,11 @@ class LinearOperator(object):
 
     def _adjoint(self):
         """Default implementation of _adjoint; defers to rmatvec."""
-        shape = (self.shape[1], self.shape[0])
-        return _CustomLinearOperator(shape, matvec=self.rmatvec,
-                                     rmatvec=self.matvec,
-                                     dtype=self.dtype)
+        return _AdjointLinearOperator(self)
+
+    def _transpose(self):
+        """ Default implementation of _transpose; defers to rmatvec + conj"""
+        return _TransposedLinearOperator(self)
 
 
 class _CustomLinearOperator(LinearOperator):
@@ -489,6 +490,37 @@ class _CustomLinearOperator(LinearOperator):
                                      matvec=self.__rmatvec_impl,
                                      rmatvec=self.__matvec_impl,
                                      dtype=self.dtype)
+
+
+class _AdjointLinearOperator(LinearOperator):
+    """Adjoint of arbitrary Linear Operator"""
+    def __init__(self, A):
+        shape = (A.shape[1], A.shape[0])
+        super(_AdjointLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        self.A = A
+        self.args = (A,)
+
+    def _matvec(self, x):
+        return self.A._rmatvec(x)
+
+    def _rmatvec(self, x):
+        return self.A._matvec(x)
+
+
+class _TransposedLinearOperator(LinearOperator):
+    """Transposition of arbitrary Linear Operator"""
+    def __init__(self, A):
+        shape = (A.shape[1], A.shape[0])
+        super(_TransposedLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        self.A = A
+        self.args = (A,)
+
+    def _matvec(self, x):
+        # NB. np.conj works also on sparse matrices
+        return np.conj(self.A._rmatvec(np.conj(x)))
+
+    def _rmatvec(self, x):
+        return np.conj(self.A._matvec(np.conj(x)))
 
 
 def _get_dtype(operators, dtypes=None):
@@ -621,7 +653,6 @@ class MatrixLinearOperator(LinearOperator):
         if self.__adj is None:
             self.__adj = _AdjointMatrixOperator(self)
         return self.__adj
-
 
 class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint):
