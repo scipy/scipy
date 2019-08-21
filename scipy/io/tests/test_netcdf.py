@@ -421,13 +421,13 @@ def test_append_recordDimension():
             # Open the file in append mode and add data
             with netcdf_file('withRecordDimension.nc', 'a') as f:
                 f.variables['time'].data = np.append(f.variables["time"].data, i)
-                f.variables['testData'][i, :, :] = np.ones((dataSize, dataSize))*i
+                f.variables['testData'][i, :, :] = np.full((dataSize, dataSize), i)
                 f.flush()
 
             # Read the file and check that append worked
             with netcdf_file('withRecordDimension.nc') as f:
                 assert_equal(f.variables['time'][-1], i)
-                assert_equal(f.variables['testData'][-1, :, :].copy(), np.ones((dataSize, dataSize))*i)
+                assert_equal(f.variables['testData'][-1, :, :].copy(), np.full((dataSize, dataSize), i))
                 assert_equal(f.variables['time'].data.shape[0], i+1)
                 assert_equal(f.variables['testData'].data.shape[0], i+1)
 

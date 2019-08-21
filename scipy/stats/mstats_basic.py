@@ -1376,13 +1376,13 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
             if low_inclusive:
                 lowidx = int(low_limit*n)
             else:
-                lowidx = np.round(low_limit*n)
+                lowidx = int(np.round(low_limit*n))
             a[idx[:lowidx]] = masked
         if up_limit is not None:
             if up_inclusive:
                 upidx = n - int(n*up_limit)
             else:
-                upidx = n - np.round(n*up_limit)
+                upidx = n - int(np.round(n*up_limit))
             a[idx[upidx:]] = masked
         return a
 

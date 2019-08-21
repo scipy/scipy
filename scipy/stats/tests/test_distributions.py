@@ -1313,15 +1313,15 @@ class TestRvDiscrete(object):
         # tests added for gh-9565
 
         # mismatch of 2d inputs
-        xk, pk = np.arange(4).reshape((2, 2)), np.ones((2, 3)) / 6
+        xk, pk = np.arange(4).reshape((2, 2)), np.full((2, 3), 1/6)
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
         # same number of elements, but shapes not compatible
-        xk, pk = np.arange(6).reshape((3, 2)), np.ones((2, 3)) / 6
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((2, 3), 1/6)
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
         # same shapes => no error
-        xk, pk = np.arange(6).reshape((3, 2)), np.ones((3, 2)) / 6
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((3, 2), 1/6)
         assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
 
 
@@ -3810,6 +3810,17 @@ def test_argus_function():
         assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
         assert_equal(stats.argus.cdf(1.0, chi=i),
                      1.0 - stats.argus.sf(1.0, chi=i))
+
+
+def test_ncf_variance():
+    # Regression test for gh-10658 (incorrect variance formula for ncf).
+    # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
+    # example, Wolfram Alpha with the expression
+    #     Variance[NoncentralFRatioDistribution[2, 6, 4]]
+    # or with the implementation of the noncentral F distribution in the C++
+    # library Boost.
+    v = stats.ncf.var(2, 6, 4)
+    assert_allclose(v, 42.75, rtol=1e-14)
 
 
 class TestHistogram(object):

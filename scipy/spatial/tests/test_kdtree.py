@@ -334,7 +334,7 @@ class Test_random_ball_compiled_periodic(ball_consistency):
         np.random.seed(1234)
         self.data = np.random.uniform(size=(n,m))
         self.T = cKDTree(self.data,leafsize=2, boxsize=1)
-        self.x = np.ones(m) * 0.1
+        self.x = np.full(m, 0.1)
         self.p = 2.
         self.eps = 0
         self.d = 0.2
@@ -1308,8 +1308,8 @@ def test_ckdtree_duplicated_inputs():
     n = 1024
     for m in range(1, 8):
         data = np.concatenate([
-            np.ones((n // 2, m)) * 1,
-            np.ones((n // 2, m)) * 2], axis=0)
+            np.full((n // 2, m), 1),
+            np.full((n // 2, m), 2)], axis=0)
 
         # it shall not divide more than 3 nodes.
         # root left (1), and right (2)

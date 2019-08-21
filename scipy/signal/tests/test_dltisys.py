@@ -27,8 +27,8 @@ class TestDLTI(object):
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
         u = np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
-                       0.01 * np.ones((5, 1)),
-                       -0.002 * np.ones((5, 1))))
+                       np.full((5, 1), 0.01),
+                       np.full((5, 1), -0.002)))
         t_in = np.linspace(0, 2.0, num=5)
 
         # Define the known result
