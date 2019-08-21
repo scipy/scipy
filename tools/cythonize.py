@@ -93,7 +93,8 @@ def process_pyx(fromfile, tofile, cwd):
         try:
             if os.path.exists(os.path.join(cwd, 'six.py')):
                 r = subprocess.call(['cython'] + flags +
-                                    ["-o", os.path.join(cwd, tofile),
+                                    ["-o",
+                                     os.path.join(cwd, tofile),
                                      os.path.join(cwd, fromfile)])
             else:
                 r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile],
@@ -105,8 +106,9 @@ def process_pyx(fromfile, tofile, cwd):
             # executable on the path, see gh-2397.
             r = subprocess.call([sys.executable, '-c',
                                  'import sys; from Cython.Compiler.Main import '
-                                 'setuptools_main as main; sys.exit(main())'] + flags +
-                                 ["-o", tofile, fromfile],
+                                 'setuptools_main as main; sys.exit(main())']
+                                + flags +
+                                ["-o", tofile, fromfile],
                                 cwd=cwd)
             if r != 0:
                 raise Exception("Cython either isn't installed or it failed.")
