@@ -1095,7 +1095,8 @@ def _round_to_power_of_two(x):
 
 def _autoscale(A, b, c, x0):
     """
-    Scales the problem according to ___
+    Scales the problem according to equilibration from [12].
+    Also normalizes the right hand side vector by its maximum element.
     """
     m, n = A.shape
 
@@ -1132,7 +1133,7 @@ def _autoscale(A, b, c, x0):
 
 def _unscale(x, C, b_scale):
     """
-    Scales the problem according to ___
+    Converts solution to _autoscale problem -> solution to original problem.
     """
 
     try:
