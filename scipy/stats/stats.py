@@ -1196,17 +1196,17 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     >>> x = np.linspace(-5, 5, 100)
     >>> ax = plt.subplot()
-    >>> method = ['laplace', 'norm', 'uniform']
+    >>> distnames = ['laplace', 'norm', 'uniform']
 
-    >>> for i, mth in enumerate(method):
-    ...     if mth == 'uniform':
-    ...         dist = getattr(stats, mth)(loc=-2, scale=4)
+    >>> for distname in distnames:
+    ...     if distname == 'uniform':
+    ...         dist = getattr(stats, distname)(loc=-2, scale=4)
     ...     else:
-    ...         dist = getattr(stats, mth)
+    ...         dist = getattr(stats, distname)
     ...     data = dist.rvs(size=1000)
     ...     kur = kurtosis(data, fisher=True)
     ...     y = dist.pdf(x)
-    ...     ax.plot(x, y, label="{}, {}".format(mth, round(kur, 3)))
+    ...     ax.plot(x, y, label="{}, {}".format(distname, round(kur, 3)))
     ...     ax.legend()
 
     The Laplace distribution has a heavier tail than the normal distribution.
