@@ -268,16 +268,21 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             maxiter : int
                 Maximum number of iterations to perform.
+                Default: see method-specific documentation.
             disp : bool
                 Set to ``True`` to print convergence messages.
+                Default: ``False``.
             autoscale : bool
                 Set to ``True`` to automatically perform equilibration.
                 Consider this this option the numerical values of
                 constraints are separated by several orders of magnitude.
+                Default: ``False``.
             presolve : bool
                 Set to ``False`` to disable automatic presolve.
+                Default: ``True``.
             rr : bool
                 Set to ``False`` to disable automatic redundancy removal.
+                Default: ``True``.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
