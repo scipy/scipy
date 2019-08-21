@@ -75,13 +75,14 @@ instructions each time you want to start the container, as changes made to a
 container do not persist after you close it.
 
 #. In a terminal window, change the directory (using the ``cd`` command)
-   to the folder that contains the SciPy git repository.
+   to root folder of the SciPy git repository, which contains the file
+   ``setup.py``.
 
 #. Ensure that Docker Desktop (or Docker Toolbox) is running, and start up the
    SciPy Docker container by entering the following command in a terminal
    window::
 
-      docker run -it --rm -v $PWD/scipy:/home/scipy scipy/scipy-dev /bin/bash
+      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
 
    This command starts (``run``) an interactive (``-it``) Docker container
    named ``scipy-dev`` (based on Ubuntu Bionic) from the ``scipy``
@@ -106,7 +107,7 @@ container do not persist after you close it.
 #. The container has both Python 3.6 and Python 3.7 available. To start
    using/building SciPy, we need to install some dependencies::
 
-      pip3.7 install numpy cython pytest pybind11
+      pip3.7 install numpy cython pytest pybind11 matplotlib
 
    If you want to work with Python 3.6 use the ``pip3.6`` command instead.
 
@@ -131,15 +132,14 @@ container do not persist after you close it.
    suite of tests that make sure SciPy is working as it should, and ``-v``
    activates the ``–verbose`` option to show all the test output.
 
+#. (Optional) If you'll want to use SciPy from any directory other than the
+SciPy root, you should set up SciPy for development::
+
+      python3.7 setup.py develop
+
 From here, you can start a Python console (e.g. enter ``python3.7``) or
 execute Python scripts from the command line (e.g.
-``python3.7 scriptname.py``). If you want to do this from any directory
-other than the SciPy root, you may want to add SciPy to the Python path::
-
-   export PYTHONPATH="/home/scipy:$PYTHONPATH"
-   source ~/.bashrc
-
-Otherwise, SciPy may not be visible to Python.
+``python3.7 scriptname.py``).
 
 You can make changes to files in the ``scipy`` directory in a text editor/IDE
 in your host OS, and those changes will be reflected
@@ -156,8 +156,7 @@ Python distribution and package manager, such as Anaconda. In this case, you
 can adapt the instructions from :ref:`quickstart-ubuntu`, using the
 container as you would any other Linux terminal. You've already cloned
 SciPy on your computer, and git and all required compilers are already
-installed, so you can simply skip the corresponding steps
-(:ref:`quickstart-ubuntu-build` 2-7, 9, 10, and 13).
+installed, so you can simply skip the corresponding steps.
 
 .. _NumPy: https://docs.scipy.org/doc/numpy/dev/gitwash/
 .. _here: https://docs.docker.com/get-started/
