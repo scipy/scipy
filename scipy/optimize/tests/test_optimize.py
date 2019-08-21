@@ -1277,6 +1277,117 @@ class TestNewtonCg(object):
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
 
+def test_line_for_search():
+    # helper function in optimize.py, not a public function.
+    line_for_search = optimize.optimize._line_for_search
+    # args are x0, alpha, lower_bound, upper_bound
+    # returns lmin, lmax
+
+    x0 = np.array([0., 0, 0, 0])
+    lower_bound = np.array([-5.3, -1, -1.5, -3])
+    upper_bound = np.array([1.9, 1, 2.8, 3])
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -5.3, 1.9),
+        (np.array([0., 1, 0, 0]), -1, 1),
+        (np.array([0., 0, 1, 0]), -1.5, 2.8),
+        (np.array([0., 0, 0, 1]), -3, 3),
+        (np.array([1., 1, 0, 0]), -1, 1),
+        (np.array([1., 0, -1, 2]), -1.5, 1.5),
+        (np.array([2., 0, -1, 2]), -1.5, 0.95),
+    )
+
+    for alpha, lmin, lmax in all_tests:
+        mi, ma = line_for_search(x0, alpha, lower_bound, upper_bound)
+        assert_allclose(mi, lmin, atol=1e-6)
+        assert_allclose(ma, lmax, atol=1e-6)
+
+    # _line_for_search is only used in _linesearch_powell, which is also
+    # tested below. Thus there are more tests of _line_for_search in the
+    # test_linesearch_powell_bounded function.
+
+
+def test_linesearch_powell():
+    # helper function in optimize.py, not a public function.
+    linesearch_powell = optimize.optimize._linesearch_powell
+    # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
+    # returns new_fval, p+direction, direction
+    func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)
+    p0 = np.array([0., 0, 0, 0])
+    fval = func(p0)
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -1),
+        (np.array([0., 1, 0, 0]), 2),
+        (np.array([0., 0, 1, 0]), 1.5),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), 1.25),
+        (np.array([0., 0, 1, 1]), .55),
+        (np.array([2., 0, -1, 1]), -.65),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, fval, tol=1e-5)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+
+def test_linesearch_powell_bounded():
+    # helper function in optimize.py, not a public function.
+    linesearch_powell = optimize.optimize._linesearch_powell
+    # args are func, p, xi, fval, lower_bound=None, upper_bound=None, tol=1e-3
+    # returns new_fval, p+direction, direction
+    func = lambda x: np.sum((x-np.array([-1., 2., 1.5, -.4]))**2)
+    p0 = np.array([0., 0, 0, 0])
+    fval = func(p0)
+
+    # first choose bounds such that the same tests from
+    # test_linesearch_powell should pass.
+    lower_bound = np.array([-2.]*4)
+    upper_bound = np.array([2.]*4)
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -1),
+        (np.array([0., 1, 0, 0]), 2),
+        (np.array([0., 0, 1, 0]), 1.5),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), 1.25),
+        (np.array([0., 0, 1, 1]), .55),
+        (np.array([2., 0, -1, 1]), -.65),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, fval,
+                                            lower_bound, upper_bound,
+                                            tol=1e-5)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+    # now choose bounds such that unbounded vs bounded gives different results
+    lower_bound = np.array([-.3]*3 + [-1])
+    upper_bound = np.array([.45]*3 + [.9])
+
+    all_tests = (
+        (np.array([1., 0, 0, 0]), -.3),
+        (np.array([0., 1, 0, 0]), .45),
+        (np.array([0., 0, 1, 0]), .45),
+        (np.array([0., 0, 0, 1]), -.4),
+        (np.array([-1., 0, 1, 0]), .3),
+        (np.array([0., 0, 1, 1]), .45),
+        (np.array([2., 0, -1, 1]), -.15),
+    )
+
+    for xi, l in all_tests:
+        f, p, direction = linesearch_powell(func, p0, xi, fval,
+                                            lower_bound, upper_bound,
+                                            tol=1e-5)
+        assert_allclose(f, func(l * xi), atol=1e-6)
+        assert_allclose(p, l * xi, atol=1e-6)
+        assert_allclose(direction, l * xi, atol=1e-6)
+
+
 class TestRosen(object):
 
     def test_hess(self):

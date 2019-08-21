@@ -2468,7 +2468,7 @@ def _linesearch_powell(func, p, xi, fval,
             return fval, p, np.zeros(xi.shape)
 
 
-def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=None,
+def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
                 maxfun=None, full_output=0, disp=1, retall=0, callback=None,
                 direc=None):
     """
@@ -2484,9 +2484,6 @@ def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=No
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func.
-    bounds : Bounds object or sequence of tuples, optional.
-        Bounds on the parameters. Bounds will be respected
-        at every iteration.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
@@ -2596,7 +2593,7 @@ def fmin_powell(func, x0, args=(), bounds=None, xtol=1e-4, ftol=1e-4, maxiter=No
             'direc': direc,
             'return_all': retall}
 
-    res = _minimize_powell(func, x0, args, bounds, callback=callback, **opts)
+    res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
     if full_output:
         retlist = (res['x'], res['fun'], res['direc'], res['nit'],
@@ -2617,8 +2614,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
                      **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
-    modified Powell algorithm. Note that bounds will be respected at
-    every iteration.
+    modified Powell algorithm.
 
     Options
     -------
@@ -2636,6 +2632,10 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
+    bounds : sequence
+        Sequence of ``(min, max)`` pairs for each element in ``x0``. None
+        is used to specify no bound. Note that bounds will be respected at
+        every iteration.
 
     """
     _check_unknown_options(unknown_options)
@@ -2677,6 +2677,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         if len(bounds_array.shape) > 1:
             lower_bound, upper_bound = bounds_array[:, 0], bounds_array[:, 1]
         else:
+            # each parameter has the same bounds.
             lower_bound = np.array([bounds[0]] * N)
             upper_bound = np.array([bounds[1]] * N)
 
