@@ -55,6 +55,14 @@ matrix:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
         - NUMPYSPEC="numpy==1.15.4"
+    - python: 3.7
+      dist: xenial # travis-ci/travis-ci/issues/9815
+      sudo: true
+      env:
+        - TESTMODE=fast
+        - NUMPYSPEC="numpy"
+      install:
+        - python setup.py install
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
     # so we must install python3.5-dbg using apt.
