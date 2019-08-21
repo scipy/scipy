@@ -540,7 +540,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     if not complete:
         A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
                                    b_eq, bounds, x0, undo)
-        if solver_options.pop('autoscale', True):
+        if solver_options.pop('autoscale', False):
             A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
             postsolve_args = postsolve_args[:-2] + (C, b_scale)
 
