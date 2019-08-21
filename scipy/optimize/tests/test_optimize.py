@@ -240,8 +240,10 @@ class CheckOptimizeParameterized(CheckOptimize):
                     res['x'], res['fun'], res['direc'], res['nit'],
                     res['nfev'], res['status'])
         else:
+            # since fmin_powell is legacy, we do not add the bounds option
+            # thus the bounds option is only accesible through the wrapper.
             retval = optimize.fmin_powell(self.func, self.startparams,
-                                          args=(), bounds=bounds,
+                                          args=(),
                                           maxiter=self.maxiter,
                                           full_output=True, disp=self.disp,
                                           retall=False)
