@@ -1331,6 +1331,42 @@ class LinprogCommonTests(object):
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
 
+    def test_bug_10466(self):
+        """
+        Test that autoscale fixes poorly-scaled problem
+        """
+        c = [-8., -0., -8., -0., -8., -0., -0., -0., -0., -0., -0., -0., -0.]
+        A_eq = [[1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., -1., 0., 0., 0., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0.],
+                [1., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                [1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0.],
+                [0., 0., 1., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0.],
+                [0., 0., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 1.]]
+
+        b_eq = [3.14572800e+08, 4.19430400e+08, 5.24288000e+08,
+                1.00663296e+09, 1.07374182e+09, 1.07374182e+09,
+                1.07374182e+09, 1.07374182e+09, 1.07374182e+09,
+                1.07374182e+09]
+        o = {"autoscale": True}
+        o.update(self.options)
+
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "Solving system with option...")
+            if has_umfpack:
+                sup.filter(UmfpackWarning)
+            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
+            sup.filter(RuntimeWarning, "divide by zero encountered...")
+            sup.filter(RuntimeWarning, "overflow encountered...")
+            sup.filter(RuntimeWarning, "invalid value encountered...")
+            sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=o)
+        assert_allclose(res.fun, -8589934560)
+
 #########################
 # Method-specific Tests #
 #########################
