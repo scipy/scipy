@@ -120,10 +120,9 @@ class IndexMixin(object):
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
             x, _ = _broadcast_arrays(x, i)
-            if x.shape != i.shape:
-                raise ValueError("shape mismatch in assignment")
             if x.size == 0:
                 return
+            x = x.reshape(i.shape)
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
