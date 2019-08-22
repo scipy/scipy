@@ -1738,6 +1738,10 @@ class AutoscaleTests(object):
 class TestAutoscaleIP(AutoscaleTests):
     method = "interior-point"
 
+    def test_bug_6139(self):
+        self.options['tol'] = 1e-10
+        return AutoscaleTests.test_bug_6139(self)
+
 
 class TestAutoscaleSimplex(AutoscaleTests):
     method = "simplex"
