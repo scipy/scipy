@@ -2777,7 +2777,10 @@ class _TestFancyIndexing(object):
     def test_fancy_indexing_2d_assign(self):
         # regression test for gh-10695
         mat = self.spmatrix(array([[1, 0], [2, 3]]))
-        mat[[0, 1], [1, 1]] = mat[[1, 0], [0, 0]]
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning,
+                       "Changing the sparsity structure")
+            mat[[0, 1], [1, 1]] = mat[[1, 0], [0, 0]]
         assert_equal(todense(mat), array([[1, 2], [2, 1]]))
 
     def test_fancy_indexing_empty(self):
