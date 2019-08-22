@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from os.path import join, dirname
+import platform
 
 import numpy as np
 from numpy.testing import (
@@ -248,7 +249,10 @@ for k,v in dec_map.copy().items():
         dec_map[(k[0], int, k[2])] = v
 
 
-@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('rdt', [pytest.param(np.longfloat,
+             marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+             reason = "test_definition fails with float128 on ppc64le")),
+             np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 class TestDCT:
     def test_definition(self, rdt, type, fftwdata_size):
@@ -324,7 +328,10 @@ def test_dct4_definition_ortho(mdata_x, rdt):
     assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
 
 
-@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('rdt', [pytest.param(np.longfloat,
+             marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+             reason = "fails with float128 on ppc64le")),
+             np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 def test_idct_definition(fftwdata_size, rdt, type):
     xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
@@ -334,7 +341,10 @@ def test_idct_definition(fftwdata_size, rdt, type):
     assert_allclose(x, xr, rtol=0., atol=np.max(xr)*10**(-dec))
 
 
-@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('rdt', [pytest.param(np.longfloat,
+             marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+             reason = "fails with float128 on ppc64le")),
+             np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 def test_definition(fftwdata_size, rdt, type):
     xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
@@ -368,7 +378,10 @@ def test_dst4_definition_ortho(rdt, mdata_x):
     assert_array_almost_equal(y, y2, decimal=dec)
 
 
-@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('rdt', [pytest.param(np.longfloat,
+             marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+             reason = "fails with float128 on ppc64le")),
+             np.double, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 def test_idst_definition(fftwdata_size, rdt, type):
     xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)

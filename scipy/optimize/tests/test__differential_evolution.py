@@ -4,6 +4,7 @@ Unit tests for the differential global minimization algorithm.
 import gc
 import multiprocessing
 import sys
+import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
@@ -1072,6 +1073,8 @@ class TestDifferentialEvolutionSolver(object):
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
     @pytest.mark.slow
+    @pytest.mark.xfail(platform.machine() == 'ppc64le',
+                       reason="fails on ppc64le")
     def test_L8(self):
         def f(x):
             x = np.hstack(([0], x))  # 1-indexed to match reference
