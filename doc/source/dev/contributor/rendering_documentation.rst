@@ -57,8 +57,7 @@ on the cloud.
 #. Log in to `GitHub`_.
 #. Log in `CircleCI`_ using your GitHub account.
 #. Back in GitHub, at the bottom of the PR, select “Show all Checks”.
-#. Next to “ci/circleci: build_docs”, select “Details”.
-#. Select the “Artifacts” tab and find ``index.html``.
+#. Next to “ci/circleci: build_docs artifact”, select “Details”.
 
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/

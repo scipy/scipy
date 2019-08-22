@@ -107,7 +107,7 @@ container do not persist after you close it.
 #. The container has both Python 3.6 and Python 3.7 available. To start
    using/building SciPy, we need to install some dependencies::
 
-      pip3.7 install numpy cython pytest pybind11 matplotlib
+      pip3.7 install numpy cython pytest pybind11
 
    If you want to work with Python 3.6 use the ``pip3.6`` command instead.
 
