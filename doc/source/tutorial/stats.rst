@@ -1142,7 +1142,7 @@ The simulation relationship can be plotted below:
    :include-source: 0
 
 Now, we can see the test statistic, p-value, and MGC map visualized below. The
-optimal scale is shown on the map as a red "x"::
+optimal scale is shown on the map as a red "x":
 
     >>> stat, pvalue, mgc_dict = multiscale_graphcorr(x, y)
     >>> print("MGC test statistic: ", round(stat, 1))

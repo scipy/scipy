@@ -5144,9 +5144,9 @@ class TestMGCErrorWarnings(object):
 
 
 class TestMGCStat(object):
-    @dec.slow
+    """ Test validity of MGC test statistic
+    """
     def test_mgc_oned_linear(self):
-        # mgcpy.benchmarks.simulations - linear_sim(50, 1, noise=0.5)
         reps = 1000
         x = np.array([0.09762701, 0.43037873, 0.20552675, 0.08976637,
                       -0.1526904, 0.29178823, -0.12482558, 0.783546,
@@ -5185,9 +5185,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, 0.498, significant=2)
         assert_approx_equal(pvalue, 1/reps, significant=2)
 
-    @dec.slow
     def test_mgc_oned_nonlinear(self):
-        # mgcpy.benchmarks.simulations - spiral_sim(50, 1, noise=0.5)
         reps = 1000
         x = np.array([-0.915363905, 2.134736725, 1.591825890, -0.947720469,
                       -0.629203447, 0.157367412, -3.009624669, 0.342083914,

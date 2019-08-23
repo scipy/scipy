@@ -179,7 +179,7 @@ from scipy._lib.six import callable, string_types
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
 from scipy._lib._version import NumpyVersion
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, MapWrapper
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -4234,7 +4234,26 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
-def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
+class _ParallelP(object):
+    """
+    Helper function to calculate parallel p-value.
+    """
+    def __init__(self, x, y, compute_distance):
+        self.x = x
+        self.y = y
+        self.compute_distance = compute_distance
+
+    def __call__(self, index):
+        permx = np.random.permutation(self.x)
+        permy = np.random.permutation(self.y)
+
+        # calculate permuted stats, store in null distribution
+        null_dist, mgc_dict = _mgc_stat(permx, permy, self.compute_distance)
+
+        return null_dist, mgc_dict["stat_mgc_map"]
+
+
+def _perm_test(x, y, stat, mgc_map, compute_distance, reps=1000):
     r"""
     Helper function that calculates the p-value. See below for uses.
 
@@ -4244,8 +4263,8 @@ def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
         `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
-    ind_test : callable
-        The independence test statistic calculation function used.
+    mgc_map : ndarray
+        The sample MGC-map.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
@@ -4256,29 +4275,32 @@ def _perm_test(x, y, stat, ind_test, compute_distance, reps=1000):
 
     Returns
     -------
-    stat : float
+    pvalue : float
         The sample test p-value.
+    null_dist : list
+        The approximated null distribution.
+    sig_mgc_map : list
+        MGC-map where `(k, l)` correspond to significance value.
     """
     # generate null distribution and p-value
     pvalue = 0
     null_dist = np.zeros(reps)
-    for i in range(reps):
-        # randomly permute one of the data matrices
-        permy = np.random.permutation(y)
 
-        # calculate permuted stats and MGC map
-        perm_stat, _ = ind_test(x, permy, compute_distance)
-        null_dist[i] = perm_stat
+    # use all cores to create function that parallelizes over number of reps
+    mapwrapper = MapWrapper(pool=-1)
+    parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance)
+    null_dist, perm_mgc_map = list(mapwrapper(parallelp, range(reps)))
 
-        # calculate p-value
-        pvalue += ((perm_stat >= stat) * (1/reps))
+    # calculate p-value and significant permutation map through list
+    pvalue = (null_dist >= stat).sum() / reps
+    sig_mgc_map = np.where(perm_mgc_map >= mgc_map)[0] / reps
 
     # correct for a p_value of 0. This is because, with bootstrapping
     # permutations, a value of 0 is incorrect
     if pvalue == 0:
         pvalue = 1 / reps
 
-    return pvalue, null_dist
+    return pvalue, null_dist, sig_mgc_map
 
 
 def _euclidean_dist(x):
@@ -4320,7 +4342,11 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
-        distance matrices. The default uses the euclidean norm metric.
+        distance matrices. The default uses the euclidean norm metric. If you
+        are calling a custom function, either create the distance matrix
+        before-hand or create a function of the form `compute_distance(x)`
+        where `x` is the data matrix for which pairwise distances are
+        calculated.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 replications.
@@ -4337,6 +4363,9 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
 
             - mgc_map : ndarray
                 A 2D representation of the latent geometry of the relationship.
+            - sig_mgc_map : ndarray
+                A 2D representation of the latent geometry of the significance
+                of the relationship.
             - opt_scale : (int, int)
                 The estimated optimal scale as a `(x, y)` pair.
             - null_dist : list
@@ -4478,11 +4507,11 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, _mgc_stat, compute_distance,
-                                   reps=reps)
+    pvalue, null_dist, sig_mgc_map = _perm_test(x, y, stat, compute_distance, reps=reps)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,
+                "sig_mgc_map": sig_mgc_map,
                 "opt_scale": opt_scale,
                 "null_dist": null_dist}
 
