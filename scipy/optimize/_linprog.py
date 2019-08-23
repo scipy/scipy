@@ -274,7 +274,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 Default: ``False``.
             autoscale : bool
                 Set to ``True`` to automatically perform equilibration.
-                Consider this this option the numerical values of
+                Consider using this option if the numerical values in the
                 constraints are separated by several orders of magnitude.
                 Default: ``False``.
             presolve : bool

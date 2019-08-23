@@ -5,7 +5,6 @@ Method agnostic utility functions for linear progamming
 import numpy as np
 import scipy.sparse as sps
 from warnings import warn
-import warnings
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
