@@ -33,24 +33,6 @@ from .test_continuous_basic import distcont
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
-# Generate test cases to test cdf and distribution consistency.
-# Note that this list does not include all distributions.
-dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
-         'powerlaw', 'bradford', 'burr', 'fisk', 'cauchy', 'halfcauchy',
-         'foldcauchy', 'gamma', 'gengamma', 'loggamma',
-         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma', 'moyal',
-         'exponnorm', 'exponweib', 'exponpow', 'frechet_l', 'frechet_r',
-         'gilbrat', 'f', 'ncf', 'chi2', 'chi', 'nakagami', 'genpareto',
-         'genextreme', 'genhalflogistic', 'pareto', 'lomax', 'halfnorm',
-         'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
-         'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
-         'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang',
-         'tukeylambda', 'vonmises', 'vonmises_line', 'pearson3', 'gennorm',
-         'halfgennorm', 'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus',
-         'crystalball']
-
-
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
         msg = '%s does not have attribute %s' % (a, b)
@@ -60,53 +42,6 @@ def _assert_hasattr(a, b, msg=None):
 def test_api_regression():
     # https://github.com/scipy/scipy/issues/3802
     _assert_hasattr(scipy.stats.distributions, 'f_gen')
-
-
-# check function for test generator
-def check_distribution(dist, args, alpha):
-    with suppress_warnings() as sup:
-        # frechet_l and frechet_r are deprecated, so all their
-        # methods generate DeprecationWarnings.
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        D, pval = stats.kstest(dist, '', args=args, N=1000)
-        if (pval < alpha):
-            D, pval = stats.kstest(dist, '', args=args, N=1000)
-            assert_(pval > alpha,
-                    msg="D = {}; pval = {}; alpha = {}; args = {}".format(
-                        D, pval, alpha, args))
-
-
-def cases_test_all_distributions():
-    np.random.seed(1234)
-
-    for dist in dists:
-        distfunc = getattr(stats, dist)
-        nargs = distfunc.numargs
-        alpha = 0.01
-        if dist == 'fatiguelife':
-            alpha = 0.001
-
-        if dist == 'trapz':
-            args = tuple(np.sort(np.random.random(nargs)))
-        elif dist == 'triang':
-            args = tuple(np.random.random(nargs))
-        elif dist == 'reciprocal' or dist == 'truncnorm':
-            vals = np.random.random(nargs)
-            vals[1] = vals[0] + 1.0
-            args = tuple(vals)
-        elif dist == 'vonmises':
-            yield dist, (10,), alpha
-            yield dist, (101,), alpha
-            args = tuple(1.0 + np.random.random(nargs))
-        else:
-            args = tuple(1.0 + np.random.random(nargs))
-
-        yield dist, args, alpha
-
-
-@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-def test_all_distributions(dist, args, alpha):
-    check_distribution(dist, args, alpha)
 
 
 def check_vonmises_pdf_periodic(k, l, s, x):
@@ -157,17 +92,6 @@ def test_support(dist):
     assert_equal(dist.logpdf(dist.a, *args), -np.inf)
     assert_almost_equal(dist.pdf(dist.b, *args), 0)
     assert_equal(dist.logpdf(dist.b, *args), -np.inf)
-
-
-@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-def test_retrieving_support(dist, args, alpha):
-    """"""
-    dist = getattr(stats, dist)
-
-    loc, scale = 1, 2
-    supp = dist.support(*args)
-    supp_loc_scale = dist.support(*args, loc=loc, scale=scale)
-    assert_almost_equal(np.array(supp)*scale + loc, np.array(supp_loc_scale))
 
 
 class TestRandInt(object):
@@ -1879,53 +1803,6 @@ class TestFitMethod(object):
 
     def setup_method(self):
         np.random.seed(1234)
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-    def test_fit(self, dist, args, alpha):
-        if dist in self.skip:
-            pytest.skip("%s fit known to fail" % dist)
-        distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
-            res = distfunc.rvs(*args, **{'size': 200})
-            vals = distfunc.fit(res)
-            vals2 = distfunc.fit(res, optimizer='powell')
-        # Only check the length of the return
-        # FIXME: should check the actual results to see if we are 'close'
-        #   to what was created --- but what is 'close' enough
-        assert_(len(vals) == 2+len(args))
-        assert_(len(vals2) == 2+len(args))
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-    def test_fix_fit(self, dist, args, alpha):
-        # Not sure why 'ncf', and 'beta' are failing
-        # frechet has different len(args) than distfunc.numargs
-        if dist in self.skip + ['frechet']:
-            pytest.skip("%s fit known to fail" % dist)
-        distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
-            res = distfunc.rvs(*args, **{'size': 200})
-            vals = distfunc.fit(res, floc=0)
-            vals2 = distfunc.fit(res, fscale=1)
-            assert_(len(vals) == 2+len(args))
-            assert_(vals[-2] == 0)
-            assert_(vals2[-1] == 1)
-            assert_(len(vals2) == 2+len(args))
-            if len(args) > 0:
-                vals3 = distfunc.fit(res, f0=args[0])
-                assert_(len(vals3) == 2+len(args))
-                assert_(vals3[0] == args[0])
-            if len(args) > 1:
-                vals4 = distfunc.fit(res, f1=args[1])
-                assert_(len(vals4) == 2+len(args))
-                assert_(vals4[1] == args[1])
-            if len(args) > 2:
-                vals5 = distfunc.fit(res, f2=args[2])
-                assert_(len(vals5) == 2+len(args))
-                assert_(vals5[2] == args[2])
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.

@@ -52,6 +52,21 @@ distslow = ['kappa4', 'rdist', 'gausshyper', 'recipinvgauss', 'genexpon',
             'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
+# skip check_fit_args (test is slow)
+skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                 'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
+                 'kappa4', 'ksone', 'kstwobign', 'mielke', 'ncf', 'nct',
+                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
+                 'vonmises', 'vonmises_line',
+                 'levy_stable', 'rv_histogram_instance']
+
+# skip check_fit_args_fix (test is slow)
+skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
+                     'gausshyper', 'genexpon', 'halfgennorm',
+                     'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
+                     'ksone', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
+                     'ncx2', 'powerlognorm', 'powernorm', 'rdist',
+                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -152,6 +167,7 @@ def test_cont_basic(distname, arg):
             sup.filter(RuntimeWarning, "invalid value")
             check_entropy_vect_scale(distfn, arg)
 
+        check_retrieving_support(distfn, arg)
         check_edge_support(distfn, arg)
 
         check_meth_dtype(distfn, arg, meths)
@@ -162,6 +178,12 @@ def test_cont_basic(distname, arg):
 
         if distname != 'truncnorm':
             check_ppf_private(distfn, arg, distname)
+
+        if distname not in skip_fit_test:
+            check_fit_args(distfn, arg, rvs[0:200])
+
+        if distname not in skip_fit_fix_test:
+            check_fit_args_fix(distfn, arg, rvs[0:200])
 
 
 def test_levy_stable_random_state_property():
@@ -539,3 +561,52 @@ def check_ppf_private(distfn, arg, msg):
     ppfs = distfn._ppf(np.array([0.1, 0.5, 0.9]), *arg)
     npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
 
+
+def check_retrieving_support(distfn, args):
+    loc, scale = 1, 2
+    supp = distfn.support(*args)
+    supp_loc_scale = distfn.support(*args, loc=loc, scale=scale)
+    npt.assert_almost_equal(np.array(supp)*scale + loc,
+                            np.array(supp_loc_scale))
+
+
+def check_fit_args(distfn, arg, rvs):
+    with np.errstate(all='ignore'), suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        sup.filter(category=RuntimeWarning,
+                   message="The shape parameter of the erlang")
+        sup.filter(category=RuntimeWarning,
+                   message="floating point number truncated")
+        vals = distfn.fit(rvs)
+        vals2 = distfn.fit(rvs, optimizer='powell')
+    # Only check the length of the return
+    # FIXME: should check the actual results to see if we are 'close'
+    #   to what was created --- but what is 'close' enough
+    npt.assert_(len(vals) == 2+len(arg))
+    npt.assert_(len(vals2) == 2+len(arg))
+
+
+def check_fit_args_fix(distfn, arg, rvs):
+    with np.errstate(all='ignore'), suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        sup.filter(category=RuntimeWarning,
+                   message="The shape parameter of the erlang")
+
+        vals = distfn.fit(rvs, floc=0)
+        vals2 = distfn.fit(rvs, fscale=1)
+        npt.assert_(len(vals) == 2+len(arg))
+        npt.assert_(vals[-2] == 0)
+        npt.assert_(vals2[-1] == 1)
+        npt.assert_(len(vals2) == 2+len(arg))
+        if len(arg) > 0:
+            vals3 = distfn.fit(rvs, f0=arg[0])
+            npt.assert_(len(vals3) == 2+len(arg))
+            npt.assert_(vals3[0] == arg[0])
+        if len(arg) > 1:
+            vals4 = distfn.fit(rvs, f1=arg[1])
+            npt.assert_(len(vals4) == 2+len(arg))
+            npt.assert_(vals4[1] == arg[1])
+        if len(arg) > 2:
+            vals5 = distfn.fit(rvs, f2=arg[2])
+            npt.assert_(len(vals5) == 2+len(arg))
+            npt.assert_(vals5[2] == arg[2])
