@@ -1621,6 +1621,51 @@ class TestCircFuncs(object):
         assert_(np.isnan(stats.circstd([])))
         assert_(np.isnan(stats.circvar([])))
 
+    def test_nan_propagate(self):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_(np.isnan(stats.circmean(x, high=360)))
+        assert_(np.isnan(stats.circstd(x, high=360)))
+        assert_(np.isnan(stats.circvar(x, high=360)))
+
+    def test_nan_omit(self):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_allclose(stats.circmean(x, high=360, nan_policy='omit'),
+                        0.167690146, rtol=1e-7)
+        assert_allclose(stats.circvar(x, high=360, nan_policy='omit'),
+                        42.51955609, rtol=1e-7)
+        assert_allclose(stats.circstd(x, high=360, nan_policy='omit'),
+                        6.520702116, rtol=1e-7)
+
+    def test_nan_omit_all(self):
+        x = [np.nan, np.nan, np.nan, np.nan, np.nan]
+        assert_(np.isnan(stats.circmean(x, nan_policy='omit')))
+        assert_(np.isnan(stats.circvar(x, nan_policy='omit')))
+        assert_(np.isnan(stats.circstd(x, nan_policy='omit')))
+
+    def test_nan_raise(self):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_raises(ValueError, stats.circmean, x, high=360,
+                      nan_policy='raise')
+        assert_raises(ValueError, stats.circvar, x, high=360,
+                      nan_policy='raise')
+        assert_raises(ValueError, stats.circstd, x, high=360,
+                      nan_policy='raise')
+
+    def test_bad_nan_policy(self):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_raises(ValueError, stats.circmean, x, high=360,
+                      nan_policy='foobar')
+        assert_raises(ValueError, stats.circvar, x, high=360,
+                      nan_policy='foobar')
+        assert_raises(ValueError, stats.circstd, x, high=360,
+                      nan_policy='foobar')
+
+    def test_bad_keyword(self):
+        x = [355, 5, 2, 359, 10, 350, np.nan]
+        assert_raises(TypeError, stats.circmean, x, high=360, foo="foo")
+        assert_raises(TypeError, stats.circvar, x, high=360, foo="foo")
+        assert_raises(TypeError, stats.circstd, x, high=360, foo="foo")
+    
     def test_circmean_scalar(self):
         x = 1.
         M1 = x
