@@ -2490,6 +2490,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
+        
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
