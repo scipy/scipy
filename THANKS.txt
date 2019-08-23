@@ -217,6 +217,7 @@ Christian Brueffer for improvements to code readability/style and documentation.
 Timothy C. Willard for contributions to x-value requirements in scipy.interpolate.
 Andrew Knyazev, the original author of LOBPCG, for advice on and maintenance of
    sparse.linalg.lobpcg
+Angeline G. Burrell for implementing nan_policy in the circular statistics
 
 
 Institutions
