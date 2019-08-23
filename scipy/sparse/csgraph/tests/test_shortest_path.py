@@ -29,6 +29,28 @@ directed_SP = [[0, 3, 3, 5, 7],
                [1, 4, 4, 0, 8],
                [2, 5, 5, 2, 0]]
 
+directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1], 
+                                            ([0, 1, 2, 3, 4], 
+                                             [1, 2, 0, 4, 3])), 
+                                            shape = (5, 5))
+
+directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
+                      [3, 0, 1, np.inf, np.inf],
+                      [2, 2, 0, np.inf, np.inf],
+                      [np.inf, np.inf, np.inf, 0, 3],
+                      [np.inf, np.inf, np.inf, 1, 0]]
+
+undirected_sparse_zero_G = scipy.sparse.csr_matrix(([0, 0, 1, 1, 2, 2, 3, 3], 
+                                              ([0, 1, 1, 2, 2, 0, 3, 4], 
+                                               [1, 0, 2, 1, 0, 2, 4, 3])), 
+                                              shape = (5, 5))
+
+undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
+                        [0, 0, 1, np.inf, np.inf],
+                        [1, 1, 0, np.inf, np.inf],
+                        [np.inf, np.inf, np.inf, 0, 3],
+                        [np.inf, np.inf, np.inf, 3, 0]]
+
 directed_pred = np.array([[-9999, 0, 0, 1, 1],
                           [3, -9999, 0, 1, 1],
                           [-9999, -9999, -9999, -9999, -9999],
@@ -97,6 +119,26 @@ def test_undirected():
     for method in methods:
         for directed_in in (True, False):
             check(method, directed_in)
+
+def test_directed_sparse_zero():
+    # test directed sparse graph with zero-weight edge and two connected components
+    def check(method):
+        SP = shortest_path(directed_sparse_zero_G, method=method, directed=True,
+                           overwrite=False)
+        assert_array_almost_equal(SP, directed_sparse_zero_SP)
+
+    for method in methods:
+        check(method)
+
+def test_undirected_sparse_zero():
+    # test undirected sparse graph with zero-weight edge and two connected components
+    def check(method):
+        SP = shortest_path(undirected_sparse_zero_G, method=method, directed=True,
+                           overwrite=False)
+        assert_array_almost_equal(SP, undirected_sparse_zero_SP)
+
+    for method in methods:
+        check(method)
 
 
 @pytest.mark.parametrize('directed, SP_ans',
