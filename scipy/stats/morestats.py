@@ -3147,16 +3147,32 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _circfuncs_common(samples, high, low):
+def _circfuncs_common(samples, high, low, **kwds):
+    # Ensure samples are array-like
     samples = np.asarray(samples)
+
+    # Read and apply the NaN policy, defaulting to propagate (previous behavior)
+    nan_policy = kwds.pop('nan_policy', 'propagate')
+    if len(kwds) > 0:
+        raise TypeError("unexpected keyword argument %r" % kwds.keys()[0])
+
+    contains_nan, nan_policy = _contains_nan(samples, nan_policy)
+    if contains_nan:
+        if nan_policy == 'propagate':
+            return np.nan, np.nan
+        else:
+            samples = samples[~np.isnan(samples)]
+
+    # Test the sample size
     if samples.size == 0:
         return np.nan, np.nan
 
+    # Recast samples as radians that range between 0 and 2 pi
     ang = (samples - low)*2.*pi / (high - low)
     return samples, ang
 
 
-def circmean(samples, high=2*pi, low=0, axis=None):
+def circmean(samples, high=2*pi, low=0, axis=None, **kwds):
     """
     Compute the circular mean for samples in a range.
 
@@ -3171,6 +3187,10 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which means are computed.  The default is to compute
         the mean of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3188,7 +3208,7 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     0.4
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
+    samples, ang = _circfuncs_common(samples, high, low, **kwds)
     S = sin(ang).sum(axis=axis)
     C = cos(ang).sum(axis=axis)
     res = arctan2(S, C)
@@ -3200,7 +3220,7 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     return res*(high - low)/2.0/pi + low
 
 
-def circvar(samples, high=2*pi, low=0, axis=None):
+def circvar(samples, high=2*pi, low=0, axis=None, **kwds):
     """
     Compute the circular variance for samples assumed to be in a range
 
@@ -3215,6 +3235,10 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which variances are computed.  The default is to compute
         the variance of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3233,14 +3257,14 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     2.19722457734
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
+    samples, ang = _circfuncs_common(samples, high, low, **kwds)
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
 
-def circstd(samples, high=2*pi, low=0, axis=None):
+def circstd(samples, high=2*pi, low=0, axis=None, **kwds):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3257,6 +3281,10 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which standard deviations are computed.  The default is
         to compute the standard deviation of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3275,7 +3303,7 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     0.063564063306
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
+    samples, ang = _circfuncs_common(samples, high, low, **kwds)
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
