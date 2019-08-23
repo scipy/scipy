@@ -132,8 +132,9 @@ container do not persist after you close it.
    suite of tests that make sure SciPy is working as it should, and ``-v``
    activates the ``–verbose`` option to show all the test output.
 
-#. (Optional) If you'll want to use SciPy from any directory other than the
-SciPy root, you should set up SciPy for development::
+#. If you'll want to :ref:`build the documentation <rendering-documentation>`
+   or import SciPy from any directory other than the SciPy root, you should
+   set up SciPy for development::
 
       python3.7 setup.py develop
 
@@ -158,7 +159,6 @@ container as you would any other Linux terminal. You've already cloned
 SciPy on your computer, and git and all required compilers are already
 installed, so you can simply skip the corresponding steps.
 
-.. _NumPy: https://docs.scipy.org/doc/numpy/dev/gitwash/
 .. _here: https://docs.docker.com/get-started/
 .. _Docker Hub repository: https://cloud.docker.com/repository/docker/scipy/scipy-dev
 .. _Scipy repository on GitHub: https://github.com/scipy/scipy

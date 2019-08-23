@@ -18,9 +18,12 @@ with Sphinx`_ \ *.*
 Rendering Documentation Locally
 -------------------------------
 
-To render the documentation on your own machine (macOS or Linux):
+To render the documentation on your own machine:
 
 0. Ensure that you have a working SciPy :ref:`dev-env` active.
+   You need to be able to ``import scipy`` regardless of Python's working
+   directory; the ``python setup.py develop`` and ``conda develop`` commands
+   from the :ref:`quickstart <dev-env>` guides make this possible.
 #. Install `Sphinx`_ and `matplotlib`_. For
    example, if you're using the Anaconda distribution of Python, enter in a
    terminal window ``conda install sphinx matplotlib``.
@@ -34,8 +37,7 @@ To render the documentation on your own machine (macOS or Linux):
 #. Enter ``make html-scipyorg``. This uses the `Make build automation tool`_
    to execute the documentation build instructions from the ``Makefile``.
    This can take a while the first time, but subsequent documentation builds
-   are typically much faster. *Note: If you use a virtual environment for
-   development, activate it first.*
+   are typically much faster.
 #. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start
    with ``index.html`` and browse, or you can jump straight to the file you’re
    interested in.
