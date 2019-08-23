@@ -693,7 +693,15 @@ def _approx_fprime_helper(xk, f, epsilon, args=(), f0=None):
     for k in range(len(xk)):
         ei[k] = 1.0
         d = epsilon * ei
-        grad[k] = (f(*((xk + d,) + args)) - f0) / d[k]
+        df = (f(*((xk + d,) + args)) - f0) / d[k]
+        if not np.isscalar(df):
+            try:
+                df = df.item()
+            except (ValueError, AttributeError):
+                raise ValueError("The user-provided "
+                                 "objective function must "
+                                 "return a scalar value.")
+        grad[k] = df
         ei[k] = 0.0
     return grad
 
@@ -989,6 +997,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if maxiter is None:
         maxiter = len(x0) * 200
     func_calls, f = wrap_function(f, args)
+
+    old_fval = f(x0)
+
     if fprime is None:
         grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
     else:
@@ -1000,7 +1011,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     Hk = I
 
     # Sets the initial step guess to dx ~ 1
-    old_fval = f(x0)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
 
     xk = x0

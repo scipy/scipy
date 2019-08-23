@@ -1,7 +1,7 @@
 .. _governance:
 
 ========================
-SciPy project governance
+SciPy Project Governance
 ========================
 
 The purpose of this document is to formalize the governance process

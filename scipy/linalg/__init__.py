@@ -131,7 +131,7 @@ Matrix Equation Solvers
    solve_sylvester - Solve the Sylvester matrix equation
    solve_continuous_are - Solve the continuous-time algebraic Riccati equation
    solve_discrete_are - Solve the discrete-time algebraic Riccati equation
-   solve_continuous_lyapunov - Solve the continous-time Lyapunov equation
+   solve_continuous_lyapunov - Solve the continuous-time Lyapunov equation
    solve_discrete_lyapunov - Solve the discrete-time Lyapunov equation
 
 

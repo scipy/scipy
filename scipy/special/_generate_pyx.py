@@ -595,7 +595,7 @@ class Ufunc(Func):
     """
     def __init__(self, name, signatures):
         super(Ufunc, self).__init__(name, signatures)
-        self.doc = add_newdocs.get("scipy.special." + name)
+        self.doc = add_newdocs.get(name)
         if self.doc is None:
             raise ValueError("No docstring for ufunc %r" % name)
         self.doc = textwrap.dedent(self.doc).strip()
@@ -1208,10 +1208,20 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
 
     # Produce output
     toplevel = "\n".join(sorted(all_loops.values()) + defs + [toplevel])
+    # Generate an `__all__` for the module
+    all_ufuncs = (
+        [
+            "'{}'".format(ufunc.name)
+            for ufunc in ufuncs if not ufunc.name.startswith('_')
+        ]
+        + ["'geterr'", "'seterr'", "'errstate'", "'jn'"]
+    )
+    module_all = '__all__ = [{}]'.format(', '.join(all_ufuncs))
 
     with open(filename, 'w') as f:
         f.write(UFUNCS_EXTRA_CODE_COMMON)
         f.write(UFUNCS_EXTRA_CODE)
+        f.write(module_all)
         f.write("\n")
         f.write(toplevel)
         f.write(UFUNCS_EXTRA_CODE_BOTTOM)

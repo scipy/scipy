@@ -4,6 +4,7 @@ Written by John Travers <jtravs@gmail.com>, February 2007
 Based closely on Matlab code by Alex Chirokov
 Additional, large, improvements by Robert Hetland
 Some additional alterations by Travis Oliphant
+Interpolation with multi-dimensional target domain by Josua Sassen
 
 Permission to use, modify, and distribute this software is given under the
 terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
@@ -59,8 +60,8 @@ class Rbf(object):
     """
     Rbf(*args)
 
-    A class for radial basis function approximation/interpolation of
-    n-dimensional scattered data.
+    A class for radial basis function interpolation of functions from
+    n-dimensional scattered data to an m-dimensional domain.
 
     Parameters
     ----------
@@ -98,6 +99,12 @@ class Rbf(object):
         is a matrix of the distances from each point in ``x1`` to each point in
         ``x2``. For more options, see documentation of
         `scipy.spatial.distances.cdist`.
+    mode : str, optional
+        Mode of the interpolation, can be '1-D' (default) or 'N-D'. When it is
+        '1-D' the data `d` will be considered as one-dimensional and flattened
+        internally. When it is 'N-D' the data `d` is assumed to be an array of
+        shape (n_samples, m), where m is the dimension of the target domain.
+
 
     Attributes
     ----------
@@ -115,6 +122,8 @@ class Rbf(object):
         Smoothing parameter.  See description under Parameters.
     norm : str or callable
         The distance function.  See description under Parameters.
+    mode : str
+        Mode of the interpolation.  See description under Parameters.
     nodes : ndarray
         A 1-D array of node values for the interpolation.
     A : internal property, do not use
@@ -214,9 +223,19 @@ class Rbf(object):
         self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
                               for a in args[:-1]])
         self.N = self.xi.shape[-1]
-        self.di = np.asarray(args[-1]).flatten()
 
-        if not all([x.size == self.di.size for x in self.xi]):
+        self.mode = kwargs.pop('mode', '1-D')
+
+        if self.mode == '1-D':
+            self.di = np.asarray(args[-1]).flatten()
+            self._target_dim = 1
+        elif self.mode == 'N-D':
+            self.di = np.asarray(args[-1])
+            self._target_dim = self.di.shape[-1]
+        else:
+            raise ValueError("Mode has to be 1-D or N-D.")
+
+        if not all([x.size == self.di.shape[0] for x in self.xi]):
             raise ValueError("All arrays must be equal length.")
 
         self.norm = kwargs.pop('norm', 'euclidean')
@@ -238,7 +257,15 @@ class Rbf(object):
         for item, value in kwargs.items():
             setattr(self, item, value)
 
-        self.nodes = linalg.solve(self.A, self.di)
+        # Compute weights
+        if self._target_dim > 1:  # If we have more than one target dimension,
+            # we first factorize the matrix
+            self.nodes = np.zeros((self.N, self._target_dim), dtype=self.di.dtype)
+            lu, piv = linalg.lu_factor(self.A)
+            for i in range(self._target_dim):
+                self.nodes[:, i] = linalg.lu_solve((lu, piv), self.di[:, i])
+        else:
+            self.nodes = linalg.solve(self.A, self.di)
 
     @property
     def A(self):
@@ -254,8 +281,10 @@ class Rbf(object):
         args = [np.asarray(x) for x in args]
         if not all([x.shape == y.shape for x in args for y in args]):
             raise ValueError("Array lengths must be equal")
-
-        shp = args[0].shape
+        if self._target_dim > 1:
+            shp = args[0].shape + (self._target_dim,)
+        else:
+            shp = args[0].shape
         xa = np.asarray([a.flatten() for a in args], dtype=np.float_)
         r = self._call_norm(xa, self.xi)
         return np.dot(self._function(r), self.nodes).reshape(shp)

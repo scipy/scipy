@@ -5,6 +5,7 @@
 #define bdtrc cephes_bdtrc
 #define bdtr cephes_bdtr
 #define bdtri cephes_bdtri
+#define besselpoly cephes_besselpoly
 #define beta cephes_beta
 #define lbeta cephes_lbeta
 #define btdtr cephes_btdtr
@@ -30,14 +31,12 @@
 #define Gamma cephes_Gamma
 #define lgam cephes_lgam
 #define lgam_sgn cephes_lgam_sgn
+#define gammasgn cephes_gammasgn
 #define gdtr cephes_gdtr
 #define gdtrc cephes_gdtrc
 #define gdtri cephes_gdtri
 #define hyp2f1 cephes_hyp2f1
 #define hyperg cephes_hyperg
-#define hyp2f0 cephes_hyp2f0
-#define onef2 cephes_onef2
-#define threef0 cephes_threef0
 #define i0 cephes_i0
 #define i0e cephes_i0e
 #define i1 cephes_i1
@@ -69,8 +68,10 @@
 #define pdtrc cephes_pdtrc
 #define pdtr cephes_pdtr
 #define pdtri cephes_pdtri
+#define poch cephes_poch
 #define psi cephes_psi
 #define rgamma cephes_rgamma
+#define riemann_zeta cephes_riemann_zeta
 #define round cephes_round
 #define shichi cephes_shichi
 #define sici cephes_sici
@@ -81,6 +82,11 @@
 #define spence cephes_spence
 #define stdtr cephes_stdtr
 #define stdtri cephes_stdtri
+#define struve_h cephes_struve_h
+#define struve_l cephes_struve_l
+#define struve_power_series cephes_struve_power_series
+#define struve_asymp_large_z cephes_struve_asymp_large_z
+#define struve_bessel_series cephes_struve_bessel_series
 #define yv cephes_yv
 #define tandg cephes_tandg
 #define cotdg cephes_cotdg

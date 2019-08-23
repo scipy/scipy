@@ -2,8 +2,6 @@
 SciPy 1.3.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.3.0 is not released yet!
-
 .. contents::
 
 SciPy 1.3.0 is the culmination of 5 months of hard work. It contains
@@ -22,7 +20,7 @@ This release requires Python 3.5+ and NumPy 1.13.3 or greater.
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
---------------------------
+==========================
 
 - Three new ``stats`` functions, a rewrite of ``pearsonr``, and an exact
   computation of the Kolmogorov-Smirnov two-sample test
@@ -203,6 +201,15 @@ can be used to track the new import locations for the relocated functions.
 
 For ``pinv``, ``pinv2``, and ``pinvh``, the default cutoff values are changed 
 for consistency (see the docs for the actual values).
+
+`scipy.optimize` changes
+---------------------------
+
+The default method for ``linprog`` is now ``'interior-point'``. The method's
+robustness and speed come at a cost: solutions may not be accurate to
+machine precision or correspond with a vertex of the polytope defined
+by the constraints. To revert to the original simplex method,
+include the argument ``method='simplex'``.
 
 `scipy.stats` changes
 ---------------------
@@ -600,3 +607,5 @@ Pull requests for 1.3.0
 * `#10090 <https://github.com/scipy/scipy/pull/10090>`__: MAINT: Fix CubicSplinerInterpolator for pandas
 * `#10091 <https://github.com/scipy/scipy/pull/10091>`__: MAINT: improve logcdf and logsf of hypergeometric distribution
 * `#10095 <https://github.com/scipy/scipy/pull/10095>`__: MAINT: Clean \`\`_clean_inputs\`\` in linprog
+* `#10116 <https://github.com/scipy/scipy/pull/10116>`__: MAINT: update scipy-sphinx-theme
+* `#10135 <https://github.com/scipy/scipy/pull/10135>`__: BUG: fix linprog revised simplex docstring problem failure

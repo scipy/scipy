@@ -70,24 +70,24 @@ Other
 
 Regarding Cython code:
 
-  - It's not clear how much functionality can be Cythonized without making the
-    .so files too large.  This needs measuring.
-  - Cython's old syntax for using NumPy arrays should be removed and replaced
-    with Cython memoryviews.
+- It's not clear how much functionality can be Cythonized without making the
+  .so files too large.  This needs measuring.
+- Cython's old syntax for using NumPy arrays should be removed and replaced
+  with Cython memoryviews.
 
 Regarding build environments:
 
-  - SciPy builds from source on Windows now with a MSVC + MinGW-w64 gfortran
-    toolchain, which we're using for official releases.
-    MSVC + Intel Fortran + MKL works as well, and is easier for users (as long
-    as they have access to ifort and MKL of course).  This mainly needs better
-    documentation at the moment.
-  - We're aiming to gradually increase the minimum version of LAPACK that is
-    required, so we can use newer features.  Support for Accelerate on macOS
-    has been dropped.  We do rely quite heavily on OpenBLAS, and its stability
-    is a worry (often only one of the recent releases works without test
-    failures) - improvements in testing and build documentation at least are
-    needed.
+- SciPy builds from source on Windows now with a MSVC + MinGW-w64 gfortran
+  toolchain, which we're using for official releases.
+  MSVC + Intel Fortran + MKL works as well, and is easier for users (as long
+  as they have access to ifort and MKL of course).  This mainly needs better
+  documentation at the moment.
+- We're aiming to gradually increase the minimum version of LAPACK that is
+  required, so we can use newer features.  Support for Accelerate on macOS
+  has been dropped.  We do rely quite heavily on OpenBLAS, and its stability
+  is a worry (often only one of the recent releases works without test
+  failures) - improvements in testing and build documentation at least are
+  needed.
 
 Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
 as a range of versions of our dependencies and building release quality wheels.
@@ -106,24 +106,8 @@ constants
 This module is basically done, low-maintenance and without open issues.
 
 
-fftpack
-```````
-We aim to follow NumPy in adopting ``pocketfft`` (see `this NumPy PR
-<https://github.com/numpy/numpy/pull/11888>`__).  That will address a number of
-maintenance issues, and increase performance (both accuracy and speed).
-Of particular interest regarding performance is the Bluestein algorithm (or
-chirp Z-transform), which we have been wanting to add to ``fftpack`` for a long
-time.
-
-We probably want to deprecate fftpack.convolve as public function (it was not
-meant to be public).
-
-There's a large overlap with ``numpy.fft``.  This duplication has to change
-(both are too widely used to deprecate one); in the documentation we should
-make clear that ``scipy.fftpack`` is preferred over ``numpy.fft``.
-If there are differences in signature or functionality, the best version
-should be picked case by case (example: numpy's ``rfft`` is preferred, see
-`gh-2487 <https://github.com/scipy/scipy/issues/2487>`__).
+fft
+````
 
 Ideas for new features:
 
@@ -135,9 +119,9 @@ integrate
 `````````
 Needed for ODE solvers:
 
-  - Documentation is pretty bad, needs fixing
-  - A new ODE solver interface  (``solve_ivp``) was added in SciPy 1.0.0.
-    In the future we can consider (soft-)deprecating the older API.
+- Documentation is pretty bad, needs fixing
+- A new ODE solver interface  (``solve_ivp``) was added in SciPy 1.0.0.
+  In the future we can consider (soft-)deprecating the older API.
 
 The numerical integration functions are in good shape.  Support for integrating
 complex-valued functions and integrating multiple intervals (see `gh-3325
@@ -149,18 +133,18 @@ interpolate
 
 Ideas for new features:
 
-  - Spline fitting routines with better user control.
-  - Transparent tensor-product splines.
-  - NURBS support.
-  - Mesh refinement and coarsening of B-splines and corresponding tensor products.
+- Spline fitting routines with better user control.
+- Transparent tensor-product splines.
+- NURBS support.
+- Mesh refinement and coarsening of B-splines and corresponding tensor products.
 
 io
 ``
-wavfile;
+wavfile:
 
-    - PCM float will be supported, for anything else use ``audiolab`` or other
-      specialized libraries.
-    - Raise errors instead of warnings if data not understood.
+- PCM float will be supported, for anything else use ``audiolab`` or other
+  specialized libraries.
+- Raise errors instead of warnings if data not understood.
 
 Other sub-modules (matlab, netcdf, idl, harwell-boeing, arff, matrix market)
 are in good shape.
@@ -174,15 +158,15 @@ we want to add support for newer features in LAPACK.
 
 Needed:
 
-  - Reduce duplication of functions with ``numpy.linalg``, make APIs consistent.
-  - ``get_lapack_funcs`` should always use ``flapack``
-  - Wrap more LAPACK functions
-  - One too many funcs for LU decomposition, remove one
+- Reduce duplication of functions with ``numpy.linalg``, make APIs consistent.
+- ``get_lapack_funcs`` should always use ``flapack``
+- Wrap more LAPACK functions
+- One too many funcs for LU decomposition, remove one
 
 Ideas for new features:
 
-  - Add type-generic wrappers in the Cython BLAS and LAPACK
-  - Make many of the linear algebra routines into gufuncs
+- Add type-generic wrappers in the Cython BLAS and LAPACK
+- Make many of the linear algebra routines into gufuncs
 
 
 misc
@@ -190,9 +174,9 @@ misc
 ``scipy.misc`` will be removed as a public module.  Most functions in it have
 been moved to another submodule or deprecated.  The few that are left:
 
-  - ``info``, ``who`` : these are NumPy functions
-  - ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
-    with more extensive functionality for numerical differentiation.
+- ``info``, ``who`` : these are NumPy functions
+- ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
+  with more extensive functionality for numerical differentiation.
 
 
 ndimage
@@ -218,15 +202,15 @@ and gh-2640.
 
 The morphology interface needs to be standardized:
 
-  - binary dilation/erosion/opening/closing take a "structure" argument,
-    whereas their grey equivalent take size (has to be a tuple, not a scalar),
-    footprint, or structure.
-  - a scalar should be acceptable for size, equivalent to providing that same
-    value for each axis.
-  - for binary dilation/erosion/opening/closing, the structuring element is
-    optional, whereas it's mandatory for grey.  Grey morphology operations
-    should get the same default.
-  - other filters should also take that default value where possible.
+- binary dilation/erosion/opening/closing take a "structure" argument,
+  whereas their grey equivalent take size (has to be a tuple, not a scalar),
+  footprint, or structure.
+- a scalar should be acceptable for size, equivalent to providing that same
+  value for each axis.
+- for binary dilation/erosion/opening/closing, the structuring element is
+  optional, whereas it's mandatory for grey.  Grey morphology operations
+  should get the same default.
+- other filters should also take that default value where possible.
 
 
 odr
@@ -241,13 +225,19 @@ Overall this module is in good shape. Two good global optimizers were added in
 1.2.0; large-scale optimizers is still a gap that could be filled.  Other
 things that are needed:
 
-  - Many ideas for additional functionality (e.g. integer constraints, sparse
-    matrix support, performance improvements) in ``linprog``, see
-    `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
-  - Add functionality to the benchmark suite to compare results more easily
-    (e.g. with summary plots).
-  - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
-    preferred.
+- Many ideas for additional functionality (e.g. integer constraints, sparse
+  matrix support, performance improvements) in ``linprog``, see
+  `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
+- Add functionality to the benchmark suite to compare results more easily
+  (e.g. with summary plots).
+- deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
+  preferred.
+- ``scipy.optimize`` has an extensive set of benchmarks for accuracy and speed of
+  the global optimizers. That has allowed adding new optimizers (``shgo`` and
+  ``dual_annealing``) with significantly better performance than the existing
+  ones.  The ``optimize`` benchmark system itself is slow and hard to use
+  however; we need to make it faster and make it easier to compare performance of
+  optimizers via plotting performance profiles.
 
 
 signal
@@ -318,20 +308,20 @@ Arpack is in good shape.
 
 isolve:
 
-    - callback keyword is inconsistent
-    - tol keyword is broken, should be relative tol
-    - Fortran code not re-entrant (but we don't solve, maybe re-use from
-      PyKrilov)
+- callback keyword is inconsistent
+- tol keyword is broken, should be relative tol
+- Fortran code not re-entrant (but we don't solve, maybe re-use from
+  PyKrilov)
 
 dsolve:
 
-    - add sparse Cholesky or incomplete Cholesky
-    - look at CHOLMOD
+- add sparse Cholesky or incomplete Cholesky
+- look at CHOLMOD
 
 
 Ideas for new features:
 
-    - Wrappers for PROPACK for faster sparse SVD computation.
+- Wrappers for PROPACK for faster sparse SVD computation.
 
 
 spatial
@@ -340,9 +330,9 @@ QHull wrappers are in good shape, as is ``cKDTree``.
 
 Needed:
 
-    - ``KDTree`` will be removed, and ``cKDTree`` will be renamed to ``KDTree``
-      in a backwards-compatible way.
-    - ``distance_wrap.c`` needs to be cleaned up (maybe rewrite in Cython).
+- ``KDTree`` will be removed, and ``cKDTree`` will be renamed to ``KDTree``
+  in a backwards-compatible way.
+- ``distance_wrap.c`` needs to be cleaned up (maybe rewrite in Cython).
 
 
 special
@@ -351,35 +341,89 @@ Though there are still a lot of functions that need improvements in precision,
 probably the only show-stoppers are hypergeometric functions, parabolic cylinder
 functions, and spheroidal wave functions. Three possible ways to handle this:
 
-    1. Get good double-precision implementations. This is doable for parabolic
-       cylinder functions (in progress). I think it's possible for hypergeometric
-       functions, though maybe not in time. For spheroidal wavefunctions this is
-       not possible with current theory.
+1. Get good double-precision implementations. This is doable for parabolic
+   cylinder functions (in progress). I think it's possible for hypergeometric
+   functions, though maybe not in time. For spheroidal wavefunctions this is
+   not possible with current theory.
 
-    2. Port Boost's arbitrary precision library and use it under the hood to get
-       double precision accuracy. This might be necessary as a stopgap measure
-       for hypergeometric functions; the idea of using arbitrary precision has
-       been suggested before by @nmayorov and in
-       `gh-5349 <https://github.com/scipy/scipy/issues/5349>`__.  Likely
-       necessary for spheroidal wave functions, this could be reused:
-       https://github.com/radelman/scattering.
+2. Port Boost's arbitrary precision library and use it under the hood to get
+   double precision accuracy. This might be necessary as a stopgap measure
+   for hypergeometric functions; the idea of using arbitrary precision has
+   been suggested before by @nmayorov and in
+   `gh-5349 <https://github.com/scipy/scipy/issues/5349>`__.  Likely
+   necessary for spheroidal wave functions, this could be reused:
+   https://github.com/radelman/scattering.
 
-    3. Add clear warnings to the documentation about the limits of the existing
-       implementations.
+3. Add clear warnings to the documentation about the limits of the existing
+   implementations.
 
 
 stats
 `````
 
-This module is in good shape overall.  New functionality that's similar to
-what's already present can continue to be added; more advanced statistical
-routines may fit better in ``statsmodels``.  Some ideas for new contributions
-are:
+The ``scipy.stats`` subpackage aims to provide fundamental statistical
+methods as might be covered in standard statistics texts such as Johnson's
+"Miller & Freund's Probability and Statistics for Engineers", Sokal & Rohlf's
+"Biometry", or Zar's "Biostatistical Analysis".  It does not seek to duplicate
+the advanced functionality of downstream packages (e.g. StatsModels,
+LinearModels, PyMC3); instead, it can provide a solid foundation on which
+they can build.  (Note that these are rough guidelines, not strict rules.
+"Advanced" is an ill-defined and subjective term, and "advanced" methods
+may also be included in SciPy, especially if no other widely used and
+well-supported package covers the topic.  Also note that *some* duplication
+with downstream projects is inevitable and not necessarily a bad thing.)
 
-- Implementing (well-known) distributions to the ``stats.distributions``
-  framework is always welcome.
-- Continuing work on making the function signatures of ``stats`` and
-  ``stats.mstats`` more consistent, and adding tests to ensure that that
+The following improvements will help SciPy better serve this role.
+
+- Add fundamental and widely used hypothesis tests:
+
+  - Alexander-Govern test
+  - Somers' D
+  - Kendall's tau-c
+  - Page's L-test
+  - Tukey-Kramer test
+  - Dunnett's test
+  - the various types of analysis of variance (ANOVA):
+
+    - two-way ANOVA (single replicate, uniform number of replicates, variable
+      number of replicates)
+    - multiway ANOVA (i.e. generalize two-way ANOVA)
+    - nested ANOVA
+    - analysis of covariance (ANCOVA)
+
+- Where appropriate, include confidence intervals for the statistic in the
+  results of any statistical test.
+- Add additional tools for meta-analysis; currently we have just `combine_pvalues`.
+- Enhance the `fit` method of the continuous probability distributions:
+
+  - Expand the options for fitting to include:
+
+    - method of moments
+    - maximal product spacings
+    - method of L-moments / probability weighted moments
+
+  - Include measures of goodness-of-fit in the results
+  - Handle censored data
+
+- Implement additional widely used continuous and discrete probability
+  distributions:
+
+  - noncentral hypergeometric distribution (both Fisher's and Wallenius')
+  - negative hypergeometric distribution
+  - multivariate hypergeometric distribution
+  - multivariate t distribution
+  - mixture distributions
+
+- Improve the core calculations provided by SciPy's probability distributions 
+  so they can robustly handle wide ranges of parameter values.  Specifically,
+  replace many of the PDF and CDF methods from the Fortran library CDFLIB
+  used in scipy.special with better code, perhaps ported from the Boost C++
+  library.
+  
+In addition, we should:
+
+- Continue work on making the function signatures of ``stats`` and
+  ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.
 - Return ``Bunch`` objects from functions that now return many values, and for
   functions for which extra return values are desired (see
@@ -388,5 +432,5 @@ are:
   example implement an exact two-sided KS test (see
   `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
   Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
-- There are a number of issues regarding ``stats.mannwhitneyu``, and a stalled
-  PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ could be picked up.
+- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the 
+  stalled PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__.

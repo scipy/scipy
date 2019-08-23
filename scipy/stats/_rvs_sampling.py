@@ -145,7 +145,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     # to avoid infinite loop, raise exception if not a single rv has been
     # generated after 50000 tries. even if exp_iter = 1000, probability of
     # this event is (1-1/1000)**50000 which is of order 10e-22
-    while True:
+    while simulated < N:
         k = N - simulated
         # simulate uniform rvs on [0, umax] and [vmin, vmax]
         u1 = umax * rng.random_sample(size=k)
@@ -155,11 +155,9 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         accept = (u1**2 <= pdf(rvs))
         num_accept = np.sum(accept)
         if num_accept > 0:
-            take = min(num_accept, N - simulated)
-            x[simulated:(simulated + take)] = rvs[accept][0:take]
-            simulated += take
-        if simulated >= N:
-            return np.reshape(x, size1d)
+            x[simulated:(simulated + num_accept)] = rvs[accept]
+            simulated += num_accept
+
         if (simulated == 0) and (i*N >= 50000):
             msg = ("Not a single random variate could be generated in {} "
                    "attempts. The ratio of uniforms method does not appear "
@@ -167,3 +165,5 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
                    "pdf and the bounds.".format(i*N))
             raise RuntimeError(msg)
         i += 1
+
+    return np.reshape(x, size1d)

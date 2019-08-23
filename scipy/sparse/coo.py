@@ -56,7 +56,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         COO format data array of the matrix
     row

@@ -364,7 +364,8 @@ To specify the seed values, use:
 >>> sli.seed(s)
 
 where ``s`` must be an integer or array of 55 floats. If an integer, the array
-of floats is obtained by using `numpy.random.rand` with the given integer seed.
+of floats is obtained by using ``numpy.random.rand`` with the given integer
+seed.
 
 To simply generate some random numbers, type:
 
@@ -416,10 +417,10 @@ def seed(seed=None):
         the generator.
 
         If the value is an integer, the internal state is obtained
-        from `numpy.random.RandomState` (MT19937) with the integer
+        from `numpy.random.mtrand.RandomState` (MT19937) with the integer
         used as the initial seed.
 
-        If `seed` is omitted (None), `numpy.random.rand` is used to
+        If `seed` is omitted (None), ``numpy.random.rand`` is used to
         initialize the generator.
 
     """

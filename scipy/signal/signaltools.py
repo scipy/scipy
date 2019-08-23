@@ -4,16 +4,14 @@
 from __future__ import division, print_function, absolute_import
 
 import operator
-import threading
 import sys
 import timeit
 
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
-from scipy._lib._version import NumpyVersion
-from scipy import fftpack, linalg
-from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
+from scipy import linalg, fft as sp_fft
+from scipy.fft._helper import _init_nd_shape_and_axes
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
@@ -48,11 +46,6 @@ _modedict = {'valid': 0, 'same': 1, 'full': 2}
 
 _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
                  'symmetric': 1, 'reflect': 4}
-
-
-_rfft_mt_safe = (NumpyVersion(np.__version__) >= '1.9.0.dev-e24486e')
-
-_rfft_lock = threading.Lock()
 
 
 def _valfrommode(mode):
@@ -100,6 +93,15 @@ def _inputs_swap_needed(mode, shape1, shape2):
         return not ok1
 
     return False
+
+
+def _reshape_nd(x1d, ndim, axis):
+    """
+    Reshape x1d to size 1 along all axes in ``range(ndim)`` except for ``axis``.
+    """
+    shape = [1] * ndim
+    shape[axis] = x1d.size
+    return x1d.reshape(shape)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -375,65 +377,55 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.size == 0 or in2.size == 0:  # empty arrays
         return array([])
 
-    _, axes = _init_nd_shape_and_axes_sorted(in1, shape=None, axes=axes)
+    s1 = in1.shape
+    s2 = in2.shape
+    _, axes = _init_nd_shape_and_axes(in1, shape=None, axes=axes)
 
-    if not noaxes and not axes.size:
+    if not noaxes and not len(axes):
         raise ValueError("when provided, axes cannot be empty")
 
-    if noaxes:
-        other_axes = array([], dtype=np.intc)
-    else:
-        other_axes = np.setdiff1d(np.arange(in1.ndim), axes)
+    # Axes of length 1 can rely on broadcasting rules for multipy, no fft needed
+    axes = [a for a in axes if in1.shape[a] != 1 and in2.shape[a] != 1]
 
-    s1 = array(in1.shape)
-    s2 = array(in2.shape)
-
-    if not np.all((s1[other_axes] == s2[other_axes])
-                  | (s1[other_axes] == 1) | (s2[other_axes] == 1)):
+    if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
+               for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
                          " {0} and {1}".format(in1.shape, in2.shape))
 
-    complex_result = (np.issubdtype(in1.dtype, np.complexfloating)
-                      or np.issubdtype(in2.dtype, np.complexfloating))
-    shape = np.maximum(s1, s2)
-    shape[axes] = s1[axes] + s2[axes] - 1
+    shape = [max((s1[i], s2[i])) if i not in axes else s1[i] + s2[i] - 1
+             for i in range(in1.ndim)]
+
+    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
 
     # Check that input sizes are compatible with 'valid' mode
     if _inputs_swap_needed(mode, s1, s2):
         # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
-    # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.helper.next_fast_len(d) for d in shape[axes]]
-    fslice = tuple([slice(sz) for sz in shape])
-    # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
-    # sure we only call rfftn/irfftn from one thread at a time.
-    if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
-        try:
-            sp1 = np.fft.rfftn(in1, fshape, axes=axes)
-            sp2 = np.fft.rfftn(in2, fshape, axes=axes)
-            ret = np.fft.irfftn(sp1 * sp2, fshape, axes=axes)[fslice].copy()
-        finally:
-            if not _rfft_mt_safe:
-                _rfft_lock.release()
-    else:
-        # If we're here, it's either because we need a complex result, or we
-        # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
-        # is already in use by another thread).  In either case, use the
-        # (threadsafe but slower) SciPy complex-FFT routines instead.
-        sp1 = fftpack.fftn(in1, fshape, axes=axes)
-        sp2 = fftpack.fftn(in2, fshape, axes=axes)
-        ret = fftpack.ifftn(sp1 * sp2, axes=axes)[fslice].copy()
+    if len(axes):
         if not complex_result:
-            ret = ret.real
+            fft, ifft = sp_fft.rfftn, sp_fft.irfftn
+            kind = 'R2C'
+        else:
+            fft, ifft = sp_fft.fftn, sp_fft.ifftn
+            kind = 'C2C'
+
+        # Speed up FFT by padding to optimal size
+        fshape = [sp_fft.next_fast_len(shape[a], kind) for a in axes]
+        fslice = tuple([slice(sz) for sz in shape])
+        sp1 = fft(in1, fshape, axes=axes)
+        sp2 = fft(in2, fshape, axes=axes)
+        ret = ifft(sp1 * sp2, fshape, axes=axes)[fslice].copy()
+    else:
+        ret = in1 * in2
 
     if mode == "full":
         return ret
     elif mode == "same":
         return _centered(ret, s1)
     elif mode == "valid":
-        shape_valid = shape.copy()
-        shape_valid[axes] = s1[axes] - s2[axes] + 1
+        shape_valid = [shape[a] if a not in axes else s1[a] - s2[a] + 1
+                       for a in range(in1.ndim)]
         return _centered(ret, shape_valid)
     else:
         raise ValueError("acceptable mode flags are 'valid',"
@@ -1219,6 +1211,10 @@ def lfilter(b, a, x, axis=-1, zi=None):
     form II transposed implementation of the standard difference equation
     (see Notes).
 
+    The function `sosfilt` (and filter design using ``output='sos'``) should be
+    preferred over `lfilter` for most filtering tasks, as second-order sections
+    have fewer numerical problems.
+
     Parameters
     ----------
     b : array_like
@@ -1543,10 +1539,6 @@ def hilbert(x, N=None, axis=-1):
     xa : ndarray
         Analytic signal of `x`, of each 1-D array along `axis`
 
-    See Also
-    --------
-    scipy.fftpack.hilbert : Return Hilbert transform of a periodic sequence x.
-
     Notes
     -----
     The analytic signal ``x_a(t)`` of signal ``x(t)`` is:
@@ -1621,7 +1613,7 @@ def hilbert(x, N=None, axis=-1):
     if N <= 0:
         raise ValueError("N must be positive.")
 
-    Xf = fftpack.fft(x, N, axis=axis)
+    Xf = sp_fft.fft(x, N, axis=axis)
     h = zeros(N)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
@@ -1634,7 +1626,7 @@ def hilbert(x, N=None, axis=-1):
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[tuple(ind)]
-    x = fftpack.ifft(Xf * h, axis=axis)
+    x = sp_fft.ifft(Xf * h, axis=axis)
     return x
 
 
@@ -1675,7 +1667,7 @@ def hilbert2(x, N=None):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
-    Xf = fftpack.fft2(x, N, axes=(0, 1))
+    Xf = sp_fft.fft2(x, N, axes=(0, 1))
     h1 = zeros(N[0], 'd')
     h2 = zeros(N[1], 'd')
     for p in range(2):
@@ -1694,7 +1686,7 @@ def hilbert2(x, N=None):
     while k > 2:
         h = h[:, newaxis]
         k -= 1
-    x = fftpack.ifft2(Xf * h, axes=(0, 1))
+    x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
 
 
@@ -2174,8 +2166,8 @@ def resample(x, num, t=None, axis=0, window=None):
     num : int
         The number of samples in the resampled signal.
     t : array_like, optional
-        If `t` is given, it is assumed to be the sample positions
-        associated with the signal data in `x`.
+        If `t` is given, it is assumed to be the equally spaced sample
+        positions associated with the signal data in `x`.
     axis : int, optional
         The axis of `x` that is resampled.  Default is 0.
     window : array_like, callable, string, float, or tuple, optional
@@ -2215,13 +2207,12 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the input vector.  The spacing between samples is changed
     from ``dx`` to ``dx * len(x) / num``.
 
-    If `t` is not None, then it represents the old sample positions,
-    and the new sample positions will be returned as well as the new
-    samples.
+    If `t` is not None, then it is used solely to calculate the resampled
+    positions `resampled_t`
 
     As noted, `resample` uses FFT transformations, which can be very
     slow if the number of input or output samples is large and prime;
-    see `scipy.fftpack.fft`.
+    see `scipy.fft.fft`.
 
     Examples
     --------
@@ -2241,47 +2232,93 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.show()
     """
     x = asarray(x)
-    X = fftpack.fft(x, axis=axis)
+    X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
+
+    # Check if we can use faster real FFT
+    real_input = np.isrealobj(x)
+
+    # Forward transform
+    if real_input:
+        X = sp_fft.rfft(x, axis=axis)
+    else:  # Full complex FFT
+        X = sp_fft.fft(x, axis=axis)
+
+    # Apply window to spectrum
     if window is not None:
         if callable(window):
-            W = window(fftpack.fftfreq(Nx))
+            W = window(sp_fft.fftfreq(Nx))
         elif isinstance(window, ndarray):
             if window.shape != (Nx,):
                 raise ValueError('window must have the same length as data')
             W = window
         else:
-            W = fftpack.ifftshift(get_window(window, Nx))
-        newshape = [1] * x.ndim
-        newshape[axis] = len(W)
-        W.shape = newshape
-        X = X * W
-        W.shape = (Nx,)
-    sl = [slice(None)] * x.ndim
+            W = sp_fft.ifftshift(get_window(window, Nx))
+
+        newshape_W = [1] * x.ndim
+        newshape_W[axis] = X.shape[axis]
+        if real_input:
+            # Fold the window back on itself to mimic complex behavior
+            W_real = W.copy()
+            W_real[1:] += W_real[-1:0:-1]
+            W_real[1:] *= 0.5
+            X *= W_real[:newshape_W[axis]].reshape(newshape_W)
+        else:
+            X *= W.reshape(newshape_W)
+
+    # Copy each half of the original spectrum to the output spectrum, either
+    # truncating high frequences (downsampling) or zero-padding them
+    # (upsampling)
+
+    # Placeholder array for output spectrum
     newshape = list(x.shape)
-    newshape[axis] = num
-    N = int(np.minimum(num, Nx))
-    Y = zeros(newshape, 'D')
-    sl[axis] = slice(0, (N + 1) // 2)
+    if real_input:
+        newshape[axis] = num // 2 + 1
+    else:
+        newshape[axis] = num
+    Y = zeros(newshape, X.dtype)
+
+    # Copy positive frequency components (and Nyquist, if present)
+    N = min(num, Nx)
+    nyq = N // 2 + 1  # Slice index that includes Nyquist if present
+    sl = [slice(None)] * x.ndim
+    sl[axis] = slice(0, nyq)
     Y[tuple(sl)] = X[tuple(sl)]
-    sl[axis] = slice(-(N - 1) // 2, None)
-    Y[tuple(sl)] = X[tuple(sl)]
+    if not real_input:
+        # Copy negative frequency components
+        if N > 2:  # (slice expression doesn't collapse to empty array)
+            sl[axis] = slice(nyq - N, None)
+            Y[tuple(sl)] = X[tuple(sl)]
 
-    if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
-        if N < Nx:  # if downsampling
-            sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
-            Y[tuple(sl)] += X[tuple(sl)]  # add the component of X at N/2
-        elif N < num:  # if upsampling
-            sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
-            Y[tuple(sl)] /= 2  # halve the component at -N/2
-            temp = Y[tuple(sl)]
-            sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
-            Y[tuple(sl)] = temp  # set that equal to the component at -N/2
+    # Split/join Nyquist component(s) if present
+    # So far we have set Y[+N/2]=X[+N/2]
+    if N % 2 == 0:
+        if num < Nx:  # downsampling
+            if real_input:
+                sl[axis] = slice(N//2, N//2 + 1)
+                Y[tuple(sl)] *= 2.
+            else:
+                # select the component of Y at frequency +N/2,
+                # add the component of X at -N/2
+                sl[axis] = slice(-N//2, -N//2 + 1)
+                Y[tuple(sl)] += X[tuple(sl)]
+        elif Nx < num:  # upsampling
+            # select the component at frequency +N/2 and halve it
+            sl[axis] = slice(N//2, N//2 + 1)
+            Y[tuple(sl)] *= 0.5
+            if not real_input:
+                temp = Y[tuple(sl)]
+                # set the component at -N/2 equal to the component at +N/2
+                sl[axis] = slice(num-N//2, num-N//2 + 1)
+                Y[tuple(sl)] = temp
 
-    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+    # Inverse transform
+    if real_input:
+        y = sp_fft.irfft(Y, num, axis=axis)
+    else:
+        y = sp_fft.ifft(Y, axis=axis, overwrite_x=True)
 
-    if x.dtype.char not in ['F', 'D']:
-        y = y.real
+    y *= (float(num) / float(Nx))
 
     if t is None:
         return y
@@ -2290,15 +2327,16 @@ def resample(x, num, t=None, axis=0, window=None):
         return y, new_t
 
 
-def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
+def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
+                  padtype='constant', cval=None):
     """
     Resample `x` along the given axis using polyphase filtering.
 
     The signal `x` is upsampled by the factor `up`, a zero-phase low-pass
     FIR filter is applied, and then it is downsampled by the factor `down`.
     The resulting sample rate is ``up / down`` times the original sample
-    rate. Values beyond the boundary of the signal are assumed to be zero
-    during the filtering step.
+    rate. By default, values beyond the boundary of the signal are assumed
+    to be zero during the filtering step.
 
     Parameters
     ----------
@@ -2313,6 +2351,19 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     window : string, tuple, or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
+    padtype : string, optional
+        `constant`, `mean` or `line`. Changes assumptions on values beyond the
+        boundary. If `constant`, assumed to be `cval` (default zero). If `line`
+        assumed to continue a linear trend defined by the first and last
+        points. `mean`, `median`, `maximum` and `minimum` work as in `np.pad` and
+        assume that the values beyond the boundary are the mean, median,
+        maximum or minimum respectively of the array along the axis.
+
+        .. versionadded:: 1.4.0
+    cval : float, optional
+        Value to use if `padtype='constant'`. Default is zero.
+
+        .. versionadded:: 1.4.0
 
     Returns
     -------
@@ -2354,7 +2405,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     Examples
     --------
-    Note that the end of the resampled data rises to meet the first
+    By default, the end of the resampled data rises to meet the first
     sample of the next cycle for the FFT method, and gets closer to zero
     for the polyphase method:
 
@@ -2372,6 +2423,34 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
     >>> plt.legend(['resample', 'resamp_poly', 'data'], loc='best')
     >>> plt.show()
+
+    This default behaviour can be changed by using the padtype option:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+
+    >>> N = 5
+    >>> x = np.linspace(0, 1, N, endpoint=False)
+    >>> y = 2 + x**2 - 1.7*np.sin(x) + .2*np.cos(11*x)
+    >>> y2 = 1 + x**3 + 0.1*np.sin(x) + .1*np.cos(11*x)
+    >>> Y = np.stack([y, y2], axis=-1)
+    >>> up = 4
+    >>> xr = np.linspace(0, 1, N*up, endpoint=False)
+
+    >>> y2 = signal.resample_poly(Y, up, 1, padtype='constant')
+    >>> y3 = signal.resample_poly(Y, up, 1, padtype='mean')
+    >>> y4 = signal.resample_poly(Y, up, 1, padtype='line')
+
+    >>> import matplotlib.pyplot as plt
+    >>> for i in [0,1]:
+    ...     plt.figure()
+    ...     plt.plot(xr, y4[:,i], 'g.', label='line')
+    ...     plt.plot(xr, y3[:,i], 'y.', label='mean')
+    ...     plt.plot(xr, y2[:,i], 'r.', label='constant')
+    ...     plt.plot(x, Y[:,i], 'k-')
+    ...     plt.legend()
+    >>> plt.show()
+
     """
     x = asarray(x)
     if up != int(up):
@@ -2382,6 +2461,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down = int(down)
     if up < 1 or down < 1:
         raise ValueError('up and down must be >= 1')
+    if cval is not None and padtype != 'constant':
+        raise ValueError('cval has no effect when padtype is ', padtype)
 
     # Determine our up and down factors
     # Use a rational approximation to save computation time on really long
@@ -2391,7 +2472,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down //= g_
     if up == down == 1:
         return x.copy()
-    n_out = x.shape[axis] * up
+    n_in = x.shape[axis]
+    n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
     if isinstance(window, (list, np.ndarray)):
@@ -2413,18 +2495,53 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     n_post_pad = 0
     n_pre_remove = (half_len + n_pre_pad) // down
     # We should rarely need to do this given our filter lengths...
-    while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
+    while _output_len(len(h) + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
     h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
                         np.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
+    # Remove background depending on the padtype option
+    funcs = {'mean': np.mean, 'median': np.median,
+             'minimum': np.amin, 'maximum': np.amax}
+    if padtype == 'constant':
+        background_line = cval
+    elif padtype in funcs:
+        background_line = [funcs[padtype](x, axis=axis), 0]
+    elif padtype == 'line':
+        background_line = [x.take(0, axis),
+                           (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
+    else:
+        raise ValueError(
+            'padtype must be line, maximum, mean, median, minimum or constant')
+
+    if padtype == 'line' or padtype in funcs:
+        rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
+        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
+        background_in = np.expand_dims(background_line[0], axis) +\
+            np.expand_dims(background_line[1], axis) * rel_len_nd
+        x = x - background_in.astype(x.dtype)
+    elif padtype == 'constant' and cval is not None:
+        x = x - cval
+
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
-    return y[tuple(keep)]
+    y_keep = y[tuple(keep)]
+
+    # Add background back
+    if padtype == 'line' or padtype in funcs:
+        rel_len = np.linspace(0.0, 1.0, n_out, endpoint=False)
+        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
+        background_out = np.expand_dims(background_line[0], axis) +\
+            np.expand_dims(background_line[1], axis) * rel_len_nd
+        y_keep += background_out.astype(x.dtype)
+    elif padtype == 'constant' and cval is not None:
+        y_keep += cval
+
+    return y_keep
 
 
 def vectorstrength(events, period):
@@ -2987,6 +3104,10 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     twice that of the original.
 
     The function provides options for handling the edges of the signal.
+
+    The function `sosfiltfilt` (and filter design using ``output='sos'``)
+    should be preferred over `filtfilt` for most filtering tasks, as
+    second-order sections have fewer numerical problems.
 
     Parameters
     ----------

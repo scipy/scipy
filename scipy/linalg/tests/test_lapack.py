@@ -22,7 +22,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import _flapack as flapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl
+from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -106,16 +106,16 @@ class TestFlapackSimple(object):
             [-27, -9, -25]])
 
         for dtype in 'fdFD':
-            for norm in 'Mm1OoIiFfEe':
+            for norm_str in 'Mm1OoIiFfEe':
                 a1 = a.astype(dtype)
                 if dtype.isupper():
                     # is complex dtype
                     a1[0, 0] += 1j
 
                 lange, = get_lapack_funcs(('lange',), (a1,))
-                value = lange(norm, a1)
+                value = lange(norm_str, a1)
 
-                if norm in 'FfEe':
+                if norm_str in 'FfEe':
                     if dtype in 'Ff':
                         decimal = 3
                     else:
@@ -123,11 +123,11 @@ class TestFlapackSimple(object):
                     ref = np.sqrt(np.sum(np.square(np.abs(a1))))
                     assert_almost_equal(value, ref, decimal)
                 else:
-                    if norm in 'Mm':
+                    if norm_str in 'Mm':
                         ref = np.max(np.abs(a1))
-                    elif norm in '1Oo':
+                    elif norm_str in '1Oo':
                         ref = np.max(np.sum(np.abs(a1), axis=0))
-                    elif norm in 'Ii':
+                    elif norm_str in 'Ii':
                         ref = np.max(np.sum(np.abs(a1), axis=1))
 
                     assert_equal(value, ref)
@@ -168,8 +168,8 @@ class TestLeastSquaresSolvers(object):
 
         for dtype in REAL_DTYPES:
             a1 = np.array([[1.0, 2.0],
-                          [4.0, 5.0],
-                          [7.0, 8.0]], dtype=dtype)
+                           [4.0, 5.0],
+                           [7.0, 8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
             gels, gels_lwork, geqrf = get_lapack_funcs(
                     ('gels', 'gels_lwork', 'geqrf'), (a1, b1))
@@ -193,8 +193,8 @@ class TestLeastSquaresSolvers(object):
 
         for dtype in COMPLEX_DTYPES:
             a1 = np.array([[1.0+4.0j, 2.0],
-                          [4.0+0.5j, 5.0-3.0j],
-                          [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
+                           [4.0+0.5j, 5.0-3.0j],
+                           [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
             gels, gels_lwork, geqrf = get_lapack_funcs(
                     ('gels', 'gels_lwork', 'geqrf'), (a1, b1))
@@ -212,15 +212,15 @@ class TestLeastSquaresSolvers(object):
             assert_allclose(x[:-1],
                             np.array([1.161753632288328-1.901075709391912j,
                                       1.735882340522193+1.521240901196909j],
-                            dtype=dtype), rtol=25*np.finfo(dtype).eps)
+                                     dtype=dtype), rtol=25*np.finfo(dtype).eps)
             lqr_truth, _, _, _ = geqrf(a1)
             assert_array_equal(lqr, lqr_truth)
 
     def test_gelsd(self):
         for dtype in REAL_DTYPES:
             a1 = np.array([[1.0, 2.0],
-                          [4.0, 5.0],
-                          [7.0, 8.0]], dtype=dtype)
+                           [4.0, 5.0],
+                           [7.0, 8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
             gelsd, gelsd_lwork = get_lapack_funcs(('gelsd', 'gelsd_lwork'),
                                                   (a1, b1))
@@ -239,7 +239,8 @@ class TestLeastSquaresSolvers(object):
             x, s, rank, info = gelsd(a1, b1, lwork, iwork_size,
                                      -1, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
-                                             14.999999999999991], dtype=dtype),
+                                              14.999999999999991],
+                                             dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
             assert_allclose(s, np.array([12.596017180511966,
                                          0.583396253199685], dtype=dtype),
@@ -247,8 +248,8 @@ class TestLeastSquaresSolvers(object):
 
         for dtype in COMPLEX_DTYPES:
             a1 = np.array([[1.0+4.0j, 2.0],
-                          [4.0+0.5j, 5.0-3.0j],
-                          [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
+                           [4.0+0.5j, 5.0-3.0j],
+                           [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
             gelsd, gelsd_lwork = get_lapack_funcs(('gelsd', 'gelsd_lwork'),
                                                   (a1, b1))
@@ -270,7 +271,7 @@ class TestLeastSquaresSolvers(object):
             assert_allclose(x[:-1],
                             np.array([1.161753632288328-1.901075709391912j,
                                       1.735882340522193+1.521240901196909j],
-                            dtype=dtype), rtol=25*np.finfo(dtype).eps)
+                                     dtype=dtype), rtol=25*np.finfo(dtype).eps)
             assert_allclose(s,
                             np.array([13.035514762572043, 4.337666985231382],
                                      dtype=dtype), rtol=25*np.finfo(dtype).eps)
@@ -279,8 +280,8 @@ class TestLeastSquaresSolvers(object):
 
         for dtype in REAL_DTYPES:
             a1 = np.array([[1.0, 2.0],
-                          [4.0, 5.0],
-                          [7.0, 8.0]], dtype=dtype)
+                           [4.0, 5.0],
+                           [7.0, 8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
             gelss, gelss_lwork = get_lapack_funcs(('gelss', 'gelss_lwork'),
                                                   (a1, b1))
@@ -297,7 +298,8 @@ class TestLeastSquaresSolvers(object):
 
             v, x, s, rank, work, info = gelss(a1, b1, -1, lwork, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
-                                             14.999999999999991], dtype=dtype),
+                                              14.999999999999991],
+                                             dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
             assert_allclose(s, np.array([12.596017180511966,
                                          0.583396253199685], dtype=dtype),
@@ -305,8 +307,8 @@ class TestLeastSquaresSolvers(object):
 
         for dtype in COMPLEX_DTYPES:
             a1 = np.array([[1.0+4.0j, 2.0],
-                          [4.0+0.5j, 5.0-3.0j],
-                          [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
+                           [4.0+0.5j, 5.0-3.0j],
+                           [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
             gelss, gelss_lwork = get_lapack_funcs(('gelss', 'gelss_lwork'),
                                                   (a1, b1))
@@ -335,8 +337,8 @@ class TestLeastSquaresSolvers(object):
 
         for dtype in REAL_DTYPES:
             a1 = np.array([[1.0, 2.0],
-                          [4.0, 5.0],
-                          [7.0, 8.0]], dtype=dtype)
+                           [4.0, 5.0],
+                           [7.0, 8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
             gelsy, gelsy_lwork = get_lapack_funcs(('gelsy', 'gelss_lwork'),
                                                   (a1, b1))
@@ -355,13 +357,14 @@ class TestLeastSquaresSolvers(object):
             v, x, j, rank, info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
                                         lwork, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
-                                             14.999999999999991], dtype=dtype),
+                                              14.999999999999991],
+                                             dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
 
         for dtype in COMPLEX_DTYPES:
             a1 = np.array([[1.0+4.0j, 2.0],
-                          [4.0+0.5j, 5.0-3.0j],
-                          [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
+                           [4.0+0.5j, 5.0-3.0j],
+                           [7.0-2.0j, 8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
             gelsy, gelsy_lwork = get_lapack_funcs(('gelsy', 'gelss_lwork'),
                                                   (a1, b1))
@@ -434,13 +437,13 @@ class TestDlasd4(object):
         m_vec = np.array([3.12, 5.7, -4.8, -2.2])
 
         M = np.hstack((np.vstack((np.diag(sigmas[0:-1]),
-                       np.zeros((1, len(m_vec) - 1)))), m_vec[:, np.newaxis]))
+                                  np.zeros((1, len(m_vec) - 1)))),
+                       m_vec[:, np.newaxis]))
         SM = svd(M, full_matrices=False, compute_uv=False, overwrite_a=False,
                  check_finite=False)
 
         it_len = len(sigmas)
-        sgm = np.concatenate((sigmas[::-1], (sigmas[0] +
-                              it_len*np.sqrt(np.sum(np.power(m_vec, 2))),)))
+        sgm = np.concatenate((sigmas[::-1], [sigmas[0] + it_len*norm(m_vec)]))
         mvc = np.concatenate((m_vec[::-1], (0,)))
 
         lasd4 = get_lapack_funcs('lasd4', (sigmas,))
@@ -489,8 +492,8 @@ def test_rot():
         c = 0.6
         s = 0.8
 
-        u = np.ones(4, dtype) * 3
-        v = np.ones(4, dtype) * 4
+        u = np.full(4, 3, dtype)
+        v = np.full(4, 4, dtype)
         atol = 10**-(np.finfo(dtype).precision-1)
 
         if dtype in 'fd':
@@ -617,7 +620,7 @@ class TestSytrd(object):
             # ```
             # This is a NumPy issue
             # <https://github.com/numpy/numpy/issues/9617>.
-            # TODO once the issue has been resolved, test for n=1
+            # TODO Once the minimum NumPy version is past 1.14, test for n=1
 
             # some upper triangular array
             n = 3
@@ -689,7 +692,7 @@ class TestHetrd(object):
             # ```
             # This is a NumPy issue
             # <https://github.com/numpy/numpy/issues/9617>.
-            # TODO once the issue has been resolved, test for n=1
+            # TODO Once the minimum NumPy version is past 1.14, test for n=1
 
             # some upper triangular array
             n = 3
@@ -700,9 +703,13 @@ class TestHetrd(object):
                 )
             np.fill_diagonal(A, np.real(np.diag(A)))
 
-            # query lwork
-            lwork, info = hetrd_lwork(n)
-            assert_equal(info, 0)
+            # test query lwork
+            for x in [0, 1]:
+                _, info = hetrd_lwork(n, lower=x)
+                assert_equal(info, 0)
+            # lwork returns complex which segfaults hetrd call (gh-10388)
+            # use the safe and recommended option
+            lwork = _compute_lwork(hetrd_lwork, n)
 
             # check lower=1 behavior (shouldn't do much since the matrix is
             # upper triangular)
@@ -820,7 +827,7 @@ def test_sycon_hecon():
         # Since sycon only refers to upper/lower part, conj() is safe here.
         A = (A + A.conj().T)/2 + 2*np.eye(n, dtype=dtype)
 
-        anorm = np.linalg.norm(A, 1)
+        anorm = norm(A, 1)
         lwork = _compute_lwork(func_lwork, n)
         ldu, ipiv, _ = functrf(A, lwork=lwork, lower=1)
         rcond, _ = funcon(a=ldu, ipiv=ipiv, anorm=anorm, lower=1)
@@ -1276,3 +1283,235 @@ def test_syconv():
         ldu, ipiv, info = trf(A, lower=0)
         a, e, info = syconv(ldu, ipiv, lower=0)
         assert_allclose(triu(a, 1), triu(U[perm, :], 1), atol=tol, rtol=0.)
+
+
+class TestBlockedQR(object):
+    """
+    Tests for the blocked QR factorization, namely through geqrt, gemqrt, tpqrt
+    and tpmqr.
+    """
+
+    def test_geqrt_gemqrt(self):
+        seed(1234)
+        for ind, dtype in enumerate(DTYPES):
+            n = 20
+
+            if ind > 1:
+                A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            else:
+                A = (rand(n, n)).astype(dtype)
+
+            tol = 100*np.spacing(dtype(1.0).real)
+            geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
+
+            a, t, info = geqrt(n, A)
+            assert(info == 0)
+
+            # Extract elementary reflectors from lower triangle, adding the
+            # main diagonal of ones.
+            v = np.tril(a, -1) + np.eye(n, dtype=dtype)
+            # Generate the block Householder transform I - VTV^H
+            Q = np.eye(n, dtype=dtype) - v @ t @ v.T.conj()
+            R = np.triu(a)
+
+            # Test columns of Q are orthogonal
+            assert_allclose(Q.T.conj() @ Q, np.eye(n, dtype=dtype), atol=tol,
+                            rtol=0.)
+            assert_allclose(Q @ R, A, atol=tol, rtol=0.)
+
+            if ind > 1:
+                C = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                transpose = 'C'
+            else:
+                C = (rand(n, n)).astype(dtype)
+                transpose = 'T'
+
+            for side in ('L', 'R'):
+                for trans in ('N', transpose):
+                    c, info = gemqrt(a, t, C, side=side, trans=trans)
+                    assert(info == 0)
+
+                    if trans == transpose:
+                        q = Q.T.conj()
+                    else:
+                        q = Q
+
+                    if side == 'L':
+                        qC = q @ C
+                    else:
+                        qC = C @ q
+
+                    assert_allclose(c, qC, atol=tol, rtol=0.)
+
+                    # Test default arguments
+                    if (side, trans) == ('L', 'N'):
+                        c_default, info = gemqrt(a, t, C)
+                        assert(info == 0)
+                        assert_equal(c_default, c)
+
+            # Test invalid side/trans
+            assert_raises(Exception, gemqrt, a, t, C, side='A')
+            assert_raises(Exception, gemqrt, a, t, C, trans='A')
+
+    def test_tpqrt_tpmqrt(self):
+        seed(1234)
+        for ind, dtype in enumerate(DTYPES):
+            n = 20
+
+            if ind > 1:
+                A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                B = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            else:
+                A = (rand(n, n)).astype(dtype)
+                B = (rand(n, n)).astype(dtype)
+
+            tol = 100*np.spacing(dtype(1.0).real)
+            tpqrt, tpmqrt = get_lapack_funcs(('tpqrt', 'tpmqrt'), dtype=dtype)
+
+            # Test for the range of pentagonal B, from square to upper
+            # triangular
+            for l in (0, n // 2, n):
+                a, b, t, info = tpqrt(l, n, A, B)
+                assert(info == 0)
+
+                # Check that lower triangular part of A has not been modified
+                assert_equal(np.tril(a, -1), np.tril(A, -1))
+                # Check that elements not part of the pentagonal portion of B
+                # have not been modified.
+                assert_equal(np.tril(b, l - n - 1), np.tril(B, l - n - 1))
+
+                # Extract pentagonal portion of B
+                B_pent, b_pent = np.triu(B, l - n), np.triu(b, l - n)
+
+                # Generate elementary reflectors
+                v = np.concatenate((np.eye(n, dtype=dtype), b_pent))
+                # Generate the block Householder transform I - VTV^H
+                Q = np.eye(2 * n, dtype=dtype) - v @ t @ v.T.conj()
+                R = np.concatenate((np.triu(a), np.zeros_like(a)))
+
+                # Test columns of Q are orthogonal
+                assert_allclose(Q.T.conj() @ Q, np.eye(2 * n, dtype=dtype),
+                                atol=tol, rtol=0.)
+                assert_allclose(Q @ R, np.concatenate((np.triu(A), B_pent)),
+                                atol=tol, rtol=0.)
+
+                if ind > 1:
+                    C = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                    D = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+                    transpose = 'C'
+                else:
+                    C = (rand(n, n)).astype(dtype)
+                    D = (rand(n, n)).astype(dtype)
+                    transpose = 'T'
+
+                for side in ('L', 'R'):
+                    for trans in ('N', transpose):
+                        c, d, info = tpmqrt(l, b, t, C, D, side=side,
+                                            trans=trans)
+                        assert(info == 0)
+
+                        if trans == transpose:
+                            q = Q.T.conj()
+                        else:
+                            q = Q
+
+                        if side == 'L':
+                            cd = np.concatenate((c, d), axis=0)
+                            CD = np.concatenate((C, D), axis=0)
+                            qCD = q @ CD
+                        else:
+                            cd = np.concatenate((c, d), axis=1)
+                            CD = np.concatenate((C, D), axis=1)
+                            qCD = CD @ q
+
+                        assert_allclose(cd, qCD, atol=tol, rtol=0.)
+
+                        if (side, trans) == ('L', 'N'):
+                            c_default, d_default, info = tpmqrt(l, b, t, C, D)
+                            assert(info == 0)
+                            assert_equal(c_default, c)
+                            assert_equal(d_default, d)
+
+                # Test invalid side/trans
+                assert_raises(Exception, tpmqrt, l, b, t, C, D, side='A')
+                assert_raises(Exception, tpmqrt, l, b, t, C, D, trans='A')
+
+
+def test_pstrf():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        # DTYPES = <s, d, c, z> pstrf
+        n = 10
+        r = 2
+        pstrf = get_lapack_funcs('pstrf', dtype=dtype)
+
+        # Create positive semidefinite A
+        if ind > 1:
+            A = rand(n, n-r).astype(dtype) + 1j * rand(n, n-r).astype(dtype)
+            A = A @ A.conj().T
+        else:
+            A = rand(n, n-r).astype(dtype)
+            A = A @ A.T
+
+        c, piv, r_c, info = pstrf(A)
+        U = triu(c)
+        U[r_c - n:, r_c - n:] = 0.
+
+        assert_equal(info, 1)
+        # python-dbg 3.5.2 runs cause trouble with the following assertion.
+        # assert_equal(r_c, n - r)
+        single_atol = 1000 * np.finfo(np.float32).eps
+        double_atol = 1000 * np.finfo(np.float64).eps
+        atol = single_atol if ind in [0, 2] else double_atol
+        assert_allclose(A[piv-1][:, piv-1], U.conj().T @ U, rtol=0., atol=atol)
+
+        c, piv, r_c, info = pstrf(A, lower=1)
+        L = tril(c)
+        L[r_c - n:, r_c - n:] = 0.
+
+        assert_equal(info, 1)
+        # assert_equal(r_c, n - r)
+        single_atol = 1000 * np.finfo(np.float32).eps
+        double_atol = 1000 * np.finfo(np.float64).eps
+        atol = single_atol if ind in [0, 2] else double_atol
+        assert_allclose(A[piv-1][:, piv-1], L @ L.conj().T, rtol=0., atol=atol)
+
+
+def test_pstf2():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        # DTYPES = <s, d, c, z> pstf2
+        n = 10
+        r = 2
+        pstf2 = get_lapack_funcs('pstf2', dtype=dtype)
+
+        # Create positive semidefinite A
+        if ind > 1:
+            A = rand(n, n-r).astype(dtype) + 1j * rand(n, n-r).astype(dtype)
+            A = A @ A.conj().T
+        else:
+            A = rand(n, n-r).astype(dtype)
+            A = A @ A.T
+
+        c, piv, r_c, info = pstf2(A)
+        U = triu(c)
+        U[r_c - n:, r_c - n:] = 0.
+
+        assert_equal(info, 1)
+        # python-dbg 3.5.2 runs cause trouble with the commented assertions.
+        # assert_equal(r_c, n - r)
+        single_atol = 1000 * np.finfo(np.float32).eps
+        double_atol = 1000 * np.finfo(np.float64).eps
+        atol = single_atol if ind in [0, 2] else double_atol
+        assert_allclose(A[piv-1][:, piv-1], U.conj().T @ U, rtol=0., atol=atol)
+
+        c, piv, r_c, info = pstf2(A, lower=1)
+        L = tril(c)
+        L[r_c - n:, r_c - n:] = 0.
+
+        assert_equal(info, 1)
+        # assert_equal(r_c, n - r)
+        single_atol = 1000 * np.finfo(np.float32).eps
+        double_atol = 1000 * np.finfo(np.float64).eps
+        atol = single_atol if ind in [0, 2] else double_atol
+        assert_allclose(A[piv-1][:, piv-1], L @ L.conj().T, rtol=0., atol=atol)

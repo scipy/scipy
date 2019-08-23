@@ -52,7 +52,7 @@ class csr_matrix(_cs_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         CSR format data array of the matrix
     indices

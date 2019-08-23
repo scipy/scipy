@@ -7,10 +7,10 @@ from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 
-from scipy.linalg import LinAlgWarning
+from scipy.fft import fft
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez, firls, minimum_phase
+    firwin, firwin2, freqz, remez, firls, minimum_phase
 
 
 def test_kaiser_beta():
@@ -565,7 +565,7 @@ class TestMinimumPhase(object):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])
         assert_raises(ValueError, minimum_phase, [1., 1.])
-        assert_raises(ValueError, minimum_phase, np.ones(10) * 1j)
+        assert_raises(ValueError, minimum_phase, np.full(10, 1j))
         assert_raises(ValueError, minimum_phase, 'foo')
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
@@ -585,8 +585,8 @@ class TestMinimumPhase(object):
         for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
             h = rng.randn(n)
             h_new = minimum_phase(np.convolve(h, h[::-1]))
-            assert_allclose(np.abs(np.fft.fft(h_new)),
-                            np.abs(np.fft.fft(h)), rtol=1e-4)
+            assert_allclose(np.abs(fft(h_new)),
+                            np.abs(fft(h)), rtol=1e-4)
 
     def test_hilbert(self):
         # compare to MATLAB output of reference implementation
@@ -598,7 +598,7 @@ class TestMinimumPhase(object):
         k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
              0.077152207480935, -0.129943946349364, -0.059355880509749]
         m = minimum_phase(h, 'hilbert')
-        assert_allclose(m, k, rtol=2e-3)
+        assert_allclose(m, k, rtol=5e-3)
 
         # f=[0 0.8 0.9 1];
         # a=[0 0 1 1];

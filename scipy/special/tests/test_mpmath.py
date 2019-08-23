@@ -102,6 +102,28 @@ def test_hyp0f1_gh_1609():
 
 
 # ------------------------------------------------------------------------------
+# hyperu
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '1.1.0')
+def test_hyperu_around_0():
+    dataset = []
+    # DLMF 13.2.14-15 test points.
+    for n in np.arange(-5, 5):
+        for b in np.linspace(-5, 5, 20):
+            a = -n
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+            a = -n + b - 1
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+    # DLMF 13.2.16-22 test points.
+    for a in [-10.5, -1.5, -0.5, 0, 0.5, 1, 10]:
+        for b in [-1.0, -0.5, 0, 0.5, 1, 1.5, 2, 2.5]:
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+    dataset = np.array(dataset)
+
+    FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-13).check()
+
+# ------------------------------------------------------------------------------
 # hyp2f1
 # ------------------------------------------------------------------------------
 
@@ -1336,12 +1358,20 @@ class TestSystematic(object):
         # in the intermediate calculations. Can be fixed by implementing an
         # asymptotic expansion for Bessel functions for large order.
 
-    @pytest.mark.xfail(run=False)
     def test_hyp1f1(self):
-        assert_mpmath_equal(inf_to_nan(sc.hyp1f1),
-                            exception_to_nan(lambda a, b, x: mpmath.hyp1f1(a, b, x, **HYPERKW)),
-                            [Arg(-1e5, 1e5), Arg(-1e5, 1e5), Arg()],
-                            n=2000)
+        def mpmath_hyp1f1(a, b, x):
+            try:
+                return mpmath.hyp1f1(a, b, x)
+            except ZeroDivisionError:
+                return np.inf
+
+        assert_mpmath_equal(
+            sc.hyp1f1,
+            mpmath_hyp1f1,
+            [Arg(-50, 50), Arg(1, 50, inclusive_a=False), Arg(-50, 50)],
+            n=500,
+            nan_ok=False
+        )
 
     @pytest.mark.xfail(run=False)
     def test_hyp1f1_complex(self):
@@ -1827,11 +1857,20 @@ class TestSystematic(object):
                             lambda z: _mpmath_wrightomega(z, 25),
                             [ComplexArg()], rtol=1e-14, nan_ok=False)
 
-    def test_zeta(self):
+    def test_hurwitz_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_riemann_zeta(self):
+        assert_mpmath_equal(
+            sc.zeta,
+            mpmath.zeta,
+            [Arg(-100, 100)],
+            nan_ok=False,
+            rtol=1e-13,
+        )
 
     def test_zetac(self):
         assert_mpmath_equal(sc.zetac,

@@ -54,8 +54,8 @@ def pade(an, m, n=None):
     if N > len(an)-1:
         raise ValueError("Order of q+p <m+n> must be smaller than len(an).")
     an = an[:N+1]
-    Akj = eye(N+1, n+1)
-    Bkj = zeros((N+1, m), 'd')
+    Akj = eye(N+1, n+1, dtype=an.dtype)
+    Bkj = zeros((N+1, m), dtype=an.dtype)
     for row in range(1, m+1):
         Bkj[row,:row] = -(an[:row])[::-1]
     for row in range(m+1, N+1):

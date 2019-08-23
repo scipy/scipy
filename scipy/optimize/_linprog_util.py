@@ -65,7 +65,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
-             OptimizeWarning)
+             OptimizeWarning, stacklevel=4)
     return options, A_ub, A_eq
 
 
@@ -745,7 +745,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
             A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
             if A_eq.shape[0] < n_rows_A:
-                warn(redundancy_warning, OptimizeWarning)
+                warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
                 complete = True
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
@@ -760,7 +760,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
         except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
-        warn(redundancy_warning, OptimizeWarning)
+        warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
         if dim_row_nullspace <= small_nullspace:
             A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
@@ -1065,6 +1065,7 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
 
     # add slack variables
     A2 = vstack([eye(A_ub.shape[0]), zeros((A_eq.shape[0], A_ub.shape[0]))])
+
     A = hstack([A1, A2])
 
     # lower bound: substitute xi = xi' + lb
@@ -1113,8 +1114,7 @@ def _display_summary(message, status, fun, iteration):
     print("         Iterations: {0:d}".format(iteration))
 
 
-def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-               complete=False, undo=[], tol=1e-8):
+def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1126,27 +1126,33 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     ----------
     x : 1D array
         Solution vector to the standard-form problem.
-    c : 1D array
-        Original coefficients of the linear objective function to be minimized.
-    A_ub : 2D array, optional
-        2D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1D array, optional
-        1D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2D array, optional
-        2D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1D array, optional
-        1D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence of tuples
-        Bounds, as modified in presolve
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the solution to the original problem, including:
+
+        c : 1D array
+            Original coefficients of the linear objective function to be
+            minimized.
+        A_ub : 2D array, optional
+            2D array such that ``A_ub @ x`` gives the values of the upper-bound
+            inequality constraints at ``x``.
+        b_ub : 1D array, optional
+            1D array of values representing the upper-bound of each inequality
+            constraint (row) in ``A_ub``.
+        A_eq : 2D array, optional
+            2D array such that ``A_eq @ x`` gives the values of the equality
+            constraints at ``x``.
+        b_eq : 1D array, optional
+            1D array of values representing the RHS of each equality constraint
+            (row) in ``A_eq``.
+        bounds : sequence of tuples
+            Bounds, as modified in presolve
+        undo: list of tuples
+            (`index`, `value`) pairs that record the original index and fixed value
+            for each variable removed from the problem
+
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
     tol : float
         Termination tolerance; see [1]_ Section 4.5.
 
@@ -1173,6 +1179,7 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     # we need these modified values to undo the variable substitutions
     # in retrospect, perhaps this could have been simplified if the "undo"
     # variable also contained information for undoing variable substitutions
+    c, A_ub, b_ub, A_eq, b_eq, bounds, undo = postsolve_args
 
     n_x = len(c)
 
@@ -1187,7 +1194,9 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         x = x.tolist()
         for i, val in zip(undo[0], undo[1]):
             x.insert(i, val)
-        x = np.array(x)
+        copy = True
+    if copy:
+        x = np.array(x, copy=True)
 
     # now undo variable substitutions
     # if "complete", problem was solved in presolve; don't do anything here
@@ -1327,9 +1336,8 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     return status, message
 
 
-def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-                 complete=False, undo=[], status=0, message="", tol=1e-8,
-                 iteration=None, disp=False):
+def _postprocess(x, postsolve_args, complete=False, status=0, message="",
+                 tol=1e-8, iteration=None, disp=False):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1403,8 +1411,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     """
 
     x, fun, slack, con, lb, ub = _postsolve(
-        x, c, A_ub, b_ub, A_eq, b_eq,
-        bounds, complete, undo, tol
+        x, postsolve_args, complete, tol
     )
 
     status, message = _check_result(

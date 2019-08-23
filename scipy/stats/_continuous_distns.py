@@ -24,7 +24,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray)
+                                    rv_continuous, _skew, valarray,
+                                    _get_fixed_fit_value)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
@@ -34,6 +35,24 @@ try:
     float_power = np.float_power
 except AttributeError:
     float_power = np.power
+
+
+def _remove_optimizer_parameters(kwds):
+    """
+    Remove the optimizer-related keyword arguments 'loc', 'scale' and
+    'optimizer' from `kwds`.  Then check that `kwds` is empty, and
+    raise `TypeError("Unknown arguments: %s." % kwds)` if it is not.
+
+    This function is used in the fit method of distributions that override
+    the default method and do not use the default optimization code.
+
+    `kwds` is modified in-place.
+    """
+    kwds.pop('loc', None)
+    kwds.pop('scale', None)
+    kwds.pop('optimizer', None)
+    if kwds:
+        raise TypeError("Unknown arguments: %s." % kwds)
 
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
@@ -252,8 +271,10 @@ class norm_gen(rv_continuous):
         estimation of the normal distribution parameters, so the
         `optimizer` argument is ignored.\n\n""")
     def fit(self, data, **kwds):
-        floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -287,7 +308,7 @@ class alpha_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `alpha` is:
+    The probability density function for `alpha` ([1]_, [2]_) is:
 
     .. math::
 
@@ -299,6 +320,15 @@ class alpha_gen(rv_continuous):
     `alpha` takes ``a`` as a shape parameter.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons,
+           p. 173 (1994).
+    .. [2] Anthony A. Salvia, "Reliability applications of the Alpha
+           Distribution", IEEE Transactions on Reliability, Vol. R-34,
+           No. 3, pp. 251-252 (1985).
 
     %(example)s
 
@@ -528,16 +558,21 @@ class beta_gen(rv_continuous):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
-        f1 = (kwds.get('f1', None) or kwds.get('fb', None) or
-              kwds.get('fix_b', None))
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
         if floc is None or fscale is None:
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
+
+        # We already got these from kwds, so just pop them.
+        kwds.pop('floc', None)
+        kwds.pop('fscale', None)
+
+        f0 = _get_fixed_fit_value(kwds, ['f0', 'fa', 'fix_a'])
+        f1 = _get_fixed_fit_value(kwds, ['f1', 'fb', 'fix_b'])
+
+        _remove_optimizer_parameters(kwds)
 
         if f0 is not None and f1 is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -750,6 +785,7 @@ class burr_gen(rv_continuous):
     --------
     fisk : a special case of either `burr` or `burr12` with ``d=1``
     burr12 : Burr Type XII distribution
+    mielke : Mielke Beta-Kappa / Dagum distribution
 
     Notes
     -----
@@ -757,14 +793,18 @@ class burr_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{-c-1} (1+x^{-c})^{-d-1}
+        f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d + 1}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
     `burr` takes :math:`c` and :math:`d` as shape parameters.
 
     This is the PDF corresponding to the third CDF given in Burr's list;
-    specifically, it is equation (11) in Burr's paper [1]_.
+    specifically, it is equation (11) in Burr's paper [1]_. The distribution
+    is also commonly referred to as the Dagum distribution [2]_. If the
+    parameter :math:`c < 1` then the mean of the distribution does not
+    exist and if :math:`c < 2` the variance does not exist [2]_.
+    The PDF is finite at the left endpoint :math:`x = 0` if :math:`c * d >= 1`.
 
     %(after_notes)s
 
@@ -772,25 +812,82 @@ class burr_gen(rv_continuous):
     ----------
     .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
        Mathematical Statistics, 13(2), pp 215-232 (1942).
+    .. [2] https://en.wikipedia.org/wiki/Dagum_distribution
+    .. [3] Kleiber, Christian. "A guide to the Dagum distributions."
+       Modeling Income Distributions and Lorenz Curves  pp 97-117 (2008).
 
     %(example)s
 
     """
-    _support_mask = rv_continuous._open_support_mask
+    # Do not set _support_mask to rv_continuous._open_support_mask
+    # Whether the left-hand endpoint is suitable for pdf evaluation is dependent
+    # on the values of c and d: if c*d >= 1, the pdf is finite, otherwise infinite.
 
     def _pdf(self, x, c, d):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
-        return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
+        output = _lazywhere(x == 0, [x, c, d],
+                   lambda x_, c_, d_: c_ * d_ * (x_**(c_*d_-1)) / (1 + x_**c_),
+                   f2 = lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
+                                            ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def _logpdf(self, x, c, d):
+        output = _lazywhere(
+            x == 0, [x, c, d],
+            lambda x_, c_, d_: (np.log(c_) + np.log(d_) + sc.xlogy(c_*d_ - 1, x_)
+                                - (d_+1) * sc.log1p(x_**(c_))),
+            f2 = lambda x_, c_, d_: (np.log(c_) + np.log(d_)
+                                     + sc.xlogy(-c_ - 1, x_)
+                                     - sc.xlog1py(d_+1, x_**(-c_))))
+        if output.ndim == 0:
+            return output[()]
+        return output
 
     def _cdf(self, x, c, d):
         return (1 + x**(-c))**(-d)
 
+    def _logcdf(self, x, c, d):
+        return sc.log1p(x**(-c)) * (-d)
+
+    def _sf(self, x, c, d):
+        return np.exp(self._logsf(x, c, d))
+
+    def _logsf(self, x, c, d):
+        return np.log1p(- (1 + x**(-c))**(-d))
+
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
+    def _stats(self, c, d):
+        nc = np.arange(1, 5).reshape(4,1) / c
+        #ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
+        e1, e2, e3, e4 = sc.beta(d + nc, 1. - nc) * d
+        mu = np.where(c > 1.0, e1, np.nan)
+        mu2_if_c = e2 - mu**2
+        mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
+        g1 = _lazywhere(
+            c > 3.0,
+            (c, e1, e2, e3, mu2_if_c),
+            lambda c, e1, e2, e3, mu2_if_c: (e3 - 3*e2*e1 + 2*e1**3) / np.sqrt((mu2_if_c)**3),
+            fillvalue=np.nan)
+        g2 = _lazywhere(
+            c > 4.0,
+            (c, e1, e2, e3, e4, mu2_if_c),
+            lambda c, e1, e2, e3, e4, mu2_if_c: (
+                ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
+            fillvalue=np.nan)
+        return mu, mu2, g1, g2
+
     def _munp(self, n, c, d):
-        nc = 1. * n / c
-        return d * sc.beta(1.0 - nc, d + nc)
+        def __munp(n, c, d):
+            nc = 1. * n / c
+            return d * sc.beta(1.0 - nc, d + nc)
+        n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
+        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
+                          lambda c, d, n: __munp(n, c, d),
+                          np.nan)
 
 
 burr = burr_gen(a=0.0, name='burr')
@@ -812,7 +909,7 @@ class burr12_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{c-1} (1+x^c)^{-d-1}
+        f(x, c, d) = c d x^{c-1} / (1 + x^c)^{d + 1}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
@@ -834,11 +931,12 @@ class burr12_gen(rv_continuous):
 
     .. [2] https://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
 
+    .. [3] "Burr distribution",
+       https://en.wikipedia.org/wiki/Burr_distribution
+
     %(example)s
 
     """
-    _support_mask = rv_continuous._open_support_mask
-
     def _pdf(self, x, c, d):
         # burr12.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
         return np.exp(self._logpdf(x, c, d))
@@ -904,16 +1002,32 @@ class fisk_gen(burr_gen):
     """
     def _pdf(self, x, c):
         # fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
-        return burr_gen._pdf(self, x, c, 1.0)
+        return burr._pdf(x, c, 1.0)
 
     def _cdf(self, x, c):
-        return burr_gen._cdf(self, x, c, 1.0)
+        return burr._cdf(x, c, 1.0)
+
+    def _sf(self, x, c):
+        return burr._sf(x, c, 1.0)
+
+    def _logpdf(self, x, c):
+        # fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
+        return burr._logpdf(x, c, 1.0)
+
+    def _logcdf(self, x, c):
+        return burr._logcdf(x, c, 1.0)
+
+    def _logsf(self, x, c):
+        return burr._logsf(x, c, 1.0)
 
     def _ppf(self, x, c):
-        return burr_gen._ppf(self, x, c, 1.0)
+        return burr._ppf(x, c, 1.0)
 
     def _munp(self, n, c):
-        return burr_gen._munp(self, n, c, 1.0)
+        return burr._munp(n, c, 1.0)
+
+    def _stats(self, c):
+        return burr._stats(c, 1.0)
 
     def _entropy(self, c):
         return 2 - np.log(c)
@@ -1319,12 +1433,7 @@ class expon_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        # Ignore the optimizer-related keyword arguments, if given.
-        kwds.pop('loc', None)
-        kwds.pop('scale', None)
-        kwds.pop('optimizer', None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -1677,7 +1786,7 @@ class f_gen(rv_continuous):
     def _logpdf(self, x, dfn, dfd):
         n = 1.0 * dfn
         m = 1.0 * dfd
-        lPx = m/2 * np.log(m) + n/2 * np.log(n) + (n/2 - 1) * np.log(x)
+        lPx = m/2 * np.log(m) + n/2 * np.log(n) + sc.xlogy(n/2 - 1, x)
         lPx -= ((n+m)/2) * np.log(m + n*x) + sc.betaln(n/2, m/2)
         return lPx
 
@@ -2589,14 +2698,19 @@ class gamma_gen(rv_continuous):
         problem than the full ML optimization problem.  So in that case,
         the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
         floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
 
         if floc is None:
             # loc is not fixed.  Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
+
+        # We already have this value, so just pop it from kwds.
+        kwds.pop('floc', None)
+
+        f0 = _get_fixed_fit_value(kwds, ['f0', 'fa', 'fix_a'])
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
 
         # Special case: loc is fixed.
 
@@ -4592,7 +4706,7 @@ maxwell = maxwell_gen(a=0.0, name='maxwell')
 
 
 class mielke_gen(rv_continuous):
-    r"""A Mielke Beta-Kappa continuous random variable.
+    r"""A Mielke Beta-Kappa / Dagum continuous random variable.
 
     %(before_notes)s
 
@@ -4604,7 +4718,10 @@ class mielke_gen(rv_continuous):
 
         f(x, k, s) = \frac{k x^{k-1}}{(1+x^s)^{1+k/s}}
 
-    for :math:`x >= 0` and :math:`k, s > 0`.
+    for :math:`x > 0` and :math:`k, s > 0`. The distribution is sometimes
+    called Dagum distribution ([2]_). It was already defined in [3]_, called
+    a Burr Type III distribution (`burr` with parameters ``c=s`` and
+    ``d=k/s``).
 
     `mielke` takes ``k`` and ``s`` as shape parameters.
 
@@ -4614,13 +4731,22 @@ class mielke_gen(rv_continuous):
     ----------
     .. [1] Mielke, P.W., 1973 "Another Family of Distributions for Describing
            and Analyzing Precipitation Data." J. Appl. Meteor., 12, 275-280
+    .. [2] Dagum, C., 1977 "A new model for personal income distribution."
+           Economie Appliquee, 33, 327-367.
+    .. [3] Burr, I. W. "Cumulative frequency functions", Annals of
+           Mathematical Statistics, 13(2), pp 215-232 (1942).
 
     %(example)s
 
     """
+    def _argcheck(self, k, s):
+        return (k > 0) & (s > 0)
+
     def _pdf(self, x, k, s):
-        # mielke.pdf(x, k, s) = k * x**(k-1) / (1+x**s)**(1+k/s)
         return k*x**(k-1.0) / (1.0+x**s)**(1.0+k*1.0/s)
+
+    def _logpdf(self, x, k, s):
+        return np.log(k) + np.log(x)*(k-1.0) - np.log1p(x**s)*(1.0+k*1.0/s)
 
     def _cdf(self, x, k, s):
         return x**k / (1.0+x**s)**(k*1.0/s)
@@ -4628,6 +4754,13 @@ class mielke_gen(rv_continuous):
     def _ppf(self, q, k, s):
         qsk = pow(q, s*1.0/k)
         return pow(qsk/(1.0-qsk), 1.0/s)
+
+    def _munp(self, n, k, s):
+        def nth_moment(n, k, s):
+            # n-th moment is defined for -k < n < s
+            return sc.gamma((k+n)/s)*sc.gamma(1-n/s)/sc.gamma(k/s)
+
+        return _lazywhere(n < s, (n, k, s), nth_moment, np.inf)
 
 
 mielke = mielke_gen(a=0.0, name='mielke')
@@ -5106,22 +5239,29 @@ class ncx2_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, df, nc):
+        return (df > 0) & (nc >= 0)
+
     def _rvs(self, df, nc):
         return self._random_state.noncentral_chisquare(df, nc, self._size)
 
     def _logpdf(self, x, df, nc):
-        return _ncx2_log_pdf(x, df, nc)
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf, f2=chi2.logpdf)
 
     def _pdf(self, x, df, nc):
         # ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
         #                       * I[(df-2)/2](sqrt(nc*x))
-        return _ncx2_pdf(x, df, nc)
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_pdf, f2=chi2.pdf)
 
     def _cdf(self, x, df, nc):
-        return _ncx2_cdf(x, df, nc)
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_cdf, f2=chi2.cdf)
 
     def _ppf(self, q, df, nc):
-        return sc.chndtrix(q, df, nc)
+        cond = np.ones_like(q, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (q, df, nc), f=sc.chndtrix, f2=chi2.ppf)
 
     def _stats(self, df, nc):
         val = df + 2.0*nc
@@ -5202,10 +5342,19 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc):
-        mu = np.where(dfd <= 2, np.inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = np.where(dfd <= 4, np.inf, 2*(dfd*1.0/dfn)**2.0 *
-                       ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
-                       ((dfd-2.0)**2.0 * (dfd-4.0)))
+        # Note: the rv_continuous class ensures that dfn > 0 when this function
+        # is called, so we don't have  to check for division by zero with dfn
+        # in the following.
+        mu_num = dfd * (dfn + nc)
+        mu_den = dfn * (dfd - 2)
+        mu = np.full_like(mu_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu_num, mu_den, where=dfd > 2, out=mu)
+
+        mu2_num = 2*((dfn + nc)**2 + (dfn + 2*nc)*(dfd - 2))*(dfd/dfn)**2
+        mu2_den = (dfd - 2)**2 * (dfd - 4)
+        mu2 = np.full_like(mu2_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu2_num, mu2_den, where=dfd > 4, out=mu2)
+
         return mu, mu2, None, None
 
 
@@ -5224,7 +5373,7 @@ class t_gen(rv_continuous):
     .. math::
 
         f(x, \nu) = \frac{\Gamma((\nu+1)/2)}
-                        {\sqrt{\pi \nu} \Gamma(\nu)}
+                        {\sqrt{\pi \nu} \Gamma(\nu/2)}
                     (1+x^2/\nu)^{-(\nu+1)/2}
 
     where :math:`x` is a real number and the degrees of freedom parameter
@@ -5305,7 +5454,7 @@ class nct_gen(rv_continuous):
     has a non-central Student's t distribution on the real line.
     The degrees of freedom parameter :math:`k` (denoted ``df`` in the
     implementation) satisfies :math:`k > 0` and the noncentrality parameter
-    :math:`c` (denoted ``nct`` in the implementation) is a real number.
+    :math:`c` (denoted ``nc`` in the implementation) is a real number.
 
     %(after_notes)s
 
@@ -6079,15 +6228,26 @@ class semicircular_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Wigner semicircle distribution",
+           https://en.wikipedia.org/wiki/Wigner_semicircle_distribution
+
     %(example)s
 
     """
     def _pdf(self, x):
-        # semicircular.pdf(x) = 2/pi * sqrt(1-x**2)
         return 2.0/np.pi*np.sqrt(1-x*x)
 
     def _cdf(self, x):
         return 0.5+1.0/np.pi*(x*np.sqrt(1-x*x) + np.arcsin(x))
+
+    def _rvs(self):
+        # generate values uniformly distributed on the area under the pdf
+        # (semi-circle) by randomly generating the radius and angle
+        r = np.sqrt(self._random_state.random_sample(size=self._size))
+        a = np.cos(np.pi * self._random_state.random_sample(size=self._size))
+        return r * a
 
     def _stats(self):
         return 0, 0.25, 0, -1.0
@@ -6608,12 +6768,7 @@ class uniform_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        # Ignore the optimizer-related keyword arguments, if given.
-        kwds.pop('loc', None)
-        kwds.pop('scale', None)
-        kwds.pop('optimizer', None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.

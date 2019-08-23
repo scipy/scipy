@@ -31,16 +31,13 @@ from ._complexstuff cimport (
     double_complex_from_npy_cdouble)
 
 from . cimport sf_error
-from ._cephes cimport Gamma, lgam, beta, lbeta
+from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
 from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
-
-cdef extern from "c_misc/misc.h":
-    double gammasgn(double x) nogil
 
 # Fused type wrappers
 

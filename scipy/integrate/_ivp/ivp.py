@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
-from .rk import RK23, RK45
+from .rk import RK23, RK45, DOP853
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
@@ -12,6 +12,7 @@ from .base import OdeSolver
 
 METHODS = {'RK23': RK23,
            'RK45': RK45,
+           'DOP853': DOP853,
            'Radau': Radau,
            'BDF': BDF,
            'LSODA': LSODA}
@@ -169,12 +170,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     The goal is to find y(t) approximately satisfying the differential
     equations, given an initial value y(t0)=y0.
 
-    Some of the solvers support integration in the complex domain, but
-    note that for stiff ODE solvers, the right-hand side must be complex-
-    differentiable (satisfy Cauchy-Riemann equations [11]_). To solve a
-    problem in the complex domain, pass y0 with a complex data type. Another
-    option is always to rewrite your problem for real and imaginary parts
-    separately.
+    Some of the solvers support integration in the complex domain, but note
+    that for stiff ODE solvers, the right-hand side must be
+    complex-differentiable (satisfy Cauchy-Riemann equations [11]_).
+    To solve a problem in the complex domain, pass y0 with a complex data type.
+    Another option always available is to rewrite your problem for real and
+    imaginary parts separately.
 
     Parameters
     ----------
@@ -193,7 +194,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         integrates until it reaches t=tf.
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
-        complex data type (even if the initial guess is purely real).
+        complex data type (even if the initial value is purely real).
     method : string or `OdeSolver`, optional
         Integration method to use:
 
@@ -206,8 +207,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
               is controlled assuming accuracy of the second-order method, but
               steps are taken using the third-order accurate formula (local
-              extrapolation is done). A cubic Hermite polynomial is used for
-              the dense output. Can be applied in the complex domain.
+              extrapolation is done). A cubic Hermite polynomial is used for the
+              dense output. Can be applied in the complex domain.
+            * 'DOP853': Explicit Runge-Kutta method of order 8 [13]_.
+              Python implementation of the "DOP853" algorithm originally
+              written in Fortran [14]_. A 7-th order interpolation polynomial
+              accurate to 7-th order is used for the dense output.
+              Can be applied in the complex domain.
             * 'Radau': Implicit Runge-Kutta method of the Radau IIA family of
               order 5 [4]_. The error is controlled with a third-order accurate
               embedded formula. A cubic polynomial which satisfies the
@@ -222,12 +228,16 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               switching [7]_, [8]_. This is a wrapper of the Fortran solver
               from ODEPACK.
 
-        You should use the 'RK45' or 'RK23' method for non-stiff problems and
-        'Radau' or 'BDF' for stiff problems [9]_. If not sure, first try to run
-        'RK45'. If needs unusually many iterations, diverges, or fails, your
-        problem is likely to be stiff and you should use 'Radau' or 'BDF'.
-        'LSODA' can also be a good universal choice, but it might be somewhat
-        less convenient to work with as it wraps old Fortran code.
+        Explicit Runge-Kutta methods ('RK23', 'RK45', 'DOP853') should be used
+        for non-stiff problems and implicit methods ('Radau', 'BDF') for
+        stiff problems [9]_. Among Runge-Kutta methods, 'DOP853' is recommended
+        for solving with high precision (low values of `rtol` and `atol`).
+
+        If not sure, first try to run 'RK45'. If it makes unusually many
+        iterations, diverges, or fails, your problem is likely to be stiff and
+        you should use 'Radau' or 'BDF'. 'LSODA' can also be a good universal
+        choice, but it might be somewhat less convenient to work with as it
+        wraps old Fortran code.
 
         You can also pass an arbitrary class derived from `OdeSolver` which
         implements the solver.
@@ -295,7 +305,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               be constant. Not supported by 'LSODA'.
             * If callable, the Jacobian is assumed to depend on both
               t and y; it will be called as ``jac(t, y)`` as necessary.
-              For the 'Radau' and 'BDF' methods, the return value might be a
+              For 'Radau' and 'BDF' methods, the return value might be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
               finite differences.
@@ -391,6 +401,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [12] `Lotka-Volterra equations
             <https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations>`_
             on Wikipedia.
+    .. [13] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
+            Equations I: Nonstiff Problems", Sec. II.
+    .. [14] `Page with original Fortran code of DOP853
+            <http://www.unige.ch/~hairer/software.html>`_.
 
     Examples
     --------
@@ -400,15 +414,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> def exponential_decay(t, y): return -0.5 * y
     >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8])
     >>> print(sol.t)
-    [  0.           0.11487653   1.26364188   3.06061781   4.85759374
-       6.65456967   8.4515456   10.        ]
+    [ 0.          0.11487653  1.26364188  3.06061781  4.81611105  6.57445806
+      8.33328988 10.        ]
     >>> print(sol.y)
-    [[2.         1.88836035 1.06327177 0.43319312 0.17648948 0.0719045
-      0.02929499 0.01350938]
-     [4.         3.7767207  2.12654355 0.86638624 0.35297895 0.143809
-      0.05858998 0.02701876]
-     [8.         7.5534414  4.25308709 1.73277247 0.7059579  0.287618
-      0.11717996 0.05403753]]
+    [[2.         1.88836035 1.06327177 0.43319312 0.18017253 0.07483045
+      0.03107158 0.01350781]
+     [4.         3.7767207  2.12654355 0.86638624 0.36034507 0.14966091
+      0.06214316 0.02701561]
+     [8.         7.5534414  4.25308709 1.73277247 0.72069014 0.29932181
+      0.12428631 0.05403123]]
 
     Specifying points where the solution is desired.
 

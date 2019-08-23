@@ -71,7 +71,7 @@ parameter):
 
     >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
     >>> res = minimize(rosen, x0, method='nelder-mead',
-    ...                options={'xtol': 1e-8, 'disp': True})
+    ...                options={'xatol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 339
@@ -273,7 +273,7 @@ Rosenbrock function using :func:`minimize` follows:
 
 
 According to [NW]_ p. 170 the ``Newton-CG`` algorithm can be inefficient
-when the Hessian is ill-condiotioned because of the poor quality search directions
+when the Hessian is ill-conditioned because of the poor quality search directions
 provided by the method in those situations. The method ``trust-ncg``,
 according to the authors, deals more effectively with this problematic situation
 and will be described next.
@@ -860,7 +860,7 @@ Here we consider "Analysis of an Enzyme Reaction" problem formulated in [1]_.
 There are 11 residuals defined as
 
 .. math::
-    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x3} - y_i, \quad i = 0, \ldots, 10,
+    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x_3} - y_i, \quad i = 0, \ldots, 10,
 
 where :math:`y_i` are measurement values and :math:`u_i` are values of
 the independent variable. The unknown vector of parameters is

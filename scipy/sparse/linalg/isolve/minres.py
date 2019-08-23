@@ -348,7 +348,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
 
 if __name__ == '__main__':
-    from scipy import ones, arange
+    from numpy import zeros, arange
     from scipy.linalg import norm
     from scipy.sparse import spdiags
 
@@ -363,6 +363,6 @@ if __name__ == '__main__':
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
-    b = 0*ones(A.shape[0])
+    b = zeros(A.shape[0])
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

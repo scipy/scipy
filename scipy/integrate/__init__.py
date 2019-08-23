@@ -12,6 +12,7 @@ Integrating functions, given function object
    :toctree: generated/
 
    quad          -- General purpose integration
+   quad_vec      -- General purpose integration of vector-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
    nquad         -- General purpose n-dimensional integration
@@ -51,6 +52,7 @@ The solvers are implemented as individual classes which can be used directly
    solve_ivp     -- Convenient function for ODE integration.
    RK23          -- Explicit Runge-Kutta solver of order 3(2).
    RK45          -- Explicit Runge-Kutta solver of order 5(4).
+   DOP853        -- Explicit Runge-Kutta solver of order 8.
    Radau         -- Implicit Runge-Kutta solver of order 5.
    BDF           -- Implicit multi-step variable order (1 to 5) solver.
    LSODA         -- LSODA solver from ODEPACK Fortran package.
@@ -92,7 +94,8 @@ from .quadpack import *
 from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
-                   OdeSolver, RK23, RK45, Radau, BDF, LSODA)
+                   OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
+from ._quad_vec import quad_vec
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
