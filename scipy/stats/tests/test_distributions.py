@@ -1808,6 +1808,17 @@ class TestEntropy(object):
         assert_array_almost_equal(stats.entropy(pk, qk, axis=0),
                                   stats.entropy(pk, qk))
 
+    def test_base_entropy_transposed(self):
+        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        assert_array_almost_equal(stats.entropy(pk.T).T,
+                                  stats.entropy(pk, axis=1))
+
+    def test_entropy_transposed(self):
+        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
+                                  stats.entropy(pk, qk, axis=1))
+
 
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
