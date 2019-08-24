@@ -1792,6 +1792,12 @@ class TestEntropy(object):
         assert_array_almost_equal(stats.entropy(pk, qk, axis=1),
                                   [0.231049, 0.231049, 0.127706])
 
+    def test_entropy_raises_value_error(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.1, 0.2], [0.6, 0.3]]
+        assert_raises(ValueError, stats.entropy, pk, qk)
+
+
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
     b, c = argsreduce(a > 1, a, 2)
