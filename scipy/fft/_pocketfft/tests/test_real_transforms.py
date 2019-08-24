@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
 from os.path import join, dirname
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_equal
+from numpy.testing import (
+    assert_array_almost_equal, assert_equal, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -12,28 +13,75 @@ from scipy.fft._pocketfft.realtransforms import (
 
 fftpack_test_dir = join(dirname(__file__), '..', '..', '..', 'fftpack', 'tests')
 
-# Matlab reference data
-MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
-X = [MDATA['x%d' % i] for i in range(8)]
-Y = [MDATA['y%d' % i] for i in range(8)]
+MDATA_COUNT = 8
+FFTWDATA_COUNT = 14
 
-# FFTW reference data: the data are organized as follows:
-#    * SIZES is an array containing all available sizes
-#    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
-#    contains the output of the DCT applied to the input np.linspace(0, size-1,
-#    size)
-FFTWDATA_DOUBLE = np.load(join(fftpack_test_dir, 'fftw_double_ref.npz'))
-FFTWDATA_SINGLE = np.load(join(fftpack_test_dir, 'fftw_single_ref.npz'))
-FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
+def get_reference_data():
+    ref = getattr(globals(), '__reference_data', None)
+    if ref is not None:
+        return ref
+
+    # Matlab reference data
+    MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
+    X = [MDATA['x%d' % i] for i in range(MDATA_COUNT)]
+    Y = [MDATA['y%d' % i] for i in range(MDATA_COUNT)]
+
+    # FFTW reference data: the data are organized as follows:
+    #    * SIZES is an array containing all available sizes
+    #    * for every type (1, 2, 3, 4) and every size, the array dct_type_size
+    #    contains the output of the DCT applied to the input np.linspace(0, size-1,
+    #    size)
+    FFTWDATA_DOUBLE = np.load(join(fftpack_test_dir, 'fftw_double_ref.npz'))
+    FFTWDATA_SINGLE = np.load(join(fftpack_test_dir, 'fftw_single_ref.npz'))
+    FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
+    assert len(FFTWDATA_SIZES) == FFTWDATA_COUNT
+
+    if np.longfloat().itemsize == 16:
+        FFTWDATA_LONGDOUBLE = np.load(
+            join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
+    else:
+        FFTWDATA_LONGDOUBLE = {k: v.astype(np.longfloat)
+                               for k,v in FFTWDATA_DOUBLE.items()}
+
+    ref = {
+        'FFTWDATA_LONGDOUBLE': FFTWDATA_LONGDOUBLE,
+        'FFTWDATA_DOUBLE': FFTWDATA_DOUBLE,
+        'FFTWDATA_SINGLE': FFTWDATA_SINGLE,
+        'FFTWDATA_SIZES': FFTWDATA_SIZES,
+        'X': X,
+        'Y': Y
+    }
+
+    globals()['__reference_data'] = ref
+    return ref
+
+
+@pytest.fixture(params=range(FFTWDATA_COUNT))
+def fftwdata_size(request):
+    return get_reference_data()['FFTWDATA_SIZES'][request.param]
+
+@pytest.fixture(params=range(MDATA_COUNT))
+def mdata_x(request):
+    return get_reference_data()['X'][request.param]
+
+
+@pytest.fixture(params=range(MDATA_COUNT))
+def mdata_xy(request):
+    ref = get_reference_data()
+    y = ref['Y'][request.param]
+    x = ref['X'][request.param]
+    return x, y
 
 
 def fftw_dct_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
     if dt == np.double:
-        data = FFTWDATA_DOUBLE
+        data = get_reference_data()['FFTWDATA_DOUBLE']
     elif dt == np.float32:
-        data = FFTWDATA_SINGLE
+        data = get_reference_data()['FFTWDATA_SINGLE']
+    elif dt == np.longfloat:
+        data = get_reference_data()['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
     y = (data['dct_%d_%d' % (type, size)]).astype(dt)
@@ -44,52 +92,24 @@ def fftw_dst_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
     if dt == np.double:
-        data = FFTWDATA_DOUBLE
+        data = get_reference_data()['FFTWDATA_DOUBLE']
     elif dt == np.float32:
-        data = FFTWDATA_SINGLE
+        data = get_reference_data()['FFTWDATA_SINGLE']
+    elif dt == np.longfloat:
+        data = get_reference_data()['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
     y = (data['dst_%d_%d' % (type, size)]).astype(dt)
     return x, y, dt
 
 
-def dct_2d_ref(x, **kwargs):
-    """Calculate reference values for testing dct2."""
+def ref_2d(func, x, **kwargs):
+    """Calculate 2d reference data from a 1d transform"""
     x = np.array(x, copy=True)
     for row in range(x.shape[0]):
-        x[row, :] = dct(x[row, :], **kwargs)
+        x[row, :] = func(x[row, :], **kwargs)
     for col in range(x.shape[1]):
-        x[:, col] = dct(x[:, col], **kwargs)
-    return x
-
-
-def idct_2d_ref(x, **kwargs):
-    """Calculate reference values for testing idct2."""
-    x = np.array(x, copy=True)
-    for row in range(x.shape[0]):
-        x[row, :] = idct(x[row, :], **kwargs)
-    for col in range(x.shape[1]):
-        x[:, col] = idct(x[:, col], **kwargs)
-    return x
-
-
-def dst_2d_ref(x, **kwargs):
-    """Calculate reference values for testing dst2."""
-    x = np.array(x, copy=True)
-    for row in range(x.shape[0]):
-        x[row, :] = dst(x[row, :], **kwargs)
-    for col in range(x.shape[1]):
-        x[:, col] = dst(x[:, col], **kwargs)
-    return x
-
-
-def idst_2d_ref(x, **kwargs):
-    """Calculate reference values for testing idst2."""
-    x = np.array(x, copy=True)
-    for row in range(x.shape[0]):
-        x[row, :] = idst(x[row, :], **kwargs)
-    for col in range(x.shape[1]):
-        x[:, col] = idst(x[:, col], **kwargs)
+        x[:, col] = func(x[:, col], **kwargs)
     return x
 
 
@@ -158,585 +178,229 @@ def naive_dst4(x, norm=None):
     return y
 
 
-class TestComplex(object):
-    def test_dct_complex64(self):
-        y = dct(1j*np.arange(5, dtype=np.complex64))
-        x = 1j*dct(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_dct_complex(self):
-        y = dct(np.arange(5)*1j)
-        x = 1j*dct(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_idct_complex(self):
-        y = idct(np.arange(5)*1j)
-        x = 1j*idct(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_dst_complex64(self):
-        y = dst(np.arange(5, dtype=np.complex64)*1j)
-        x = 1j*dst(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_dst_complex(self):
-        y = dst(np.arange(5)*1j)
-        x = 1j*dst(np.arange(5))
-        assert_array_almost_equal(x, y)
-
-    def test_idst_complex(self):
-        y = idst(np.arange(5)*1j)
-        x = 1j*idst(np.arange(5))
-        assert_array_almost_equal(x, y)
+@pytest.mark.parametrize('dtype', [np.complex64, np.complex128, np.longcomplex])
+@pytest.mark.parametrize('transform', [dct, dst, idct, idst])
+def test_complex(transform, dtype):
+    y = transform(1j*np.arange(5, dtype=dtype))
+    x = 1j*transform(np.arange(5))
+    assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(object):
-    def setup_method(self):
-        self.rdt = None
-        self.dec = 14
-        self.type = None
+# map (tranform, dtype, type) -> decimal
+dec_map = {
+    # DCT
+    (dct, np.double, 1): 13,
+    (dct, np.float32, 1): 6,
 
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            x, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
-            y = dct(x, type=self.type)
-            assert_equal(y.dtype, dt)
-            # XXX: we divide by np.max(y) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
+    (dct, np.double, 2): 14,
+    (dct, np.float32, 2): 5,
 
-    def test_axis(self):
+    (dct, np.double, 3): 14,
+    (dct, np.float32, 3): 5,
+
+    (dct, np.double, 4): 13,
+    (dct, np.float32, 4): 6,
+
+    # IDCT
+    (idct, np.double, 1): 14,
+    (idct, np.float32, 1): 6,
+
+    (idct, np.double, 2): 14,
+    (idct, np.float32, 2): 5,
+
+    (idct, np.double, 3): 14,
+    (idct, np.float32, 3): 5,
+
+    (idct, np.double, 4): 14,
+    (idct, np.float32, 4): 6,
+
+    # DST
+    (dst, np.double, 1): 13,
+    (dst, np.float32, 1): 6,
+
+    (dst, np.double, 2): 14,
+    (dst, np.float32, 2): 6,
+
+    (dst, np.double, 3): 14,
+    (dst, np.float32, 3): 7,
+
+    (dst, np.double, 4): 13,
+    (dst, np.float32, 4): 6,
+
+    # IDST
+    (idst, np.double, 1): 14,
+    (idst, np.float32, 1): 6,
+
+    (idst, np.double, 2): 14,
+    (idst, np.float32, 2): 6,
+
+    (idst, np.double, 3): 14,
+    (idst, np.float32, 3): 6,
+
+    (idst, np.double, 4): 14,
+    (idst, np.float32, 4): 6,
+}
+
+for k,v in dec_map.copy().items():
+    if k[1] == np.double:
+        dec_map[(k[0], np.longdouble, k[2])] = v
+    elif k[1] == np.float32:
+        dec_map[(k[0], int, k[2])] = v
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+class TestDCT:
+    def test_definition(self, rdt, type, fftwdata_size):
+        x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
+        y = dct(x, type=type)
+        assert_equal(y.dtype, dt)
+        dec = dec_map[(dct, rdt, type)]
+        assert_allclose(y, yr, rtol=0., atol=np.max(yr)*10**(-dec))
+
+    @pytest.mark.parametrize('size', [7, 8, 9, 16, 32, 64])
+    def test_axis(self, rdt, type, size):
         nt = 2
-        for i in [7, 8, 9, 16, 32, 64]:
-            x = np.random.randn(nt, i)
-            y = dct(x, type=self.type)
-            for j in range(nt):
-                assert_array_almost_equal(y[j], dct(x[j], type=self.type),
-                        decimal=self.dec)
-
-            x = x.T
-            y = dct(x, axis=0, type=self.type)
-            for j in range(nt):
-                assert_array_almost_equal(y[:,j], dct(x[:,j], type=self.type),
-                        decimal=self.dec)
-
-
-class _TestDCTIBase(_TestDCTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, norm='ortho', type=1)
-            y2 = naive_dct1(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
-class _TestDCTIIBase(_TestDCTBase):
-    def test_definition_matlab(self):
-        # Test correspondence with matlab (orthornomal mode).
-        for i in range(len(X)):
-            dt = np.result_type(np.float32, self.rdt)
-            x = np.array(X[i], dtype=dt)
-
-            yr = Y[i]
-            y = dct(x, norm="ortho", type=2)
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y, yr, decimal=self.dec)
-
-
-class _TestDCTIIIBase(_TestDCTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, norm='ortho', type=2)
-            xi = dct(y, norm="ortho", type=3)
-            assert_equal(xi.dtype, dt)
-            assert_array_almost_equal(xi, x, decimal=self.dec)
-
-class _TestDCTIVBase(_TestDCTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, norm='ortho', type=4)
-            y2 = naive_dct4(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
-
-class TestDCTIDouble(_TestDCTIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 1
-
-
-class TestDCTIFloat(_TestDCTIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestDCTIInt(_TestDCTIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 1
-
-
-class TestDCTIIDouble(_TestDCTIIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 2
-
-
-class TestDCTIIFloat(_TestDCTIIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 2
-
-
-class TestDCTIIInt(_TestDCTIIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 2
-
-
-class TestDCTIIIDouble(_TestDCTIIIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestDCTIIIFloat(_TestDCTIIIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 3
-
-
-class TestDCTIIIInt(_TestDCTIIIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 3
-
-
-class TestDCTIVDouble(_TestDCTIVBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 3
-
-
-class TestDCTIVFloat(_TestDCTIVBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 3
-
-
-class TestDCTIVInt(_TestDCTIVBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 3
-
-
-class _TestIDCTBase(object):
-    def setup_method(self):
-        self.rdt = None
-        self.dec = 14
-        self.type = None
-
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
-            x = idct(yr, type=self.type)
-            assert_equal(x.dtype, dt)
-            # XXX: we divide by np.max(y) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
-
-
-class TestIDCTIDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 1
-
-
-class TestIDCTIFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDCTIInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDCTIIDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 10
-        self.type = 2
-
-
-class TestIDCTIIFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 2
-
-
-class TestIDCTIIInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 2
-
-
-class TestIDCTIIIDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestIDCTIIIFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 3
-
-
-class TestIDCTIIIInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 3
-
-class TestIDCTIVDouble(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 4
-
-
-class TestIDCTIVFloat(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 5
-        self.type = 4
-
-
-class TestIDCTIVInt(_TestIDCTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 4
-
-class _TestDSTBase(object):
-    def setup_method(self):
-        self.rdt = None  # dtype
-        self.dec = None  # number of decimals to match
-        self.type = None  # dst type
-
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
-            y = dst(xr, type=self.type)
-            assert_equal(y.dtype, dt)
-            # XXX: we divide by np.max(y) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(y / np.max(y), yr / np.max(y), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
-
-
-class _TestDSTIBase(_TestDSTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dst(x, norm='ortho', type=1)
-            y2 = naive_dst1(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
-class _TestDSTIVBase(_TestDSTBase):
-    def test_definition_ortho(self):
-        # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dst(x, norm='ortho', type=4)
-            y2 = naive_dst4(x, norm='ortho')
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y, y2, decimal=self.dec)
-
-class TestDSTIDouble(_TestDSTIBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 1
-
-
-class TestDSTIFloat(_TestDSTIBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestDSTIInt(_TestDSTIBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 1
-
-
-class TestDSTIIDouble(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 2
-
-
-class TestDSTIIFloat(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 2
-
-
-class TestDSTIIInt(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 2
-
-
-class TestDSTIIIDouble(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestDSTIIIFloat(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 7
-        self.type = 3
-
-
-class TestDSTIIIInt(_TestDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 7
-        self.type = 3
-
-
-class TestDSTIVDouble(_TestDSTIVBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 4
-
-
-class TestDSTIVFloat(_TestDSTIVBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 4
-
-
-class TestDSTIVInt(_TestDSTIVBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 5
-        self.type = 4
-
-
-class _TestIDSTBase(object):
-    def setup_method(self):
-        self.rdt = None
-        self.dec = None
-        self.type = None
-
-    def test_definition(self):
-        for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
-            x = idst(yr, type=self.type)
-            assert_equal(x.dtype, dt)
-            # XXX: we divide by np.max(x) because the tests fail otherwise. We
-            # should really use something like assert_array_approx_equal. The
-            # difference is due to fftw using a better algorithm w.r.t error
-            # propagation compared to the ones from fftpack.
-            assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
-                    err_msg="Size %d failed" % i)
-
-
-class TestIDSTIDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 1
-
-
-class TestIDSTIFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDSTIInt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 4
-        self.type = 1
-
-
-class TestIDSTIIDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 2
-
-
-class TestIDSTIIFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 2
-
-
-class TestIDSTIIInt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 2
-
-
-class TestIDSTIIIDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 14
-        self.type = 3
-
-
-class TestIDSTIIIFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 3
-
-
-class TestIDSTIIIInt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 3
-
-
-class TestIDSTIVDouble(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.double
-        self.dec = 12
-        self.type = 4
-
-
-class TestIDSTIVFloat(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = np.float32
-        self.dec = 6
-        self.type = 4
-
-
-class TestIDSTIVnt(_TestIDSTBase):
-    def setup_method(self):
-        self.rdt = int
-        self.dec = 6
-        self.type = 4
-
-
-class TestOverwrite(object):
-    """Check input overwrite behavior."""
-
-    real_dtypes = [np.float32, np.float64]
-
-    def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
-               should_overwrite, **kw):
-        x2 = x.copy()
-        routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
-
-        sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
-            routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
-        if not should_overwrite:
-            assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
-
-    def _check_1d(self, routine, dtype, shape, axis):
-        np.random.seed(1234)
-        if np.issubdtype(dtype, np.complexfloating):
-            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
-        else:
-            data = np.random.randn(*shape)
-        data = data.astype(dtype)
-
-        for type in [1, 2, 3, 4]:
-            for overwrite_x in [True, False]:
-                for norm in [None, 'ortho']:
-                    should_overwrite = overwrite_x
-                    self._check(data, routine, type, None, axis, norm,
-                                overwrite_x, should_overwrite)
-
-    def test_dct(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(dct, dtype, (16,), -1)
-            self._check_1d(dct, dtype, (16, 2), 0)
-            self._check_1d(dct, dtype, (2, 16), 1)
-
-    def test_idct(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(idct, dtype, (16,), -1)
-            self._check_1d(idct, dtype, (16, 2), 0)
-            self._check_1d(idct, dtype, (2, 16), 1)
-
-    def test_dst(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(dst, dtype, (16,), -1)
-            self._check_1d(dst, dtype, (16, 2), 0)
-            self._check_1d(dst, dtype, (2, 16), 1)
-
-    def test_idst(self):
-        for dtype in self.real_dtypes:
-            self._check_1d(idst, dtype, (16,), -1)
-            self._check_1d(idst, dtype, (16, 2), 0)
-            self._check_1d(idst, dtype, (2, 16), 1)
+        dec = dec_map[(dct, rdt, type)]
+        x = np.random.randn(nt, size)
+        y = dct(x, type=type)
+        for j in range(nt):
+            assert_array_almost_equal(y[j], dct(x[j], type=type),
+                                      decimal=dec)
+
+        x = x.T
+        y = dct(x, axis=0, type=type)
+        for j in range(nt):
+            assert_array_almost_equal(y[:,j], dct(x[:,j], type=type),
+                                      decimal=dec)
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+def test_dct1_definition_ortho(rdt, mdata_x):
+    # Test orthornomal mode.
+    dec = dec_map[(dct, rdt, 1)]
+    x = np.array(mdata_x, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dct(x, norm='ortho', type=1)
+    y2 = naive_dct1(x, norm='ortho')
+    assert_equal(y.dtype, dt)
+    assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+def test_dct2_definition_matlab(mdata_xy, rdt):
+    # Test correspondence with matlab (orthornomal mode).
+    dt = np.result_type(np.float32, rdt)
+    x = np.array(mdata_xy[0], dtype=dt)
+
+    yr = mdata_xy[1]
+    y = dct(x, norm="ortho", type=2)
+    dec = dec_map[(dct, rdt, 2)]
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y, yr, decimal=dec)
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+def test_dct3_definition_ortho(mdata_x, rdt):
+    # Test orthornomal mode.
+    x = np.array(mdata_x, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dct(x, norm='ortho', type=2)
+    xi = dct(y, norm="ortho", type=3)
+    dec = dec_map[(dct, rdt, 3)]
+    assert_equal(xi.dtype, dt)
+    assert_array_almost_equal(xi, x, decimal=dec)
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+def test_dct4_definition_ortho(mdata_x, rdt):
+    # Test orthornomal mode.
+    x = np.array(mdata_x, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dct(x, norm='ortho', type=4)
+    y2 = naive_dct4(x, norm='ortho')
+    dec = dec_map[(dct, rdt, 4)]
+    assert_equal(y.dtype, dt)
+    assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+def test_idct_definition(fftwdata_size, rdt, type):
+    xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
+    x = idct(yr, type=type)
+    dec = dec_map[(idct, rdt, type)]
+    assert_equal(x.dtype, dt)
+    assert_allclose(x, xr, rtol=0., atol=np.max(xr)*10**(-dec))
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+def test_definition(fftwdata_size, rdt, type):
+    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
+    y = dst(xr, type=type)
+    dec = dec_map[(dst, rdt, type)]
+    assert_equal(y.dtype, dt)
+    assert_allclose(y, yr, rtol=0., atol=np.max(yr)*10**(-dec))
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+def test_dst1_definition_ortho(rdt, mdata_x):
+    # Test orthornomal mode.
+    dec = dec_map[(dst, rdt, 1)]
+    x = np.array(mdata_x, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dst(x, norm='ortho', type=1)
+    y2 = naive_dst1(x, norm='ortho')
+    assert_equal(y.dtype, dt)
+    assert_allclose(y, y2, rtol=0., atol=np.max(y2)*10**(-dec))
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+def test_dst4_definition_ortho(rdt, mdata_x):
+    # Test orthornomal mode.
+    dec = dec_map[(dst, rdt, 4)]
+    x = np.array(mdata_x, dtype=rdt)
+    dt = np.result_type(np.float32, rdt)
+    y = dst(x, norm='ortho', type=4)
+    y2 = naive_dst4(x, norm='ortho')
+    assert_equal(y.dtype, dt)
+    assert_array_almost_equal(y, y2, decimal=dec)
+
+
+@pytest.mark.parametrize('rdt', [np.longfloat, np.double, np.float32, int])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+def test_idst_definition(fftwdata_size, rdt, type):
+    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
+    x = idst(yr, type=type)
+    dec = dec_map[(idst, rdt, type)]
+    assert_equal(x.dtype, dt)
+    assert_allclose(x, xr, rtol=0., atol=np.max(xr)*10**(-dec))
+
+
+@pytest.mark.parametrize('routine', [dct, dst, idct, idst])
+@pytest.mark.parametrize('dtype', [np.float32, np.float64, np.longfloat])
+@pytest.mark.parametrize('shape, axis', [
+    ((16,), -1), ((16, 2), 0), ((2, 16), 1)
+])
+@pytest.mark.parametrize('type', [1, 2, 3, 4])
+@pytest.mark.parametrize('overwrite_x', [True, False])
+@pytest.mark.parametrize('norm', [None, 'ortho'])
+def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
+    # Check input overwrite behavior
+    np.random.seed(1234)
+    if np.issubdtype(dtype, np.complexfloating):
+        x = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+    else:
+        x = np.random.randn(*shape)
+    x = x.astype(dtype)
+    x2 = x.copy()
+    routine(x2, type, None, axis, norm, overwrite_x=overwrite_x)
+
+    sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+        routine.__name__, x.dtype, x.shape, None, axis, overwrite_x)
+    if not overwrite_x:
+        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 
 
 class Test_DCTN_IDCTN(object):
@@ -761,25 +425,21 @@ class Test_DCTN_IDCTN(object):
         tmp = finverse(tmp, type=dct_type, axes=axes, norm=norm)
         assert_array_almost_equal(self.data, tmp, decimal=12)
 
-    @pytest.mark.parametrize('fforward,fforward_ref', [(dctn, dct_2d_ref),
-                                                       (dstn, dst_2d_ref)])
+    @pytest.mark.parametrize('funcn,func', [(dctn, dct), (dstn, dst)])
     @pytest.mark.parametrize('dct_type', dct_type)
     @pytest.mark.parametrize('norm', norms)
-    def test_dctn_vs_2d_reference(self, fforward, fforward_ref,
-                                  dct_type, norm):
-        y1 = fforward(self.data, type=dct_type, axes=None, norm=norm)
-        y2 = fforward_ref(self.data, type=dct_type, norm=norm)
+    def test_dctn_vs_2d_reference(self, funcn, func, dct_type, norm):
+        y1 = funcn(self.data, type=dct_type, axes=None, norm=norm)
+        y2 = ref_2d(func, self.data, type=dct_type, norm=norm)
         assert_array_almost_equal(y1, y2, decimal=11)
 
-    @pytest.mark.parametrize('finverse,finverse_ref', [(idctn, idct_2d_ref),
-                                                       (idstn, idst_2d_ref)])
+    @pytest.mark.parametrize('funcn,func', [(idctn, idct), (idstn, idst)])
     @pytest.mark.parametrize('dct_type', dct_type)
     @pytest.mark.parametrize('norm', [None, 'ortho'])
-    def test_idctn_vs_2d_reference(self, finverse, finverse_ref,
-                                   dct_type, norm):
+    def test_idctn_vs_2d_reference(self, funcn, func, dct_type, norm):
         fdata = dctn(self.data, type=dct_type, norm=norm)
-        y1 = finverse(fdata, type=dct_type, norm=norm)
-        y2 = finverse_ref(fdata, type=dct_type, norm=norm)
+        y1 = funcn(fdata, type=dct_type, norm=norm)
+        y2 = ref_2d(func, fdata, type=dct_type, norm=norm)
         assert_array_almost_equal(y1, y2, decimal=11)
 
     @pytest.mark.parametrize('fforward,finverse', [(dctn, idctn),
