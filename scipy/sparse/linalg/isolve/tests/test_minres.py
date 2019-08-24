@@ -82,7 +82,7 @@ def test_minres_precond_non_default_x0():
     a = np.dot(a, a.T)
     b = np.random.randn(5)
     c = np.random.randn(5)
-    m = np.linalg.inv(a) + tol*a
+    m = np.random.randn(5, 5)
     m = np.dot(m, m.T)
     x = minres(a, b, M=m, x0=c, tol=tol)[0]
     assert norm(a.dot(x) - b) < tol
