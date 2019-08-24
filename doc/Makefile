@@ -7,12 +7,12 @@
 # Use explicit "version_info" indexing since make cannot handle colon characters, and
 # evaluate it now to allow easier debugging when printing the varaible
 
-PYVER:=$(shell python3.7 -c 'from sys import version_info as v; print("{0}.{1}".format(v[0], v[1]))')
-PYTHON = python$(PYVER)
+PYTHON = python3
+PYVER = $(shell $(PYTHON) -c 'from sys import version_info as v; print("{0}.{1}".format(v[0], v[1]))')
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = LANG=C $(PYTHON) $(shell which sphinx-build)
+SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 PAPER         =
 
 FILES=
@@ -37,7 +37,7 @@ help:
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  clean     to clean all build files/directories"
-	@echo "  dist PYVER=... to make a distribution-ready tree"
+	@echo "  dist PYTHON=... to make a distribution-ready tree"
 	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
 	@echo "  show      to show the html-scipyorg output"
 
