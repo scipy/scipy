@@ -117,7 +117,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     r1 = b - A*x
     y = psolve(r1)
 
-    beta1 = inner(y, y)
+    beta1 = inner(r1, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
