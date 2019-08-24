@@ -1797,6 +1797,17 @@ class TestEntropy(object):
         qk = [[0.1, 0.2], [0.6, 0.3]]
         assert_raises(ValueError, stats.entropy, pk, qk)
 
+    def test_base_entropy_with_axis_0_is_equal_to_default(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        assert_array_almost_equal(stats.entropy(pk, axis=0),
+                                  stats.entropy(pk))
+
+    def test_entropy_with_axis_0_is_equal_to_default(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
+        assert_array_almost_equal(stats.entropy(pk, qk, axis=0),
+                                  stats.entropy(pk, qk))
+
 
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
