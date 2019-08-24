@@ -1,18 +1,10 @@
 # Makefile for Sphinx documentation
-#
 
-# PYVER needs to be major.minor, just "3" doesn't work - it will result in
-# issues with the amendments to PYTHONPATH and install paths (see DIST_VARS).
-
-# Use explicit "version_info" indexing since make cannot handle colon characters, and
-# evaluate it now to allow easier debugging when printing the varaible
-
-PYVER:=$(shell python3.7 -c 'from sys import version_info as v; print("{0}.{1}".format(v[0], v[1]))')
-PYTHON = python$(PYVER)
+PYTHON = python3
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = LANG=C $(PYTHON) $(shell which sphinx-build)
+SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 PAPER         =
 
 FILES=
@@ -37,7 +29,8 @@ help:
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  clean     to clean all build files/directories"
-	@echo "  dist PYVER=... to make a distribution-ready tree"
+	@echo "  dist      to make a distribution-ready tree (installing Scipy in venv)"
+	@echo "  doc-dist  to make a distribution-ready tree (assuming Scipy is installed)"
 	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
 	@echo "  show      to show the html-scipyorg output"
 
@@ -57,16 +50,17 @@ clean:
 # - Different versions of easy_install install to different directories (!)
 #
 
-INSTALL_DIR = $(CURDIR)/build/inst-dist/
-INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
-DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(PYTHON)" SPHINXBUILD="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(SPHINXBUILD)"
-
 dist:
-	make $(DIST_VARS) real-dist
+	install -d build
+	rm -rf build/env
+	$(PYTHON) -mvenv --system-site-packages build/env
+	$(CURDIR)/build/env/bin/python -mpip install Sphinx
+	$(CURDIR)/build/env/bin/python -mpip install ..
+	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
-real-dist: dist-build html html-scipyorg
+doc-dist: html html-scipyorg
 	test -d build/latex || make latex
 	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
@@ -79,12 +73,6 @@ real-dist: dist-build html html-scipyorg
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *
-
-dist-build:
-	rm -f ../dist/*.egg
-	cd .. && $(PYTHON) setup.py bdist_egg
-	install -d $(subst :, ,$(INSTALL_PPH))
-	$(PYTHON) `which easy_install` --prefix=$(INSTALL_DIR) ../dist/*.egg
 
 upload:
 	# SSH must be correctly configured for this to work.
