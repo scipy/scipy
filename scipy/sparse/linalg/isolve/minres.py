@@ -114,17 +114,15 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    y = b
     r1 = b - A*x
+    y = psolve(r1)
 
-    y = psolve(b)
-
-    beta1 = inner(b,y)
+    beta1 = inner(y, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
     elif beta1 == 0:
-        return (postprocess(x), 0)
+        return (postprocess(zeros(n, dtype=xtype)), 0)
 
     beta1 = sqrt(beta1)
 
