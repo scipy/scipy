@@ -2606,10 +2606,10 @@ def entropy(pk, qk=None, base=None, axis=0):
     """Calculate the entropy of a distribution for given probability values.
 
     If only probabilities `pk` are given, the entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=0)``.
+    ``S = -sum(pk * log(pk), axis=axis)``.
 
     If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=0)``.
+    ``S = sum(pk * log(pk / qk), axis=axis)``.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
