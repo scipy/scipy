@@ -1,5 +1,7 @@
 # Makefile for Sphinx documentation
 
+# If `python3` doesn't point to the Python you want to use (with Sphinx installed),
+# then you can use, e.g., `make html PYTHON=python3.7` to specify a Python executable
 PYTHON = python3
 
 # You can set these variables from the command line.
@@ -15,7 +17,7 @@ PAPEROPT_letter = -D "latex_elements.papersize=letterpaper"
 ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck \
-        dist dist-build
+        dist dist-build version-check
 
 #------------------------------------------------------------------------------
 
@@ -51,6 +53,25 @@ clean:
 #
 
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
+
+SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
+GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
+				print(git_version()[:10])")
+
+version-check:
+ifeq "$(GITVER)" "Unknown"
+	# @echo sdist build with unlabeled sources
+else ifeq ("", "$(SCIPYVER)")
+	@echo scipy not found, cannot build documentation without successful \"import scipy\"
+	@exit 1
+else ifneq ($(SCIPYVER),$(GITVER))
+	@echo installed scipy $(SCIPYVER) != current repo git version \'$(GITVER)\'
+	@echo use '"make dist"' or '"GITVER=$(SCIPYVER) make $(MAKECMDGOALS) ..."'
+	@exit 1
+else
+	# for testing
+	# @echo installed scipy $(SCIPYVER) matches git version $(GITVER); exit 1
+endif
 
 dist:
 	install -d build
@@ -93,7 +114,8 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
-html:
+html: version-check html-build
+html-build:
 	mkdir -p build/html build/doctrees
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) build/html $(FILES)
 	@echo
@@ -105,28 +127,8 @@ html-scipyorg:
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
-pickle:
-	mkdir -p build/pickle build/doctrees
-	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) build/pickle $(FILES)
-	@echo
-	@echo "Build finished; now you can process the pickle files or run"
-	@echo "  sphinx-web build/pickle"
-	@echo "to start the sphinx-web server."
-
-web: pickle
-
-htmlhelp:
-	mkdir -p build/htmlhelp build/doctrees
-	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) build/htmlhelp $(FILES)
-	@echo
-	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      ".hhp project file in build/htmlhelp."
-
-htmlhelp-build: htmlhelp build/htmlhelp/scipy.chm
-%.chm: %.hhp
-	-hhc.exe $^
-
-latex:
+latex: version-check latex-build
+latex-build:
 	mkdir -p build/latex build/doctrees
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex $(FILES)
 	$(PYTHON) postprocess.py tex build/latex/*.tex
@@ -135,18 +137,18 @@ latex:
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
 
-coverage: build
+coverage: build version-check
 	mkdir -p build/coverage build/doctrees
 	$(SPHINXBUILD) -b coverage $(ALLSPHINXOPTS) build/coverage $(FILES)
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
-changes:
+changes: version-check
 	mkdir -p build/changes build/doctrees
 	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) build/changes $(FILES)
 	@echo
 	@echo "The overview file is in build/changes."
 
-linkcheck:
+linkcheck: version-check
 	mkdir -p build/linkcheck build/doctrees
 	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) build/linkcheck $(FILES)
 	@echo
