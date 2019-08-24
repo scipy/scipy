@@ -2659,8 +2659,8 @@ def entropy(pk, qk=None, base=None, axis=0):
         vec = entr(pk)
     else:
         qk = asarray(qk)
-        if len(qk) != len(pk):
-            raise ValueError("qk and pk must have same length.")
+        if qk.shape != pk.shape:
+            raise ValueError("qk and pk must have same shape.")
         qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
         vec = rel_entr(pk, qk)
     S = np.sum(vec, axis=axis)
