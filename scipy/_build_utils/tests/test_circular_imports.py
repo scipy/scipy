@@ -3,14 +3,13 @@ from __future__ import division, absolute_import, print_function
 import sys
 import subprocess
 
-from numpy.testing import run_module_suite
-
 
 PUBLIC_SUBMODULES = [
     'cluster',
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
@@ -46,7 +45,3 @@ def test_importing_submodules():
             subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
             raise AssertionError('Importing scipy.{0} failed'.format(name))
-
-
-if __name__ == "__main__":
-    run_module_suite()

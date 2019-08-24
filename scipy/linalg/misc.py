@@ -5,10 +5,18 @@ from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
 
-__all__ = ['LinAlgError', 'norm']
+__all__ = ['LinAlgError', 'LinAlgWarning', 'norm']
 
 
-def norm(a, ord=None, axis=None, keepdims=False):
+class LinAlgWarning(RuntimeWarning):
+    """
+    The warning emitted when a linear algebra related operation is close
+    to fail conditions of the algorithm or loss of accuracy is expected.
+    """
+    pass
+
+
+def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     """
     Matrix or vector norm.
 
@@ -33,6 +41,10 @@ def norm(a, ord=None, axis=None, keepdims=False):
         If this is set to True, the axes which are normed over are left in the
         result as dimensions with size one.  With this option the result will
         broadcast correctly against the original `a`.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -126,7 +138,10 @@ def norm(a, ord=None, axis=None, keepdims=False):
 
     """
     # Differs from numpy only in non-finite handling and the use of blas.
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
 
     # Only use optimized norms if axis and keepdims are not specified.
     if a.dtype.char in 'fdFD' and axis is None and not keepdims:

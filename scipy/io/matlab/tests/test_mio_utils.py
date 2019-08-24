@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-     run_module_suite, assert_
+     assert_
 
 from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 
@@ -44,6 +44,3 @@ def test_chars_strings():
     out_arr = np.array([''], dtype='U1')
     assert_array_equal(chars_to_strings(arr), out_arr)
 
-
-if __name__ == "__main__":
-    run_module_suite()

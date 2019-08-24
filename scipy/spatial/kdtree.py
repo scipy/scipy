@@ -38,6 +38,15 @@ def minkowski_distance_p(x, y, p=2):
     """
     x = np.asarray(x)
     y = np.asarray(y)
+
+    # Find smallest common datatype with float64 (return type of this function) - addresses #10262.
+    # Don't just cast to float64 for complex input case.
+    common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), 'float64')
+
+    # Make sure x and y are numpy arrays of correct datatype.
+    x = x.astype(common_datatype)
+    y = y.astype(common_datatype)
+
     if p == np.inf:
         return np.amax(np.abs(y-x), axis=-1)
     elif p == 1:
@@ -596,7 +605,7 @@ class KDTree(object):
         --------
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 0:5]
-        >>> points = zip(x.ravel(), y.ravel())
+        >>> points = np.c_[x.ravel(), y.ravel()]
         >>> tree = spatial.KDTree(points)
         >>> tree.query_ball_point([2, 0], 1)
         [5, 10, 11, 15]
@@ -807,7 +816,7 @@ class KDTree(object):
         Count how many nearby pairs can be formed.
 
         Count the number of pairs (x1,x2) can be formed, with x1 drawn
-        from self and x2 drawn from `other`, and where
+        from self and x2 drawn from ``other``, and where
         ``distance(x1, x2, p) <= r``.
         This is the "two-point correlation" described in Gray and Moore 2000,
         "N-body problems in statistical learning", and the code here is based

@@ -3,7 +3,7 @@ Linear Algebra (`scipy.linalg`)
 
 .. sectionauthor:: Travis E. Oliphant
 
-.. currentmodule: scipy
+.. currentmodule:: scipy
 
 When SciPy is built using the optimized ATLAS LAPACK and BLAS
 libraries, it has very fast linear algebra capabilities. If you dig
@@ -18,8 +18,11 @@ also a two-dimensional array.
 scipy.linalg vs numpy.linalg
 ----------------------------
 
-``scipy.linalg`` contains all the functions in ``numpy.linalg``.
-plus some other more advanced ones not contained in ``numpy.linalg``
+.. TODO: replace numpy.linalg HTML link with `numpy.linalg` once NumPy updates doc
+
+:mod:`scipy.linalg` contains all the functions in
+`numpy.linalg <https://www.numpy.org/devdocs/reference/routines.linalg.html>`__.
+plus some other more advanced ones not contained in ``numpy.linalg``.
 
 Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
 it is always compiled with BLAS/LAPACK support, while for numpy this is
@@ -27,7 +30,7 @@ optional. Therefore, the scipy version might be faster depending on how
 numpy was installed.
 
 Therefore, unless you don't want to add ``scipy`` as a dependency to
-your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``
+your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
 
 
 numpy.matrix vs 2D numpy.ndarray
@@ -35,14 +38,14 @@ numpy.matrix vs 2D numpy.ndarray
 
 The classes that represent matrices, and basic operations such as
 matrix multiplications and transpose are a part of ``numpy``.
-For convenience, we summarize the differences between ``numpy.matrix``
-and ``numpy.ndarray`` here.
+For convenience, we summarize the differences between :class:`numpy.matrix`
+and :class:`numpy.ndarray` here.
 
 ``numpy.matrix`` is matrix class that has a more convenient interface
 than ``numpy.ndarray`` for matrix operations. This class supports for
-example MATLAB-like creation syntax via the, has matrix multiplication
-as default for the ``*`` operator, and contains ``I`` and ``T`` members
-that serve as shortcuts for inverse and transpose:
+example MATLAB-like creation syntax via the semicolon, has matrix
+multiplication as default for the ``*`` operator, and contains ``I``
+and ``T`` members that serve as shortcuts for inverse and transpose:
 
     >>> import numpy as np
     >>> A = np.mat('[1 2;3 4]')
@@ -111,7 +114,7 @@ The inverse of a matrix :math:`\mathbf{A}` is the matrix
 :math:`\mathbf{I}` is the identity matrix consisting of ones down the
 main diagonal.  Usually :math:`\mathbf{B}` is denoted
 :math:`\mathbf{B}=\mathbf{A}^{-1}` . In SciPy, the matrix inverse of
-the Numpy array, A, is obtained using :obj:`linalg.inv` ``(A)`` , or
+the NumPy array, A, is obtained using :obj:`linalg.inv` ``(A)`` , or
 using ``A.I`` if ``A`` is a Matrix. For example, let
 
 .. math::
@@ -123,8 +126,8 @@ then
 .. math::
 
     \mathbf{A^{-1}} = \frac{1}{25}
-        \left[\begin{array}{ccc} -37 & 9 & 22 \\ 
-                                  14 & 2 & -9 \\ 
+        \left[\begin{array}{ccc} -37 & 9 & 22 \\
+                                  14 & 2 & -9 \\
                                   4 & -3 & 1
               \end{array}\right] = %
          \left[\begin{array}{ccc} -1.48 & 0.36 & 0.88  \\
@@ -525,16 +528,16 @@ eigenvalues can then be found.
     >>> A = np.array([[1, 2], [3, 4]])
     >>> la, v = linalg.eig(A)
     >>> l1, l2 = la
-    >>> print l1, l2   # eigenvalues
-    (-0.372281323269+0j) (5.37228132327+0j)
-    >>> print v[:, 0]   # first eigenvector
+    >>> print(l1, l2)   # eigenvalues
+    (-0.3722813232690143+0j) (5.372281323269014+0j)
+    >>> print(v[:, 0])   # first eigenvector
     [-0.82456484  0.56576746]
-    >>> print v[:, 1]   # second eigenvector
+    >>> print(v[:, 1])   # second eigenvector
     [-0.41597356 -0.90937671]
-    >>> print np.sum(abs(v**2), axis=0)  # eigenvectors are unitary
-    [ 1.  1.]
+    >>> print(np.sum(abs(v**2), axis=0))  # eigenvectors are unitary
+    [1. 1.]
     >>> v1 = np.array(v[:, 0]).T
-    >>> print linalg.norm(A.dot(v1) - l1*v1)  # check the computation
+    >>> print(linalg.norm(A.dot(v1) - l1*v1))  # check the computation
     3.23682852457e-16
 
 
@@ -571,7 +574,7 @@ matrix has a singular value decomposition. Sometimes, the singular
 values are called the spectrum of :math:`\mathbf{A}.` The command
 :obj:`linalg.svd` will return :math:`\mathbf{U}` ,
 :math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the
-singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
+singular values. To obtain the matrix :math:`\boldsymbol{\Sigma}` use
 :obj:`linalg.diagsvd`. The following example illustrates the use of
 :obj:`linalg.svd` .
 
@@ -731,12 +734,12 @@ The following example illustrates the schur decomposition:
            [ 0.        ,  0.54993766, -1.57754789],
            [ 0.        ,  0.51260928,  0.54993766]])
     >>> T2
-    array([[ 9.90012467 +0.00000000e+00j, -0.32436598 +1.55463542e+00j,
-            -0.88619748 +5.69027615e-01j],
-           [ 0.00000000 +0.00000000e+00j,  0.54993766 +8.99258408e-01j,
-             1.06493862 -5.80496735e-16j],
-           [ 0.00000000 +0.00000000e+00j,  0.00000000 +0.00000000e+00j,
-             0.54993766 -8.99258408e-01j]])
+    array([[ 9.90012467+0.00000000e+00j, -0.32436598+1.55463542e+00j,
+            -0.88619748+5.69027615e-01j],
+           [ 0.        +0.00000000e+00j,  0.54993766+8.99258408e-01j,
+             1.06493862+3.05311332e-16j],
+           [ 0.        +0.00000000e+00j,  0.        +0.00000000e+00j,
+             0.54993766-8.99258408e-01j]])
     >>> abs(T1 - T2) # different
     array([[  1.06604538e-14,   2.06969555e+00,   1.69375747e+00],  # may vary
            [  0.00000000e+00,   1.33688556e-15,   4.74146496e-01],
@@ -811,31 +814,7 @@ is rarely the best way to calculate a matrix function.
 Exponential and logarithm functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The matrix exponential is one of the more common matrix functions. It
-can be defined for square matrices as
-
-.. math::
-
-    e^{\mathbf{A}}=\sum_{k=0}^{\infty}\frac{1}{k!}\mathbf{A}^{k}.
-
-The command :obj:`linalg.expm3` uses this Taylor series definition to compute the matrix exponential.
-Due to poor convergence properties it is not often used.
-
-Another method to compute the matrix exponential is to find an
-eigenvalue decomposition of :math:`\mathbf{A}` :
-
-.. math::
-
-    \mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}
-
-and note that
-
-.. math::
-
-    e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}
-
-where the matrix exponential of the diagonal matrix :math:`\boldsymbol{\Lambda}` is just the exponential of its elements. This method is implemented in :obj:`linalg.expm2` .
-
+The matrix exponential is one of the more common matrix functions.
 The preferred method for implementing the matrix exponential is to use
 scaling and a Padé approximation for :math:`e^{x}` . This algorithm is
 implemented as :obj:`linalg.expm` .

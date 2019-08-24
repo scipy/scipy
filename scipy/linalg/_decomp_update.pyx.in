@@ -11,7 +11,7 @@ Routines for updating QR decompositions
 #
 # 1, 2, and 3 cover updates to full decompositons (q is square) and 4 and 5
 # cover updates to thin (economic) decompositions (r is square). Reference 3
-# additonally covers updating complete orthogonal factorizations and cholesky
+# additionally covers updating complete orthogonal factorizations and cholesky
 # decompositions (i.e. updating R alone).
 #
 # 1. Golub, G. H. & Van Loan, C. F. Matrix Computations, 3rd Ed.
@@ -31,6 +31,8 @@ Routines for updating QR decompositions
 # 5. Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
 #    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 3693-77 (1990).
 #
+
+from __future__ import absolute_import
 
 __all__ = ['qr_delete', 'qr_insert', 'qr_update']
 
@@ -265,6 +267,12 @@ cdef bint blas_t_less_than(blas_t x, blas_t y) nogil:
         return x < y
     else:
         return x.real < y.real
+
+cdef bint blas_t_less_equal(blas_t x, blas_t y) nogil:
+    if blas_t is float or blas_t is double:
+        return x <= y
+    else:
+        return x.real <= y.real
 
 cdef int to_lwork(blas_t a, blas_t b) nogil:
     cdef int ai, bi
@@ -757,7 +765,7 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
         libc.stdlib.free(work)
 
         # zero the reflectors since we're done with them
-        # memset can be used here, since r is always fortan order
+        # memset can be used here, since r is always fortran order
         for j in range(p):
             memset(index2(r, rs, n-p+1+j, k+j), 0, (m-(n-p+1+j))*sizeof(blas_t))
 
@@ -967,7 +975,7 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
     blas_t_2d_conj(p, n, v, vs)
     trmm(sideL, uplo, trans, diag, p, n, 1, u, m, v, p)
 
-    # (should this be n, p length adds instead since these are fortan contig?)
+    # (should this be n, p length adds instead since these are fortran contig?)
     for j in range(p):
         axpy(n, 1, row(v, vs, j), vs[1], row(r, rs, j), rs[1])
 
@@ -1043,7 +1051,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
        find vectors s, w and scalar p such that u = Qs + pw where w is of unit
        length and orthogonal to the columns of q.
 
-       This function returns 0 or 1 on sucess, and 2 if the recipercal
+       This function returns 0 or 1 on success, and 2 if the recipercal
        condition number of [q, u/||u||] is less than RCOND. This condition is
        important when inserting columns, because updating may not be meaningful
        if u is a linear combination of the columns of q.
@@ -1131,7 +1139,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
 
     wpnorm = nrm2(m, u, us[0])
 
-    if blas_t_less_than(wpnorm, wnorm*inv_root2): # u lies in span(q)
+    if blas_t_less_equal(wpnorm, wnorm*inv_root2): # u lies in span(q)
         scal(m, 0, u, us[0])
         axpy(n, 1, s, 1, s+n, 1)
         scal(n, unorm, s, 1)
@@ -1826,7 +1834,7 @@ cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite):
                         <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k)
                 {{endfor}}
         else:
-            # only copies if if necessary.
+            # only copies if necessary.
             r1 = PyArray_FromArray(r1, NULL, cnp.NPY_F_CONTIGUOUS)
             u1 = PyArray_FromArray(u1, NULL, cnp.NPY_F_CONTIGUOUS)
             qptr = extract(qnew, qs)
@@ -1888,6 +1896,8 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
     cdef bint economic
     cdef float frc = libc.float.FLT_EPSILON
     cdef double drc = libc.float.DBL_EPSILON
+    cdef float_complex cfrc = frc
+    cdef double_complex cdrc = drc
 
     # 1 eco q alloc, r alloc, u any
     # p eco q alloc, r alloc, u any unless eco->fat then F
@@ -1934,7 +1944,7 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
     # special case 1xN
     # if m == 1, Q is always 1x1 and abs(Q[0,0]) == 1.0
     if m == 1:
-        rnew = np.insert(r1, k*np.ones(p, np.intp), q1.conjugate()*u1, 1)
+        rnew = np.insert(r1, np.full(p, k, np.intp), q1.conjugate()*u1, 1)
         return q1.copy(), rnew
 
     if economic:
@@ -1961,7 +1971,7 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
         rptr = extract(rnew, rs)
         uptr = extract(u1, us)
 {{py:
-RCONDS = ['&frc', '&drc', '<float_complex*>&frc', '<double_complex*>&drc']
+RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
 }}
         with nogil:
             {{for COND, TYPECODE, CNAME, RC in zip(CONDS, TCODES, CNAMES, RCONDS)}}

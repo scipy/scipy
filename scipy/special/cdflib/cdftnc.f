@@ -67,7 +67,7 @@ C     Upper tail    of  the  cumulative  noncentral t is calculated usin
 C     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuou
 C     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
 C
-C     Computation of other parameters involve a seach for a value that
+C     Computation of other parameters involve a search for a value that
 C     produces  the desired  value  of P.   The search relies  on  the
 C     monotinicity of P with the other parameter.
 C

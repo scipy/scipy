@@ -16,22 +16,22 @@ give SciPy a try!
 
 """
 
-DOCLINES = __doc__.split("\n")
+DOCLINES = (__doc__ or '').split("\n")
 
 import os
 import sys
 import subprocess
 import textwrap
 import warnings
+import sysconfig
+from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (2, 6) or (3, 0) <= sys.version_info[0:2] < (3, 2):
-    raise RuntimeError("Python version 2.6, 2.7 or >= 3.2 required.")
+if sys.version_info[:2] < (3, 5):
+    raise RuntimeError("Python version >= 3.5 required.")
 
-if sys.version_info[0] < 3:
-    import __builtin__ as builtins
-else:
-    import builtins
+import builtins
+
 
 CLASSIFIERS = """\
 Development Status :: 5 - Production/Stable
@@ -40,15 +40,10 @@ Intended Audience :: Developers
 License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
-Programming Language :: Python :: 2
-Programming Language :: Python :: 2.6
-Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.2
-Programming Language :: Python :: 3.3
-Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -59,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 0
+MINOR = 4
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -113,9 +108,9 @@ def get_version_info():
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
         # load it as a separate module to not load scipy/__init__.py
-        import imp
-        version = imp.load_source('scipy.version', 'scipy/version.py')
-        GIT_REVISION = version.git_revision
+        import runpy
+        ns = runpy.run_path('scipy/version.py')
+        GIT_REVISION = ns['git_revision']
     else:
         GIT_REVISION = "Unknown"
 
@@ -148,10 +143,11 @@ if not release:
     finally:
         a.close()
 
+
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True
-except:
+except Exception:
     HAVE_SPHINX = False
 
 if HAVE_SPHINX:
@@ -187,12 +183,92 @@ def check_submodules():
             raise ValueError('Submodule not clean: %s' % line)
 
 
+class concat_license_files():
+    """Merge LICENSE.txt and LICENSES_bundled.txt for sdist creation
+
+    Done this way to keep LICENSE.txt in repo as exact BSD 3-clause (see
+    NumPy gh-13447).  This makes GitHub state correctly how SciPy is licensed.
+    """
+    def __init__(self):
+        self.f1 = 'LICENSE.txt'
+        self.f2 = 'LICENSES_bundled.txt'
+
+    def __enter__(self):
+        """Concatenate files and remove LICENSES_bundled.txt"""
+        with open(self.f1, 'r') as f1:
+            self.bsd_text = f1.read()
+
+        with open(self.f1, 'a') as f1:
+            with open(self.f2, 'r') as f2:
+                self.bundled_text = f2.read()
+                f1.write('\n\n')
+                f1.write(self.bundled_text)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Restore content of both files"""
+        with open(self.f1, 'w') as f:
+            f.write(self.bsd_text)
+
+
 from distutils.command.sdist import sdist
 class sdist_checked(sdist):
     """ check submodules on sdist to prevent incomplete tarballs """
     def run(self):
         check_submodules()
-        sdist.run(self)
+        with concat_license_files():
+            sdist.run(self)
+
+
+def get_build_ext_override():
+    """
+    Custom build_ext command to tweak extension building.
+    """
+    from numpy.distutils.command.build_ext import build_ext as old_build_ext
+
+    class build_ext(old_build_ext):
+        def build_extension(self, ext):
+            # When compiling with GNU compilers, use a version script to
+            # hide symbols during linking.
+            if self.__is_using_gnu_linker(ext):
+                export_symbols = self.get_export_symbols(ext)
+                text = '{global: %s; local: *; };' % (';'.join(export_symbols),)
+
+                script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
+                with open(script_fn, 'w') as f:
+                    f.write(text)
+                    # line below fixes gh-8680
+                    ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
+                    ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            # Allow late configuration
+            if hasattr(ext, '_pre_build_hook'):
+                ext._pre_build_hook(self, ext)
+
+            old_build_ext.build_extension(self, ext)
+
+        def __is_using_gnu_linker(self, ext):
+            if not sys.platform.startswith('linux'):
+                return False
+
+            # Fortran compilation with gfortran uses it also for
+            # linking. For the C compiler, we detect gcc in a similar
+            # way as distutils does it in
+            # UnixCCompiler.runtime_library_dir_option
+            if ext.language == 'f90':
+                is_gcc = (self._f90_compiler.compiler_type in ('gnu', 'gnu95'))
+            elif ext.language == 'f77':
+                is_gcc = (self._f77_compiler.compiler_type in ('gnu', 'gnu95'))
+            else:
+                is_gcc = False
+                if self.compiler.compiler_type == 'unix':
+                    cc = sysconfig.get_config_var("CC")
+                    if not cc:
+                        cc = ""
+                    compiler_name = os.path.basename(cc)
+                    is_gcc = "gcc" in compiler_name or "g++" in compiler_name
+            return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
+
+    return build_ext
 
 
 def generate_cython():
@@ -203,7 +279,19 @@ def generate_cython():
                          'scipy'],
                         cwd=cwd)
     if p != 0:
-        raise RuntimeError("Running cythonize failed!")
+        # Could be due to a too old pip version and build isolation, check that
+        try:
+            # Note, pip may not be installed or not have been used
+            import pip
+            if LooseVersion(pip.__version__) < LooseVersion('18.0.0'):
+                raise RuntimeError("Cython not found or too old. Possibly due "
+                                   "to `pip` being too old, found version {}, "
+                                   "needed is >= 18.0.0.".format(
+                                   pip.__version__))
+            else:
+                raise RuntimeError("Running cythonize failed!")
+        except ImportError:
+            raise RuntimeError("Running cythonize failed!")
 
 
 def parse_setuppy_commands():
@@ -212,7 +300,9 @@ def parse_setuppy_commands():
     Return a boolean value for whether or not to run the build or not (avoid
     parsing Cython and template files if False).
     """
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+
+    if not args:
         # User forgot to give an argument probably, let setuptools handle that.
         return True
 
@@ -222,12 +312,9 @@ def parse_setuppy_commands():
                      '--contact-email', '--url', '--license', '--description',
                      '--long-description', '--platforms', '--classifiers',
                      '--keywords', '--provides', '--requires', '--obsoletes']
-    # Add commands that do more than print info, but also don't need Cython and
-    # template parsing.
-    info_commands.extend(['egg_info', 'install_egg_info', 'rotate'])
 
     for command in info_commands:
-        if command in sys.argv[1:]:
+        if command in args:
             return False
 
     # Note that 'alias', 'saveopts' and 'setopt' commands also seem to work
@@ -239,12 +326,12 @@ def parse_setuppy_commands():
                      'build_sphinx')
 
     for command in good_commands:
-        if command in sys.argv[1:]:
+        if command in args:
             return True
 
     # The following commands are supported, but we need to show more
     # useful messages to the user
-    if 'install' in sys.argv[1:]:
+    if 'install' in args:
         print(textwrap.dedent("""
             Note: if you need reliable uninstall behavior, then install
             with pip instead of using `setup.py install`:
@@ -256,7 +343,7 @@ def parse_setuppy_commands():
             """))
         return True
 
-    if '--help' in sys.argv[1:] or '-h' in sys.argv[1]:
+    if '--help' in args or '-h' in sys.argv[1]:
         print(textwrap.dedent("""
             SciPy-specific help
             -------------------
@@ -273,6 +360,7 @@ def parse_setuppy_commands():
             ------------------------
             """))
         return False
+
 
     # The following commands aren't supported.  They can only be executed when
     # the user explicitly adds a --force command-line argument.
@@ -313,20 +401,39 @@ def parse_setuppy_commands():
         bad_commands[command] = "`setup.py %s` is not supported" % command
 
     for command in bad_commands.keys():
-        if command in sys.argv[1:]:
+        if command in args:
             print(textwrap.dedent(bad_commands[command]) +
                   "\nAdd `--force` to your command to use it anyway if you "
                   "must (unsupported).\n")
             sys.exit(1)
 
+    # Commands that do more than print info, but also don't need Cython and
+    # template parsing.
+    other_commands = ['egg_info', 'install_egg_info', 'rotate']
+    for command in other_commands:
+        if command in args:
+            return False
+
     # If we got here, we didn't detect what setup.py command was given
-    warnings.warn("Unrecognized setuptools command, proceeding with "
-                  "generating Cython sources and expanding templates")
+    warnings.warn("Unrecognized setuptools command ('{}'), proceeding with "
+                  "generating Cython sources and expanding templates".format(
+                  ' '.join(sys.argv[1:])))
     return True
 
 
 def configuration(parent_package='', top_path=None):
+    from scipy._build_utils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
+
+    lapack_opt = get_info('lapack_opt')
+
+    if not lapack_opt:
+        msg = 'No lapack/blas resources found.'
+        if sys.platform == "darwin":
+            msg = ('No lapack/blas resources found. '
+                   'Note: Accelerate is no longer supported.')
+        raise NotFoundError(msg)
+
     config = Configuration(None, parent_package, top_path)
     config.set_options(ignore_setup_xxx_py=True,
                        assume_default_configuration=True,
@@ -356,36 +463,49 @@ def setup_package():
     try:
         import numpy
     except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.8.2']
+        build_requires = ['numpy>=1.13.3']
     else:
         # If we're building a wheel, assume there already exist numpy wheels
         # for this platform, so it is safe to add numpy to build requirements.
         # See gh-5184.
-        build_requires = (['numpy>=1.8.2'] if 'bdist_wheel' in sys.argv[1:]
+        build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
+
+    install_requires = build_requires
+    setup_requires = build_requires + ['pybind11>=2.2.4']
 
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
-        maintainer_email="scipy-dev@scipy.org",
+        maintainer_email="scipy-dev@python.org",
         description=DOCLINES[0],
         long_description="\n".join(DOCLINES[2:]),
         url="https://www.scipy.org",
         download_url="https://github.com/scipy/scipy/releases",
+        project_urls={
+            "Bug Tracker": "https://github.com/scipy/scipy/issues",
+            "Documentation": "https://docs.scipy.org/doc/scipy/reference/",
+            "Source Code": "https://github.com/scipy/scipy",
+        },
         license='BSD',
         cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=build_requires,
-        install_requires=build_requires,
+        setup_requires=setup_requires,
+        install_requires=install_requires,
+        python_requires='>=3.5',
     )
 
     if "--force" in sys.argv:
         run_build = True
+        sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = parse_setuppy_commands()
+
+    # Disable OSX Accelerate, it has too old LAPACK
+    os.environ['ACCELERATE'] = 'None'
 
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import
@@ -394,6 +514,10 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+
+        # Customize extension building
+        cmdclass['build_ext'] = get_build_ext_override()
+
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release
@@ -402,8 +526,8 @@ def setup_package():
         metadata['configuration'] = configuration
     else:
         # Don't import numpy here - non-build actions are required to succeed
-        # without Numpy for example when pip is used to install Scipy when
-        # Numpy is not yet present in the system.
+        # without NumPy for example when pip is used to install Scipy when
+        # NumPy is not yet present in the system.
 
         # Version number is added to metadata inside configuration() if build
         # is run.

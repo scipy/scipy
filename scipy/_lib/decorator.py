@@ -28,7 +28,7 @@
 # DAMAGE.
 
 """
-Decorator module, see http://pypi.python.org/pypi/decorator
+Decorator module, see https://pypi.python.org/pypi/decorator
 for the documentation.
 """
 from __future__ import print_function
@@ -76,6 +76,7 @@ def getargspec(f):
     """A replacement for inspect.getargspec"""
     spec = getfullargspec(f)
     return ArgSpec(spec.args, spec.varargs, spec.varkw, spec.defaults)
+
 
 DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 
@@ -188,7 +189,7 @@ class FunctionMaker(object):
         try:
             code = compile(src, filename, 'single')
             exec(code, evaldict)
-        except:
+        except:  # noqa: E722
             print('Error in generated code:', file=sys.stderr)
             print(src, file=sys.stderr)
             raise
@@ -281,6 +282,7 @@ class ContextManager(_GeneratorContextManager):
         return FunctionMaker.create(
             func, "with _self_: return _func_(%(shortsignature)s)",
             dict(_self_=self, _func_=func), __wrapped__=func)
+
 
 init = getfullargspec(_GeneratorContextManager.__init__)
 n_args = len(init.args)
@@ -390,9 +392,8 @@ def dispatch_on(*dispatch_args):
             An utility to introspect the dispatch algorithm
             """
             check(types)
-            lst = []
-            for anc in itertools.product(*ancestors(*types)):
-                lst.append(tuple(a.__name__ for a in anc))
+            lst = [tuple(a.__name__ for a in anc)
+                   for anc in itertools.product(*ancestors(*types))]
             return lst
 
         def _dispatch(dispatch_args, *args, **kw):

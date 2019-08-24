@@ -4,6 +4,7 @@ import functools
 import operator
 
 import numpy as np
+from scipy._lib.six import string_types
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
@@ -29,6 +30,19 @@ def _get_dtype(dtype):
         return np.float_
 
 
+def _as_float_array(x, check_finite=False):
+    """Convert the input into a C contiguous float array.
+
+    NB: Upcasts half- and single-precision floats to double precision.
+    """
+    x = np.ascontiguousarray(x)
+    dtyp = _get_dtype(x.dtype)
+    x = x.astype(dtyp, copy=False)
+    if check_finite and not np.isfinite(x).all():
+        raise ValueError("Array must not contain infs or nans.")
+    return x
+
+
 class BSpline(object):
     r"""Univariate spline in the B-spline basis.
 
@@ -47,11 +61,12 @@ class BSpline(object):
         spline coefficients
     k : int
         B-spline order
-    extrapolate : bool, optional
+    extrapolate : bool or 'periodic', optional
         whether to extrapolate beyond the base interval, ``t[k] .. t[n]``,
         or to return nans.
         If True, extrapolates the first and last polynomial pieces of b-spline
         functions active on the base interval.
+        If 'periodic', periodic extrapolation is used.
         Default is True.
     axis : int, optional
         Interpolation axis. Default is zero.
@@ -70,7 +85,7 @@ class BSpline(object):
     axis : int
         Interpolation axis.
     tck : tuple
-        A read-only equivalent of ``(self.t, self.c, self.k)``    
+        A read-only equivalent of ``(self.t, self.c, self.k)``
 
     Methods
     -------
@@ -166,10 +181,14 @@ class BSpline(object):
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super(BSpline, self).__init__()
 
-        self.k = int(k)
+        self.k = operator.index(k)
         self.c = np.asarray(c)
         self.t = np.ascontiguousarray(t, dtype=np.float64)
-        self.extrapolate = bool(extrapolate)
+
+        if extrapolate == 'periodic':
+            self.extrapolate = extrapolate
+        else:
+            self.extrapolate = bool(extrapolate)
 
         n = self.t.shape[0] - self.k - 1
 
@@ -187,8 +206,6 @@ class BSpline(object):
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
-        if int(k) != k:
-            raise ValueError("Spline order must be integer.")
         if self.t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
@@ -223,7 +240,7 @@ class BSpline(object):
 
     @property
     def tck(self):
-        """Equvalent to ``(self.t, self.c, self.k)`` (read-only).
+        """Equivalent to ``(self.t, self.c, self.k)`` (read-only).
         """
         return self.t, self.c, self.k
 
@@ -235,9 +252,11 @@ class BSpline(object):
         ----------
         t : ndarray, shape (k+1,)
             internal knots
-        extrapolate : bool, optional
+        extrapolate : bool or 'periodic', optional
             whether to extrapolate beyond the base interval, ``t[0] .. t[k+1]``,
-            or to return nans. Default is True.
+            or to return nans.
+            If 'periodic', periodic extrapolation is used.
+            Default is True.
 
         Returns
         -------
@@ -298,9 +317,10 @@ class BSpline(object):
             points to evaluate the spline at.
         nu: int, optional
             derivative to evaluate (default is 0).
-        extrapolate : bool, optional
+        extrapolate : bool or 'periodic', optional
             whether to extrapolate based on the first and last intervals
-            or return nans. Default is `self.extrapolate`.
+            or return nans. If 'periodic', periodic extrapolation is used.
+            Default is `self.extrapolate`.
 
         Returns
         -------
@@ -314,6 +334,15 @@ class BSpline(object):
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+
+        # With periodic extrapolation we map x to the segment
+        # [self.t[k], self.t[n]].
+        if extrapolate == 'periodic':
+            n = self.t.size - self.k - 1
+            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] -
+                                                         self.t[self.k])
+            extrapolate = False
+
         out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
@@ -381,6 +410,13 @@ class BSpline(object):
         b : BSpline object
             A new instance representing the antiderivative.
 
+        Notes
+        -----
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
+
         See Also
         --------
         splder, splantider
@@ -392,8 +428,14 @@ class BSpline(object):
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splantider((self.t, c, self.k), nu)
-        return self.construct_fast(*tck, extrapolate=self.extrapolate,
-                                    axis=self.axis)
+
+        if self.extrapolate == 'periodic':
+            extrapolate = False
+        else:
+            extrapolate = self.extrapolate
+
+        return self.construct_fast(*tck, extrapolate=extrapolate,
+                                   axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """Compute a definite integral of the spline.
@@ -404,10 +446,11 @@ class BSpline(object):
             Lower limit of integration.
         b : float
             Upper limit of integration.
-        extrapolate : bool, optional
-            whether to extrapolate beyond the base interval, ``t[k] .. t[-k-1]``,
-            or take the spline to be zero outside of the base interval.
-            Default is True.
+        extrapolate : bool or 'periodic', optional
+            whether to extrapolate beyond the base interval,
+            ``t[k] .. t[-k-1]``, or take the spline to be zero outside of the
+            base interval. If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -445,34 +488,87 @@ class BSpline(object):
         if extrapolate is None:
             extrapolate = self.extrapolate
 
-        if not extrapolate:
-            # shrink the integration interval, if needed
-            a = max(a, self.t[self.k])
-            b = min(b, self.t[-self.k - 1])
-
-            if self.c.ndim == 1:
-                # fast path: use FITPACK's routine (cf _fitpack_impl.splint)
-                t, c, k = self.tck
-                aint, wrk = _dierckx._splint(t, c, k, a, b)
-                return aint
-
-        # prepare t & c
+        # Prepare self.t and self.c.
         self._ensure_c_contiguous()
 
-        # compute the antiderivative
+        # Swap integration bounds if needed.
+        sign = 1
+        if b < a:
+            a, b = b, a
+            sign = -1
+        n = self.t.size - self.k - 1
+
+        if extrapolate != "periodic" and not extrapolate:
+            # Shrink the integration interval, if needed.
+            a = max(a, self.t[self.k])
+            b = min(b, self.t[n])
+
+            if self.c.ndim == 1:
+                # Fast path: use FITPACK's routine
+                # (cf _fitpack_impl.splint).
+                t, c, k = self.tck
+                integral, wrk = _dierckx._splint(t, c, k, a, b)
+                return integral * sign
+
+        out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
+
+        # Compute the antiderivative.
         c = self.c
         ct = len(self.t) - len(c)
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
-        t, c, k = _fitpack_impl.splantider((self.t, c, self.k), 1)
+        ta, ca, ka = _fitpack_impl.splantider((self.t, c, self.k), 1)
 
-        # evaluate the diff of antiderivatives
-        x = np.asarray([a, b], dtype=np.float_)
-        out = np.empty((2, prod(c.shape[1:])), dtype=c.dtype)
-        _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
-                k, x, 0, extrapolate, out)
-        out = out[1] - out[0]
-        return out.reshape(c.shape[1:])
+        if extrapolate == 'periodic':
+            # Split the integral into the part over period (can be several
+            # of them) and the remaining part.
+
+            ts, te = self.t[self.k], self.t[n]
+            period = te - ts
+            interval = b - a
+            n_periods, left = divmod(interval, period)
+
+            if n_periods > 0:
+                # Evaluate the difference of antiderivatives.
+                x = np.asarray([ts, te], dtype=np.float_)
+                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False, out)
+                integral = out[1] - out[0]
+                integral *= n_periods
+            else:
+                integral = np.zeros((1, prod(self.c.shape[1:])),
+                                    dtype=self.c.dtype)
+
+            # Map a to [ts, te], b is always a + left.
+            a = ts + (a - ts) % period
+            b = a + left
+
+            # If b <= te then we need to integrate over [a, b], otherwise
+            # over [a, te] and from xs to what is remained.
+            if b <= te:
+                x = np.asarray([a, b], dtype=np.float_)
+                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False, out)
+                integral += out[1] - out[0]
+            else:
+                x = np.asarray([a, te], dtype=np.float_)
+                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False, out)
+                integral += out[1] - out[0]
+
+                x = np.asarray([ts, ts + b - te], dtype=np.float_)
+                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False, out)
+                integral += out[1] - out[0]
+        else:
+            # Evaluate the difference of antiderivatives.
+            x = np.asarray([a, b], dtype=np.float_)
+            _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                  ka, x, 0, extrapolate, out)
+            integral = out[1] - out[0]
+
+        integral *= sign
+        return integral.reshape(ca.shape[1:])
 
 
 #################################
@@ -497,14 +593,28 @@ def _augknt(x, k):
     return np.r_[(x[0],)*k, x, (x[-1],)*k]
 
 
-def _as_float_array(x, check_finite=False):
-    """Convert the input into a C contiguous float array."""
-    x = np.ascontiguousarray(x)
-    if not np.issubdtype(x.dtype, np.inexact):
-        x = x.astype(float)
-    if check_finite and not np.isfinite(x).all():
-        raise ValueError("Array must not contain infs or nans.")
-    return x
+def _convert_string_aliases(deriv, target_shape):
+    if isinstance(deriv, string_types):
+        if deriv == "clamped":
+            deriv = [(1, np.zeros(target_shape))]
+        elif deriv == "natural":
+            deriv = [(2, np.zeros(target_shape))]
+        else:
+            raise ValueError("Unknown boundary condition : %s" % deriv)
+    return deriv
+
+
+def _process_deriv_spec(deriv):
+    if deriv is not None:
+        try:
+            ords, vals = zip(*deriv)
+        except TypeError:
+            msg = ("Derivatives, `bc_type`, should be specified as a pair of "
+                   "iterables of pairs of (order, value).")
+            raise ValueError(msg)
+    else:
+        ords, vals = [], []
+    return np.atleast_1d(ords, vals)
 
 
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
@@ -533,6 +643,15 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         be an iterable of pairs ``(order, value)`` which gives the values of
         derivatives of specified orders at the given edge of the interpolation
         interval.
+        Alternatively, the following string aliases are recognized:
+
+        * ``"clamped"``: The first derivatives at the ends are zero. This is
+           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
+        * ``"natural"``: The second derivatives at ends are zero. This is
+          equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
+        * ``"not-a-knot"`` (default): The first and second segments are the same
+          polynomial. This is equivalent to having ``bc_type=None``.
+
     axis : int, optional
         Interpolation axis. Default is 0.
     check_finite : bool, optional
@@ -570,8 +689,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Here we use a 'natural' spline, with zero 2nd derivatives at edges:
 
-    >>> l, r = [(2, 0)], [(2, 0)]
-    >>> b_n = make_interp_spline(x, y, bc_type=(l, r))
+    >>> l, r = [(2, 0.0)], [(2, 0.0)]
+    >>> b_n = make_interp_spline(x, y, bc_type=(l, r))  # or, bc_type="natural"
     >>> np.allclose(b_n(x), y)
     True
     >>> x0, x1 = x[0], x[-1]
@@ -612,9 +731,23 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     splrep : a wrapper over FITPACK spline fitting routines
 
     """
-    if bc_type is None:
-        bc_type = (None, None)
-    deriv_l, deriv_r = bc_type
+    # convert string aliases for the boundary conditions
+    if bc_type is None or bc_type == 'not-a-knot':
+        deriv_l, deriv_r = None, None
+    elif isinstance(bc_type, string_types):
+        deriv_l, deriv_r = bc_type, bc_type
+    else:
+        try:
+            deriv_l, deriv_r = bc_type
+        except TypeError:
+            raise ValueError("Unknown boundary condition: %s" % bc_type)
+
+    y = np.asarray(y)
+
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
 
     # special-case k=0 right away
     if k == 0:
@@ -624,6 +757,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
@@ -634,8 +768,13 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
+
+    x = _as_float_array(x, check_finite)
+    y = _as_float_array(y, check_finite)
+    k = operator.index(k)
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -652,12 +791,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         else:
             t = _augknt(x, k)
 
-    x = _as_float_array(x, check_finite)
-    y = _as_float_array(y, check_finite)
     t = _as_float_array(t, check_finite)
-    k = int(k)
 
-    axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
@@ -675,18 +810,12 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('Out of bounds w/ x = %s.' % x)
 
     # Here : deriv_l, r = [(nu, value), ...]
-    if deriv_l is not None:
-        deriv_l_ords, deriv_l_vals = zip(*deriv_l)
-    else:
-        deriv_l_ords, deriv_l_vals = [], []
-    deriv_l_ords, deriv_l_vals = np.atleast_1d(deriv_l_ords, deriv_l_vals)
+    deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
+    deriv_l_ords, deriv_l_vals = _process_deriv_spec(deriv_l)
     nleft = deriv_l_ords.shape[0]
 
-    if deriv_r is not None:
-        deriv_r_ords, deriv_r_vals = zip(*deriv_r)
-    else:
-        deriv_r_ords, deriv_r_vals = [], []
-    deriv_r_ords, deriv_r_vals = np.atleast_1d(deriv_r_ords, deriv_r_vals)
+    deriv_r = _convert_string_aliases(deriv_r, y.shape[1:])
+    deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
@@ -694,7 +823,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     nt = t.size - k - 1
 
     if nt - n != nleft + nright:
-        raise ValueError("number of derivatives at boundaries.")
+        raise ValueError("The number of derivatives at boundaries does not "
+                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
 
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
@@ -843,15 +973,19 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         w = _as_float_array(w, check_finite)
     else:
         w = np.ones_like(x)
-    k = int(k)
+    k = operator.index(k)
 
-    axis = axis % y.ndim
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
+
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if x.shape[0] < k+1:
-        raise("Need more x points.")
+        raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):

@@ -54,7 +54,9 @@ def label(input, structure=None, output=None):
         counted as features and zero values are considered the background.
     structure : array_like, optional
         A structuring element that defines feature connections.
-        `structure` must be symmetric.  If no structuring element is provided,
+        `structure` must be centrosymmetric
+        (see Notes).
+        If no structuring element is provided,
         one is automatically generated with a squared connectivity equal to
         one.  That is, for a 2-D `input` array, the default structuring element
         is::
@@ -65,7 +67,7 @@ def label(input, structure=None, output=None):
 
     output : (None, data-type, array_like), optional
         If `output` is a data type, it specifies the type of the resulting
-        labeled feature array
+        labeled feature array.
         If `output` is an array-like object, then `output` will be updated
         with the labeled features from this function.  This function can
         operate in-place, by passing output=input.
@@ -92,6 +94,29 @@ def label(input, structure=None, output=None):
     find_objects : generate a list of slices for the labeled features (or
                    objects); useful for finding features' position or
                    dimensions
+
+    Notes
+    -----
+    A centrosymmetric matrix is a matrix that is symmetric about the center.
+    See [1]_ for more information.
+
+    The `structure` matrix must be centrosymmetric to ensure
+    two-way connections.
+    For instance, if the `structure` matrix is not centrosymmetric
+    and is defined as::
+
+        [[0,1,0],
+         [1,1,0],
+         [0,0,0]]
+
+    and the `input` is::
+
+        [[1,2],
+         [0,3]]
+
+    then the structure matrix would indicate the
+    entry 2 in the input is connected to 1,
+    but 1 is not connected to 2.
 
     Examples
     --------
@@ -140,6 +165,14 @@ def label(input, structure=None, output=None):
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
            [0, 0, 0, 1, 0, 0]])
+
+    References
+    ----------
+
+    .. [1] James R. Weaver, "Centrosymmetric (cross-symmetric)
+       matrices, their basic properties, eigenvalues, and
+       eigenvectors." The American Mathematical Monthly 92.10
+       (1985): 711-717.
 
     """
     input = numpy.asarray(input)
@@ -428,7 +461,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 def _safely_castable_to_int(dt):
     """Test whether the numpy data type `dt` can be safely cast to an int."""
     int_size = np.dtype(int).itemsize
-    safe = ((np.issubdtype(dt, int) and dt.itemsize <= int_size) or
+    safe = ((np.issubdtype(dt, np.signedinteger) and dt.itemsize <= int_size) or
             (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
     return safe
 
@@ -611,9 +644,7 @@ def mean(input, labels=None, index=None):
 
     See also
     --------
-    ndimage.variance, ndimage.standard_deviation, ndimage.minimum,
-    ndimage.maximum, ndimage.sum
-    ndimage.label
+    variance, standard_deviation, minimum, maximum, sum, label
 
     Examples
     --------
@@ -888,7 +919,7 @@ def minimum(input, labels=None, index=None):
 
     Notes
     -----
-    The function returns a Python list and not a Numpy array, use
+    The function returns a Python list and not a NumPy array, use
     `np.array` to convert the list to an array.
 
     Examples
@@ -950,7 +981,7 @@ def maximum(input, labels=None, index=None):
 
     Notes
     -----
-    The function returns a Python list and not a Numpy array, use
+    The function returns a Python list and not a NumPy array, use
     `np.array` to convert the list to an array.
 
     Examples
@@ -1028,7 +1059,7 @@ def median(input, labels=None, index=None):
 
     Notes
     -----
-    The function returns a Python list and not a Numpy array, use
+    The function returns a Python list and not a NumPy array, use
     `np.array` to convert the list to an array.
 
     Examples
@@ -1092,6 +1123,33 @@ def minimum_position(input, labels=None, index=None):
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
+
+    Examples
+    --------
+    >>> a = np.array([[10, 20, 30],
+    ...               [40, 80, 100],
+    ...               [1, 100, 200]])
+    >>> b = np.array([[1, 2, 0, 1],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+
+    >>> from scipy import ndimage
+
+    >>> ndimage.minimum_position(a)
+    (2, 0)
+    >>> ndimage.minimum_position(b)
+    (0, 2)
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> label, pos = ndimage.label(a)
+    >>> ndimage.minimum_position(a, label, index=np.arange(1, pos+1))
+    [(2, 0)]
+
+    >>> label, pos = ndimage.label(b)
+    >>> ndimage.minimum_position(b, label, index=np.arange(1, pos+1))
+    [(0, 0), (0, 3), (3, 1)]
 
     """
     dims = numpy.array(numpy.asarray(input).shape)
@@ -1435,6 +1493,6 @@ def watershed_ift(input, markers, structure=None, output=None):
     else:
         output = markers.dtype
 
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
-    return return_value
+    return output

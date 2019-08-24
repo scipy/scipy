@@ -28,7 +28,15 @@ class Bench(Benchmark):
     ]
     param_names = ['size', 'contiguous', 'module']
 
+    def __init__(self):
+        # likely not useful to benchmark svd for large sizes
+        self.time_svd.__func__.params = [[20, 100, 500]] + self.params[1:]
+
     def setup(self, size, contig, module):
+        if module == 'numpy' and size >= 200:
+            # skip: slow, and not useful to benchmark numpy
+            raise NotImplementedError()
+
         a = random([size,size])
         # larger diagonal ensures non-singularity:
         for i in range(size):
@@ -71,6 +79,13 @@ class Bench(Benchmark):
             nl.svd(self.a)
         else:
             sl.svd(self.a)
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_det.version = "87e530ee50eb6b6c06c7a8abe51c2168e133d5cbd486f4c1c2b9cedc5a078325"
+    time_eigvals.version = "9d68d3a6b473df9bdda3d3fd25c7f9aeea7d5cee869eec730fb2a2bcd1dfb907"
+    time_inv.version = "20beee193c84a5713da9749246a7c40ef21590186c35ed00a4fe854cce9e153b"
+    time_solve.version = "1fe788070f1c9132cbe78a47fdb4cce58266427fc636d2aa9450e3c7d92c644c"
+    time_svd.version = "0ccbda456d096e459d4a6eefc6c674a815179e215f83931a81cfa8c18e39d6e3"
 
 
 class Norm(Benchmark):
@@ -125,6 +140,10 @@ class Lstsq(Benchmark):
     ]
 
     def setup(self, dtype, size, lapack_driver):
+        if lapack_driver == 'numpy' and size >= 200:
+            # skip: slow, and not useful to benchmark numpy
+            raise NotImplementedError()
+
         np.random.seed(1234)
         n = math.ceil(2./3. * size)
         k = math.ceil(1./2. * size)
@@ -153,3 +172,76 @@ class Lstsq(Benchmark):
             sl.lstsq(self.A, self.b, cond=None, overwrite_a=False,
                      overwrite_b=False, check_finite=False,
                      lapack_driver=lapack_driver)
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_lstsq.version = "15ee0be14a0a597c7d1c9a3dab2c39e15c8ac623484410ffefa406bf6b596ebe"
+
+
+class SpecialMatrices(Benchmark):
+    param_names = ['size']
+    params = [[4, 128]]
+
+    def setup(self, size):
+        self.x = np.arange(1, size + 1).astype(float)
+        self.small_blocks = [np.ones([2, 2])] * (size//2)
+        self.big_blocks = [np.ones([size//2, size//2]),
+                           np.ones([size//2, size//2])]
+
+    def time_block_diag_small(self, size):
+        sl.block_diag(*self.small_blocks)
+
+    def time_block_diag_big(self, size):
+        sl.block_diag(*self.big_blocks)
+
+    def time_circulant(self, size):
+        sl.circulant(self.x)
+
+    def time_companion(self, size):
+        sl.companion(self.x)
+
+    def time_dft(self, size):
+        sl.dft(size)
+
+    def time_hadamard(self, size):
+        sl.hadamard(size)
+
+    def time_hankel(self, size):
+        sl.hankel(self.x)
+
+    def time_helmert(self, size):
+        sl.helmert(size)
+
+    def time_hilbert(self, size):
+        sl.hilbert(size)
+
+    def time_invhilbert(self, size):
+        sl.invhilbert(size)
+
+    def time_leslie(self, size):
+        sl.leslie(self.x, self.x[1:])
+
+    def time_pascal(self, size):
+        sl.pascal(size)
+
+    def time_invpascal(self, size):
+        sl.invpascal(size)
+
+    def time_toeplitz(self, size):
+        sl.toeplitz(self.x)
+
+    def time_tri(self, size):
+        sl.tri(size)
+
+
+class GetFuncs(Benchmark):
+    def setup(self):
+        self.x = np.eye(1)
+
+    def time_get_blas_funcs(self):
+        sl.blas.get_blas_funcs('gemm', dtype=float)
+
+    def time_get_blas_funcs_2(self):
+        sl.blas.get_blas_funcs(('gemm', 'axpy'), (self.x, self.x))
+
+    def time_small_cholesky(self):
+        sl.cholesky(self.x)

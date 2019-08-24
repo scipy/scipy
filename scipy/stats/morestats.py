@@ -7,9 +7,8 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, poly1d, compress,
+                   sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
-from numpy.testing.decorators import setastest
 
 from scipy._lib.six import string_types
 from scipy import optimize
@@ -27,7 +26,9 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'circmean', 'circvar', 'circstd', 'anderson_ksamp',
+           'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
+           'yeojohnson_normplot'
            ]
 
 
@@ -81,7 +82,7 @@ def bayes_mvs(data, alpha=0.90):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -92,11 +93,11 @@ def bayes_mvs(data, alpha=0.90):
     >>> data = [6, 9, 12, 7, 8, 8, 13]
     >>> mean, var, std = stats.bayes_mvs(data)
     >>> mean
-    Mean(statistic=9.0, minmax=(7.1036502226125329, 10.896349777387467))
+    Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.9456146050146295))
+    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
@@ -109,7 +110,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> ax.hist(data, bins=100, normed=True, label='Histogram of data')
+    >>> ax.hist(data, bins=100, density=True, label='Histogram of data')
     >>> ax.vlines(res_mean.statistic, 0, 0.5, colors='r', label='Estimated mean')
     >>> ax.axvspan(res_mean.minmax[0],res_mean.minmax[1], facecolor='r',
     ...            alpha=0.2, label=r'Estimated mean (95% limits)')
@@ -170,7 +171,7 @@ def mvsdist(data):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -464,7 +465,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
             plot.title(title)
             plot.xlabel(xlabel)
             plot.ylabel(ylabel)
-    except:
+    except Exception:
         # Not an MPL object or something that looks (enough) like it.
         # Don't crash on adding labels or title
         pass
@@ -670,7 +671,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test for
            Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
 
-    .. [2] http://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
+    .. [2] https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
 
     Examples
     --------
@@ -885,7 +886,7 @@ def boxcox_llf(lmb, data):
     ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
     ...     ax_inset.set_xticklabels([])
     ...     ax_inset.set_yticklabels([])
-    ...     ax_inset.set_title('$\lambda=%1.2f$' % lmbda)
+    ...     ax_inset.set_title(r'$\lambda=%1.2f$' % lmbda)
 
     >>> plt.show()
 
@@ -895,11 +896,18 @@ def boxcox_llf(lmb, data):
     if N == 0:
         return np.nan
 
-    y = boxcox(data, lmb)
-    y_mean = np.mean(y, axis=0)
-    llf = (lmb - 1) * np.sum(np.log(data), axis=0)
-    llf -= N / 2.0 * np.log(np.sum((y - y_mean)**2. / N, axis=0))
-    return llf
+    logdata = np.log(data)
+
+    # Compute the variance of the transformed data.
+    if lmb == 0:
+        variance = np.var(logdata, axis=0)
+    else:
+        # Transform without the constant offset 1/lmb.  The offset does
+        # not effect the variance, and the subtraction of the offset can
+        # lead to loss of precision.
+        variance = np.var(data**lmb / lmb, axis=0)
+
+    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * np.log(variance)
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -1151,6 +1159,43 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     return optimfunc(x, brack)
 
 
+def _normplot(method, x, la, lb, plot=None, N=80):
+    """Compute parameters for a Box-Cox or Yeo-Johnson normality plot,
+    optionally show it. See `boxcox_normplot` or `yeojohnson_normplot` for
+    details."""
+
+    if method == 'boxcox':
+        title = 'Box-Cox Normality Plot'
+        transform_func = boxcox
+    else:
+        title = 'Yeo-Johnson Normality Plot'
+        transform_func = yeojohnson
+
+    x = np.asarray(x)
+    if x.size == 0:
+        return x
+
+    if lb <= la:
+        raise ValueError("`lb` has to be larger than `la`.")
+
+    lmbdas = np.linspace(la, lb, num=N)
+    ppcc = lmbdas * 0.0
+    for i, val in enumerate(lmbdas):
+        # Determine for each lmbda the square root of correlation coefficient
+        # of transformed x
+        z = transform_func(x, lmbda=val)
+        _, (_, _, r) = probplot(z, dist='norm', fit=True)
+        ppcc[i] = r
+
+    if plot is not None:
+        plot.plot(lmbdas, ppcc, 'x')
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
+                               ylabel='Prob Plot Corr. Coef.',
+                               title=title)
+
+    return lmbdas, ppcc
+
+
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1216,31 +1261,336 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     >>> plt.show()
 
     """
+    return _normplot('boxcox', x, la, lb, plot, N)
+
+
+def yeojohnson(x, lmbda=None):
+    r"""
+    Return a dataset transformed by a Yeo-Johnson power transformation.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.  Should be 1-dimensional.
+    lmbda : float, optional
+        If ``lmbda`` is ``None``, find the lambda that maximizes the
+        log-likelihood function and return it as the second output argument.
+        Otherwise the transformation is done for the given value.
+
+    Returns
+    -------
+    yeojohnson: ndarray
+        Yeo-Johnson power transformed array.
+    maxlog : float, optional
+        If the `lmbda` parameter is None, the second returned argument is
+        the lambda that maximizes the log-likelihood function.
+
+    See Also
+    --------
+    probplot, yeojohnson_normplot, yeojohnson_normmax, yeojohnson_llf, boxcox
+
+    Notes
+    -----
+    The Yeo-Johnson transform is given by::
+
+        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
+            log(x + 1),                                  for x >= 0, lmbda = 0
+            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
+            -log(-x + 1),                                for x < 0, lmbda = 2
+
+    Unlike `boxcox`, `yeojohnson` does not require the input data to be
+    positive.
+
+    .. versionadded:: 1.2.0
+
+
+    References
+    ----------
+    I. Yeo and R.A. Johnson, "A New Family of Power Transformations to
+    Improve Normality or Symmetry", Biometrika 87.4 (2000):
+
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    We generate some random variates from a non-normal distribution and make a
+    probability plot for it, to show it is non-normal in the tails:
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(211)
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> prob = stats.probplot(x, dist=stats.norm, plot=ax1)
+    >>> ax1.set_xlabel('')
+    >>> ax1.set_title('Probplot against normal distribution')
+
+    We now use `yeojohnson` to transform the data so it's closest to normal:
+
+    >>> ax2 = fig.add_subplot(212)
+    >>> xt, lmbda = stats.yeojohnson(x)
+    >>> prob = stats.probplot(xt, dist=stats.norm, plot=ax2)
+    >>> ax2.set_title('Probplot after Yeo-Johnson transformation')
+
+    >>> plt.show()
+
+    """
+
     x = np.asarray(x)
     if x.size == 0:
         return x
 
-    if lb <= la:
-        raise ValueError("`lb` has to be larger than `la`.")
+    if lmbda is not None:
+        return _yeojohnson_transform(x, lmbda)
 
-    lmbdas = np.linspace(la, lb, num=N)
-    ppcc = lmbdas * 0.0
-    for i, val in enumerate(lmbdas):
-        # Determine for each lmbda the correlation coefficient of transformed x
-        z = boxcox(x, lmbda=val)
-        _, r2 = probplot(z, dist='norm', fit=True)
-        ppcc[i] = r2[-1]
+    # if lmbda=None, find the lmbda that maximizes the log-likelihood function.
+    lmax = yeojohnson_normmax(x)
+    y = _yeojohnson_transform(x, lmax)
 
-    if plot is not None:
-        plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\\lambda$',
-                               ylabel='Prob Plot Corr. Coef.',
-                               title='Box-Cox Normality Plot')
-
-    return lmbdas, ppcc
+    return y, lmax
 
 
-def shapiro(x, a=None, reta=False):
+def _yeojohnson_transform(x, lmbda):
+    """Return x transformed by the Yeo-Johnson power transform with given
+    parameter lmbda."""
+
+    out = np.zeros_like(x)
+    pos = x >= 0  # binary mask
+
+    # when x >= 0
+    if abs(lmbda) < np.spacing(1.):
+        out[pos] = np.log1p(x[pos])
+    else:  # lmbda != 0
+        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+
+    # when x < 0
+    if abs(lmbda - 2) > np.spacing(1.):
+        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+    else:  # lmbda == 2
+        out[~pos] = -np.log1p(-x[~pos])
+
+    return out
+
+
+def yeojohnson_llf(lmb, data):
+    r"""The yeojohnson log-likelihood function.
+
+    Parameters
+    ----------
+    lmb : scalar
+        Parameter for Yeo-Johnson transformation. See `yeojohnson` for
+        details.
+    data : array_like
+        Data to calculate Yeo-Johnson log-likelihood for. If `data` is
+        multi-dimensional, the log-likelihood is calculated along the first
+        axis.
+
+    Returns
+    -------
+    llf : float
+        Yeo-Johnson log-likelihood of `data` given `lmb`.
+
+    See Also
+    --------
+    yeojohnson, probplot, yeojohnson_normplot, yeojohnson_normmax
+
+    Notes
+    -----
+    The Yeo-Johnson log-likelihood function is defined here as
+
+    .. math::
+
+        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+
+    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
+    transformed input data ``x``.
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    >>> np.random.seed(1245)
+
+    Generate some random variates and calculate Yeo-Johnson log-likelihood
+    values for them for a range of ``lmbda`` values:
+
+    >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
+    >>> lmbdas = np.linspace(-2, 10)
+    >>> llf = np.zeros(lmbdas.shape, dtype=float)
+    >>> for ii, lmbda in enumerate(lmbdas):
+    ...     llf[ii] = stats.yeojohnson_llf(lmbda, x)
+
+    Also find the optimal lmbda value with `yeojohnson`:
+
+    >>> x_most_normal, lmbda_optimal = stats.yeojohnson(x)
+
+    Plot the log-likelihood as function of lmbda.  Add the optimal lmbda as a
+    horizontal line to check that that's really the optimum:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(lmbdas, llf, 'b.-')
+    >>> ax.axhline(stats.yeojohnson_llf(lmbda_optimal, x), color='r')
+    >>> ax.set_xlabel('lmbda parameter')
+    >>> ax.set_ylabel('Yeo-Johnson log-likelihood')
+
+    Now add some probability plots to show that where the log-likelihood is
+    maximized the data transformed with `yeojohnson` looks closest to normal:
+
+    >>> locs = [3, 10, 4]  # 'lower left', 'center', 'lower right'
+    >>> for lmbda, loc in zip([-1, lmbda_optimal, 9], locs):
+    ...     xt = stats.yeojohnson(x, lmbda=lmbda)
+    ...     (osm, osr), (slope, intercept, r_sq) = stats.probplot(xt)
+    ...     ax_inset = inset_axes(ax, width="20%", height="20%", loc=loc)
+    ...     ax_inset.plot(osm, osr, 'c.', osm, slope*osm + intercept, 'k-')
+    ...     ax_inset.set_xticklabels([])
+    ...     ax_inset.set_yticklabels([])
+    ...     ax_inset.set_title(r'$\lambda=%1.2f$' % lmbda)
+
+    >>> plt.show()
+
+    """
+    data = np.asarray(data)
+    n_samples = data.shape[0]
+
+    if n_samples == 0:
+        return np.nan
+
+    trans = _yeojohnson_transform(data, lmb)
+
+    loglike = -n_samples / 2 * np.log(trans.var(axis=0))
+    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0)
+
+    return loglike
+
+
+def yeojohnson_normmax(x, brack=(-2, 2)):
+    """Compute optimal Yeo-Johnson transform parameter for input data, using
+    maximum likelihood estimation.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    brack : 2-tuple, optional
+        The starting interval for a downhill bracket search with
+        `optimize.brent`. Note that this is in most cases not critical; the
+        final result is allowed to be outside this bracket.
+
+    Returns
+    -------
+    maxlog : float
+        The optimal transform parameter found.
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
+
+    See Also
+    --------
+    yeojohnson, yeojohnson_llf, yeojohnson_normplot
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(1234)  # make this example reproducible
+
+    Generate some data and determine optimal ``lmbda``
+
+    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> lmax = stats.yeojohnson_normmax(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -10, 10, plot=ax)
+    >>> ax.axvline(lmax, color='r')
+
+    >>> plt.show()
+
+    """
+
+    def _neg_llf(lmbda, data):
+        return -yeojohnson_llf(lmbda, data)
+
+    return optimize.brent(_neg_llf, brack=brack, args=(x,))
+
+
+def yeojohnson_normplot(x, la, lb, plot=None, N=80):
+    """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
+
+    A Yeo-Johnson normality plot shows graphically what the best
+    transformation parameter is to use in `yeojohnson` to obtain a
+    distribution that is close to normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    la, lb : scalar
+        The lower and upper bounds for the ``lmbda`` values to pass to
+        `yeojohnson` for Yeo-Johnson transformations. These are also the
+        limits of the horizontal axis of the plot if that is generated.
+    plot : object, optional
+        If given, plots the quantiles and least squares fit.
+        `plot` is an object that has to have methods "plot" and "text".
+        The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
+        or a custom object with the same methods.
+        Default is None, which means that no plot is created.
+    N : int, optional
+        Number of points on the horizontal axis (equally distributed from
+        `la` to `lb`).
+
+    Returns
+    -------
+    lmbdas : ndarray
+        The ``lmbda`` values for which a Yeo-Johnson transform was done.
+    ppcc : ndarray
+        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        when fitting the Box-Cox transformed input `x` against a normal
+        distribution.
+
+    See Also
+    --------
+    probplot, yeojohnson, yeojohnson_normmax, yeojohnson_llf, ppcc_max
+
+    Notes
+    -----
+    Even if `plot` is given, the figure is not shown or saved by
+    `boxcox_normplot`; ``plt.show()`` or ``plt.savefig('figname.png')``
+    should be used after calling `probplot`.
+
+    .. versionadded:: 1.2.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Generate some non-normally distributed data, and create a Yeo-Johnson plot:
+
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -20, 20, plot=ax)
+
+    Determine and plot the optimal ``lmbda`` to transform ``x`` and plot it in
+    the same plot:
+
+    >>> _, maxlog = stats.yeojohnson(x)
+    >>> ax.axvline(maxlog, color='r')
+
+    >>> plt.show()
+
+    """
+    return _normplot('yeojohnson', x, la, lb, plot, N)
+
+
+def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
 
@@ -1251,13 +1601,6 @@ def shapiro(x, a=None, reta=False):
     ----------
     x : array_like
         Array of sample data.
-    a : array_like, optional
-        Array of internal parameters used in the calculation.  If these
-        are not given, they will be computed internally.  If x has length
-        n, then a must have length n/2.
-    reta : bool, optional
-        Whether or not to return the internally computed a values.  The
-        default is False.
 
     Returns
     -------
@@ -1265,9 +1608,6 @@ def shapiro(x, a=None, reta=False):
         The test statistic.
     p-value : float
         The p-value for the hypothesis test.
-    a : array_like, optional
-        If `reta` is True, then these are the internally computed "a"
-        values that may be passed into this function on future calls.
 
     See Also
     --------
@@ -1285,7 +1625,7 @@ def shapiro(x, a=None, reta=False):
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
            normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
     .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
@@ -1302,21 +1642,15 @@ def shapiro(x, a=None, reta=False):
     (0.9772805571556091, 0.08144091814756393)
 
     """
-    if a is not None or reta:
-        warnings.warn("input parameters 'a' and 'reta' are scheduled to be "
-                      "removed in version 0.18.0", FutureWarning)
     x = np.ravel(x)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
-    if a is None:
-        a = zeros(N, 'f')
-        init = 0
-    else:
-        if len(a) != N // 2:
-            raise ValueError("len(a) must equal len(x)/2")
-        init = 1
+
+    a = zeros(N, 'f')
+    init = 0
+
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
     if ifault not in [0, 2]:
@@ -1324,10 +1658,9 @@ def shapiro(x, a=None, reta=False):
                       "may not be accurate.")
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
-    if reta:
-        return w, pw, a
-    else:
-        return w, pw
+
+    return w, pw
+
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
 #             Some Comparisons", Journal of he American Statistical
@@ -1352,8 +1685,7 @@ def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution
 
-    The Anderson-Darling test is a modification of the Kolmogorov-
-    Smirnov test `kstest` for the null hypothesis that a sample is
+    The Anderson-Darling tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1381,6 +1713,10 @@ def anderson(x, dist='norm'):
         differing set of significance levels depending on the
         distribution that is being tested against.
 
+    See Also
+    --------
+    kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
+
     Notes
     -----
     Critical values provided are for the following significance levels:
@@ -1392,13 +1728,14 @@ def anderson(x, dist='norm'):
     Gumbel
         25%, 10%, 5%, 2.5%, 1%
 
-    If A2 is larger than these critical values then for the corresponding
-    significance level, the null hypothesis that the data come from the
-    chosen distribution can be rejected.
+    If the returned statistic is larger than these critical values then
+    for the corresponding significance level, the null hypothesis that
+    the data come from the chosen distribution can be rejected.
+    The returned statistic is referred to as 'A2' in the references.
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Stephens, M. A. (1974). EDF Statistics for Goodness of Fit and
            Some Comparisons, Journal of the American Statistical Association,
            Vol. 69, pp. 730-737.
@@ -1582,10 +1919,12 @@ def anderson_ksamp(samples, midrank=True):
     statistic : float
         Normalized k-sample Anderson-Darling test statistic.
     critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+        0.5%, 0.1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected.
+        provided samples can be rejected. The value is floored / capped at
+        0.1% / 25%.
 
     Raises
     ------
@@ -1600,7 +1939,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Notes
     -----
-    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    [1]_ defines three versions of the k-sample Anderson-Darling test:
     one for continuous distributions and two for discrete
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
@@ -1610,6 +1949,12 @@ def anderson_ksamp(samples, midrank=True):
     data. According to [1]_, the two discrete test statistics differ
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
+
+    The critical values corresponding to the significance levels from 0.01
+    to 0.25 are taken from [1]_. p-values are floored / capped
+    at 0.1% / 25%. Since the range of critical values might be extended in
+    future releases, it is recommended not to test ``p == 0.25``, but rather
+    ``p >= 0.25`` (analogously for the lower bound).
 
     .. versionadded:: 0.14.0
 
@@ -1628,24 +1973,26 @@ def anderson_ksamp(samples, midrank=True):
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.1%:
+    significance level of 3.2%:
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(loc=0.5, size=30)])
     (2.4615796189876105,
-      array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
-      0.03134990135800783)
+      array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
+      0.03176687568842282)
 
 
     The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The approximate p-value (87%) has to be
-    computed by extrapolation and may not be very accurate:
+    identical distribution. The reported p-value (25%) has been capped and
+    may not be very accurate (since it corresponds to the value 0.449
+    whereas the statistic is -0.731):
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(size=30), np.random.normal(size=20)])
     (-0.73091722665244196,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
-      0.8789283903979661)
+      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101]),
+      0.25)
 
     """
     k = len(samples)
@@ -1685,15 +2032,25 @@ def anderson_ksamp(samples, midrank=True):
 
     # The b_i values are the interpolation coefficients from Table 2
     # of Scholz and Stephens 1987
-    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
-    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
-    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
+    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085])
+    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615])
+    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396, -0.345, -0.154])
     critical = b0 + b1 / math.sqrt(m) + b2 / m
-    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
-    if A2 < critical.min() or A2 > critical.max():
-        warnings.warn("approximate p-value will be computed by extrapolation")
 
-    p = math.exp(np.polyval(pf, A2))
+    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
+    if A2 < critical.min():
+        p = sig.max()
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
+        p = sig.min()
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
+        # interpolation of probit of significance level
+        pf = np.polyfit(critical, log(sig), 2)
+        p = math.exp(np.polyval(pf, A2))
+
     return Anderson_ksampResult(A2, critical, p)
 
 
@@ -1808,7 +2165,8 @@ def bartlett(*args):
     Parameters
     ----------
     sample1, sample2,... : array_like
-        arrays of sample data.  May be different lengths.
+        arrays of sample data.  Only 1d arrays are accepted, they may have
+        different lengths.
 
     Returns
     -------
@@ -1827,11 +2185,12 @@ def bartlett(*args):
     Conover et al. (1981) examine many of the existing parametric and
     nonparametric tests by extensive simulations and they conclude that the
     tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
-    superior in terms of robustness of departures from normality and power [3]_.
+    superior in terms of robustness of departures from normality and power
+    ([3]_).
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
     .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
               Methods, Eighth Edition, Iowa State University Press.
@@ -1846,10 +2205,12 @@ def bartlett(*args):
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
     """
-    # Handle empty input
+    # Handle empty input and input that is not 1d
     for a in args:
         if np.asanyarray(a).size == 0:
             return BartlettResult(np.nan, np.nan)
+        if np.asanyarray(a).ndim > 1:
+            raise ValueError('Samples must be one-dimensional.')
 
     k = len(args)
     if k < 2:
@@ -1885,7 +2246,8 @@ def levene(*args, **kwds):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        The sample data, possibly with different lengths
+        The sample data, possibly with different lengths. Only one-dimensional
+        samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
         Which function of the data to use in the test.  The default
         is 'median'.
@@ -1910,9 +2272,14 @@ def levene(*args, **kwds):
       * 'mean' : Recommended for symmetric, moderate-tailed distributions.
       * 'trimmed' : Recommended for heavy-tailed distributions.
 
+    The test version using the mean was proposed in the original article
+    of Levene ([2]_) while the median and trimmed mean have been studied by
+    Brown and Forsythe ([3]_), sometimes also referred to as Brown-Forsythe
+    test.
+
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
     .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
                Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
                Stanford University Press, pp. 278-292.
@@ -1935,12 +2302,17 @@ def levene(*args, **kwds):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+    # check for 1d input
+    for j in range(k):
+        if np.asanyarray(args[j]).ndim > 1:
+            raise ValueError('Samples must be one-dimensional.')
+
     Ni = zeros(k)
     Yci = zeros(k, 'd')
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
+                         " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -1983,7 +2355,6 @@ def levene(*args, **kwds):
     return LeveneResult(W, pval)
 
 
-@setastest(False)
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -2014,7 +2385,21 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Binomial_test
+    .. [1] https://en.wikipedia.org/wiki/Binomial_test
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    A car manufacturer claims that no more than 10% of their cars are unsafe.
+    15 cars are inspected for safety, 3 were found to be unsafe. Test the
+    manufacturer's claim:
+
+    >>> stats.binom_test(3, n=15, p=0.1, alternative='greater')
+    0.18406106910639114
+
+    The null hypothesis cannot be rejected at the 5% level of significance
+    because the returned p-value is greater than the critical value of 5%.
 
     """
     x = atleast_1d(x).astype(np.integer)
@@ -2069,9 +2454,7 @@ def _apply_func(x, g, func):
     #  separating x into different groups
     #  func should be applied over the groups
     g = unique(r_[0, g, len(x)])
-    output = []
-    for k in range(len(g) - 1):
-        output.append(func(x[g[k]:g[k+1]]))
+    output = [func(x[g[k]:g[k+1]]) for k in range(len(g) - 1)]
 
     return asarray(output)
 
@@ -2124,7 +2507,11 @@ def fligner(*args, **kwds):
 
     References
     ----------
-    .. [1] http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
+    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
+           Hypothesis Testing based on Quadratic Inference Function. Technical
+           Report #99-03, Center for Likelihood Studies, Pennsylvania State
+           University.
+           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. 'Journal of the American Statistical Association.'
@@ -2325,7 +2712,8 @@ def mood(x, y, axis=0):
 WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
-def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
+def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
+             alternative="two-sided"):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -2337,42 +2725,107 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     Parameters
     ----------
     x : array_like
-        The first set of measurements.
+        Either the first set of measurements (in which case `y` is the second
+        set of measurements), or the differences between two sets of
+        measurements (in which case `y` is not to be specified.)  Must be
+        one-dimensional.
     y : array_like, optional
-        The second set of measurements.  If `y` is not given, then the `x`
-        array is considered to be the differences between the two sets of
-        measurements.
-    zero_method : string, {"pratt", "wilcox", "zsplit"}, optional
+        Either the second set of measurements (if `x` is the first set of
+        measurements), or not specified (if `x` is the differences between
+        two sets of measurements.)  Must be one-dimensional.
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
         "pratt":
-            Pratt treatment: includes zero-differences in the ranking process
-            (more conservative)
+            includes zero-differences in the ranking process,
+            but drops the ranks of the zeros, see [4]_, (more conservative)
         "wilcox":
-            Wilcox treatment: discards all zero-differences
+            discards all zero-differences, the default
         "zsplit":
-            Zero rank split: just like Pratt, but spliting the zero rank
-            between positive and negative ones
+            includes zero-differences in the ranking process and split the
+            zero rank between positive and negative ones
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
         z-statistic.  Default is False.
+    alternative : {"two-sided", "greater", "less"}, optional
+        The alternative hypothesis to be tested, see Notes. Default is
+        "two-sided".
 
     Returns
     -------
     statistic : float
-        The sum of the ranks of the differences above or below zero, whichever
-        is smaller.
+        If `alternative` is "two-sided", the sum of the ranks of the
+        differences above or below zero, whichever is smaller.
+        Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The two-sided p-value for the test.
+        The p-value for the test depending on `alternative`.
+
+    See Also
+    --------
+    kruskal, mannwhitneyu
 
     Notes
     -----
-    Because the normal approximation is used for the calculations, the
-    samples used should be large.  A typical rule is to require that
-    n > 20.
+    The test has been introduced in [4]_. Given n independent samples
+    (xi, yi) from a bivariate distribution (i.e. paired samples),
+    it computes the differences di = xi - yi. One assumption of the test
+    is that the differences are symmetric, see [2]_.
+    The two-sided test has the null hypothesis that the median of the
+    differences is zero against the alternative that it is different from
+    zero. The one-sided test has the null that the median is positive against
+    the alternative that the it is negative (``alternative == 'less'``),
+    or vice versa (``alternative == 'greater.'``).
+
+    The test uses a normal approximation to derive the p-value (if
+    ``zero_method == 'pratt'``, the approximation is adjusted as in [5]_).
+    A typical rule is to require that n > 20 ([2]_, p. 383). For smaller n,
+    exact tables can be used to find critical values.
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
+    .. [1] https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
+    .. [2] Conover, W.J., Practical Nonparametric Statistics, 1971.
+    .. [3] Pratt, J.W., Remarks on Zeros and Ties in the Wilcoxon Signed
+       Rank Procedures, Journal of the American Statistical Association,
+       Vol. 54, 1959, pp. 655-667. :doi:`10.1080/01621459.1959.10501526`
+    .. [4] Wilcoxon, F., Individual Comparisons by Ranking Methods,
+       Biometrics Bulletin, Vol. 1, 1945, pp. 80-83. :doi:`10.2307/3001968`
+    .. [5] Cureton, E.E., The Normal Approximation to the Signed-Rank
+       Sampling Distribution When Zero Differences are Present,
+       Journal of the American Statistical Association, Vol. 62, 1967,
+       pp. 1068-1069. :doi:`10.1080/01621459.1967.10500917`
+
+    Examples
+    --------
+    In [4]_, the differences in height between cross- and self-fertilized
+    corn plants is given as follows:
+
+    >>> d = [6, 8, 14, 16, 23, 24, 28, 29, 41, -48, 49, 56, 60, -67, 75]
+
+    Cross-fertilized plants appear to be be higher. To test the null
+    hypothesis that there is no height difference, we can apply the
+    two-sided test:
+
+    >>> from scipy.stats import wilcoxon
+    >>> w, p = wilcoxon(d)
+    >>> w, p
+    (24.0, 0.04088813291185591)
+
+    Hence, we would reject the null hypothesis at a confidence level of 5%,
+    concluding that there is a difference in height between the groups.
+    To confirm that the median of the differences can be assumed to be
+    positive, we use:
+
+    >>> w, p = wilcoxon(d, alternative='greater')
+    >>> w, p
+    (96.0, 0.020444066455927955)
+
+    This shows that the null hypothesis that the median is negative can be
+    rejected at a confidence level of 5% in favor of the alternative that
+    the median is greater than zero. The p-value based on the approximation
+    is within the range of 0.019 and 0.054 given in [2]_.
+    Note that the statistic changed to 96 in the one-sided case (the sum
+    of ranks of positive differences) whereas it is 24 in the two-sided
+    case (the minimum of sum of ranks above and below zero).
 
     """
 
@@ -2380,13 +2833,27 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         raise ValueError("Zero method should be either 'wilcox' "
                          "or 'pratt' or 'zsplit'")
 
+    if alternative not in ["two-sided", "less", "greater"]:
+        raise ValueError("Alternative must be either 'two-sided', "
+                         "'greater' or 'less'")
+
     if y is None:
         d = asarray(x)
+        if d.ndim > 1:
+            raise ValueError('Sample x must be one-dimensional.')
     else:
         x, y = map(asarray, (x, y))
+        if x.ndim > 1 or y.ndim > 1:
+            raise ValueError('Samples x and y must be one-dimensional.')
         if len(x) != len(y):
-            raise ValueError('Unequal N in wilcoxon.  Aborting.')
+            raise ValueError('The samples x and y must have the same length.')
         d = x - y
+
+    if zero_method in ["wilcox", "pratt"]:
+        n_zero = np.sum(d == 0, axis=0)
+        if n_zero == len(d):
+            raise ValueError("zero_method 'wilcox' and 'pratt' do not work if "
+                             "the x - y is zero for all elements.")
 
     if zero_method == "wilcox":
         # Keep all non-zero differences
@@ -2394,7 +2861,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     count = len(d)
     if count < 10:
-        warnings.warn("Warning: sample size too small for normal approximation.")
+        warnings.warn("Sample size too small for normal approximation.")
 
     r = stats.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r, axis=0)
@@ -2405,12 +2872,25 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         r_plus += r_zero / 2.
         r_minus += r_zero / 2.
 
-    T = min(r_plus, r_minus)
+    # return min for two-sided test, but r_plus for one-sided test
+    # the literature is not consistent here
+    # r_plus is more informative since r_plus + r_minus = count*(count+1)/2,
+    # i.e. the sum of the ranks, so r_minus and the min can be inferred
+    # (If alternative='pratt', r_plus + r_minus = count*(count+1)/2 - r_zero.)
+    # [3] uses the r_plus for the one-sided test, keep min for two-sided test
+    # to keep backwards compatibility
+    if alternative == "two-sided":
+        T = min(r_plus, r_minus)
+    else:
+        T = r_plus
     mn = count * (count + 1.) * 0.25
     se = count * (count + 1.) * (2. * count + 1.)
 
     if zero_method == "pratt":
         r = r[d != 0]
+        # normal approximation needs to be adjusted, see Cureton (1967)
+        mn -= n_zero * (n_zero + 1.) * 0.25
+        se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
 
     replist, repnum = find_repeats(r)
     if repnum.size != 0:
@@ -2418,14 +2898,31 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
 
     se = sqrt(se / 24)
-    correction = 0.5 * int(bool(correction)) * np.sign(T - mn)
-    z = (T - mn - correction) / se
-    prob = 2. * distributions.norm.sf(abs(z))
+
+    # apply continuity correction if applicable
+    d = 0
+    if correction:
+        if alternative == "two-sided":
+            d = 0.5 * np.sign(T - mn)
+        elif alternative == "less":
+            d = -0.5
+        else:
+            d = 0.5
+
+    # compute statistic and p-value using normal approximation
+    z = (T - mn - d) / se
+    if alternative == "two-sided":
+        prob = 2. * distributions.norm.sf(abs(z))
+    elif alternative == "greater":
+        # large T = r_plus indicates x is greater than y; i.e.
+        # accept alternative in that case and return small p-value (sf)
+        prob = distributions.norm.sf(z)
+    else:
+        prob = distributions.norm.cdf(z)
 
     return WilcoxonResult(T, prob)
 
 
-@setastest(False)
 def median_test(*args, **kwds):
     """
     Mood's median test.
@@ -2638,7 +3135,7 @@ def median_test(*args, **kwds):
         # is possible that all those values equal the grand median.  If `ties`
         # is "ignore", that would result in a column of zeros in `table`.  We
         # check for that case here.
-        zero_cols = np.where((table == 0).all(axis=0))[0]
+        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
             msg = ("All values in sample %d are equal to the grand "
                    "median (%r), so they are ignored, resulting in an "
@@ -2650,55 +3147,12 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _hermnorm(N):
-    # return the negatively normalized hermite polynomials up to order N-1
-    #  (inclusive)
-    #  using the recursive relationship
-    #  p_n+1 = p_n(x)' - x*p_n(x)
-    #   and p_0(x) = 1
-    plist = [None] * N
-    plist[0] = poly1d(1)
-    for n in range(1, N):
-        plist[n] = plist[n-1].deriv() - poly1d([1, 0]) * plist[n-1]
-
-    return plist
-
-
-# Note: when removing pdf_fromgamma, also remove the _hermnorm support function
-@np.deprecate(message="scipy.stats.pdf_fromgamma is deprecated in scipy 0.16.0 "
-                      "in favour of statsmodels.distributions.ExpandedNormal.")
-def pdf_fromgamma(g1, g2, g3=0.0, g4=None):
-    if g4 is None:
-        g4 = 3 * g2**2
-    sigsq = 1.0 / g2
-    sig = sqrt(sigsq)
-    mu = g1 * sig**3.0
-    p12 = _hermnorm(13)
-    for k in range(13):
-        p12[k] /= sig**k
-
-    # Add all of the terms to polynomial
-    totp = (p12[0] - g1/6.0*p12[3] +
-            g2/24.0*p12[4] + g1**2/72.0 * p12[6] -
-            g3/120.0*p12[5] - g1*g2/144.0*p12[7] - g1**3.0/1296.0*p12[9] +
-            g4/720*p12[6] + (g2**2/1152.0 + g1*g3/720)*p12[8] +
-            g1**2 * g2/1728.0*p12[10] + g1**4.0 / 31104.0*p12[12])
-    # Final normalization
-    totp = totp / sqrt(2*pi) / sig
-
-    def thefunc(x):
-        xn = (x - mu) / sig
-        return totp(xn) * exp(-xn**2 / 2.)
-
-    return thefunc
-
-
 def _circfuncs_common(samples, high, low):
     samples = np.asarray(samples)
     if samples.size == 0:
         return np.nan, np.nan
 
-    ang = (samples - low)*2*pi / (high - low)
+    ang = (samples - low)*2.*pi / (high - low)
     return samples, ang
 
 
@@ -2722,6 +3176,16 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     -------
     circmean : float
         Circular mean.
+
+    Examples
+    --------
+    >>> from scipy.stats import circmean
+    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
+    0.2
+
+    >>> from scipy.stats import circmean
+    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
+    0.4
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
@@ -2762,6 +3226,12 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     This uses a definition of circular variance that in the limit of small
     angles returns a number close to the 'linear' variance.
 
+    Examples
+    --------
+    >>> from scipy.stats import circvar
+    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
+    2.19722457734
+
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
@@ -2798,10 +3268,15 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     This uses a definition of circular standard deviation that in the limit of
     small angles returns a number close to the 'linear' standard deviation.
 
+    Examples
+    --------
+    >>> from scipy.stats import circstd
+    >>> circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
+    0.063564063306
+
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
-

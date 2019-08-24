@@ -2,7 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
-from numpy.testing import assert_, assert_equal, assert_raises
+from numpy.testing import assert_, assert_equal
+from scipy._lib._numpy_compat import suppress_warnings
+import pytest
+from pytest import raises as assert_raises
 
 import scipy.special as sc
 from scipy.special._ufuncs import _sf_error_test_function
@@ -29,9 +32,8 @@ _sf_error_actions = [
 
 def _check_action(fun, args, action):
     if action == 'warn':
-        with warnings.catch_warnings(record=True) as w:
+        with pytest.warns(sc.SpecialFunctionWarning):
             fun(*args)
-            assert_(w[-1].category is sc.SpecialFunctionWarning)
     elif action == 'raise':
         with assert_raises(sc.SpecialFunctionError):
             fun(*args)
@@ -111,18 +113,3 @@ def test_errstate_all_but_one():
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1.0)
     assert_equal(olderr, sc.geterr())
-
-
-def test_errprint():
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        flag = sc.errprint(True)
-    try:
-        assert_(isinstance(flag, bool))
-        with warnings.catch_warnings(record=True) as w:
-            sc.loggamma(0)
-            assert_(w[-1].category is sc.SpecialFunctionWarning)
-    finally:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            sc.errprint(flag)

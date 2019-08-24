@@ -19,7 +19,7 @@
  * The file also includes a conditional assembly definition
  * for the type of computer arithmetic (IEEE, Motorola
  * IEEE, or UNKnown).
- * 
+ *
  * For little-endian computers, such as IBM PC, that follow the
  * IEEE Standard for Binary Floating Point Arithmetic (ANSI/IEEE
  * Std 754-1985), the symbol IBMPC should be defined.  These
@@ -62,7 +62,7 @@
 #include <numpy/npy_math.h>
 
 #include "cephes_names.h"
-#include "protos.h"
+#include "cephes.h"
 #include "polevl.h"
 
 /* Constant definitions for math error conditions
@@ -79,15 +79,6 @@
 
 #define EDOM		33
 #define ERANGE		34
-
-/* Long double complex numeral.  */
-/*
- * typedef struct
- * {
- * long double r;
- * long double i;
- * } cmplxl;
- */
 
 /* Type of computer arithmetic */
 
@@ -108,6 +99,8 @@
 #define DENORMAL 1
 
 #define gamma Gamma
+
+extern void mtherr(const char *name, int code);
 
 /*
  * Enable loop unrolling on GCC and use faster isnan et al.

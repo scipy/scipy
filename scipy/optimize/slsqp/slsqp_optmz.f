@@ -2,10 +2,10 @@ C
 C      ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
 C      TRANSACTIONS ON MATHEMATICAL SOFTWARE,
 C      VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
-C      http://doi.acm.org/10.1145/192115.192124
+C      https://doi.org/10.1145/192115.192124
 C
 C
-C      http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
+C      https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
 C      ------
 C      From: Deborah Cotton <cotton@hq.acm.org>
 C      Date: Fri, 14 Sep 2007 12:35:55 -0500
@@ -35,7 +35,10 @@ C
 ************************************************************************
 
       SUBROUTINE slsqp (m, meq, la, n, x, xl, xu, f, c, g, a,
-     *                  acc, iter, mode, w, l_w, jw, l_jw)
+     *                  acc, iter, mode, w, l_w, jw, l_jw,
+     *                  alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                  iexact, incons, ireset, itermx, line, 
+     *                  n1, n2, n3)
 
 C   SLSQP       S EQUENTIAL  L EAST  SQ UARES  P ROGRAMMING
 C            TO SOLVE GENERAL NONLINEAR OPTIMIZATION PROBLEMS
@@ -112,7 +115,7 @@ C*                   ON EXIT : REQUIRED ACCURACY FOR SOLUTION OBTAINED *
 C*                1: FUNCTION EVALUATION, (F&C)                        *
 C*                                                                     *
 C*                   FAILURE MODES:                                    *
-C*                2: NUMBER OF EQUALITY CONTRAINTS LARGER THAN N       *
+C*                2: NUMBER OF EQUALITY CONSTRAINTS LARGER THAN N      *
 C*                3: MORE THAN 3*N ITERATIONS IN LSQ SUBPROBLEM        *
 C*                4: INEQUALITY CONSTRAINTS INCOMPATIBLE               *
 C*                5: SINGULAR MATRIX E IN LSQ SUBPROBLEM               *
@@ -198,7 +201,7 @@ C*  which should be referenced if the user publishes results of SLSQP  *
 C*                                                                     *
 C*  DATE:           APRIL - OCTOBER, 1981.                             *
 C*  STATUS:         DECEMBER, 31-ST, 1984.                             *
-C*  STATUS:         MARCH   , 21-ST, 1987, REVISED TO FORTAN 77        *
+C*  STATUS:         MARCH   , 21-ST, 1987, REVISED TO FORTRAN 77       *
 C*  STATUS:         MARCH   , 20-th, 1989, REVISED TO MS-FORTRAN       *
 C*  STATUS:         APRIL   , 14-th, 1989, HESSE   in-line coded       *
 C*  STATUS:         FEBRUARY, 28-th, 1991, FORTRAN/2 Version 1.04      *
@@ -214,10 +217,14 @@ C*                                                                     *
 C***********************************************************************
 
       INTEGER          il, im, ir, is, iter, iu, iv, iw, ix, l_w, l_jw,
-     *                 jw(l_jw), la, m, meq, mineq, mode, n, n1
+     *                 jw(l_jw), la, m, meq, mineq, mode, n
 
       DOUBLE PRECISION acc, a(la,n+1), c(la), f, g(n+1),
      *                 x(n), xl(n), xu(n), w(l_w)
+
+      INTEGER          iexact, incons, ireset, itermx, line, n1, n2, n3
+
+      DOUBLE PRECISION alpha, f0, gs, h1, h2, h3, h4, t, t0, tol
 
 c     dim(W) =         N1*(N1+1) + MEQ*(N1+1) + MINEQ*(N1+1)  for LSQ
 c                    +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ          for LSI
@@ -254,12 +261,18 @@ C   PREPARE DATA FOR CALLING SQPBDY  -  INITIAL ADDRESSES IN W
       iw = iv + n1
 
       CALL slsqpb  (m, meq, la, n, x, xl, xu, f, c, g, a, acc, iter,
-     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw)
-
+     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw,
+     * alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     * iexact, incons, ireset, itermx, line, 
+     * n1, n2, n3)
+ 
       END
 
       SUBROUTINE slsqpb (m, meq, la, n, x, xl, xu, f, c, g, a, acc,
-     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw)
+     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw,
+     *                   alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                   iexact, incons, ireset, itermx, line, 
+     *                   n1, n2, n3)
 
 C   NONLINEAR PROGRAMMING BY SOLVING SEQUENTIALLY QUADRATIC PROGRAMS
 
@@ -269,6 +282,7 @@ C                      BODY SUBROUTINE FOR SLSQP
 
       INTEGER          iw(*), i, iexact, incons, ireset, iter, itermx,
      *                 k, j, la, line, m, meq, mode, n, n1, n2, n3
+      LOGICAL          badlin
 
       DOUBLE PRECISION a(la,n+1), c(la), g(n+1), l((n+1)*(n+2)/2),
      *                 mu(la), r(m+n+n+2), s(n+1), u(n+1), v(n+1), w(*),
@@ -282,11 +296,12 @@ c                     +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ
 c                     +(N1+MINEQ)*(N1-MEQ) + 2*MEQ + N1       for LSEI
 c                      with MINEQ = M - MEQ + 2*N1  &  N1 = N+1
 
-      SAVE             alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                 iexact, incons, ireset, itermx, line, n1, n2, n3
-
       DATA             ZERO /0.0d0/, one /1.0d0/, alfmin /1.0d-1/,
      *                 hun /1.0d+2/, ten /1.0d+1/, two /2.0d0/
+
+C     The badlin flag keeps track whether the SQP problem on the current
+C     iteration was inconsistent or not.
+      badlin = .false.
 
       IF (mode) 260, 100, 220
 
@@ -336,13 +351,19 @@ C   SEARCH DIRECTION AS SOLUTION OF QP - SUBPROBLEM
       CALL lsq (m, meq, n , n3, la, l, g, a, c, u, v, s, r, w, iw, mode)
 
 C   AUGMENTED PROBLEM FOR INCONSISTENT LINEARIZATION
+C
+C   If it turns out that the original SQP problem is inconsistent,
+C   disallow termination with convergence on this iteration,
+C   even if the augmented problem was solved.
 
+      badlin = .false.
       IF (mode.EQ.6) THEN
           IF (n.EQ.meq) THEN
               mode = 4
           ENDIF
       ENDIF
       IF (mode.EQ.4) THEN
+          badlin = .true.
           DO 140 j=1,m
              IF (j.LE.meq) THEN
                  a(j,n1) = -c(j)
@@ -399,7 +420,7 @@ C   UPDATE MULTIPLIERS FOR L1-TEST
 C   CHECK CONVERGENCE
 
       mode = 0
-      IF (h1.LT.acc .AND. h2.LT.acc) GO TO 330
+      IF (h1.LT.acc .AND. h2.LT.acc .AND. .NOT. badlin) GO TO 330
       h1 = ZERO
       DO 180 j=1,m
          IF (j.LE.meq) THEN
@@ -470,7 +491,8 @@ C   CHECK CONVERGENCE
          ENDIF
          h3 = h3 + MAX(-c(j),h1)
   250 CONTINUE
-      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc)
+      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc
+     *     .AND. .NOT. badlin)
      *   THEN
             mode = 0
          ELSE
@@ -481,7 +503,8 @@ C   CHECK CONVERGENCE
 C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
-      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol)
+      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
+     *     .AND. .NOT. badlin)
      *   THEN
             mode = 0
          ELSE

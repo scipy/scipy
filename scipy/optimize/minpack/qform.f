@@ -1,4 +1,5 @@
-      subroutine qform(m,n,q,ldq,wa)
+      recursive
+     *subroutine qform(m,n,q,ldq,wa)
       integer m,n,ldq
       double precision q(ldq,m),wa(m)
 c     **********

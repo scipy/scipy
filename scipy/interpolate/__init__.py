@@ -1,4 +1,5 @@
-"""========================================
+"""
+========================================
 Interpolation (:mod:`scipy.interpolate`)
 ========================================
 
@@ -21,10 +22,11 @@ Univariate interpolation
    interp1d
    BarycentricInterpolator
    KroghInterpolator
-   PchipInterpolator
    barycentric_interpolate
    krogh_interpolate
    pchip_interpolate
+   CubicHermiteSpline
+   PchipInterpolator
    Akima1DInterpolator
    CubicSpline
    PPoly
@@ -95,7 +97,7 @@ Functional interface to FITPACK routines:
 Object-oriented FITPACK interface:
 
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
    UnivariateSpline
    InterpolatedUnivariateSpline
@@ -157,19 +159,8 @@ Additional tools
    `scipy.signal.qspline2d`,
    `scipy.signal.cspline2d`.
 
-Functions existing for backward compatibility (should not be used in
-new code):
-
-.. autosummary::
-   :toctree: generated/
-
-   ppform
-   spleval
-   spline
-   splmake
-   spltopp
-   pchip
-
+``pchip`` is an alias of `PchipInterpolator` for backward compatibility
+(should not be used in new code).
 """
 from __future__ import division, print_function, absolute_import
 
@@ -192,5 +183,10 @@ from ._bsplines import *
 from ._pade import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester
+
+# Backward compatibility
+pchip = PchipInterpolator

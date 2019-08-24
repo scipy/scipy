@@ -37,7 +37,7 @@ all fields of science and technology. The values became available on 25 June
 available through 31 December 2014. The 2014 adjustment was carried out under
 the auspices of the CODATA Task Group on Fundamental Constants. Also available
 is an introduction to the constants for non-experts at
-http://physics.nist.gov/cuu/Constants/introduction.html
+https://physics.nist.gov/cuu/Constants/introduction.html
 
 References
 ----------
@@ -46,7 +46,7 @@ and closely related precision measurements published since the mid 1980s, but
 also including many older papers of particular interest, some of which date
 back to the 1800s. To search bibliography visit
 
-http://physics.nist.gov/cuu/Constants/
+https://physics.nist.gov/cuu/Constants/
 
 """
 from __future__ import division, print_function, absolute_import
@@ -58,7 +58,7 @@ __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
 
 """
-Source:  http://physics.nist.gov/cuu/Constants/index.html
+Source:  https://physics.nist.gov/cuu/Constants/
 
 The values of the constants provided at the above site are recommended for
 international use by CODATA and are the latest available. Termed the "2006
@@ -70,7 +70,7 @@ the auspices of the CODATA Task Group on Fundamental Constants.
 """
 
 #
-# Source:  http://physics.nist.gov/cuu/Constants/index.html
+# Source:  https://physics.nist.gov/cuu/Constants/
 #
 
 # Quantity                                             Value                 Uncertainty          Unit
@@ -1211,11 +1211,6 @@ def value(key):
     value : float
         Value in `physical_constants` corresponding to `key`
 
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
-
     Examples
     --------
     >>> from scipy import constants
@@ -1241,11 +1236,6 @@ def unit(key):
     unit : Python string
         Unit in `physical_constants` corresponding to `key`
 
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
-
     Examples
     --------
     >>> from scipy import constants
@@ -1270,11 +1260,6 @@ def precision(key):
     -------
     prec : float
         Relative precision in `physical_constants` corresponding to `key`
-
-    See Also
-    --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
 
     Examples
     --------
@@ -1305,10 +1290,33 @@ def find(sub=None, disp=False):
         If `disp` is False, the list of keys is returned.
         Otherwise, None is returned.
 
-    See Also
+    Examples
     --------
-    codata : Contains the description of `physical_constants`, which, as a
-        dictionary literal object, does not itself possess a docstring.
+    >>> from scipy.constants import find, physical_constants
+
+    Which keys in the ``physical_constants`` dictionary contain 'boltzmann'?
+
+    >>> find('boltzmann')
+    ['Boltzmann constant',
+     'Boltzmann constant in Hz/K',
+     'Boltzmann constant in eV/K',
+     'Boltzmann constant in inverse meters per kelvin',
+     'Stefan-Boltzmann constant']
+
+    Get the constant called 'Boltzmann constant in Hz/K':
+
+    >>> physical_constants['Boltzmann constant in Hz/K']
+    (20836612000.0, 'Hz K^-1', 12000.0)
+
+    Find constants with 'radius' in the key:
+
+    >>> find('radius')
+    ['Bohr radius',
+     'classical electron radius',
+     'deuteron rms charge radius',
+     'proton rms charge radius']
+    >>> physical_constants['classical electron radius']
+    (2.8179403227e-15, 'm', 1.9e-24)
 
     """
     if sub is None:
@@ -1324,6 +1332,7 @@ def find(sub=None, disp=False):
         return
     else:
         return result
+
 
 # Table is lacking some digits for exact values: calculate from definition
 c = value('speed of light in vacuum')

@@ -84,6 +84,7 @@ def _exp_est(data):
     # Eh.
     return np.array([1., 1.])
 
+
 multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
                fjacd=_lin_fjd, estimate=_lin_est,
                meta={'name': 'Arbitrary-dimensional Linear',
@@ -130,6 +131,7 @@ def polynomial(order):
                  'TeXequ': r'$y=\beta_0 + \sum_{i=1}^{%s} \beta_i x^i$' %
                         (len_beta-1)})
 
+
 exponential = Model(_exp_fcn, fjacd=_exp_fjd, fjacb=_exp_fjb,
                     estimate=_exp_est, meta={'name':'Exponential',
                     'equ': 'y= B_0 + exp(B_1 * x)',
@@ -172,6 +174,7 @@ def _quad_fjb(B, x):
 
 def _quad_est(data):
     return (1.,1.,1.)
+
 
 unilinear = Model(_unilin, fjacd=_unilin_fjd, fjacb=_unilin_fjb,
                   estimate=_unilin_est, meta={'name': 'Univariate Linear',

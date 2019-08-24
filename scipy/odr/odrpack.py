@@ -62,7 +62,7 @@ class OdrError(Exception):
     """
     Exception indicating an error in fitting.
 
-    This is raised by `scipy.odr` if an error occurs during fitting.
+    This is raised by `~scipy.odr.odr` if an error occurs during fitting.
     """
     pass
 
@@ -72,9 +72,10 @@ class OdrStop(Exception):
     Exception stopping fitting.
 
     You can raise this exception in your objective function to tell
-    `scipy.odr` to stop fitting.
+    `~scipy.odr.odr` to stop fitting.
     """
     pass
+
 
 # Backwards compatibility
 odr_error = OdrError
@@ -481,8 +482,8 @@ class Model(object):
         If the input data is multi-dimensional, then `x` is a rank-2 array;
         i.e., ``x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n)``.
         In all cases, it has the same shape as the input data array passed to
-        `odr`. `m` is the dimensionality of the input data, `n` is the number
-        of observations.
+        `~scipy.odr.odr`. `m` is the dimensionality of the input data,
+        `n` is the number of observations.
     `y`
         if the response variable is single-dimensional, then `y` is a
         rank-1 array, i.e., ``y = array([2, 4, ...]); y.shape = (n,)``.
@@ -563,7 +564,7 @@ class Output(object):
         Array ``y = fcn(x + delta)``.
     res_var : float, optional
         Residual variance.
-    sum_sqare : float, optional
+    sum_square : float, optional
         Sum of squares error.
     sum_square_delta : float, optional
         Sum of squares of delta error.
@@ -585,8 +586,8 @@ class Output(object):
     Notes
     -----
     Takes one argument for initialization, the return value from the
-    function `odr`. The attributes listed as "optional" above are only
-    present if `odr` was run with ``full_output=1``.
+    function `~scipy.odr.odr`. The attributes listed as "optional" above are
+    only present if `~scipy.odr.odr` was run with ``full_output=1``.
 
     """
 
@@ -740,6 +741,9 @@ class ODR(object):
                 )
         else:
             self.beta0 = _conv(beta0)
+
+        if ifixx is None and data.fix is not None:
+            ifixx = data.fix
 
         self.delta0 = _conv(delta0)
         # These really are 32-bit integers in FORTRAN (gfortran), even on 64-bit
@@ -1056,7 +1060,7 @@ class ODR(object):
         self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
 
     def run(self):
-        """ Run the fitting routine with all of the information given.
+        """ Run the fitting routine with all of the information given and with ``full_output=1``.
 
         Returns
         -------

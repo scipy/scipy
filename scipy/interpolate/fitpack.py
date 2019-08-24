@@ -111,6 +111,12 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     See `splev` for evaluation of the spline and its derivatives.
     The number of dimensions N must be smaller than 11.
 
+    The number of coefficients in the `c` array is ``k+1`` less then the number
+    of knots, ``len(t)``. This is in contrast with `splrep`, which zero-pads
+    the array of coefficients to have the same length as the array of knots.
+    These additional coefficients are ignored by evaluation routines, `splev`
+    and `BSpline`.
+
     References
     ----------
     .. [1] P. Dierckx, "Algorithms for smoothing data with periodic and
@@ -246,6 +252,11 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
 
+    This routine zero-pads the coefficients array ``c`` to have the same length
+    as the array of knots ``t`` (the trailing ``k + 1`` coefficients are ignored
+    by the evaluation routines, `splev` and `BSpline`.) This is in contrast with
+    `splprep`, which does not zero-pad the coefficients.
+
     References
     ----------
     Based on algorithms described in [1]_, [2]_, [3]_, and [4]_:
@@ -299,7 +310,7 @@ def splev(x, tck, der=0, ext=0):
         of the spline. (Also see Notes.)
     der : int, optional
         The order of derivative of the spline to compute (must be less than
-        or equal to k).
+        or equal to k, the degree of the spline).
     ext : int, optional
         Controls the value returned for elements of ``x`` not in the
         interval defined by the knot sequence.

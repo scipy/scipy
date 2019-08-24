@@ -1,8 +1,8 @@
 /*
- * Handle different Fortran conventions.
+ * Handle different Fortran conventions and qh_new_qhull_scipy entry point.
  */
-
-#include "qhull_misc_config.h"
+#ifndef QHULL_MISC_H_
+#define QHULL_MISC_H_
 
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
@@ -24,14 +24,9 @@
 
 #define qhull_misc_lib_check() QHULL_LIB_CHECK
 
-#if HAVE_OPEN_MEMSTREAM
-FILE *qhull_open_memstream(char **ptr, size_t *sizeloc)
-{
-    return open_memstream(ptr, sizeloc);
-}
-#else
-FILE *qhull_open_memstream(char **ptr, size_t *sizeloc)
-{
-    return NULL;
-}
-#endif
+#include "qhull_src/src/libqhull_r.h"
+
+int qh_new_qhull_scipy(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc,
+                       char *qhull_cmd, FILE *outfile, FILE *errfile, coordT* feaspoint);
+
+#endif /* QHULL_MISC_H_ */

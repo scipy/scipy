@@ -209,13 +209,13 @@ c             in upper triangular form.
 c     ctrsen  LAPACK routine that re-orders the Schur form.
 c     cunm2r  LAPACK routine that applies an orthogonal matrix in 
 c             factored form.
-c     wslamch  LAPACK routine that determines machine constants.
+c     slamch  LAPACK routine that determines machine constants.
 c     ctrmm   Level 3 BLAS matrix times an upper triangular matrix.
 c     cgeru   Level 2 BLAS rank one update to a matrix.
 c     ccopy   Level 1 BLAS that copies one vector to another .
 c     cscal   Level 1 BLAS that scales a vector.
 c     csscal  Level 1 BLAS that scales a complex vector by a real number.
-c     wscnrm2  Level 1 BLAS that computes the norm of a complex vector.
+c     scnrm2  Level 1 BLAS that computes the norm of a complex vector.
 c
 c\Remarks
 c
@@ -321,8 +321,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wscnrm2, wslamch, wslapy2
-      external   wscnrm2, wslamch, wslapy2
+     &           scnrm2, slamch, slapy2
+      external   scnrm2, slamch, slapy2
 c
       Complex
      &           wcdotc
@@ -346,7 +346,7 @@ c     %---------------------------------%
 c     | Get machine dependent constant. |
 c     %---------------------------------%
 c
-      eps23 = wslamch('Epsilon-Machine')
+      eps23 = slamch('Epsilon-Machine')
       eps23 = eps23**(2.0E+0 / 3.0E+0)
 c
 c     %-------------------------------%
@@ -515,11 +515,11 @@ c
          numcnv = 0
          do 11 j = 1,ncv
             rtemp = max(eps23,
-     &                 wslapy2 ( real(workl(irz+ncv-j)),
+     &                 slapy2 ( real(workl(irz+ncv-j)),
      &                          aimag(workl(irz+ncv-j)) ))
             jj = workl(bounds + ncv - j)
             if (numcnv .lt. nconv .and.
-     &          wslapy2( real(workl(ibd+jj-1)),
+     &          slapy2( real(workl(ibd+jj-1)),
      &          aimag(workl(ibd+jj-1)) )
      &          .le. tol*rtemp) then
                select(jj) = .true.
@@ -717,7 +717,7 @@ c           | magnitude 1.                                   |
 c           %------------------------------------------------%
 c
             do 40 j=1, nconv
-                  rtemp = wscnrm2(ncv, workl(invsub+(j-1)*ldq), 1)
+                  rtemp = scnrm2(ncv, workl(invsub+(j-1)*ldq), 1)
                   rtemp = real(one) / rtemp
                   call csscal ( ncv, rtemp,
      &                 workl(invsub+(j-1)*ldq), 1 )

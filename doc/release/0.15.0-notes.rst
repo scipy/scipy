@@ -106,7 +106,7 @@ instead.  In order to support existing code, ``scipy.weave`` has been packaged
 separately: https://github.com/scipy/weave.  It is a pure Python package, and
 can easily be installed with ``pip install weave``.
 
-`scipy.special.bessel_diff_formula` is deprecated.  It is a private function,
+``scipy.special.bessel_diff_formula`` is deprecated.  It is a private function,
 and therefore will be removed from the public API in a following release.
 
 ``scipy.stats.nanmean``, ``nanmedian`` and ``nanstd`` functions are deprecated

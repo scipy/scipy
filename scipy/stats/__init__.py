@@ -3,7 +3,7 @@
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
 
-.. module:: scipy.stats
+.. currentmodule:: scipy.stats
 
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
@@ -37,6 +37,7 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
@@ -49,8 +50,8 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
-   frechet_l         -- Frechet Left Sided, Weibull_max
+   frechet_r         -- Deprecated. Alias for weibull_min
+   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
@@ -89,11 +90,13 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    norm              -- Normal (Gaussian)
+   norminvgauss      -- Normal Inverse Gaussian
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function
@@ -134,6 +137,7 @@ Multivariate distributions
    multinomial           -- Multinomial distribution
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
+   unitary_group         -- U(N) group
    random_correlation    -- random correlation matrices
 
 Discrete distributions
@@ -155,12 +159,14 @@ Discrete distributions
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
+   yulesimon         -- Yule-Simon
 
-Statistical functions
-=====================
+An overview of statistical functions is given below.
+Several of these functions have a similar version in
+`scipy.stats.mstats` which work for masked arrays.
 
-Several of these functions have a similar version in scipy.stats.mstats
-which work for masked arrays.
+Summary statistics
+==================
 
 .. autosummary::
    :toctree: generated/
@@ -169,12 +175,9 @@ which work for masked arrays.
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
    kurtosis          -- Fisher or Pearson kurtosis
-   kurtosistest      --
    mode              -- Modal value
    moment            -- Central moment
-   normaltest        --
    skew              -- Skewness
-   skewtest          --
    kstat             --
    kstatvar          --
    tmean             -- Truncated arithmetic mean
@@ -186,13 +189,21 @@ which work for masked arrays.
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
+   gstd              -- Geometric Standard Deviation
+   iqr
+   sem
+   bayes_mvs
+   mvsdist
+   entropy
+   median_absolute_deviation
+
+Frequency statistics
+====================
 
 .. autosummary::
    :toctree: generated/
 
    cumfreq
-   histogram2
-   histogram
    itemfreq
    percentileofscore
    scoreatpercentile
@@ -205,25 +216,8 @@ which work for masked arrays.
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
-.. autosummary::
-   :toctree: generated/
-
-   obrientransform
-   signaltonoise
-   bayes_mvs
-   mvsdist
-   sem
-   zmap
-   zscore
-   iqr
-
-.. autosummary::
-   :toctree: generated/
-
-   sigmaclip
-   threshold
-   trimboth
-   trim1
+Correlation functions
+=====================
 
 .. autosummary::
    :toctree: generated/
@@ -235,8 +229,11 @@ which work for masked arrays.
    kendalltau
    weightedtau
    linregress
+   siegelslopes
    theilslopes
-   f_value
+
+Statistical tests
+=================
 
 .. autosummary::
    :toctree: generated/
@@ -249,6 +246,7 @@ which work for masked arrays.
    chisquare
    power_divergence
    ks_2samp
+   epps_singleton_2samp
    mannwhitneyu
    tiecorrect
    rankdata
@@ -256,9 +254,8 @@ which work for masked arrays.
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
    combine_pvalues
-   ss
-   square_of_sums
    jarque_bera
 
 .. autosummary::
@@ -274,6 +271,12 @@ which work for masked arrays.
    fligner
    median_test
    mood
+   skewtest
+   kurtosistest
+   normaltest
+
+Transformations
+===============
 
 .. autosummary::
    :toctree: generated/
@@ -281,14 +284,32 @@ which work for masked arrays.
    boxcox
    boxcox_normmax
    boxcox_llf
+   yeojohnson
+   yeojohnson_normmax
+   yeojohnson_llf
+   obrientransform
+   sigmaclip
+   trimboth
+   trim1
+   zmap
+   zscore
 
-   entropy
+Statistical distances
+=====================
 
 .. autosummary::
    :toctree: generated/
 
-   chisqprob
-   betai
+   wasserstein_distance
+   energy_distance
+
+Random variate generation
+=========================
+
+.. autosummary::
+   :toctree: generated/
+
+   rvs_ratio_uniforms
 
 Circular statistical functions
 ==============================
@@ -321,6 +342,7 @@ Plot-tests
    ppcc_plot
    probplot
    boxcox_normplot
+   yeojohnson_normplot
 
 
 Masked statistics functions
@@ -331,13 +353,22 @@ Masked statistics functions
    stats.mstats
 
 
-Univariate and multivariate kernel density estimation (:mod:`scipy.stats.kde`)
-==============================================================================
+Univariate and multivariate kernel density estimation
+=====================================================
 
 .. autosummary::
    :toctree: generated/
 
    gaussian_kde
+
+Warnings used in :mod:`scipy.stats`
+===================================
+
+.. autosummary::
+   :toctree: generated/
+
+   PearsonRConstantInputWarning
+   PearsonRNearConstantInputWarning
 
 For many more stat related functions install the software R and the
 interface package rpy.
@@ -356,5 +387,6 @@ from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

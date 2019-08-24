@@ -79,6 +79,8 @@ Filter design
 
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
+   bilinear_zpk  -- Digital filter from an analog filter using
+                    -- the bilinear transform.
    findfreqs     -- Find array of frequencies for computing filter response.
    firls         -- FIR filter design using least-squares error minimization.
    firwin        -- Windowed FIR filter design, with frequency response
@@ -126,9 +128,13 @@ Lower-level filter design functions:
    cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
+   lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bs          -- Transform a lowpass filter prototype to a bandstop filter.
+   lp2bs_zpk      -- Transform a lowpass filter prototype to a bandstop filter.
    lp2hp          -- Transform a lowpass filter prototype to a highpass filter.
+   lp2hp_zpk      -- Transform a lowpass filter prototype to a highpass filter.
    lp2lp          -- Transform a lowpass filter prototype to a lowpass filter.
+   lp2lp_zpk      -- Transform a lowpass filter prototype to a lowpass filter.
    normalize      -- Normalize polynomial representation of a transfer function.
 
 
@@ -165,7 +171,7 @@ Continuous-Time Linear Systems
    lsim2            -- like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- impulse response of linear, time-invariant (LTI) system.
    impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
-   step             -- step response of continous-time LTI system.
+   step             -- step response of continuous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
    freqresp         -- frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
@@ -222,31 +228,15 @@ Waveforms
 Window functions
 ================
 
+For window functions, see the `scipy.signal.windows` namespace.
+
+In the `scipy.signal` namespace, there is a convenience function to
+obtain these windows by name:
+
 .. autosummary::
    :toctree: generated/
 
-   get_window        -- Return a window of a given length and type.
-   barthann          -- Bartlett-Hann window
-   bartlett          -- Bartlett window
-   blackman          -- Blackman window
-   blackmanharris    -- Minimum 4-term Blackman-Harris window
-   bohman            -- Bohman window
-   boxcar            -- Boxcar window
-   chebwin           -- Dolph-Chebyshev window
-   cosine            -- Cosine window
-   exponential       -- Exponential window
-   flattop           -- Flat top window
-   gaussian          -- Gaussian window
-   general_gaussian  -- Generalized Gaussian window
-   hamming           -- Hamming window
-   hann              -- Hann window
-   hanning           -- Hann window
-   kaiser            -- Kaiser window
-   nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
-   parzen            -- Parzen window
-   slepian           -- Slepian window
-   triang            -- Triangular window
-   tukey             -- Tukey window
+   get_window -- Return a window of a given length and type.
 
 Wavelets
 ========
@@ -267,10 +257,13 @@ Peak finding
 .. autosummary::
    :toctree: generated/
 
-   find_peaks_cwt -- Attempt to find the peaks in the given 1-D array
-   argrelmin      -- Calculate the relative minima of data
-   argrelmax      -- Calculate the relative maxima of data
-   argrelextrema  -- Calculate the relative extrema of data
+   argrelmin        -- Calculate the relative minima of data
+   argrelmax        -- Calculate the relative maxima of data
+   argrelextrema    -- Calculate the relative extrema of data
+   find_peaks       -- Find a subset of peaks inside a signal.
+   find_peaks_cwt   -- Find peaks in a 1-D array with wavelet transformation.
+   peak_prominences -- Calculate the prominence of each peak in a signal.
+   peak_widths      -- Calculate the width of each peak in a signal.
 
 Spectral Analysis
 =================
@@ -288,11 +281,12 @@ Spectral Analysis
    stft           -- Compute the Short Time Fourier Transform
    istft          -- Compute the Inverse Short Time Fourier Transform
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction
+   check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction
 
 """
 from __future__ import division, print_function, absolute_import
 
-from . import sigtools
+from . import sigtools, windows
 from .waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
@@ -306,13 +300,62 @@ from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *
 from .lti_conversion import *
-from .windows import *
 from .signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from .spectral import *
 from .wavelets import *
 from ._peak_finding import *
+from .windows import get_window  # keep this one in signal namespace
+
+
+# deal with * -> windows.* doc-only soft-deprecation
+deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
+                      'nuttall', 'blackmanharris', 'flattop', 'bartlett',
+                      'barthann', 'hamming', 'kaiser', 'gaussian',
+                      'general_gaussian', 'chebwin', 'slepian', 'cosine',
+                      'hann', 'exponential', 'tukey')
+
+# backward compatibility imports for actually deprecated windows not
+# in the above list
+from .windows import hanning
+
+
+def deco(name):
+    f = getattr(windows, name)
+    # Add deprecation to docstring
+
+    def wrapped(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    wrapped.__name__ = name
+    wrapped.__module__ = 'scipy.signal'
+    if hasattr(f, '__qualname__'):
+        wrapped.__qualname__ = f.__qualname__
+
+    if f.__doc__ is not None:
+        lines = f.__doc__.splitlines()
+        for li, line in enumerate(lines):
+            if line.strip() == 'Parameters':
+                break
+        else:
+            raise RuntimeError('dev error: badly formatted doc')
+        spacing = ' ' * line.find('P')
+        lines.insert(li, ('{0}.. warning:: scipy.signal.{1} is deprecated,\n'
+                          '{0}             use scipy.signal.windows.{1} '
+                          'instead.\n'.format(spacing, name)))
+        wrapped.__doc__ = '\n'.join(lines)
+
+    return wrapped
+
+
+for name in deprecated_windows:
+    locals()[name] = deco(name)
+
+del deprecated_windows, name, deco
+
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

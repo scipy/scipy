@@ -70,44 +70,44 @@ extern double MACHEP;
 
 int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
 {
-  double ai, b, phi, t, twon, dnfac;
+    double ai, b, phi, t, twon, dnfac;
     double a[9], c[9];
     int i;
 
     /* Check for special cases */
     if (m < 0.0 || m > 1.0 || cephes_isnan(m)) {
-	mtherr("ellpj", DOMAIN);
-	*sn = NPY_NAN;
-	*cn = NPY_NAN;
-	*ph = NPY_NAN;
-	*dn = NPY_NAN;
-	return (-1);
+        mtherr("ellpj", DOMAIN);
+        *sn = NPY_NAN;
+        *cn = NPY_NAN;
+        *ph = NPY_NAN;
+        *dn = NPY_NAN;
+        return (-1);
     }
     if (m < 1.0e-9) {
-	t = sin(u);
-	b = cos(u);
-	ai = 0.25 * m * (u - t * b);
-	*sn = t - ai * b;
-	*cn = b + ai * t;
-	*ph = u - ai;
-	*dn = 1.0 - 0.5 * m * t * t;
-	return (0);
+        t = sin(u);
+        b = cos(u);
+        ai = 0.25 * m * (u - t * b);
+        *sn = t - ai * b;
+        *cn = b + ai * t;
+        *ph = u - ai;
+        *dn = 1.0 - 0.5 * m * t * t;
+        return (0);
     }
     if (m >= 0.9999999999) {
-	ai = 0.25 * (1.0 - m);
-	b = cosh(u);
-	t = tanh(u);
-	phi = 1.0 / b;
-	twon = b * sinh(u);
-	*sn = t + ai * (twon - u) / (b * b);
-	*ph = 2.0 * atan(exp(u)) - NPY_PI_2 + ai * (twon - u) / b;
-	ai *= t * phi;
-	*cn = phi - ai * (twon - u);
-	*dn = phi + ai * (twon + u);
-	return (0);
+        ai = 0.25 * (1.0 - m);
+        b = cosh(u);
+        t = tanh(u);
+        phi = 1.0 / b;
+        twon = b * sinh(u);
+        *sn = t + ai * (twon - u) / (b * b);
+        *ph = 2.0 * atan(exp(u)) - NPY_PI_2 + ai * (twon - u) / b;
+        ai *= t * phi;
+        *cn = phi - ai * (twon - u);
+        *dn = phi + ai * (twon + u);
+        return (0);
     }
 
-    /* A. G. M. scale. See DLMF 20.20(ii) */
+    /* A. G. M. scale. See DLMF 22.20(ii) */
     a[0] = 1.0;
     b = sqrt(1.0 - m);
     c[0] = sqrt(m);
@@ -115,26 +115,26 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
     i = 0;
 
     while (fabs(c[i] / a[i]) > MACHEP) {
-	if (i > 7) {
-	    mtherr("ellpj", OVERFLOW);
-	    goto done;
-	}
-	ai = a[i];
-	++i;
-	c[i] = (ai - b) / 2.0;
-	t = sqrt(ai * b);
-	a[i] = (ai + b) / 2.0;
-	b = t;
-	twon *= 2.0;
+        if (i > 7) {
+            mtherr("ellpj", OVERFLOW);
+            goto done;
+        }
+        ai = a[i];
+        ++i;
+        c[i] = (ai - b) / 2.0;
+        t = sqrt(ai * b);
+        a[i] = (ai + b) / 2.0;
+        b = t;
+        twon *= 2.0;
     }
 
-  done:
+ done:
     /* backward recurrence */
     phi = twon * a[i] * u;
     do {
-	t = c[i] * sin(phi) / a[i];
-	b = phi;
-	phi = (asin(t) + phi) / 2.0;
+        t = c[i] * sin(phi) / a[i];
+        b = phi;
+        phi = (asin(t) + phi) / 2.0;
     }
     while (--i);
 
@@ -144,9 +144,10 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
     dnfac = cos(phi - b);
     /* See discussion after DLMF 22.20.5 */
     if (fabs(dnfac) < 0.1) {
-    	*dn = sqrt(1 - m*(*sn)*(*sn));
-    } else {
-    	*dn = t / dnfac;
+        *dn = sqrt(1 - m*(*sn)*(*sn));
+    }
+    else {
+        *dn = t / dnfac;
     }
     *ph = phi;
     return (0);

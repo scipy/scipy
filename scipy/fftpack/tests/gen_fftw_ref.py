@@ -26,6 +26,7 @@ def gen_data(dt):
 
     return arrays
 
+
 # generate single precision data
 data = gen_data(np.float32)
 filename = 'fftw_single_ref'

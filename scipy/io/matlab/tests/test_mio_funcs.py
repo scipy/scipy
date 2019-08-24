@@ -8,7 +8,6 @@ import os.path
 import sys
 import io
 
-from numpy.testing import run_module_suite
 from numpy.compat import asstr
 
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer,
@@ -56,6 +55,3 @@ def test_jottings():
     # example
     fname = os.path.join(test_data_path, 'parabola.mat')
     ws_vars = read_workspace_vars(fname)
-
-if __name__ == "__main__":
-    run_module_suite()

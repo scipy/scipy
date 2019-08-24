@@ -1,5 +1,10 @@
-API - importing from Scipy
-==========================
+.. _scipy-api:
+
+SciPy API
+=========
+
+Importing from SciPy
+---------------------
 
 In Python the distinction between what is the public API of a library and what
 are private implementation details is not always clear.  Unlike in other
@@ -8,29 +13,32 @@ objects.  Occasionally this may be convenient, but be aware that if you do so
 your code may break without warning in future releases.  Some widely understood
 rules for what is and isn't public in Python are:
 
-  - Methods / functions / classes and module attributes whose names begin 
-    with a leading underscore are private.
-  - If a class name begins with a leading underscore none of its members are 
-    public, whether or not they begin with a leading underscore.
-  - If a module name in a package begins with a leading underscore none of 
-    its members are public, whether or not they begin with a leading
-    underscore.
-  - If a module or package defines ``__all__`` that authoritatively defines the
-    public interface.
-  - If a module or package doesn't define ``__all__`` then all names that don't 
-    start with a leading underscore are public.
+- Methods / functions / classes and module attributes whose names begin with a
+  leading underscore are private.
+
+- If a class name begins with a leading underscore none of its members are
+  public, whether or not they begin with a leading underscore.
+
+- If a module name in a package begins with a leading underscore none of
+  its members are public, whether or not they begin with a leading underscore.
+
+- If a module or package defines ``__all__`` that authoritatively defines the
+  public interface.
+
+- If a module or package doesn't define ``__all__`` then all names that don't
+  start with a leading underscore are public.
 
 .. note:: Reading the above guidelines one could draw the conclusion that every
-          private module or object starts with an underscore.  This is not the 
+          private module or object starts with an underscore.  This is not the
           case; the presence of underscores do mark something as private, but
           the absence of underscores do not mark something as public.
 
-In Scipy there are modules whose names don't start with an underscore, but that
+In SciPy there are modules whose names don't start with an underscore, but that
 should be considered private.  To clarify which modules these are we define
-below what the public API is for Scipy, and give some recommendations for how
-to import modules/functions/objects from Scipy.
+below what the public API is for SciPy, and give some recommendations for how
+to import modules/functions/objects from SciPy.
 
-Guidelines for importing functions from Scipy
+Guidelines for importing functions from SciPy
 ---------------------------------------------
 
 The scipy namespace itself only contains functions imported from numpy.  These
@@ -77,62 +85,112 @@ API definition
 
 Every submodule listed below is public.  That means that these submodules are
 unlikely to be renamed or changed in an incompatible way, and if that is
-necessary a deprecation warning will be raised for one Scipy release before the
+necessary a deprecation warning will be raised for one SciPy release before the
 change is made.
 
-* scipy.cluster
+* `scipy.cluster`
 
-  - vq
-  - hierarchy
+  - `scipy.cluster.vq`
+  - `scipy.cluster.hierarchy`
 
-* scipy.constants
+* `scipy.constants`
 
-* scipy.fftpack
+* `scipy.fft`
 
-* scipy.integrate
+* `scipy.fftpack`
 
-* scipy.interpolate
+* `scipy.integrate`
 
-* scipy.io
+* `scipy.interpolate`
 
-  - arff
-  - harwell_boeing
-  - idl
-  - matlab
-  - netcdf
-  - wavfile
+* `scipy.io`
 
-* scipy.linalg
+  - `scipy.io.arff`
+  - ``scipy.io.harwell_boeing``
+  - ``scipy.io.idl``
+  - ``scipy.io.matlab``
+  - ``scipy.io.netcdf``
+  - `scipy.io.wavfile`
 
-  - scipy.linalg.blas
-  - scipy.linalg.cython_blas
-  - scipy.linalg.lapack
-  - scipy.linalg.cython_lapack
-  - scipy.linalg.interpolative
+* `scipy.linalg`
 
-* scipy.misc
+  - `scipy.linalg.blas`
+  - `scipy.linalg.cython_blas`
+  - `scipy.linalg.lapack`
+  - `scipy.linalg.cython_lapack`
+  - `scipy.linalg.interpolative`
 
-* scipy.ndimage
+* `scipy.misc`
 
-* scipy.odr
+* `scipy.ndimage`
 
-* scipy.optimize
+* `scipy.odr`
 
-* scipy.signal
+* `scipy.optimize`
 
-* scipy.sparse
+* `scipy.signal`
 
-  - linalg
-  - csgraph
+  - `scipy.signal.windows`
 
-* scipy.spatial
+* `scipy.sparse`
 
-  - distance
+  - `scipy.sparse.linalg`
+  - `scipy.sparse.csgraph`
 
-* scipy.special
+* `scipy.spatial`
 
-* scipy.stats
+  - `scipy.spatial.distance`
+  - `scipy.spatial.transform`
 
-  - distributions
-  - mstats
+* `scipy.special`
 
+* `scipy.stats`
+
+  - ``scipy.stats.distributions``
+  - `scipy.stats.mstats`
+
+
+SciPy structure
+---------------
+
+All SciPy modules should follow the following conventions. In the
+following, a *SciPy module* is defined as a Python package, say
+``yyy``, that is located in the scipy/ directory.
+
+* Ideally, each SciPy module should be as self-contained as possible.
+  That is, it should have minimal dependencies on other packages or
+  modules.  Even dependencies on other SciPy modules should be kept to
+  a minimum.  A dependency on NumPy is of course assumed.
+
+* Directory ``yyy/`` contains:
+
+  - A file ``setup.py`` that defines
+    ``configuration(parent_package='',top_path=None)`` function
+    for `numpy.distutils`.
+
+  - A directory ``tests/`` that contains files ``test_<name>.py``
+    corresponding to modules ``yyy/<name>{.py,.so,/}``.
+
+* Private modules should be prefixed with an underscore ``_``,
+  for instance ``yyy/_somemodule.py``.
+
+* User-visible functions should have good documentation following
+  the `NumPy documentation style`_.
+
+* The ``__init__.py`` of the module should contain the main reference
+  documentation in its docstring. This is connected to the Sphinx
+  documentation under ``doc/`` via Sphinx's automodule directive.
+
+  The reference documentation should first give a categorized list of
+  the contents of the module using ``autosummary::`` directives, and
+  after that explain points essential for understanding the use of the
+  module.
+
+  Tutorial-style documentation with extensive examples should be
+  separate, and put under ``doc/source/tutorial/``
+
+See the existing SciPy submodules for guidance.
+
+For further details on NumPy distutils, see `NumPy Distutils - User's Guide <https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt>`_.
+
+.. _NumPy documentation style: https://numpydoc.readthedocs.io/en/latest/format.html

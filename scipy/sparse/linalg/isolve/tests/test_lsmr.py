@@ -1,6 +1,6 @@
 """
 Copyright (C) 2010 David Fong and Michael Saunders
-Distributed under the same license as Scipy
+Distributed under the same license as SciPy
 
 Testing Code for LSMR.
 
@@ -20,17 +20,17 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
-from numpy.testing import (run_module_suite, assert_almost_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_array_almost_equal)
 
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg.interface import aslinearoperator
 from scipy.sparse.linalg import lsmr
-from test_lsqr import G, b
+from .test_lsqr import G, b
 
 
 class TestLSMR:
-    def setUp(self):
+    def setup_method(self):
         self.n = 10
         self.m = 10
 
@@ -66,6 +66,31 @@ class TestLSMR:
         x = lsmr(A, b)[0]
         assert_almost_equal(norm(A.dot(x) - b), 0)
 
+    def testComplexX(self):
+        A = eye(self.n)
+        xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
+        self.assertCompatibleSystem(A, xtrue)
+
+    def testComplexX0(self):
+        A = 4 * eye(self.n) + ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1))
+        b = aslinearoperator(A).matvec(xtrue)
+        x0 = zeros(self.n, dtype=complex)
+        x = lsmr(A, b, x0=x0)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+
+    def testComplexA(self):
+        A = 4 * eye(self.n) + 1j * ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1).astype(complex))
+        self.assertCompatibleSystem(A, xtrue)
+
+    def testComplexB(self):
+        A = 4 * eye(self.n) + ones((self.n, self.n))
+        xtrue = transpose(arange(self.n, 0, -1) * (1 + 1j))
+        b = aslinearoperator(A).matvec(xtrue)
+        x = lsmr(A, b)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
+
     def testColumnB(self):
         A = eye(self.n)
         b = ones((self.n, 1))
@@ -85,7 +110,7 @@ class TestLSMR:
         assert_array_almost_equal(x_ref, x)
 
 class TestLSMRReturns:
-    def setUp(self):
+    def setup_method(self):
         self.n = 10
         self.A = lowerBidiagonalMatrix(20,self.n)
         self.xtrue = transpose(arange(self.n,0,-1))
@@ -175,7 +200,6 @@ def lsmrtest(m, n, damp):
     print(str2)
     print(' ')
 
+
 if __name__ == "__main__":
-    # Comment out the next line to run unit tests only
     lsmrtest(20,10,0)
-    run_module_suite()

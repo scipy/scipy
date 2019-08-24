@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from os.path import join
@@ -6,9 +5,6 @@ from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
-
-    lapack_opt = get_info('lapack_opt', notfound_action=2)
 
     config = Configuration('interpolate', parent_package, top_path)
 
@@ -19,8 +15,7 @@ def configuration(parent_package='',top_path=None):
                          sources=['interpnd.c'])
 
     config.add_extension('_ppoly',
-                         sources=['_ppoly.c'],
-                         **lapack_opt)
+                         sources=['_ppoly.c'])
 
     config.add_extension('_bspl',
                          sources=['_bspl.c'],
@@ -40,14 +35,10 @@ def configuration(parent_package='',top_path=None):
                          depends=fitpack_src,
                          )
 
-    config.add_extension('_interpolate',
-                         sources=['src/_interpolate.cpp'],
-                         include_dirs=['src'],
-                         depends=['src/interpolate.h'])
-
     config.add_data_dir('tests')
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

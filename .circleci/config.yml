@@ -1,0 +1,118 @@
+version: 2
+jobs:
+  build_docs:
+    docker:
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: circleci/python:3.7.0
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: merge with upstream
+          command: |
+            echo $(git log -1 --pretty=%B) | tee gitlog.txt
+            echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
+            if [[ $(cat merge.txt) != "" ]]; then
+              echo "Merging $(cat merge.txt)";
+              git remote add upstream git://github.com/scipy/scipy.git;
+              git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
+              git fetch upstream master;
+            fi
+
+      - run:
+          name: update submodules
+          command: |
+            git submodule init
+            git submodule update
+
+      - run:
+          name: install Debian dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
+
+      - run:
+          name: setup Python venv
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --install-option="--no-cython-compile" cython
+            pip install numpy
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
+            pip install pybind11
+
+      - run:
+          name: build docs
+          command: |
+            . venv/bin/activate
+            export SHELL=$(which bash)
+            python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg latex'
+            make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
+            cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
+
+      - store_artifacts:
+          path: doc/build/html-scipyorg
+          destination: html-scipyorg
+
+      - persist_to_workspace:
+          root: doc/build
+          paths:
+            - html-scipyorg
+
+
+# Upload build output to scipy/devdocs repository, using SSH deploy keys.
+# The keys are only available for builds on master branch.
+# https://developer.github.com/guides/managing-deploy-keys/
+# https://circleci.com/docs/2.0/configuration-reference/#add_ssh_keys
+
+  deploy:
+    docker:
+      - image: circleci/python:3.7.0
+
+    working_directory: ~/repo
+
+    steps:
+      - attach_workspace:
+          at: /tmp/build
+
+      - add_ssh_keys:
+          fingerprints:
+            - "08:18:07:68:71:e3:f9:5f:bd:95:f0:6a:df:a9:47:a2"
+
+      - run:
+          name: upload
+          command: |
+            set -e;
+            mkdir -p ~/.ssh
+            echo -e "Host *\nStrictHostKeyChecking no" > ~/.ssh/config
+            chmod og= ~/.ssh/config
+            git clone git@github.com:scipy/devdocs.git devdocs;
+            cd devdocs;
+            (git checkout --orphan tmp && git branch -D gh-pages || true);
+            git checkout --orphan gh-pages;
+            git reset --hard;
+            cp -R /tmp/build/html-scipyorg/. .;
+            touch .nojekyll;
+            git config --global user.email "scipy-circleci-bot@nomail";
+            git config --global user.name "scipy-circleci-bot";
+            git config --global push.default simple;
+            git add . > /dev/null;
+            git commit -m "Docs build of $CIRCLE_SHA1";
+            git push --set-upstream origin gh-pages --force
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - build_docs
+      - deploy:
+          requires:
+            - build_docs
+
+          filters:
+            branches:
+              only: master

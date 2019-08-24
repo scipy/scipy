@@ -1,12 +1,7 @@
-""" Classes for interpolating values.
-"""
 from __future__ import division, print_function, absolute_import
 
-
-__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
+__all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
            'RegularGridInterpolator', 'interpn']
-
 
 import itertools
 import warnings
@@ -15,9 +10,8 @@ import operator
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
-                   dot, ravel, poly1d, asarray, intp)
+                   ravel, poly1d, asarray, intp)
 
-import scipy.linalg
 import scipy.special as spec
 from scipy.special import comb
 
@@ -41,7 +35,7 @@ def prod(x):
 
 
 def lagrange(x, w):
-    """
+    r"""
     Return a Lagrange interpolating polynomial.
 
     Given two 1-D arrays `x` and `w,` returns the Lagrange interpolating
@@ -59,10 +53,34 @@ def lagrange(x, w):
 
     Returns
     -------
-    lagrange : numpy.poly1d instance
+    lagrange : `numpy.poly1d` instance
         The Lagrange interpolating polynomial.
 
+    Examples
+    --------
+    Interpolate :math:`f(x) = x^3` by 3 points.
+
+    >>> from scipy.interpolate import lagrange
+    >>> x = np.array([0, 1, 2])
+    >>> y = x**3
+    >>> poly = lagrange(x, y)
+
+    Since there are only 3 points, Lagrange polynomial has degree 2. Explicitly,
+    it is given by
+
+    .. math::
+
+        \begin{aligned}
+            L(x) &= 1\times \frac{x (x - 2)}{-1} + 8\times \frac{x (x-1)}{2} \\
+                 &= x (-2 + 3x)
+        \end{aligned}
+
+    >>> from numpy.polynomial.polynomial import Polynomial
+    >>> Polynomial(poly).coef
+    array([ 3., -2.,  0.])
+
     """
+
     M = len(x)
     p = poly1d(0.0)
     for j in xrange(M):
@@ -83,7 +101,7 @@ def lagrange(x, w):
 class interp2d(object):
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
-             fill_value=nan)
+             fill_value=None)
 
     Interpolate over a 2-D grid.
 
@@ -136,7 +154,7 @@ class interp2d(object):
     fill_value : number, optional
         If provided, the value to use for points outside of the
         interpolation domain. If omitted (None), values outside
-        the domain are extrapolated.
+        the domain are extrapolated via nearest-neighbor extrapolation.
 
     See Also
     --------
@@ -338,10 +356,12 @@ class interp1d(_Interpolator1D):
         axis must be equal to the length of `x`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
-        ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'
-        where 'zero', 'slinear', 'quadratic' and 'cubic' refer to a spline
-        interpolation of zeroth, first, second or third order) or as an
-        integer specifying the order of the spline interpolator to use.
+        ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic',
+        'previous', 'next', where 'zero', 'slinear', 'quadratic' and 'cubic'
+        refer to a spline interpolation of zeroth, first, second or third
+        order; 'previous' and 'next' simply return the previous or next value
+        of the point) or as an integer specifying the order of the spline
+        interpolator to use.
         Default is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
@@ -353,7 +373,7 @@ class interp1d(_Interpolator1D):
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
-        By default, an error is raised unless `fill_value="extrapolate"`.
+        By default, an error is raised unless ``fill_value="extrapolate"``.
     fill_value : array-like or (array-like, array_like) or "extrapolate", optional
         - if a ndarray (or float), this value will be used to fill in for
           requested points outside of the data range. If not provided, then
@@ -374,6 +394,10 @@ class interp1d(_Interpolator1D):
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
+
+    Attributes
+    ----------
+    fill_value
 
     Methods
     -------
@@ -410,13 +434,13 @@ class interp1d(_Interpolator1D):
         self.copy = copy
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
-            order = {'nearest': 0, 'zero': 0, 'slinear': 1,
+            order = {'zero': 0, 'slinear': 1,
                      'quadratic': 2, 'cubic': 3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'nearest'):
+        elif kind not in ('linear', 'nearest', 'previous', 'next'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
@@ -450,8 +474,8 @@ class interp1d(_Interpolator1D):
         # Adjust to interpolation kind; store reference to *unbound*
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
-        # collection.  See: http://docs.python.org/2/reference/datamodel.html
-        if kind in ('linear', 'nearest'):
+        # collection.  See: https://docs.python.org/reference/datamodel.html
+        if kind in ('linear', 'nearest', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
@@ -462,6 +486,19 @@ class interp1d(_Interpolator1D):
                 self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
 
                 self._call = self.__class__._call_nearest
+            elif kind == 'previous':
+                # Side for np.searchsorted and index for clipping
+                self._side = 'left'
+                self._ind = 0
+                # Move x by one floating point value to the left
+                self._x_shift = np.nextafter(self.x, -np.inf)
+                self._call = self.__class__._call_previousnext
+            elif kind == 'next':
+                self._side = 'right'
+                self._ind = 1
+                # Move x by one floating point value to the right
+                self._x_shift = np.nextafter(self.x, np.inf)
+                self._call = self.__class__._call_previousnext
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
@@ -505,6 +542,7 @@ class interp1d(_Interpolator1D):
 
     @property
     def fill_value(self):
+        """The fill value."""
         # backwards compat: mimic a public attribute
         return self._fill_value_orig
 
@@ -547,7 +585,7 @@ class interp1d(_Interpolator1D):
         return np.interp(x_new, self.x, self.y)
 
     def _call_linear(self, x_new):
-        # 2. Find where in the orignal data, the values to interpolate
+        # 2. Find where in the original data, the values to interpolate
         #    would be inserted.
         #    Note: If x_new[n] == x[m], then m is returned by searchsorted.
         x_new_indices = searchsorted(self.x, x_new)
@@ -589,6 +627,21 @@ class interp1d(_Interpolator1D):
 
         # 4. Calculate the actual value for each entry in x_new.
         y_new = self._y[x_new_indices]
+
+        return y_new
+
+    def _call_previousnext(self, x_new):
+        """Use previous/next neighbour of x_new, y_new = f(x_new)."""
+
+        # 1. Get index of left/right value
+        x_new_indices = searchsorted(self._x_shift, x_new, side=self._side)
+
+        # 2. Clip x_new_indices so that they are within the range of x indices.
+        x_new_indices = x_new_indices.clip(1-self._ind,
+                                           len(self.x)-self._ind).astype(intp)
+
+        # 3. Calculate the actual value for each entry in x_new.
+        y_new = self._y[x_new_indices+self._ind-1]
 
         return y_new
 
@@ -661,8 +714,13 @@ class _PPolyBase(object):
             extrapolate = bool(extrapolate)
         self.extrapolate = extrapolate
 
+        if self.c.ndim < 2:
+            raise ValueError("Coefficients array must be at least "
+                             "2-dimensional.")
+
         if not (0 <= axis < self.c.ndim - 1):
-            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim-1))
+            raise ValueError("axis=%s must be between 0 and %s" %
+                             (axis, self.c.ndim-1))
 
         self.axis = axis
         if axis != 0:
@@ -705,8 +763,8 @@ class _PPolyBase(object):
         Construct the piecewise polynomial without making checks.
 
         Takes the same parameters as the constructor. Input arguments
-        `c` and `x` must be arrays of the correct shape and type.  The
-        `c` array can only be of dtypes float and complex, and `x`
+        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` array can only be of dtypes float and complex, and ``x``
         array must have dtype float.
         """
         self = object.__new__(cls)
@@ -737,10 +795,10 @@ class _PPolyBase(object):
         c : ndarray, size (k, m, ...)
             Additional coefficients for polynomials in intervals. Note that
             the first additional interval will be formed using one of the
-            `self.x` end points.
+            ``self.x`` end points.
         x : ndarray, size (m,)
             Additional breakpoints. Must be sorted in the same order as
-            `self.x` and either to the right or to the left of the current
+            ``self.x`` and either to the right or to the left of the current
             breakpoints.
         right
             Deprecated argument. Has no effect.
@@ -1153,7 +1211,7 @@ class PPoly(_PPolyBase):
 
         >>> from scipy.interpolate import PPoly
         >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
-        >>> pp.roots()
+        >>> pp.solve()
         array([-1.,  1.])
         """
         if extrapolate is None:
@@ -1252,6 +1310,10 @@ class PPoly(_PPolyBase):
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
         """
+        if not isinstance(bp, BPoly):
+            raise TypeError(".from_bernstein_basis only accepts BPoly instances. "
+                            "Got %s instead." % type(bp))
+
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
 
@@ -1327,16 +1389,18 @@ class BPoly(_PPolyBase):
 
     Notes
     -----
-    Properties of Bernstein polynomials are well documented in the literature.
-    Here's a non-exhaustive list:
+    Properties of Bernstein polynomials are well documented in the literature,
+    see for example [1]_ [2]_ [3]_.
 
-    .. [1] http://en.wikipedia.org/wiki/Bernstein_polynomial
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Bernstein_polynomial
 
     .. [2] Kenneth I. Joy, Bernstein polynomials,
-      http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
+       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
 
     .. [3] E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
-         vol 2011, article ID 829546, :doi:`10.1155/2011/829543`.
+           vol 2011, article ID 829546, :doi:`10.1155/2011/829543`.
 
     Examples
     --------
@@ -1554,6 +1618,10 @@ class BPoly(_PPolyBase):
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
         """
+        if not isinstance(pp, PPoly):
+            raise TypeError(".from_power_basis only accepts PPoly instances. "
+                            "Got %s instead." % type(pp))
+
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
 
@@ -1624,7 +1692,7 @@ class BPoly(_PPolyBase):
         Based on the number of derivatives provided, the order of the
         local polynomials is 2 on `[0, 1]` and 1 on `[1, 2]`.
         Notice that no restriction is imposed on the derivatives at
-        `x = 1` and `x = 2`.
+        ``x = 1`` and ``x = 2``.
 
         Indeed, the explicit form of the polynomial is::
 
@@ -1694,10 +1762,10 @@ class BPoly(_PPolyBase):
         given the values and derivatives at the edges.
 
         Return the coefficients of a polynomial in the Bernstein basis
-        defined on `[xa, xb]` and having the values and derivatives at the
-        endpoints ``xa`` and ``xb`` as specified by ``ya`` and ``yb``.
+        defined on ``[xa, xb]`` and having the values and derivatives at the
+        endpoints `xa` and `xb` as specified by `ya`` and `yb`.
         The polynomial constructed is of the minimal possible degree, i.e.,
-        if the lengths of ``ya`` and ``yb`` are ``na`` and ``nb``, the degree
+        if the lengths of `ya` and `yb` are `na` and `nb`, the degree
         of the polynomial is ``na + nb - 1``.
 
         Parameters
@@ -1707,10 +1775,10 @@ class BPoly(_PPolyBase):
         xb : float
             Right-hand end point of the interval
         ya : array_like
-            Derivatives at ``xa``. ``ya[0]`` is the value of the function, and
-            ``ya[i]`` for ``i > 0`` is the value of the ``i``-th derivative.
+            Derivatives at `xa`. `ya[0]` is the value of the function, and
+            `ya[i]` for ``i > 0`` is the value of the ``i``-th derivative.
         yb : array_like
-            Derivatives at ``xb``.
+            Derivatives at `xb`.
 
         Returns
         -------
@@ -1740,7 +1808,7 @@ class BPoly(_PPolyBase):
         This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and
         `c_q` are found one by one by iterating `q = 0, ..., na`.
 
-        At `x = xb` it's the same with `a = n - q`.
+        At ``x = xb`` it's the same with ``a = n - q``.
 
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
@@ -1819,7 +1887,7 @@ class NdPPoly(object):
     """
     Piecewise tensor product polynomial
 
-    The value at point `xp = (x', y', z', ...)` is evaluated by first
+    The value at point ``xp = (x', y', z', ...)`` is evaluated by first
     computing the interval indices `i` such that::
 
         x[0][i[0]] <= x' < x[0][i[0]+1]
@@ -1902,8 +1970,8 @@ class NdPPoly(object):
         Construct the piecewise polynomial without making checks.
 
         Takes the same parameters as the constructor. Input arguments
-        `c` and `x` must be arrays of the correct shape and type.  The
-        `c` array can only be of dtypes float and complex, and `x`
+        ``c`` and ``x`` must be arrays of the correct shape and type.  The
+        ``c`` array can only be of dtypes float and complex, and ``x``
         array must have dtype float.
 
         """
@@ -2011,7 +2079,7 @@ class NdPPoly(object):
         else:
             sl = [slice(None)]*ndim
             sl[axis] = slice(None, -nu, None)
-            c2 = self.c[sl]
+            c2 = self.c[tuple(sl)]
 
         if c2.shape[axis] == 0:
             # derivative of order 0 is zero
@@ -2023,7 +2091,7 @@ class NdPPoly(object):
         factor = spec.poch(np.arange(c2.shape[axis], 0, -1), nu)
         sl = [None]*c2.ndim
         sl[axis] = slice(None)
-        c2 *= factor[sl]
+        c2 *= factor[tuple(sl)]
 
         self.c = c2
 
@@ -2286,6 +2354,10 @@ class RegularGridInterpolator(object):
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
 
+    If any of `points` have a dimension of size 1, linear interpolation will
+    return an array of `nan` values. Nearest-neighbor interpolation will work
+    as usual in this case.
+
     .. versionadded:: 0.14
 
     Examples
@@ -2327,13 +2399,12 @@ class RegularGridInterpolator(object):
     ----------
     .. [1] Python package *regulargrid* by Johannes Buchner, see
            https://pypi.python.org/pypi/regulargrid/
-    .. [2] Trilinear interpolation. (2013, January 17). In Wikipedia, The Free
-           Encyclopedia. Retrieved 27 Feb 2013 01:28.
-           http://en.wikipedia.org/w/index.php?title=Trilinear_interpolation&oldid=533448871
+    .. [2] Wikipedia, "Trilinear interpolation",
+           https://en.wikipedia.org/wiki/Trilinear_interpolation
     .. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
            and multilinear table interpolation in many dimensions." MATH.
            COMPUT. 50.181 (1988): 189-196.
-           http://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
+           https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
 
     """
     # this class is based on code originally programmed by Johannes Buchner,
@@ -2445,10 +2516,9 @@ class RegularGridInterpolator(object):
         return values
 
     def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
-        idx_res = []
-        for i, yi in zip(indices, norm_distances):
-            idx_res.append(np.where(yi <= .5, i, i + 1))
-        return self.values[idx_res]
+        idx_res = [np.where(yi <= .5, i, i + 1)
+                   for i, yi in zip(indices, norm_distances)]
+        return self.values[tuple(idx_res)]
 
     def _find_indices(self, xi):
         # find relevant edges between which xi are situated
@@ -2607,7 +2677,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
 
 # backward compatibility wrapper
-class ppform(PPoly):
+class _ppform(PPoly):
     """
     Deprecated piecewise polynomial class.
 
@@ -2616,7 +2686,7 @@ class ppform(PPoly):
     """
 
     def __init__(self, coeffs, breaks, fill=0.0, sort=False):
-        warnings.warn("ppform is deprecated -- use PPoly instead",
+        warnings.warn("_ppform is deprecated -- use PPoly instead",
                       category=DeprecationWarning)
 
         if sort:
@@ -2652,204 +2722,3 @@ class ppform(PPoly):
             res /= fact
             sivals[order-m, :] = res
         return cls(sivals, xk, fill=fill)
-
-
-# The 3 private functions below can be called by splmake().
-
-
-def _dot0(a, b):
-    """Similar to numpy.dot, but sum over last axis of a and 1st axis of b"""
-    if b.ndim <= 2:
-        return dot(a, b)
-    else:
-        axes = list(range(b.ndim))
-        axes.insert(-1, 0)
-        axes.pop(0)
-        return dot(a, b.transpose(axes))
-
-
-def _find_smoothest(xk, yk, order, conds=None, B=None):
-    # construct Bmatrix, and Jmatrix
-    # e = J*c
-    # minimize norm(e,2) given B*c=yk
-    # if desired B can be given
-    # conds is ignored
-    N = len(xk)-1
-    K = order
-    if B is None:
-        B = _fitpack._bsplmat(order, xk)
-    J = _fitpack._bspldismat(order, xk)
-    u, s, vh = scipy.linalg.svd(B)
-    ind = K-1
-    V2 = vh[-ind:,:].T
-    V1 = vh[:-ind,:].T
-    A = dot(J.T,J)
-    tmp = dot(V2.T,A)
-    Q = dot(tmp,V2)
-    p = scipy.linalg.solve(Q, tmp)
-    tmp = dot(V2,p)
-    tmp = np.eye(N+K) - tmp
-    tmp = dot(tmp,V1)
-    tmp = dot(tmp,np.diag(1.0/s))
-    tmp = dot(tmp,u.T)
-    return _dot0(tmp, yk)
-
-
-# conds is a tuple of an array and a vector
-#  giving the left-hand and the right-hand side
-#  of the additional equations to add to B
-
-
-def _find_user(xk, yk, order, conds, B):
-    lh = conds[0]
-    rh = conds[1]
-    B = np.concatenate((B, lh), axis=0)
-    w = np.concatenate((yk, rh), axis=0)
-    M, N = B.shape
-    if (M > N):
-        raise ValueError("over-specification of conditions")
-    elif (M < N):
-        return _find_smoothest(xk, yk, order, None, B)
-    else:
-        return scipy.linalg.solve(B, w)
-
-
-# Remove the 3 private functions above as well when removing splmake
-@np.deprecate(message="splmake is deprecated in scipy 0.19.0, "
-                      "use make_interp_spline instead.")
-def splmake(xk, yk, order=3, kind='smoothest', conds=None):
-    """
-    Return a representation of a spline given data-points at internal knots
-
-    Parameters
-    ----------
-    xk : array_like
-        The input array of x values of rank 1
-    yk : array_like
-        The input array of y values of rank N. `yk` can be an N-d array to
-        represent more than one curve, through the same `xk` points. The first
-        dimension is assumed to be the interpolating dimension and is the same
-        length of `xk`.
-    order : int, optional
-        Order of the spline
-    kind : str, optional
-        Can be 'smoothest', 'not_a_knot', 'fixed', 'clamped', 'natural',
-        'periodic', 'symmetric', 'user', 'mixed' and it is ignored if order < 2
-    conds : optional
-        Conds
-
-    Returns
-    -------
-    splmake : tuple
-        Return a (`xk`, `cvals`, `k`) representation of a spline given
-        data-points where the (internal) knots are at the data-points.
-
-    """
-    yk = np.asanyarray(yk)
-
-    order = int(order)
-    if order < 0:
-        raise ValueError("order must not be negative")
-    if order == 0:
-        return xk, yk[:-1], order
-    elif order == 1:
-        return xk, yk, order
-
-    try:
-        func = eval('_find_%s' % kind)
-    except:
-        raise NotImplementedError
-
-    # the constraint matrix
-    B = _fitpack._bsplmat(order, xk)
-    coefs = func(xk, yk, order, conds, B)
-    return xk, coefs, order
-
-
-@np.deprecate(message="spleval is deprecated in scipy 0.19.0, "
-        "use BSpline instead.")
-def spleval(xck, xnew, deriv=0):
-    """
-    Evaluate a fixed spline represented by the given tuple at the new x-values
-
-    The `xj` values are the interior knot points.  The approximation
-    region is `xj[0]` to `xj[-1]`.  If N+1 is the length of `xj`, then `cvals`
-    should have length N+k where `k` is the order of the spline.
-
-    Parameters
-    ----------
-    (xj, cvals, k) : tuple
-        Parameters that define the fixed spline
-    xj : array_like
-        Interior knot points
-    cvals : array_like
-        Curvature
-    k : int
-        Order of the spline
-    xnew : array_like
-        Locations to calculate spline
-    deriv : int
-        Deriv
-
-    Returns
-    -------
-    spleval : ndarray
-        If `cvals` represents more than one curve (`cvals.ndim` > 1) and/or
-        `xnew` is N-d, then the result is `xnew.shape` + `cvals.shape[1:]`
-        providing the interpolation of multiple curves.
-
-    Notes
-    -----
-    Internally, an additional `k`-1 knot points are added on either side of
-    the spline.
-
-    """
-    (xj, cvals, k) = xck
-    oldshape = np.shape(xnew)
-    xx = np.ravel(xnew)
-    sh = cvals.shape[1:]
-    res = np.empty(xx.shape + sh, dtype=cvals.dtype)
-    for index in np.ndindex(*sh):
-        sl = (slice(None),) + index
-        if issubclass(cvals.dtype.type, np.complexfloating):
-            res[sl].real = _fitpack._bspleval(xx,xj, cvals.real[sl], k, deriv)
-            res[sl].imag = _fitpack._bspleval(xx,xj, cvals.imag[sl], k, deriv)
-        else:
-            res[sl] = _fitpack._bspleval(xx, xj, cvals[sl], k, deriv)
-    res.shape = oldshape + sh
-    return res
-
-
-@np.deprecate(message="spltopp is deprecated in scipy 0.19.0, "
-                      "use PPoly.from_spline instead.")
-def spltopp(xk, cvals, k):
-    """Return a piece-wise polynomial object from a fixed-spline tuple."""
-    return ppform.fromspline(xk, cvals, k)
-
-
-@np.deprecate(message="spline is deprecated in scipy 0.19.0, "
-                      "use Bspline class instead.")
-def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
-    """
-    Interpolate a curve at new points using a spline fit
-
-    Parameters
-    ----------
-    xk, yk : array_like
-        The x and y values that define the curve.
-    xnew : array_like
-        The x values where spline should estimate the y values.
-    order : int
-        Default is 3.
-    kind : string
-        One of {'smoothest'}
-    conds : Don't know
-        Don't know
-
-    Returns
-    -------
-    spline : ndarray
-        An array of y values; the spline evaluated at the positions `xnew`.
-
-    """
-    return spleval(splmake(xk, yk, order=order, kind=kind, conds=conds), xnew)

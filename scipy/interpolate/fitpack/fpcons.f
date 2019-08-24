@@ -49,7 +49,7 @@ c      we compute directly the polynomial curve of degree k.           c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c  determine nmin, the number of knots for polynomial approximation.
       nmin = 2*k1
-c  find which data points are to be concidered.
+c  find which data points are to be considered.
       mb = 2
       jb = ib
       if(ib.gt.0) go to 10

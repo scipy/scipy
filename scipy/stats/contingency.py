@@ -34,6 +34,7 @@ def margins(a):
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
            [ 6,  7,  8,  9, 10, 11]])
+    >>> from scipy.stats.contingency import margins
     >>> m0, m1 = margins(a)
     >>> m0
     array([[15],
@@ -86,7 +87,7 @@ def expected_freq(observed):
     Examples
     --------
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
-    >>> from scipy.stats import expected_freq
+    >>> from scipy.stats.contingency import expected_freq
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
            [ 18.,  18.,  24.]])
@@ -158,8 +159,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     Notes
     -----
     An often quoted guideline for the validity of this calculation is that
-    the test should be used only if the observed and expected frequency in
-    each cell is at least 5.
+    the test should be used only if the observed and expected frequencies
+    in each cell are at least 5.
 
     This is a test for the independence of different categories of a
     population. The test is only meaningful when the dimension of
@@ -187,9 +188,10 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     References
     ----------
-    .. [1] "Contingency table", http://en.wikipedia.org/wiki/Contingency_table
+    .. [1] "Contingency table",
+           https://en.wikipedia.org/wiki/Contingency_table
     .. [2] "Pearson's chi-squared test",
-           http://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+           https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
     .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.
@@ -248,7 +250,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     if np.any(expected == 0):
         # Include one of the positions where expected is zero in
         # the exception message.
-        zeropos = list(zip(*np.where(expected == 0)))[0]
+        zeropos = list(zip(*np.nonzero(expected == 0)))[0]
         raise ValueError("The internally computed table of expected "
                          "frequencies has a zero element at %s." % (zeropos,))
 

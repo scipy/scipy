@@ -1,11 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_almost_equal, \
-        run_module_suite, assert_raises
+from numpy.testing import assert_equal, assert_allclose, assert_almost_equal
+from pytest import raises as assert_raises
+import pytest
+from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial.qhull as qhull
@@ -151,14 +152,10 @@ class TestLinearNDInterpolation(object):
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        try:
+        match = ("Rescaling is not supported when passing a "
+                 "Delaunay triangulation as ``points``.")
+        with pytest.raises(ValueError, match=match):
             interpnd.LinearNDInterpolator(tri, y, rescale=True)(x)
-        except ValueError as e:
-            if str(e) != ("Rescaling is not supported when passing a "
-                          "Delaunay triangulation as ``points``."):
-                raise
-        except:
-            raise
 
     def test_pickle(self):
         # Test at single points
@@ -203,8 +200,9 @@ class TestEstimateGradients2DGlobal(object):
         tri = qhull.Delaunay(points)
 
         # This should not hang
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', category=interpnd.GradientEstimationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(interpnd.GradientEstimationWarning,
+                       "Gradient estimation did not converge")
             interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 
@@ -297,14 +295,10 @@ class TestCloughTocher2DInterpolator(object):
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        try:
+        match = ("Rescaling is not supported when passing a "
+                 "Delaunay triangulation as ``points``.")
+        with pytest.raises(ValueError, match=match):
             interpnd.CloughTocher2DInterpolator(tri, y, rescale=True)(x)
-        except ValueError as a:
-            if str(a) != ("Rescaling is not supported when passing a "
-                          "Delaunay triangulation as ``points``."):
-                raise
-        except:
-            raise
 
     def test_tripoints_input_rescale(self):
         # Test at single points
@@ -354,5 +348,41 @@ class TestCloughTocher2DInterpolator(object):
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
-if __name__ == "__main__":
-    run_module_suite()
+    def test_boundary_tri_symmetry(self):
+        # Interpolation at neighbourless triangles should retain
+        # symmetry with mirroring the triangle.
+
+        # Equilateral triangle
+        points = np.array([(0, 0), (1, 0), (0.5, np.sqrt(3)/2)])
+        values = np.array([1, 0, 0])
+
+        ip = interpnd.CloughTocher2DInterpolator(points, values)
+
+        # Set gradient to zero at vertices
+        ip.grad[...] = 0
+
+        # Interpolation should be symmetric vs. bisector
+        alpha = 0.3
+        p1 = np.array([0.5 * np.cos(alpha), 0.5 * np.sin(alpha)])
+        p2 = np.array([0.5 * np.cos(np.pi/3 - alpha), 0.5 * np.sin(np.pi/3 - alpha)])
+
+        v1 = ip(p1)
+        v2 = ip(p2)
+        assert_allclose(v1, v2)
+
+        # ... and affine invariant
+        np.random.seed(1)
+        A = np.random.randn(2, 2)
+        b = np.random.randn(2)
+
+        points = A.dot(points.T).T + b[None,:]
+        p1 = A.dot(p1) + b
+        p2 = A.dot(p2) + b
+
+        ip = interpnd.CloughTocher2DInterpolator(points, values)
+        ip.grad[...] = 0
+
+        w1 = ip(p1)
+        w2 = ip(p2)
+        assert_allclose(w1, v1)
+        assert_allclose(w2, v2)

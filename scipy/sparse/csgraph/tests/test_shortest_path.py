@@ -1,11 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_array_almost_equal, assert_raises, dec,
-    run_module_suite, assert_array_equal)
+from numpy.testing import assert_array_almost_equal, assert_array_equal
+from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
-    bellman_ford, construct_dist_matrix, NegativeCycleError)
-
+                                  bellman_ford, construct_dist_matrix,
+                                  NegativeCycleError)
+import scipy.sparse
+import pytest
 
 directed_G = np.array([[0, 3, 3, 0, 0],
                        [0, 0, 0, 2, 4],
@@ -68,7 +70,7 @@ def test_dijkstra_limit():
         assert_array_almost_equal(SP, result)
 
     for limit, result in zip(limits, results):
-        yield check, limit, result
+        check(limit, result)
 
 
 def test_directed():
@@ -78,7 +80,7 @@ def test_directed():
         assert_array_almost_equal(SP, directed_SP)
 
     for method in methods:
-        yield check, method
+        check(method)
 
 
 def test_undirected():
@@ -94,7 +96,58 @@ def test_undirected():
 
     for method in methods:
         for directed_in in (True, False):
-            yield check, method, directed_in
+            check(method, directed_in)
+
+
+@pytest.mark.parametrize('directed, SP_ans',
+                         ((True, directed_SP),
+                          (False, undirected_SP)))
+@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4]))
+def test_dijkstra_indices_min_only(directed, SP_ans, indices):
+    SP_ans = np.array(SP_ans)
+    indices = np.array(indices, dtype=np.int64)
+    min_ind_ans = indices[np.argmin(SP_ans[indices, :], axis=0)]
+    min_d_ans = np.zeros(SP_ans.shape[0], SP_ans.dtype)
+    for k in range(SP_ans.shape[0]):
+        min_d_ans[k] = SP_ans[min_ind_ans[k], k]
+    min_ind_ans[np.isinf(min_d_ans)] = -9999
+
+    SP, pred, sources = dijkstra(directed_G,
+                                 directed=directed,
+                                 indices=indices,
+                                 min_only=True,
+                                 return_predecessors=True)
+    assert_array_almost_equal(SP, min_d_ans)
+    assert_array_equal(min_ind_ans, sources)
+    SP = dijkstra(directed_G,
+                  directed=directed,
+                  indices=indices,
+                  min_only=True,
+                  return_predecessors=False)
+    assert_array_almost_equal(SP, min_d_ans)
+
+
+@pytest.mark.parametrize('n', (10, 100, 1000))
+def test_shortest_path_min_only_random(n):
+    np.random.seed(1234)
+    data = scipy.sparse.rand(n, n, density=0.5, format='lil',
+                             random_state=42, dtype=np.float)
+    data.setdiag(np.zeros(n, dtype=np.bool))
+    # choose some random vertices
+    v = np.arange(n)
+    np.random.shuffle(v)
+    indices = v[:int(n*.1)]
+    ds, pred, sources = dijkstra(data,
+                                 directed=False,
+                                 indices=indices,
+                                 min_only=True,
+                                 return_predecessors=True)
+    for k in range(n):
+        p = pred[k]
+        s = sources[k]
+        while(p != -9999):
+            assert(sources[p] == s)
+            p = pred[p]
 
 
 def test_shortest_path_indices():
@@ -108,7 +161,7 @@ def test_shortest_path_indices():
 
     for indshape in [(4,), (4, 1), (2, 2)]:
         for func in (dijkstra, bellman_ford, johnson, shortest_path):
-            yield check, func, indshape
+            check(func, indshape)
 
     assert_raises(ValueError, shortest_path, directed_G, method='FW',
                   indices=indices)
@@ -129,7 +182,7 @@ def test_predecessors():
 
     for method in methods:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_construct_shortest_path():
@@ -143,7 +196,7 @@ def test_construct_shortest_path():
 
     for method in methods:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_unweighted_path():
@@ -160,7 +213,7 @@ def test_unweighted_path():
 
     for method in methods:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_negative_cycles():
@@ -175,7 +228,7 @@ def test_negative_cycles():
 
     for method in ['FW', 'J', 'BF']:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_masked_input():
@@ -187,7 +240,7 @@ def test_masked_input():
         assert_array_almost_equal(SP, directed_SP)
 
     for method in methods:
-        yield check, method
+        check(method)
 
 
 def test_overwrite():
@@ -201,5 +254,13 @@ def test_overwrite():
     assert_array_equal(foo, G)
 
 
-if __name__ == '__main__':
-    run_module_suite()
+@pytest.mark.parametrize('method', methods)
+def test_buffer(method):
+    # Smoke test that sparse matrices with read-only buffers (e.g., those from
+    # joblib workers) do not cause::
+    #
+    #     ValueError: buffer source array is read-only
+    #
+    G = scipy.sparse.csr_matrix([[1.]])
+    G.data.flags['WRITEABLE'] = False
+    shortest_path(G, method=method)

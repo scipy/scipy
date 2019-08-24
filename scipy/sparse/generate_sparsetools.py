@@ -1,5 +1,6 @@
-#!/usr/bin/env python
 """
+python generate_sparsetools.py
+
 Generate manual wrappers for C++ sparsetools code.
 
 Type codes used:
@@ -12,6 +13,7 @@ Type codes used:
     'W':  std::vector<data>*
     '*':  indicates that the next argument is an output argument
     'v':  void
+    'l':  64-bit integer scalar
 
 See sparsetools.cxx for more details.
 
@@ -28,7 +30,8 @@ from distutils.dep_util import newer
 
 # bsr.h
 BSR_ROUTINES = """
-bsr_diagonal        v iiiiIIT*T
+bsr_diagonal        v iiiiiIIT*T
+bsr_tocsr           v iiiiIIT*I*I*T
 bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
@@ -51,7 +54,7 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 
 # csc.h
 CSC_ROUTINES = """
-csc_diagonal        v iiIIT*T
+csc_diagonal        v iiiIIT*T
 csc_tocsr           v iiIIT*I*I*T
 csc_matmat_pass1    v iiIIII*I
 csc_matmat_pass2    v iiIITIIT*I*I*T
@@ -74,9 +77,10 @@ csc_ge_csc          v iiIITIIT*I*I*B
 CSR_ROUTINES = """
 csr_matmat_pass1    v iiIIII*I
 csr_matmat_pass2    v iiIITIIT*I*I*T
-csr_diagonal        v iiIIT*T
+csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
+csr_todense         v iiIIT*T
 csr_matvec          v iiIITT*T
 csr_matvecs         v iiiIITT*T
 csr_elmul_csr       v iiIITIIT*I*I*T
@@ -96,6 +100,10 @@ csr_sort_indices    v iI*I*T
 csr_eliminate_zeros v ii*I*I*T
 csr_sum_duplicates  v ii*I*I*T
 get_csr_submatrix   v iiIITiiii*V*V*W
+csr_row_index       v iIIIT*I*T
+csr_row_slice       v iiiIIT*I*T
+csr_column_index1   v iIiiII*I*I
+csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
 csr_sample_offsets  i iiIIiII*I
@@ -108,8 +116,8 @@ csr_has_canonical_format  i iII
 # coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
-coo_todense         v iiiIIT*Ti
-coo_matvec          v iIITT*T
+coo_todense         v iilIIT*Ti
+coo_matvec          v lIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
@@ -158,7 +166,7 @@ T_TYPES = [
 #
 
 THUNK_TEMPLATE = """
-static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
+static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 {
     %(thunk_content)s
 }
@@ -191,7 +199,7 @@ def get_thunk_type_set():
 
     Returns
     -------
-    i_types : list [(j, I_typenum, None, I_type, None), ...] 
+    i_types : list [(j, I_typenum, None, I_type, None), ...]
          Pairing of index type numbers and the corresponding C++ types,
          and an unique index `j`. This is for routines that are parameterized
          only by I but not by T.
@@ -280,6 +288,8 @@ def parse_routine(name, args, types):
                 if const:
                     raise ValueError("'W' argument must be an output arg")
                 args.append("(std::vector<%s>*)a[%d]" % (T_type, j,))
+            elif t == 'l':
+                args.append("*(%snpy_int64*)a[%d]" % (const, j))
             else:
                 raise ValueError("Invalid spec character %r" % (t,))
             j += 1
@@ -329,7 +339,7 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=__doc__.strip())
+    p = optparse.OptionParser(usage=(__doc__ or '').strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
     options, args = p.parse_args()

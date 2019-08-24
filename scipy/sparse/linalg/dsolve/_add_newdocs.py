@@ -69,10 +69,8 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
 
     The permutation matrices can be constructed:
 
-    >>> Pr = csc_matrix((4, 4))
-    >>> Pr[lu.perm_r, np.arange(4)] = 1
-    >>> Pc = csc_matrix((4, 4))
-    >>> Pc[np.arange(4), lu.perm_c] = 1
+    >>> Pr = csc_matrix((np.ones(4), (lu.perm_r, np.arange(4))))
+    >>> Pc = csc_matrix((np.ones(4), (np.arange(4), lu.perm_c)))
 
     We can reassemble the original matrix:
 

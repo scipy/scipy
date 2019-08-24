@@ -116,14 +116,6 @@ Morphology
    morphological_laplace
    white_tophat
 
-Utility
-=======
-
-.. autosummary::
-   :toctree: generated/
-
-   imread - Load an image from a file
-
 """
 
 # Copyright (C) 2003-2005 Peter J. Verveer
@@ -163,10 +155,11 @@ from .fourier import *
 from .interpolation import *
 from .measurements import *
 from .morphology import *
-from .io import *
 
 __version__ = '2.0'
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

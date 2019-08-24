@@ -2,8 +2,10 @@
 SciPy pull request guidelines
 =============================
 
-Pull requests are always welcome, and the Scipy community appreciates
-any help you give.
+Pull requests are always welcome, and the SciPy community appreciates
+any help you give. Note that a code of conduct applies to all spaces
+managed by the SciPy project, including issues and pull requests:
+https://github.com/scipy/scipy/blob/master/doc/source/dev/conduct/code_of_conduct.rst.
 
 When submitting a pull request, we ask you check the following:
 

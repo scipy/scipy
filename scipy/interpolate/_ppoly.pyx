@@ -4,7 +4,8 @@ local power basis.
 
 """
 
-from .polyint import _Interpolator1D
+from __future__ import absolute_import
+
 import numpy as np
 
 cimport cython
@@ -12,17 +13,13 @@ cimport cython
 cimport libc.stdlib
 cimport libc.math
 
+from scipy.linalg.cython_lapack cimport dgeev
+
 ctypedef double complex double_complex
 
 ctypedef fused double_or_complex:
     double
     double complex
-
-cdef extern from "blas_defs.h":
-    void c_dgeev(char *jobvl, char *jobvr, int *n, double *a,
-                 int *lda, double *wr, double *wi, double *vl, int *ldvl,
-                 double *vr, int *ldvr, double *work, int *lwork,
-                 int *info)
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
@@ -37,8 +34,8 @@ DEF MAX_DIMS = 64
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate(double_or_complex[:,:,::1] c,
-             double[::1] x,
-             double[::1] xp,
+             const double[::1] x,
+             const double[::1] xp,
              int dx,
              bint extrapolate,
              double_or_complex[:,::1] out):
@@ -330,7 +327,7 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def integrate(double_or_complex[:,:,::1] c,
-              double[::1] x,
+              const double[::1] x,
               double a,
               double b,
               bint extrapolate,
@@ -565,7 +562,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_ascending(double *x,
+cdef int find_interval_ascending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
@@ -650,7 +647,7 @@ cdef int find_interval_ascending(double *x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_descending(double *x,
+cdef int find_interval_descending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
@@ -928,8 +925,8 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
 
     # Compute companion matrix eigenvalues
     info = 0
-    c_dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
-            NULL, &order, NULL, &order, work, &lwork, &info)
+    dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
+          NULL, &order, NULL, &order, work, &lwork, &info)
     if info != 0:
         # Failure
         return -2
@@ -1045,7 +1042,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
     # special-case lowest orders
     if k == 0:
         res = c[0, ci, cj]
-    elif k == 1: 
+    elif k == 1:
         res = c[0, ci, cj] * s1 + c[1, ci, cj] * s
     elif k == 2:
         res = c[0, ci, cj] * s1*s1 + c[1, ci, cj] * 2.*s1*s + c[2, ci, cj] * s*s
@@ -1071,7 +1068,7 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              int nu,
                                              double_or_complex[:,:,::1] wrk) nogil:
     """
-    Evaluate the derivative of a polynomial in the Bernstein basis 
+    Evaluate the derivative of a polynomial in the Bernstein basis
     in a single interval.
 
     A Bernstein polynomial is defined as
@@ -1180,7 +1177,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
         else:
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
-        
+
 
     interval = 0
     cdef bint ascending = x[x.shape[0] - 1] >= x[0]

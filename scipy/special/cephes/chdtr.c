@@ -122,7 +122,7 @@
  * This is accomplished using the inverse Gamma integral
  * function and the relation
  *
- *    x/2 = igami( df/2, y );
+ *    x/2 = igamci( df/2, y );
  *
  *
  *
@@ -184,6 +184,6 @@ double df, y;
 	return (NPY_NAN);
     }
 
-    x = igami(0.5 * df, y);
+    x = igamci(0.5 * df, y);
     return (2.0 * x);
 }

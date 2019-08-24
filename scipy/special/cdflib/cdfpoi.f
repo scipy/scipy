@@ -71,7 +71,7 @@ C     of  the cumulative distribution function to that  of computing a
 C     chi-square, hence an incomplete gamma function.
 C
 C     Cumulative  distribution function  (P) is  calculated  directly.
-C     Computation of other parameters involve a seach for a value that
+C     Computation of other parameters involve a search for a value that
 C     produces  the desired value of  P.   The  search relies  on  the
 C     monotinicity of P with the other parameter.
 C

@@ -10,6 +10,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
@@ -22,7 +23,9 @@ from ._decomp_qz import ordqz
 from .decomp import _asarray_validated
 from .special_matrices import kron, block_diag
 
-__all__ = ['solve_sylvester', 'solve_lyapunov', 'solve_discrete_lyapunov',
+__all__ = ['solve_sylvester',
+           'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+           'solve_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
@@ -61,6 +64,22 @@ def solve_sylvester(a, b, q):
 
     .. versionadded:: 0.11.0
 
+    Examples
+    --------
+    Given `a`, `b`, and `q` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[-3, -2, 0], [-1, -1, 3], [3, -5, -1]])
+    >>> b = np.array([[1]])
+    >>> q = np.array([[1],[2],[3]])
+    >>> x = linalg.solve_sylvester(a, b, q)
+    >>> x
+    array([[ 0.0625],
+           [-0.5625],
+           [ 0.6875]])
+    >>> np.allclose(a.dot(x) + x.dot(b), q)
+    True
+
     """
 
     # Compute the Schur decomp form of a
@@ -88,7 +107,7 @@ def solve_sylvester(a, b, q):
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 
-def solve_lyapunov(a, q):
+def solve_continuous_lyapunov(a, q):
     """
     Solves the continuous Lyapunov equation :math:`AX + XA^H = Q`.
 
@@ -104,24 +123,84 @@ def solve_lyapunov(a, q):
 
     Returns
     -------
-    x : array_like
+    x : ndarray
         Solution to the continuous Lyapunov equation
 
     See Also
     --------
+    solve_discrete_lyapunov : computes the solution to the discrete-time
+        Lyapunov equation
     solve_sylvester : computes the solution to the Sylvester equation
 
     Notes
     -----
-    Because the continuous Lyapunov equation is just a special form of the
-    Sylvester equation, this solver relies entirely on solve_sylvester for a
-    solution.
+    The continuous Lyapunov equation is a special form of the Sylvester
+    equation, hence this solver relies on LAPACK routine ?TRSYL.
 
     .. versionadded:: 0.11.0
 
+    Examples
+    --------
+    Given `a` and `q` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[-3, -2, 0], [-1, -1, 0], [0, -5, -1]])
+    >>> b = np.array([2, 4, -1])
+    >>> q = np.eye(3)
+    >>> x = linalg.solve_continuous_lyapunov(a, q)
+    >>> x
+    array([[ -0.75  ,   0.875 ,  -3.75  ],
+           [  0.875 ,  -1.375 ,   5.3125],
+           [ -3.75  ,   5.3125, -27.0625]])
+    >>> np.allclose(a.dot(x) + x.dot(a.T), q)
+    True
     """
 
-    return solve_sylvester(a, a.conj().transpose(), q)
+    a = np.atleast_2d(_asarray_validated(a, check_finite=True))
+    q = np.atleast_2d(_asarray_validated(q, check_finite=True))
+
+    r_or_c = float
+
+    for ind, _ in enumerate((a, q)):
+        if np.iscomplexobj(_):
+            r_or_c = complex
+
+        if not np.equal(*_.shape):
+            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+
+    # Shape consistency check
+    if a.shape != q.shape:
+        raise ValueError("Matrix a and q should have the same shape.")
+
+    # Compute the Schur decomp form of a
+    r, u = schur(a, output='real')
+
+    # Construct f = u'*q*u
+    f = u.conj().T.dot(q.dot(u))
+
+    # Call the Sylvester equation solver
+    trsyl = get_lapack_funcs('trsyl', (r, f))
+
+    dtype_string = 'T' if r_or_c == float else 'C'
+    y, scale, info = trsyl(r, r, f, tranb=dtype_string)
+
+    if info < 0:
+        raise ValueError('?TRSYL exited with the internal error '
+                         '"illegal value in argument number {}.". See '
+                         'LAPACK documentation for the ?TRSYL error codes.'
+                         ''.format(-info))
+    elif info == 1:
+        warnings.warn('Input "a" has an eigenvalue pair whose sum is '
+                      'very close to or exactly zero. The solution is '
+                      'obtained via perturbing the coefficients.',
+                      RuntimeWarning)
+    y *= scale
+
+    return u.dot(y).dot(u.conj().T)
+
+
+# For backwards compatibility, keep the old name
+solve_lyapunov = solve_continuous_lyapunov
 
 
 def _solve_discrete_lyapunov_direct(a, q):
@@ -177,7 +256,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     See Also
     --------
-    solve_lyapunov : computes the solution to the continuous Lyapunov equation
+    solve_continuous_lyapunov : computes the solution to the continuous-time
+        Lyapunov equation
 
     Notes
     -----
@@ -203,10 +283,24 @@ def solve_discrete_lyapunov(a, q, method=None):
     ----------
     .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
        University Press, 1994.  265.  Print.
-       http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+       http://doc1.lbfl.li/aca/FLMF037168.pdf
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
+
+    Examples
+    --------
+    Given `a` and `q` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[0.2, 0.5],[0.7, -0.9]])
+    >>> q = np.eye(2)
+    >>> x = linalg.solve_discrete_lyapunov(a, q)
+    >>> x
+    array([[ 0.70872893,  1.43518822],
+           [ 1.43518822, -2.4266315 ]])
+    >>> np.allclose(a.dot(x).dot(a.T)-x, -q)
+    True
 
     """
     a = np.asarray(a)
@@ -330,6 +424,22 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
        SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
 
+    Examples
+    --------
+    Given `a`, `b`, `q`, and `r` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[4, 3], [-4.5, -3.5]])
+    >>> b = np.array([[1], [-1]])
+    >>> q = np.array([[9, 6], [6, 4.]])
+    >>> r = 1
+    >>> x = linalg.solve_continuous_are(a, b, q, r)
+    >>> x
+    array([[ 21.72792206,  14.48528137],
+           [ 14.48528137,   9.65685425]])
+    >>> np.allclose(a.T.dot(x) + x.dot(a)-x.dot(b).dot(b.T).dot(x), -q)
+    True
+
     """
 
     # Validate input arguments
@@ -404,11 +514,12 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     if balanced:
         x *= sca[:m, None] * sca[:m]
 
-    # Check the deviation from symmetry for success
+    # Check the deviation from symmetry for lack of success
+    # See proof of Thm.5 item 3 in [2]
     u_sym = u00.conj().T.dot(u10)
     n_u_sym = norm(u_sym, 1)
     u_sym = u_sym - u_sym.conj().T
-    sym_threshold = np.max([np.spacing(1000.), n_u_sym])
+    sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated Hamiltonian pencil has eigenvalues '
@@ -518,6 +629,23 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
        SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
 
+    Examples
+    --------
+    Given `a`, `b`, `q`, and `r` solve for `x`:
+
+    >>> from scipy import linalg as la
+    >>> a = np.array([[0, 1], [0, -1]])
+    >>> b = np.array([[1, 0], [2, 1]])
+    >>> q = np.array([[-4, -4], [-4, 7]])
+    >>> r = np.array([[9, 3], [3, 1]])
+    >>> x = la.solve_discrete_are(a, b, q, r)
+    >>> x
+    array([[-4., -4.],
+           [-4.,  7.]])
+    >>> R = la.solve(r + b.T.dot(x).dot(b), b.T.dot(x).dot(a))
+    >>> np.allclose(a.T.dot(x).dot(a) - x - a.T.dot(x).dot(b).dot(R), -q)
+    True
+
     """
 
     # Validate input arguments
@@ -594,11 +722,12 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     if balanced:
         x *= sca[:m, None] * sca[:m]
 
-    # Check the deviation from symmetry for success
+    # Check the deviation from symmetry for lack of success
+    # See proof of Thm.5 item 3 in [2]
     u_sym = u00.conj().T.dot(u10)
     n_u_sym = norm(u_sym, 1)
     u_sym = u_sym - u_sym.conj().T
-    sym_threshold = np.max([np.spacing(1000.), n_u_sym])
+    sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated symplectic pencil has eigenvalues'
@@ -655,7 +784,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     q = np.atleast_2d(_asarray_validated(q, check_finite=True))
     r = np.atleast_2d(_asarray_validated(r, check_finite=True))
 
-    # Get the correct data types otherwise Numpy complains
+    # Get the correct data types otherwise NumPy complains
     # about pushing complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
 

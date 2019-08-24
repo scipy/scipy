@@ -312,12 +312,12 @@ general function that takes a function argument to calculate the
 second derivative along a given direction.
 
 - The function :func:`generic_laplace` calculates a laplace filter
-  using the function passed through :func:`derivative2` to calculate
-  second derivatives. The function :func:`derivative2` should have the
+  using the function passed through ``derivative2`` to calculate
+  second derivatives. The function ``derivative2`` should have the
   following signature
 
   .. code:: python
-      
+
      derivative2(input, axis, output, mode, cval, *extra_arguments, **extra_keywords)
 
   It should calculate the second derivative along the dimension
@@ -327,7 +327,7 @@ second derivative along a given direction.
 
   The *extra_arguments* and *extra_keywords* arguments can be used
   to pass a tuple of extra arguments and a dictionary of named
-  arguments that are passed to :func:`derivative2` at each call.
+  arguments that are passed to ``derivative2`` at each call.
 
   For example
 
@@ -380,7 +380,7 @@ second derivative function:
 - The function :func:`laplace` calculates the Laplace using discrete
   differentiation for the second derivative (i.e. convolution with
   ``[1, -2, 1]``).
-  
+
 - The function :func:`gaussian_laplace` calculates the Laplace filter
   using :func:`gaussian_filter` to calculate the second
   derivatives. The standard-deviations of the Gaussian filter along
@@ -395,11 +395,11 @@ function that calculats the gradient magnitude of an array.
 
 - The function :func:`generic_gradient_magnitude` calculates a
   gradient magnitude using the function passed through
-  :func:`derivative` to calculate first derivatives. The function
-  :func:`derivative` should have the following signature
+  ``derivative`` to calculate first derivatives. The function
+  ``derivative`` should have the following signature
 
   .. code:: python
-	    
+
      derivative(input, axis, output, mode, cval, *extra_arguments, **extra_keywords)
 
   It should calculate the derivative along the dimension *axis*. If
@@ -459,9 +459,9 @@ information).
   one-dimensional filter function, where the actual filtering
   operation must be supplied as a python function (or other callable
   object). The :func:`generic_filter1d` function iterates over the
-  lines of an array and calls :func:`function` at each line. The
-  arguments that are passed to :func:`function` are one-dimensional
-  arrays of the :c:type:`tFloat64` type. The first contains the values
+  lines of an array and calls ``function`` at each line. The
+  arguments that are passed to ``function`` are one-dimensional
+  arrays of the ``numpy.float64`` type. The first contains the values
   of the current line.  It is extended at the beginning end the end,
   according to the *filter_size* and *origin* arguments. The second
   array should be modified in-place to provide the output values of
@@ -523,8 +523,8 @@ information).
   function, where the actual filtering operation must be supplied as a
   python function (or other callable object). The
   :func:`generic_filter` function iterates over the array and calls
-  :func:`function` at each element. The argument of :func:`function`
-  is a one-dimensional array of the :c:type:`tFloat64` type, that
+  ``function`` at each element. The argument of ``function``
+  is a one-dimensional array of the ``numpy.float64`` type, that
   contains the values around the current element that are within the
   footprint of the filter. The function should return a single value
   that can be converted to a double precision number. For example
@@ -613,9 +613,9 @@ the current coordinates:
    ...
    ...     def filter(self, buffer):
    ...         result = (buffer * np.array([1, 3])).sum()
-   ...         print self.coordinates
+   ...         print(self.coordinates)
    ...         # calculate the next coordinates:
-   ...         axes = range(len(self.shape))
+   ...         axes = list(range(len(self.shape)))
    ...         axes.reverse()
    ...         for jj in axes:
    ...             if self.coordinates[jj] < self.shape[jj] - 1:
@@ -662,9 +662,9 @@ filtered. The example for :func:`generic_filter1d` then becomes this:
    ...
    ...     def filter(self, iline, oline):
    ...         oline[...] = iline[:-2] + 2 * iline[1:-1] + 3 * iline[2:]
-   ...         print self.coordinates
+   ...         print(self.coordinates)
    ...         # calculate the next coordinates:
-   ...         axes = range(len(self.shape))
+   ...         axes = list(range(len(self.shape)))
    ...         # skip the filter axis:
    ...         del axes[self.axis]
    ...         axes.reverse()
@@ -790,7 +790,7 @@ is used.
   shape and type.
 
   For example:
-  
+
   .. code:: python
 
      >>> a = np.arange(12).reshape(4,3).astype(np.float64)
@@ -832,7 +832,7 @@ is used.
 	    [ 0.    ,  8.2625,  9.6375]])
 
   .. note::
-     
+
      The mapping function can also be written in C and passed using a
      `scipy.LowLevelCallable`. See :ref:`ndimage-ccallbacks` for more
      information.
@@ -1160,7 +1160,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type (both
-  :c:type:`Int32`). The basics of the algorithm used to implement this
+  ``numpy.int32``). The basics of the algorithm used to implement this
   function is described in [2]_.
 
 - The function :func:`distance_transform_edt` calculates the exact
@@ -1182,7 +1182,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
-  (:c:type:`Float64` and :c:type:`Int32`).The algorithm used to
+  (``numpy.float64`` and ``numpy.int32``).The algorithm used to
   implement this function is described in [3]_.
 
 - The function :func:`distance_transform_bf` uses a brute-force
@@ -1207,7 +1207,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
-  (:c:type:`Float64` and :c:type:`Int32`).
+  (``numpy.float64`` and ``numpy.int32``).
 
   .. note::
 
@@ -1311,7 +1311,7 @@ for the objects:
 - The :func:`watershed_ift` function applies a watershed from markers
   algorithm, using an Iterative Forest Transform, as described in
   [4]_.
-    
+
 - The inputs of this function are the array to which the transform is
   applied, and an array of markers that designate the objects by a
   unique label, where any non-zero value is a marker. For instance:
@@ -1413,7 +1413,7 @@ for the objects:
   .. note::
 
      The implementation of :func:`watershed_ift` limits the data types
-     of the input to :c:type:`UInt8` and :c:type:`UInt16`.
+     of the input to ``numpy.uint8`` and ``numpy.uint16``.
 
 .. _ndimage-object-measurements:
 
@@ -1597,7 +1597,7 @@ lists, if *index* is a sequence.
   ``None``, all elements of *input* are used in the calculation.
   Histograms are defined by their minimum (*min*), maximum (*max*) and
   the number of bins (*bins*). They are returned as one-dimensional
-  arrays of type :c:type:`Int32`.
+  arrays of type ``numpy.int32``.
 
 .. _ndimage-ccallbacks:
 
@@ -1728,7 +1728,7 @@ and now running the script
 
    user_data = ctypes.c_double(shift)
    ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
-   callback = LowLevelCallable(transform(), ptr)
+   callback = LowLevelCallable(get_transform(), ptr)
    im = np.arange(12).reshape(4, 3).astype(np.float64)
    print(ndimage.geometric_transform(im, callback))
 
@@ -1750,20 +1750,20 @@ The function ``py_transform`` wraps the callback function in a
   the callback function.
 
 - The second argument is the function signature which must match exactly
-  the one expected by :mod:`ndimage`.
+  the one expected by :mod:`~scipy.ndimage`.
 
 - Above, we used  `scipy.LowLevelCallable` to specify ``user_data``
   that we generated with `ctypes`.
 
   A different approach would be to supply the data in the capsule context,
-  that can be set by :cfunc:`PyCapsule_SetContext` and omit specifying
+  that can be set by `PyCapsule_SetContext` and omit specifying
   ``user_data`` in `scipy.LowLevelCallable`. However, in this approach we would
   need to deal with allocation/freeing of the data --- freeing the data
   after the capsule is destroyed can be done by specifying a non-NULL
-  callback function in the third argument of :cfunc:`PyCapsule_New`.
+  callback function in the third argument of `PyCapsule_New`.
 
-C callback functions for :mod:`ndimage` all follow this scheme. The
-next section lists the :mod:`ndimage` functions that accept a C
+C callback functions for :mod:`~scipy.ndimage` all follow this scheme. The
+next section lists the :mod:`~scipy.ndimage` functions that accept a C
 callback function and gives the prototype of the function.
 
 .. seealso::
@@ -1772,10 +1772,11 @@ callback function and gives the prototype of the function.
 
    `generic_filter`, `generic_filter1d`, `geometric_transform`
 
-Below, we show alternative ways to write the code, using Cython_,
+Below, we show alternative ways to write the code, using Numba_, Cython_,
 ctypes_, or cffi_ instead of writing wrapper code in C.
 
-.. _Cython: http://cython.org/
+.. _Numba: https://numba.pydata.org/
+.. _Cython: https://cython.org/
 .. _ctypes: https://docs.python.org/3/library/ctypes.html
 .. _cffi: https://cffi.readthedocs.io/
 
@@ -1817,8 +1818,6 @@ We can write the above using Numba as:
 
    im = np.arange(12).reshape(4, 3).astype(np.float64)
    print(ndimage.geometric_transform(im, callback))
-
-.. _Numba: http://numba.pydata.org/
 
 
 .. rubric:: Cython

@@ -1,18 +1,21 @@
 """
-Test Scipy functions versus mpmath, if available.
+Test SciPy functions versus mpmath, if available.
 
 """
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import dec, run_module_suite, assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose
 from numpy import pi
+import pytest
+import itertools
+
+from distutils.version import LooseVersion
 
 import scipy.special as sc
 from scipy._lib.six import with_metaclass
-from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import (
-    MissingModule, check_version, FuncData, DecoratorMeta,
+    MissingModule, check_version, FuncData,
     assert_func_equal)
 from scipy.special._mptestutils import (
     Arg, FixedArg, ComplexArg, IntArg, assert_mpmath_equal,
@@ -99,14 +102,41 @@ def test_hyp0f1_gh_1609():
 
 
 # ------------------------------------------------------------------------------
+# hyperu
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '1.1.0')
+def test_hyperu_around_0():
+    dataset = []
+    # DLMF 13.2.14-15 test points.
+    for n in np.arange(-5, 5):
+        for b in np.linspace(-5, 5, 20):
+            a = -n
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+            a = -n + b - 1
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+    # DLMF 13.2.16-22 test points.
+    for a in [-10.5, -1.5, -0.5, 0, 0.5, 1, 10]:
+        for b in [-1.0, -0.5, 0, 0.5, 1, 1.5, 2, 2.5]:
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+    dataset = np.array(dataset)
+
+    FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-13).check()
+
+# ------------------------------------------------------------------------------
 # hyp2f1
 # ------------------------------------------------------------------------------
 
-@check_version(mpmath, '0.14')
+@check_version(mpmath, '1.0.0')
 def test_hyp2f1_strange_points():
     pts = [
-        (2, -1, -1, 0.7),
-        (2, -2, -2, 0.7),
+        (2, -1, -1, 0.7),  # expected: 2.4
+        (2, -2, -2, 0.7),  # expected: 3.87
+    ]
+    pts += list(itertools.product([2, 1, -0.7, -1000], repeat=4))
+    pts = [
+        (a, b, c, x) for a, b, c, x in pts
+        if b == c and round(b) == b and b < 0 and b != -1000
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
@@ -181,7 +211,7 @@ def test_hyp2f1_real_some():
                 for z in [-10, -1.01, -0.99, 0, 0.6, 0.95, 1.5, 10]:
                     try:
                         v = float(mpmath.hyp2f1(a, b, c, z))
-                    except:
+                    except Exception:
                         continue
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
@@ -195,7 +225,7 @@ def test_hyp2f1_real_some():
 
 
 @check_version(mpmath, '0.12')
-@dec.slow
+@pytest.mark.slow
 def test_hyp2f1_real_random():
     npoints = 500
     dataset = np.zeros((npoints, 5), np.float_)
@@ -357,9 +387,7 @@ def test_loggamma_taylor_transition():
     dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))
+    dataset = [(z0, complex(mpmath.loggamma(z0))) for z0 in z]
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -375,9 +403,7 @@ def test_loggamma_taylor():
     dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))
+    dataset = [(z0, complex(mpmath.loggamma(z0))) for z0 in z]
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -388,7 +414,7 @@ def test_loggamma_taylor():
 # ------------------------------------------------------------------------------
 
 @check_version(mpmath, '0.19')
-@dec.slow
+@pytest.mark.slow
 def test_rgamma_zeros():
     # Test around the zeros at z = 0, -1, -2, ...,  -169. (After -169 we
     # get values that are out of floating point range even when we're
@@ -401,10 +427,8 @@ def test_rgamma_zeros():
     dz = dx + 1j*dy
     zeros = np.arange(0, -170, -1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
     with mpmath.workdps(100):
-        for z0 in z:
-            dataset.append((z0, complex(mpmath.rgamma(z0))))
+        dataset = [(z0, complex(mpmath.rgamma(z0))) for z0 in z]
 
     dataset = np.array(dataset)
     FuncData(sc.rgamma, dataset, 0, 1, rtol=1e-12).check()
@@ -415,7 +439,7 @@ def test_rgamma_zeros():
 # ------------------------------------------------------------------------------
 
 @check_version(mpmath, '0.19')
-@dec.slow
+@pytest.mark.slow
 def test_digamma_roots():
     # Test the special-cased roots for digamma.
     root = mpmath.findroot(mpmath.digamma, 1.5)
@@ -430,10 +454,8 @@ def test_digamma_roots():
     dx, dy = np.meshgrid(dx, dy)
     dz = dx + 1j*dy
     z = (roots + np.dstack((dz,)*roots.size)).flatten()
-    dataset = []
     with mpmath.workdps(30):
-        for z0 in z:
-            dataset.append((z0, complex(mpmath.digamma(z0))))
+        dataset = [(z0, complex(mpmath.digamma(z0))) for z0 in z]
 
     dataset = np.array(dataset)
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-14).check()
@@ -452,11 +474,8 @@ def test_digamma_negreal():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
     with mpmath.workdps(40):
-        for z0 in z:
-            res = digamma(z0)
-            dataset.append((z0, complex(res)))
+        dataset = [(z0, complex(digamma(z0))) for z0 in z]
     dataset = np.asarray(dataset)
 
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
@@ -472,11 +491,8 @@ def test_digamma_boundary():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
     with mpmath.workdps(30):
-        for z0 in z:
-            res = mpmath.digamma(z0)
-            dataset.append((z0, complex(res)))
+        dataset = [(z0, complex(mpmath.digamma(z0))) for z0 in z]
     dataset = np.asarray(dataset)
 
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
@@ -487,7 +503,7 @@ def test_digamma_boundary():
 # ------------------------------------------------------------------------------
 
 @check_version(mpmath, '0.19')
-@dec.slow
+@pytest.mark.slow
 def test_gammainc_boundary():
     # Test the transition to the asymptotic series.
     small = 20
@@ -495,10 +511,9 @@ def test_gammainc_boundary():
     x = a.copy()
     a, x = np.meshgrid(a, x)
     a, x = a.flatten(), x.flatten()
-    dataset = []
     with mpmath.workdps(100):
-        for a0, x0 in zip(a, x):
-            dataset.append((a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True))))
+        dataset = [(a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True)))
+                   for a0, x0 in zip(a, x)]
     dataset = np.array(dataset)
 
     FuncData(sc.gammainc, dataset, (0, 1), 2, rtol=1e-12).check()
@@ -509,7 +524,7 @@ def test_gammainc_boundary():
 # ------------------------------------------------------------------------------
 
 @check_version(mpmath, '0.19')
-@dec.slow
+@pytest.mark.slow
 def test_spence_circle():
     # The trickiest region for spence is around the circle |z - 1| = 1,
     # so test that region carefully.
@@ -520,11 +535,8 @@ def test_spence_circle():
     r = np.linspace(0.5, 1.5)
     theta = np.linspace(0, 2*pi)
     z = (1 + np.outer(r, np.exp(1j*theta))).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, spence(z0)))
+    dataset = np.asarray([(z0, spence(z0)) for z0 in z])
 
-    dataset = np.array(dataset)
     FuncData(sc.spence, dataset, 0, 1, rtol=1e-14).check()
 
 
@@ -541,11 +553,8 @@ def test_sinpi_zeros():
     dz = dx + 1j*dy
     zeros = np.arange(-100, 100, 1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.sinpi(z0))))
-
-    dataset = np.array(dataset)
+    dataset = np.asarray([(z0, complex(mpmath.sinpi(z0)))
+                          for z0 in z])
     FuncData(_sinpi, dataset, 0, 1, rtol=2*eps).check()
 
 
@@ -558,11 +567,9 @@ def test_cospi_zeros():
     dz = dx + 1j*dy
     zeros = (np.arange(-100, 100, 1) + 0.5).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.cospi(z0))))
+    dataset = np.asarray([(z0, complex(mpmath.cospi(z0)))
+                          for z0 in z])
 
-    dataset = np.array(dataset)
     FuncData(_cospi, dataset, 0, 1, rtol=2*eps).check()
 
 
@@ -603,7 +610,7 @@ def _mpmath_wrightomega(z, dps):
     return res
 
 
-@dec.slow
+@pytest.mark.slow
 @check_version(mpmath, '0.19')
 def test_wrightomega_branch():
     x = -np.logspace(10, 0, 25)
@@ -620,15 +627,13 @@ def test_wrightomega_branch():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
 
 
-@dec.slow
+@pytest.mark.slow
 @check_version(mpmath, '0.19')
 def test_wrightomega_region1():
     # This region gets less coverage in the TestSystematic test
@@ -637,15 +642,13 @@ def test_wrightomega_region1():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
 
 
-@dec.slow
+@pytest.mark.slow
 @check_version(mpmath, '0.19')
 def test_wrightomega_region2():
     # This region gets less coverage in the TestSystematic test
@@ -654,12 +657,27 @@ def test_wrightomega_region2():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+# ------------------------------------------------------------------------------
+# lambertw
+# ------------------------------------------------------------------------------
+
+@pytest.mark.slow
+@check_version(mpmath, '0.19')
+def test_lambertw_smallz():
+    x, y = np.linspace(-1, 1, 25), np.linspace(-1, 1, 25)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = np.asarray([(z0, complex(mpmath.lambertw(z0)))
+                          for z0 in z])
+
+    FuncData(sc.lambertw, dataset, 0, 1, rtol=1e-13).check()
 
 
 # ------------------------------------------------------------------------------
@@ -669,9 +687,9 @@ def test_wrightomega_region2():
 HYPERKW = dict(maxprec=200, maxterms=200)
 
 
-class TestSystematic(with_metaclass(DecoratorMeta, object)):
-    decorators = [(dec.slow, None),
-                  (check_version, (mpmath, '0.17'))]
+@pytest.mark.slow
+@check_version(mpmath, '0.17')
+class TestSystematic(object):
 
     def test_airyai(self):
         # oscillating function, limit range
@@ -779,29 +797,16 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(), ComplexArg()])
 
     def test_besselk(self):
-        def mpbesselk(v, x):
-            r = float(mpmath.besselk(v, x, **HYPERKW))
-            if abs(r) > 1e305:
-                # overflowing to inf a bit earlier is OK
-                r = np.inf * np.sign(r)
-            if abs(v) == abs(x) and abs(r) == np.inf and abs(x) > 1:
-                # wrong result (kv(x,x) -> 0 for x > 1),
-                # try with higher dps
-                old_dps = mpmath.mp.dps
-                mpmath.mp.dps = 200
-                try:
-                    r = float(mpmath.besselk(v, x, **HYPERKW))
-                finally:
-                    mpmath.mp.dps = old_dps
-            return r
         assert_mpmath_equal(sc.kv,
-                            exception_to_nan(mpbesselk),
-                            [Arg(-1e100, 1e100), Arg()])
+                            mpmath.besselk,
+                            [Arg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
-                            exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [IntArg(-1000, 1000), Arg()])
+                            mpmath.besselk,
+                            [IntArg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
@@ -879,7 +884,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             np.array(bad_points),
                             dps=400,
                             ignore_inf_sign=True,
-                            atol=1e-14)
+                            atol=1e-11)
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
@@ -920,7 +925,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(lambda n, x: mpmath.chebyt(n, x, **HYPERKW)),
                             [IntArg(), Arg()], dps=50)
 
-    @knownfailure_overridable("some cases in hyp2f1 not fully accurate")
+    @pytest.mark.xfail(run=False, reason="some cases in hyp2f1 not fully accurate")
     def test_chebyt(self):
         assert_mpmath_equal(sc.eval_chebyt,
                             lambda n, x: time_limited()(exception_to_nan(mpmath.chebyt))(n, x, **HYPERKW),
@@ -931,7 +936,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(lambda n, x: mpmath.chebyu(n, x, **HYPERKW)),
                             [IntArg(), Arg()], dps=50)
 
-    @knownfailure_overridable("some cases in hyp2f1 not fully accurate")
+    @pytest.mark.xfail(run=False, reason="some cases in hyp2f1 not fully accurate")
     def test_chebyu(self):
         assert_mpmath_equal(sc.eval_chebyu,
                             lambda n, x: time_limited()(exception_to_nan(mpmath.chebyu))(n, x, **HYPERKW),
@@ -971,14 +976,10 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             rtol=1e-8)
 
     def test_cospi(self):
-        # Without the extra factor of 2 in the relative tolerance as
-        # compared to sinpi there will be one failure at ~0.318 with
-        # an rdiff of ~6e-16. Neither the Taylor series nor the system
-        # cosine are accurate enough here.
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=4*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1036,9 +1037,10 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_(sc.exprel(-np.inf) == 0)
 
     def test_expm1_complex(self):
+        # Oscillates as a function of Im[z], so limit range to avoid loss of precision
         assert_mpmath_equal(sc.expm1,
                             mpmath.expm1,
-                            [ComplexArg()])
+                            [ComplexArg(complex(-np.inf, -1e7), complex(np.inf, 1e7))])
 
     def test_log1p_complex(self):
         assert_mpmath_equal(sc.log1p,
@@ -1250,7 +1252,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
 
         assert_mpmath_equal(sc.gammaln, exception_to_nan(f), [Arg()])
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_gegenbauer(self):
         assert_mpmath_equal(sc.eval_gegenbauer,
                             exception_to_nan(mpmath.gegenbauer),
@@ -1275,8 +1277,10 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
 
             # Mpmath 0.17 gives wrong results (spurious zero) in some cases, so
             # compute the value by perturbing the result
-            if float(r) == 0 and n <= 1-a and a < -1 and float(a) == int(float(a)):
+            if float(r) == 0 and a < -1 and float(a) == int(float(a)):
                 r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
+                if abs(r) < mpmath.mpf('1e-50'):
+                    r = mpmath.mpf('0.0')
 
             # Differing overflow thresholds in scipy vs. mpmath
             if abs(r) > 1e270:
@@ -1291,9 +1295,9 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
             return r
         assert_mpmath_equal(sc_gegenbauer,
                             exception_to_nan(gegenbauer),
-                            [IntArg(0, 100), Arg(), Arg()],
+                            [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
                             n=40000, dps=100,
-                            ignore_inf_sign=True)
+                            ignore_inf_sign=True, rtol=1e-6)
 
         # Check the small-x expansion
         assert_mpmath_equal(sc_gegenbauer,
@@ -1302,7 +1306,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             dps=100,
                             ignore_inf_sign=True)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_gegenbauer_complex(self):
         assert_mpmath_equal(lambda n, a, x: sc.eval_gegenbauer(int(n), a.real, x),
                             exception_to_nan(mpmath.gegenbauer),
@@ -1325,7 +1329,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(lambda v, x: mpmath.hankel2(v, x, **HYPERKW)),
                             [Arg(-1e20, 1e20), Arg()])
 
-    @knownfailure_overridable("issues at intermediately large orders")
+    @pytest.mark.xfail(run=False, reason="issues at intermediately large orders")
     def test_hermite(self):
         assert_mpmath_equal(lambda n, x: sc.eval_hermite(int(n), x),
                             exception_to_nan(mpmath.hermite),
@@ -1336,9 +1340,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_hyp0f1(self):
         # mpmath reports no convergence unless maxterms is large enough
         KW = dict(maxprec=400, maxterms=1500)
+        # n=500 (non-xslow default) fails for one bad point
         assert_mpmath_equal(sc.hyp0f1,
                             lambda a, x: mpmath.hyp0f1(a, x, **KW),
-                            [Arg(-1e7, 1e7), Arg(0, 1e5)])
+                            [Arg(-1e7, 1e7), Arg(0, 1e5)],
+                            n=5000)
         # NB: The range of the second parameter ("z") is limited from below
         # because of an overflow in the intermediate calculations. The way
         # for fix it is to implement an asymptotic expansion for Bessel J
@@ -1347,71 +1353,49 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_hyp0f1_complex(self):
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
+                            [Arg(-10, 10), ComplexArg(complex(-120, -120), complex(120, 120))])
         # NB: The range of the first parameter ("v") are limited by an overflow
         # in the intermediate calculations. Can be fixed by implementing an
         # asymptotic expansion for Bessel functions for large order.
 
-    @knownfailure_overridable()
     def test_hyp1f1(self):
-        assert_mpmath_equal(inf_to_nan(sc.hyp1f1),
-                            exception_to_nan(lambda a, b, x: mpmath.hyp1f1(a, b, x, **HYPERKW)),
-                            [Arg(-1e5, 1e5), Arg(-1e5, 1e5), Arg()],
-                            n=2000)
+        def mpmath_hyp1f1(a, b, x):
+            try:
+                return mpmath.hyp1f1(a, b, x)
+            except ZeroDivisionError:
+                return np.inf
 
-    @knownfailure_overridable()
+        assert_mpmath_equal(
+            sc.hyp1f1,
+            mpmath_hyp1f1,
+            [Arg(-50, 50), Arg(1, 50, inclusive_a=False), Arg(-50, 50)],
+            n=500,
+            nan_ok=False
+        )
+
+    @pytest.mark.xfail(run=False)
     def test_hyp1f1_complex(self):
         assert_mpmath_equal(inf_to_nan(lambda a, b, x: sc.hyp1f1(a.real, b.real, x)),
                             exception_to_nan(lambda a, b, x: mpmath.hyp1f1(a, b, x, **HYPERKW)),
                             [Arg(-1e3, 1e3), Arg(-1e3, 1e3), ComplexArg()],
                             n=2000)
 
-    @knownfailure_overridable()
-    def test_hyp1f2(self):
-        def hyp1f2(a, b, c, x):
-            v, err = sc.hyp1f2(a, b, c, x)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp1f2,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp1f2(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=20000)
-
-    @knownfailure_overridable()
-    def test_hyp2f0(self):
-        def hyp2f0(a, b, x):
-            v, err = sc.hyp2f0(a, b, x, 1)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp2f0,
-                            lambda a, b, x: time_limited(0.1)(exception_to_nan(trace_args(mpmath.hyp2f0)))(
-                                a, b, x, **HYPERKW),
-                            [Arg(), Arg(), Arg()])
-
-    @knownfailure_overridable("spurious inf (or inf with wrong sign) for some argument values")
-    def test_hyp2f1(self):
-        assert_mpmath_equal(sc.hyp2f1,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()])
-
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
-        # Scipy's hyp2f1 seems to have performance and accuracy problems
+        # SciPy's hyp2f1 seems to have performance and accuracy problems
         assert_mpmath_equal(lambda a, b, c, x: sc.hyp2f1(a.real, b.real, c.real, x),
                             exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
                             [Arg(-1e2, 1e2), Arg(-1e2, 1e2), Arg(-1e2, 1e2), ComplexArg()],
                             n=10)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_hyperu(self):
         assert_mpmath_equal(sc.hyperu,
                             exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
 
-    @dec.knownfailureif(_is_32bit_platform,
-            "mpmath issue gh-342: unsupported operand mpz, long for pow")
+    @pytest.mark.xfail(condition=_is_32bit_platform,
+                       reason="mpmath issue gh-342: unsupported operand mpz, long for pow")
     def test_igam_fac(self):
         def mp_igam_fac(a, x):
             return mpmath.power(x, a)*mpmath.exp(-x)/mpmath.gamma(a)
@@ -1445,7 +1429,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(-1e8, 1e8)],
                             rtol=1e-5)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_jacobi(self):
         assert_mpmath_equal(sc.eval_jacobi,
                             exception_to_nan(lambda a, b, c, x: mpmath.jacobi(a, b, c, x, **HYPERKW)),
@@ -1492,11 +1476,12 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda n, x: exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
                             [IntArg(), Arg()], n=20000)
 
-    @dec.knownfailureif(_is_32bit_platform, "see gh-3551 for bad points")
-    def test_lambertw(self):
-        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
-                            lambda x, k: mpmath.lambertw(x, int(k)),
-                            [Arg(), IntArg(0, 10)])
+    @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
+    def test_lambertw_real(self):
+        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k.real)),
+                            lambda x, k: mpmath.lambertw(x, int(k.real)),
+                            [ComplexArg(-np.inf, np.inf), IntArg(0, 10)],
+                            rtol=1e-13, nan_ok=False)
 
     def test_lanczos_sum_expg_scaled(self):
         maxgamma = 171.624376956302725
@@ -1504,7 +1489,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         g = 6.024680040776729583740234375
 
         def gamma(x):
-            return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
+            with np.errstate(over='ignore'):
+                fac = ((x + g - 0.5)/e)**(x - 0.5)
+                if fac != np.inf:
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                else:
+                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                    res *= fac
+            return res
 
         assert_mpmath_equal(gamma,
                             mpmath.gamma,
@@ -1576,7 +1569,8 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
 
         assert_mpmath_equal(lpnm_2,
                             legenp,
-                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
+                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)],
+                            atol=1e-10)
 
     def test_legenp_complex_2(self):
         def clpnm(n, m, z):
@@ -1626,7 +1620,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             rtol=1e-6,
                             n=500)
 
-    @knownfailure_overridable("apparently picks wrong function at |z| > 1")
+    @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
     def test_legenq(self):
         def lqnm(n, m, z):
             return sc.lqmn(m, n, z)[0][-1,-1]
@@ -1684,7 +1678,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [ComplexArg()], nan_ok=False,
                             distinguish_nan_and_inf=False, rtol=5e-14)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_pcfd(self):
         def pcfd(v, x):
             return sc.pbdv(v, x)[0]
@@ -1692,7 +1686,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(lambda v, x: mpmath.pcfd(v, x, **HYPERKW)),
                             [Arg(), Arg()])
 
-    @knownfailure_overridable("it's not the same as the mpmath function --- maybe different definition?")
+    @pytest.mark.xfail(run=False, reason="it's not the same as the mpmath function --- maybe different definition?")
     def test_pcfv(self):
         def pcfv(v, x):
             return sc.pbvv(v, x)[0]
@@ -1700,15 +1694,27 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda v, x: time_limited()(exception_to_nan(mpmath.pcfv))(v, x, **HYPERKW),
                             [Arg(), Arg()], n=1000)
 
-    @knownfailure_overridable()
     def test_pcfw(self):
         def pcfw(a, x):
             return sc.pbwa(a, x)[0]
-        assert_mpmath_equal(pcfw,
-                            lambda v, x: time_limited()(exception_to_nan(mpmath.pcfw))(v, x, **HYPERKW),
-                            [Arg(), Arg()], dps=50, n=1000)
 
-    @knownfailure_overridable("issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
+        def dpcfw(a, x):
+            return sc.pbwa(a, x)[1]
+
+        def mpmath_dpcfw(a, x):
+            return mpmath.diff(mpmath.pcfw, (a, x), (0, 1))
+
+        # The Zhang and Jin implementation only uses Taylor series and
+        # is thus accurate in only a very small range.
+        assert_mpmath_equal(pcfw,
+                            mpmath.pcfw,
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-8, n=100)
+
+        assert_mpmath_equal(dpcfw,
+                            mpmath_dpcfw,
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-9, n=100)
+
+    @pytest.mark.xfail(run=False, reason="issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
     def test_polygamma(self):
         assert_mpmath_equal(sc.polygamma,
                             time_limited()(exception_to_nan(mpmath.polygamma)),
@@ -1721,9 +1727,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
             else:
                 v = mpmath.rgamma(x)
             return v
+        # n=500 (non-xslow default) fails for one bad point
         assert_mpmath_equal(sc.rgamma,
                             rgamma,
                             [Arg()],
+                            n=5000,
                             ignore_inf_sign=True)
 
     def test_rgamma_complex(self):
@@ -1731,16 +1739,22 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(mpmath.rgamma),
                             [ComplexArg()], rtol=5e-13)
 
-    @dec.knownfailureif(_is_32bit_platform, "see gh-3551 for bad points")
+    @pytest.mark.xfail(reason=("see gh-3551 for bad points on 32 bit "
+                               "systems and gh-8095 for another bad "
+                               "point"))
     def test_rf(self):
-        def mppoch(a, m):
-            # deal with cases where the result in double precision
-            # hits exactly a non-positive integer, but the
-            # corresponding extended-precision mpf floats don't
-            if float(a + m) == int(a + m) and float(a + m) <= 0:
-                a = mpmath.mpf(a)
-                m = int(a + m) - a
-            return mpmath.rf(a, m)
+        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+            # no workarounds needed
+            mppoch = mpmath.rf
+        else:
+            def mppoch(a, m):
+                # deal with cases where the result in double precision
+                # hits exactly a non-positive integer, but the
+                # corresponding extended-precision mpf floats don't
+                if float(a + m) == int(a + m) and float(a + m) <= 0:
+                    a = mpmath.mpf(a)
+                    m = int(a + m) - a
+                return mpmath.rf(a, m)
 
         assert_mpmath_equal(sc.poch,
                             mppoch,
@@ -1750,7 +1764,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=2*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
@@ -1843,11 +1857,26 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda z: _mpmath_wrightomega(z, 25),
                             [ComplexArg()], rtol=1e-14, nan_ok=False)
 
-    def test_zeta(self):
+    def test_hurwitz_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_riemann_zeta(self):
+        assert_mpmath_equal(
+            sc.zeta,
+            mpmath.zeta,
+            [Arg(-100, 100)],
+            nan_ok=False,
+            rtol=1e-13,
+        )
+
+    def test_zetac(self):
+        assert_mpmath_equal(sc.zetac,
+                            lambda x: mpmath.zeta(x) - 1,
+                            [Arg(-100, 100)],
+                            nan_ok=False, dps=45, rtol=1e-13)
 
     def test_boxcox(self):
 
@@ -1985,7 +2014,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [IntArg(0, 150), Arg()],
                             dps=100)
 
-    @knownfailure_overridable("Accuracy issues near z = -1 inherited from kv.")
+    @pytest.mark.xfail(run=False, reason="Accuracy issues near z = -1 inherited from kv.")
     def test_spherical_kn_complex(self):
         def mp_spherical_kn(n, z):
             arg = mpmath.mpmathify(z)
@@ -2000,6 +2029,3 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(mp_spherical_kn),
                             [IntArg(0, 200), ComplexArg()],
                             dps=200)
-
-if __name__ == "__main__":
-    run_module_suite()

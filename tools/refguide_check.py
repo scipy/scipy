@@ -19,7 +19,7 @@ in docstrings. This is different from doctesting [we do not aim to have
 scipy docstrings doctestable!], this is just to make sure that code in
 docstrings is valid python::
 
-    $ python refguide_check.py --check_docs optimize
+    $ python refguide_check.py --doctests optimize
 
 """
 from __future__ import print_function
@@ -38,18 +38,29 @@ from docutils.parsers.rst import directives
 import shutil
 import glob
 from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
-from argparse import ArgumentParser, REMAINDER
+from argparse import ArgumentParser
+from pkg_resources import parse_version
+
+import sphinx
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
-# Remove sphinx directives that don't run without Sphinx environment
-directives._directives.pop('versionadded', None)
-directives._directives.pop('versionchanged', None)
-directives._directives.pop('moduleauthor', None)
-directives._directives.pop('sectionauthor', None)
-directives._directives.pop('codeauthor', None)
-directives._directives.pop('toctree', None)
+
+if parse_version(sphinx.__version__) >= parse_version('1.5'):
+    # Enable specific Sphinx directives
+    from sphinx.directives import SeeAlso, Only
+    directives.register_directive('seealso', SeeAlso)
+    directives.register_directive('only', Only)
+else:
+    # Remove sphinx directives that don't run without Sphinx environment.
+    # Sphinx < 1.5 installs all directives on import...
+    directives._directives.pop('versionadded', None)
+    directives._directives.pop('versionchanged', None)
+    directives._directives.pop('moduleauthor', None)
+    directives._directives.pop('sectionauthor', None)
+    directives._directives.pop('codeauthor', None)
+    directives._directives.pop('toctree', None)
 
 
 BASE_MODULE = "scipy"
@@ -59,6 +70,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
@@ -75,14 +87,17 @@ PUBLIC_SUBMODULES = [
     'odr',
     'optimize',
     'signal',
+    'signal.windows',
     'sparse',
     'sparse.csgraph',
     'sparse.linalg',
     'spatial',
     'spatial.distance',
+    'spatial.transform',
     'special',
     'stats',
     'stats.mstats',
+    'stats.contingency',
 ]
 
 # Docs for these modules are included in the parent module
@@ -115,9 +130,19 @@ REFGUIDE_ALL_SKIPLIST = [
 # these names are not required to be in an autosummary:: listing
 # despite being in ALL
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
-    r'scipy\.special\..*_roots' # old aliases for scipy.special.*_roots
+    r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
+    r'scipy\.special\.jn',  # alias for jv
+    r'scipy\.linalg\.solve_lyapunov',  # deprecated name
+    r'scipy\.stats\.contingency\.chi2_contingency',
+    r'scipy\.stats\.contingency\.expected_freq',
+    r'scipy\.stats\.contingency\.margins',
 ]
-
+# deprecated windows in scipy.signal namespace
+for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
+             'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
+             'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
+             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False
 
@@ -240,7 +265,7 @@ def is_deprecated(f):
             f(**{"not a kwarg":None})
         except DeprecationWarning:
             return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -302,7 +327,7 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'versionchanged', 'module', 'class',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
@@ -403,7 +428,7 @@ def check_rest(module, names, dots=True):
         else:
             try:
                 text = str(get_doc_object(obj))
-            except:
+            except Exception:
                 import traceback
                 results.append((full_name, False,
                                 "Error in docstring format!\n" +
@@ -449,6 +474,7 @@ CHECK_NAMESPACE = {
       'uint64': np.uint64,
       'int8': np.int8,
       'int32': np.int32,
+      'float32': np.float32,
       'float64': np.float64,
       'dtype': np.dtype,
       'nan': np.nan,
@@ -496,9 +522,10 @@ class Checker(doctest.OutputChecker):
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
-                 'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
+                 'set_title', 'imshow', 'plt.show', '.axis(', '.plot(',
                  '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
-                 '# reformatted'}
+                 '# reformatted', '.set_xlabel(', '.set_ylabel(', '.set_zlabel(',
+                 '.set(xlim=', '.set(ylim=', '.set(xlabel=', '.set(ylabel='}
 
     def __init__(self, parse_namedtuples=True, ns=None, atol=1e-8, rtol=1e-2):
         self.parse_namedtuples = parse_namedtuples
@@ -545,7 +572,21 @@ class Checker(doctest.OutputChecker):
         try:
             a_want = eval(want, dict(self.ns))
             a_got = eval(got, dict(self.ns))
-        except:
+        except Exception:
+            # Maybe we're printing a numpy array? This produces invalid python
+            # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
+            # values. So, reinsert commas and retry.
+            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            #              (2) n-dim arrays with n > 1
+            s_want = want.strip()
+            s_got = got.strip()
+            cond = (s_want.startswith("[") and s_want.endswith("]") and
+                    s_got.startswith("[") and s_got.endswith("]"))
+            if cond:
+                s_want = ", ".join(s_want[1:-1].split())
+                s_got = ", ".join(s_got[1:-1].split())
+                return self.check_output(s_want, s_got, optionflags)
+
             if not self.parse_namedtuples:
                 return False
             # suppose that "want"  is a tuple, and "got" is smth like
@@ -578,7 +619,7 @@ class Checker(doctest.OutputChecker):
 
     def _do_check(self, want, got):
         # This should be done exactly as written to correctly handle all of
-        # numpy-comparable objects, strings, and heterogenous tuples
+        # numpy-comparable objects, strings, and heterogeneous tuples
         try:
             if want == got:
                 return True
@@ -608,6 +649,12 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
                 sys.stdout.write(msg)
             else:
                 out(msg)
+
+        # a flush method is required when a doctest uses multiprocessing
+        # multiprocessing/popen_fork.py flushes sys.stderr
+        def flush(self):
+            if doctest_warnings:
+                sys.stdout.flush()
 
     # Run tests, trying to restore global state afterward
     old_printoptions = np.get_printoptions()
@@ -667,7 +714,7 @@ def check_doctests(module, verbose, ns=None,
         finder = doctest.DocTestFinder()
         try:
             tests = finder.find(obj, name, globs=dict(ns))
-        except:
+        except Exception:
             import traceback
             results.append((full_name, False,
                             "Failed to get doctests!\n" +
@@ -734,7 +781,12 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    text = open(fname).read()
+    if sys.version_info.major <= 2:
+        with open(fname) as f:
+            text = f.read()
+    else:
+        with open(fname, encoding='utf-8') as f:
+            text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it
@@ -860,8 +912,9 @@ def main(argv):
         sys.stderr.flush()
 
     if not args.skip_tutorial:
-        tut_path = os.path.join(os.getcwd(), 'doc', 'source', 'tutorial', '*.rst')
-        print('\nChecking tutorial files at %s:' % tut_path)
+        base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
+        tut_path = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*.rst')
+        print('\nChecking tutorial files at %s:' % os.path.relpath(tut_path, os.getcwd()))
         for filename in sorted(glob.glob(tut_path)):
             if dots:
                 sys.stderr.write('\n')

@@ -6,7 +6,7 @@ from os.path import realpath, abspath, dirname, isfile, join as pjoin, exists
 
 from scipy._lib._tmpdirs import tempdir, in_tempdir, in_dir
 
-from numpy.testing import run_module_suite, assert_, assert_equal
+from numpy.testing import assert_, assert_equal
 
 MY_PATH = abspath(__file__)
 MY_DIR = dirname(MY_PATH)
@@ -43,6 +43,3 @@ def test_given_directory():
     # We were deleting the given directory!  Check not so now.
     assert_(isfile(MY_PATH))
 
-
-if __name__ == "__main__":
-    run_module_suite()

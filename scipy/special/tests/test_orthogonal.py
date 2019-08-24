@@ -2,9 +2,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, sqrt
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_almost_equal, assert_allclose, assert_raises,
-                           run_module_suite)
+from numpy.testing import (assert_array_almost_equal, assert_equal,
+                           assert_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 from scipy import integrate
@@ -13,7 +13,7 @@ from scipy.special import gamma
 import scipy.special.orthogonal as orth
 
 
-class TestCheby(TestCase):
+class TestCheby(object):
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
@@ -76,7 +76,7 @@ class TestCheby(TestCase):
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 
-class TestGegenbauer(TestCase):
+class TestGegenbauer(object):
 
     def test_gegenbauer(self):
         a = 5*np.random.random() - 0.5
@@ -100,7 +100,7 @@ class TestGegenbauer(TestCase):
                                                0,15*orth.poch(a,3),0])/15.0,11)
 
 
-class TestHermite(TestCase):
+class TestHermite(object):
     def test_hermite(self):
         H0 = orth.hermite(0)
         H1 = orth.hermite(1)
@@ -139,7 +139,7 @@ class TestHermite(TestCase):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre(TestCase):
+class _test_sh_legendre(object):
 
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
@@ -164,7 +164,7 @@ class _test_sh_legendre(TestCase):
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt(TestCase):
+class _test_sh_chebyt(object):
 
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -189,7 +189,7 @@ class _test_sh_chebyt(TestCase):
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu(TestCase):
+class _test_sh_chebyu(object):
 
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
@@ -214,14 +214,14 @@ class _test_sh_chebyu(TestCase):
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi(TestCase):
+class _test_sh_jacobi(object):
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
         psub = np.poly1d([2,-1])
         q = 4 * np.random.random()
         p = q-1 + 2*np.random.random()
-        #print "shifted jacobi p,q = ", p, q
+        # print("shifted jacobi p,q = ", p, q)
         G0 = orth.sh_jacobi(0,p,q)
         G1 = orth.sh_jacobi(1,p,q)
         G2 = orth.sh_jacobi(2,p,q)
@@ -270,31 +270,41 @@ class TestCall(object):
         try:
             for pstr in poly:
                 p = eval(pstr)
-                assert_almost_equal(p(0.315), np.poly1d(p)(0.315), err_msg=pstr)
+                assert_almost_equal(p(0.315), np.poly1d(p.coef)(0.315),
+                                    err_msg=pstr)
         finally:
             np.seterr(**olderr)
 
+
+class TestGenlaguerre(object):
+    def test_regression(self):
+        assert_equal(orth.genlaguerre(1, 1, monic=False)(0), 2.)
+        assert_equal(orth.genlaguerre(1, 1, monic=True)(0), -2.)
+        assert_equal(orth.genlaguerre(1, 1, monic=False), np.poly1d([-1, 2]))
+        assert_equal(orth.genlaguerre(1, 1, monic=True), np.poly1d([1, -2]))
+
+
 def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
                       rtol=1e-15, atol=1e-14):
-        # this test is copied from numpy's TestGauss in test_hermite.py
-        x, w, mu = root_func(N, True)
+    # this test is copied from numpy's TestGauss in test_hermite.py
+    x, w, mu = root_func(N, True)
 
-        n = np.arange(N)
-        v = eval_func(n[:,np.newaxis], x)
-        vv = np.dot(v*w, v.T)
-        vd = 1 / np.sqrt(vv.diagonal())
-        vv = vd[:, np.newaxis] * vv * vd
-        assert_allclose(vv, np.eye(N), rtol, atol)
+    n = np.arange(N)
+    v = eval_func(n[:,np.newaxis], x)
+    vv = np.dot(v*w, v.T)
+    vd = 1 / np.sqrt(vv.diagonal())
+    vv = vd[:, np.newaxis] * vv * vd
+    assert_allclose(vv, np.eye(N), rtol, atol)
 
-        # check that the integral of 1 is correct
-        assert_allclose(w.sum(), mu, rtol, atol)
+    # check that the integral of 1 is correct
+    assert_allclose(w.sum(), mu, rtol, atol)
 
-        # compare the results of integrating a function with quad.
-        f = lambda x: x**3 - 3*x**2 + x - 2
-        resI = integrate.quad(lambda x: f(x)*weight_func(x), a, b)
-        resG = np.vdot(f(x), w)
-        rtol = 1e-6 if 1e-6 < resI[1] else resI[1] * 10
-        assert_allclose(resI[0], resG, rtol=rtol)
+    # compare the results of integrating a function with quad.
+    f = lambda x: x**3 - 3*x**2 + x - 2
+    resI = integrate.quad(lambda x: f(x)*weight_func(x), a, b)
+    resG = np.vdot(f(x), w)
+    rtol = 1e-6 if 1e-6 < resI[1] else resI[1] * 10
+    assert_allclose(resI[0], resG, rtol=rtol)
 
 def test_roots_jacobi():
     rf = lambda a, b: lambda n, mu: sc.roots_jacobi(n, a, b, mu)
@@ -310,7 +320,7 @@ def test_roots_jacobi():
 
     vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 5)
     vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 25, atol=1.5e-13)
-    vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 100, atol=1e-12)
+    vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 100, atol=2e-12)
 
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), -1., 1., 5, atol=2e-13)
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), -1., 1., 25, atol=2e-13)
@@ -318,7 +328,7 @@ def test_roots_jacobi():
 
     vgq(rf(0.9, 2), ef(0.9, 2), wf(0.9, 2), -1., 1., 5)
     vgq(rf(0.9, 2), ef(0.9, 2), wf(0.9, 2), -1., 1., 25, atol=1e-13)
-    vgq(rf(0.9, 2), ef(0.9, 2), wf(0.9, 2), -1., 1., 100, atol=2e-13)
+    vgq(rf(0.9, 2), ef(0.9, 2), wf(0.9, 2), -1., 1., 100, atol=3e-13)
 
     vgq(rf(18.24, 27.3), ef(18.24, 27.3), wf(18.24, 27.3), -1., 1., 5)
     vgq(rf(18.24, 27.3), ef(18.24, 27.3), wf(18.24, 27.3), -1., 1., 25)
@@ -379,7 +389,7 @@ def test_roots_sh_jacobi():
 
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 5)
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 25, atol=1.5e-13)
-    vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 100, atol=1e-12)
+    vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 100, atol=2e-12)
 
     vgq(rf(2, 0.9), ef(2, 0.9), wf(2, 0.9), 0., 1., 5)
     vgq(rf(2, 0.9), ef(2, 0.9), wf(2, 0.9), 0., 1., 25, atol=1e-13)
@@ -521,7 +531,7 @@ def test_roots_gegenbauer():
     # to a scaled down copy of T_n(x) there.
     vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 5)
     vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 25)
-    vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 100)
+    vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 100, atol=1e-12)
 
     x, w = sc.roots_gegenbauer(5, 2, False)
     y, v, m = sc.roots_gegenbauer(5, 2, True)
@@ -539,7 +549,7 @@ def test_roots_chebyt():
     weightf = orth.chebyt(5).weight_func
     verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 5)
     verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 25)
-    verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 100)
+    verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 100, atol=1e-12)
 
     x, w = sc.roots_chebyt(5, False)
     y, v, m = sc.roots_chebyt(5, True)
@@ -551,6 +561,12 @@ def test_roots_chebyt():
 
     assert_raises(ValueError, sc.roots_chebyt, 0)
     assert_raises(ValueError, sc.roots_chebyt, 3.3)
+
+def test_chebyt_symmetry():
+    x, w = sc.roots_chebyt(21)
+    pos, neg = x[:10], x[11:]
+    assert_equal(neg, -pos[::-1])
+    assert_equal(x[10], 0)
 
 def test_roots_chebyu():
     weightf = orth.chebyu(5).weight_func
@@ -573,7 +589,7 @@ def test_roots_chebyc():
     weightf = orth.chebyc(5).weight_func
     verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 5)
     verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 25)
-    verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 100)
+    verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 100, atol=1e-12)
 
     x, w = sc.roots_chebyc(5, False)
     y, v, m = sc.roots_chebyc(5, True)
@@ -738,7 +754,3 @@ def test_roots_genlaguerre():
 def test_gh_6721():
     # Regresssion test for gh_6721. This should not raise.
     sc.chebyt(65)(0.2)
-
-
-if __name__ == "__main__":
-    run_module_suite()

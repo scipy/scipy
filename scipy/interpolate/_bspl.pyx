@@ -3,13 +3,15 @@ Routines for evaluating and manipulating B-splines.
 
 """
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as cnp
 
 cimport cython
 
 cdef extern from "src/__fitpack.h":
-    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result) nogil
+    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
@@ -27,7 +29,7 @@ ctypedef fused double_or_complex:
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef inline int find_interval(double[::1] t,
+cdef inline int find_interval(const double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
@@ -44,7 +46,7 @@ cdef inline int find_interval(double[::1] t,
     k : int
         B-spline degree
     xval : double
-        value to find the inteval for
+        value to find the interval for
     prev_l : int
         interval where the previous value was located.
         if unknown, use any value < k to start the search.
@@ -87,10 +89,10 @@ cdef inline int find_interval(double[::1] t,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def evaluate_spline(double[::1] t,
+def evaluate_spline(const double[::1] t,
              double_or_complex[:, ::1] c,
              int k,
-             double[::1] xp,
+             const double[::1] xp,
              int nu,
              bint extrapolate,
              double_or_complex[:, ::1] out):
@@ -158,7 +160,7 @@ def evaluate_spline(double[::1] t,
                     out[ip, jp] = out[ip, jp] + c[interval + a - k, jp] * work[a]
 
 
-def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
+def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     """Evaluate the ``k+1`` B-splines which are non-zero on interval ``m``.
 
     Parameters
@@ -222,7 +224,8 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _colloc(double[::1] x, double[::1] t, int k, double[::1, :] ab, int offset=0):
+def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
+            int offset=0):
     """Build the B-spline collocation matrix.
 
     The collocation matrix is defined as :math:`B_{j,l} = B_l(x_j)`,
@@ -283,10 +286,10 @@ def _colloc(double[::1] x, double[::1] t, int k, double[::1, :] ab, int offset=0
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _handle_lhs_derivatives(double[::1]t, int k, double xval,
+def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
                             double[::1, :] ab,
                             int kl, int ku,
-                            cnp.int_t[::1] deriv_ords,
+                            const cnp.int_t[::1] deriv_ords,
                             int offset=0):
     """ Fill in the entries of the collocation matrix corresponding to known
     derivatives at xval.
@@ -334,11 +337,11 @@ def _handle_lhs_derivatives(double[::1]t, int k, double xval,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _norm_eq_lsq(double[::1] x,
-                 double[::1] t,
+def _norm_eq_lsq(const double[::1] x,
+                 const double[::1] t,
                  int k,
                  double_or_complex[:, ::1] y,
-                 double[::1] w,
+                 const double[::1] w,
                  double[::1, :] ab,
                  double_or_complex[::1, :] rhs):
     """Construct the normal equations for the B-spline LSQ problem.

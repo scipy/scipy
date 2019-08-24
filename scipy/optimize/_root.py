@@ -123,8 +123,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     .. [1] More, Jorge J., Burton S. Garbow, and Kenneth E. Hillstrom.
        1980. User Guide for MINPACK-1.
     .. [2] C. T. Kelley. 1995. Iterative Methods for Linear and Nonlinear
-        Equations. Society for Industrial and Applied Mathematics.
-        <http://www.siam.org/books/kelley/>
+       Equations. Society for Industrial and Applied Mathematics.
+       <https://archive.siam.org/books/kelley/fr16/>
     .. [3] W. La Cruz, J.M. Martinez, M. Raydan. Math. Comp. 75, 1429 (2006).
 
     Examples
@@ -148,6 +148,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> sol = optimize.root(fun, [0, 0], jac=jac, method='hybr')
     >>> sol.x
     array([ 0.8411639,  0.1588361])
+
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -344,16 +345,23 @@ def _root_broyden1_doc():
                 method and values for additional parameters.
 
                 Methods available:
-                    - ``restart``: drop all matrix columns. Has no
+
+                    - ``restart``
+                        Drop all matrix columns. Has no
                         extra parameters.
-                    - ``simple``: drop oldest matrix column. Has no
+                    - ``simple``
+                        Drop oldest matrix column. Has no
                         extra parameters.
-                    - ``svd``: keep only the most significant SVD
+                    - ``svd``
+                        Keep only the most significant SVD
                         components.
-                      Extra parameters:
-                          - ``to_retain``: number of SVD components to
-                              retain when rank reduction is done.
-                              Default is ``max_rank - 2``.
+
+                        Extra parameters:
+
+                            - ``to_retain``
+                                Number of SVD components to
+                                retain when rank reduction is done.
+                                Default is ``max_rank - 2``.
             max_rank : int, optional
                 Maximum rank for the Broyden matrix.
                 Default is infinity (ie., no rank reduction).
@@ -402,16 +410,23 @@ def _root_broyden2_doc():
             method and values for additional parameters.
 
             Methods available:
-                - ``restart``: drop all matrix columns. Has no
+
+                - ``restart``
+                    Drop all matrix columns. Has no
                     extra parameters.
-                - ``simple``: drop oldest matrix column. Has no
+                - ``simple``
+                    Drop oldest matrix column. Has no
                     extra parameters.
-                - ``svd``: keep only the most significant SVD
+                - ``svd``
+                    Keep only the most significant SVD
                     components.
-                  Extra parameters:
-                      - ``to_retain``: number of SVD components to
-                          retain when rank reduction is done.
-                          Default is ``max_rank - 2``.
+
+                    Extra parameters:
+                  
+                        - ``to_retain``
+                            Number of SVD components to
+                            retain when rank reduction is done.
+                            Default is ``max_rank - 2``.
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (ie., no rank reduction).

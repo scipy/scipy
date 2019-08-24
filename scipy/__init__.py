@@ -18,7 +18,8 @@ Using any of these subpackages requires an explicit import.  For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
@@ -31,6 +32,7 @@ Using any of these subpackages requires an explicit import.  For example,
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
+ signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
  sparse.linalg                --- Sparse Linear Algebra
  sparse.linalg.dsolve         --- Linear Solvers
@@ -50,7 +52,7 @@ Utility tools
  test              --- Run scipy unittests
  show_config       --- Show scipy build configuration
  show_numpy_config --- Show numpy build configuration
- __version__       --- Scipy version string
+ __version__       --- SciPy version string
  __numpy_version__ --- Numpy version string
 
 """
@@ -60,7 +62,8 @@ __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
-    raise ImportError("Cannot import scipy when running from numpy source directory.")
+    raise ImportError(
+        "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
@@ -70,6 +73,9 @@ from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
+
+# Allow distributors to run custom init code
+from . import _distributor_init
 
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
@@ -98,14 +104,14 @@ else:
     except ImportError:
         msg = """Error importing scipy: you cannot import scipy while
         being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python intepreter."""
+        tree first, and relaunch your python interpreter."""
         raise ImportError(msg)
 
     from scipy.version import version as __version__
     from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.8.2':
+    if _NumpyVersion(__numpy_version__) < '1.13.3':
         import warnings
-        warnings.warn("Numpy 1.8.2 or above is recommended for this version of "
+        warnings.warn("Numpy 1.13.3 or above is required for this version of "
                       "scipy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
@@ -113,20 +119,10 @@ else:
 
     from scipy._lib._ccallback import LowLevelCallable
 
-    from numpy.testing import Tester
+    from scipy._lib._testutils import PytestTester
+    test = PytestTester(__name__)
+    del PytestTester
 
-    def test(*a, **kw):
-        # Nose never recurses into directories with underscores prefix, so we
-        # need to list those explicitly. Note that numpy.testing.Tester inserts
-        # the top-level package path determined from __file__ to argv unconditionally,
-        # so we only need to add the part that is not otherwise recursed into.
-        import os
-        underscore_modules = ['_lib', '_build_utils']
-        base_dir = os.path.abspath(os.path.dirname(__file__))
-        underscore_paths = [os.path.join(base_dir, name) for name in underscore_modules]
-        kw['extra_argv'] = list(kw.get('extra_argv', [])) + underscore_paths
-        return test._tester.test(*a, **kw)
-
-    test._tester = Tester()
-    test.__doc__ = test._tester.test.__doc__
-    test.__test__ = False  # Prevent nose from treating test() as a test
+    # This makes "from scipy import fft" return scipy.fft, not np.fft
+    del fft
+    from . import fft

@@ -115,17 +115,18 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     ----------
     phi : callable phi(alpha)
         Function at point `alpha`
-    derphi : callable dphi(alpha)
-        Derivative `d phi(alpha)/ds`. Returns a scalar.
-
+    derphi : callable phi'(alpha)
+        Objective function derivative. Returns a scalar.
     phi0 : float, optional
-        Value of `f` at 0
+        Value of phi at 0
     old_phi0 : float, optional
-        Value of `f` at the previous point
+        Value of phi at previous point
     derphi0 : float, optional
-        Value `derphi` at 0
-    c1, c2 : float, optional
-        Wolfe parameters
+        Value derphi at 0
+    c1 : float, optional
+        Parameter for Armijo condition rule.
+    c2 : float, optional
+        Parameter for curvature condition rule.
     amax, amin : float, optional
         Maximum and minimum step size
     xtol : float, optional
@@ -184,6 +185,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
 
     return stp, phi1, phi0
 
+
 line_search = line_search_wolfe1
 
 
@@ -192,7 +194,8 @@ line_search = line_search_wolfe1
 #------------------------------------------------------------------------------
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
-                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=50):
+                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
+                       extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     Parameters
@@ -220,6 +223,17 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         Parameter for curvature condition rule.
     amax : float, optional
         Maximum step size
+    extra_condition : callable, optional
+        A callable of the form ``extra_condition(alpha, x, f, g)``
+        returning a boolean. Arguments are the proposed step ``alpha``
+        and the corresponding ``x``, ``f`` and ``g`` values. The line search 
+        accepts the value of ``alpha`` only if this 
+        callable returns ``True``. If the callable returns ``False`` 
+        for the step length, the algorithm will continue with 
+        new iterates. The callable is only called for iterates 
+        satisfying the strong Wolfe conditions.
+    maxiter : int, optional
+        Maximum number of iterations to perform
 
     Returns
     -------
@@ -253,6 +267,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     fc = [0]
     gc = [0]
     gval = [None]
+    gval_alpha = [None]
 
     def phi(alpha):
         fc[0] += 1
@@ -265,6 +280,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             fprime = myfprime[0]
             newargs = (f, eps) + args
             gval[0] = fprime(xk + alpha * pk, *newargs)  # store for later use
+            gval_alpha[0] = alpha
             return np.dot(gval[0], pk)
     else:
         fprime = myfprime
@@ -272,14 +288,27 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         def derphi(alpha):
             gc[0] += 1
             gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
+            gval_alpha[0] = alpha
             return np.dot(gval[0], pk)
 
     if gfk is None:
         gfk = fprime(xk, *args)
     derphi0 = np.dot(gfk, pk)
 
+    if extra_condition is not None:
+        # Add the current gradient as argument, to avoid needless
+        # re-evaluation
+        def extra_condition2(alpha, phi):
+            if gval_alpha[0] != alpha:
+                derphi(alpha)
+            x = xk + alpha * pk
+            return extra_condition(alpha, x, phi, gval[0])
+    else:
+        extra_condition2 = None
+
     alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
-            phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax)
+            phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax,
+            extra_condition2, maxiter=maxiter)
 
     if derphi_star is None:
         warn('The line search algorithm did not converge', LineSearchWarning)
@@ -293,31 +322,42 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     return alpha_star, fc[0], gc[0], phi_star, old_fval, derphi_star
 
 
-def scalar_search_wolfe2(phi, derphi=None, phi0=None,
+def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
-                         c1=1e-4, c2=0.9, amax=50):
+                         c1=1e-4, c2=0.9, amax=None,
+                         extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     alpha > 0 is assumed to be a descent direction.
 
     Parameters
     ----------
-    phi : callable f(x)
+    phi : callable phi(alpha)
         Objective scalar function.
-    derphi : callable f'(x), optional
-        Objective function derivative (can be None)
+    derphi : callable phi'(alpha)
+        Objective function derivative. Returns a scalar.
     phi0 : float, optional
-        Value of phi at s=0
+        Value of phi at 0
     old_phi0 : float, optional
         Value of phi at previous point
     derphi0 : float, optional
-        Value of derphi at s=0
+        Value of derphi at 0
     c1 : float, optional
         Parameter for Armijo condition rule.
     c2 : float, optional
         Parameter for curvature condition rule.
     amax : float, optional
         Maximum step size
+    extra_condition : callable, optional
+        A callable of the form ``extra_condition(alpha, phi_value)``
+        returning a boolean. The line search accepts the value
+        of ``alpha`` only if this callable returns ``True``.
+        If the callable returns ``False`` for the step length,
+        the algorithm will continue with new iterates.
+        The callable is only called for iterates satisfying
+        the strong Wolfe conditions.
+    maxiter : int, optional
+        Maximum number of iterations to perform
 
     Returns
     -------
@@ -344,7 +384,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if phi0 is None:
         phi0 = phi(0.)
 
-    if derphi0 is None and derphi is not None:
+    if derphi0 is None:
         derphi0 = derphi(0.)
 
     alpha0 = 0
@@ -356,14 +396,8 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if alpha1 < 0:
         alpha1 = 1.0
 
-    if alpha1 == 0:
-        # This shouldn't happen. Perhaps the increment has slipped below
-        # machine precision?  For now, set the return variables skip the
-        # useless while loop, and raise warnflag=2 due to possible imprecision.
-        alpha_star = None
-        phi_star = phi0
-        phi0 = old_phi0
-        derphi_star = None
+    if amax is not None:
+        alpha1 = min(alpha1, amax)
 
     phi_a1 = phi(alpha1)
     #derphi_a1 = derphi(alpha1)  evaluated below
@@ -371,35 +405,53 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     phi_a0 = phi0
     derphi_a0 = derphi0
 
-    i = 1
-    maxiter = 10
+    if extra_condition is None:
+        extra_condition = lambda alpha, phi: True
+
     for i in xrange(maxiter):
-        if alpha1 == 0:
+        if alpha1 == 0 or (amax is not None and alpha0 == amax):
+            # alpha1 == 0: This shouldn't happen. Perhaps the increment has
+            # slipped below machine precision?
+            alpha_star = None
+            phi_star = phi0
+            phi0 = old_phi0
+            derphi_star = None
+
+            if alpha1 == 0:
+                msg = 'Rounding errors prevent the line search from converging'
+            else:
+                msg = "The line search algorithm could not find a solution " + \
+                      "less than or equal to amax: %s" % amax
+
+            warn(msg, LineSearchWarning)
             break
+
         if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2)
+                              phi0, derphi0, c1, c2, extra_condition)
             break
 
         derphi_a1 = derphi(alpha1)
         if (abs(derphi_a1) <= -c2*derphi0):
-            alpha_star = alpha1
-            phi_star = phi_a1
-            derphi_star = derphi_a1
-            break
+            if extra_condition(alpha1, phi_a1):
+                alpha_star = alpha1
+                phi_star = phi_a1
+                derphi_star = derphi_a1
+                break
 
         if (derphi_a1 >= 0):
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2)
+                              phi0, derphi0, c1, c2, extra_condition)
             break
 
-        alpha2 = 2 * alpha1   # increase by factor of two on each iteration
-        i = i + 1
+        alpha2 = 2 * alpha1  # increase by factor of two on each iteration
+        if amax is not None:
+            alpha2 = min(alpha2, amax)
         alpha0 = alpha1
         alpha1 = alpha2
         phi_a0 = phi_a1
@@ -472,7 +524,7 @@ def _quadmin(a, fa, fpa, b, fb):
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
-          phi, derphi, phi0, derphi0, c1, c2):
+          phi, derphi, phi0, derphi0, c1, c2, extra_condition):
     """
     Part of the optimization algorithm in `scalar_search_wolfe2`.
     """
@@ -502,7 +554,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         #
         # if the result is too close to the end points (or out of the
         # interval) then use quadratic interpolation with phi_lo,
-        # derphi_lo and phi_hi if the result is stil too close to the
+        # derphi_lo and phi_hi if the result is still too close to the
         # end points (or out of the interval) then use bisection
 
         if (i > 0):
@@ -525,7 +577,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             phi_hi = phi_aj
         else:
             derphi_aj = derphi(a_j)
-            if abs(derphi_aj) <= -c2*derphi0:
+            if abs(derphi_aj) <= -c2*derphi0 and extra_condition(a_j, phi_aj):
                 a_star = a_j
                 val_star = phi_aj
                 valprime_star = derphi_aj
@@ -643,7 +695,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
         return alpha1, phi_a1
 
     # Otherwise loop with cubic interpolation until we find an alpha which
-    # satifies the first Wolfe condition (since we are backtracking, we will
+    # satisfies the first Wolfe condition (since we are backtracking, we will
     # assume that the value of alpha is not too small and satisfies the second
     # condition.
 

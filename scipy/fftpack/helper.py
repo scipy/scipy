@@ -1,9 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange
+import operator
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
-from bisect import bisect_left
-
+import scipy.fft._pocketfft.helper as _helper
+import numpy as np
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
 
 
@@ -41,11 +41,12 @@ def rfftfreq(n, d=1.0):
     array([ 0.  ,  1.25,  1.25,  2.5 ,  2.5 ,  3.75,  3.75,  5.  ])
 
     """
-    if not isinstance(n, int) or n < 0:
+    n = operator.index(n)
+    if n < 0:
         raise ValueError("n = %s is not valid. "
                          "n must be a nonnegative integer." % n)
 
-    return (arange(1, n + 1, dtype=int) // 2) / float(n * d)
+    return (np.arange(1, n + 1, dtype=int) // 2) / float(n * d)
 
 
 def next_fast_len(target):
@@ -93,57 +94,18 @@ def next_fast_len(target):
     >>> b = fftpack.fft(a, 16384)
 
     """
-    hams = (8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 27, 30, 32, 36, 40, 45, 48,
-            50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100, 108, 120, 125, 128,
-            135, 144, 150, 160, 162, 180, 192, 200, 216, 225, 240, 243, 250,
-            256, 270, 288, 300, 320, 324, 360, 375, 384, 400, 405, 432, 450,
-            480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675, 720, 729,
-            750, 768, 800, 810, 864, 900, 960, 972, 1000, 1024, 1080, 1125,
-            1152, 1200, 1215, 1250, 1280, 1296, 1350, 1440, 1458, 1500, 1536,
-            1600, 1620, 1728, 1800, 1875, 1920, 1944, 2000, 2025, 2048, 2160,
-            2187, 2250, 2304, 2400, 2430, 2500, 2560, 2592, 2700, 2880, 2916,
-            3000, 3072, 3125, 3200, 3240, 3375, 3456, 3600, 3645, 3750, 3840,
-            3888, 4000, 4050, 4096, 4320, 4374, 4500, 4608, 4800, 4860, 5000,
-            5120, 5184, 5400, 5625, 5760, 5832, 6000, 6075, 6144, 6250, 6400,
-            6480, 6561, 6750, 6912, 7200, 7290, 7500, 7680, 7776, 8000, 8100,
-            8192, 8640, 8748, 9000, 9216, 9375, 9600, 9720, 10000)
+    # Real transforms use regular sizes so this is backwards compatible
+    return _helper.next_fast_len(target, 'R2C')
 
-    if target <= 6:
-        return target
 
-    # Quickly check if it's already a power of 2
-    if not (target & (target-1)):
-        return target
+def _good_shape(x, shape, axes):
+    """Ensure that shape argument is valid for scipy.fftpack
 
-    # Get result quickly for small sizes, since FFT itself is similarly fast.
-    if target <= hams[-1]:
-        return hams[bisect_left(hams, target)]
-
-    match = float('inf')  # Anything found will be smaller
-    p5 = 1
-    while p5 < target:
-        p35 = p5
-        while p35 < target:
-            # Ceiling integer division, avoiding conversion to float
-            # (quotient = ceil(target / p35))
-            quotient = -(-target // p35)
-
-            # Quickly find next power of 2 >= quotient
-            p2 = 2**((quotient - 1).bit_length())
-
-            N = p2 * p35
-            if N == target:
-                return N
-            elif N < match:
-                match = N
-            p35 *= 3
-            if p35 == target:
-                return p35
-        if p35 < match:
-            match = p35
-        p5 *= 5
-        if p5 == target:
-            return p5
-    if p5 < match:
-        match = p5
-    return match
+    scipy.fftpack does not support len(shape) < x.ndim when axes is not given.
+    """
+    if shape and not axes:
+        shape = _helper._iterable_of_int(shape, 'shape')
+        if len(shape) != np.ndim(x):
+            raise ValueError("when given, axes and shape arguments"
+                             " have to be of the same length")
+    return shape

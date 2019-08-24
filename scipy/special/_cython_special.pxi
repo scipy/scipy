@@ -20,10 +20,10 @@ cdef public int wrap_PyUFunc_getfperr() nogil:
 cdef extern from "numpy/npy_math.h":
     double NPY_NAN
 
-cimport sf_error
-cimport _complexstuff
+from . cimport sf_error
+from . cimport _complexstuff
 cimport scipy.special._ufuncs_cxx
-from . import _ufuncs
+from scipy.special import _ufuncs
 
 ctypedef long double long_double
 ctypedef float complex float_complex

@@ -4,10 +4,10 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
-import sys
-
+from warnings import WarningMessage
+import re
+from functools import wraps
 import numpy as np
-from numpy.testing.nosetester import import_nose
 
 from scipy._lib._version import NumpyVersion
 
@@ -50,31 +50,6 @@ else:
         return result
 
 
-def assert_raises_regex(exception_class, expected_regexp,
-                        callable_obj=None, *args, **kwargs):
-    """
-    Fail unless an exception of class exception_class and with message that
-    matches expected_regexp is thrown by callable when invoked with arguments
-    args and keyword arguments kwargs.
-    Name of this function adheres to Python 3.2+ reference, but should work in
-    all versions down to 2.6.
-    Notes
-    -----
-    .. versionadded:: 1.8.0
-    """
-    __tracebackhide__ = True  # Hide traceback for py.test
-    nose = import_nose()
-
-    if sys.version_info.major >= 3:
-        funcname = nose.tools.assert_raises_regex
-    else:
-        # Only present in Python 2.7, missing from unittest in 2.6
-            funcname = nose.tools.assert_raises_regexp
-
-    return funcname(exception_class, expected_regexp, callable_obj,
-                    *args, **kwargs)
-
-
 if NumpyVersion(np.__version__) >= '1.10.0':
     from numpy import broadcast_to
 else:
@@ -110,6 +85,21 @@ else:
 
     def broadcast_to(array, shape, subok=False):
         return _broadcast_to(array, shape, subok=subok, readonly=True)
+
+
+if NumpyVersion(np.__version__) >= '1.11.0':
+    def get_randint(random_state):
+        return random_state.randint
+else:
+    # In NumPy versions previous to 1.11.0 the randint function and the randint
+    # method of RandomState does only work with int32 values.
+    def get_randint(random_state):
+        def randint_patched(low, high, size, dtype=np.int32):
+            low = max(low, np.iinfo(dtype).min, np.iinfo(np.int32).min)
+            high = min(high, np.iinfo(dtype).max, np.iinfo(np.int32).max)
+            integers = random_state.randint(low, high=high, size=size)
+            return integers.astype(dtype, copy=False)
+        return randint_patched
 
 
 if NumpyVersion(np.__version__) >= '1.9.0':
@@ -211,7 +201,7 @@ if NumpyVersion(np.__version__) > '1.12.0.dev':
     polyvalfromroots = np.polynomial.polynomial.polyvalfromroots
 else:
     def polyvalfromroots(x, r, tensor=True):
-        """
+        r"""
         Evaluate a polynomial specified by its roots at points x.
 
         This function is copypasted from numpy 1.12.0.dev.
@@ -297,3 +287,495 @@ else:
                 raise ValueError("x.ndim must be < r.ndim when tensor == "
                                  "False")
         return np.prod(x - r, axis=0)
+
+
+try:
+    from numpy.testing import suppress_warnings
+except ImportError:
+    class suppress_warnings(object):
+        """
+        Context manager and decorator doing much the same as
+        ``warnings.catch_warnings``.
+
+        However, it also provides a filter mechanism to work around
+        https://bugs.python.org/issue4180.
+
+        This bug causes Python before 3.4 to not reliably show warnings again
+        after they have been ignored once (even within catch_warnings). It
+        means that no "ignore" filter can be used easily, since following
+        tests might need to see the warning. Additionally it allows easier
+        specificity for testing warnings and can be nested.
+
+        Parameters
+        ----------
+        forwarding_rule : str, optional
+            One of "always", "once", "module", or "location". Analogous to
+            the usual warnings module filter mode, it is useful to reduce
+            noise mostly on the outmost level. Unsuppressed and unrecorded
+            warnings will be forwarded based on this rule. Defaults to "always".
+            "location" is equivalent to the warnings "default", match by exact
+            location the warning warning originated from.
+
+        Notes
+        -----
+        Filters added inside the context manager will be discarded again
+        when leaving it. Upon entering all filters defined outside a
+        context will be applied automatically.
+
+        When a recording filter is added, matching warnings are stored in the
+        ``log`` attribute as well as in the list returned by ``record``.
+
+        If filters are added and the ``module`` keyword is given, the
+        warning registry of this module will additionally be cleared when
+        applying it, entering the context, or exiting it. This could cause
+        warnings to appear a second time after leaving the context if they
+        were configured to be printed once (default) and were already
+        printed before the context was entered.
+
+        Nesting this context manager will work as expected when the
+        forwarding rule is "always" (default). Unfiltered and unrecorded
+        warnings will be passed out and be matched by the outer level.
+        On the outmost level they will be printed (or caught by another
+        warnings context). The forwarding rule argument can modify this
+        behaviour.
+
+        Like ``catch_warnings`` this context manager is not threadsafe.
+
+        Examples
+        --------
+        >>> with suppress_warnings() as sup:
+        ...     sup.filter(DeprecationWarning, "Some text")
+        ...     sup.filter(module=np.ma.core)
+        ...     log = sup.record(FutureWarning, "Does this occur?")
+        ...     command_giving_warnings()
+        ...     # The FutureWarning was given once, the filtered warnings were
+        ...     # ignored. All other warnings abide outside settings (may be
+        ...     # printed/error)
+        ...     assert_(len(log) == 1)
+        ...     assert_(len(sup.log) == 1)  # also stored in log attribute
+
+        Or as a decorator:
+
+        >>> sup = suppress_warnings()
+        >>> sup.filter(module=np.ma.core)  # module must match exact
+        >>> @sup
+        >>> def some_function():
+        ...     # do something which causes a warning in np.ma.core
+        ...     pass
+        """
+        def __init__(self, forwarding_rule="always"):
+            self._entered = False
+
+            # Suppressions are either instance or defined inside one with block:
+            self._suppressions = []
+
+            if forwarding_rule not in {"always", "module", "once", "location"}:
+                raise ValueError("unsupported forwarding rule.")
+            self._forwarding_rule = forwarding_rule
+
+        def _clear_registries(self):
+            if hasattr(warnings, "_filters_mutated"):
+                # clearing the registry should not be necessary on new pythons,
+                # instead the filters should be mutated.
+                warnings._filters_mutated()
+                return
+            # Simply clear the registry, this should normally be harmless,
+            # note that on new pythons it would be invalidated anyway.
+            for module in self._tmp_modules:
+                if hasattr(module, "__warningregistry__"):
+                    module.__warningregistry__.clear()
+
+        def _filter(self, category=Warning, message="", module=None, record=False):
+            if record:
+                record = []  # The log where to store warnings
+            else:
+                record = None
+            if self._entered:
+                if module is None:
+                    warnings.filterwarnings(
+                        "always", category=category, message=message)
+                else:
+                    module_regex = module.__name__.replace('.', r'\.') + '$'
+                    warnings.filterwarnings(
+                        "always", category=category, message=message,
+                        module=module_regex)
+                    self._tmp_modules.add(module)
+                    self._clear_registries()
+
+                self._tmp_suppressions.append(
+                    (category, message, re.compile(message, re.I), module, record))
+            else:
+                self._suppressions.append(
+                    (category, message, re.compile(message, re.I), module, record))
+
+            return record
+
+        def filter(self, category=Warning, message="", module=None):
+            """
+            Add a new suppressing filter or apply it if the state is entered.
+
+            Parameters
+            ----------
+            category : class, optional
+                Warning class to filter
+            message : string, optional
+                Regular expression matching the warning message.
+            module : module, optional
+                Module to filter for. Note that the module (and its file)
+                must match exactly and cannot be a submodule. This may make
+                it unreliable for external modules.
+
+            Notes
+            -----
+            When added within a context, filters are only added inside
+            the context and will be forgotten when the context is exited.
+            """
+            self._filter(category=category, message=message, module=module,
+                         record=False)
+
+        def record(self, category=Warning, message="", module=None):
+            """
+            Append a new recording filter or apply it if the state is entered.
+
+            All warnings matching will be appended to the ``log`` attribute.
+
+            Parameters
+            ----------
+            category : class, optional
+                Warning class to filter
+            message : string, optional
+                Regular expression matching the warning message.
+            module : module, optional
+                Module to filter for. Note that the module (and its file)
+                must match exactly and cannot be a submodule. This may make
+                it unreliable for external modules.
+
+            Returns
+            -------
+            log : list
+                A list which will be filled with all matched warnings.
+
+            Notes
+            -----
+            When added within a context, filters are only added inside
+            the context and will be forgotten when the context is exited.
+            """
+            return self._filter(category=category, message=message, module=module,
+                                record=True)
+
+        def __enter__(self):
+            if self._entered:
+                raise RuntimeError("cannot enter suppress_warnings twice.")
+
+            self._orig_show = warnings.showwarning
+            self._filters = warnings.filters
+            warnings.filters = self._filters[:]
+
+            self._entered = True
+            self._tmp_suppressions = []
+            self._tmp_modules = set()
+            self._forwarded = set()
+
+            self.log = []  # reset global log (no need to keep same list)
+
+            for cat, mess, _, mod, log in self._suppressions:
+                if log is not None:
+                    del log[:]  # clear the log
+                if mod is None:
+                    warnings.filterwarnings(
+                        "always", category=cat, message=mess)
+                else:
+                    module_regex = mod.__name__.replace('.', r'\.') + '$'
+                    warnings.filterwarnings(
+                        "always", category=cat, message=mess,
+                        module=module_regex)
+                    self._tmp_modules.add(mod)
+            warnings.showwarning = self._showwarning
+            self._clear_registries()
+
+            return self
+
+        def __exit__(self, *exc_info):
+            warnings.showwarning = self._orig_show
+            warnings.filters = self._filters
+            self._clear_registries()
+            self._entered = False
+            del self._orig_show
+            del self._filters
+
+        def _showwarning(self, message, category, filename, lineno,
+                         *args, **kwargs):
+            use_warnmsg = kwargs.pop("use_warnmsg", None)
+            for cat, _, pattern, mod, rec in (
+                    self._suppressions + self._tmp_suppressions)[::-1]:
+                if (issubclass(category, cat) and
+                        pattern.match(message.args[0]) is not None):
+                    if mod is None:
+                        # Message and category match, either recorded or ignored
+                        if rec is not None:
+                            msg = WarningMessage(message, category, filename,
+                                                 lineno, **kwargs)
+                            self.log.append(msg)
+                            rec.append(msg)
+                        return
+                    # Use startswith, because warnings strips the c or o from
+                    # .pyc/.pyo files.
+                    elif mod.__file__.startswith(filename):
+                        # The message and module (filename) match
+                        if rec is not None:
+                            msg = WarningMessage(message, category, filename,
+                                                 lineno, **kwargs)
+                            self.log.append(msg)
+                            rec.append(msg)
+                        return
+
+            # There is no filter in place, so pass to the outside handler
+            # unless we should only pass it once
+            if self._forwarding_rule == "always":
+                if use_warnmsg is None:
+                    self._orig_show(message, category, filename, lineno,
+                                    *args, **kwargs)
+                else:
+                    self._orig_showmsg(use_warnmsg)
+                return
+
+            if self._forwarding_rule == "once":
+                signature = (message.args, category)
+            elif self._forwarding_rule == "module":
+                signature = (message.args, category, filename)
+            elif self._forwarding_rule == "location":
+                signature = (message.args, category, filename, lineno)
+
+            if signature in self._forwarded:
+                return
+            self._forwarded.add(signature)
+            if use_warnmsg is None:
+                self._orig_show(message, category, filename, lineno, *args,
+                                **kwargs)
+            else:
+                self._orig_showmsg(use_warnmsg)
+
+        def __call__(self, func):
+            """
+            Function decorator to apply certain suppressions to a whole
+            function.
+            """
+            @wraps(func)
+            def new_func(*args, **kwargs):
+                with self:
+                    return func(*args, **kwargs)
+
+            return new_func
+
+if NumpyVersion(np.__version__) >= '1.10.0':
+    from numpy import cov
+else:
+    from numpy import array, average, dot
+
+    def cov(m, y=None, rowvar=True, bias=False, ddof=None, fweights=None,
+            aweights=None):
+        """
+        Estimate a covariance matrix, given data and weights.
+
+        Covariance indicates the level to which two variables vary together.
+        If we examine N-dimensional samples, :math:`X = [x_1, x_2, ... x_N]^T`,
+        then the covariance matrix element :math:`C_{ij}` is the covariance of
+        :math:`x_i` and :math:`x_j`. The element :math:`C_{ii}` is the variance
+        of :math:`x_i`.
+
+        See the notes for an outline of the algorithm.
+
+        Parameters
+        ----------
+        m : array_like
+            A 1-D or 2-D array containing multiple variables and observations.
+            Each row of `m` represents a variable, and each column a single
+            observation of all those variables. Also see `rowvar` below.
+        y : array_like, optional
+            An additional set of variables and observations. `y` has the same form
+            as that of `m`.
+        rowvar : bool, optional
+            If `rowvar` is True (default), then each row represents a
+            variable, with observations in the columns. Otherwise, the relationship
+            is transposed: each column represents a variable, while the rows
+            contain observations.
+        bias : bool, optional
+            Default normalization (False) is by ``(N - 1)``, where ``N`` is the
+            number of observations given (unbiased estimate). If `bias` is True,
+            then normalization is by ``N``. These values can be overridden by using
+            the keyword ``ddof`` in numpy versions >= 1.5.
+        ddof : int, optional
+            If not ``None`` the default value implied by `bias` is overridden.
+            Note that ``ddof=1`` will return the unbiased estimate, even if both
+            `fweights` and `aweights` are specified, and ``ddof=0`` will return
+            the simple average. See the notes for the details. The default value
+            is ``None``.
+
+            .. versionadded:: 1.5
+        fweights : array_like, int, optional
+            1-D array of integer freguency weights; the number of times each
+            observation vector should be repeated.
+
+            .. versionadded:: 1.10
+        aweights : array_like, optional
+            1-D array of observation vector weights. These relative weights are
+            typically large for observations considered "important" and smaller for
+            observations considered less "important". If ``ddof=0`` the array of
+            weights can be used to assign probabilities to observation vectors.
+
+            .. versionadded:: 1.10
+
+        Returns
+        -------
+        out : ndarray
+            The covariance matrix of the variables.
+
+        See Also
+        --------
+        corrcoef : Normalized covariance matrix
+
+        Notes
+        -----
+        Assume that the observations are in the columns of the observation
+        array `m` and let ``f = fweights`` and ``a = aweights`` for brevity. The
+        steps to compute the weighted covariance are as follows::
+
+            >>> w = f * a
+            >>> v1 = np.sum(w)
+            >>> v2 = np.sum(w * a)
+            >>> m -= np.sum(m * w, axis=1, keepdims=True) / v1
+            >>> cov = np.dot(m * w, m.T) * v1 / (v1**2 - ddof * v2)
+
+        Note that when ``a == 1``, the normalization factor
+        ``v1 / (v1**2 - ddof * v2)`` goes over to ``1 / (np.sum(f) - ddof)``
+        as it should.
+
+        Examples
+        --------
+        Consider two variables, :math:`x_0` and :math:`x_1`, which
+        correlate perfectly, but in opposite directions:
+
+        >>> x = np.array([[0, 2], [1, 1], [2, 0]]).T
+        >>> x
+        array([[0, 1, 2],
+               [2, 1, 0]])
+
+        Note how :math:`x_0` increases while :math:`x_1` decreases. The covariance
+        matrix shows this clearly:
+
+        >>> np.cov(x)
+        array([[ 1., -1.],
+               [-1.,  1.]])
+
+        Note that element :math:`C_{0,1}`, which shows the correlation between
+        :math:`x_0` and :math:`x_1`, is negative.
+
+        Further, note how `x` and `y` are combined:
+
+        >>> x = [-2.1, -1,  4.3]
+        >>> y = [3,  1.1,  0.12]
+        >>> X = np.stack((x, y), axis=0)
+        >>> print(np.cov(X))
+        [[ 11.71        -4.286     ]
+         [ -4.286        2.14413333]]
+        >>> print(np.cov(x, y))
+        [[ 11.71        -4.286     ]
+         [ -4.286        2.14413333]]
+        >>> print(np.cov(x))
+        11.71
+
+        """
+        # Check inputs
+        if ddof is not None and ddof != int(ddof):
+            raise ValueError(
+                "ddof must be integer")
+
+        # Handles complex arrays too
+        m = np.asarray(m)
+        if m.ndim > 2:
+            raise ValueError("m has more than 2 dimensions")
+
+        if y is None:
+            dtype = np.result_type(m, np.float64)
+        else:
+            y = np.asarray(y)
+            if y.ndim > 2:
+                raise ValueError("y has more than 2 dimensions")
+            dtype = np.result_type(m, y, np.float64)
+
+        X = array(m, ndmin=2, dtype=dtype)
+        if not rowvar and X.shape[0] != 1:
+            X = X.T
+        if X.shape[0] == 0:
+            return np.array([]).reshape(0, 0)
+        if y is not None:
+            y = array(y, copy=False, ndmin=2, dtype=dtype)
+            if not rowvar and y.shape[0] != 1:
+                y = y.T
+            X = np.concatenate((X, y), axis=0)
+
+        if ddof is None:
+            if bias == 0:
+                ddof = 1
+            else:
+                ddof = 0
+
+        # Get the product of frequencies and weights
+        w = None
+        if fweights is not None:
+            fweights = np.asarray(fweights, dtype=float)
+            if not np.all(fweights == np.around(fweights)):
+                raise TypeError(
+                    "fweights must be integer")
+            if fweights.ndim > 1:
+                raise RuntimeError(
+                    "cannot handle multidimensional fweights")
+            if fweights.shape[0] != X.shape[1]:
+                raise RuntimeError(
+                    "incompatible numbers of samples and fweights")
+            if any(fweights < 0):
+                raise ValueError(
+                    "fweights cannot be negative")
+            w = fweights
+        if aweights is not None:
+            aweights = np.asarray(aweights, dtype=float)
+            if aweights.ndim > 1:
+                raise RuntimeError(
+                    "cannot handle multidimensional aweights")
+            if aweights.shape[0] != X.shape[1]:
+                raise RuntimeError(
+                    "incompatible numbers of samples and aweights")
+            if any(aweights < 0):
+                raise ValueError(
+                    "aweights cannot be negative")
+            if w is None:
+                w = aweights
+            else:
+                w *= aweights
+
+        avg, w_sum = average(X, axis=1, weights=w, returned=True)
+        w_sum = w_sum[0]
+
+        # Determine the normalization
+        if w is None:
+            fact = X.shape[1] - ddof
+        elif ddof == 0:
+            fact = w_sum
+        elif aweights is None:
+            fact = w_sum - ddof
+        else:
+            fact = w_sum - ddof*sum(w*aweights)/w_sum
+
+        if fact <= 0:
+            warnings.warn("Degrees of freedom <= 0 for slice",
+                          RuntimeWarning, stacklevel=2)
+            fact = 0.0
+
+        X -= avg[:, None]
+        if w is None:
+            X_T = X.T
+        else:
+            X_T = (X*w).T
+        c = dot(X, X_T.conj())
+        c *= 1. / np.float64(fact)
+        return c.squeeze()

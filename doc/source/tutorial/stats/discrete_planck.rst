@@ -18,12 +18,10 @@ solved.
     \begin{eqnarray*} \mu & = & \frac{1}{e^{\lambda}-1}\\ \mu_{2} & = & \frac{e^{-\lambda}}{\left(1-e^{-\lambda}\right)^{2}}\\ \gamma_{1} & = & 2\cosh\left(\frac{\lambda}{2}\right)\\ \gamma_{2} & = & 4+2\cosh\left(\lambda\right)\end{eqnarray*}
 
 .. math::
-   :nowrap:
 
     M\left(t\right)=\frac{1-e^{-\lambda}}{1-e^{t-\lambda}}
 
 .. math::
-   :nowrap:
 
     h\left[X\right]=\frac{\lambda e^{-\lambda}}{1-e^{-\lambda}}-\log\left(1-e^{-\lambda}\right)
 

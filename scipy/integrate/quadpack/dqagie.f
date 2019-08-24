@@ -176,7 +176,7 @@ c           rlist(i)  - approximation to the integral over
 c                       (alist(i),blist(i))
 c           rlist2    - array of dimension at least (limexp+2),
 c                       containing the part of the epsilon table
-c                       wich is still needed for further computations
+c                       which is still needed for further computations
 c           elist(i)  - error estimate applying to rlist(i)
 c           maxerr    - pointer to the interval with largest error
 c                       estimate

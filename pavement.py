@@ -70,13 +70,11 @@ import warnings
 from hashlib import md5
 from hashlib import sha256
 
-import distutils
-
 try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
         raise RuntimeError("paver version >= 1.0 required (was %s)" % _PVER)
-except ImportError, e:
+except (ImportError, e):
     raise RuntimeError("paver version >= 1.0 required")
 
 import paver
@@ -115,10 +113,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.0.0-notes.rst'
+RELEASE = 'doc/release/1.4.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.19.0'
+LOG_START = 'v1.3.0'
 LOG_END = 'master'
 
 
@@ -127,11 +125,11 @@ LOG_END = 'master'
 #-------------------------------------------------------
 
 # Default python version
-PYVER="2.7"
+PYVER="3.6"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
-        virtualenv=Bunch(packages_to_install=["sphinx==1.1.3", "numpydoc"],
+        virtualenv=Bunch(packages_to_install=["sphinx==1.8.5", "numpydoc"],
                          no_site_packages=False),
         sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         superpack=Bunch(builddir="build-superpack",
@@ -157,40 +155,23 @@ SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None',
 
 # Wine config for win32 builds
 if sys.platform == "win32":
-    WINE_PY26 = [r"C:\Python26\python.exe"]
-    WINE_PY27 = [r"C:\Python27\python.exe"]
-    WINE_PY32 = [r"C:\Python32\python.exe"]
-    WINE_PY33 = [r"C:\Python33\python.exe"]
-    WINE_PY34 = [r"C:\Python34\python.exe"]
+    WINE_PY35 = [r"C:\Python35\python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
-    WINE_PY26 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
-    WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    WINE_PY32 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
-    WINE_PY33 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
-    WINE_PY34 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
+    WINE_PY35 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python35/python.exe"]
     WINDOWS_ENV = os.environ
     WINDOWS_ENV["DYLD_FALLBACK_LIBRARY_PATH"] = "/usr/X11/lib:/usr/lib"
     MAKENSIS = ["wine", "makensis"]
 else:
-    WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
-    WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    WINE_PY32 = [os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
-    WINE_PY33 = [os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
-    WINE_PY34 = [os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
+    WINE_PY35 = [os.environ['HOME'] + "/.wine/drive_c/Python35/python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'3.4':WINE_PY34, '3.3':WINE_PY33, '3.2':WINE_PY32,
-            '2.7':WINE_PY27, '2.6':WINE_PY26}
+WINE_PYS = {'3.5':WINE_PY35}
 
 # Framework Python locations on OS X
 MPKG_PYTHON = {
-        "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
-        "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python",
-        "3.2": "/Library/Frameworks/Python.framework/Versions/3.2/bin/python3",
-        "3.3": "/Library/Frameworks/Python.framework/Versions/3.3/bin/python3",
-        "3.4": "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
+        "3.5": "/Library/Frameworks/Python.framework/Versions/3.5/bin/python3"
         }
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
@@ -231,7 +212,7 @@ def bootstrap():
     bdir = options.bootstrap_dir
     if not os.path.exists(bdir):
         os.makedirs(bdir)
-    bscript = "boostrap.py"
+    bscript = "bootstrap.py"
 
     options.virtualenv.script_name = os.path.join(options.bootstrap_dir,
                                                   bscript)
@@ -321,7 +302,7 @@ def sdist():
     sh('git submodule update')
 
     # Fix file permissions
-    sh('chmod a+rX -R *')
+    sh('chmod -R a+rX *')
 
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
@@ -333,7 +314,7 @@ def sdist():
         os.unlink(os.path.join('dist', tarball_name("xztar")))
     sh('xz %s' % os.path.join('dist', tarball_name("tar")), ignore_error=True)
 
-    # Copy the superpack into installers dir
+    # Copy the sdists into installers dir
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
 
@@ -352,15 +333,11 @@ def sdist():
 
 @task
 def release(options):
-    """Automate everything to be done for a release with numpy-vendor"""
+    """sdists, release notes and changelog.  Docs and wheels are built in
+    separate steps (see doc/source/dev/releasing.rst).
+    """
     # Source tarballs
     sdist()
-
-    # Windows .exe installers
-    options.python_version = '2.7'
-    bdist_superpack(options)
-    options.python_version = '3.4'
-    bdist_superpack(options)
 
     # README (gpg signed) and Changelog
     write_release_and_log()
@@ -568,7 +545,7 @@ def _build_mpkg(pyver):
 def dmg():
     try:
         pyver = options.dmg.python_version
-    except:
+    except Exception:
         pyver = PYVER
     idirs = options.installers.installersdir
 
@@ -664,7 +641,7 @@ def compute_md5(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
     for f in sorted(released):
-        m = md5(open(f, 'r').read())
+        m = md5(open(f, 'rb').read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -675,7 +652,7 @@ def compute_sha256(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
     for f in sorted(released):
-        m = sha256(open(f, 'r').read())
+        m = sha256(open(f, 'rb').read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -707,8 +684,9 @@ SHA256
 """)
         ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
 
-    # Sign release
-    cmd = ['gpg', '--clearsign', '--armor']
+    # Sign release; on some platforms gpg2 may actually
+    # be named gpg
+    cmd = ['gpg2', '--clearsign', '--armor']
     if hasattr(options, 'gpg_key'):
         cmd += ['--default-key', options.gpg_key]
     cmd += ['--output', str(target), str(tmp_target)]
@@ -722,7 +700,7 @@ def write_log_task(filename='Changelog'):
             ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
             stdout=subprocess.PIPE)
 
-    out = st.communicate()[0]
+    out = st.communicate()[0].decode()
     a = open(filename, 'w')
     a.writelines(out)
     a.close()

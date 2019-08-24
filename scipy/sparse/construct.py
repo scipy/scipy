@@ -9,6 +9,7 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 
 import numpy as np
+from scipy._lib._numpy_compat import get_randint
 
 from scipy._lib.six import xrange
 
@@ -210,7 +211,7 @@ def identity(n, dtype='d', format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> identity(3, dtype='int8', format='dia')
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -244,7 +245,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sparse.eye(3, dtype=np.int8)
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
         with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -404,19 +405,25 @@ def _compressed_sparse_stack(blocks, axis):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
-    indices = np.concatenate([b.indices for b in blocks])
-    indptr = []
-    last_indptr = 0
     constant_dim = blocks[0].shape[other_axis]
+    idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
+                                maxval=max(data.size, constant_dim))
+    indices = np.empty(data.size, dtype=idx_dtype)
+    indptr = np.empty(sum(b.shape[axis] for b in blocks) + 1, dtype=idx_dtype)
+    last_indptr = idx_dtype(0)
     sum_dim = 0
+    sum_indices = 0
     for b in blocks:
         if b.shape[other_axis] != constant_dim:
             raise ValueError('incompatible dimensions for axis %d' % other_axis)
+        indices[sum_indices:sum_indices+b.indices.size] = b.indices
+        sum_indices += b.indices.size
+        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        indptr[idxs] = b.indptr[:-1]
+        indptr[idxs] += last_indptr
         sum_dim += b.shape[axis]
-        indptr.append(b.indptr[:-1] + last_indptr)
         last_indptr += b.indptr[-1]
-    indptr.append([last_indptr])
-    indptr = np.concatenate(indptr)
+    indptr[-1] = last_indptr
     if axis == 0:
         return csr_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
@@ -700,14 +707,24 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sampled using the same random state as is used for sampling
         the sparsity structure.
 
+    Returns
+    -------
+    res : sparse matrix
+
+    Notes
+    -----
+    Only float types are supported for now.
+
     Examples
     --------
     >>> from scipy.sparse import random
     >>> from scipy import stats
-    >>> class CustomRandomState(object):
+
+    >>> class CustomRandomState(np.random.RandomState):
     ...     def randint(self, k):
     ...         i = np.random.randint(k)
     ...         return i - i % 2
+    >>> np.random.seed(12345)
     >>> rs = CustomRandomState()
     >>> rvs = stats.poisson(25, loc=10).rvs
     >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
@@ -716,15 +733,23 @@ def random(m, n, density=0.01, format='coo', dtype=None,
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
-    Notes
-    -----
-    Only float types are supported for now.
+    >>> from scipy.sparse import random
+    >>> from scipy.stats import rv_continuous
+    >>> class CustomDistribution(rv_continuous):
+    ...     def _rvs(self, *args, **kwargs):
+    ...         return self._random_state.randn(*self._size)
+    >>> X = CustomDistribution(seed=2906)
+    >>> Y = X()  # get a frozen version of the distribution
+    >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
+    >>> S.A
+    array([[ 0.        ,  0.        ,  0.        ,  0.        ],
+           [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
+           [ 0.        ,  0.        ,  0.        ,  0.        ]])
+
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
     dtype = np.dtype(dtype)
-    if dtype.char not in 'fdg':
-        raise NotImplementedError("type %s not supported" % dtype)
 
     mn = m * n
 
@@ -746,26 +771,27 @@ greater than %d - this is not supported on this machine
         random_state = np.random
     elif isinstance(random_state, (int, np.integer)):
         random_state = np.random.RandomState(random_state)
+
     if data_rvs is None:
-        data_rvs = random_state.rand
+        if np.issubdtype(dtype, np.integer):
+            randint = get_randint(random_state)
 
-    # Use the algorithm from python's random.sample for k < mn/3.
-    if mn < 3*k:
-        ind = random_state.choice(mn, size=k, replace=False)
-    else:
-        ind = np.empty(k, dtype=tp)
-        selected = set()
-        for i in xrange(k):
-            j = random_state.randint(mn)
-            while j in selected:
-                j = random_state.randint(mn)
-            selected.add(j)
-            ind[i] = j
+            def data_rvs(n):
+                return randint(np.iinfo(dtype).min, np.iinfo(dtype).max,
+                               n, dtype=dtype)
+        elif np.issubdtype(dtype, np.complexfloating):
+            def data_rvs(n):
+                return random_state.rand(n) + random_state.rand(n) * 1j
+        else:
+            data_rvs = random_state.rand
 
-    j = np.floor(ind * 1. / m).astype(tp)
-    i = (ind - j * m).astype(tp)
-    vals = data_rvs(k).astype(dtype)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
+    ind = random_state.choice(mn, size=k, replace=False)
+
+    j = np.floor(ind * 1. / m).astype(tp, copy=False)
+    i = (ind - j * m).astype(tp, copy=False)
+    vals = data_rvs(k).astype(dtype, copy=False)
+    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format,
+                                                             copy=False)
 
 
 def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
@@ -787,9 +813,30 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         Random number generator or random seed. If not given, the singleton
         numpy.random will be used.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Notes
     -----
     Only float types are supported for now.
+
+    See Also
+    --------
+    scipy.sparse.random : Similar function that allows a user-specified random
+        data source.
+
+    Examples
+    --------
+    >>> from scipy.sparse import rand
+    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
+    >>> matrix
+    <3x4 sparse matrix of type '<class 'numpy.float64'>'
+       with 3 stored elements in Compressed Sparse Row format>
+    >>> matrix.todense()
+    matrix([[0.05641158, 0.        , 0.        , 0.65088847],
+            [0.        , 0.        , 0.        , 0.14286682],
+            [0.        , 0.        , 0.        , 0.        ]])
 
     """
     return random(m, n, density, format, dtype, random_state)

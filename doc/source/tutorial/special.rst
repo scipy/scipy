@@ -21,7 +21,7 @@ write the function in either C, Fortran, or Python. Look in the source
 code of the library for examples of each of these kinds of functions.
 
 
-Bessel functions of real order(:func:`jn`, :func:`jn_zeros`)
+Bessel functions of real order(:func:`jv`, :func:`jn_zeros`)
 ------------------------------------------------------------
 
 Bessel functions are a family of solutions to Bessel's differential equation
@@ -66,7 +66,7 @@ Cython Bindings for Special Functions (:mod:`scipy.special.cython_special`)
 
 .. highlight:: cython
 
-Scipy also offers Cython bindings for scalar, typed versions of many
+SciPy also offers Cython bindings for scalar, typed versions of many
 of the functions in special. The following Cython code gives a simple
 example of how to use these functions::
 
@@ -108,7 +108,7 @@ be worth it.
 
 Avoiding Python Function Overhead
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  
+
 For the ufuncs in special, Python function overhead is avoided by
 vectorizing, that is, by passing an array to the function. Typically
 this approach works quite well, but sometimes it is more convenient to
@@ -123,7 +123,7 @@ overhead can become significant. Consider the following example::
       cdef:
           int n
           double x = 1
-    
+
       for n in range(100):
           sc.jv(n, x)
 
@@ -246,12 +246,7 @@ The `binary entropy function`_::
   def binary_entropy(x):
       return -(sc.xlogy(x, x) + sc.xlog1py(1 - x, -x))/np.log(2)
 
-The `Heaviside step function`_::
-
-  def heaviside(x):
-      return 0.5*(np.sign(x) + 1)
-
-A similar idea can also be used to get a step function on [0, 1]::
+A rectangular step function on [0, 1]::
 
   def step(x):
       return 0.5*(np.sign(x) + np.sign(1 - x))
@@ -269,7 +264,5 @@ The `ramp function`_::
 .. _here: http://docs.cython.org/en/latest/src/userguide/parallelism.html#compiling
 
 .. _`binary entropy function`: https://en.wikipedia.org/wiki/Binary_entropy_function
-
-.. _`Heaviside step function`: https://stackoverflow.com/questions/15121048/does-a-heaviside-step-function-exist
 
 .. _`ramp function`: https://en.wikipedia.org/wiki/Ramp_function

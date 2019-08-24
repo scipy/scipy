@@ -120,8 +120,10 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     Parameters
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
-        Representation of an m-by-n matrix.  It is required that
-        the linear operator can produce ``Ax`` and ``A^T x``.
+        Representation of an m-by-n matrix.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` and ``A^T x`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : array_like, shape (m,)
         Right-hand side vector ``b``.
     damp : float
@@ -252,6 +254,59 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     .. [3] M. A. Saunders (1995).  "Solution of sparse rectangular
            systems using LSQR and CRAIG", BIT 35, 588-604.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import lsqr
+    >>> A = csc_matrix([[1., 0.], [1., 1.], [0., 1.]], dtype=float)
+
+    The first example has the trivial solution `[0, 0]`
+
+    >>> b = np.array([0., 0., 0.], dtype=float)
+    >>> x, istop, itn, normr = lsqr(A, b)[:4]
+    The exact solution is  x = 0
+    >>> istop
+    0
+    >>> x
+    array([ 0.,  0.])
+
+    The stopping code `istop=0` returned indicates that a vector of zeros was
+    found as a solution. The returned solution `x` indeed contains `[0., 0.]`.
+    The next example has a non-trivial solution:
+
+    >>> b = np.array([1., 0., -1.], dtype=float)
+    >>> x, istop, itn, r1norm = lsqr(A, b)[:4]
+    >>> istop
+    1
+    >>> x
+    array([ 1., -1.])
+    >>> itn
+    1
+    >>> r1norm
+    4.440892098500627e-16
+
+    As indicated by `istop=1`, `lsqr` found a solution obeying the tolerance
+    limits. The given solution `[1., -1.]` obviously solves the equation. The
+    remaining return values include information about the number of iterations
+    (`itn=1`) and the remaining difference of left and right side of the solved
+    equation.
+    The final example demonstrates the behavior in the case where there is no
+    solution for the equation:
+
+    >>> b = np.array([1., 0.01, -1.], dtype=float)
+    >>> x, istop, itn, r1norm = lsqr(A, b)[:4]
+    >>> istop
+    2
+    >>> x
+    array([ 1.00333333, -0.99666667])
+    >>> A.dot(x)-b
+    array([ 0.00333333, -0.00333333,  0.00333333])
+    >>> r1norm
+    0.005773502691896255
+
+    `istop` indicates that the system is inconsistent and thus `x` is rather an
+    approximate solution to the corresponding least-squares problem. `r1norm`
+    contains the norm of the minimal residual that was found.
     """
     A = aslinearoperator(A)
     b = np.atleast_1d(b)

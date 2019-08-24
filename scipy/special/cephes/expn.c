@@ -64,7 +64,7 @@
 #define BIG  1.44115188075855872E+17
 extern double MACHEP, MAXLOG;
 
-double expn_large_n(int, double);
+static double expn_large_n(int, double);
 
 
 double expn(int n, double x)
@@ -75,12 +75,12 @@ double expn(int n, double x)
     int i, k;
     static double big = BIG;
 
-    if (n < 0)
-	goto domerr;
-
-    if (x < 0) {
-      domerr: mtherr("expn", DOMAIN);
-	return (NPY_INFINITY);
+    if (npy_isnan(x)) {
+	return NPY_NAN;
+    }
+    else if (n < 0 || x < 0) {
+	mtherr("expn", DOMAIN);
+	return NPY_INFINITY;
     }
 
     if (x > MAXLOG) {
@@ -191,7 +191,7 @@ double expn(int n, double x)
 
 
 /* Asymptotic expansion for large n, DLMF 8.20(ii) */
-double expn_large_n(int n, double x)
+static double expn_large_n(int n, double x)
 {
     int k;
     double p = n;

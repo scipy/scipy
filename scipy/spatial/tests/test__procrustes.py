@@ -1,14 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_allclose,
-                           assert_equal, assert_almost_equal, assert_raises)
+from numpy.testing import assert_allclose, assert_equal, assert_almost_equal
+from pytest import raises as assert_raises
 
 from scipy.spatial import procrustes
 
 
-class ProcrustesTests(TestCase):
-    def setUp(self):
+class TestProcrustes(object):
+    def setup_method(self):
         """creates inputs"""
         # an L
         self.data1 = np.array([[1, 3], [1, 2], [1, 1], [2, 1]], 'd')
@@ -53,7 +53,7 @@ class ProcrustesTests(TestCase):
 
         # at worst, data3 is an 'L' with one point off by .5
         m1, m3, disp13 = procrustes(self.data1, self.data3)
-        #self.assertTrue(disp13 < 0.5 ** 2)
+        #assert_(disp13 < 0.5 ** 2)
 
     def test_procrustes2(self):
         # procrustes disparity should not depend on order of matrices
@@ -116,6 +116,3 @@ class ProcrustesTests(TestCase):
                       np.array([[[11], [7]]]),
                       np.array([[[5, 13]]]))
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -2,11 +2,9 @@
 SciPy 0.19.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.19.0 is not released yet!
-
 .. contents::
 
-SciPy 0.19.0 is the culmination of X months of hard work. It contains
+SciPy 0.19.0 is the culmination of 7 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -77,6 +75,9 @@ perform weighted pair counting via the new keywords ``weights`` and
 ``cumulative``. See `gh-5647 <https://github.com/scipy/scipy/pull/5647>`_ for
 details.
 
+`scipy.spatial.distance.pdist` and `scipy.spatial.distance.cdist` now support
+non-double custom metrics.
+
 `scipy.ndimage` improvements
 ----------------------------
 
@@ -110,7 +111,7 @@ correlations are performed on many arrays of the same size.
 New functions have been added to calculate complex short time fourier
 transforms of an input signal, and to invert the transform to recover the
 original signal: `scipy.signal.stft` and `scipy.signal.istft`. This
-implementation also fixes the previously incorrect ouput of
+implementation also fixes the previously incorrect output of
 `scipy.signal.spectrogram` when complex output data were requested.
 
 The function `scipy.signal.sosfreqz` was added to compute the frequency
@@ -180,7 +181,7 @@ context manager `scipy.special.errstate`.
 
 The names of orthogonal polynomial root functions have been changed to
 be consistent with other functions relating to orthogonal
-polynomials. For example, `scipy.special.j_roots` has been renamed
+polynomials. For example, ``scipy.special.j_roots`` has been renamed
 `scipy.special.roots_jacobi` for consistency with the related
 functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
 preserve back-compatibility the old names have been left as aliases.
@@ -248,6 +249,10 @@ was inconsistent with `splrep/splev` which was confusing to users.
 
 `scipy.special.errprint` is deprecated. Improved functionality is
 available in `scipy.special.seterr`.
+
+calling `scipy.spatial.distance.pdist` or `scipy.spatial.distance.cdist` with
+arguments not needed by the chosen metric is deprecated. Also, metrics
+`"old_cosine"` and `"old_cos"` are deprecated.
 
 
 Backwards incompatible changes
@@ -317,9 +322,9 @@ Authors
 * Baptiste Fontaine +
 * Jed Frey +
 * Siddhartha Gandhi +
-* GiggleLiu +
 * Wim Glenn +
 * Akash Goel +
+* Christoph Gohlke
 * Ralf Gommers
 * Alexander Goncearenco +
 * Richard Gowers +
@@ -345,6 +350,7 @@ Authors
 * Josh Lefler +
 * Julien Lhermitte +
 * Evan Limanto +
+* Jin-Guo Liu +
 * Nikolay Mayorov
 * Geordie McBain +
 * Josue Melka +
@@ -412,7 +418,7 @@ Authors
 * G Young
 * Evgeny Zhurko +
 
-A total of 120 people contributed to this release.
+A total of 121 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -434,7 +440,7 @@ Issues closed for 0.19.0
 - `#4234 <https://github.com/scipy/scipy/issues/4234>`__: scipy.signal.flattop documentation doesn't list a source for...
 - `#4831 <https://github.com/scipy/scipy/issues/4831>`__: Bugs in C code in __quadpack.h
 - `#4908 <https://github.com/scipy/scipy/issues/4908>`__: bug: unnessesary validity check for block dimension in scipy.sparse.block_diag
-- `#4917 <https://github.com/scipy/scipy/issues/4917>`__: BUG: indexing error for sparse matrix with ix_
+- `#4917 <https://github.com/scipy/scipy/issues/4917>`__: BUG: indexing error for sparse matrix with ix\_
 - `#4938 <https://github.com/scipy/scipy/issues/4938>`__: Docs on extending ndimage need to be updated.
 - `#5056 <https://github.com/scipy/scipy/issues/5056>`__: sparse matrix element-wise multiplying dense matrix returns dense...
 - `#5337 <https://github.com/scipy/scipy/issues/5337>`__: Formula in documentation for correlate is wrong
@@ -449,7 +455,7 @@ Issues closed for 0.19.0
 - `#6306 <https://github.com/scipy/scipy/issues/6306>`__: Anderson-Darling bad results
 - `#6314 <https://github.com/scipy/scipy/issues/6314>`__: scipy.stats.kendaltau() p value not in agreement with R, SPSS...
 - `#6340 <https://github.com/scipy/scipy/issues/6340>`__: Curve_fit bounds and maxfev
-- `#6377 <https://github.com/scipy/scipy/issues/6377>`__: expm_multiply, complex matrices not working using start,stop,ect...
+- `#6377 <https://github.com/scipy/scipy/issues/6377>`__: expm_multiply, complex matrices not working using start,stop,etc...
 - `#6382 <https://github.com/scipy/scipy/issues/6382>`__: optimize.differential_evolution stopping criterion has unintuitive...
 - `#6391 <https://github.com/scipy/scipy/issues/6391>`__: Global Benchmarking times out at 600s.
 - `#6397 <https://github.com/scipy/scipy/issues/6397>`__: mmwrite errors with large (but still 64-bit) integers
@@ -470,7 +476,8 @@ Issues closed for 0.19.0
 - `#6628 <https://github.com/scipy/scipy/issues/6628>`__: Incorrect parameter name in binomial documentation
 - `#6634 <https://github.com/scipy/scipy/issues/6634>`__: Expose LAPACK's xGESVX family for linalg.solve ill-conditioned...
 - `#6657 <https://github.com/scipy/scipy/issues/6657>`__: Confusing documentation for `scipy.special.sph_harm`
-- `#6676 <https://github.com/scipy/scipy/issues/6676>`__: optimize: Incorrect size of Jacobian returned by `minimize(...,...
+- `#6676 <https://github.com/scipy/scipy/issues/6676>`__: optimize: Incorrect size of Jacobian returned by \`minimize(...,...
+- `#6681 <https://github.com/scipy/scipy/issues/6681>`__: add a new context manager to wrap `scipy.special.seterr`
 - `#6700 <https://github.com/scipy/scipy/issues/6700>`__: BUG: scipy.io.wavfile.read stays in infinite loop, warns on wav...
 - `#6721 <https://github.com/scipy/scipy/issues/6721>`__: scipy.special.chebyt(N) throw a 'TypeError' when N > 64
 - `#6727 <https://github.com/scipy/scipy/issues/6727>`__: Documentation for scipy.stats.norm.fit is incorrect
@@ -493,6 +500,9 @@ Issues closed for 0.19.0
 - `#6991 <https://github.com/scipy/scipy/issues/6991>`__: Division by zero in linregress()
 - `#7011 <https://github.com/scipy/scipy/issues/7011>`__: possible speed improvment in rv_continuous.fit()
 - `#7015 <https://github.com/scipy/scipy/issues/7015>`__: Test failure with Python 3.5 and numpy master
+- `#7055 <https://github.com/scipy/scipy/issues/7055>`__: SciPy 0.19.0rc1 test errors and failures on Windows
+- `#7096 <https://github.com/scipy/scipy/issues/7096>`__: macOS test failues for test_solve_continuous_are
+- `#7100 <https://github.com/scipy/scipy/issues/7100>`__: test_distance.test_Xdist_deprecated_args test error in 0.19.0rc2
 
 
 Pull requests for 0.19.0
@@ -751,8 +761,23 @@ Pull requests for 0.19.0
 - `#7021 <https://github.com/scipy/scipy/pull/7021>`__: MAINT: stats: use machine constants from np.finfo, not machar
 - `#7026 <https://github.com/scipy/scipy/pull/7026>`__: MAINT: update .mailmap
 - `#7032 <https://github.com/scipy/scipy/pull/7032>`__: Fix layout of rv_histogram docs
+- `#7035 <https://github.com/scipy/scipy/pull/7035>`__: DOC: update 0.19.0 release notes
 - `#7036 <https://github.com/scipy/scipy/pull/7036>`__: ENH: Add more boundary options to signal.stft
 - `#7040 <https://github.com/scipy/scipy/pull/7040>`__: TST: stats: skip too slow tests
 - `#7042 <https://github.com/scipy/scipy/pull/7042>`__: MAINT: sparse: speed up setdiag tests
 - `#7043 <https://github.com/scipy/scipy/pull/7043>`__: MAINT: refactory and code cleaning Xdist
+- `#7053 <https://github.com/scipy/scipy/pull/7053>`__: Fix msvc 9 and 10 compile errors
+- `#7060 <https://github.com/scipy/scipy/pull/7060>`__: DOC: updated release notes with #7043 and #6656
+- `#7062 <https://github.com/scipy/scipy/pull/7062>`__: MAINT: Change defaut STFT boundary kwarg to "zeros"
+- `#7064 <https://github.com/scipy/scipy/pull/7064>`__: Fix ValueError: path is on mount 'X:', start on mount 'D:' on...
+- `#7067 <https://github.com/scipy/scipy/pull/7067>`__: TST: Fix PermissionError: [Errno 13] Permission denied on Windows
+- `#7068 <https://github.com/scipy/scipy/pull/7068>`__: TST: Fix UnboundLocalError: local variable 'data' referenced...
+- `#7069 <https://github.com/scipy/scipy/pull/7069>`__: Fix OverflowError: Python int too large to convert to C long...
+- `#7071 <https://github.com/scipy/scipy/pull/7071>`__: TST: silence RuntimeWarning for nan test of stats.spearmanr
+- `#7072 <https://github.com/scipy/scipy/pull/7072>`__: Fix OverflowError: Python int too large to convert to C long...
+- `#7084 <https://github.com/scipy/scipy/pull/7084>`__: TST: linalg: bump tolerance in test_falker
+- `#7095 <https://github.com/scipy/scipy/pull/7095>`__: TST: linalg: bump more tolerances in test_falker
+- `#7101 <https://github.com/scipy/scipy/pull/7101>`__: TST: Relax solve_continuous_are test case 2 and 12
+- `#7106 <https://github.com/scipy/scipy/pull/7106>`__: BUG: stop cdist "correlation" modifying input
+- `#7116 <https://github.com/scipy/scipy/pull/7116>`__: Backports to 0.19.0rc2
 

@@ -33,7 +33,7 @@ def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     -----
     The keyword arguments start, stop and step are used by calling
     slice(start, stop, step).  This implies axis_slice() does not
-    handle its arguments the exacty the same as indexing.  To select
+    handle its arguments the exactly the same as indexing.  To select
     a single index k, for example, use
         axis_slice(a, start=k, stop=k+1)
     In this case, the length of the axis 'axis' in the result will
@@ -42,7 +42,7 @@ def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     """
     a_slice = [slice(None)] * a.ndim
     a_slice[axis] = slice(start, stop, step)
-    b = a[a_slice]
+    b = a[tuple(a_slice)]
     return b
 
 

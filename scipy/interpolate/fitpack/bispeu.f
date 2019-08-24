@@ -26,7 +26,7 @@ c           lwrk >= kx+ky+2
 c
 c  output parameters:
 c   z     : real array of dimension m.
-c           on succesful exit z(i) contains the value of s(x,y)
+c           on successful exit z(i) contains the value of s(x,y)
 c           at the point (x(i),y(i)), i=1,...,m.
 c   ier   : integer error flag
 c    ier=0 : normal return

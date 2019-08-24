@@ -107,7 +107,7 @@ standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 A function to compute this Gaussian for arbitrary :math:`x` and :math:`o` is
 also available ( :func:`gauss_spline` ). The following code and Figure uses
 spline-filtering to compute an edge-image (the second-derivative of a smoothed
-spline) of a raccoon's face which is an array returned by the command :func:`misc.face`.
+spline) of a raccoon's face which is an array returned by the command :func:`scipy.misc.face`.
 The command :func:`sepfir2d` was used to apply a separable two-dimensional FIR
 filter with mirror- symmetric boundary conditions to the spline coefficients.
 This function is ideally suited for reconstructing samples from spline
@@ -151,17 +151,17 @@ Filtering
 ---------
 
 Filtering is a generic name for any system that modifies an input
-signal in some way. In SciPy a signal can be thought of as a Numpy
+signal in some way. In SciPy a signal can be thought of as a NumPy
 array. There are different kinds of filters for different kinds of
 operations. There are two broad kinds of filtering operations: linear
 and non-linear. Linear filters can always be reduced to multiplication
-of the flattened Numpy array by an appropriate matrix resulting in
-another flattened Numpy array. Of course, this is not usually the best
+of the flattened NumPy array by an appropriate matrix resulting in
+another flattened NumPy array. Of course, this is not usually the best
 way to compute the filter as the matrices and vectors involved may be
 huge. For example filtering a :math:`512 \times 512` image with this
 method would require multiplication of a :math:`512^2 \times 512^2`
 matrix with a :math:`512^2` vector. Just trying to store the
-:math:`512^2 \times 512^2` matrix using a standard Numpy array would
+:math:`512^2 \times 512^2` matrix using a standard NumPy array would
 require :math:`68,719,476,736` elements. At 4 bytes per element this
 would require :math:`256\textrm{GB}` of memory. In most applications
 most of the elements of this matrix are zero and a different method
@@ -190,8 +190,8 @@ This equation can only be implemented directly if we limit the
 sequences to finite support sequences that can be stored in a
 computer, choose :math:`n=0` to be the starting point of both
 sequences, let :math:`K+1` be that value for which
-:math:`y\left[n\right]=0` for all :math:`n>K+1` and :math:`M+1` be
-that value for which :math:`x\left[n\right]=0` for all :math:`n>M+1` ,
+:math:`x\left[n\right]=0` for all :math:`n\geq K+1` and :math:`M+1` be
+that value for which :math:`h\left[n\right]=0` for all :math:`n\geq M+1` ,
 then the discrete convolution expression is
 
 .. math::
@@ -213,7 +213,7 @@ Thus, the full discrete convolution of two finite sequences of lengths
 One dimensional convolution is implemented in SciPy with the function
 :func:`convolve`. This function takes as inputs the signals :math:`x,`
 :math:`h` , and two optional flags 'mode' and 'method' and returns the signal
-:math:`y.` 
+:math:`y.`
 
 The first optional flag 'mode' allows for specification of which part of the
 output signal to return. The default value of 'full' returns the entire signal.
@@ -345,7 +345,7 @@ If the filter function :math:`w[n,m]` can be factored according to
   h[n, m] = h_1[n] h_2[m],
 
 convolution can be calculated by means of the function :func:`sepfir2d`. As an
-example we consider a Gaussian filter :func:`gaussian`
+example we consider a Gaussian filter :func:`~scipy.signal.windows.gaussian`
 
 .. math::
 
@@ -512,7 +512,7 @@ Filter Design
 
 Time-discrete filters can be classified into finite response (FIR) filters and
 infinite response (IIR) filters. FIR filters can provide a linear phase
-response, whereas IIR filters cannot. Scipy provides functions
+response, whereas IIR filters cannot. SciPy provides functions
 for designing both types of filters.
 
 FIR Filter
@@ -579,7 +579,7 @@ Nyquist frequency in :func:`firwin2` and :func:`freqz` (as explained above).
 IIR Filter
 """"""""""
 
-Scipy provides two functions to directly design IIR :func:`iirdesign` and
+SciPy provides two functions to directly design IIR :func:`iirdesign` and
 :func:`iirfilter` where the filter type (e.g. elliptic) is passed as an
 argument and several more filter design functions for specific filter types;
 e.g. :func:`ellip`.
@@ -975,7 +975,7 @@ the spectrogram.
 Lomb-Scargle Periodograms (:func:`lombscargle`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Least-squares spectral analysis (LSSA) is a method of estimating a frequency
+Least-squares spectral analysis (LSSA) [1]_ [2]_ is a method of estimating a frequency
 spectrum, based on a least squares fit of sinusoids to data samples, similar
 to Fourier analysis. Fourier analysis, the most used spectral method in
 science, generally boosts long-periodic noise in long gapped records; LSSA
@@ -1044,7 +1044,7 @@ implementation.
 Detrend
 -------
 
-Scipy provides the function :func:`detrend` to remove a constant or linear
+SciPy provides the function :func:`detrend` to remove a constant or linear
 trend in a data series in order to see effect of higher order.
 
 The example below removes the constant and linear trend of a 2-nd order

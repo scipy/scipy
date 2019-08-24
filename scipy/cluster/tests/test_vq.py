@@ -6,13 +6,15 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-    TestCase, run_module_suite, assert_raises, assert_allclose, assert_equal,
-    assert_)
-from numpy.testing.decorators import skipif
+                           assert_allclose, assert_equal, assert_)
+from scipy._lib._numpy_compat import suppress_warnings
+import pytest
+from pytest import raises as assert_raises
 
-from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
-    ClusterError, _krandinit)
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
+                              ClusterError, _krandinit)
 from scipy.cluster import _vq
+from scipy.sparse.sputils import matrix
 
 
 TESTDATA_2D = np.array([
@@ -57,8 +59,8 @@ TESTDATA_2D = np.array([
 
 # Global data
 X = np.array([[3.0, 3], [4, 3], [4, 2],
-               [9, 2], [5, 1], [6, 2], [9, 4],
-               [5, 2], [5, 4], [7, 4], [6, 5]])
+              [9, 2], [5, 1], [6, 2], [9, 4],
+              [5, 2], [5, 4], [7, 4], [6, 5]])
 
 CODET1 = np.array([[3.0000, 3.0000],
                    [6.2000, 4.0000],
@@ -71,14 +73,14 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
-class TestWhiten(TestCase):
+class TestWhiten(object):
     def test_whiten(self):
         desired = np.array([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
                             [4.51041982, 0.02640918],
                             [4.38567074, 0.95120889],
                             [2.32191480, 1.63195503]])
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             obs = tp([[0.98744510, 0.82766775],
                       [0.62093317, 0.19406729],
                       [0.87545741, 0.00735733],
@@ -90,7 +92,7 @@ class TestWhiten(TestCase):
         desired = np.array([[0., 1.0, 2.86666544],
                             [0., 1.0, 1.32460034],
                             [0., 1.0, 3.74382172]])
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             obs = tp([[0., 1., 0.74109533],
                       [0., 1., 0.34243798],
                       [0., 1., 0.96785929]])
@@ -101,7 +103,7 @@ class TestWhiten(TestCase):
                 assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_whiten_not_finite(self):
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             for bad_value in np.nan, np.inf, -np.inf:
                 obs = tp([[0.98744510, bad_value],
                           [0.62093317, 0.19406729],
@@ -111,34 +113,19 @@ class TestWhiten(TestCase):
                 assert_raises(ValueError, whiten, obs)
 
 
-class TestVq(TestCase):
+class TestVq(object):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             label1 = py_vq(tp(X), tp(initc))[0]
-            assert_array_equal(label1, LABEL1)
-
-    def test_py_vq2(self):
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
-            label1 = py_vq2(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
-
-    # def test_py_vq_1d(self):
-    #     """Test special rank 1 vq algo, python implementation."""
-    #     data = X[:, 0]
-    #     initc = data[:3]
-    #     a, b = _py_vq_1d(data, initc)
-    #     ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-    #     assert_array_equal(a, ta)
-    #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
         # Test special rank 1 vq algo, python implementation.
@@ -185,7 +172,7 @@ class TestVq(TestCase):
         assert_array_equal(codes0, codes1)
 
 
-class TestKMean(TestCase):
+class TestKMean(object):
     def test_large_features(self):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).
@@ -206,7 +193,7 @@ class TestKMean(TestCase):
     def test_kmeans_simple(self):
         np.random.seed(54321)
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
 
@@ -215,11 +202,13 @@ class TestKMean(TestCase):
         data = TESTDATA_2D
         initk = np.array([[-1.8127404, -0.67128041],
                          [2.04621601, 0.07401111],
-                         [-2.31149087,-0.05160469]])
+                         [-2.31149087, -0.05160469]])
 
         kmeans(data, initk)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "One of the clusters is empty. Re-run kmeans with a "
+                       "different initialization")
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -227,7 +216,7 @@ class TestKMean(TestCase):
     def test_kmeans2_simple(self):
         np.random.seed(12345678)
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
+        for tp in np.array, matrix:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
 
@@ -256,19 +245,23 @@ class TestKMean(TestCase):
         kmeans2(data, 2)
 
     def test_kmeans2_init(self):
+        np.random.seed(12345)
         data = TESTDATA_2D
 
         kmeans2(data, 3, minit='points')
         kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
 
+        kmeans2(data, 3, minit='++')
+        kmeans2(data[:, :1], 3, minit='++')  # special case (1-D)
+
         # minit='random' can give warnings, filter those
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="One of the clusters is empty. Re-run")
+        with suppress_warnings() as sup:
+            sup.filter(message="One of the clusters is empty. Re-run")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
-    @skipif(sys.platform == 'win32', 'Fails with MemoryError in Wine.')
+    @pytest.mark.skipif(sys.platform == 'win32',
+                        reason='Fails with MemoryError in Wine.')
     def test_krandinit(self):
         data = TESTDATA_2D
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
@@ -292,23 +285,7 @@ class TestKMean(TestCase):
 
     def test_kmeans_large_thres(self):
         # Regression test for gh-1774
-        x = np.array([1,2,3,4,10], dtype=float)
+        x = np.array([1, 2, 3, 4, 10], dtype=float)
         res = kmeans(x, 1, thresh=1e16)
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
-
-    def test_kmeans_no_duplicates(self):
-        # Regression test for gh-4044
-        np.random.seed(23495)
-        features = np.linspace(1, 2, num=20).reshape(10, 2)
-        # randint(0, 10, 3) will give a duplicate with this seed ([7, 7, 5])
-        codebook, distortion = kmeans(features, k_or_guess=3)
-        expected = np.array([[1.15789474, 1.21052632],
-                             [1.52631579, 1.57894737],
-                             [1.84210526, 1.89473684]])
-        assert_allclose(codebook, expected)
-        assert_allclose(distortion, 0.11909166841036592)
-
-
-if __name__ == "__main__":
-    run_module_suite()

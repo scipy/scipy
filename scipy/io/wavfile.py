@@ -126,7 +126,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         else:
             dtype += 'f%d' % bytes_per_sample
     if not mmap:
-        data = numpy.fromstring(fid.read(size), dtype=dtype)
+        data = numpy.frombuffer(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
@@ -223,7 +223,7 @@ def read(filename, mmap=False):
     .. [1] IBM Corporation and Microsoft Corporation, "Multimedia Programming
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
-       http://www-mmsp.ece.mcgill.ca/documents/audioformats/wave/Docs/riffmci.pdf
+       http://www.tactilemedia.com/info/MCI_Control_Info.html
 
     """
     if hasattr(filename, 'read'):
@@ -319,7 +319,7 @@ def write(filename, rate, data):
     .. [1] IBM Corporation and Microsoft Corporation, "Multimedia Programming
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
-       http://www-mmsp.ece.mcgill.ca/documents/audioformats/wave/Docs/riffmci.pdf
+       http://www.tactilemedia.com/info/MCI_Control_Info.html
 
     """
     if hasattr(filename, 'write'):

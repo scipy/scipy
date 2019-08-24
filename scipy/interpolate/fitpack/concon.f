@@ -78,7 +78,7 @@ c          if the computation mode iopt=1 is used, the values of t(1),
 c          t(2),...,t(n) should be left unchanged between subsequent
 c          calls.
 c    c   : real array of dimension at least (nest).
-c          on succesful exit, this array will contain the coefficients
+c          on successful exit, this array will contain the coefficients
 c          c(1),c(2),..,c(n-4) in the b-spline representation of s(x)
 c    sq  : real. unless ier>0 , sq contains the weighted sum of
 c          squared residuals of the spline approximation returned.
@@ -129,7 +129,7 @@ c                 probably causes : maxbin too small.
 c        ier=2  : the number of records in the tree structure exceeds
 c                 maxtr.
 c                 probably causes : maxtr too small.
-c        ier=3  : the algoritm finds no solution to the posed quadratic
+c        ier=3  : the algorithm finds no solution to the posed quadratic
 c                 programming problem.
 c                 probably causes : rounding errors.
 c        ier=4  : the minimum number of knots (given by n) to guarantee

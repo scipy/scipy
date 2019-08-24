@@ -1,15 +1,16 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_raises, \
-        assert_almost_equal, assert_array_almost_equal, assert_equal, \
-        assert_, assert_allclose, assert_warns
-from scipy.special import sinc
+from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
+                           assert_equal, assert_,
+                           assert_allclose, assert_warns)
+from pytest import raises as assert_raises
+import pytest
 
+from scipy.fft import fft
+from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez, firls, minimum_phase
+    firwin, firwin2, freqz, remez, firls, minimum_phase
 
 
 def test_kaiser_beta():
@@ -36,7 +37,7 @@ def test_kaiserord():
     assert_equal((numtaps, beta), (2, 0.0))
 
 
-class TestFirwin(TestCase):
+class TestFirwin(object):
 
     def check_response(self, h, expected_response, tol=.05):
         N = len(h)
@@ -45,7 +46,7 @@ class TestFirwin(TestCase):
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'
+            assert_(mse < tol, 'response not as expected, mse=%g > %g'
                % (mse, tol))
 
     def test_response(self):
@@ -120,18 +121,19 @@ class TestFirwin(TestCase):
                     cutoff = [0] + cutoff
                 else:
                     cutoff = cutoff + [1]
-            self.assertTrue(self.mse(h, [cutoff]) < self.mse(hs, [cutoff]),
+            assert_(self.mse(h, [cutoff]) < self.mse(hs, [cutoff]),
                 'least squares violation')
             self.check_response(hs, [expected_response], 1e-12)
 
 
-class TestFirWinMore(TestCase):
+class TestFirWinMore(object):
     """Different author, different style, different tests..."""
 
     def test_lowpass(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=0.5, window=('kaiser', beta), scale=False)
+        kwargs = dict(cutoff=0.5, window=('kaiser', beta), scale=False)
+        taps = firwin(ntaps, **kwargs)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -142,6 +144,9 @@ class TestFirWinMore(TestCase):
         assert_array_almost_equal(np.abs(response),
                                     [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
 
+        taps_str = firwin(ntaps, pass_zero='lowpass', **kwargs)
+        assert_allclose(taps, taps_str)
+
     def test_highpass(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
@@ -149,8 +154,8 @@ class TestFirWinMore(TestCase):
         # Ensure that ntaps is odd.
         ntaps |= 1
 
-        taps = firwin(ntaps, cutoff=0.5, window=('kaiser', beta),
-                        pass_zero=False, scale=False)
+        kwargs = dict(cutoff=0.5, window=('kaiser', beta), scale=False)
+        taps = firwin(ntaps, pass_zero=False, **kwargs)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -161,11 +166,14 @@ class TestFirWinMore(TestCase):
         assert_array_almost_equal(np.abs(response),
                                     [0.0, 0.0, 0.0, 1.0, 1.0, 1.0], decimal=5)
 
+        taps_str = firwin(ntaps, pass_zero='highpass', **kwargs)
+        assert_allclose(taps, taps_str)
+
     def test_bandpass(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=[0.3, 0.7], window=('kaiser', beta),
-                        pass_zero=False, scale=False)
+        kwargs = dict(cutoff=[0.3, 0.7], window=('kaiser', beta), scale=False)
+        taps = firwin(ntaps, pass_zero=False, **kwargs)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -177,11 +185,15 @@ class TestFirWinMore(TestCase):
         assert_array_almost_equal(np.abs(response),
                 [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
 
-    def test_multi(self):
+        taps_str = firwin(ntaps, pass_zero='bandpass', **kwargs)
+        assert_allclose(taps, taps_str)
+
+    def test_bandstop_multi(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=[0.2, 0.5, 0.8], window=('kaiser', beta),
-                        pass_zero=True, scale=False)
+        kwargs = dict(cutoff=[0.2, 0.5, 0.8], window=('kaiser', beta),
+                      scale=False)
+        taps = firwin(ntaps, **kwargs)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -195,14 +207,17 @@ class TestFirWinMore(TestCase):
                 [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
                 decimal=5)
 
-    def test_nyq(self):
-        """Test the nyq keyword."""
+        taps_str = firwin(ntaps, pass_zero='bandstop', **kwargs)
+        assert_allclose(taps, taps_str)
+
+    def test_fs_nyq(self):
+        """Test the fs and nyq keywords."""
         nyquist = 1000
         width = 40.0
         relative_width = width/nyquist
         ntaps, beta = kaiserord(120, relative_width)
         taps = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
-                        pass_zero=False, scale=False, nyq=nyquist)
+                        pass_zero=False, scale=False, fs=2*nyquist)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -213,6 +228,10 @@ class TestFirWinMore(TestCase):
         freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
         assert_array_almost_equal(np.abs(response),
                 [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
+
+        taps2 = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
+                        pass_zero=False, scale=False, nyq=nyquist)
+        assert_allclose(taps2, taps)
 
     def test_bad_cutoff(self):
         """Test that invalid cutoff argument raises ValueError."""
@@ -232,6 +251,8 @@ class TestFirWinMore(TestCase):
         # cutoff values must be less than nyq.
         assert_raises(ValueError, firwin, 99, 50.0, nyq=40)
         assert_raises(ValueError, firwin, 99, [10, 20, 30], nyq=25)
+        assert_raises(ValueError, firwin, 99, 50.0, fs=80)
+        assert_raises(ValueError, firwin, 99, [10, 20, 30], fs=50)
 
     def test_even_highpass_raises_value_error(self):
         """Test that attempt to create a highpass filter with an even number
@@ -239,8 +260,21 @@ class TestFirWinMore(TestCase):
         assert_raises(ValueError, firwin, 40, 0.5, pass_zero=False)
         assert_raises(ValueError, firwin, 40, [.25, 0.5])
 
+    def test_bad_pass_zero(self):
+        """Test degenerate pass_zero cases."""
+        with assert_raises(ValueError, match='pass_zero must be'):
+            firwin(41, 0.5, pass_zero='foo')
+        with assert_raises(TypeError, match='cannot be interpreted'):
+            firwin(41, 0.5, pass_zero=1.)
+        for pass_zero in ('lowpass', 'highpass'):
+            with assert_raises(ValueError, match='cutoff must have one'):
+                firwin(41, [0.5, 0.6], pass_zero=pass_zero)
+        for pass_zero in ('bandpass', 'bandstop'):
+            with assert_raises(ValueError, match='must have at least two'):
+                firwin(41, [0.5], pass_zero=pass_zero)
 
-class TestFirwin2(TestCase):
+
+class TestFirwin2(object):
 
     def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
@@ -255,7 +289,7 @@ class TestFirwin2(TestCase):
         # `freq` does not start at 0.0.
         assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
 
-        # Type II filter, but the gain at nyquist rate is not zero.
+        # Type II filter, but the gain at nyquist frequency is not zero.
         assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
         # Type III filter, but the gains at nyquist and zero rate are not zero.
@@ -351,13 +385,14 @@ class TestFirwin2(TestCase):
         response2 = np.interp(freqs / np.pi, freq, gain)
         assert_array_almost_equal(abs(response1), response2, decimal=3)
 
-    def test_nyq(self):
+    def test_fs_nyq(self):
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
+        taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], fs=120.0)
+        assert_array_almost_equal(taps1, taps2)
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
         assert_array_almost_equal(taps1, taps2)
 
-
-class TestRemez(TestCase):
+class TestRemez(object):
 
     def test_bad_args(self):
         assert_raises(ValueError, remez, 11, [0.1, 0.4], [1], type='pooka')
@@ -375,7 +410,7 @@ class TestRemez(TestCase):
         # make sure it is type III (anti-symmetric tap coefficients)
         assert_array_almost_equal(h[:(N-1)//2], -h[:-(N-1)//2-1:-1])
 
-        # Since the requested response is symmetric, all even coeffcients
+        # Since the requested response is symmetric, all even coefficients
         # should be zero (or in this case really small)
         assert_((abs(h[1::2]) < 1e-15).all(), "Even Coefficients Equal Zero")
 
@@ -399,6 +434,8 @@ class TestRemez(TestCase):
              -0.075943803756711, -0.041314581814658, 0.024590270518440]
         h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
         assert_allclose(h, k)
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], fs=2.)
+        assert_allclose(h, k)
 
         h = [-0.038976016082299, 0.018704846485491, -0.014644062687875,
              0.002879152556419, 0.016849978528150, -0.043276706138248,
@@ -408,9 +445,10 @@ class TestRemez(TestCase):
              -0.043276706138248, 0.016849978528150, 0.002879152556419,
              -0.014644062687875, 0.018704846485491, -0.038976016082299]
         assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
+        assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.), h)
 
 
-class TestFirls(TestCase):
+class TestFirls(object):
 
     def test_bad_args(self):
         # even numtaps
@@ -436,7 +474,7 @@ class TestFirls(TestCase):
         a = 0.1  # width of the transition band
 
         # design a halfband symmetric low-pass filter
-        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], nyq=0.5)
+        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], fs=1.0)
 
         # make sure the filter has correct # of taps
         assert_equal(len(h), N)
@@ -488,7 +526,7 @@ class TestFirls(TestCase):
         assert_allclose(taps, known_taps)
 
         # With linear changes:
-        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], fs=20)
         # >> taps = firls(6, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [1, 0, 0, 1, 1, 0])
         known_taps = [
             1.156090832768218, -4.1385894727395849, 7.5288619164321826,
@@ -496,20 +534,42 @@ class TestFirls(TestCase):
             1.156090832768218]
         assert_allclose(taps, known_taps)
 
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+        assert_allclose(taps, known_taps)
 
-class TestMinimumPhase(TestCase):
+        with pytest.raises(ValueError, match='between 0 and 1'):
+            firls(7, [0, 1], [0, 1], nyq=0.5)
+
+    def test_rank_deficient(self):
+        # solve() runs but warns (only sometimes, so here we don't use match)
+        x = firls(21, [0, 0.1, 0.9, 1], [1, 1, 0, 0])
+        w, h = freqz(x, fs=2.)
+        assert_allclose(np.abs(h[:2]), 1., atol=1e-5)
+        assert_allclose(np.abs(h[-2:]), 0., atol=1e-6)
+        # switch to pinvh (tolerances could be higher with longer
+        # filters, but using shorter ones is faster computationally and
+        # the idea is the same)
+        x = firls(101, [0, 0.01, 0.99, 1], [1, 1, 0, 0])
+        w, h = freqz(x, fs=2.)
+        mask = w < 0.01
+        assert mask.sum() > 3
+        assert_allclose(np.abs(h[mask]), 1., atol=1e-4)
+        mask = w > 0.99
+        assert mask.sum() > 3
+        assert_allclose(np.abs(h[mask]), 0., atol=1e-4)
+
+
+class TestMinimumPhase(object):
 
     def test_bad_args(self):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])
         assert_raises(ValueError, minimum_phase, [1., 1.])
-        assert_raises(ValueError, minimum_phase, np.ones(10) * 1j)
+        assert_raises(ValueError, minimum_phase, np.full(10, 1j))
         assert_raises(ValueError, minimum_phase, 'foo')
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
+        assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
 
     def test_homomorphic(self):
         # check that it can recover frequency responses of arbitrary
@@ -525,8 +585,8 @@ class TestMinimumPhase(TestCase):
         for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
             h = rng.randn(n)
             h_new = minimum_phase(np.convolve(h, h[::-1]))
-            assert_allclose(np.abs(np.fft.fft(h_new)),
-                            np.abs(np.fft.fft(h)), rtol=1e-4)
+            assert_allclose(np.abs(fft(h_new)),
+                            np.abs(fft(h)), rtol=1e-4)
 
     def test_hilbert(self):
         # compare to MATLAB output of reference implementation
@@ -534,22 +594,19 @@ class TestMinimumPhase(TestCase):
         # f=[0 0.3 0.5 1];
         # a=[1 1 0 0];
         # h=remez(11,f,a);
-        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], fs=2.)
         k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
              0.077152207480935, -0.129943946349364, -0.059355880509749]
         m = minimum_phase(h, 'hilbert')
-        assert_allclose(m, k, rtol=1e-3)
+        assert_allclose(m, k, rtol=5e-3)
 
         # f=[0 0.8 0.9 1];
         # a=[0 0 1 1];
         # h=remez(20,f,a);
-        h = remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.)
+        h = remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.)
         k = [0.232486803906329, -0.133551833687071, 0.151871456867244,
              -0.157957283165866, 0.151739294892963, -0.129293146705090,
              0.100787844523204, -0.065832656741252, 0.035361328741024,
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
-        assert_allclose(m, k, rtol=1e-3)
-
-if __name__ == "__main__":
-    run_module_suite()
+        assert_allclose(m, k, rtol=2e-3)

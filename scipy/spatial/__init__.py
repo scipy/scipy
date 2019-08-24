@@ -5,6 +5,11 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
 
 .. currentmodule:: scipy.spatial
 
+Spatial Transformations
+=======================
+
+These are contained in the `scipy.spatial.transform` submodule.
+
 Nearest-neighbor Queries
 ========================
 .. autosummary::
@@ -12,8 +17,9 @@ Nearest-neighbor Queries
 
    KDTree      -- class for efficient nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster impl.)
-   distance    -- module containing many different distance measures
    Rectangle
+
+Distance metrics are contained in the :mod:`scipy.spatial.distance` submodule.
 
 Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
 =========================================================
@@ -43,7 +49,7 @@ Plotting Helpers
 Simplex representation
 ======================
 The simplices (triangles, tetrahedra, ...) appearing in the Delaunay
-tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
+tessellation (N-dim simplices), convex hull facets, and Voronoi ridges
 (N-1 dim simplices) are represented in the following scheme::
 
     tess = Delaunay(points)
@@ -51,16 +57,14 @@ tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
     voro = Voronoi(points)
 
     # coordinates of the j-th vertex of the i-th simplex
-    tess.points[tess.simplices[i, j], :]        # tesselation element
+    tess.points[tess.simplices[i, j], :]        # tessellation element
     hull.points[hull.simplices[i, j], :]        # convex hull facet
     voro.vertices[voro.ridge_vertices[i, j], :] # ridge between Voronoi cells
 
 For Delaunay triangulations and convex hulls, the neighborhood
 structure of the simplices satisfies the condition:
-
-    ``tess.neighbors[i,j]`` is the neighboring simplex of the i-th
-    simplex, opposite to the j-vertex. It is -1 in case of no
-    neighbor.
+``tess.neighbors[i,j]`` is the neighboring simplex of the ``i``-th
+simplex, opposite to the ``j``-vertex. It is -1 in case of no neighbor.
 
 Convex hull facets also define a hyperplane equation::
 
@@ -98,8 +102,10 @@ from ._plotutils import *
 from ._procrustes import procrustes
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-__all__ += ['distance']
+__all__ += ['distance', 'transform']
 
-from . import distance
-from numpy.testing import Tester
-test = Tester().test
+from . import distance, transform
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

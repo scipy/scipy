@@ -4,7 +4,7 @@ from scipy._lib._version import NumpyVersion
 
 
 # Don't use deprecated Numpy C API.  Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released Scipy versions
+# NPY_API_VERSION in order not to break compilation for released SciPy versions
 # when Numpy introduces a new deprecation.  Use in setup.py::
 #
 #   config.add_extension('_name', sources=['source_fname'], **numpy_nodepr_api)
@@ -16,5 +16,6 @@ else:
     numpy_nodepr_api = dict()
 
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

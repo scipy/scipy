@@ -58,6 +58,8 @@
 #include "mconf.h"
 extern double MACHEP;
 
+#include <numpy/npy_math.h>
+
 static double ellik_neg_m(double phi, double m);
 
 double ellik(double phi,  double m)
@@ -87,7 +89,7 @@ double ellik(double phi,  double m)
 	    return (NPY_INFINITY);
 	}
         /* DLMF 19.6.8, and 4.23.42 */
-       return asinh(tan(phi));
+       return npy_asinh(tan(phi));
     }
     npio2 = floor(phi / NPY_PI_2);
     if (fmod(fabs(npio2), 2.0) == 1.0)
@@ -171,7 +173,7 @@ double ellik(double phi,  double m)
  * use the first form, accounting for the smallness of phi.
  * 
  * The algorithm used is described in Carlson, B. C. Numerical computation of
- * real or complex elliptic integrals. (1994) http://arxiv.org/abs/math/9409227
+ * real or complex elliptic integrals. (1994) https://arxiv.org/abs/math/9409227
  * Most variable names reflect Carlson's usage.
  *
  * In this routine, we assume m < 0 and  0 > phi > pi/2.

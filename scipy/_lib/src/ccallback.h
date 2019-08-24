@@ -199,7 +199,7 @@ static ccallback_t *ccallback_obtain(void)
  *     The mismatcing signature from user-provided PyCapsule.
  */
 static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
-                                             char *capsule_signature)
+                                             const char *capsule_signature)
 {
     PyObject *sig_list = NULL;
     ccallback_signature_t *sig;
@@ -329,15 +329,6 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
     if (PyCallable_Check(callback_obj)) {
         /* Python callable */
         callback->py_function = callback_obj;
-        Py_INCREF(callback->py_function);
-        callback->c_function = NULL;
-        callback->user_data = NULL;
-        callback->signature = NULL;
-    }
-    else if (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-             PyCallable_Check(PyTuple_GET_ITEM(callback_obj, 0))) {
-        /* Python callable in LowLevelCallable */
-        callback->py_function = PyTuple_GET_ITEM(callback_obj, 0);
         Py_INCREF(callback->py_function);
         callback->c_function = NULL;
         callback->user_data = NULL;

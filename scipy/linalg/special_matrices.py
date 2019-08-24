@@ -4,16 +4,17 @@ import math
 import numpy as np
 from scipy._lib.six import xrange
 from scipy._lib.six import string_types
-
+from numpy.lib.stride_tricks import as_strided
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
-           'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft']
+           'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
+           'fiedler', 'fiedler_companion']
 
 
-#-----------------------------------------------------------------------------
-# matrix construction functions
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+#  matrix construction functions
+# -----------------------------------------------------------------------------
 
 #
 # *Note*: tri{,u,l} is implemented in numpy, but an important bug was fixed in
@@ -61,11 +62,11 @@ def tri(N, M=None, k=0, dtype=None):
     if M is None:
         M = N
     if isinstance(M, string_types):
-        #pearu: any objections to remove this feature?
+        # pearu: any objections to remove this feature?
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M
         M = N
-    m = np.greater_equal(np.subtract.outer(np.arange(N), np.arange(M)), -k)
+    m = np.greater_equal.outer(np.arange(k, N+k), np.arange(M))
     if dtype is None:
         return m
     else:
@@ -164,10 +165,11 @@ def toeplitz(c, r=None):
     A : (len(c), len(r)) ndarray
         The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     circulant : circulant matrix
     hankel : Hankel matrix
+    solve_toeplitz : Solve a Toeplitz system.
 
     Notes
     -----
@@ -193,14 +195,12 @@ def toeplitz(c, r=None):
         r = c.conjugate()
     else:
         r = np.asarray(r).ravel()
-    # Form a 1D array of values to be used in the matrix, containing a reversed
-    # copy of r[1:], followed by c.
-    vals = np.concatenate((r[-1:0:-1], c))
-    a, b = np.ogrid[0:len(c), len(r) - 1:-1:-1]
-    indx = a + b
-    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so
-    # that `vals[indx]` is the Toeplitz matrix.
-    return vals[indx]
+    # Form a 1D array containing a reversed c followed by r[1:] that could be
+    # strided to give us toeplitz matrix.
+    vals = np.concatenate((c[::-1], r[1:]))
+    out_shp = len(c), len(r)
+    n = vals.strides[0]
+    return as_strided(vals[len(c)-1:], shape=out_shp, strides=(-n, n)).copy()
 
 
 def circulant(c):
@@ -217,10 +217,11 @@ def circulant(c):
     A : (N, N) ndarray
         A circulant matrix whose first column is `c`.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     hankel : Hankel matrix
+    solve_circulant : Solve a circulant system.
 
     Notes
     -----
@@ -236,11 +237,11 @@ def circulant(c):
 
     """
     c = np.asarray(c).ravel()
-    a, b = np.ogrid[0:len(c), 0:-len(c):-1]
-    indx = a + b
-    # `indx` is a 2D array of indices into `c`, arranged so that `c[indx]` is
-    # the circulant matrix.
-    return c[indx]
+    # Form an extended array that could be strided to give circulant version
+    c_ext = np.concatenate((c[::-1], c[:0:-1]))
+    L = len(c)
+    n = c_ext.strides[0]
+    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
 
 
 def hankel(c, r=None):
@@ -267,7 +268,7 @@ def hankel(c, r=None):
     A : (len(c), len(r)) ndarray
         The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     circulant : circulant matrix
@@ -294,11 +295,10 @@ def hankel(c, r=None):
     # Form a 1D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
     vals = np.concatenate((c, r[1:]))
-    a, b = np.ogrid[0:len(c), 0:len(r)]
-    indx = a + b
-    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so
-    # that `vals[indx]` is the Hankel matrix.
-    return vals[indx]
+    # Stride on concatenated array to get hankel matrix
+    out_shp = len(c), len(r)
+    n = vals.strides[0]
+    return as_strided(vals, shape=out_shp, strides=(n, n)).copy()
 
 
 def hadamard(n, dtype=int):
@@ -363,7 +363,8 @@ def leslie(f, s):
     Create a Leslie matrix.
 
     Given the length n array of fecundity coefficients `f` and the length
-    n-1 array of survival coefficents `s`, return the associated Leslie matrix.
+    n-1 array of survival coefficients `s`, return the associated Leslie
+    matrix.
 
     Parameters
     ----------
@@ -810,7 +811,7 @@ def pascal(n, kind='symmetric', exact=True):
 
     Notes
     -----
-    See http://en.wikipedia.org/wiki/Pascal_matrix for more information
+    See https://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
 
     .. versionadded:: 0.11.0
@@ -852,9 +853,9 @@ def pascal(n, kind='symmetric', exact=True):
     else:
         L_n = comb(*np.ogrid[:n, :n])
 
-    if kind is 'lower':
+    if kind == 'lower':
         p = L_n
-    elif kind is 'upper':
+    elif kind == 'upper':
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)
@@ -879,7 +880,7 @@ def invpascal(n, kind='symmetric', exact=True):
         Default is 'symmetric'.
     exact : bool, optional
         If `exact` is True, the result is either an array of type
-        `numpy.int64` (if `n` <= 35) or an object array of Python integers.
+        ``numpy.int64`` (if `n` <= 35) or an object array of Python integers.
         If `exact` is False, the coefficients in the matrix are computed using
         `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and for large `n`, the values in the array will not be the
@@ -901,7 +902,7 @@ def invpascal(n, kind='symmetric', exact=True):
 
     References
     ----------
-    .. [1] "Pascal matrix",  http://en.wikipedia.org/wiki/Pascal_matrix
+    .. [1] "Pascal matrix", https://en.wikipedia.org/wiki/Pascal_matrix
     .. [2] Cohen, A. M., "The inverse of a Pascal matrix", Mathematical
            Gazette, 59(408), pp. 111-112, 1975.
 
@@ -1000,30 +1001,34 @@ def dft(n, scale=None):
     -----
     When `scale` is None, multiplying a vector by the matrix returned by
     `dft` is mathematically equivalent to (but much less efficient than)
-    the calculation performed by `scipy.fftpack.fft`.
+    the calculation performed by `scipy.fft.fft`.
 
     .. versionadded:: 0.14.0
 
     References
     ----------
-    .. [1] "DFT matrix", http://en.wikipedia.org/wiki/DFT_matrix
+    .. [1] "DFT matrix", https://en.wikipedia.org/wiki/DFT_matrix
 
     Examples
     --------
     >>> from scipy.linalg import dft
-    >>> np.set_printoptions(precision=5, suppress=True)
-    >>> x = np.array([1, 2, 3, 0, 3, 2, 1, 0])
-    >>> m = dft(8)
-    >>> m.dot(x)   # Compute the DFT of x
-    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
-            -0.+4.j,  -2.+2.j])
+    >>> np.set_printoptions(precision=2, suppress=True)  # for compact output
+    >>> m = dft(5)
+    >>> m
+    array([[ 1.  +0.j  ,  1.  +0.j  ,  1.  +0.j  ,  1.  +0.j  ,  1.  +0.j  ],
+           [ 1.  +0.j  ,  0.31-0.95j, -0.81-0.59j, -0.81+0.59j,  0.31+0.95j],
+           [ 1.  +0.j  , -0.81-0.59j,  0.31+0.95j,  0.31-0.95j, -0.81+0.59j],
+           [ 1.  +0.j  , -0.81+0.59j,  0.31-0.95j,  0.31+0.95j, -0.81-0.59j],
+           [ 1.  +0.j  ,  0.31+0.95j, -0.81+0.59j, -0.81-0.59j,  0.31-0.95j]])
+    >>> x = np.array([1, 2, 3, 0, 3])
+    >>> m @ x  # Compute the DFT of x
+    array([ 9.  +0.j  ,  0.12-0.81j, -2.12+3.44j, -2.12-3.44j,  0.12+0.81j])
 
-    Verify that ``m.dot(x)`` is the same as ``fft(x)``.
+    Verify that ``m @ x`` is the same as ``fft(x)``.
 
-    >>> from scipy.fftpack import fft
-    >>> fft(x)     # Same result as m.dot(x)
-    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
-             0.+4.j,  -2.+2.j])
+    >>> from scipy.fft import fft
+    >>> fft(x)     # Same result as m @ x
+    array([ 9.  +0.j  ,  0.12-0.81j, -2.12+3.44j, -2.12-3.44j,  0.12+0.81j])
     """
     if scale not in [None, 'sqrtn', 'n']:
         raise ValueError("scale must be None, 'sqrtn', or 'n'; "
@@ -1036,3 +1041,156 @@ def dft(n, scale=None):
     elif scale == 'n':
         m /= n
     return m
+
+
+def fiedler(a):
+    """Returns a symmetric Fiedler matrix
+
+    Given an sequence of numbers `a`, Fiedler matrices have the structure
+    ``F[i, j] = np.abs(a[i] - a[j])``, and hence zero diagonals and nonnegative
+    entries. A Fiedler matrix has a dominant positive eigenvalue and other
+    eigenvalues are negative. Although not valid generally, for certain inputs,
+    the inverse and the determinant can be derived explicitly as given in [1]_.
+
+    Parameters
+    ----------
+    a : (n,) array_like
+        coefficient array
+
+    Returns
+    -------
+    F : (n, n) ndarray
+
+    See Also
+    --------
+    circulant, toeplitz
+
+    Notes
+    -----
+
+    .. versionadded:: 1.3.0
+
+    References
+    ----------
+    .. [1] J. Todd, "Basic Numerical Mathematics: Vol.2 : Numerical Algebra",
+        1977, Birkhauser, :doi:`10.1007/978-3-0348-7286-7`
+
+    Examples
+    --------
+    >>> from scipy.linalg import det, inv, fiedler
+    >>> a = [1, 4, 12, 45, 77]
+    >>> n = len(a)
+    >>> A = fiedler(a)
+    >>> A
+    array([[ 0,  3, 11, 44, 76],
+           [ 3,  0,  8, 41, 73],
+           [11,  8,  0, 33, 65],
+           [44, 41, 33,  0, 32],
+           [76, 73, 65, 32,  0]])
+
+    The explicit formulas for determinant and inverse seem to hold only for
+    monotonically increasing/decreasing arrays. Note the tridiagonal structure
+    and the corners.
+
+    >>> Ai = inv(A)
+    >>> Ai[np.abs(Ai) < 1e-12] = 0.  # cleanup the numerical noise for display
+    >>> Ai
+    array([[-0.16008772,  0.16666667,  0.        ,  0.        ,  0.00657895],
+           [ 0.16666667, -0.22916667,  0.0625    ,  0.        ,  0.        ],
+           [ 0.        ,  0.0625    , -0.07765152,  0.01515152,  0.        ],
+           [ 0.        ,  0.        ,  0.01515152, -0.03077652,  0.015625  ],
+           [ 0.00657895,  0.        ,  0.        ,  0.015625  , -0.00904605]])
+    >>> det(A)
+    15409151.999999998
+    >>> (-1)**(n-1) * 2**(n-2) * np.diff(a).prod() * (a[-1] - a[0])
+    15409152
+
+    """
+    a = np.atleast_1d(a)
+
+    if a.ndim != 1:
+        raise ValueError("Input 'a' must be a 1D array.")
+
+    if a.size == 0:
+        return np.array([], dtype=float)
+    elif a.size == 1:
+        return np.array([[0.]])
+    else:
+        return np.abs(a[:, None] - a)
+
+
+def fiedler_companion(a):
+    """ Returns a Fiedler companion matrix
+
+    Given a polynomial coefficient array ``a``, this function forms a
+    pentadiagonal matrix with a special structure whose eigenvalues coincides
+    with the roots of ``a``.
+
+    Parameters
+    ----------
+    a : (N,) array_like
+        1-D array of polynomial coefficients in descending order with a nonzero
+        leading coefficient. For ``N < 2``, an empty array is returned.
+
+    Returns
+    -------
+    c : (N-1, N-1) ndarray
+        Resulting companion matrix
+
+    Notes
+    -----
+    Similar to `companion` the leading coefficient should be nonzero. In case
+    the leading coefficient is not 1., other coefficients are rescaled before
+    the array generation. To avoid numerical issues, it is best to provide a
+    monic polynomial.
+
+    .. versionadded:: 1.3.0
+
+    See Also
+    --------
+    companion
+
+    References
+    ----------
+    .. [1] M. Fiedler, " A note on companion matrices", Linear Algebra and its
+        Applications, 2003, :doi:`10.1016/S0024-3795(03)00548-2`
+
+    Examples
+    --------
+    >>> from scipy.linalg import fiedler_companion, eigvals
+    >>> p = np.poly(np.arange(1, 9, 2))  # [1., -16., 86., -176., 105.]
+    >>> fc = fiedler_companion(p)
+    >>> fc
+    array([[  16.,  -86.,    1.,    0.],
+           [   1.,    0.,    0.,    0.],
+           [   0.,  176.,    0., -105.],
+           [   0.,    1.,    0.,    0.]])
+    >>> eigvals(fc)
+    array([7.+0.j, 5.+0.j, 3.+0.j, 1.+0.j])
+
+    """
+    a = np.atleast_1d(a)
+
+    if a.ndim != 1:
+        raise ValueError("Input 'a' must be a 1D array.")
+
+    if a.size <= 2:
+        if a.size == 2:
+            return np.array([[-(a/a[0])[-1]]])
+        return np.array([], dtype=a.dtype)
+
+    if a[0] == 0.:
+        raise ValueError('Leading coefficient is zero.')
+
+    a = a/a[0]
+    n = a.size - 1
+    c = np.zeros((n, n), dtype=a.dtype)
+    # subdiagonals
+    c[range(3, n, 2), range(1, n-2, 2)] = 1.
+    c[range(2, n, 2), range(1, n-1, 2)] = -a[3::2]
+    # superdiagonals
+    c[range(0, n-2, 2), range(2, n, 2)] = 1.
+    c[range(0, n-1, 2), range(1, n, 2)] = -a[2::2]
+    c[[0, 1], 0] = [-a[1], 1]
+
+    return c

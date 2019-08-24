@@ -98,33 +98,33 @@ cdef inline object tocsr(setlist_t *setlist):
     """
     Convert list of sets to CSR format
 
-    Integers for set `i` reside in data[indices[i]:indices[i+1]]
+    Integers for set `i` reside in data[indptr[i]:indptr[i+1]]
 
     Returns
     -------
-    indices
-        CSR indices
+    indptr
+        CSR indptr
     data
         CSR data
 
     """
     cdef size_t i, j, pos
     cdef size_t total_size
-    cdef np.ndarray[np.npy_int, ndim=1] indices, data
+    cdef np.ndarray[np.npy_int, ndim=1] indptr, data
 
     total_size = 0
     for j in xrange(setlist.n):
         total_size += setlist.sizes[j]
 
-    indices = np.empty((setlist.n+1,), dtype=np.intc)
+    indptr = np.empty((setlist.n+1,), dtype=np.intc)
     data = np.empty((total_size,), dtype=np.intc)
 
     pos = 0
     for i in xrange(setlist.n):
-        indices[i] = pos
+        indptr[i] = pos
         for j in xrange(setlist.sizes[i]):
             data[pos] = setlist.sets[i][j]
             pos += 1
-    indices[setlist.n] = pos
+    indptr[setlist.n] = pos
 
-    return indices, data
+    return indptr, data
