@@ -86,3 +86,15 @@ def test_minres_precond_non_default_x0():
     m = np.dot(m, m.T)
     x = minres(a, b, M=m, x0=c, tol=tol)[0]
     assert norm(a.dot(x) - b) < tol
+
+
+def test_minres_precond_exact_x0():
+    np.random.seed(1234)
+    tol = 10**(-6)
+    a = np.eye(10)
+    b = np.ones(10)
+    c = np.ones(10)
+    m = np.random.randn(10, 10)
+    m = np.dot(m, m.T)
+    x = minres(a, b, M=m, x0=c, tol=tol)[0]
+    assert norm(a.dot(x) - b) < tol
