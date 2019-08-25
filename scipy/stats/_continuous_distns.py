@@ -1551,7 +1551,7 @@ class exponweib_gen(rv_continuous):
 
     See Also
     --------
-    weibull_min, numpy.random.weibull
+    weibull_min, numpy.random.mtrand.RandomState.weibull
 
     Notes
     -----
@@ -1572,7 +1572,7 @@ class exponweib_gen(rv_continuous):
     `exponweib` takes :math:`a` and :math:`c` as shape parameters:
 
     * :math:`a` is the exponentiation parameter,
-      with the special case :math:`a=1` corresponding to the usual
+      with the special case :math:`a=1` corresponding to the
       (non-exponentiated) Weibull distribution `weibull_min`.
     * :math:`c` is the shape parameter of the non-exponentiated Weibull law.
 
@@ -1928,7 +1928,7 @@ class weibull_min_gen(rv_continuous):
 
     See Also
     --------
-    weibull_max, numpy.random.weibull, exponweib
+    weibull_max, numpy.random.mtrand.RandomState.weibull, exponweib
 
     Notes
     -----
@@ -1941,9 +1941,10 @@ class weibull_min_gen(rv_continuous):
     for :math:`x >= 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
-    (named :math:`k` in Wikipedia article and :math:`a` in `numpy.random.weibull`)
-    Special shape values are :math:`c=1` and :math:`c=2` where Weibull distribution
-    reduces to the `expon` and `rayleigh` distributions respectively.
+    (named :math:`k` in Wikipedia article and :math:`a` in
+    ``numpy.random.weibull``).  Special shape values are :math:`c=1` and
+    :math:`c=2` where Weibull distribution reduces to the `expon` and
+    `rayleigh` distributions respectively.
 
     %(after_notes)s
 
