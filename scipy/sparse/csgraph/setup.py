@@ -21,8 +21,8 @@ def configuration(parent_package='', top_path=None):
          sources=['_min_spanning_tree.c'],
          include_dirs=[numpy.get_include()])
     
-    config.add_extension('_max_flow',
-         sources=['_max_flow.c'],
+    config.add_extension('_flow',
+         sources=['_flow.c'],
          include_dirs=[numpy.get_include()])
     
     config.add_extension('_reordering',
