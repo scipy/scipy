@@ -122,7 +122,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
     elif beta1 == 0:
-        return (postprocess(zeros(n, dtype=xtype)), 0)
+        return (postprocess(x), 0)
 
     beta1 = sqrt(beta1)
 
