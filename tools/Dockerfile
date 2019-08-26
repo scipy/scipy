@@ -9,13 +9,13 @@
 # docker build .
 # docker push <build-hash> scipy/scipy-dev
 #
-# To use the container use the following command. It assumes that you are in a
-# directory containing the scipy git repository, mounting the scipy directory
-# in $PWD and making it available as /home/scipy in the container. Whatever
-# changes you make to that directory are visible in the host and container.
+# To use the container use the following command. It assumes that you are in
+# the root folder of the scipy git repository, making it available as
+# /home/scipy in the container. Whatever changes you make to that directory
+# are visible in the host and container.
 # The docker image is retrieved from the scipy dockerhub repository
 #
-# docker run -it --rm -v $PWD/scipy:/home/scipy scipy/scipy-dev /bin/bash
+# docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
 #
 # The available Python executables are python3.6 and python3.7 (along with
 # pip3.6 and pip3.7.
