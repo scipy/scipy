@@ -218,7 +218,7 @@ Timothy C. Willard for contributions to x-value requirements in scipy.interpolat
 Andrew Knyazev, the original author of LOBPCG, for advice on and maintenance of
    sparse.linalg.lobpcg
 Angeline G. Burrell for implementing nan_policy in the circular statistics
-
+Michael Marien for contributing to scipy.stats.entropy
 
 Institutions
 ------------

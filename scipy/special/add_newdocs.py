@@ -2887,30 +2887,67 @@ add_newdoc("gammainc",
 
     Regularized lower incomplete gamma function.
 
-    Defined as
+    It is defined as
 
     .. math::
 
-        \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
+        P(a, x) = \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
 
-    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
-    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where
-    `gammaincc` is the regularized upper incomplete gamma function.
+    for :math:`a > 0` and :math:`x \geq 0`. See [dlmf]_ for details.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    x : array_like
+        Nonnegative argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the lower incomplete gamma function
 
     Notes
     -----
-    The implementation largely follows that of [1]_.
+    The function satisfies the relation ``gammainc(a, x) +
+    gammaincc(a, x) = 1`` where `gammaincc` is the regularized upper
+    incomplete gamma function.
+
+    The implementation largely follows that of [boost]_.
 
     See also
     --------
     gammaincc : regularized upper incomplete gamma function
-    gammaincinv : inverse to ``gammainc`` versus ``x``
-    gammainccinv : inverse to ``gammaincc`` versus ``x``
+    gammaincinv : inverse of the regularized lower incomplete gamma
+        function with respect to `x`
+    gammainccinv : inverse of the regularized upper incomplete gamma
+        function with respect to `x`
 
     References
     ----------
-    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+    .. [dlmf] NIST Digital Library of Mathematical functions
+              https://dlmf.nist.gov/8.2#E4
+    .. [boost] Maddock et. al., "Incomplete Gamma Functions",
        https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the CDF of the gamma distribution, so it starts at 0 and
+    monotonically increases to 1.
+
+    >>> sc.gammainc(0.5, [0, 1, 10, 100])
+    array([0.        , 0.84270079, 0.99999226, 1.        ])
+
+    It is equal to one minus the upper incomplete gamma function.
+
+    >>> a, x = 0.5, 0.4
+    >>> sc.gammainc(a, x)
+    0.6289066304773024
+    >>> 1 - sc.gammaincc(a, x)
+    0.6289066304773024
+
     """)
 
 add_newdoc("gammaincc",
@@ -2919,48 +2956,182 @@ add_newdoc("gammaincc",
 
     Regularized upper incomplete gamma function.
 
-    Defined as
+    It is defined as
 
     .. math::
 
-        \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
+        Q(a, x) = \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
 
-    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
-    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`
-    is the regularized lower incomplete gamma function.
+    for :math:`a > 0` and :math:`x \geq 0`. See [dlmf]_ for details.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    x : array_like
+        Nonnegative argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the upper incomplete gamma function
 
     Notes
     -----
-    The implementation largely follows that of [1]_.
+    The function satisfies the relation ``gammainc(a, x) +
+    gammaincc(a, x) = 1`` where `gammainc` is the regularized lower
+    incomplete gamma function.
+
+    The implementation largely follows that of [boost]_.
 
     See also
     --------
     gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse to ``gammainc`` versus ``x``
-    gammainccinv : inverse to ``gammaincc`` versus ``x``
+    gammaincinv : inverse of the regularized lower incomplete gamma
+        function with respect to `x`
+    gammainccinv : inverse to of the regularized upper incomplete
+        gamma function with respect to `x`
 
     References
     ----------
-    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+    .. [dlmf] NIST Digital Library of Mathematical functions
+              https://dlmf.nist.gov/8.2#E4
+    .. [boost] Maddock et. al., "Incomplete Gamma Functions",
        https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the survival function of the gamma distribution, so it
+    starts at 1 and monotonically decreases to 0.
+
+    >>> sc.gammaincc(0.5, [0, 1, 10, 100, 1000])
+    array([1.00000000e+00, 1.57299207e-01, 7.74421643e-06, 2.08848758e-45,
+           0.00000000e+00])
+
+    It is equal to one minus the lower incomplete gamma function.
+
+    >>> a, x = 0.5, 0.4
+    >>> sc.gammaincc(a, x)
+    0.37109336952269756
+    >>> 1 - sc.gammainc(a, x)
+    0.37109336952269756
+
     """)
 
 add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse to `gammaincc`
+    Inverse of the upper incomplete gamma function with respect to `x`
 
-    Returns `x` such that ``gammaincc(a, x) == y``.
+    Given an input :math:`y` between 0 and 1, returns :math:`x` such
+    that :math:`y = Q(a, x)`. Here :math:`Q` is the upper incomplete
+    gamma function; see `gammaincc`. This is well-defined because the
+    upper incomplete gamma function is monotonic as can be seen from
+    its definition in [dlmf]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    y : array_like
+        Argument between 0 and 1, inclusive
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inverse of the upper incomplete gamma function
+
+    See Also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse of the regularized lower incomplete gamma
+        function with respect to `x`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/8.2#E4
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It starts at infinity and monotonically decreases to 0.
+
+    >>> sc.gammainccinv(0.5, [0, 0.1, 0.5, 1])
+    array([       inf, 1.35277173, 0.22746821, 0.        ])
+
+    It inverts the upper incomplete gamma function.
+
+    >>> a, x = 0.5, [0, 0.1, 0.5, 1]
+    >>> sc.gammaincc(a, sc.gammainccinv(a, x))
+    array([0. , 0.1, 0.5, 1. ])
+
+    >>> a, x = 0.5, [0, 10, 50]
+    >>> sc.gammainccinv(a, sc.gammaincc(a, x))
+    array([ 0., 10., 50.])
+
     """)
 
 add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to `gammainc`
+    Inverse to the lower incomplete gamma function with respect to `x`.
 
-    Returns `x` such that ``gammainc(a, x) = y``.
+    Given an input :math:`y` between 0 and 1, returns :math:`x` such
+    that :math:`y = P(a, x)`. Here :math:`P` is the regularized lower
+    incomplete gamma function; see `gammainc`. This is well-defined
+    because the lower incomplete gamma function is monotonic as can be
+    seen from its definition in [dlmf]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    y : array_like
+        Parameter between 0 and 1, inclusive
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inverse of the lower incomplete gamma function
+
+    See Also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    gammainccinv : inverse of the regualizred upper incomplete gamma
+        function with respect to `x`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/8.2#E4
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It starts at 0 and monotonically increases to infinity.
+
+    >>> sc.gammaincinv(0.5, [0, 0.1 ,0.5, 1])
+    array([0.        , 0.00789539, 0.22746821,        inf])
+
+    It inverts the lower incomplete gamma function.
+
+    >>> a, x = 0.5, [0, 0.1, 0.5, 1]
+    >>> sc.gammainc(a, sc.gammaincinv(a, x))
+    array([0. , 0.1, 0.5, 1. ])
+
+    >>> a, x = 0.5, [0, 10, 25]
+    >>> sc.gammaincinv(a, sc.gammainc(a, x))
+    array([ 0.        , 10.        , 25.00001465])
+
     """)
 
 add_newdoc("gammaln",
