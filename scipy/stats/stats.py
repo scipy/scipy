@@ -4381,9 +4381,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is `1000`.
-    is_ksample : bool, optional
-        Decides whether or not to perform an independence or k-sample test. The
-        default is `False`.
 
     Returns
     -------
@@ -4704,32 +4701,6 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
                 opt_scale = [k+1, l+1]  # adding 1s to match R indexing
 
     return stat, opt_scale
-
-
-def two_sample_transform(x, y):
-    r"""
-    Performs a k-sample transform.
-
-    Parameters
-    ----------
-    x, y : array_like
-        Input data or distance matrices with the same number of samples. That
-        is, `x` and `y` must have shapes `(n, p)` and `(n, q)` where `n` is the
-        number of samples and `p` and `q` are the number of dimensions.
-        Alternatively, `x` and `y` can be `(n, n)` distance or similarity
-        matrices. If the parameter `is_ksample` is set to `True`, `x` and `y`
-        must have shapes `(n, p)` and `(m, p)` and MGC will perform a k-sample
-        test.
-
-    Returns
-    -------
-    u : ndarray
-        The concatenated data matrix of `x` and `y` with dimension `(2*n, p)`.
-    v : ndarray
-        A label matrix where `x` is labeled with 0's and `y` is labeled with
-        1's.
-    """
-    np.concatenate([x, y], axis=0)
 
 
 #####################################

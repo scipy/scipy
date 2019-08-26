@@ -4,6 +4,7 @@ Statistics (`scipy.stats`)
 .. sectionauthor:: Travis E. Oliphant
 .. sectionauthor:: Josef Perktold
 .. sectionauthor:: Nicky van Foreest
+.. sectionauthor:: Sambit Panda
 
 .. currentmodule:: scipy
 
@@ -1069,6 +1070,7 @@ the individual data points on top.
 .. plot:: tutorial/stats/plots/kde_plot5.py
    :align: center
    :include-source: 0
+
 
 Multiscale Graph Correlation (MGC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
