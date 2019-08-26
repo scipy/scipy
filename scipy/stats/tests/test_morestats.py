@@ -1532,19 +1532,13 @@ class TestYeojohnsonNormmax(object):
 
 
 class TestCircFuncs(object):
-    def test_circfuncs(self):
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean, 0.167690146),
+                              (stats.circvar, 42.51955609),
+                              (stats.circstd, 6.520702116)])
+    def test_circfuncs(self, test_func, expected):
         x = np.array([355, 5, 2, 359, 10, 350])
-        M = stats.circmean(x, high=360)
-        Mval = 0.167690146
-        assert_allclose(M, Mval, rtol=1e-7)
-
-        V = stats.circvar(x, high=360)
-        Vval = 42.51955609
-        assert_allclose(V, Vval, rtol=1e-7)
-
-        S = stats.circstd(x, high=360)
-        Sval = 6.520702116
-        assert_allclose(S, Sval, rtol=1e-7)
+        assert_allclose(test_func(x, high=360), expected, rtol=1e-7)
 
     def test_circfuncs_small(self):
         x = np.array([20, 21, 22, 18, 19, 20.5, 19.2])
@@ -1610,55 +1604,51 @@ class TestCircFuncs(object):
         S2 = [stats.circstd(x[:, i], high=360) for i in range(x.shape[1])]
         assert_allclose(S1, S2, rtol=1e-11)
 
-    def test_circfuncs_array_like(self):
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean, 0.167690146),
+                              (stats.circvar, 42.51955609),
+                              (stats.circstd, 6.520702116)])
+    def test_circfuncs_array_like(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350]
-        assert_allclose(stats.circmean(x, high=360), 0.167690146, rtol=1e-7)
-        assert_allclose(stats.circvar(x, high=360), 42.51955609, rtol=1e-7)
-        assert_allclose(stats.circstd(x, high=360), 6.520702116, rtol=1e-7)
+        assert_allclose(test_func(x, high=360), expected, rtol=1e-7)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.circmean([])))
-        assert_(np.isnan(stats.circstd([])))
-        assert_(np.isnan(stats.circvar([])))
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_empty(self, test_func):
+        assert_(np.isnan(test_func([])))
 
-    def test_nan_propagate(self):
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_propagate(self, test_func):
         x = [355, 5, 2, 359, 10, 350, np.nan]
-        assert_(np.isnan(stats.circmean(x, high=360)))
-        assert_(np.isnan(stats.circstd(x, high=360)))
-        assert_(np.isnan(stats.circvar(x, high=360)))
+        assert_(np.isnan(test_func(x, high=360)))
 
-    def test_nan_omit(self):
+    @pytest.mark.parametrize("test_func,expected",
+                             [(stats.circmean, 0.167690146),
+                              (stats.circvar, 42.51955609),
+                              (stats.circstd, 6.520702116)])
+    def test_nan_omit(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350, np.nan]
-        assert_allclose(stats.circmean(x, high=360, nan_policy='omit'),
-                        0.167690146, rtol=1e-7)
-        assert_allclose(stats.circvar(x, high=360, nan_policy='omit'),
-                        42.51955609, rtol=1e-7)
-        assert_allclose(stats.circstd(x, high=360, nan_policy='omit'),
-                        6.520702116, rtol=1e-7)
+        assert_allclose(test_func(x, high=360, nan_policy='omit'),
+                        expected, rtol=1e-7)
 
-    def test_nan_omit_all(self):
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_omit_all(self, test_func):
         x = [np.nan, np.nan, np.nan, np.nan, np.nan]
-        assert_(np.isnan(stats.circmean(x, nan_policy='omit')))
-        assert_(np.isnan(stats.circvar(x, nan_policy='omit')))
-        assert_(np.isnan(stats.circstd(x, nan_policy='omit')))
+        assert_(np.isnan(test_func(x, nan_policy='omit')))
 
-    def test_nan_raise(self):
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_raise(self, test_func):
         x = [355, 5, 2, 359, 10, 350, np.nan]
-        assert_raises(ValueError, stats.circmean, x, high=360,
-                      nan_policy='raise')
-        assert_raises(ValueError, stats.circvar, x, high=360,
-                      nan_policy='raise')
-        assert_raises(ValueError, stats.circstd, x, high=360,
-                      nan_policy='raise')
+        assert_raises(ValueError, test_func, x, high=360, nan_policy='raise')
 
-    def test_bad_nan_policy(self):
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_bad_nan_policy(self, test_func):
         x = [355, 5, 2, 359, 10, 350, np.nan]
-        assert_raises(ValueError, stats.circmean, x, high=360,
-                      nan_policy='foobar')
-        assert_raises(ValueError, stats.circvar, x, high=360,
-                      nan_policy='foobar')
-        assert_raises(ValueError, stats.circstd, x, high=360,
-                      nan_policy='foobar')
+        assert_raises(ValueError, test_func, x, high=360, nan_policy='foobar')
 
     def test_circmean_scalar(self):
         x = 1.
