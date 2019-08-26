@@ -4338,8 +4338,7 @@ def _euclidean_dist(x):
 MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
-def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
-                         is_ksample=False):
+def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4527,10 +4526,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                "calculations may be unreliable. Use the p-value result, with "
                "caution!")
         warnings.warn(msg, RuntimeWarning)
-
-    if is_ksample and x.shape[1] != y.shape[1]:
-        raise ValueError("Shape mismatch, x and y must have shape [n, p] and"
-                         " [m, p].")
 
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y, compute_distance)
