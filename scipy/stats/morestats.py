@@ -3147,15 +3147,11 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _circfuncs_common(samples, high, low, **kwds):
+def _circfuncs_common(samples, high, low, nan_policy='propagate'):
     # Ensure samples are array-like
     samples = np.asarray(samples)
 
-    # Read and apply the NaN policy, defaulting to propagate (previous behavior)
-    nan_policy = kwds.pop('nan_policy', 'propagate')
-    if len(kwds) > 0:
-        raise TypeError("unexpected keyword argument %r" % kwds.keys()[0])
-
+    # Apply the NaN policy
     contains_nan, nan_policy = _contains_nan(samples, nan_policy)
     if contains_nan:
         if nan_policy == 'propagate':
@@ -3172,7 +3168,7 @@ def _circfuncs_common(samples, high, low, **kwds):
     return samples, ang
 
 
-def circmean(samples, high=2*pi, low=0, axis=None, **kwds):
+def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular mean for samples in a range.
 
@@ -3208,7 +3204,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, **kwds):
     0.4
 
     """
-    samples, ang = _circfuncs_common(samples, high, low, **kwds)
+    samples, ang = _circfuncs_common(samples, high, low, nan_policy=nan_policy)
     S = sin(ang).sum(axis=axis)
     C = cos(ang).sum(axis=axis)
     res = arctan2(S, C)
@@ -3220,7 +3216,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, **kwds):
     return res*(high - low)/2.0/pi + low
 
 
-def circvar(samples, high=2*pi, low=0, axis=None, **kwds):
+def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular variance for samples assumed to be in a range
 
@@ -3257,14 +3253,14 @@ def circvar(samples, high=2*pi, low=0, axis=None, **kwds):
     2.19722457734
 
     """
-    samples, ang = _circfuncs_common(samples, high, low, **kwds)
+    samples, ang = _circfuncs_common(samples, high, low, nan_policy=nan_policy)
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
 
-def circstd(samples, high=2*pi, low=0, axis=None, **kwds):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3303,7 +3299,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, **kwds):
     0.063564063306
 
     """
-    samples, ang = _circfuncs_common(samples, high, low, **kwds)
+    samples, ang = _circfuncs_common(samples, high, low, nan_policy='propagate')
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
