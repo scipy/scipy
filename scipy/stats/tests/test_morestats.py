@@ -1660,12 +1660,6 @@ class TestCircFuncs(object):
         assert_raises(ValueError, stats.circstd, x, high=360,
                       nan_policy='foobar')
 
-    def test_bad_keyword(self):
-        x = [355, 5, 2, 359, 10, 350, np.nan]
-        assert_raises(TypeError, stats.circmean, x, high=360, foo="foo")
-        assert_raises(TypeError, stats.circvar, x, high=360, foo="foo")
-        assert_raises(TypeError, stats.circstd, x, high=360, foo="foo")
-    
     def test_circmean_scalar(self):
         x = 1.
         M1 = x
