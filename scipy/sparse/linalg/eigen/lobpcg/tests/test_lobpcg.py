@@ -269,7 +269,6 @@ def test_verbosity():
                   verbosityLevel=11)
 
 
-@pytest.mark.xfail(reason="Randomly fails on some platforms, a fix in progress")
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
