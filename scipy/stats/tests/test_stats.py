@@ -5146,35 +5146,72 @@ class TestMGCErrorWarnings(object):
 class TestMGCStat(object):
     """ Test validity of MGC test statistic
     """
-    def test_mgc_oned_linear(self):
-        reps = 1000
+    def _simulations(self, samps=100, dims=1, sim_type=""):
+        # linear simulation
+        if sim_type == "linear":
+            x = np.random.uniform(-1, 1, size=(samps, 1))
+            y = x + 0.3 * np.random.random(x.size)
+
+            # add dimensions of noise for higher dimensions
+            if dims > 1:
+                dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
+                np.concatenate((x, dims_noise), axis=1)
+
+        # spiral simulation
+        elif sim_type == "nonlinear":
+            unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
+            x = unif * np.cos(np.pi * unif)
+            y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+
+            # add dimensions of noise for higher dimensions
+            if dims > 1:
+                dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
+                np.concatenate((x, dims_noise), axis=1)
+
+        # independence (tests type I simulation)
+        elif sim_type == "independence":
+            u = np.random.normal(0, 1, size=samps)
+            v = np.random.normal(0, 1, size=samps)
+            u_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
+            v_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
+            x = u/3 + 2*u_2 - 1
+            y = v/3 + 2*v_2 - 1
+
+        # raises error if not approved sim_type
+        else:
+            raise ValueError("sim_type must be linear, nonlinear, or "
+                             "independence")
+
+        return x, y
+
+    @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
+        ("linear", 0.97, 1/1000),           # test linear simulation
+        ("nonlinear", 0.163, 1/1000),       # test spiral simulation
+        ("independence", -0.00206, 0.326)   # test independence simulation
+    ])
+    def test_oned(self, sim_type, obs_stat, obs_pvalue):
         np.random.seed(12345678)
-        x = np.linspace(-1, 1, num=100)
-        y = x + 0.3 * np.random.random(x.size)
 
-        # verify stat is 1 and p-value is 1/reps when calculating x and x
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, x, reps=reps)
-        assert_approx_equal(stat, 1, significant=2)
-        assert_approx_equal(pvalue, 1/reps, significant=2)
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type=sim_type)
 
-        # verify stat and pvalue against mgcpy implementation
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=reps)
-        assert_approx_equal(stat, 0.97, significant=2)
-        assert_approx_equal(pvalue, 1/reps, significant=2)
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
+        assert_approx_equal(stat, obs_stat, significant=2)
+        assert_approx_equal(pvalue, obs_pvalue, significant=2)
 
-    def test_mgc_oned_nonlinear(self):
-        reps = 1000
+    @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
+        ("linear", 1.0, 1/1000),            # test linear simulation
+        ("nonlinear", 0.228, 1/1000),       # test spiral simulation
+        ("independence", -0.00206, 0.326)   # test independence simulation
+    ])
+    def test_tend(self, sim_type, obs_stat, obs_pvalue):
         np.random.seed(12345678)
-        unif = np.array(np.random.uniform(0, 5, size=100))
-        x = unif * np.cos(np.pi * unif)
-        y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
 
-        # verify stat is 1 and p-value is 1/reps when calculating x and x
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, x)
-        assert_approx_equal(stat, 1, significant=2)
-        assert_approx_equal(pvalue, 1/reps, significant=2)
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=10, sim_type=sim_type)
 
-        # verify stat and pvalue against mgcpy implementation
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
-        assert_approx_equal(stat, -0.018, significant=2)
-        assert_approx_equal(pvalue, 0.708, significant=1)
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
+        assert_approx_equal(stat, obs_stat, significant=2)
+        assert_approx_equal(pvalue, obs_pvalue, significant=2)
