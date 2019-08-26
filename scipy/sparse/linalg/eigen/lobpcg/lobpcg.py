@@ -522,7 +522,7 @@ def lobpcg(A, X,
         if residualNorms.max() > myeps and not explicitGramFlag:
             explicitGramFlag = False
         else:
-            # Ones explicitGramFlag, then always explicitGramFlag.
+            # Once explicitGramFlag, forever explicitGramFlag.
             explicitGramFlag = True
 
         # Shared memory assingments to simplify the code
