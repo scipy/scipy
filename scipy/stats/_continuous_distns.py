@@ -1549,19 +1549,38 @@ class exponweib_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    weibull_min, numpy.random.mtrand.RandomState.weibull
+
     Notes
     -----
     The probability density function for `exponweib` is:
 
     .. math::
 
-        f(x, a, c) = a c (1-\exp(-x^c))^{a-1} \exp(-x^c) x^{c-1}
+        f(x, a, c) = a c [1-\exp(-x^c)]^{a-1} \exp(-x^c) x^{c-1}
 
-    for :math:`x >= 0`, :math:`a > 0`, :math:`c > 0`.
+    and its cumulative distribution function is:
 
-    `exponweib` takes :math:`a` and :math:`c` as shape parameters.
+    .. math::
+
+        F(x, a, c) = [1-\exp(-x^c)]^a
+
+    for :math:`x > 0`, :math:`a > 0`, :math:`c > 0`.
+
+    `exponweib` takes :math:`a` and :math:`c` as shape parameters:
+
+    * :math:`a` is the exponentiation parameter,
+      with the special case :math:`a=1` corresponding to the
+      (non-exponentiated) Weibull distribution `weibull_min`.
+    * :math:`c` is the shape parameter of the non-exponentiated Weibull law.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Exponentiated_Weibull_distribution
 
     %(example)s
 
@@ -1902,11 +1921,14 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
+    The Weibull Minimum Extreme Value distribution, from extreme value theory,
+    is also often simply called the Weibull distribution.
+
     %(before_notes)s
 
     See Also
     --------
-    weibull_max
+    weibull_max, numpy.random.mtrand.RandomState.weibull, exponweib
 
     Notes
     -----
@@ -1919,8 +1941,16 @@ class weibull_min_gen(rv_continuous):
     for :math:`x >= 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
+    (named :math:`k` in Wikipedia article and :math:`a` in
+    ``numpy.random.weibull``).  Special shape values are :math:`c=1` and
+    :math:`c=2` where Weibull distribution reduces to the `expon` and
+    `rayleigh` distributions respectively.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Weibull_distribution
 
     %(example)s
 
