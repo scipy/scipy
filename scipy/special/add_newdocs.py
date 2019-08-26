@@ -885,19 +885,21 @@ add_newdoc("betaincinv",
     
     .. math::
     
-        y = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x 
-        t^{a-1}(1-t)^{b-1}dt,
+        y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
         
-    where :math:`\Gamma` is the `gamma` function [1]_.
+    where :math:`I_x` is the normalized incomplete beta
+    function `betainc` and
+    :math:`\Gamma` is the `gamma` function [1]_.
     
     Parameters
     ----------
     a, b : array-like
-           Positive, real-valued parameters
+        Positive, real-valued parameters
     y : array-like
         Real-valued input
     out : ndarray, optional
-          Optional output array for function values
+        Optional output array for function values
     
     Returns
     -------
