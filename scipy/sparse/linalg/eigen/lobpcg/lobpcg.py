@@ -27,11 +27,6 @@ from scipy.sparse.sputils import bmat
 __all__ = ['lobpcg']
 
 
-def _save(ar, fileName):
-    # Used only when verbosity level > 10.
-    np.savetxt(fileName, ar)
-
-
 def _report_nonhermitian(M, name):
     """
     Report if `M` is not a hermitian matrix given its type.
@@ -549,6 +544,15 @@ def lobpcg(A, X,
             gramRBR = ident
             gramXBR = np.zeros((sizeX, currentBlockSize), dtype=A.dtype)
 
+        def _handle_gramA_gramB_verbosity(gramA, gramB):
+            if verbosityLevel > 0:
+                _report_nonhermitian(gramA, 'gramA')
+                _report_nonhermitian(gramB, 'gramB')
+            if verbosityLevel > 10:
+                # Note: not documented, but leave it in here for now
+                np.savetxt('gramA.txt', gramA)
+                np.savetxt('gramB.txt', gramB)
+
         if not restart:
             gramXAP = np.dot(blockVectorX.T.conj(), activeBlockVectorAP)
             gramRAP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAP)
@@ -568,12 +572,8 @@ def lobpcg(A, X,
             gramB = bmat([[gramXBX, gramXBR, gramXBP],
                           [gramXBR.T.conj(), gramRBR, gramRBP],
                           [gramXBP.T.conj(), gramRBP.T.conj(), gramPBP]])
-            if verbosityLevel > 0:
-                _report_nonhermitian(gramA, 'gramA')
-                _report_nonhermitian(gramB, 'gramB')
-            if verbosityLevel > 10:
-                _save(gramA, 'gramA')
-                _save(gramB, 'gramB')
+
+            _handle_gramA_gramB_verbosity(gramA, gramB)
 
             try:
                 _lambda, eigBlockVector = eigh(gramA, gramB,
@@ -587,12 +587,9 @@ def lobpcg(A, X,
                           [gramXAR.T.conj(), gramRAR]])
             gramB = bmat([[gramXBX, gramXBR],
                           [gramXBR.T.conj(), gramRBR]])
-            if verbosityLevel > 0:
-                _report_nonhermitian(gramA, 'gramA')
-                _report_nonhermitian(gramB, 'gramB')
-            if verbosityLevel > 10:
-                _save(gramA, 'gramA')
-                _save(gramB, 'gramB')
+
+            _handle_gramA_gramB_verbosity(gramA, gramB)
+
             try:
                 _lambda, eigBlockVector = eigh(gramA, gramB,
                                                check_finite=False)

@@ -266,7 +266,7 @@ def test_verbosity():
     V = rand(n, m)
     X = orth(V)
     _, _ = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                  verbosityLevel=11)
+                  verbosityLevel=9)
 
 
 def test_tolerance_float32():
@@ -299,6 +299,7 @@ def test_random_initial_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
+@pytest.mark.slow
 def test_diagonal_data_types():
     """Check lobpcg for diagonal matrices for all matrix types.
     """
