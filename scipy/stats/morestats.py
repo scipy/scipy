@@ -3148,24 +3148,25 @@ def median_test(*args, **kwds):
 
 
 def _circfuncs_common(samples, high, low, nan_policy='propagate'):
-    # Ensure samples are array-like
+    # Ensure samples are array-like and size is not zero
     samples = np.asarray(samples)
+    if samples.size == 0:
+        return np.nan, np.nan, np.nan
+
+    # Recast samples as radians that range between 0 and 2 pi for use in
+    # calculating the sine and cosine
+    sin_ang = (samples - low)*2.*pi / (high - low)
+    cos_ang = (samples - low)*2.*pi / (high - low)
 
     # Apply the NaN policy
     contains_nan, nan_policy = _contains_nan(samples, nan_policy)
-    if contains_nan:
-        if nan_policy == 'propagate':
-            return np.nan, np.nan
-        else:
-            samples = samples[~np.isnan(samples)]
+    if contains_nan and nan_policy == 'omit':
+        mask = np.isnan(samples)
+        # Set NaN to values that will be zero when taking the sine or cosine
+        np.copyto(sin_ang, 0.0, where=mask, casting='unsafe')
+        np.copyto(cos_ang, np.pi/2.0, where=mask, casting='unsafe')
 
-    # Test the sample size
-    if samples.size == 0:
-        return np.nan, np.nan
-
-    # Recast samples as radians that range between 0 and 2 pi
-    ang = (samples - low)*2.*pi / (high - low)
-    return samples, ang
+    return samples, sin_ang, cos_ang
 
 
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3204,9 +3205,10 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.4
 
     """
-    samples, ang = _circfuncs_common(samples, high, low, nan_policy=nan_policy)
-    S = sin(ang).sum(axis=axis)
-    C = cos(ang).sum(axis=axis)
+    samples, sin_ang, cos_ang = _circfuncs_common(samples, high, low,
+                                                  nan_policy=nan_policy)
+    S = sin(sin_ang).sum(axis=axis)
+    C = cos(cos_ang).sum(axis=axis)
     res = arctan2(S, C)
     mask = res < 0
     if mask.ndim > 0:
@@ -3253,9 +3255,10 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     2.19722457734
 
     """
-    samples, ang = _circfuncs_common(samples, high, low, nan_policy=nan_policy)
-    S = sin(ang).mean(axis=axis)
-    C = cos(ang).mean(axis=axis)
+    samples, sin_ang, cos_ang = _circfuncs_common(samples, high, low,
+                                                  nan_policy=nan_policy)
+    S = sin(sin_ang).mean(axis=axis)
+    C = cos(cos_ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
@@ -3299,8 +3302,9 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.063564063306
 
     """
-    samples, ang = _circfuncs_common(samples, high, low, nan_policy='propagate')
-    S = sin(ang).mean(axis=axis)
-    C = cos(ang).mean(axis=axis)
+    samples, sin_ang, cos_ang = _circfuncs_common(samples, high, low,
+                                                  nan_policy='propagate')
+    S = sin(sin_ang).mean(axis=axis)
+    C = cos(cos_ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
