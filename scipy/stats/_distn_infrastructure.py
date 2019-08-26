@@ -2490,6 +2490,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
+        
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
@@ -2602,14 +2603,14 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
             return c
 
 
-def entropy(pk, qk=None, base=None):
+def entropy(pk, qk=None, base=None, axis=0):
     """Calculate the entropy of a distribution for given probability values.
 
     If only probabilities `pk` are given, the entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=0)``.
+    ``S = -sum(pk * log(pk), axis=axis)``.
 
     If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=0)``.
+    ``S = sum(pk * log(pk / qk), axis=axis)``.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
@@ -2623,6 +2624,8 @@ def entropy(pk, qk=None, base=None):
         the same format as `pk`.
     base : float, optional
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
+    axis: int, optional
+        The axis along which the entropy is calculated. Default is 0.
 
     Returns
     -------
@@ -2652,16 +2655,16 @@ def entropy(pk, qk=None, base=None):
 
     """
     pk = asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=0)
+    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
         vec = entr(pk)
     else:
         qk = asarray(qk)
-        if len(qk) != len(pk):
-            raise ValueError("qk and pk must have same length.")
-        qk = 1.0*qk / np.sum(qk, axis=0)
+        if qk.shape != pk.shape:
+            raise ValueError("qk and pk must have same shape.")
+        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
         vec = rel_entr(pk, qk)
-    S = np.sum(vec, axis=0)
+    S = np.sum(vec, axis=axis)
     if base is not None:
         S /= log(base)
     return S
