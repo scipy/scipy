@@ -4248,12 +4248,12 @@ class _ParallelP(object):
         permy = np.random.permutation(self.y)
 
         # calculate permuted stats, store in null distribution
-        null_dist, mgc_dict = _mgc_stat(permx, permy, self.compute_distance)
+        perm_stat = _mgc_stat(permx, permy, self.compute_distance)[0]
 
-        return null_dist, mgc_dict["stat_mgc_map"]
+        return perm_stat
 
 
-def _perm_test(x, y, stat, mgc_map, compute_distance, reps=1000):
+def _perm_test(x, y, stat, compute_distance, reps=1000):
     r"""
     Helper function that calculates the p-value. See below for uses.
 
@@ -4263,15 +4263,13 @@ def _perm_test(x, y, stat, mgc_map, compute_distance, reps=1000):
         `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
-    mgc_map : ndarray
-        The sample MGC-map.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
         distance.
     reps : int, optional
         The number of replications used to estimate the null when using the
-        permutation test. The default is 1000 repelications.
+        permutation test. The default is 1000 replications.
 
     Returns
     -------
@@ -4279,8 +4277,6 @@ def _perm_test(x, y, stat, mgc_map, compute_distance, reps=1000):
         The sample test p-value.
     null_dist : list
         The approximated null distribution.
-    sig_mgc_map : list
-        MGC-map where `(k, l)` correspond to significance value.
     """
     # generate null distribution and p-value
     pvalue = 0
@@ -4289,18 +4285,17 @@ def _perm_test(x, y, stat, mgc_map, compute_distance, reps=1000):
     # use all cores to create function that parallelizes over number of reps
     mapwrapper = MapWrapper(pool=-1)
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance)
-    null_dist, perm_mgc_map = list(mapwrapper(parallelp, range(reps)))
+    null_dist = list(mapwrapper(parallelp, range(reps)))
 
     # calculate p-value and significant permutation map through list
     pvalue = (null_dist >= stat).sum() / reps
-    sig_mgc_map = np.where(perm_mgc_map >= mgc_map)[0] / reps
 
-    # correct for a p_value of 0. This is because, with bootstrapping
-    # permutations, a value of 0 is incorrect
+    # correct for a p-value of 0. This is because, with bootstrapping
+    # permutations, a p-value of 0 is incorrect
     if pvalue == 0:
         pvalue = 1 / reps
 
-    return pvalue, null_dist, sig_mgc_map
+    return pvalue, null_dist
 
 
 def _euclidean_dist(x):
@@ -4310,7 +4305,8 @@ def _euclidean_dist(x):
 MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
-def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
+def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
+                         is_ksample=False):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4333,12 +4329,14 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
 
     Parameters
     ----------
-    x, y : array_like
+    x, y : ndarray
         Input data or distance matrices with the same number of samples. That
         is, `x` and `y` must have shapes `(n, p)` and `(n, q)` where `n` is the
         number of samples and `p` and `q` are the number of dimensions.
         Alternatively, `x` and `y` can be `(n, n)` distance or similarity
-        matrices.
+        matrices. If the parameter `is_ksample` is set to `True`, `x` and `y`
+        must have shapes `(n, p)` and `(m, p)` and MGC will perform a k-sample
+        test.
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
@@ -4349,7 +4347,10 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
         calculated.
     reps : int, optional
         The number of replications used to estimate the null when using the
-        permutation test. The default is 1000 replications.
+        permutation test. The default is `1000`.
+    is_ksample : bool, optional
+        Decides whether or not to perform an independence or k-sample test. The
+        default is `False`.
 
     Returns
     -------
@@ -4363,8 +4364,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
 
             - mgc_map : ndarray
                 A 2D representation of the latent geometry of the relationship.
-            - sig_mgc_map : ndarray
-                A 2D representation of the latent geometry of the significance
                 of the relationship.
             - opt_scale : (int, int)
                 The estimated optimal scale as a `(x, y)` pair.
@@ -4501,17 +4500,24 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
                "caution!")
         warnings.warn(msg, RuntimeWarning)
 
+    if is_ksample and x.shape[1] != y.shape[1]:
+        raise ValueError("Shape mismatch, x and y must have shape [n, p] and"
+                         " [m, p].")
+
+    # perform k-sample transform if option used
+    if is_ksample:
+        x, y = two_sample_transform(x, y)
+
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y, compute_distance)
     stat_mgc_map = stat_dict["stat_mgc_map"]
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist, sig_mgc_map = _perm_test(x, y, stat, compute_distance, reps=reps)
+    pvalue, null_dist = _perm_test(x, y, stat, compute_distance, reps=reps)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,
-                "sig_mgc_map": sig_mgc_map,
                 "opt_scale": opt_scale,
                 "null_dist": null_dist}
 
@@ -4524,9 +4530,10 @@ def _mgc_stat(x, y, compute_distance):
 
     Parameters
     ----------
-    x, y : array_like
+    x, y : ndarray
         `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
-        if distance matrices.
+        if distance matrices. Can be `(n, p)` and `(m, p)` if k-sample
+        transform.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
@@ -4664,6 +4671,32 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
                 opt_scale = [k+1, l+1]  # adding 1s to match R indexing
 
     return stat, opt_scale
+
+
+def two_sample_transform(x, y):
+    r"""
+    Performs a k-sample transform.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Input data or distance matrices with the same number of samples. That
+        is, `x` and `y` must have shapes `(n, p)` and `(n, q)` where `n` is the
+        number of samples and `p` and `q` are the number of dimensions.
+        Alternatively, `x` and `y` can be `(n, n)` distance or similarity
+        matrices. If the parameter `is_ksample` is set to `True`, `x` and `y`
+        must have shapes `(n, p)` and `(m, p)` and MGC will perform a k-sample
+        test.
+
+    Returns
+    -------
+    u : ndarray
+        The concatenated data matrix of `x` and `y` with dimension `(2*n, p)`.
+    v : ndarray
+        A label matrix where `x` is labeled with 0's and `y` is labeled with
+        1's.
+    """
+    np.concatenate([x, y], axis=0)
 
 
 #####################################
