@@ -43,10 +43,11 @@ from scipy.cluster.hierarchy import (
     is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, optimal_leaf_ordering,
+    set_link_color_palette, cut_tree, cut_tree_balanced, optimal_leaf_ordering,
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
+from scipy.stats import gamma
 
 from . import hierarchy_test_data
 
@@ -1023,6 +1024,23 @@ def test_cut_tree():
                  cut_tree(Z, height=[5, 10]))
     assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
                  cut_tree(Z, height=[10, 5]))
+
+
+def test_cut_tree_balanced():
+    np.random.seed(14)
+    nobs = 100
+    max_cluster_size = 10
+    X = gamma.rvs(0.1, size=400).reshape((100, 4))
+    Z = scipy.cluster.hierarchy.ward(X)
+
+    [cluster_id, cluster_level] = cut_tree_balanced(
+        Z, max_cluster_size=max_cluster_size)
+    uniq_id, uniq_count = np.unique(cluster_id, return_counts=True)
+
+    assert_equal(cluster_id.shape, (nobs, 1))
+    assert_equal(cluster_level.shape, (nobs, 1))
+    assert_(uniq_id.max() >= (nobs / max_cluster_size))
+    assert_(all(elem <= max_cluster_size for elem in uniq_count))
 
 
 def test_optimal_leaf_ordering():

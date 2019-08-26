@@ -220,6 +220,7 @@ Andrew Knyazev, the original author of LOBPCG, for advice on and maintenance of
    sparse.linalg.lobpcg
 Angeline G. Burrell for implementing nan_policy in the circular statistics
 Michael Marien for contributing to scipy.stats.entropy
+Vicente Reyes-Puerta for the function cut_tree_balanced in scipy.cluster.hierarchy
 Joseph Weston for a bug fix in scipy.optimize.zeros.
 Peyton Murray for a bug fix in scipy.optimize.curve_fit.
 Leo P. Singer for bug fixes in scipy.optimize and scipy.interpolate and

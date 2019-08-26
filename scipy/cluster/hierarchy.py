@@ -1387,6 +1387,170 @@ def cut_tree(Z, n_clusters=None, height=None):
     return groups.T
 
 
+def cut_tree_balanced(Z, max_cluster_size):
+    """
+    Given a linkage matrix Z, return the balanced cut tree (where each
+    resulting cluster has a maximum size of max_cluster_size).
+
+    The function looks recursively along the hierarchical tree, from the root
+    (single cluster gathering all the samples) to the leaves (i.e. the clusters
+    with only one sample), retrieving the biggest possible clusters containing
+    a number of samples lower than a given maximum. If a cluster at a specific
+    tree level contains a number of samples higher than the given maximum, it
+    is ignored and its offspring (smaller) sub-clusters are taken into
+    consideration. If the cluster contains a number of samples lower than the
+    given maximum, it is taken as result and its offspring sub-clusters not
+    further processed.
+
+    Parameters
+    ----------
+    Z : scipy.cluster.linkage array
+        The linkage matrix resulting (for instance) from calling the method
+        scipy.cluster.hierarchy.ward(). I.e. it contains the hierarchical
+        clustering encoded as a linkage matrix.
+
+    max_cluster_size : array_like
+        maximum number of data samples contained within the resulting clusters.
+        Thus, all resulting clusters will contain a number of data samples
+        <= max_cluster_size. Note that max_cluster_size must be >= 1.
+
+    Returns
+    -------
+    cluster_id : ndarray
+        one-dimensional numpy array of integers containing for each input
+        sample its corresponding cluster id. The cluster id is an integer which
+        is higher for deeper tree levels.
+
+    cluster_level : ndarray
+        one-dimensional numpy array of strings containing for each input sample
+        its corresponding cluster tree level, i.e. a string of '0's and '1's
+        separated by '.' Note that the cluster level is longer for deeper tree
+        levels, being 0 the root cluster, 0.0 and 0.1 its offspring, and so on.
+
+    Examples
+    --------
+    >>> from scipy import cluster
+    >>> from scipy import stats
+
+    Initialize the random seed.
+
+    >>> np.random.seed(14)
+
+    Create a input matrix containing 100 data samples with 4 dimensions. Note:
+    using gamma() in order to generate an unbalanced distribution. If a regular
+    cut_tree() would be performed, one big and many small clusters would be
+    obtained.
+
+    >>> X = stats.gamma.rvs(0.1, size=400).reshape((100,4))
+
+    Compute the linkage matrix using the scipy ward() method.
+
+    >>> Z = cluster.hierarchy.ward(X)
+
+    Perform a balanced cut tree of the linkage matrix.
+
+    >>> [cluster_id, cluster_level] = cut_tree_balanced(Z, max_cluster_size=10)
+    >>> cluster_id[:10]
+    >>> cluster_level[:10]
+    """
+    try:
+        # Assert that the input max_cluster_size is >= 1
+        assert max_cluster_size >= 1
+
+        # Perform a full cut tree of the linkage matrix
+        full_cut = cut_tree(Z)
+
+        # Initialize the vble containing the current cluster id (it will be
+        # higher for each newly found valid cluster)
+        last_cluster_id = 1
+
+        # Initialize the resulting cluster id vector (containing for each row
+        # in input_data_x_sample its corresponding cluster id)
+        cluster_id = np.zeros(full_cut.shape[1], dtype=int)
+
+        # Initialize the resulting cluster level vector (containing for each
+        # data sample its corresponding cluster tree level)
+        cluster_level = np.array(['0' for _ in
+                                  range(full_cut.shape[1])], dtype=object)
+
+        # Scan the full cut matrix from the last column (root tree level) to
+        # the first column (leaves tree level)
+        for curr_column in range(full_cut.shape[1]-1, -1, -1):
+
+            # Get a list of unique group ids and their count within the current
+            # tree level
+            values, counts = np.unique(full_cut[:, curr_column],
+                                       return_counts=True)
+
+            # Stop if all samples have been already selected (i.e. if all data
+            # samples have been already clustered)
+            if (values.size == 1) and (values[0] == -1):
+                break
+
+            # For each group id within the current tree level
+            for curr_elem_pos in range(values.size):
+
+                # If it is a valid group id (i.e. not yet marked with -1)
+                # Note: data samples which were alredy included in a valid
+                # cluster id are marked with the group id -1 (see below)
+                if (values[curr_elem_pos] >= 0):
+
+                    # Select the current group id
+                    selected_curr_value = values[curr_elem_pos]
+
+                    # Look for the vector positions (related to rows in
+                    # input_data_x_sample) belonging to the current group id
+                    selected_curr_elems = np.where(full_cut[:, curr_column] ==
+                                                   selected_curr_value)
+
+                    # Major step #1: Populate the resulting vector of cluster
+                    # levels for each data sample, if we are not at the root
+                    if curr_column < (full_cut.shape[1]-1):
+                        # Get the ancestor values and element positions
+                        selected_ancestor_value = (
+                            full_cut[selected_curr_elems[0][0], curr_column+1])
+                        selected_ancestor_elems = np.where(
+                            full_cut[:, curr_column+1] ==
+                            selected_ancestor_value)
+
+                        # Compute the values and counts of the offspring
+                        offspring_values, offspring_counts = np.unique(
+                            full_cut[selected_ancestor_elems, curr_column],
+                            return_counts=True)
+
+                        # If the size of the offspring is > 1
+                        if (offspring_values.shape[0] > 1):
+                            # Select the position of the current value
+                            # (i.e. 0 or 1) and append it to the cluster level
+                            offspring_elem_pos = np.where(
+                                offspring_values == selected_curr_value)[0][0]
+                            cluster_level[selected_curr_elems] = (
+                                cluster_level[selected_curr_elems] +
+                                '.' + str(offspring_elem_pos))
+
+                    # Major step #2: Populate the resulting vector of cluster
+                    # ids for each data sample, and mark them as clustered (-1)
+                    # If the number of elements is below max_cluster_size
+                    if (counts[curr_elem_pos] <= max_cluster_size):
+
+                        # Relate vector positions to the current cluster id
+                        cluster_id[selected_curr_elems] = last_cluster_id
+
+                        # Delete these vector positions at lower tree levels
+                        # for further processing (i.e. mark as clustered)
+                        full_cut[selected_curr_elems, 0:curr_column] = -1
+
+                        # Update the cluster id
+                        last_cluster_id = last_cluster_id + 1
+
+        # Return the resulting clustering array (containing for each row in
+        # input_data_x_sample its corresponding cluster id)
+        return [np.vstack(cluster_id), np.vstack(cluster_level)]
+
+    except AssertionError:
+        print("Please use a max_cluster_size >= 1")
+
+
 def to_tree(Z, rd=False):
     """
     Convert a linkage matrix into an easy-to-use tree object.
