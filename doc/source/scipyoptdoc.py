@@ -47,6 +47,7 @@ else:
 
 def setup(app):
     app.add_domain(ScipyOptimizeInterfaceDomain)
+    return {'parallel_read_safe': True}
 
 
 def _option_required_str(x):

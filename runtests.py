@@ -125,6 +125,8 @@ def main(argv):
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
                         help="Perform pep8 check with pycodestyle.")
+    parser.add_argument("--doc", action="append", nargs="?",
+                        const="html-scipyorg", help="Build documentation")
     args = parser.parse_args(argv)
 
     if args.pep8:
@@ -191,6 +193,14 @@ def main(argv):
         print("Spawning a Unix shell...")
         os.execv(shell, [shell] + extra_argv)
         sys.exit(1)
+
+    if args.doc:
+        cmd = ["make", "-Cdoc", 'PYTHON="{}"'.format(sys.executable)]
+        cmd += args.doc
+        if args.parallel:
+            cmd.append('SPHINXOPTS="-j{}"'.format(args.parallel))
+        subprocess.run(cmd, check=True)
+        sys.exit(0)
 
     if args.coverage:
         dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
