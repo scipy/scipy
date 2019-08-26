@@ -4367,9 +4367,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         is, `x` and `y` must have shapes `(n, p)` and `(n, q)` where `n` is the
         number of samples and `p` and `q` are the number of dimensions.
         Alternatively, `x` and `y` can be `(n, n)` distance or similarity
-        matrices. If the parameter `is_ksample` is set to `True`, `x` and `y`
-        must have shapes `(n, p)` and `(m, p)` and MGC will perform a k-sample
-        test.
+        matrices.
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
@@ -4534,10 +4532,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         raise ValueError("Shape mismatch, x and y must have shape [n, p] and"
                          " [m, p].")
 
-    # perform k-sample transform if option used
-    if is_ksample:
-        x, y = two_sample_transform(x, y)
-
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y, compute_distance)
     stat_mgc_map = stat_dict["stat_mgc_map"]
@@ -4562,8 +4556,7 @@ def _mgc_stat(x, y, compute_distance):
     ----------
     x, y : ndarray
         `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
-        if distance matrices. Can be `(n, p)` and `(m, p)` if k-sample
-        transform.
+        if distance matrices.
     compute_distance : callable
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
