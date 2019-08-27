@@ -5150,28 +5150,29 @@ class TestMGCStat(object):
         # linear simulation
         if sim_type == "linear":
             x = np.random.uniform(-1, 1, size=(samps, 1))
-            y = x + 0.3 * np.random.random(x.size)
+            y = x + 0.3 * np.random.random_sample(size=(x.size, 1))
 
             # add dimensions of noise for higher dimensions
             if dims > 1:
                 dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
-                np.concatenate((x, dims_noise), axis=1)
+                x = np.concatenate((x, dims_noise), axis=1)
 
         # spiral simulation
         elif sim_type == "nonlinear":
             unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
             x = unif * np.cos(np.pi * unif)
-            y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+            y = unif * np.sin(np.pi * unif) + (0.4
+                * np.random.random_sample(size=(x.size, 1)))
 
             # add dimensions of noise for higher dimensions
             if dims > 1:
                 dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
-                np.concatenate((x, dims_noise), axis=1)
+                x = np.concatenate((x, dims_noise), axis=1)
 
         # independence (tests type I simulation)
         elif sim_type == "independence":
-            u = np.random.normal(0, 1, size=samps)
-            v = np.random.normal(0, 1, size=samps)
+            u = np.random.normal(0, 1, size=(samps, 1))
+            v = np.random.normal(0, 1, size=(samps, 1))
             u_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
             v_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
             x = u/3 + 2*u_2 - 1
@@ -5187,7 +5188,7 @@ class TestMGCStat(object):
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.163, 1/1000),       # test spiral simulation
-        ("independence", -0.00206, 0.326)   # test independence simulation
+        ("independence", -0.0094, 0.78)     # test independence simulation
     ])
     def test_oned(self, sim_type, obs_stat, obs_pvalue):
         np.random.seed(12345678)
@@ -5201,15 +5202,15 @@ class TestMGCStat(object):
         assert_approx_equal(pvalue, obs_pvalue, significant=2)
 
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
-        ("linear", 1.0, 1/1000),            # test linear simulation
-        ("nonlinear", 0.228, 1/1000),       # test spiral simulation
-        ("independence", -0.00206, 0.326)   # test independence simulation
+        ("linear", 0.184, 1/1000),           # test linear simulation
+        ("nonlinear", 0.0190, 0.117),        # test spiral simulation
     ])
-    def test_tend(self, sim_type, obs_stat, obs_pvalue):
+    def test_fived(self, sim_type, obs_stat, obs_pvalue):
         np.random.seed(12345678)
 
         # generate x and y
-        x, y = self._simulations(samps=100, dims=10, sim_type=sim_type)
+        x, y = self._simulations(samps=100, dims=5, sim_type=sim_type)
+        print(x.shape)
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
