@@ -876,12 +876,63 @@ add_newdoc("betainc",
     """)
 
 add_newdoc("betaincinv",
-    """
-    betaincinv(a, b, y)
+    r"""
+    betaincinv(a, b, y, out=None)
 
-    Inverse function to beta integral.
+    Inverse of the incomplete beta function.
 
-    Compute `x` such that betainc(a, b, x) = y.
+    Computes :math:`x` such that:
+    
+    .. math::
+    
+        y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
+        
+    where :math:`I_x` is the normalized incomplete beta
+    function `betainc` and
+    :math:`\Gamma` is the `gamma` function [1]_.
+    
+    Parameters
+    ----------
+    a, b : array-like
+        Positive, real-valued parameters
+    y : array-like
+        Real-valued input
+    out : ndarray, optional
+        Optional output array for function values
+    
+    Returns
+    -------
+    array-like
+        Value of the inverse of the incomplete beta function
+    
+    See Also
+    --------
+    betainc : incomplete beta function
+    gamma : gamma function
+    
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    
+    Examples
+    --------
+    >>> import scipy.special as sc
+    
+    This function is the inverse of `betainc` for fixed
+    values of :math:`a` and :math:`b`.
+    
+    >>> a, b = 1.2, 3.1
+    >>> y = sc.betainc(a, b, 0.2)
+    >>> sc.betaincinv(a, b, y)
+    0.2
+    >>>
+    >>> a, b = 7.5, 0.4
+    >>> x = sc.betaincinv(a, b, 0.5)
+    >>> sc.betainc(a, b, x)
+    0.5
+    
     """)
 
 add_newdoc("betaln",
