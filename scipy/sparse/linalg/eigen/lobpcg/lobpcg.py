@@ -418,6 +418,7 @@ def lobpcg(A, X,
 
     iterationNumber = -1
     restart = True
+    explicitGramFlag = False
     while iterationNumber < maxIterations:
         iterationNumber += 1
         if verbosityLevel > 0:
@@ -518,10 +519,10 @@ def lobpcg(A, X,
         else:
             myeps = 1e-8
 
-        if residualNorms.max() > myeps:
+        if residualNorms.max() > myeps and not explicitGramFlag:
             explicitGramFlag = False
         else:
-            # suggested by Garrett Moran
+            # Once explicitGramFlag, forever explicitGramFlag.
             explicitGramFlag = True
 
         # Shared memory assingments to simplify the code
@@ -536,7 +537,9 @@ def lobpcg(A, X,
         gramRAR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAR)
 
         if explicitGramFlag:
+            gramRAR = (gramRAR + gramRAR.T.conj())/2
             gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+            gramXAX = (gramXAX + gramXAX.T.conj())/2
             gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
             gramRBR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBR)
             gramXBR = np.dot(blockVectorX.T.conj(), activeBlockVectorBR)
@@ -553,6 +556,7 @@ def lobpcg(A, X,
             gramXBP = np.dot(blockVectorX.T.conj(), activeBlockVectorBP)
             gramRBP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBP)
             if explicitGramFlag:
+                gramPAP = (gramPAP + gramPAP.T.conj())/2
                 gramPBP = np.dot(activeBlockVectorP.T.conj(),
                                  activeBlockVectorBP)
             else:
