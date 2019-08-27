@@ -5210,7 +5210,6 @@ class TestMGCStat(object):
 
         # generate x and y
         x, y = self._simulations(samps=100, dims=5, sim_type=sim_type)
-        print(x.shape)
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
