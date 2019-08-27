@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import string_types, exec_, PY3
+from scipy._lib.six import string_types, exec_, PY2
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -37,11 +37,11 @@ import numpy as np
 
 from ._constants import _XMAX
 
-if PY3:
+if PY2:
+    instancemethod = types.MethodType
+else:
     def instancemethod(func, obj, cls):
         return types.MethodType(func, obj)
-else:
-    instancemethod = types.MethodType
 
 
 # These are the docstring parts used for substitution in specific
