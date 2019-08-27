@@ -396,7 +396,7 @@ def dijkstra(csgraph, directed=True, indices=None,
              bint min_only=False):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
-             unweighted=False, limit=np.inf)
+             unweighted=False, limit=np.inf, min_only=False)
 
     Dijkstra algorithm using Fibonacci Heaps
 
