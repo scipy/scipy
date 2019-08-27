@@ -5198,8 +5198,8 @@ class TestMGCStat(object):
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
-        assert_approx_equal(stat, obs_stat, significant=2)
-        assert_approx_equal(pvalue, obs_pvalue, significant=2)
+        assert_approx_equal(stat, obs_stat, significant=1)
+        assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.184, 1/1000),           # test linear simulation
@@ -5214,5 +5214,5 @@ class TestMGCStat(object):
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
-        assert_approx_equal(stat, obs_stat, significant=2)
-        assert_approx_equal(pvalue, obs_pvalue, significant=2)
+        assert_approx_equal(stat, obs_stat, significant=1)
+        assert_approx_equal(pvalue, obs_pvalue, significant=1)

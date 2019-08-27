@@ -4286,7 +4286,7 @@ class _ParallelP(object):
         return perm_stat
 
 
-def _perm_test(x, y, stat, compute_distance, reps=1000):
+def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1):
     r"""
     Helper function that calculates the p-value. See below for uses.
 
@@ -4303,6 +4303,16 @@ def _perm_test(x, y, stat, compute_distance, reps=1000):
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 replications.
+    workers : int or map-like callable, optional
+        If `workers` is an int the population is subdivided into `workers`
+        sections and evaluated in parallel (uses
+        `multiprocessing.Pool <multiprocessing>`). Supply `-1` to use all cores
+        available to the Process. Alternatively supply a map-like callable,
+        such as `multiprocessing.Pool.map` for evaluating the population in
+        parallel. This evaluation is carried out as `workers(func, iterable)`.
+        This option will override the `updating` keyword to
+        `updating='deferred'` if `workers != 1`. Requires that `func` be
+        pickleable.
 
     Returns
     -------
@@ -4316,7 +4326,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000):
     null_dist = np.zeros(reps)
 
     # use all cores to create function that parallelizes over number of reps
-    mapwrapper = MapWrapper(pool=-1)
+    mapwrapper = MapWrapper(workers)
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance)
     null_dist = list(mapwrapper(parallelp, range(reps)))
 
@@ -4338,7 +4348,8 @@ def _euclidean_dist(x):
 MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
-def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
+def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
+                         workers=-1):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4378,6 +4389,14 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is `1000`.
+    workers : int or map-like callable, optional
+        If `workers` is an int the population is subdivided into `workers`
+        sections and evaluated in parallel (uses
+        `multiprocessing.Pool <multiprocessing>`). Supply `-1` to use all cores
+        available to the Process. Alternatively supply a map-like callable,
+        such as `multiprocessing.Pool.map` for evaluating the population in
+        parallel. This evaluation is carried out as `workers(func, iterable)`.
+        Requires that `func` be pickleable. The default is `-1`.
 
     Returns
     -------
@@ -4533,7 +4552,8 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000):
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, compute_distance, reps=reps)
+    pvalue, null_dist = _perm_test(x, y, stat, compute_distance, reps=reps,
+                                   workers=workers)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,
