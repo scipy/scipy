@@ -4310,9 +4310,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1):
         available to the Process. Alternatively supply a map-like callable,
         such as `multiprocessing.Pool.map` for evaluating the population in
         parallel. This evaluation is carried out as `workers(func, iterable)`.
-        This option will override the `updating` keyword to
-        `updating='deferred'` if `workers != 1`. Requires that `func` be
-        pickleable.
+        Requires that `func` be pickleable.
 
     Returns
     -------
