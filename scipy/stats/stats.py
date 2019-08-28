@@ -165,7 +165,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import sys
 import math
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+if sys.version_info >= (3, 5):
     from math import gcd
 else:
     from fractions import gcd
