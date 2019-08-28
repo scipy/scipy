@@ -562,6 +562,15 @@ C   L*D*L'*S
           CALL dscal_sl(n, h4, u, 1)
           CALL daxpy_sl(n, one-h4, v, 1, u, 1)
       ENDIF
+      IF (h1.EQ.0 .or. h2.EQ.0) THEN
+C         Singular update: reset hessian.  The code jumps to 255 if too
+C         many resets are encountered, expecting h3 to store current
+C         constraint violation. But h3 has been overwritten at this
+C         point, so set it to nan to avoid spurious exit.
+          h3 = 0d0
+          h3 = 1/h3
+          GO TO 110
+      end if
       CALL ldl(n, l, u, +one/h1, v)
       CALL ldl(n, l, v, -one/h2, u)
 
