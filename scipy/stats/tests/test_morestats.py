@@ -1637,7 +1637,7 @@ class TestCircFuncs(object):
         for axis in expected.keys():
             out = test_func(x, high=360, axis=axis)
             if axis is None:
-                 assert_(np.isnan(out))
+                assert_(np.isnan(out))
             else:
                 assert_allclose(out[0], expected[axis], rtol=1e-7)
                 assert_(np.isnan(out[1:]).all())
@@ -1667,7 +1667,7 @@ class TestCircFuncs(object):
         for axis in expected.keys():
             out = test_func(x, high=360, nan_policy='omit', axis=axis)
             if axis is None:
-                 assert_allclose(out, expected[axis], rtol=1e-7)
+                assert_allclose(out, expected[axis], rtol=1e-7)
             else:
                 assert_allclose(out[:-1], expected[axis], rtol=1e-7)
                 assert_(np.isnan(out[-1]))

@@ -3283,9 +3283,9 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     else:
         nsum = np.sum(~mask, axis=axis).astype(float)
         if nsum.ndim > 0:
-            np.copyto(nsum, np.nan, where=(nsum==0), casting='unsafe')
+            np.copyto(nsum, np.nan, where=(nsum == 0), casting='unsafe')
         elif nsum == 0.0:
-            nsum =  np.nan
+            nsum = np.nan
         S = sin(sin_ang).sum(axis=axis) / nsum
         C = cos(cos_ang).sum(axis=axis) / nsum
     R = hypot(S, C)
@@ -3340,7 +3340,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     else:
         nsum = np.sum(~mask, axis=axis).astype(float)
         if nsum.ndim > 0:
-            np.copyto(nsum, np.nan, where=(nsum==0), casting='unsafe')
+            np.copyto(nsum, np.nan, where=(nsum == 0), casting='unsafe')
         elif nsum == 0.0:
             nsum = np.nan
         S = sin(sin_ang).sum(axis=axis) / nsum
