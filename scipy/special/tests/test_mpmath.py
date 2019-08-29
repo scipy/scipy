@@ -1852,6 +1852,18 @@ class TestSystematic(object):
                             rtol=5e-10,
                             ignore_inf_sign=True)
 
+    def test_wrightomega_real(self):
+        def mpmath_wrightomega_real(x):
+            return mpmath.lambertw(mpmath.exp(x), mpmath.mpf('-0.5'))
+
+        assert_mpmath_equal(
+            sc.wrightomega,
+            mpmath_wrightomega_real,
+            [Arg()],
+            rtol=1e-14,
+            nan_ok=False,
+        )
+
     def test_wrightomega(self):
         assert_mpmath_equal(sc.wrightomega,
                             lambda z: _mpmath_wrightomega(z, 25),
