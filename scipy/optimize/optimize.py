@@ -2432,7 +2432,12 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     lmin = np.max(low * pos + high * neg)
     lmax = np.min(low * neg + high * pos)
 
-    return lmin, lmax
+    # if x0 is outside the bounds, then it is possible that there is 
+    # no way to get back in the bounds for the parameters being updated
+    # with the current direction alpha.
+    # when this happens, lmax > lmin.
+    # If this is the case, then we can just return (0, 0)
+    return (lmin, lmax) if lmax >= lmin else (0, 0)
 
 
 def _linesearch_powell(func, p, xi, fval,
@@ -2462,10 +2467,7 @@ def _linesearch_powell(func, p, xi, fval,
         bound = _line_for_search(p, xi, lower_bound, upper_bound)
         res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
         xi = res.x * xi
-        if res.fun <= fval:
-            return squeeze(res.fun), p + xi, xi
-        else:  # if we didn't find a better minimum, then keep the old one.
-            return fval, p, np.zeros(xi.shape)
+        return squeeze(res.fun), p + xi, xi
 
 
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
@@ -2669,6 +2671,10 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         direc = eye(N, dtype=float)
     else:
         direc = asarray(direc, dtype=float)
+        if np.linalg.matrix_rank(direc) != direc.shape[0]:
+            warnings.warn("direc input is not full rank, some parameters may "
+                          "not be optimized",
+                          OptimizeWarning, 3)
 
     if bounds is None:
         lower_bound, upper_bound = None, None
@@ -2682,7 +2688,7 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
             upper_bound = np.array([bounds[1]] * N)
 
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
-            warnings.warn("Initial guess is not within the specified bounds.",
+            warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, 3)
 
     fval = squeeze(func(x))
