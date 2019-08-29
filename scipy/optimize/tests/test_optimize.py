@@ -583,6 +583,15 @@ def test_bounded_powell_vs_powell():
     assert_allclose(res_powell.fun, 0.007136253919761627, atol=1e-6)
     assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
 
+    # test when x0 starts outside of the bounds.
+    x0 = [45.46254415, -26.52351498, 31.74830248]
+    # we're starting outside the bounds, so we should get a warning
+    with assert_warns(optimize.OptimizeWarning):
+        res_bounded_powell = optimize.minimize(func, x0,
+                                               bounds=bounds,
+                                               method="Powell")
+    assert_allclose(res_bounded_powell.fun, 0, atol=1e-6)
+
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = True
     disp = True
