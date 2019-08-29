@@ -730,62 +730,62 @@ add_newdoc("beta",
     beta(a, b, out=None)
 
     Beta function.
-    
+
     This function is defined in [1]_ as
-    
+
     .. math::
-    
-        B(a, b) = \int_0^1 t^{a-1}(1-t)^{b-1}dt 
+
+        B(a, b) = \int_0^1 t^{a-1}(1-t)^{b-1}dt
                 = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)},
-    
+
     where :math:`\Gamma` is the gamma function.
-    
+
     Parameters
     ----------
     a, b : array-like
         Real-valued arguments
     out : ndarray, optional
         Optional output array for the function result
-    
+
     Returns
     -------
     scalar or ndarray
         Value of the beta function
-    
+
     See Also
     --------
     gamma : the gamma function
     betainc :  the incomplete beta function
     betaln : the natural logarithm of the absolute
              value of the beta function
-    
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions,
            Eq. 5.12.1. https://dlmf.nist.gov/5.12
-    
+
     Examples
     --------
     >>> import scipy.special as sc
-    
+
     The beta function relates to the gamma function by the
     definition given above:
-    
+
     >>> sc.beta(2, 3)
     0.08333333333333333
-    >>> sc.gamma(2)*sc.gamma(3)/sc.gamma(2 + 3)     
+    >>> sc.gamma(2)*sc.gamma(3)/sc.gamma(2 + 3)
     0.08333333333333333
-    
+
     As this relationship demonstrates, the beta function
     is symmetric:
-    
+
     >>> sc.beta(1.7, 2.4)
     0.16567527689031739
     >>> sc.beta(2.4, 1.7)
     0.16567527689031739
-    
+
     This function satisfies :math:`B(1, b) = 1/b`:
-    
+
     >>> sc.beta(1, 4)
     0.25
 
@@ -798,12 +798,12 @@ add_newdoc("betainc",
     Incomplete beta function.
 
     Computes the incomplete beta function, defined as [1]_:
-    
+
     .. math::
 
-        I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x 
+        I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x
         t^{a-1}(1-t)^{b-1}dt,
-        
+
     for :math:`0 \leq x \leq 1`.
 
     Parameters
@@ -815,59 +815,59 @@ add_newdoc("betainc",
         the upper limit of integration
     out : ndarray, optional
         Optional output array for the function values
-    
+
     Returns
     -------
     array-like
         Value of the incomplete beta function
-    
+
     See Also
     --------
     beta : beta function
     betaincinv : inverse of the incomplete beta function
-    
+
     Notes
     -----
-    The incomplete beta function is also sometimes defined 
+    The incomplete beta function is also sometimes defined
     without the `gamma` terms, in which case the above
-    definition is the so-called regularized incomplete beta 
+    definition is the so-called regularized incomplete beta
     function. Under this definition, you can get the incomplete
     beta function by multiplying the result of the SciPy
     function by `beta`.
-    
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17
-    
+
     Examples
     --------
-    
+
     Let :math:`B(a, b)` be the `beta` function.
-    
+
     >>> import scipy.special as sc
-    
+
     The coefficient in terms of `gamma` is equal to
     :math:`1/B(a, b)`. Also, when :math:`x=1`
     the integral is equal to :math:`B(a, b)`.
     Therefore, :math:`I_{x=1}(a, b) = 1` for any :math:`a, b`.
-    
+
     >>> sc.betainc(0.2, 3.5, 1.0)
     1.0
-    
-    It satisfies 
+
+    It satisfies
     :math:`I_x(a, b) = x^a F(a, 1-b, a+1, x)/ (aB(a, b))`,
     where :math:`F` is the hypergeometric function `hyp2f1`:
-    
+
     >>> a, b, x = 1.4, 3.1, 0.5
     >>> x**a * sc.hyp2f1(a, 1 - b, a + 1, x)/(a * sc.beta(a, b))
     0.8148904036225295
     >>> sc.betainc(a, b, x)
     0.8148904036225296
-    
+
     This functions satisfies the relationship
     :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
-    
+
     >>> sc.betainc(2.2, 3.1, 0.4)
     0.49339638807619446
     >>> 1 - sc.betainc(3.1, 2.2, 1 - 0.4)
@@ -882,16 +882,16 @@ add_newdoc("betaincinv",
     Inverse of the incomplete beta function.
 
     Computes :math:`x` such that:
-    
+
     .. math::
-    
+
         y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
         \int_0^x t^{a-1}(1-t)^{b-1}dt,
-        
+
     where :math:`I_x` is the normalized incomplete beta
     function `betainc` and
     :math:`\Gamma` is the `gamma` function [1]_.
-    
+
     Parameters
     ----------
     a, b : array-like
@@ -900,29 +900,29 @@ add_newdoc("betaincinv",
         Real-valued input
     out : ndarray, optional
         Optional output array for function values
-    
+
     Returns
     -------
     array-like
         Value of the inverse of the incomplete beta function
-    
+
     See Also
     --------
     betainc : incomplete beta function
     gamma : gamma function
-    
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17
-    
+
     Examples
     --------
     >>> import scipy.special as sc
-    
+
     This function is the inverse of `betainc` for fixed
     values of :math:`a` and :math:`b`.
-    
+
     >>> a, b = 1.2, 3.1
     >>> y = sc.betainc(a, b, 0.2)
     >>> sc.betaincinv(a, b, y)
@@ -932,7 +932,7 @@ add_newdoc("betaincinv",
     >>> x = sc.betaincinv(a, b, 0.5)
     >>> sc.betainc(a, b, x)
     0.5
-    
+
     """)
 
 add_newdoc("betaln",
@@ -3186,18 +3186,31 @@ add_newdoc("gammaincinv",
     """)
 
 add_newdoc("gammaln",
-    """
+    r"""
+    gammaln(x, out=None)
+
     Logarithm of the absolute value of the Gamma function.
+
+    Defined as
+
+    .. math::
+
+       \ln(\lvert\Gamma(x)\rvert)
+
+    where :math:`\Gamma` is the Gamma function. For more details on
+    the Gamma function, see [dlmf]_.
 
     Parameters
     ----------
-    x : array-like
-        Values on the real line at which to compute ``gammaln``
+    x : array_like
+        Real argument
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    gammaln : ndarray
-        Values of ``gammaln`` at x.
+    scalar or ndarray
+        Values of the log of the absolute value of Gamma
 
     See Also
     --------
@@ -3206,11 +3219,43 @@ add_newdoc("gammaln",
 
     Notes
     -----
+    It is the same function as the Python standard library function
+    :func:`math.lgamma`.
+
     When used in conjunction with `gammasgn`, this function is useful
-    for working in logspace on the real axis without having to deal with
-    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
+    for working in logspace on the real axis without having to deal
+    with complex numbers via the relation ``exp(gammaln(x)) =
+    gammasgn(x) * gamma(x)``.
 
     For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has two positive zeros.
+
+    >>> sc.gammaln([1, 2])
+    array([0., 0.])
+
+    It has poles at nonpositive integers.
+
+    >>> sc.gammaln([0, -1, -2, -3, -4])
+    array([inf, inf, inf, inf, inf])
+
+    It asymptotically approaches ``x * log(x)`` (Stirling's formula).
+
+    >>> x = np.array([1e10, 1e20, 1e40, 1e80])
+    >>> sc.gammaln(x)
+    array([2.20258509e+11, 4.50517019e+21, 9.11034037e+41, 1.83206807e+82])
+    >>> x * np.log(x)
+    array([2.30258509e+11, 4.60517019e+21, 9.21034037e+41, 1.84206807e+82])
+
     """)
 
 add_newdoc("gammasgn",
