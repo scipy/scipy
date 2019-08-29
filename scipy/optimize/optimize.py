@@ -2453,7 +2453,7 @@ def _linesearch_powell(func, p, xi, fval,
 
     # if xi is zero, then don't optimize
     if not np.any(xi):
-        return fval, p, np.zeros(xi.shape)
+        return fval, p, xi
     elif lower_bound is None and upper_bound is None:
         alpha_min, fret, iter, num = brent(myfunc, full_output=1, tol=tol)
         xi = alpha_min*xi
@@ -2731,8 +2731,9 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
                 fval, x, direc1 = _linesearch_powell(func, x, direc1, fval,
                                                      lower_bound, upper_bound,
                                                      tol=xtol * 100)
-                direc[bigind] = direc[-1]
-                direc[-1] = direc1
+                if np.any(direc1):
+                    direc[bigind] = direc[-1]
+                    direc[-1] = direc1
 
     warnflag = 0
     # out of bounds is more urgent than exceeding function evals or iters,
