@@ -425,7 +425,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
               5: ["Number of calls to function has reached "
                   "maxfev = %d." % maxfev, ValueError],
               6: ["ftol=%f is too small, no further reduction "
-                  "in the sum of squares\n  is possible.""" % ftol,
+                  "in the sum of squares\n  is possible." % ftol,
                   ValueError],
               7: ["xtol=%f is too small, no further improvement in "
                   "the approximate\n  solution is possible." % xtol,
