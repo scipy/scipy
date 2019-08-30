@@ -408,14 +408,19 @@ wright::wrightomega_real(double x)
       /* on [-2,1) approx < 1.5e-1 accurate */
       w = exp(2.0*(x-1.0)/3.0);
     }
+  else if (x > 1e20)
+    {
+      /*
+       * Skip the iterative scheme because the result is just x to
+       * double precision
+       */
+      return x;
+    }
   else
     {
       /* infinite series with 2 terms approx <1.7e-1 accurate */
       w = log(x);
       w = x - w + w/x;
-      if (x > 1e20) {
-	return w;
-      }
     }
 
   /* Iteration one of Fritsch, Shafer, and Crowley (FSC) iteration */

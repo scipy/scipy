@@ -14,8 +14,7 @@ def mpmath_wrightomega(x):
 
 
 def wrightomega_series_error(x):
-    w = mpmath.log(x)
-    series = x + w - w / x
+    series = x
     desired = mpmath_wrightomega(x)
     return abs(series - desired) / desired
 
