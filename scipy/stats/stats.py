@@ -4347,7 +4347,7 @@ MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
-                         workers=-1):
+                         workers=-1, is_twosamp=False):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4371,11 +4371,12 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     Parameters
     ----------
     x, y : ndarray
-        Input data or distance matrices with the same number of samples. That
-        is, `x` and `y` must have shapes `(n, p)` and `(n, q)` where `n` is the
-        number of samples and `p` and `q` are the number of dimensions.
-        Alternatively, `x` and `y` can be `(n, n)` distance or similarity
-        matrices.
+        If `x` and `y` have shapes `(n, p)` and `(n, q)` where `n` is the
+        number of samples and `p` and `q` are the number of dimensions, then
+        the MGC independence test will be run.  Alternatively, `x` and `y` can
+        be `(n, n)` distance or similarity matrices, and `compute_distance`
+        must be sent to `None`. If `x` and `y` have shapes `(n, p)` and
+        `(m, p)`, an unpaired two-sample MGC test will be run.
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to `None` if `x` and `y` are already
@@ -4395,6 +4396,11 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         such as `multiprocessing.Pool.map` for evaluating the population in
         parallel. This evaluation is carried out as `workers(func, iterable)`.
         Requires that `func` be pickleable. The default is `-1`.
+    is_twosamp : bool, optional
+        If `True`, a two sample test will be run. If `x` and `y` have shapes
+        `(n, p)` and `(m, p)`, this optional will be overriden and set to
+        `True`. Set to `True` if `x` and `y` both have shapes `(n, p)` and
+        a two sample test is desired. The default is `False`.
 
     Returns
     -------
@@ -4427,7 +4433,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     A description of the process of MGC and applications on neuroscience data
     can be found in [1]_. It is performed using the following steps:
 
-    #. Two distance matrices :math:`D^x` and :math:`D^x` are computed and
+    #. Two distance matrices :math:`D^X` and :math:`D^Y` are computed and
        modified to be mean zero columnwise. This results in two
        :math:`n \times n` distance matrices :math:`A` and :math:`B` (the
        centering and unbiased modification) [3]_.
@@ -4470,6 +4476,21 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     MGC requires at least 5 samples to run with reliable results. It can also
     handle high-dimensional data sets.
 
+    In addition, by manipulating the input data matrices, the two-sample
+    testing problem can be reduced to the independence testing problem [4]_.
+    Given sample data :math:`U` and :math:`V` of sizes :math:`p \times n`
+    :math:`p \times m`, data matrix :math:`X` and :math:`Y` can be created as
+    follows:
+
+    .. math::
+
+        X = [U | V] \in \mathcal{R}^{p \times (n + m)}
+
+        Y = [0_{1 \times n} | 1_{1 \times m}] \in \mathcal{R}^{(n + m)}
+
+    Then, the MGC statistic can be calculated as normal. This methodology can
+    be extended to similar tests such as distance correlation [4]_.
+
     .. versionadded:: 1.4.0
 
     References
@@ -4481,9 +4502,12 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
            Ramachandran, S., Bridgeford, E. W., ... Vogelstein, J. T. (2019).
            mgcpy: A Comprehensive High Dimensional Independence Testing Python
            Package. ArXiv:1907.02088 [Cs, Stat].
-    .. [3] Shen, C., Priebe, C.E., & Vogelstein, J.T. (2019). From distance
+    .. [3] Shen, C., Priebe, C.E., & Vogelstein, J. T. (2019). From distance
            correlation to multiscale graph correlation. Journal of the American
            Statistical Association.
+    .. [4] Shen, C. & Vogelstein, J. T. (2018). The Exact Equivalence of
+           Distance and Kernel Methods for Hypothesis Testing. ArXiv:1806.05514
+           [Cs, Stat].
 
     Examples
     --------
@@ -4504,7 +4528,30 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> mgc = multiscale_graphcorr(x, y)
     >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
     (1.0, 0.0)
+
+    To run an unpaired two-sample test,
+
+    >>> from scipy.stats import multiscale_graphcorr
+    >>> np.random.seed(12345678)
+    >>> x = np.random.binomial(100, 0.5, size=(100, 5))
+    >>> y = np.random.normal(0, 1, size=(80, 5))
+    >>> mgc = multiscale_graphcorr(x, y)
+    >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
+    (1.0, 0.0)
+
+    or, if shape of the inputs are the same,
+
+    >>> from scipy.stats import multiscale_graphcorr
+    >>> np.random.seed(12345678)
+    >>> x = np.random.binomial(100, 0.5, size=(100, 5))
+    >>> y = np.random.normal(0, 1, size=(100, 5))
+    >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
+    >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
+    (1.0, 0.0)
     """
+    nx, px = x.shape
+    ny, py = y.shape
+
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise ValueError("x and y why must be ndarrays")
 
@@ -4518,11 +4565,15 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     if y.ndim == 1:
         y.shape = (-1, 1)
 
-    if x.shape[0] != y.shape[0]:
-        raise ValueError("Shape mismatch, x and y must have shape [n, p] and"
-                         " [n, q].")
+    if nx != ny:
+        if px == py:
+            # reshape x and y for two sample testing
+            is_twosamp = True
+        else:
+            raise ValueError("Shape mismatch, x and y must have shape [n, p] "
+                             "and [n, q] or have shape [n, p] and [m, p].")
 
-    if x.shape[0] < 5 or y.shape[0] < 5:
+    if nx < 5 or ny < 5:
         raise ValueError("MGC requires at least 5 samples to give reasonable "
                          "results.")
 
@@ -4543,6 +4594,9 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                "calculations may be unreliable. Use the p-value result, with "
                "caution!")
         warnings.warn(msg, RuntimeWarning)
+
+    if is_twosamp:
+        x, y = _two_sample_transform(x, y)
 
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y, compute_distance)
@@ -4707,6 +4761,31 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
                 opt_scale = [k+1, l+1]  # adding 1s to match R indexing
 
     return stat, opt_scale
+
+
+def _two_sample_transform(u, v):
+    """
+    Helper function that concatenates x and y for two sample MGC stat. See
+    above for use.
+
+    Parameters
+    ----------
+    u, v : ndarray
+        `u` and `v` have shapes `(n, p)` and `(m, p)`,
+
+    Returns
+    -------
+    x : ndarray
+        Concatenate `u` and `v` along the `axis = 0`. `x` thus has shape
+        `(2n, p)`.
+    y : ndarray
+        Label matrix for `x` where 0 refers to samples that comes from `u` and
+        1 refers to samples that come from `v`. `y` thus has shape `(2n, 1)`.
+    """
+    x = np.concatenate([u, v], axis=0)
+    y = np.concatenate([np.repeat(0, u.shape[0]), np.repeat(1, v.shape[0])],
+                       axis=0).reshape(-1, 1)
+    return x, y
 
 
 #####################################

@@ -5094,15 +5094,12 @@ class TestMGCErrorWarnings(object):
         x = np.arange(20)
         y = [5] * 20
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
-
-        x = [5] * 20
-        y = np.arange(20)
-        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+        assert_raises(ValueError, stats.multiscale_graphcorr, y, x)
 
     def test_error_shape(self):
         # raises error if number of samples different (n)
-        x = np.arange(20)
-        y = np.arange(40)
+        x = np.arange(100).reshape(25, 4)
+        y = x.reshape(10, 10)
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
 
     def test_error_lowsamples(self):
@@ -5152,22 +5149,12 @@ class TestMGCStat(object):
             x = np.random.uniform(-1, 1, size=(samps, 1))
             y = x + 0.3 * np.random.random_sample(size=(x.size, 1))
 
-            # add dimensions of noise for higher dimensions
-            if dims > 1:
-                dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
-                x = np.concatenate((x, dims_noise), axis=1)
-
         # spiral simulation
         elif sim_type == "nonlinear":
             unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
             x = unif * np.cos(np.pi * unif)
             y = unif * np.sin(np.pi * unif) + (0.4
                 * np.random.random_sample(size=(x.size, 1)))
-
-            # add dimensions of noise for higher dimensions
-            if dims > 1:
-                dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
-                x = np.concatenate((x, dims_noise), axis=1)
 
         # independence (tests type I simulation)
         elif sim_type == "independence":
@@ -5183,6 +5170,11 @@ class TestMGCStat(object):
             raise ValueError("sim_type must be linear, nonlinear, or "
                              "independence")
 
+        # add dimensions of noise for higher dimensions
+        if dims > 1:
+            dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
+            x = np.concatenate((x, dims_noise), axis=1)
+
         return x, y
 
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
@@ -5197,7 +5189,7 @@ class TestMGCStat(object):
         x, y = self._simulations(samps=100, dims=1, sim_type=sim_type)
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
@@ -5212,6 +5204,27 @@ class TestMGCStat(object):
         x, y = self._simulations(samps=100, dims=5, sim_type=sim_type)
 
         # test stat and pvalue
-        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, reps=1000)
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
+
+    def test_twosamp(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x = np.random.binomial(100, 0.5, size=(100, 5))
+        y = np.random.normal(0, 1, size=(80, 5))
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
+        assert_approx_equal(stat, 1.0, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
+        # generate x and y
+        y = np.random.normal(0, 1, size=(100, 5))
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True)
+        assert_approx_equal(stat, 1.0, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
