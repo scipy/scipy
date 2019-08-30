@@ -535,7 +535,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._updating == 'immediate')
 
         # should raise a UserWarning because the updating='immediate'
-        # is being overriden by the workers keyword
+        # is being overridden by the workers keyword
         with warns(UserWarning):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
             assert_(solver._updating == 'deferred')
