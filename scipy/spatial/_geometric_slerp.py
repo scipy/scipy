@@ -7,9 +7,9 @@ import numpy as np
 from . import _slerp
 from scipy.spatial.distance import euclidean
 
-def geometric_slerp(start_coord,
-                    end_coord,
-                    t_values,
+def geometric_slerp(start,
+                    end,
+                    t,
                     tol=1e-7):
     """
     Spherical linear interpolation along unit-radius
@@ -17,15 +17,17 @@ def geometric_slerp(start_coord,
 
     Parameters
     ----------
-    start_coord : (D, ) ndarray
-        Single D-dimensional input coordinate in a 1-D array.
+    start : (D, ) array-like
+        Single D-dimensional input coordinate in a 1-D array-like
+        object.
         Starting coordinate for interpolation will be converted
         to float64.
-    end_coord : (D, ) ndarray
-        Single D-dimensional input coordinate in a 1-D array.
+    end : (D, ) array-like
+        Single D-dimensional input coordinate in a 1-D array-like
+        object.
         End coordinate for interpolation will be converted to
         float64.
-    t_values : array
+    t: array
         An array of doubles representing interpolation parameters,
         with values required in the inclusive interval between
         0 and 1. A common approach is to generate the array with
@@ -38,12 +40,12 @@ def geometric_slerp(start_coord,
 
     Returns
     -------
-    result : (t_values.size, D)
+    result : (t.size, D)
         An array of doubles containing the interpolated
-        spherical path and including start_coord and
-        end_coord when 0 and 1 t_values are used. The
+        spherical path and including start and
+        end when 0 and 1 t are used. The
         interpolated values should correspond to the
-        same sort order provided in the t_values array.
+        same sort order provided in the t array.
 
     Notes
     -----
@@ -136,50 +138,69 @@ def geometric_slerp(start_coord,
     >>> plt.show()
     """
 
-    if start_coord.ndim != 1 or end_coord.ndim != 1:
+    start = np.asanyarray(start)
+    end = np.asanyarray(end)
+
+    if start.ndim != 1 or end.ndim != 1:
         raise ValueError("Start and end coordinates must be flat")
 
-    if start_coord.size != end_coord.size:
-        raise ValueError("The dimensions of start_coord and "
-                         "end_coord must match (have same size)")
+    if start.size != end.size:
+        raise ValueError("The dimensions of start and "
+                         "end must match (have same size)")
 
-    if start_coord.size == 0 or end_coord.size == 0:
+    if start.size == 0 or end.size == 0:
         raise ValueError("One or both input coordinates are empty")
+
+    if np.array_equal(start, end):
+        raise ValueError("Start and end coordinates cannot be the same")
+
+    if start.size == 1 or end.size == 1:
+        raise ValueError("Cannot interpolate the 0-sphere")
 
     if not isinstance(tol, float):
         raise ValueError("tol must be a float")
     else:
         tol = math.fabs(tol)
 
-    coord_dist = euclidean(start_coord, end_coord)
+    coord_dist = euclidean(start, end)
 
     # diameter of 2 within tolerance means antipodes, which is a problem
     # for all unit n-spheres (even the 0-sphere would have an ambiguous path)
     if np.allclose(coord_dist, 2.0, rtol=0, atol=tol):
-        raise ValueError("start_coord and end_coord are antipodes"
+        raise ValueError("start and end are antipodes"
                          " using the specified tolerance or they"
                          " are not on a unit n-sphere")
 
     # a diameter > 2 within tol violates requirement for input to be on
     # unit n-sphere
     if coord_dist > (2.0 + tol):
-        raise ValueError("start_coord and end_coord are not"
+        raise ValueError("start and end are not"
                          " on a unit n-sphere")
 
     # similarly for points that violate equation for n-sphere
     # NOTE: this is tricky to think about for the 0-sphere;
     # performing the check for 1-sphere (circle) and up
-    if start_coord.size > 1:
-        for coord in [start_coord, end_coord]:
+    if start.size > 1:
+        for coord in [start, end]:
             if not np.allclose(np.square(coord).sum(), 1.0, rtol=0, atol=tol):
-                raise ValueError("start_coord and end_coord are not"
+                raise ValueError("start and end are not"
                                  " on a unit n-sphere")
 
-    t_values = np.asanyarray(t_values).astype(np.float64)
-    if t_values.min() < 0 or t_values.max() > 1:
+    t = np.asanyarray(t).astype(np.float64)
+
+    if t.size == 0:
+        return np.empty((0, start.size))
+
+    if t.min() < 0 or t.max() > 1:
         raise ValueError("interpolation parameter must be in [0, 1]")
 
-    result = _slerp._geometric_slerp(start_coord.astype(np.float64),
-                                     end_coord.astype(np.float64),
-                                     t_values)
-    return result
+    if np.ndim(t) == 0:
+        result = _slerp._geometric_slerp(start.astype(np.float64),
+                                         end.astype(np.float64),
+                                         np.atleast_1d(t))
+        return result.ravel()
+    else:
+        result = _slerp._geometric_slerp(start.astype(np.float64),
+                                         end.astype(np.float64),
+                                         t)
+        return result

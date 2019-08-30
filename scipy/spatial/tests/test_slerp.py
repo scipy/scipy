@@ -20,24 +20,21 @@ def _generate_spherical_points(ndim=3, n_pts=2):
 class TestGeometricSlerp(object):
     # Test various properties of the geometric slerp code
 
-    @pytest.mark.parametrize("n_dims", [1, 2, 3, 5, 7, 9])
-    @pytest.mark.parametrize("n_pts", [3, 17])
+    @pytest.mark.parametrize("n_dims", [2, 3, 5, 7, 9])
+    @pytest.mark.parametrize("n_pts", [0, 3, 17])
     def test_shape_property(self, n_dims, n_pts):
         # geometric_slerp output shape should match
         # input dimensionality & requested number
         # of interpolation points
-        if n_dims > 1:
-            start, end = _generate_spherical_points(n_dims, 2)
-        else:
-            start, end = (np.array([1]), np.array([0]))
+        start, end = _generate_spherical_points(n_dims, 2)
 
-        actual = geometric_slerp(start_coord=start,
-                                 end_coord=end,
-                                 t_values=np.linspace(0, 1, n_pts))
+        actual = geometric_slerp(start=start,
+                                 end=end,
+                                 t=np.linspace(0, 1, n_pts))
 
         assert actual.shape == (n_pts, n_dims)
 
-    @pytest.mark.parametrize("n_dims", [1, 2, 3, 5, 7, 9])
+    @pytest.mark.parametrize("n_dims", [2, 3, 5, 7, 9])
     @pytest.mark.parametrize("n_pts", [3, 17])
     def test_include_ends(self, n_dims, n_pts):
         # geometric_slerp should return a data structure
@@ -49,14 +46,11 @@ class TestGeometricSlerp(object):
         # the generator doesn't work so well for the unit
         # sphere (it always produces antipodes), so use
         # custom values there
-        if n_dims > 1:
-            start, end = _generate_spherical_points(n_dims, 2)
-        else:
-            start, end = (np.array([1]), np.array([0]))
+        start, end = _generate_spherical_points(n_dims, 2)
 
-        actual = geometric_slerp(start_coord=start,
-                                 end_coord=end,
-                                 t_values=np.linspace(0, 1, n_pts))
+        actual = geometric_slerp(start=start,
+                                 end=end,
+                                 t=np.linspace(0, 1, n_pts))
 
         assert_equal(actual[0], start)
         assert_equal(actual[-1], end)
@@ -73,9 +67,9 @@ class TestGeometricSlerp(object):
         # geometric_slerp should handle input arrays that are
         # not flat appropriately
         with pytest.raises(ValueError, match='flat'):
-            geometric_slerp(start_coord=start,
-                            end_coord=end,
-                            t_values=np.linspace(0, 1, 10))
+            geometric_slerp(start=start,
+                            end=end,
+                            t=np.linspace(0, 1, 10))
 
     @pytest.mark.parametrize("start, end", [
         # 7-D and 3-D ends
@@ -90,9 +84,9 @@ class TestGeometricSlerp(object):
         # an interpolation is attempted across two different
         # dimensionalities
         with pytest.raises(ValueError, match='dimensions'):
-            geometric_slerp(start_coord=start,
-                            end_coord=end,
-                            t_values=np.linspace(0, 1, 10))
+            geometric_slerp(start=start,
+                            end=end,
+                            t=np.linspace(0, 1, 10))
 
     @pytest.mark.parametrize("start, end", [
         # both empty
@@ -103,9 +97,9 @@ class TestGeometricSlerp(object):
         # be handled appropriately when not detected
         # by mismatch
         with pytest.raises(ValueError, match='empty'):
-            geometric_slerp(start_coord=start,
-                            end_coord=end,
-                            t_values=np.linspace(0, 1, 10))
+            geometric_slerp(start=start,
+                            end=end,
+                            t=np.linspace(0, 1, 10))
 
     @pytest.mark.parametrize("start, end, expected", [
         # North and South Poles are definitely antipodes
@@ -131,31 +125,22 @@ class TestGeometricSlerp(object):
         # interpolations between them in higher dims
         if expected == "error":
             with pytest.raises(ValueError, match='antipodes'):
-                geometric_slerp(start_coord=start,
-                                end_coord=end,
-                                t_values=np.linspace(0, 1, 10))
+                geometric_slerp(start=start,
+                                end=end,
+                                t=np.linspace(0, 1, 10))
         else:
-            geometric_slerp(start_coord=start,
-                            end_coord=end,
-                            t_values=np.linspace(0, 1, 10))
+            geometric_slerp(start=start,
+                            end=end,
+                            t=np.linspace(0, 1, 10))
 
     @pytest.mark.parametrize("start, end, expected", [
-        # 1-D is the 0-sphere, which is not path-connected
-        # we effectively follow a 1-D coordinate along
-        # a "circumference"
-        (np.array([1]),
-         np.array([0]),
-         np.array([[1],
-                   [math.sqrt(3) / 2],
-                   [0.5],
-                   [0]])),
         # 2-D with n_pts=4 (two new interpolation points)
         # this is an actual circle
         (np.array([1, 0]),
          np.array([0, 1]),
          np.array([[1, 0],
-                   [math.sqrt(3) / 2, 0.5], # 30 deg on unit circle
-                   [0.5, math.sqrt(3) / 2], # 60 deg on unit circle
+                   [math.sqrt(3) / 2, 0.5],  # 30 deg on unit circle
+                   [0.5, math.sqrt(3) / 2],  # 60 deg on unit circle
                    [0, 1]])),
         # likewise for 3-D (add z = 0 plane)
         # this is an ordinary sphere
@@ -182,24 +167,40 @@ class TestGeometricSlerp(object):
         # simple to use the unit circle to deduce expected values;
         # for larger dimensions, pad with constants so that the
         # data is N-D but simpler to reason about
-        actual = geometric_slerp(start_coord=start,
-                                 end_coord=end,
-                                 t_values=np.linspace(0, 1, 4))
+        actual = geometric_slerp(start=start,
+                                 end=end,
+                                 t=np.linspace(0, 1, 4))
         assert_allclose(actual, expected)
 
-    @pytest.mark.parametrize("t_values", [
+    @pytest.mark.parametrize("t", [
         # both interval ends clearly violate limits
         np.linspace(-20, 20, 300),
         # only one interval end violating limit slightly
         np.linspace(-0.0001, 0.0001, 17),
         ])
-    def test_t_values_limits(self, t_values):
+    def test_t_values_limits(self, t):
         # geometric_slerp() should appropriately handle
         # interpolation parameters < 0 and > 1
         with pytest.raises(ValueError, match='interpolation parameter'):
-            actual = geometric_slerp(start_coord=np.array([1]),
-                                     end_coord=np.array([0]),
-                                     t_values=t_values)
+            actual = geometric_slerp(start=np.array([1, 0]),
+                                     end=np.array([0, 1]),
+                                     t=t)
+
+    @pytest.mark.parametrize("start, end", [
+        (np.array([1]),
+         np.array([0])),
+        (np.array([0]),
+         np.array([1])),
+        (np.array([-17.7]),
+         np.array([165.9])),
+     ])
+    def test_0_sphere_handling(self, start, end):
+        # it does not make sense to interpolate the set of
+        # two points that is the 0-sphere
+        with pytest.raises(ValueError, match='0-sphere'):
+            actual = geometric_slerp(start=start,
+                                     end=end,
+                                     t=np.linspace(0, 1, 4))
 
     @pytest.mark.parametrize("tol", [
         # an integer currently raises
@@ -213,9 +214,9 @@ class TestGeometricSlerp(object):
         # geometric_slerp() should raise if tol is not
         # a suitable float type
         with pytest.raises(ValueError, match='must be a float'):
-            actual = geometric_slerp(start_coord=np.array([1]),
-                                     end_coord=np.array([0]),
-                                     t_values=np.linspace(0, 1, 5),
+            actual = geometric_slerp(start=np.array([1, 0]),
+                                     end=np.array([0, 1]),
+                                     t=np.linspace(0, 1, 5),
                                      tol=tol)
 
     @pytest.mark.parametrize("tol", [
@@ -225,14 +226,12 @@ class TestGeometricSlerp(object):
     def test_tol_sign(self, tol):
         # geometric_slerp() currently handles negative
         # tol values, as long as they are floats
-        actual = geometric_slerp(start_coord=np.array([1]),
-                                 end_coord=np.array([0]),
-                                 t_values=np.linspace(0, 1, 5),
+        actual = geometric_slerp(start=np.array([1, 0]),
+                                 end=np.array([0, 1]),
+                                 t=np.linspace(0, 1, 5),
                                  tol=tol)
 
     @pytest.mark.parametrize("start, end", [
-        # 0-sphere with two points too far away
-        (np.array([2]), np.array([0])),
         # 1-sphere (circle) with one point at origin
         # and the other on the circle
         (np.array([1, 0]), np.array([0, 0])),
@@ -249,21 +248,19 @@ class TestGeometricSlerp(object):
         # geometric_slerp() should raise on input that clearly
         # cannot be on an n-sphere of radius 1
         with pytest.raises(ValueError, match='unit n-sphere'):
-            geometric_slerp(start_coord=start,
-                            end_coord=end,
-                            t_values=np.linspace(0, 1, 5))
+            geometric_slerp(start=start,
+                            end=end,
+                            t=np.linspace(0, 1, 5))
 
     @pytest.mark.parametrize("start, end", [
-        # 0-sphere 90 degree case
-        (np.array([1]), np.array([0])),
         # 1-sphere 45 degree case
         (np.array([1, 0]),
-         np.array([math.sqrt(2)/ 2.,
-                   math.sqrt(2)/ 2.])),
+         np.array([math.sqrt(2) / 2.,
+                   math.sqrt(2) / 2.])),
         # 2-sphere 135 degree case
         (np.array([1, 0]),
-         np.array([-math.sqrt(2)/ 2.,
-                   math.sqrt(2)/ 2.])),
+         np.array([-math.sqrt(2) / 2.,
+                   math.sqrt(2) / 2.])),
         ])
     @pytest.mark.parametrize("t_func", [
         np.linspace, np.logspace])
@@ -285,32 +282,64 @@ class TestGeometricSlerp(object):
         np.random.shuffle(shuffled_indices)
         scramble_t_vals = forward_t_vals.copy()[shuffled_indices]
 
-        forward_results = geometric_slerp(start_coord=start,
-                                          end_coord=end,
-                                          t_values=forward_t_vals)
-        reverse_results = geometric_slerp(start_coord=start,
-                                          end_coord=end,
-                                          t_values=reverse_t_vals)
-        scrambled_results = geometric_slerp(start_coord=start,
-                                            end_coord=end,
-                                            t_values=scramble_t_vals)
+        forward_results = geometric_slerp(start=start,
+                                          end=end,
+                                          t=forward_t_vals)
+        reverse_results = geometric_slerp(start=start,
+                                          end=end,
+                                          t=reverse_t_vals)
+        scrambled_results = geometric_slerp(start=start,
+                                            end=end,
+                                            t=scramble_t_vals)
 
         # check fidelity to input order
         assert_allclose(forward_results, np.flipud(reverse_results))
         assert_allclose(forward_results[shuffled_indices],
                         scrambled_results)
 
-    @pytest.mark.parametrize("t_values", [
+    @pytest.mark.parametrize("t", [
         # string:
         "15, 5, 7",
         # complex numbers currently produce a warning
         # but not sure we need to worry about it too much:
         # [3 + 1j, 5 + 2j],
-        # empty list:
-        [],
         ])
-    def test_t_values_conversion(self, t_values):
+    def test_t_values_conversion(self, t):
         with pytest.raises(ValueError):
-            scrambled_results = geometric_slerp(start_coord=np.array([1]),
-                                                end_coord=np.array([0]),
-                                                t_values=t_values)
+            scrambled_results = geometric_slerp(start=np.array([1]),
+                                                end=np.array([0]),
+                                                t=t)
+
+    def test_accept_arraylike(self):
+        # array-like support requested by reviewer
+        # in gh-10380
+        actual = geometric_slerp([1, 0], [0, 1], [0, 1/3, 0.5, 2/3, 1])
+
+        # expected values are based on visual inspection
+        # of the unit circle for the progressions along
+        # the circumference provided in t
+        expected = np.array([[1, 0],
+                             [np.sqrt(3) / 2, 0.5],
+                             [np.sqrt(2) / 2,
+                              np.sqrt(2) / 2],
+                             [0.5, np.sqrt(3) / 2],
+                             [0, 1]], dtype=np.float64)
+        assert_allclose(actual, expected)
+
+    def test_scalar_t(self):
+        # when t is a scalar, return value is a single
+        # interpolated point of the appropriate dimensionality
+        # requested by reviewer in gh-10380
+        actual = geometric_slerp([1, 0], [0, 1], 0.5)
+        expected = np.array([np.sqrt(2) / 2,
+                             np.sqrt(2) / 2], dtype=np.float64)
+        assert actual.shape == (2,)
+        assert_allclose(actual, expected)
+
+    def test_degenerate_input(self):
+        # handle start == end with ValueError
+        start = np.array([1, 0, 0])
+        with pytest.raises(ValueError, match="cannot be the same"):
+            geometric_slerp(start=start,
+                            end=start,
+                            t=np.linspace(0, 1, 5))
