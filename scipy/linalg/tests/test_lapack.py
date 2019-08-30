@@ -21,7 +21,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 
 from numpy.random import rand, randint, seed
 
-from scipy.linalg import _flapack as flapack
+from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 
@@ -1515,3 +1515,20 @@ def test_pstf2():
         double_atol = 1000 * np.finfo(np.float64).eps
         atol = single_atol if ind in [0, 2] else double_atol
         assert_allclose(A[piv-1][:, piv-1], L @ L.conj().T, rtol=0., atol=atol)
+
+
+def test_lapack_documented():
+    """Test that all entries are in the doc."""
+    if lapack.__doc__ is None:  # just in case there is a python -OO
+        pytest.skip('lapack.__doc__ is None')
+    names = set(lapack.__doc__.split())
+    ignore_list = set([
+        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
+        'flapack', 'print_function',
+    ])
+    missing = list()
+    for name in dir(lapack):
+        if (not name.startswith('_') and name not in ignore_list and
+                name not in names):
+            missing.append(name)
+    assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
