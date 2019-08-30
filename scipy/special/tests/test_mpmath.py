@@ -1860,7 +1860,8 @@ class TestSystematic(object):
             sc.wrightomega,
             mpmath_wrightomega_real,
             [Arg()],
-            rtol=1e-14,
+            rtol=1e-15,
+            atol=0,
             nan_ok=False,
         )
 

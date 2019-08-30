@@ -391,30 +391,38 @@ wright::wrightomega_real(double x)
 	}
     }
 
-  /* Split int three distinct intervals (-inf,-2), [-2,1), [1,inf) */
-  if (x < -2.0)
+  if (x < -50.0)
     {
-      /* exponential is approx < 1.3e-1 accurate */
+      /*
+       * Skip the iterative scheme because it exp(x) is already
+       * accurate to double precision.
+       */
       w = exp(x);
       if (w == 0.0)
         {
-          /* Skip the iterative scheme because it computes log(w) */
           sf_error("wrightomega", SF_ERROR_UNDERFLOW, "underflow in exponential series");
-          return w;
         }
+      return w;
     }
-  else if (x < 1)
-    {
-      /* on [-2,1) approx < 1.5e-1 accurate */
-      w = exp(2.0*(x-1.0)/3.0);
-    }
-  else if (x > 1e20)
+  if (x > 1e20)
     {
       /*
        * Skip the iterative scheme because the result is just x to
        * double precision
        */
       return x;
+    }
+
+  /* Split int three distinct intervals (-inf,-2), [-2,1), [1,inf) */
+  if (x < -2.0)
+    {
+      /* exponential is approx < 1.3e-1 accurate */
+      w = exp(x);
+    }
+  else if (x < 1)
+    {
+      /* on [-2,1) approx < 1.5e-1 accurate */
+      w = exp(2.0*(x-1.0)/3.0);
     }
   else
     {
