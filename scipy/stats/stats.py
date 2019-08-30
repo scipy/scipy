@@ -4549,21 +4549,21 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
     (1.0, 0.0)
     """
-    nx, px = x.shape
-    ny, py = y.shape
-
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise ValueError("x and y why must be ndarrays")
-
-    # check for NaNs
-    _contains_nan(x, nan_policy='raise')
-    _contains_nan(y, nan_policy='raise')
 
     # convert arrays of type (n,) to (n, 1)
     if x.ndim == 1:
         x.shape = (-1, 1)
     if y.ndim == 1:
         y.shape = (-1, 1)
+
+    nx, px = x.shape
+    ny, py = y.shape
+
+    # check for NaNs
+    _contains_nan(x, nan_policy='raise')
+    _contains_nan(y, nan_policy='raise')
 
     if nx != ny:
         if px == py:
