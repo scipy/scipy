@@ -36,7 +36,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy.optimize import moduleTNC
 from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
-                       wrap_function)
+                       wrap_function, _prepare_scalar_function)
 from ._differentiable_functions import ScalarFunction, FD_METHODS
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new
@@ -373,27 +373,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     else:
         messages = MSG_NONE
 
-    fun_calls, func = wrap_function(fun, args)
-    if jac is None:
-        def func_and_grad(x):
-            f = func(x)
-            g = approx_derivative(func, x, abs_step=eps, f0=f,
-                                  method='2-point', bounds=new_bounds)
-            return f, g
-
-    elif callable(jac):
-        def func_and_grad(x):
-            return func(x), jac(x, *args)
-
-    elif jac in FD_METHODS:
-        def fake_hess(x):
-            return x
-        sf = ScalarFunction(func, x0, (), jac, fake_hess, finite_diff_rel_step,
-                            new_bounds)
-
-        def func_and_grad(x):
-            f, g = sf.fun_and_grad(x)
-            return f, g
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  bounds=new_bounds)
+    func_and_grad = sf.fun_and_grad
 
     """
     low, up   : the bounds (lists of floats)
@@ -433,7 +416,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     funv, jacv = func_and_grad(x)
 
-    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=fun_calls[0],
+    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
                           nit=nit, status=rc, message=RCSTRINGS[rc],
                           success=(-1 < rc < 3))
 

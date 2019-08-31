@@ -27,7 +27,7 @@ class ScalarFunction(object):
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds):
+                 finite_diff_bounds, epsilon=None):
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError("`grad` must be either callable or one of {}."
                              .format(FD_METHODS))
@@ -57,10 +57,12 @@ class ScalarFunction(object):
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
             finite_diff_options["rel_step"] = finite_diff_rel_step
+            finite_diff_options["abs_step"] = epsilon
             finite_diff_options["bounds"] = finite_diff_bounds
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
+            finite_diff_options["abs_step"] = epsilon
             finite_diff_options["as_linear_operator"] = True
 
         # Function evaluation

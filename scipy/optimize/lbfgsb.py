@@ -39,7 +39,7 @@ import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, wrap_function)
+                       _check_unknown_options, wrap_function, _prepare_scalar_function)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new
 from ._differentiable_functions import ScalarFunction, FD_METHODS
@@ -302,34 +302,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
-    n_function_evals, func = wrap_function(fun, args)
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+                                  bounds=new_bounds,
+                                  finite_diff_rel_step=finite_diff_rel_step)
 
-    if jac is None:
-        def func_and_grad(x):
-            f = func(x)
-            g = approx_derivative(func, x, abs_step=eps, f0=f,
-                                  method='2-point', bounds=new_bounds)
-            return f, g
-
-    elif callable(jac):
-        def func_and_grad(x):
-            return func(x), jac(x, *args)
-
-    elif jac in FD_METHODS:
-        def fake_hess(x):
-            return x
-
-        sf = ScalarFunction(func, x0, (), jac, fake_hess, finite_diff_rel_step,
-                            new_bounds)
-
-        def func_and_grad(x):
-            f, g = sf.fun_and_grad(x)
-            return f, g
-
-        assert sf.nfev == n_function_evals[0]
-
-    # for tracking grad calls
-    n_fg_evals, myfunc_and_grad = wrap_function(func_and_grad, ())
+    func_and_grad = sf.fun_and_grad
 
     nbd = zeros(n, int32)
     low_bnd = zeros(n, float64)
@@ -377,7 +354,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # Note that interruptions due to maxfun are postponed
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
-            f, g = myfunc_and_grad(x)
+            f, g = func_and_grad(x)
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
@@ -386,7 +363,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
-            elif n_function_evals[0] > maxfun:
+            elif sf.nfev > maxfun:
                 task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
                            'EXCEEDS LIMIT')
         else:
@@ -395,7 +372,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
-    elif n_function_evals[0] > maxfun or n_iterations >= maxiter:
+    elif sf.nfev > maxfun or n_iterations >= maxiter:
         warnflag = 1
     else:
         warnflag = 2
@@ -412,8 +389,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n_corrs = min(n_bfgs_updates, maxcor)
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
-    return OptimizeResult(fun=f, jac=g, nfev=n_function_evals[0],
-                          njev=n_fg_evals[0],
+    return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
+                          njev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=task_str,
                           x=x, success=(warnflag == 0), hess_inv=hess_inv)
 

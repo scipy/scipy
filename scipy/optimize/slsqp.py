@@ -21,7 +21,8 @@ import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
-from .optimize import wrap_function, OptimizeResult, _check_unknown_options
+from .optimize import (wrap_function, OptimizeResult, _check_unknown_options,
+                       _prepare_scalar_function)
 from ._numdiff import approx_derivative
 from ._differentiable_functions import ScalarFunction, FD_METHODS
 from ._constraints import old_bound_to_new
@@ -306,45 +307,18 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    8: "Positive directional derivative for linesearch",
                    9: "Iteration limit exceeded"}
 
-    # Wrap func
-    feval, func = wrap_function(func, args)
-
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
 
-    # jacobian function for the minimizer
     # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
-    # approx_derivative and ScalarFunction
+    # ScalarFunction
     if bounds is None or len(bounds) == 0:
         new_bounds = (-np.inf, np.inf)
     else:
         new_bounds = old_bound_to_new(bounds)
 
-    # clip the initial guess to bounds, otherwise approx_derivative and
-    # ScalarFunction don't work
+    # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
     x = np.clip(x, new_bounds[0], new_bounds[1])
-
-    if jac is None:
-        def grad(x, f0=None):
-            g = approx_derivative(func, x, abs_step=eps, f0=f0,
-                                  method='2-point', bounds=new_bounds)
-            return g
-
-        geval, fprime = wrap_function(grad, ())
-
-    elif callable(jac):
-        geval, fprime = wrap_function(jac, args)
-
-    elif jac in FD_METHODS:
-        def fake_hess(x, *args):
-            return x
-
-        # ScalarFunction caches. Reuse of fun(x) during grad
-        # calculation reduces overall function evaluations.
-        sf = ScalarFunction(func, x, (), jac, fake_hess,
-                            finite_diff_rel_step, new_bounds)
-        func = sf.fun
-        geval, fprime = wrap_function(sf.grad, ())
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
@@ -392,6 +366,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         infbnd = ~isfinite(bnds)
         xl[infbnd[:, 0]] = np.nan
         xu[infbnd[:, 1]] = np.nan
+
+    # ScalarFunction provides function and gradient evaluation
+    sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  bounds=new_bounds)
+    func = sf.fun
+    fprime = sf.grad
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)
@@ -487,7 +468,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented
         if iprint >= 2 and majiter > majiter_prev:
-            print("%5i %5i % 16.6E % 16.6E" % (majiter, feval[0],
+            print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
                                                fx, linalg.norm(g)))
 
         # If exit mode is not -1 or 1, slsqp has completed
@@ -501,11 +482,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
         print("            Current function value:", fx)
         print("            Iterations:", majiter)
-        print("            Function evaluations:", feval[0])
-        print("            Gradient evaluations:", geval[0])
+        print("            Function evaluations:", sf.nfev)
+        print("            Gradient evaluations:", sf.ngev)
 
     return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
-                          nfev=feval[0], njev=geval[0], status=int(mode),
+                          nfev=sf.nfev, njev=sf.ngev, status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 
 

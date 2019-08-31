@@ -165,6 +165,79 @@ def vecnorm(x, ord=2):
         return numpy.sum(numpy.abs(x)**ord, axis=0)**(1.0 / ord)
 
 
+def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
+                             epsilon=None, finite_diff_rel_step=None):
+    """
+    Creates a ScalarFunction object for use with scalar minimizers
+    (BFGS/LBFGSB/SLSQP/TNC/CG/etc).
+
+    Parameters
+    ----------
+    fun : callable
+        The objective function to be minimized.
+
+            ``fun(x, *args) -> float``
+
+        where ``x`` is an 1-D array with shape (n,) and ``args``
+        is a tuple of the fixed parameters needed to completely
+        specify the function.
+    x0 : ndarray, shape (n,)
+        Initial guess. Array of real elements of size (n,),
+        where 'n' is the number of independent variables.
+    jac : {callable,  '2-point', '3-point', 'cs', None}, optional
+        Method for computing the gradient vector. If one of
+        `{'2-point', '3-point', 'cs'}` is selected then the gradient is
+        calculated with a relative step for finite differences. If `None`, the
+        two step finite differences with an absolute step is used.
+    args : tuple, optional
+        Extra arguments passed to the objective function and its
+        derivatives (`fun`, `jac` functions).
+    bounds : sequence, optional
+        Bounds on variables. 'new-style' bounds are required.
+    eps : float or ndarray
+        If `jac is None` the absolute step size used for numerical
+        approximation of the jacobian via forward differences.
+    finite_diff_rel_step : None or array_like, optional
+        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        use for numerical approximation of the jacobian. The absolute step
+        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        the sign of `h` is ignored. If None (default) then step is selected
+        automatically.
+
+    Returns
+    -------
+    func_calls, sf : list, ScalarFunction
+    """
+    if callable(jac):
+        grad = jac
+    elif jac in FD_METHODS:
+        # epsilon is set to None so that ScalarFunction is made to use
+        # rel_steps
+        epsilon = None
+        grad = jac
+    else:
+        # default (jac is None) is to do 2-point finite differences with
+        # absolute step size. ScalarFunction has to be provided an
+        # epsilon value that is not None to use absolute steps. This is
+        # normally the case from most _minimize* methods.
+        grad = '2-point'
+        epsilon = epsilon
+
+    def fake_hess(x, *args):
+        return x
+
+    if bounds is None:
+        bounds = (-np.inf, np.inf)
+
+    # ScalarFunction caches. Reuse of fun(x) during grad
+    # calculation reduces overall function evaluations.
+    sf = ScalarFunction(fun, x0, args, grad, fake_hess,
+                        finite_diff_rel_step, bounds, epsilon=epsilon)
+
+    return sf
+
+
 def rosen(x):
     """
     The Rosenbrock function.
@@ -991,44 +1064,14 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if maxiter is None:
         maxiter = len(x0) * 200
 
-    func_calls, f = wrap_function(fun, args)
+    sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps,
+                                  finite_diff_rel_step=finite_diff_rel_step)
 
-    if jac is None:
-        def grad(x, f0=None):
-            g = approx_derivative(f, x, abs_step=eps, f0=f0,
-                                  method='2-point')
-            return g
+    f = sf.fun
+    myfprime = sf.grad
 
-        grad_calls, myfprime = wrap_function(grad, ())
-        # code would be simplified by calculating old_fval, gfk outside these
-        # if clauses. However, for this specific case we can save some function
-        # evaluations.
-        old_fval = f(x0)
-        gfk = grad(x0, f0=old_fval)
-        grad_calls[0] += 1
-
-    elif callable(jac):
-        grad_calls, myfprime = wrap_function(jac, args)
-        old_fval = f(x0)
-        gfk = myfprime(x0)
-
-    elif jac in FD_METHODS:
-        def fake_hess(x, *args):
-            return x
-
-        # ScalarFunction caches. Reuse of fun(x) during grad
-        # calculation reduces overall function evaluations.
-        sf = ScalarFunction(f, x0, (), jac, fake_hess,
-                            finite_diff_rel_step, (-np.inf, np.inf))
-
-        f = sf.fun
-
-        old_fval = f(x0)
-        gfk = sf.grad(x0)
-        grad_calls, myfprime = wrap_function(sf.grad, ())
-
-        grad_calls[0] += 1
-        assert sf.nfev == func_calls[0]
+    old_fval = f(x0)
+    gfk = myfprime(x0)
 
     if not np.isscalar(old_fval):
         try:
@@ -1118,11 +1161,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % func_calls[0])
-        print("         Gradient evaluations: %d" % grad_calls[0])
+        print("         Function evaluations: %d" % sf.nfev)
+        print("         Gradient evaluations: %d" % sf.ngev)
 
-    result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
-                            njev=grad_calls[0], status=warnflag,
+    result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=sf.nfev,
+                            njev=sf.ngev, status=warnflag,
                             success=(warnflag == 0), message=msg, x=xk,
                             nit=k)
     if retall:
@@ -1339,44 +1382,14 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     if maxiter is None:
         maxiter = len(x0) * 200
 
-    func_calls, f = wrap_function(fun, args)
+    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+                                  finite_diff_rel_step=finite_diff_rel_step)
 
-    if jac is None:
-        def grad(x, f0=None):
-            g = approx_derivative(f, x, abs_step=eps, f0=f0,
-                                  method='2-point')
-            return g
+    f = sf.fun
+    myfprime = sf.grad
 
-        grad_calls, myfprime = wrap_function(grad, ())
-        # code would be simplified by calculating old_fval, gfk outside these
-        # if clauses. However, for this specific case we can save some function
-        # evaluations.
-        old_fval = f(x0)
-        gfk = grad(x0, f0=old_fval)
-        grad_calls[0] += 1
-
-    elif callable(jac):
-        grad_calls, myfprime = wrap_function(jac, args)
-        old_fval = f(x0)
-        gfk = myfprime(x0)
-
-    elif jac in FD_METHODS:
-        def fake_hess(x, *args):
-            return x
-
-        # ScalarFunction caches. Reuse of fun(x) during grad
-        # calculation reduces overall function evaluations.
-        sf = ScalarFunction(f, x0, (), jac, fake_hess,
-                            finite_diff_rel_step, (-np.inf, np.inf))
-
-        f = sf.fun
-
-        old_fval = f(x0)
-        gfk = sf.grad(x0)
-        grad_calls, myfprime = wrap_function(sf.grad, ())
-
-        grad_calls[0] += 1
-        assert sf.nfev == func_calls[0]
+    old_fval = f(x0)
+    gfk = myfprime(x0)
 
     if not np.isscalar(old_fval):
         try:
@@ -1466,11 +1479,11 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
         print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % func_calls[0])
-        print("         Gradient evaluations: %d" % grad_calls[0])
+        print("         Function evaluations: %d" % sf.nfev)
+        print("         Gradient evaluations: %d" % sf.ngev)
 
-    result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
-                            njev=grad_calls[0], status=warnflag,
+    result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
+                            njev=sf.ngev, status=warnflag,
                             success=(warnflag == 0), message=msg, x=xk,
                             nit=k)
     if retall:
