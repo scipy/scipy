@@ -382,6 +382,16 @@ All functions
    cpocon
    zpocon
 
+   spstrf
+   dpstrf
+   cpstrf
+   zpstrf
+
+   spstf2
+   dpstf2
+   cpstf2
+   zpstf2
+
    sposv
    dposv
    cposv
