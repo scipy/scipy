@@ -437,7 +437,7 @@ def test_zero_rhs(solver):
             if solver is not minres:
                 x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
                 if info == 0:
-                    assert_allclose(x, 0)
+                    assert_allclose(x, 0, atol=1e-100)
 
                 x, info = solver(A, b, tol=tol, atol=tol)
                 assert_equal(info, 0)
