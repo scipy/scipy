@@ -74,6 +74,16 @@ All functions
    cgecon
    zgecon
 
+   sgeequ
+   dgeequ
+   cgeequ
+   zgeequ
+
+   sgeequb
+   dgeequb
+   cgeequb
+   zgeequb
+
    sgees
    dgees
    cgees
@@ -242,6 +252,9 @@ All functions
 
    checon
    zhecon
+
+   cheequb
+   zheequb
 
    cheev
    zheev
@@ -464,6 +477,11 @@ All functions
    dsyconv
    csyconv
    zsyconv
+
+   ssyequb
+   dsyequb
+   csyequb
+   zsyequb
 
    ssyev
    dsyev

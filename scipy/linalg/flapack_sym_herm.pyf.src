@@ -370,7 +370,6 @@ end subroutine <prefix2c>heevd
 
   end subroutine <c,z,c,z><sy,\0,he,\2>con
 
-
   subroutine <prefix>syconv(lower,way,n,a,lda,ipiv,e,info)
   ! ?SYCONV converts A given by ???TRF into L and D and vice-versa.
   ! Get Non-diag elements of D (returned in workspace) and apply or reverse permutation done in TRF.
@@ -386,7 +385,7 @@ end subroutine <prefix2c>heevd
     integer intent(in),dimension(n),depend(n) :: ipiv
     <ftype> intent(out),dimension(n),depend(n):: e
     integer intent(out) :: info
-  
+
   end subroutine <prefix>syconv
 
   subroutine <prefix2c>hegst(n,a,lda,b,ldb,info,itype,lower)
@@ -410,7 +409,6 @@ end subroutine <prefix2c>heevd
      integer intent(out):: info
 
    end subroutine <prefix2c>hegst
-
 
    subroutine <prefix2c>hetrf(lower,n,a,lda,ipiv,work,lwork,info)
 
@@ -874,3 +872,39 @@ subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,absto
     integer intent(out),dimension(n),depend(n) :: ifail
     integer intent(out) :: info
 end subroutine <prefix2c>hegvx
+
+subroutine <prefix>syequb(lower,n,a,lda,s,scond,amax,work,info)
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&scond,&amax,work,&info)
+    callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,int*
+
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    integer intent(hide),depend(a) :: lda = MAX(1,shape(a,0))
+    <ftype> intent(hide),depend(n),dimension(2*n + 1) :: work
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    <ftype> intent(in),dimension(lda,n),check(shape(a,0)==shape(a,1)) :: a
+    <ftypereal> intent(out),dimension(n),depend(n) :: s
+    <ftypereal> intent(out) :: scond
+    <ftypereal> intent(out) :: amax
+    integer intent(out) :: info
+
+end subroutine <prefix>syequb
+
+subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&scond,&amax,work,&info)
+    callprotoargument char*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,int*
+
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    integer intent(hide),depend(a) :: lda = MAX(1,shape(a,0))
+    <ftype2c> intent(hide),depend(n),dimension(2*n + 1) :: work
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    <ftype2c> intent(in),dimension(lda,n),check(shape(a,0)==shape(a,1)) :: a
+    <ftype2> intent(out),dimension(n),depend(n) :: s
+    <ftype2> intent(out) :: scond
+    <ftype2> intent(out) :: amax
+    integer intent(out) :: info
+
+end subroutine <prefix2c>heequb
