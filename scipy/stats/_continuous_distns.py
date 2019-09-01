@@ -1549,19 +1549,38 @@ class exponweib_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    weibull_min, numpy.random.mtrand.RandomState.weibull
+
     Notes
     -----
     The probability density function for `exponweib` is:
 
     .. math::
 
-        f(x, a, c) = a c (1-\exp(-x^c))^{a-1} \exp(-x^c) x^{c-1}
+        f(x, a, c) = a c [1-\exp(-x^c)]^{a-1} \exp(-x^c) x^{c-1}
 
-    for :math:`x >= 0`, :math:`a > 0`, :math:`c > 0`.
+    and its cumulative distribution function is:
 
-    `exponweib` takes :math:`a` and :math:`c` as shape parameters.
+    .. math::
+
+        F(x, a, c) = [1-\exp(-x^c)]^a
+
+    for :math:`x > 0`, :math:`a > 0`, :math:`c > 0`.
+
+    `exponweib` takes :math:`a` and :math:`c` as shape parameters:
+
+    * :math:`a` is the exponentiation parameter,
+      with the special case :math:`a=1` corresponding to the
+      (non-exponentiated) Weibull distribution `weibull_min`.
+    * :math:`c` is the shape parameter of the non-exponentiated Weibull law.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Exponentiated_Weibull_distribution
 
     %(example)s
 
@@ -1902,11 +1921,14 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
+    The Weibull Minimum Extreme Value distribution, from extreme value theory,
+    is also often simply called the Weibull distribution.
+
     %(before_notes)s
 
     See Also
     --------
-    weibull_max
+    weibull_max, numpy.random.mtrand.RandomState.weibull, exponweib
 
     Notes
     -----
@@ -1919,8 +1941,16 @@ class weibull_min_gen(rv_continuous):
     for :math:`x >= 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
+    (named :math:`k` in Wikipedia article and :math:`a` in
+    ``numpy.random.weibull``).  Special shape values are :math:`c=1` and
+    :math:`c=2` where Weibull distribution reduces to the `expon` and
+    `rayleigh` distributions respectively.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Weibull_distribution
 
     %(example)s
 
@@ -5342,10 +5372,19 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc):
-        mu = np.where(dfd <= 2, np.inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = np.where(dfd <= 4, np.inf, 2*(dfd*1.0/dfn)**2.0 *
-                       ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
-                       ((dfd-2.0)**2.0 * (dfd-4.0)))
+        # Note: the rv_continuous class ensures that dfn > 0 when this function
+        # is called, so we don't have  to check for division by zero with dfn
+        # in the following.
+        mu_num = dfd * (dfn + nc)
+        mu_den = dfn * (dfd - 2)
+        mu = np.full_like(mu_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu_num, mu_den, where=dfd > 2, out=mu)
+
+        mu2_num = 2*((dfn + nc)**2 + (dfn + 2*nc)*(dfd - 2))*(dfd/dfn)**2
+        mu2_den = (dfd - 2)**2 * (dfd - 4)
+        mu2 = np.full_like(mu2_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu2_num, mu2_den, where=dfd > 4, out=mu2)
+
         return mu, mu2, None, None
 
 

@@ -2856,8 +2856,6 @@ c     ************
             if (info .eq. -8) write (0,9018)
             if (info .eq. -9) write (0,9019)
          endif
-         if (iprint .ge. 1) write (6,3007) cachyt,sbtime,lnscht
-         write (6,3008) time
       endif
 
  1004 format (/,a4, 1p, 6(1x,d11.4),/,(4x,1p,6(1x,d11.4)))

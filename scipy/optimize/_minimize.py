@@ -175,7 +175,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         generic options:
 
             maxiter : int
-                Maximum number of iterations to perform.
+                Maximum number of iterations to perform. Depending on the
+                method each iteration may use several function evaluations.
             disp : bool
                 Set to True to print convergence messages.
 

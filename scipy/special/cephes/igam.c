@@ -135,7 +135,7 @@ double a, x;
 	return (0.0);
 
     if ((x < 0) || (a <= 0)) {
-	mtherr("gammainc", DOMAIN);
+	sf_error("gammainc", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -160,7 +160,7 @@ double igamc(double a, double x)
     double absxma_a;
 
     if ((x < 0) || (a <= 0)) {
-	mtherr("gammaincc", DOMAIN);
+	sf_error("gammaincc", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     } else if (x == 0) {
 	return 1;
@@ -175,7 +175,7 @@ double igamc(double a, double x)
     } else if ((a > LARGE) && (absxma_a < LARGERATIO / sqrt(a))) {
 	return asymptotic_series(a, x, IGAMC);
     }
-    
+
     /* Everywhere else; see [2]. */
     if (x > 1.1) {
 	if (x < a) {
@@ -213,12 +213,12 @@ double igam_fac(double a, double x)
     if (fabs(a - x) > 0.4 * fabs(a)) {
 	ax = a * log(x) - x - lgam(a);
 	if (ax < -MAXLOG) {
-	    mtherr("igam", UNDERFLOW);
+	    sf_error("igam", SF_ERROR_UNDERFLOW, NULL);
 	    return 0.0;
 	}
 	return exp(ax);
     }
-    
+
     fac = a + lanczos_g - 0.5;
     res = sqrt(fac / exp(1)) / lanczos_sum_expg_scaled(a);
 
@@ -228,7 +228,7 @@ double igam_fac(double a, double x)
 	num = x - a - lanczos_g + 0.5;
 	res *= exp(a * log1pmx(num / fac) + x * (0.5 - lanczos_g) / fac);
     }
-    
+
     return res;
 }
 
@@ -239,7 +239,7 @@ static double igamc_continued_fraction(double a, double x)
     int i;
     double ans, ax, c, yc, r, t, y, z;
     double pk, pkm1, pkm2, qk, qkm1, qkm2;
-    
+
     ax = igam_fac(a, x);
     if (ax == 0.0) {
 	return 0.0;
@@ -298,12 +298,12 @@ static double igam_series(double a, double x)
     if (ax == 0.0) {
 	return 0.0;
     }
-    
+
     /* power series */
     r = a;
     c = 1.0;
     ans = 1.0;
-    
+
     for (i = 0; i < MAXITER; i++) {
 	r += 1.0;
 	c *= x / r;
@@ -396,6 +396,6 @@ static double asymptotic_series(double a, double x, int func)
 	afac /= a;
     }
     res += sgn * exp(-0.5 * a * eta * eta) * sum / sqrt(2 * NPY_PI * a);
-	    
+
     return res;
 }

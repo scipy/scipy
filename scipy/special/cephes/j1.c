@@ -204,11 +204,11 @@ double x;
 
     if (x <= 5.0) {
 	if (x == 0.0) {
-	    mtherr("y1", SING);
+	    sf_error("y1", SF_ERROR_SINGULAR, NULL);
 	    return -NPY_INFINITY;
 	}
 	else if (x <= 0.0) {
-	    mtherr("y1", DOMAIN);
+	    sf_error("y1", SF_ERROR_DOMAIN, NULL);
 	    return NPY_NAN;
 	}
 	z = x * x;

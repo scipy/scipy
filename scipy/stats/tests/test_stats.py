@@ -4093,7 +4093,7 @@ class TestGeometricStandardDeviation(object):
         with pytest.raises(ValueError, match='Infinite value'):
             stats.gstd(np.append(self.array_1d, [np.inf]))
 
-    def test_propogates_nan_values(self):
+    def test_propagates_nan_values(self):
         a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
         gstd_actual = stats.gstd(a, axis=1)
         assert_allclose(gstd_actual, np.array([4, np.nan]))

@@ -39,7 +39,7 @@ def binned_statistic(x, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
-          * 'std' : compute the standard deviation within each bin. This 
+          * 'std' : compute the standard deviation within each bin. This
             is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
@@ -215,7 +215,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
           * 'mean' : compute the mean of values for points within each bin.
             Empty bins will be represented by NaN.
-          * 'std' : compute the standard deviation within each bin. This 
+          * 'std' : compute the standard deviation within each bin. This
             is implicitly calculated with ddof=0.
           * 'median' : compute the median of values for points within each
             bin. Empty bins will be represented by NaN.
@@ -388,7 +388,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             referenced.
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
-          * 'std' : compute the standard deviation within each bin. This 
+          * 'std' : compute the standard deviation within each bin. This
             is implicitly calculated with ddof=0.
           * 'min' : compute the minimum of values for points within each bin.
             Empty bins will be represented by NaN.
@@ -472,7 +472,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     >>> mu = np.array([0., 1.])
     >>> sigma = np.array([[1., -0.5],[-0.5, 1.5]])
     >>> multinormal = stats.multivariate_normal(mu, sigma)
-    >>> data = multinormal.rvs(size=600)
+    >>> data = multinormal.rvs(size=600, random_state=235412)
     >>> data.shape
     (600, 2)
 
@@ -498,7 +498,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111, projection='3d')
-    >>> ax.bar3d(x, y, z, dx, dy, bincounts)
+    >>> with np.errstate(divide='ignore'):   # silence random axes3d warning
+    ...     ax.bar3d(x, y, z, dx, dy, bincounts)
 
     """
     known_stats = ['mean', 'median', 'count', 'sum', 'std','min','max']

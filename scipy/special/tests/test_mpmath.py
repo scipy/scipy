@@ -105,7 +105,7 @@ def test_hyp0f1_gh_1609():
 # hyperu
 # ------------------------------------------------------------------------------
 
-@check_version(mpmath, '0.19')
+@check_version(mpmath, '1.1.0')
 def test_hyperu_around_0():
     dataset = []
     # DLMF 13.2.14-15 test points.
@@ -1358,12 +1358,20 @@ class TestSystematic(object):
         # in the intermediate calculations. Can be fixed by implementing an
         # asymptotic expansion for Bessel functions for large order.
 
-    @pytest.mark.xfail(run=False)
     def test_hyp1f1(self):
-        assert_mpmath_equal(inf_to_nan(sc.hyp1f1),
-                            exception_to_nan(lambda a, b, x: mpmath.hyp1f1(a, b, x, **HYPERKW)),
-                            [Arg(-1e5, 1e5), Arg(-1e5, 1e5), Arg()],
-                            n=2000)
+        def mpmath_hyp1f1(a, b, x):
+            try:
+                return mpmath.hyp1f1(a, b, x)
+            except ZeroDivisionError:
+                return np.inf
+
+        assert_mpmath_equal(
+            sc.hyp1f1,
+            mpmath_hyp1f1,
+            [Arg(-50, 50), Arg(1, 50, inclusive_a=False), Arg(-50, 50)],
+            n=500,
+            nan_ok=False
+        )
 
     @pytest.mark.xfail(run=False)
     def test_hyp1f1_complex(self):
