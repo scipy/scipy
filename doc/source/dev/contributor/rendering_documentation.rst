@@ -29,12 +29,15 @@ To render the documentation on your own machine:
    terminal window ``conda install sphinx matplotlib``.
 #. In a terminal window, browse to the ``scipy/doc`` directory. Note the
    presence of the file ``Makefile``.
-#. If this is your first time building the docs, execute ``git submodule
-   init``. After you’ve initialized for the first time, enter ``git submodule
-   update`` instead. Some of the documentation theme files are not distributed
-   with the main ``scipy`` repository; this keeps them up to date with
+#. Execute ``git submodule update --init``.
+   Some of the documentation theme files are not distributed
+   with the main ``scipy`` repository; this keeps them up to date using
    `git submodules`_.
-#. Enter ``make html-scipyorg``. This uses the `Make build automation tool`_
+#. Enter ``make html-scipyorg``. If you have multiple version of Python on
+   your path, you can choose which version to use by appending
+   ``PYTHON=python3.7`` to this command, where ``python3.7`` is to be
+   replaced with the name of the Python you use for SciPy development.
+   This uses the `Make build automation tool`_
    to execute the documentation build instructions from the ``Makefile``.
    This can take a while the first time, but subsequent documentation builds
    are typically much faster.
