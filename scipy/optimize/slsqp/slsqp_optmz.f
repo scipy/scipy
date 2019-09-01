@@ -503,6 +503,15 @@ C   CHECK CONVERGENCE
 C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
+      h3 = ZERO
+      DO 256 j=1,m
+         IF (j.LE.meq) THEN
+             h1 = c(j)
+         ELSE
+             h1 = ZERO
+         ENDIF
+         h3 = h3 + MAX(-c(j),h1)
+  256 CONTINUE
       IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
      *     .AND. .NOT. badlin)
      *   THEN
@@ -563,12 +572,7 @@ C   L*D*L'*S
           CALL daxpy_sl(n, one-h4, v, 1, u, 1)
       ENDIF
       IF (h1.EQ.0 .or. h2.EQ.0) THEN
-C         Singular update: reset hessian.  The code jumps to 255 if too
-C         many resets are encountered, expecting h3 to store current
-C         constraint violation. But h3 has been overwritten at this
-C         point, so set it to nan to avoid spurious exit.
-          h3 = 0d0
-          h3 = 1/h3
+C         Singular update: reset hessian.
           GO TO 110
       end if
       CALL ldl(n, l, u, +one/h1, v)
