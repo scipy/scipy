@@ -19,8 +19,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-import platform
 import itertools
 
 import numpy as np
@@ -218,10 +216,28 @@ class TestCephes(object):
 
     def test_chndtr(self):
         assert_equal(cephes.chndtr(0,1,0),0.0)
-        p = cephes.chndtr(np.linspace(20, 25, 5), 2, 1.07458615e+02)
-        assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
-                            1.33520017e-08, 2.74909967e-08],
-                        rtol=1e-6, atol=0)
+
+        # Each row holds (x, nu, lam, expected_value)
+        # These values were computed using Wolfram Alpha with
+        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
+        values = np.array([
+            [25.00, 20.0, 400, 4.1210655112396197139e-57],
+            [25.00, 8.00, 250, 2.3988026526832425878e-29],
+            [0.001, 8.00, 40., 5.3761806201366039084e-24],
+            [0.010, 8.00, 40., 5.45396231055999457039e-20],
+            [20.00, 2.00, 107, 1.39390743555819597802e-9],
+            [22.50, 2.00, 107, 7.11803307138105870671e-9],
+            [25.00, 2.00, 107, 3.11041244829864897313e-8],
+            [3.000, 2.00, 1.0, 0.62064365321954362734],
+            [350.0, 300., 10., 0.93880128006276407710],
+            [100.0, 13.5, 10., 0.99999999650104210949],
+            [700.0, 20.0, 400, 0.99999999925680650105],
+            [150.0, 13.5, 10., 0.99999999999999983046],
+            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
+        ])
+        cdf = cephes.chndtr(values[:, 0], values[:, 1], values[:, 2])
+        assert_allclose(cdf, values[:, 3], rtol=1e-12)
+
         assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
         assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
         assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
@@ -296,10 +312,14 @@ class TestCephes(object):
         assert_equal(cephes.ellipkinc(0,0),0.0)
 
     def test_erf(self):
-        assert_equal(cephes.erf(0),0.0)
+        assert_equal(cephes.erf(0), 0.0)
+
+    def test_erf_symmetry(self):
+        x = 5.905732037710919
+        assert_equal(cephes.erf(x) + cephes.erf(-x), 0.0)
 
     def test_erfc(self):
-        assert_equal(cephes.erfc(0),1.0)
+        assert_equal(cephes.erfc(0), 1.0)
 
     def test_exp1(self):
         cephes.exp1(1)
@@ -456,20 +476,8 @@ class TestCephes(object):
         assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
         cephes.hyp1f1(1,1,1)
 
-    def test_hyp1f2(self):
-        cephes.hyp1f2(1,1,1,1)
-
-    def test_hyp2f0(self):
-        cephes.hyp2f0(1,1,1,1)
-
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
-
-    def test_hyp3f0(self):
-        assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
-
-    def test_hyperu(self):
-        assert_equal(cephes.hyperu(0,1,1),1.0)
 
     def test_i0(self):
         assert_equal(cephes.i0(0),1.0)
@@ -563,7 +571,17 @@ class TestCephes(object):
         assert_(np.isnan(cephes.kolmogi(np.nan)))
 
     def test_kolmogorov(self):
-        assert_equal(cephes.kolmogorov(0),1.0)
+        assert_equal(cephes.kolmogorov(0), 1.0)
+
+    def test_kolmogp(self):
+        assert_equal(cephes._kolmogp(0), -0.0)
+
+    def test_kolmogc(self):
+        assert_equal(cephes._kolmogc(0), 0.0)
+
+    def test_kolmogci(self):
+        assert_equal(cephes._kolmogci(0), 0.0)
+        assert_(np.isnan(cephes._kolmogci(np.nan)))
 
     def _check_kv(self):
         cephes.kv(1,1)
@@ -585,17 +603,19 @@ class TestCephes(object):
         c = complex
         assert_equal(log1p(0 + 0j), 0 + 0j)
         assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
-        assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
-        assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
-        assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
-        assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
-        assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
-        assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
-        assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
-        assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
-        assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
-        assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
-        assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
+            assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
+            assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
+            assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
+            assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
+            assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
+            assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
+            assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
+            assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
+            assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
+            assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
 
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
@@ -769,13 +789,6 @@ class TestCephes(object):
     def test_nctdtrit(self):
         cephes.nctdtrit(.1,0.2,.5)
 
-    def test_ndtr(self):
-        assert_equal(cephes.ndtr(0), 0.5)
-        assert_almost_equal(cephes.ndtr(1), 0.84134474606)
-
-    def test_ndtri(self):
-        assert_equal(cephes.ndtri(0.5),0.0)
-
     def test_nrdtrimn(self):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
 
@@ -901,10 +914,29 @@ class TestCephes(object):
         assert_equal(cephes.smirnov(1,.1),0.9)
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
 
+    def test_smirnovp(self):
+        assert_equal(cephes._smirnovp(1, .1), -1)
+        assert_equal(cephes._smirnovp(2, 0.75), -2*(0.25)**(2-1))
+        assert_equal(cephes._smirnovp(3, 0.75), -3*(0.25)**(3-1))
+        assert_(np.isnan(cephes._smirnovp(1, np.nan)))
+
+    def test_smirnovc(self):
+        assert_equal(cephes._smirnovc(1,.1),0.1)
+        assert_(np.isnan(cephes._smirnovc(1,np.nan)))
+        x10 = np.linspace(0, 1, 11, endpoint=True)
+        assert_almost_equal(cephes._smirnovc(3, x10), 1-cephes.smirnov(3, x10))
+        x4 = np.linspace(0, 1, 5, endpoint=True)
+        assert_almost_equal(cephes._smirnovc(4, x4), 1-cephes.smirnov(4, x4))
+
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
         assert_(np.isnan(cephes.smirnovi(1,np.nan)))
+
+    def test_smirnovci(self):
+        assert_almost_equal(cephes._smirnovc(1,cephes._smirnovci(1,0.4)),0.4)
+        assert_almost_equal(cephes._smirnovc(1,cephes._smirnovci(1,0.6)),0.6)
+        assert_(np.isnan(cephes._smirnovci(1,np.nan)))
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)
@@ -943,26 +975,6 @@ class TestCephes(object):
 
     def _check_yve(self):
         cephes.yve(1,1)
-
-    def test_zeta(self):
-        assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
-
-    def test_zetac(self):
-        assert_equal(cephes.zetac(0), -1.5)
-        assert_equal(cephes.zetac(1.0), np.inf)
-        # Expected values in the following were computed using
-        # Wolfram Alpha `Zeta[x] - 1`:
-        rtol = 1e-12
-        assert_allclose(cephes.zetac(-2.1), -0.9972705002153750, rtol=rtol)
-        assert_allclose(cephes.zetac(0.8), -5.437538415895550, rtol=rtol)
-        assert_allclose(cephes.zetac(0.9999), -10000.42279161673, rtol=rtol)
-        assert_allclose(cephes.zetac(9), 0.002008392826082214, rtol=rtol)
-        assert_allclose(cephes.zetac(50), 8.881784210930816e-16, rtol=rtol)
-        assert_allclose(cephes.zetac(75), 2.646977960169853e-23, rtol=rtol)
-
-    def test_zeta_1arg(self):
-        assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
-        assert_allclose(zeta(4), pi**4/90, rtol=1e-12)
 
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
@@ -1008,6 +1020,23 @@ class TestCephes(object):
         ]
         assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
+    def test_voigt(self):
+        x = np.array([-7.89, -0.05, -13.98, -12.66, 11.34, -11.56, -9.17,
+                      16.59, 9.11, -43.33])
+        sigma = np.array([45.06, 7.98, 16.83, 0.21, 4.25, 20.40, 25.61, 18.05,
+                          2.12, 0.30])
+        gamma = np.array([6.66, 24.13, 42.37, 6.32, 21.96, 30.53, 8.32, 2.50,
+                          39.33, 45.68])
+        mu = np.array([-0.90, 9.81, 16.39, 11.35, -4.00, -1.10, -16.40, 2.17,
+                       -26.34, 19.12])
+        inp = np.array([x, sigma, gamma, mu]).T
+        # obtained from Mathematica: PDF[VoigtDistribution[g, s], x - m]
+        res = np.array([0.007814991977202203,0.010812438037546024,
+                        0.005002213710481824,0.003264178482142271,
+                        0.009796933140171458,0.007708387983265838,
+                        0.011866733688978792,0.014941654349762511,
+                        0.004471089949150293,0.002428855941768048])
+        assert_func_equal(special.voigt, res, inp, rtol=1e-10, atol=1e-13)
 
 class TestAiry(object):
     def test_airy(self):
@@ -1523,10 +1552,10 @@ class TestEllip(object):
             mvals.append(m)
             m = np.nextafter(m, 1)
         f = special.ellipkinc(phi, mvals)
-        assert_array_almost_equal_nulp(f, 1.0259330100195334 * np.ones_like(f), 1)
+        assert_array_almost_equal_nulp(f, np.full_like(f, 1.0259330100195334), 1)
         # this bug also appears at phi + n * pi for at least small n
         f1 = special.ellipkinc(phi + pi, mvals)
-        assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
+        assert_array_almost_equal_nulp(f1, np.full_like(f1, 5.1296650500976675), 2)
 
     def test_ellipkinc_singular(self):
         # ellipkinc(phi, 1) has closed form and is finite only for phi in (-pi/2, pi/2)
@@ -1591,10 +1620,10 @@ class TestEllip(object):
             mvals.append(m)
             m = np.nextafter(m, 1)
         f = special.ellipeinc(phi, mvals)
-        assert_array_almost_equal_nulp(f, 0.84442884574781019 * np.ones_like(f), 2)
+        assert_array_almost_equal_nulp(f, np.full_like(f, 0.84442884574781019), 2)
         # this bug also appears at phi + n * pi for at least small n
         f1 = special.ellipeinc(phi + pi, mvals)
-        assert_array_almost_equal_nulp(f1, 3.3471442287390509 * np.ones_like(f1), 4)
+        assert_array_almost_equal_nulp(f1, np.full_like(f1, 3.3471442287390509), 4)
 
 
 class TestErf(object):
@@ -1677,16 +1706,6 @@ class TestErf(object):
         i = special.erfinv(0)
         assert_equal(i,0)
 
-    def test_errprint(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
-            a = special.errprint()
-            b = 1-a  # a is the state 1-a inverts state
-            c = special.errprint(b)  # returns last state 'a'
-            d = special.errprint(a)  # returns to original state
-        assert_equal(a,c)
-        assert_equal(d,b)  # makes sure state was returned
-
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -1, 1]
@@ -1716,6 +1735,11 @@ class TestErf(object):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
         assert_allclose(special.wofz(vals), expected, rtol=1e-15)
+
+    def test_voigt_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -0.0, 0.0]
+        assert_allclose(special.voigt(vals), expected, rtol=1e-15)
 
 
 class TestEuler(object):
@@ -2056,7 +2080,7 @@ class TestHyper(object):
         assert_almost_equal(hyp1, 1.3498588075760032,7)
 
         # test contributed by Moritz Deger (2008-05-29)
-        # http://projects.scipy.org/scipy/scipy/ticket/659
+        # https://github.com/scipy/scipy/issues/1186 (Trac #659)
 
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
@@ -2174,12 +2198,6 @@ class TestHyper(object):
         hyp = special.hyp1f1(0.5, 1.5, -1000)
         assert_almost_equal(hyp, 0.028024956081989643, 12)
 
-    def test_hyp1f2(self):
-        pass
-
-    def test_hyp2f0(self):
-        pass
-
     def test_hyp2f1(self):
         # a collection of special cases taken from AMS 55
         values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
@@ -2210,9 +2228,6 @@ class TestHyper(object):
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
-
-    def test_hyp3f0(self):
-        pass
 
     def test_hyperu(self):
         val1 = special.hyperu(1,0.1,100)
@@ -3161,7 +3176,7 @@ class TestRound(object):
 
 def test_sph_harm():
     # Tests derived from tables in
-    # http://en.wikipedia.org/wiki/Table_of_spherical_harmonics
+    # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
     sh = special.sph_harm
     pi = np.pi
     exp = np.exp
@@ -3319,7 +3334,6 @@ def test_legacy():
         assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
         assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
-        assert_equal(special.hyp2f0(1, 2, 0.3, 1), special.hyp2f0(1, 2, 0.3, 1.8))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))

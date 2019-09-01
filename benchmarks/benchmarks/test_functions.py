@@ -45,7 +45,7 @@ class LJ(object):
 
     a mathematically simple model that approximates the interaction between a
     pair of neutral atoms or molecules.
-    http://en.wikipedia.org/wiki/Lennard-Jones_potential
+    https://en.wikipedia.org/wiki/Lennard-Jones_potential
 
     E = sum_ij V(r_ij)
 
@@ -170,9 +170,9 @@ Global Test functions for minimizers.
 
 HolderTable, Ackey and Levi have many competing local minima and are suited
 for global minimizers such as basinhopping or differential_evolution.
-(http://en.wikipedia.org/wiki/Test_functions_for_optimization)
+(https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-See also http://mpra.ub.uni-muenchen.de/2718/1/MPRA_paper_2718.pdf
+See also https://mpra.ub.uni-muenchen.de/2718/1/MPRA_paper_2718.pdf
 
 """
 

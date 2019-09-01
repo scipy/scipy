@@ -120,7 +120,7 @@ nautical_mile = 1852.0
 fermi = 1e-15
 angstrom = 1e-10
 micron = 1e-6
-au = astronomical_unit = 149597870691.0
+au = astronomical_unit = 149597870700.0
 light_year = Julian_year * c
 parsec = au / arcsec
 

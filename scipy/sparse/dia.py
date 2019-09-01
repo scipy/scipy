@@ -11,7 +11,7 @@ import numpy as np
 from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
 from .sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                      get_sum_dtype, validateaxis, check_shape)
+                      get_sum_dtype, validateaxis, check_shape, matrix)
 from ._sparsetools import dia_matvec
 
 
@@ -42,7 +42,7 @@ class dia_matrix(_data_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         DIA format data array of the matrix
     offsets
@@ -104,7 +104,7 @@ class dia_matrix(_data_matrix):
                 try:
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
-                except:
+                except Exception:
                     raise ValueError('unrecognized form for dia_matrix constructor')
                 else:
                     if shape is None:
@@ -118,7 +118,7 @@ class dia_matrix(_data_matrix):
             #must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
@@ -201,7 +201,7 @@ class dia_matrix(_data_matrix):
             else:
                 res = np.zeros(num_cols, dtype=x.dtype)
                 res[:x.shape[0]] = x
-            ret = np.matrix(res, dtype=res_dtype)
+            ret = matrix(res, dtype=res_dtype)
 
         else:
             row_sums = np.zeros(num_rows, dtype=res_dtype)
@@ -209,7 +209,7 @@ class dia_matrix(_data_matrix):
             dia_matvec(num_rows, num_cols, len(self.offsets),
                        self.data.shape[1], self.offsets, self.data, one, row_sums)
 
-            row_sums = np.matrix(row_sums)
+            row_sums = matrix(row_sums)
 
             if axis is None:
                 return row_sums.sum(dtype=dtype, out=out)
@@ -217,7 +217,7 @@ class dia_matrix(_data_matrix):
             if axis is not None:
                 row_sums = row_sums.T
 
-            ret = np.matrix(row_sums.sum(axis=axis))
+            ret = matrix(row_sums.sum(axis=axis))
 
         if out is not None and out.shape != ret.shape:
             raise ValueError("dimensions do not match")
@@ -311,7 +311,7 @@ class dia_matrix(_data_matrix):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
             raise ValueError("k exceeds matrix dimensions")
-        idx, = np.where(self.offsets == k)
+        idx, = np.nonzero(self.offsets == k)
         first_col, last_col = max(0, k), min(rows + k, cols)
         if idx.size == 0:
             return np.zeros(last_col - first_col, dtype=self.data.dtype)

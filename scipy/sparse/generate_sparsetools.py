@@ -31,6 +31,7 @@ from distutils.dep_util import newer
 # bsr.h
 BSR_ROUTINES = """
 bsr_diagonal        v iiiiiIIT*T
+bsr_tocsr           v iiiiIIT*I*I*T
 bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
@@ -99,6 +100,10 @@ csr_sort_indices    v iI*I*T
 csr_eliminate_zeros v ii*I*I*T
 csr_sum_duplicates  v ii*I*I*T
 get_csr_submatrix   v iiIITiiii*V*V*W
+csr_row_index       v iIIIT*I*T
+csr_row_slice       v iiiIIT*I*T
+csr_column_index1   v iIiiII*I*I
+csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
 csr_sample_offsets  i iiIIiII*I
@@ -334,7 +339,7 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=__doc__.strip())
+    p = optparse.OptionParser(usage=(__doc__ or '').strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
     options, args = p.parse_args()

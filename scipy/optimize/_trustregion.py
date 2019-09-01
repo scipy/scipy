@@ -178,7 +178,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     k = 0
 
     # search for the function min
-    while True:
+    # do not even start if the gradient is small enough
+    while m.jac_mag >= gtol:
 
         # Solve the sub-problem.
         # This gives us the proposed step relative to the current position
@@ -218,9 +219,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # append the best guess, call back, increment the iteration count
         if return_all:
-            allvecs.append(x)
+            allvecs.append(np.copy(x))
         if callback is not None:
-            callback(x)
+            callback(np.copy(x))
         k += 1
 
         # check if the gradient is small enough to stop
@@ -249,11 +250,11 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % nfun[0])
         print("         Gradient evaluations: %d" % njac[0])
-        print("         Hessian evaluations: %d" % nhess[0])
+        print("         Hessian evaluations: %d" % (nhess[0] + nhessp[0]))
 
     result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
                             fun=m.fun, jac=m.jac, nfev=nfun[0], njev=njac[0],
-                            nhev=nhess[0], nit=k,
+                            nhev=nhess[0] + nhessp[0], nit=k,
                             message=status_messages[warnflag])
 
     if hess is not None:

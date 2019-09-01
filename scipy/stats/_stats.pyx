@@ -29,8 +29,11 @@ cdef double von_mises_cdf_series(double k, double x, unsigned int p):
         return 0.5 + x / (2 * PI) + V / PI
 
 
+DEF SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
+
+
 cdef von_mises_cdf_normalapprox(k, x):
-    b = math.sqrt(2 / PI) / scipy.special.i0e(k) # Check for negative k
+    b = SQRT2_PI / scipy.special.i0e(k)  # Check for negative k
     z = b * np.sin(x / 2.)
     return scipy.stats.norm.cdf(z)
 
@@ -77,7 +80,8 @@ def von_mises_cdf(k_obj, x_obj):
 def _kendall_dis(intp_t[:] x, intp_t[:] y):
     cdef:
         intp_t sup = 1 + np.max(y)
-        intp_t[::1] arr = np.zeros(sup, dtype=np.intp)
+        # Use of `>> 14` improves cache performance of the Fenwick tree (see gh-10108)
+        intp_t[::1] arr = np.zeros(sup + ((sup - 1) >> 14), dtype=np.intp)
         intp_t i = 0, k = 0, size = x.size, idx
         int64_t dis = 0
 
@@ -87,7 +91,7 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
                 dis += i
                 idx = y[k]
                 while idx != 0:
-                    dis -= arr[idx]
+                    dis -= arr[idx + (idx >> 14)]
                     idx = idx & (idx - 1)
 
                 k += 1
@@ -95,7 +99,7 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
             while i < k:
                 idx = y[i]
                 while idx < sup:
-                    arr[idx] += 1
+                    arr[idx + (idx >> 14)] += 1
                     idx += idx & -idx
                 i += 1
 

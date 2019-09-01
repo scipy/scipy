@@ -7,7 +7,6 @@ import numpy as np
 import math
 from numpy import cos, sin
 import scipy.optimize
-import collections
 from scipy._lib._util import check_random_state
 
 __all__ = ['basinhopping']
@@ -637,7 +636,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     # set up step-taking algorithm
     if take_step is not None:
-        if not isinstance(take_step, collections.Callable):
+        if not callable(take_step):
             raise TypeError("take_step must be callable")
         # if take_step.stepsize exists then use AdaptiveStepsize to control
         # take_step.stepsize
@@ -653,12 +652,12 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                                              verbose=disp)
 
     # set up accept tests
+    accept_tests = []
     if accept_test is not None:
-        if not isinstance(accept_test, collections.Callable):
+        if not callable(accept_test):
             raise TypeError("accept_test must be callable")
         accept_tests = [accept_test]
-    else:
-        accept_tests = []
+
     # use default
     metropolis = Metropolis(T, random_state=rng)
     accept_tests.append(metropolis)
@@ -676,7 +675,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     for i in range(niter):
         new_global_min = bh.one_cycle()
 
-        if isinstance(callback, collections.Callable):
+        if callable(callback):
             # should we pass a copy of x?
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:

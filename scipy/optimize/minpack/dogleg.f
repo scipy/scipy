@@ -1,4 +1,5 @@
-      subroutine dogleg(n,r,lr,diag,qtb,delta,x,wa1,wa2)
+      recursive
+     *subroutine dogleg(n,r,lr,diag,qtb,delta,x,wa1,wa2)
       integer n,lr
       double precision delta
       double precision r(lr),diag(n),qtb(n),x(n),wa1(n),wa2(n)

@@ -54,6 +54,51 @@ extern void LMDIF(void*,int*,int*,double*,double*,double*,double*,double*,int*,d
 extern void LMDER(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
 extern void LMSTR(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
 
+/* We only use ccallback with Python functions right now */
+static ccallback_signature_t call_signatures[] = {
+  {NULL}
+};
+
+static int init_callback(ccallback_t *callback, PyObject *fcn, PyObject *extra_args)
+{
+  int ret;
+  int flags = CCALLBACK_OBTAIN;
+
+  ret = ccallback_prepare(callback, call_signatures, fcn, flags);
+  if (ret == -1) {
+    return -1;
+  }
+  
+  callback->info_p = (void *)extra_args;
+
+  return 0;
+}
+
+static int release_callback(ccallback_t *callback)
+{
+  return ccallback_release(callback) != 0;
+}
+
+static int init_jac_callback(ccallback_t *callback, jac_callback_info_t *jac_callback_info, PyObject *fcn, PyObject *Dfun, PyObject *extra_args, int col_deriv)
+{
+  int ret;
+  int flags = CCALLBACK_OBTAIN;
+
+  ret = ccallback_prepare(callback, call_signatures, fcn, flags);
+  if (ret == -1) {
+    return -1;
+  }
+
+  jac_callback_info->Dfun = Dfun;
+  jac_callback_info->extra_args = extra_args;
+  jac_callback_info->jac_transpose = !col_deriv;
+  
+  callback->info_p = (void *)jac_callback_info;
+
+  return 0;
+}
+
+
 int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
 {
   /* This is the function called from the Fortran code it should
@@ -61,6 +106,10 @@ int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
 	-- check for errors and return -1 if any
 	-- otherwise place result of calculation in *fvec
   */
+
+  ccallback_t *callback = ccallback_obtain();
+  PyObject *multipack_python_function = callback->py_function;
+  PyObject *multipack_extra_arguments = (PyObject *)callback->info_p;
 
   PyArrayObject *result_array = NULL;
  
@@ -86,6 +135,12 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
      If iflag = 1 this should compute the function.
      If iflag = 2 this should compute the jacobian (derivative matrix)
   */
+
+  ccallback_t *callback = ccallback_obtain();
+  PyObject *multipack_python_function = callback->py_function,
+           *multipack_python_jacobian = ((jac_callback_info_t *)callback->info_p)->Dfun;
+  PyObject *multipack_extra_arguments = ((jac_callback_info_t *)callback->info_p)->extra_args;
+  int multipack_jac_transpose = ((jac_callback_info_t *)callback->info_p)->jac_transpose;
 
   PyArrayObject *result_array;
 
@@ -121,6 +176,10 @@ int raw_multipack_lm_function(int *m, int *n, double *x, double *fvec, int *ifla
 	-- otherwise place result of calculation in *fvec
   */
 
+  ccallback_t *callback = ccallback_obtain();
+  PyObject *multipack_python_function = callback->py_function;
+  PyObject *multipack_extra_arguments = (PyObject *)callback->info_p;
+
   PyArrayObject *result_array = NULL;
  
   result_array = (PyArrayObject *)call_python_function(multipack_python_function,*n, x, multipack_extra_arguments, 1, minpack_error, *m);
@@ -133,7 +192,6 @@ int raw_multipack_lm_function(int *m, int *n, double *x, double *fvec, int *ifla
   return 0;
 }
 
-
 int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *fjac, int *ldfjac, int *iflag)
 {
   /* This is the function called from the Fortran code it should
@@ -144,6 +202,12 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
      If iflag = 1 this should compute the function.
      If iflag = 2 this should compute the jacobian (derivative matrix)
   */
+
+  ccallback_t *callback = ccallback_obtain();
+  PyObject *multipack_python_function = callback->py_function,
+           *multipack_python_jacobian = ((jac_callback_info_t *)callback->info_p)->Dfun;
+  PyObject *multipack_extra_arguments = ((jac_callback_info_t *)callback->info_p)->extra_args;
+  int multipack_jac_transpose = ((jac_callback_info_t *)callback->info_p)->jac_transpose;
 
   PyArrayObject *result_array;
 
@@ -165,57 +229,6 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
       MATRIXC2F(fjac, PyArray_DATA(result_array), *n, *ldfjac)
     else
       memcpy(fjac, PyArray_DATA(result_array), (*n)*(*ldfjac)*sizeof(double));
-  }
-
-  Py_DECREF(result_array);
-  return 0;
-}
-
-int smjac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *fjrow, int *iflag)
-{
-  /* This is the function called from the Fortran code it should
-        -- use call_python_function to get a multiarrayobject result
-	-- check for errors and return -1 if any
-	-- otherwise place result of calculation in *fvec or *fjac.
-
-     If iflag = 1 this should compute the function.
-     If iflag = i this should compute the (i-1)-st row of the jacobian.
-  */
-  int row;
-  PyObject *newargs, *ob_row;
-  PyArrayObject *result_array;
-
-  if (*iflag == 1) {
-    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error, *m);
-    if (result_array == NULL) {
-      *iflag = -1;
-      return -1;
-    }
-    memcpy(fvec, PyArray_DATA(result_array), (*m)*sizeof(double));
-  }
-  else {         /* iflag == i */
-    /* append row number to argument list and call row-based jacobian */
-    row = *iflag - 2;
-
-    if ((ob_row = PyInt_FromLong((long)row)) == NULL) {
-      *iflag = -1;
-      return -1;
-    }
-    newargs = PySequence_Concat( ob_row, multipack_extra_arguments);
-    Py_DECREF(ob_row);
-    if (newargs == NULL) {
-      PyErr_SetString(minpack_error, "Internal error constructing argument list.");
-      *iflag = -1;
-      return -1;
-    }
-
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, newargs, 2, minpack_error, *n);
-    if (result_array == NULL) {
-      Py_DECREF(newargs);
-      *iflag = -1;
-      return -1;
-    }
-    memcpy(fjrow, PyArray_DATA(result_array), (*n)*sizeof(double));
   }
 
   Py_DECREF(result_array);
@@ -314,6 +327,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
 
  fail:
   RESTORE_FUNC();
+ fail_free:
   Py_XDECREF(extra_args);
   Py_XDECREF(ap_x);
   Py_XDECREF(ap_fvec);
@@ -415,6 +429,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
 
  fail:
   RESTORE_JAC_FUNC();
+ fail_free:
   Py_XDECREF(extra_args);
   Py_XDECREF(ap_x);
   Py_XDECREF(ap_fvec);
@@ -515,6 +530,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
 
  fail:
   RESTORE_FUNC();
+ fail_free:
   Py_XDECREF(extra_args);
   Py_XDECREF(ap_x);
   Py_XDECREF(ap_fvec);
@@ -613,6 +629,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
  fail:
   RESTORE_JAC_FUNC();
+ fail_free:
   Py_XDECREF(extra_args);
   Py_XDECREF(ap_x);
   Py_XDECREF(ap_fvec);

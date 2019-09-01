@@ -5,7 +5,7 @@ File IO (:mod:`scipy.io`)
 
 .. currentmodule:: scipy.io
 
-.. seealso:: :ref:`numpy-reference.routines.io` (in numpy)
+.. seealso:: `NumPy IO routines <https://www.numpy.org/devdocs/reference/routines.io.html>`__
 
 MATLAB files
 ------------
@@ -44,8 +44,8 @@ From time to time you may find yourself re-using this machinery.
 How do I start?
 ```````````````
 
-You may have a ``.mat`` file that you want to read into Scipy.  Or, you
-want to pass some variables from Scipy / Numpy into MATLAB.
+You may have a ``.mat`` file that you want to read into SciPy.  Or, you
+want to pass some variables from SciPy / NumPy into MATLAB.
 
 To save us using a MATLAB license, let's start in Octave_.  Octave has
 MATLAB-compatible save and load functions.  Start Octave (``octave`` at
@@ -171,7 +171,7 @@ We can load this in Python:
    >>> val.dtype
    dtype([('field1', 'O'), ('field2', 'O')])
 
-In versions of Scipy from 0.12.0, MATLAB structs come back as numpy
+In versions of SciPy from 0.12.0, MATLAB structs come back as numpy
 structured arrays, with fields named for the struct fields.  You can see
 the field names in the ``dtype`` output above.  Note also:
 
@@ -187,7 +187,7 @@ and:
      1   1
 
 So, in MATLAB, the struct array must be at least 2D, and we replicate
-that when we read into Scipy.  If you want all length 1 dimensions
+that when we read into SciPy.  If you want all length 1 dimensions
 squeezed out, try this:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat', squeeze_me=True)
@@ -243,7 +243,7 @@ like this:
    >>> dt = [('f1', 'f8'), ('f2', 'S10')]
    >>> arr = np.zeros((2,), dtype=dt)
    >>> arr
-   array([(0.0, ''), (0.0, '')], 
+   array([(0.0, ''), (0.0, '')],
          dtype=[('f1', '<f8'), ('f2', 'S10')])
    >>> arr[0]['f1'] = 0.5
    >>> arr[0]['f2'] = 'python'
@@ -323,7 +323,7 @@ Matrix Market files
 Wav sound files (:mod:`scipy.io.wavfile`)
 -----------------------------------------
 
-.. module:: scipy.io.wavfile
+.. currentmodule:: scipy.io.wavfile
 
 .. autosummary::
 
@@ -333,16 +333,16 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 Arff files (:mod:`scipy.io.arff`)
 ---------------------------------
 
-.. automodule:: scipy.io.arff
+.. currentmodule:: scipy.io.arff
 
 .. autosummary::
 
    loadarff
 
-Netcdf (:mod:`scipy.io.netcdf`)
--------------------------------
+Netcdf
+------
 
-.. module:: scipy.io.netcdf
+.. currentmodule:: scipy.io
 
 .. autosummary::
 
@@ -350,6 +350,6 @@ Netcdf (:mod:`scipy.io.netcdf`)
 
 Allows reading of  NetCDF files (version of pupynere_ package)
 
-.. _pupynere: http://pypi.python.org/pypi/pupynere/
-.. _octave: http://www.gnu.org/software/octave
-.. _matlab: http://www.mathworks.com/
+.. _pupynere: https://pypi.python.org/pypi/pupynere/
+.. _octave: https://www.gnu.org/software/octave
+.. _matlab: https://www.mathworks.com/

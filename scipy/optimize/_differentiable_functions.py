@@ -4,7 +4,6 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from copy import deepcopy
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')
@@ -147,14 +146,14 @@ class ScalarFunction(object):
                 self.x_prev = self.x
                 self.g_prev = self.g
 
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -192,6 +191,13 @@ class ScalarFunction(object):
             self._update_x_impl(x)
         self._update_hess()
         return self.H
+
+    def fun_and_grad(self, x):
+        if not np.array_equal(x, self.x):
+            self._update_x_impl(x)
+        self._update_fun()
+        self._update_grad()
+        return self.f, self.g
 
 
 class VectorFunction(object):
@@ -399,14 +405,14 @@ class VectorFunction(object):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -484,7 +490,7 @@ class LinearVectorFunction(object):
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = x
+            self.x = np.atleast_1d(x).astype(float)
             self.f_updated = False
 
     def fun(self, x):

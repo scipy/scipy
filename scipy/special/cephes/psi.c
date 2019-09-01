@@ -61,7 +61,7 @@
  * (C) Copyright John Maddock 2006.
  * Use, modification and distribution are subject to the
  * Boost Software License, Version 1.0. (See accompanying file
- * LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ * LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 
 #include "mconf.h"
@@ -159,14 +159,14 @@ double psi(double x)
 	return NPY_NAN;
     }
     else if (x == 0) {
-	mtherr("psi", SING);
+	sf_error("psi", SF_ERROR_SINGULAR, NULL);
 	return npy_copysign(NPY_INFINITY, -x);
     }
     else if (x < 0.0) {
 	/* argument reduction before evaluating tan(pi * x) */
 	r = modf(x, &q);
 	if (r == 0.0) {
-	    mtherr("psi", SING);
+	    sf_error("psi", SF_ERROR_SINGULAR, NULL);
 	    return NPY_NAN;
 	}
 	y = -NPY_PI / tan(NPY_PI * r);

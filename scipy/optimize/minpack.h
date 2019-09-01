@@ -36,17 +36,16 @@ the result tuple when the full_output argument is non-zero.
     #define PyInt_FromLong PyLong_FromLong
 #endif
 #include "numpy/arrayobject.h"
+#include "ccallback.h"
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
 
-#define STORE_VARS() PyObject *store_multipack_globals[4]; int store_multipack_globals3;
+#define STORE_VARS() ccallback_t callback; int callback_inited = 0; jac_callback_info_t jac_callback_info;
 
-#define INIT_FUNC(fun,arg,errobj) { /* Get extra arguments or set to zero length tuple */ \
-  store_multipack_globals[0] = multipack_python_function; \
-  store_multipack_globals[1] = multipack_extra_arguments; \
+#define INIT_FUNC(fun,arg,errobj) do { /* Get extra arguments or set to zero length tuple */ \
   if (arg == NULL) { \
-    if ((arg = PyTuple_New(0)) == NULL) goto fail; \
+    if ((arg = PyTuple_New(0)) == NULL) goto fail_free; \
   } \
   else \
     Py_INCREF(arg);   /* We decrement on exit. */ \
@@ -55,16 +54,14 @@ the result tuple when the full_output argument is non-zero.
   /* Set up callback functions */ \
   if (!PyCallable_Check(fun)) \
     PYERR(errobj,"First argument must be a callable function."); \
-  multipack_python_function = fun; \
-  multipack_extra_arguments = arg; }
+  if (init_callback(&callback, fun, arg) != 0) \
+    PYERR(errobj,"Could not init callback");\
+  callback_inited = 1; \
+  } while(0)
 
-#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj) { \
-  store_multipack_globals[0] = multipack_python_function; \
-  store_multipack_globals[1] = multipack_extra_arguments; \
-  store_multipack_globals[2] = multipack_python_jacobian; \
-  store_multipack_globals3 = multipack_jac_transpose; \
+#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj) do { \
   if (arg == NULL) { \
-    if ((arg = PyTuple_New(0)) == NULL) goto fail; \
+    if ((arg = PyTuple_New(0)) == NULL) goto fail_free; \
   } \
   else \
     Py_INCREF(arg);   /* We decrement on exit. */ \
@@ -73,18 +70,20 @@ the result tuple when the full_output argument is non-zero.
   /* Set up callback functions */ \
   if (!PyCallable_Check(fun) || (Dfun != Py_None && !PyCallable_Check(Dfun))) \
     PYERR(errobj,"The function and its Jacobian must be callable functions."); \
-  multipack_python_function = fun; \
-  multipack_extra_arguments = arg; \
-  multipack_python_jacobian = Dfun; \
-  multipack_jac_transpose = !(col_deriv);}
+  if (init_jac_callback(&callback, &jac_callback_info, fun, Dfun, arg, col_deriv) != 0) \
+    PYERR(errobj,"Could not init callback");\
+  callback_inited = 1; \
+} while(0)
 
-#define RESTORE_JAC_FUNC() multipack_python_function = store_multipack_globals[0]; \
-  multipack_extra_arguments = store_multipack_globals[1]; \
-  multipack_python_jacobian = store_multipack_globals[2]; \
-  multipack_jac_transpose = store_multipack_globals3;
+#define RESTORE_JAC_FUNC() do { \
+  if (callback_inited && release_callback(&callback) != 0) { \
+    goto fail_free; \
+  }} while(0)
 
-#define RESTORE_FUNC() multipack_python_function = store_multipack_globals[0]; \
-  multipack_extra_arguments = store_multipack_globals[1];
+#define RESTORE_FUNC() do { \
+  if (callback_inited && release_callback(&callback) != 0) { \
+    goto fail_free; \
+  }} while(0)
 
 #define SET_DIAG(ap_diag,o_diag,mode) { /* Set the diag vector from input */ \
   if (o_diag == NULL || o_diag == Py_None) { \
@@ -105,10 +104,11 @@ for (j=0;j<(m);p3++,j++) \
   for (p2=p3,i=0;i<(n);p2+=(m),i++,p1++) \
     *p1 = *p2; }
 
-static PyObject *multipack_python_function=NULL;
-static PyObject *multipack_python_jacobian=NULL;
-static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
-static int multipack_jac_transpose=1;
+typedef struct {
+  PyObject *Dfun;
+  PyObject *extra_args;
+  int jac_transpose;
+} jac_callback_info_t;
 
 static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyObject *args, int dim, PyObject *error_obj, npy_intp out_size)
 {

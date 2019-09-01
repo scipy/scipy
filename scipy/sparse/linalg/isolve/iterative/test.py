@@ -1,14 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy import *
 from iterative import *
+import numpy as np
 
 
 def test_fun(alpha, x, beta, y, A, n):
     # compute z = alpha*A*x + beta*y
     xx = x[:n]
     yy = y[:n]
-    w = dot(A,xx)
+    w = np.dot(A,xx)
     z = alpha*w+beta*yy
     y[:n] = z
     return
@@ -18,8 +18,8 @@ def test_fun_t(alpha, x, beta, y, A, n):
     # compute z = alpha*A*x + beta*y
     xx = x[:n]
     yy = y[:n]
-    AA = conj(transpose(A))
-    w = dot(AA,xx)
+    AA = np.conj(np.transpose(A))
+    w = np.dot(AA,xx)
     z = alpha*w+beta*yy
     y[:n] = z
     return
@@ -46,24 +46,24 @@ def test_psolveq_t(x,b,which,n):
 
 
 n = 5
-dA = 1.0*array([[2, -1, 0, 0, 0],
-                [-1, 2, -1, 0, 0],
-                [0, -1, 2, -1, 0],
-                [0, 0, -1, 2, -1],
-                [0, 0, 0, 1, 2]])
-db = 1.0*array([0,1,1,0,0])
+dA = 1.0*np.array([[2, -1, 0, 0, 0],
+                   [-1, 2, -1, 0, 0],
+                   [0, -1, 2, -1, 0],
+                   [0, 0, -1, 2, -1],
+                   [0, 0, 0, 1, 2]])
+db = 1.0*np.array([0,1,1,0,0])
 
-##zA = (1.0+0j)*array([[      2, -1+0.1j,       0,       0,       0],
-##                     [-1+0.1j,       2, -1-0.1j,       0,       0],
-##                     [      0, -1-0.1j,       2, -1+0.1j,       0],
-##                     [      0,       0, -1+0.1j,       2, -1-0.1j],
-##                     [      0,       0,       0,      -1,  2-0.1j]])
-zA = (1.0+0j)*array([[2, -1 + 1j, 0, 0, 0],
-                     [-1+0.1j, 2, -1-0.1j, 0, 0],
-                     [0, -1 - 1j, 2, -1+0.1j, 0],
-                     [0, 0, -1+0.1j, 2, -1-0.1j],
-                     [0, 0, 0, -1, 2-0.1j]])
-zb = (1.0+0j)*array([0,1,1,0,0])
+##zA = (1.0+0j)*np.array([[      2, -1+0.1j,       0,       0,       0],
+##                        [-1+0.1j,       2, -1-0.1j,       0,       0],
+##                        [      0, -1-0.1j,       2, -1+0.1j,       0],
+##                        [      0,       0, -1+0.1j,       2, -1-0.1j],
+##                        [      0,       0,       0,      -1,  2-0.1j]])
+zA = (1.0+0j)*np.array([[2, -1 + 1j, 0, 0, 0],
+                        [-1+0.1j, 2, -1-0.1j, 0, 0],
+                        [0, -1 - 1j, 2, -1+0.1j, 0],
+                        [0, 0, -1+0.1j, 2, -1-0.1j],
+                        [0, 0, 0, -1, 2-0.1j]])
+zb = (1.0+0j)*np.array([0,1,1,0,0])
 
 dx = 0*db.copy()
 zx = 0*zb.copy()

@@ -171,7 +171,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
     int err = 0;
     NPY_BEGIN_THREADS_DEF;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(weights);
     pw = (npy_double*)PyArray_DATA(weights);
     pf = malloc(fsize * sizeof(npy_bool));
@@ -542,7 +542,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     npy_double *ps;
     NPY_BEGIN_THREADS_DEF;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
     pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
@@ -735,7 +735,7 @@ int NI_RankFilter(PyArrayObject* input, int rank,
     int err = 0;
     NPY_BEGIN_THREADS_DEF;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
     pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
@@ -947,7 +947,7 @@ int NI_GenericFilter(PyArrayObject* input,
     char *pi, *po;
     double *buffer = NULL;
 
-    /* get the the footprint: */
+    /* get the footprint: */
     fsize = PyArray_SIZE(footprint);
     pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {

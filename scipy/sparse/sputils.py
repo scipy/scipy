@@ -172,8 +172,6 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
 def get_sum_dtype(dtype):
     """Mimic numpy's casting for np.sum"""
-    if np.issubdtype(dtype, np.float_):
-        return np.float_
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint
     if np.can_cast(dtype, np.int_):
@@ -216,7 +214,7 @@ def isshape(x, nonneg=False):
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
         (M, N) = x
-    except:
+    except Exception:
         return False
     else:
         if isintlike(M) and isintlike(N):
@@ -296,7 +294,7 @@ def check_shape(args, current_shape=None):
             new_size = np.prod(new_shape, dtype=int)
             if new_size != current_size:
                 raise ValueError('cannot reshape array of size {} into shape {}'
-                                 .format(new_size, new_shape))
+                                 .format(current_size, new_shape))
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
             specified = np.prod(new_shape[0:skip] + new_shape[skip+1:])
@@ -309,17 +307,8 @@ def check_shape(args, current_shape=None):
         else:
             raise ValueError('can only specify one unknown dimension')
 
-        # Add and remove ones like numpy.matrix.reshape
-        if len(new_shape) != 2:
-            new_shape = tuple(arg for arg in new_shape if arg != 1)
-
-            if len(new_shape) == 0:
-                new_shape = (1, 1)
-            elif len(new_shape) == 1:
-                new_shape = (1, new_shape[0])
-
-    if len(new_shape) > 2:
-        raise ValueError('shape too large to be a matrix')
+    if len(new_shape) != 2:
+        raise ValueError('matrix shape must be two-dimensional')
 
     return new_shape
 
@@ -341,138 +330,25 @@ def check_reshape_kwargs(kwargs):
     return order, copy
 
 
-class IndexMixin(object):
-    """
-    This class simply exists to hold the methods necessary for fancy indexing.
-    """
-    def _slicetoarange(self, j, shape):
-        """ Given a slice object, use numpy arange to change it to a 1D
-        array.
-        """
-        start, stop, step = j.indices(shape)
-        return np.arange(start, stop, step)
+###############################################################################
+# Wrappers for NumPy types that are deprecated
 
-    def _unpack_index(self, index):
-        """ Parse index. Always return a tuple of the form (row, col).
-        Where row/col is a integer, slice, or array of integers.
-        """
-        # First, check if indexing with single boolean matrix.
-        from .base import spmatrix  # This feels dirty but...
-        if (isinstance(index, (spmatrix, np.ndarray)) and
-           (index.ndim == 2) and index.dtype.kind == 'b'):
-                return index.nonzero()
+def matrix(*args, **kwargs):
+    with warnings.catch_warnings(record=True):
+        warnings.filterwarnings(
+            'ignore', '.*the matrix subclass is not the recommended way.*')
+        return np.matrix(*args, **kwargs)
 
-        # Parse any ellipses.
-        index = self._check_ellipsis(index)
 
-        # Next, parse the tuple or object
-        if isinstance(index, tuple):
-            if len(index) == 2:
-                row, col = index
-            elif len(index) == 1:
-                row, col = index[0], slice(None)
-            else:
-                raise IndexError('invalid number of indices')
-        else:
-            row, col = index, slice(None)
+def asmatrix(*args, **kwargs):
+    with warnings.catch_warnings(record=True):
+        warnings.filterwarnings(
+            'ignore', '.*the matrix subclass is not the recommended way.*')
+        return np.asmatrix(*args, **kwargs)
 
-        # Next, check for validity, or transform the index as needed.
-        row, col = self._check_boolean(row, col)
-        return row, col
 
-    def _check_ellipsis(self, index):
-        """Process indices with Ellipsis. Returns modified index."""
-        if index is Ellipsis:
-            return (slice(None), slice(None))
-        elif isinstance(index, tuple):
-            # Find first ellipsis
-            for j, v in enumerate(index):
-                if v is Ellipsis:
-                    first_ellipsis = j
-                    break
-            else:
-                first_ellipsis = None
-
-            # Expand the first one
-            if first_ellipsis is not None:
-                # Shortcuts
-                if len(index) == 1:
-                    return (slice(None), slice(None))
-                elif len(index) == 2:
-                    if first_ellipsis == 0:
-                        if index[1] is Ellipsis:
-                            return (slice(None), slice(None))
-                        else:
-                            return (slice(None), index[1])
-                    else:
-                        return (index[0], slice(None))
-
-                # General case
-                tail = ()
-                for v in index[first_ellipsis+1:]:
-                    if v is not Ellipsis:
-                        tail = tail + (v,)
-                nd = first_ellipsis + len(tail)
-                nslice = max(0, 2 - nd)
-                return index[:first_ellipsis] + (slice(None),)*nslice + tail
-
-        return index
-
-    def _check_boolean(self, row, col):
-        from .base import isspmatrix  # ew...
-        # Supporting sparse boolean indexing with both row and col does
-        # not work because spmatrix.ndim is always 2.
-        if isspmatrix(row) or isspmatrix(col):
-            raise IndexError(
-                "Indexing with sparse matrices is not supported "
-                "except boolean indexing where matrix and index "
-                "are equal shapes.")
-        if isinstance(row, np.ndarray) and row.dtype.kind == 'b':
-            row = self._boolean_index_to_array(row)
-        if isinstance(col, np.ndarray) and col.dtype.kind == 'b':
-            col = self._boolean_index_to_array(col)
-        return row, col
-
-    def _boolean_index_to_array(self, i):
-        if i.ndim > 1:
-            raise IndexError('invalid index shape')
-        return i.nonzero()[0]
-
-    def _index_to_arrays(self, i, j):
-        i, j = self._check_boolean(i, j)
-
-        i_slice = isinstance(i, slice)
-        if i_slice:
-            i = self._slicetoarange(i, self.shape[0])[:, None]
-        else:
-            i = np.atleast_1d(i)
-
-        if isinstance(j, slice):
-            j = self._slicetoarange(j, self.shape[1])[None, :]
-            if i.ndim == 1:
-                i = i[:, None]
-            elif not i_slice:
-                raise IndexError('index returns 3-dim structure')
-        elif isscalarlike(j):
-            # row vector special case
-            j = np.atleast_1d(j)
-            if i.ndim == 1:
-                i, j = np.broadcast_arrays(i, j)
-                i = i[:, None]
-                j = j[:, None]
-                return i, j
-        else:
-            j = np.atleast_1d(j)
-            if i_slice and j.ndim > 1:
-                raise IndexError('index returns 3-dim structure')
-
-        i, j = np.broadcast_arrays(i, j)
-
-        if i.ndim == 1:
-            # return column vectors for 1-D indexing
-            i = i[None, :]
-            j = j[None, :]
-        elif i.ndim > 2:
-            raise IndexError("Index dimension must be <= 2")
-
-        return i, j
+def bmat(*args, **kwargs):
+    with warnings.catch_warnings(record=True):
+        warnings.filterwarnings(
+            'ignore', '.*the matrix subclass is not the recommended way.*')
+        return np.bmat(*args, **kwargs)

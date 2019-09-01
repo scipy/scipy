@@ -154,6 +154,17 @@ class TestLineSearch(object):
                 assert_fp_equal(derphi1, derphi(s), name)
             assert_wolfe(s, phi, derphi, err_msg="%s %g" % (name, old_phi0))
 
+    def test_scalar_search_wolfe2_with_low_amax(self):
+        def phi(alpha):
+            return (alpha - 5) ** 2
+
+        def derphi(alpha):
+            return 2 * (alpha - 5)
+
+        s, _, _, _ = assert_warns(LineSearchWarning,
+                                  ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
+        assert_(s is None)
+
     def test_scalar_search_armijo(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1 = ls.scalar_search_armijo(phi, phi(0), derphi(0))

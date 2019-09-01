@@ -24,12 +24,12 @@ from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients)
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
 
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+if sys.version_info >= (3, 5):
     from math import gcd
 else:
     from fractions import gcd
@@ -66,6 +66,16 @@ class _TestConvolve(object):
         b = 4567
         c = convolve(a, b)
         assert_equal(c, a * b)
+
+    def test_broadcastable(self):
+        a = np.arange(27).reshape(3, 3, 3)
+        b = np.arange(3)
+        for i in range(3):
+            b_shape = [1]*3
+            b_shape[i] = 3
+            x = convolve(a, b.reshape(b_shape), method='direct')
+            y = convolve(a, b.reshape(b_shape), method='fft')
+            assert_allclose(x, y)
 
     def test_single_element(self):
         a = array([4967])
@@ -213,7 +223,7 @@ class TestConvolve(_TestConvolve):
                 kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
                 # atol is default for np.allclose
-                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
+                kwargs = {'rtol': 1e-3, 'atol': 1e-3}
             else:
                 # defaults for np.allclose (different from assert_allclose)
                 kwargs = {'rtol': 1e-5, 'atol': 1e-8}
@@ -403,77 +413,247 @@ class TestConvolve2d(_TestConvolve2d):
 
 class TestFFTConvolve(object):
 
-    def test_real(self):
-        x = array([1, 2, 3])
-        assert_array_almost_equal(signal.fftconvolve(x, x), [1, 4, 10, 12, 9.])
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_real(self, axes):
+        a = array([1, 2, 3])
+        expected = array([1, 4, 10, 12, 9.])
 
-    def test_complex(self):
-        x = array([1 + 1j, 2 + 2j, 3 + 3j])
-        assert_array_almost_equal(signal.fftconvolve(x, x),
-                                  [0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
 
-    def test_2d_real_same(self):
-        a = array([[1, 2, 3], [4, 5, 6]])
-        assert_array_almost_equal(signal.fftconvolve(a, a),
-                                  array([[1, 4, 10, 12, 9],
-                                         [8, 26, 56, 54, 36],
-                                         [16, 40, 73, 60, 36]]))
+        assert_array_almost_equal(out, expected)
 
-    def test_2d_complex_same(self):
-        a = array([[1 + 2j, 3 + 4j, 5 + 6j], [2 + 1j, 4 + 3j, 6 + 5j]])
-        c = fftconvolve(a, a)
-        d = array([[-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
-                   [10j, 44j, 118j, 156j, 122j],
-                   [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]])
-        assert_array_almost_equal(c, d)
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_real_axes(self, axes):
+        a = array([1, 2, 3])
+        expected = array([1, 4, 10, 12, 9.])
 
-    def test_real_same_mode(self):
+        a = np.tile(a, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_complex(self, axes):
+        a = array([1 + 1j, 2 + 2j, 3 + 3j])
+        expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_complex_axes(self, axes):
+        a = array([1 + 1j, 2 + 2j, 3 + 3j])
+        expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+
+        a = np.tile(a, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['',
+                                      None,
+                                      [0, 1],
+                                      [1, 0],
+                                      [0, -1],
+                                      [-1, 0],
+                                      [-2, 1],
+                                      [1, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_real_same(self, axes):
+        a = array([[1, 2, 3],
+                   [4, 5, 6]])
+        expected = array([[1, 4, 10, 12, 9],
+                          [8, 26, 56, 54, 36],
+                          [16, 40, 73, 60, 36]])
+
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [[1, 2],
+                                      [2, 1],
+                                      [1, -1],
+                                      [-1, 1],
+                                      [-2, 2],
+                                      [2, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_real_same_axes(self, axes):
+        a = array([[1, 2, 3],
+                   [4, 5, 6]])
+        expected = array([[1, 4, 10, 12, 9],
+                          [8, 26, 56, 54, 36],
+                          [16, 40, 73, 60, 36]])
+
+        a = np.tile(a, [2, 1, 1])
+        expected = np.tile(expected, [2, 1, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['',
+                                      None,
+                                      [0, 1],
+                                      [1, 0],
+                                      [0, -1],
+                                      [-1, 0],
+                                      [-2, 1],
+                                      [1, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_complex_same(self, axes):
+        a = array([[1 + 2j, 3 + 4j, 5 + 6j],
+                   [2 + 1j, 4 + 3j, 6 + 5j]])
+        expected = array([
+            [-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
+            [10j, 44j, 118j, 156j, 122j],
+            [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
+            ])
+
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
+
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [[1, 2],
+                                      [2, 1],
+                                      [1, -1],
+                                      [-1, 1],
+                                      [-2, 2],
+                                      [2, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_complex_same_axes(self, axes):
+        a = array([[1 + 2j, 3 + 4j, 5 + 6j],
+                   [2 + 1j, 4 + 3j, 6 + 5j]])
+        expected = array([
+            [-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
+            [10j, 44j, 118j, 156j, 122j],
+            [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
+            ])
+
+        a = np.tile(a, [2, 1, 1])
+        expected = np.tile(expected, [2, 1, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_real_same_mode(self, axes):
         a = array([1, 2, 3])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        c = fftconvolve(a, b, 'same')
-        d = array([35., 41., 47.])
-        assert_array_almost_equal(c, d)
+        expected_1 = array([35., 41., 47.])
+        expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-    def test_real_same_mode2(self):
-        a = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        b = array([1, 2, 3])
-        c = fftconvolve(a, b, 'same')
-        d = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
-        assert_array_almost_equal(c, d)
+        if axes == '':
+            out = fftconvolve(a, b, 'same')
+        else:
+            out = fftconvolve(a, b, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_1)
 
-    def test_valid_mode(self):
+        if axes == '':
+            out = fftconvolve(b, a, 'same')
+        else:
+            out = fftconvolve(b, a, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_2)
+
+    @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
+    def test_real_same_mode_axes(self, axes):
+        a = array([1, 2, 3])
+        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected_1 = array([35., 41., 47.])
+        expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected_1 = np.tile(expected_1, [2, 1])
+        expected_2 = np.tile(expected_2, [2, 1])
+
+        out = fftconvolve(a, b, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_1)
+
+        out = fftconvolve(b, a, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_2)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_valid_mode_real(self, axes):
         # See gh-5897
         a = array([3, 2, 1])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = array([24., 31., 41., 43., 49., 25., 12.])
 
-        out = fftconvolve(a, b, 'valid')
+        if axes == '':
+            out = fftconvolve(a, b, 'valid')
+        else:
+            out = fftconvolve(a, b, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
-        out = fftconvolve(b, a, 'valid')
+        if axes == '':
+            out = fftconvolve(b, a, 'valid')
+        else:
+            out = fftconvolve(b, a, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
+    @pytest.mark.parametrize('axes', [1, [1]])
+    def test_valid_mode_real_axes(self, axes):
+        # See gh-5897
+        a = array([3, 2, 1])
+        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = array([24., 31., 41., 43., 49., 25., 12.])
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, b, 'valid', axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_valid_mode_complex(self, axes):
         a = array([3 - 1j, 2 + 7j, 1 + 0j])
         b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
         expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        out = fftconvolve(a, b, 'valid')
+        if axes == '':
+            out = fftconvolve(a, b, 'valid')
+        else:
+            out = fftconvolve(a, b, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
-        out = fftconvolve(b, a, 'valid')
+        if axes == '':
+            out = fftconvolve(b, a, 'valid')
+        else:
+            out = fftconvolve(b, a, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
-    def test_real_valid_mode(self):
-        a = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        b = array([3, 2, 1])
-        d = array([24., 31., 41., 43., 49., 25., 12.])
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_valid_mode_complex_axes(self, axes):
+        a = array([3 - 1j, 2 + 7j, 1 + 0j])
+        b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
+        expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        c = fftconvolve(a, b, 'valid')
-        assert_array_almost_equal(c, d)
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected = np.tile(expected, [2, 1])
 
-        # See gh-5897
-        c = fftconvolve(b, a, 'valid')
-        assert_array_almost_equal(c, d)
+        out = fftconvolve(a, b, 'valid', axes=axes)
+        assert_array_almost_equal(out, expected)
+
+        out = fftconvolve(b, a, 'valid', axes=axes)
+        assert_array_almost_equal(out, expected)
 
     def test_empty(self):
         # Regression test for #1745: crashes with 0-length input.
@@ -484,63 +664,146 @@ class TestFFTConvolve(object):
     def test_zero_rank(self):
         a = array(4967)
         b = array(3920)
-        c = fftconvolve(a, b)
-        assert_equal(c, a * b)
+        out = fftconvolve(a, b)
+        assert_equal(out, a * b)
 
     def test_single_element(self):
         a = array([4967])
         b = array([3920])
-        c = fftconvolve(a, b)
-        assert_equal(c, a * b)
+        out = fftconvolve(a, b)
+        assert_equal(out, a * b)
 
-    def test_random_data(self):
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_random_data(self, axes):
         np.random.seed(1234)
         a = np.random.rand(1233) + 1j * np.random.rand(1233)
         b = np.random.rand(1321) + 1j * np.random.rand(1321)
-        c = fftconvolve(a, b, 'full')
-        d = np.convolve(a, b, 'full')
-        assert_(np.allclose(c, d, rtol=1e-10))
+        expected = np.convolve(a, b, 'full')
+
+        if axes == '':
+            out = fftconvolve(a, b, 'full')
+        else:
+            out = fftconvolve(a, b, 'full', axes=axes)
+        assert_(np.allclose(out, expected, rtol=1e-10))
+
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_random_data_axes(self, axes):
+        np.random.seed(1234)
+        a = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = np.convolve(a, b, 'full')
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, b, 'full', axes=axes)
+        assert_(np.allclose(out, expected, rtol=1e-10))
+
+    @pytest.mark.parametrize('axes', [[1, 4],
+                                      [4, 1],
+                                      [1, -1],
+                                      [-1, 1],
+                                      [-4, 4],
+                                      [4, -4],
+                                      [-4, -1],
+                                      [-1, -4]])
+    def test_random_data_multidim_axes(self, axes):
+        a_shape, b_shape = (123, 22), (132, 11)
+        np.random.seed(1234)
+        a = np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape)
+        b = np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape)
+        expected = convolve2d(a, b, 'full')
+
+        a = a[:, :, None, None, None]
+        b = b[:, :, None, None, None]
+        expected = expected[:, :, None, None, None]
+
+        a = np.rollaxis(a.swapaxes(0, 2), 1, 5)
+        b = np.rollaxis(b.swapaxes(0, 2), 1, 5)
+        expected = np.rollaxis(expected.swapaxes(0, 2), 1, 5)
+
+        # use 1 for dimension 2 in a and 3 in b to test broadcasting
+        a = np.tile(a, [2, 1, 3, 1, 1])
+        b = np.tile(b, [2, 1, 1, 4, 1])
+        expected = np.tile(expected, [2, 1, 3, 4, 1])
+
+        out = fftconvolve(a, b, 'full', axes=axes)
+        assert_allclose(out, expected, rtol=1e-10, atol=1e-10)
 
     @pytest.mark.slow
-    def test_many_sizes(self):
-        np.random.seed(1234)
+    @pytest.mark.parametrize(
+        'n',
+        list(range(1, 100)) +
+        list(range(1000, 1500)) +
+        np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
+    def test_many_sizes(self, n):
+        a = np.random.rand(n) + 1j * np.random.rand(n)
+        b = np.random.rand(n) + 1j * np.random.rand(n)
+        expected = np.convolve(a, b, 'full')
 
-        def ns():
-            for j in range(1, 100):
-                yield j
-            for j in range(1000, 1500):
-                yield j
-            for k in range(50):
-                yield np.random.randint(1001, 10000)
+        out = fftconvolve(a, b, 'full')
+        assert_allclose(out, expected, atol=1e-10)
 
-        for n in ns():
-            msg = 'n=%d' % (n,)
-            a = np.random.rand(n) + 1j * np.random.rand(n)
-            b = np.random.rand(n) + 1j * np.random.rand(n)
-            c = fftconvolve(a, b, 'full')
-            d = np.convolve(a, b, 'full')
-            assert_allclose(c, d, atol=1e-10, err_msg=msg)
+        out = fftconvolve(a, b, 'full', axes=[0])
+        assert_allclose(out, expected, atol=1e-10)
 
     def test_invalid_shapes(self):
-        # By "invalid," we mean that no one
-        # array has dimensions that are all at
-        # least as large as the corresponding
-        # dimensions of the other array. This
-        # setup should throw a ValueError.
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
+        with assert_raises(ValueError,
+                           match="For 'valid' mode, one must be at least "
+                           "as large as the other in every dimension"):
+            fftconvolve(a, b, mode='valid')
 
-        assert_raises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
-        assert_raises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+    def test_invalid_shapes_axes(self):
+        a = np.zeros([5, 6, 2, 1])
+        b = np.zeros([5, 6, 3, 1])
+        with assert_raises(ValueError,
+                           match=r"incompatible shapes for in1 and in2:"
+                           r" \(5L?, 6L?, 2L?, 1L?\) and"
+                           r" \(5L?, 6L?, 3L?, 1L?\)"):
+            fftconvolve(a, b, axes=[0, 1])
 
-    def test_mismatched_dims(self):
-        assert_raises(ValueError, fftconvolve, [1], 2)
-        assert_raises(ValueError, fftconvolve, 1, [2])
-        assert_raises(ValueError, fftconvolve, [1], [[2]])
-        assert_raises(ValueError, fftconvolve, [3], 2)
+    @pytest.mark.parametrize('a,b',
+                             [([1], 2),
+                              (1, [2]),
+                              ([3], [[2]])])
+    def test_mismatched_dims(self, a, b):
+        with assert_raises(ValueError,
+                           match="in1 and in2 should have the same"
+                           " dimensionality"):
+            fftconvolve(a, b)
 
     def test_invalid_flags(self):
-        assert_raises(ValueError, fftconvolve, [1], [2], mode='chips')
+        with assert_raises(ValueError,
+                           match="acceptable mode flags are 'valid',"
+                           " 'same', or 'full'"):
+            fftconvolve([1], [2], mode='chips')
+
+        with assert_raises(ValueError,
+                           match="when provided, axes cannot be empty"):
+            fftconvolve([1], [2], axes=[])
+
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
+            fftconvolve([1], [2], axes=[[1, 2], [3, 4]])
+
+        with assert_raises(ValueError, match="axes must be a scalar or "
+                           "iterable of integers"):
+            fftconvolve([1], [2], axes=[1., 2., 3., 4.])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            fftconvolve([1], [2], axes=[1])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            fftconvolve([1], [2], axes=[-2])
+
+        with assert_raises(ValueError,
+                           match="all axes must be unique"):
+            fftconvolve([1], [2], axes=[0, 0])
 
 
 class TestMedFilt(object):
@@ -573,10 +836,7 @@ class TestMedFilt(object):
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
-        try:
-            signal.medfilt(None)
-        except:
-            pass
+        signal.medfilt(None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -616,8 +876,10 @@ class TestWiener(object):
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
-class TestResample(object):
+padtype_options = ["constant", "mean", "median", "minimum", "maximum", "line"]
 
+
+class TestResample(object):
     def test_basic(self):
         # Some basic tests
 
@@ -631,33 +893,68 @@ class TestResample(object):
         # Other degenerate conditions
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, padtype='')
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1,
+                      padtype='mean', cval=10)
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
-        sig2 = np.tile(np.arange(160), (2,1))
+        sig2 = np.tile(np.arange(160), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert_(win.shape == (160,))
 
-    def test_fft(self):
-        # Test FFT-based resampling
-        self._test_data(method='fft')
+    @pytest.mark.parametrize('window', (None, 'hamming'))
+    @pytest.mark.parametrize('N', (20, 19))
+    @pytest.mark.parametrize('num', (100, 101, 10, 11))
+    def test_rfft(self, N, num, window):
+        # Make sure the speed up using rfft gives the same result as the normal
+        # way using fft
+        x = np.linspace(0, 10, N, endpoint=False)
+        y = np.cos(-x**2/6.0)
+        assert_allclose(signal.resample(y, num, window=window),
+                        signal.resample(y + 0j, num, window=window).real)
 
-    def test_polyphase(self):
-        # Test polyphase resampling
-        self._test_data(method='polyphase')
+        y = np.array([np.cos(-x**2/6.0), np.sin(-x**2/6.0)])
+        y_complex = y + 0j
+        assert_allclose(
+            signal.resample(y, num, axis=1, window=window),
+            signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
 
-    def test_polyphase_extfilter(self):
-        # Test external specification of downsampling filter
-        self._test_data(method='polyphase', ext=True)
+    @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('dtype', ('float', 'complex'))
+    def test_dc(self, nx, ny, dtype):
+        x = np.array([1] * nx, dtype)
+        y = signal.resample(x, ny)
+        assert_allclose(y, [1] * ny)
 
-    def test_mutable_window(self):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
-        signal.resample_poly(impulse, 5, 1, window=window)
+        signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
         assert_array_equal(window, window_orig)
 
-    def _test_data(self, method, ext=False):
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_output_float32(self, padtype):
+        # Test that float32 inputs yield a float32 output
+        x = np.arange(10, dtype=np.float32)
+        h = np.array([1, 1, 1], dtype=np.float32)
+        y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
+        assert(y.dtype == np.float32)
+
+    @pytest.mark.parametrize(
+        "method, ext, padtype",
+        [("fft", False, None)]
+        + list(
+            product(
+                ["polyphase"], [False, True], padtype_options,
+            )
+        ),
+    )
+    def test_resample_methods(self, method, ext, padtype):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -683,9 +980,9 @@ class TestResample(object):
                     half_len = 10 * max_rate
                     window = signal.firwin(2 * half_len + 1, f_c,
                                            window=('kaiser', 5.0))
-                    polyargs = {'window': window}
+                    polyargs = {'window': window, 'padtype': padtype}
                 else:
-                    polyargs = {}
+                    polyargs = {'padtype': padtype}
 
                 y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
                                                  **polyargs)
@@ -693,7 +990,10 @@ class TestResample(object):
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
-                    assert_allclose(y_resamp, y_to, atol=1e-3)
+                    if padtype in ['minimum', 'maximum']:
+                        assert_allclose(y_resamp, y_to, atol=3e-1)
+                    else:
+                        assert_allclose(y_resamp, y_to, atol=1e-3)
                 else:
                     assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
@@ -709,20 +1009,22 @@ class TestResample(object):
             if method == 'fft':
                 y_resamp = signal.resample(x, rate_to)
             else:
-                y_resamp = signal.resample_poly(x, rate_to, rate)
+                y_resamp = signal.resample_poly(x, rate_to, rate,
+                                                padtype=padtype)
             assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
         # More tests of fft method (Master 0.18.1 fails these)
         if method == 'fft':
-            x1 = np.array([1.+0.j,0.+0.j])
-            y1_test = signal.resample(x1,4)
-            y1_true = np.array([1.+0.j,0.5+0.j,0.+0.j,0.5+0.j])  # upsampling a complex array
+            x1 = np.array([1.+0.j, 0.+0.j])
+            y1_test = signal.resample(x1, 4)
+            # upsampling a complex array
+            y1_true = np.array([1.+0.j, 0.5+0.j, 0.+0.j, 0.5+0.j])
             assert_allclose(y1_test, y1_true, atol=1e-12)
-            x2 = np.array([1.,0.5,0.,0.5])
-            y2_test = signal.resample(x2,2)  # downsampling a real array
-            y2_true = np.array([1.,0.])
+            x2 = np.array([1., 0.5, 0., 0.5])
+            y2_test = signal.resample(x2, 2)  # downsampling a real array
+            y2_true = np.array([1., 0.])
             assert_allclose(y2_test, y2_true, atol=1e-12)
 
     def test_poly_vs_filtfilt(self):
@@ -760,7 +1062,8 @@ class TestResample(object):
                     x = np.random.random((nx,))
                     weights = np.random.random((nweights,))
                     y_g = correlate1d(x, weights[::-1], mode='constant')
-                    y_s = signal.resample_poly(x, up=1, down=down, window=weights)
+                    y_s = signal.resample_poly(
+                        x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
 
 
@@ -803,6 +1106,7 @@ class TestOrderFilt(object):
 
 
 class _TestLinearFilter(object):
+
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
         return self.convert_dtype(x)
@@ -1230,6 +1534,8 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
     assert_raises(TypeError, lfilter, [1.0], [None], [1.0, 2.0, 3.0])
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
+    with assert_raises(ValueError, match='common type'):
+        lfilter([1.], [1., 1.], ['a', 'b', 'c'])
 
 
 def test_lfilter_notimplemented_input():
@@ -1260,6 +1566,14 @@ class TestCorrelateReal(object):
             pass
         return decimal
 
+    def equal_tolerance_fft(self, res_dt):
+        # FFT implementations convert longdouble arguments down to
+        # double so don't expect better precision, see gh-9520
+        if res_dt == np.longdouble:
+            return self.equal_tolerance(np.double)
+        else:
+            return self.equal_tolerance(res_dt)
+
     def test_method(self, dt):
         if dt == Decimal:
             method = choose_conv_method([Decimal(4)], [Decimal(3)])
@@ -1269,8 +1583,8 @@ class TestCorrelateReal(object):
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance(y_fft.dtype))
-            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_fft.dtype))
+            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance_fft(y_fft.dtype))
+            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_direct.dtype))
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 
@@ -1401,8 +1715,13 @@ class TestCorrelateComplex(object):
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
     # assert_array_almost_equal().
+    # Since correlate may chose to use FFT method which converts
+    # longdoubles to doubles internally don't expect better precision
+    # for longdouble than for double (see gh-9520).
 
     def decimal(self, dt):
+        if dt == np.clongdouble:
+            dt = np.cdouble
         return int(2 * np.finfo(dt).precision / 3)
 
     def _setup_rank1(self, dt, mode):
@@ -2000,6 +2319,7 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(object):
+
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
@@ -2382,3 +2702,17 @@ class TestDeconvolve(object):
         recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
+
+
+class TestDetrend(object):
+
+    def test_basic(self):
+        detrended = detrend(array([1, 2, 3]))
+        detrended_exact = array([0, 0, 0])
+        assert_array_almost_equal(detrended, detrended_exact)
+
+    def test_copy(self):
+        x = array([1, 1.2, 1.5, 1.6, 2.4])
+        copy_array = detrend(x, overwrite_data=False)
+        inplace = detrend(x, overwrite_data=True)
+        assert_array_almost_equal(copy_array, inplace)

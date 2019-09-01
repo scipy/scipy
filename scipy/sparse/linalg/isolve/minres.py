@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy import sqrt, inner, finfo, zeros
+from numpy import sqrt, inner, zeros, inf, finfo
 from numpy.linalg import norm
 
 from .utils import make_system
@@ -22,6 +22,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real symmetric N-by-N matrix of the linear system
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
 
@@ -79,7 +82,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         maxiter = 5 * n
 
     msg = [' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
-            ' beta1 = 0.  The exact solution is  x = 0          ',   # 0
+            ' beta1 = 0.  The exact solution is x0          ',   # 0
             ' A solution to Ax = b was found, given rtol        ',   # 1
             ' A least-squares solution was found, given rtol    ',   # 2
             ' Reasonable accuracy achieved, given eps           ',   # 3
@@ -107,18 +110,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     eps = finfo(xtype).eps
 
-    x = zeros(n, dtype=xtype)
-
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    y = b
-    r1 = b
+    r1 = b - A*x
+    y = psolve(r1)
 
-    y = psolve(b)
-
-    beta1 = inner(b,y)
+    beta1 = inner(r1, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
@@ -159,7 +158,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     rhs1 = beta1
     rhs2 = 0
     tnorm2 = 0
-    ynorm2 = 0
+    gmax = 0
+    gmin = finfo(xtype).max
     cs = -1
     sn = 0
     w = zeros(n, dtype=xtype)
@@ -198,9 +198,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         if itn == 1:
             if beta/beta1 <= 10*eps:
                 istop = -1  # Terminate later
-            # tnorm2 = alfa**2 ??
-            gmax = abs(alfa)
-            gmin = gmax
 
         # Apply previous rotation Qk-1 to get
         #   [deltak epslnk+1] = [cs  sn][dbark    0   ]
@@ -236,14 +233,13 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         gmax = max(gmax, gamma)
         gmin = min(gmin, gamma)
         z = rhs1 / gamma
-        ynorm2 = z**2 + ynorm2
         rhs1 = rhs2 - delta*z
         rhs2 = - epsln*z
 
         # Estimate various norms and test for convergence.
 
         Anorm = sqrt(tnorm2)
-        ynorm = sqrt(ynorm2)
+        ynorm = norm(x)
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps
         epsr = Anorm * ynorm * tol
@@ -254,8 +250,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
         qrnorm = phibar
         rnorm = qrnorm
-        test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
-        test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
+        if ynorm == 0 or Anorm == 0:
+            test1 = inf
+        else:
+            test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
+        if Anorm == 0:
+            test2 = inf
+        else:
+            test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
@@ -280,7 +282,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
                 istop = 6
             if Acond >= 0.1/eps:
                 istop = 4
-            if epsx >= beta:
+            if epsx >= beta1:
                 istop = 3
             # if rnorm <= epsx   : istop = 2
             # if rnorm <= epsr   : istop = 1
@@ -342,7 +344,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
 
 if __name__ == '__main__':
-    from scipy import ones, arange
+    from numpy import zeros, arange
     from scipy.linalg import norm
     from scipy.sparse import spdiags
 
@@ -357,6 +359,6 @@ if __name__ == '__main__':
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
-    b = 0*ones(A.shape[0])
+    b = zeros(A.shape[0])
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

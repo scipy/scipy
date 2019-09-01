@@ -2,13 +2,14 @@
 from __future__ import division, print_function, absolute_import
 
 import re
-import itertools
 import datetime
-from functools import partial
+from collections import OrderedDict
 
 import numpy as np
 
 from scipy._lib.six import next
+import csv
+import ctypes
 
 """A module to read arff files."""
 
@@ -36,19 +37,22 @@ r_comment = re.compile(r'^%')
 # Match an empty line
 r_empty = re.compile(r'^\s+$')
 # Match a header line, that is a line which starts by @ + a word
-r_headerline = re.compile(r'^@\S*')
+r_headerline = re.compile(r'^\s*@\S*')
 r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
 r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
-r_attribute = re.compile(r'^@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
+r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
+
+r_nominal = re.compile('{(.+)}')
+r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''
 r_comattrval = re.compile(r"'(..+)'\s+(..+$)")
 # To get normal attributes
 r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
-#-------------------------
+# ------------------------
 # Module defined exception
-#-------------------------
+# ------------------------
 
 
 class ArffError(IOError):
@@ -58,168 +62,444 @@ class ArffError(IOError):
 class ParseArffError(ArffError):
     pass
 
-#------------------
+
+# ----------
+# Attributes
+# ----------
+class Attribute(object):
+
+    type_name = None
+
+    def __init__(self, name):
+        self.name = name
+        self.range = None
+        self.dtype = np.object_
+
+    @classmethod
+    def parse_attribute(cls, name, attr_string):
+        """
+        Parse the attribute line if it knows how. Returns the parsed
+        attribute, or None.
+        """
+        return None
+
+    def parse_data(self, data_str):
+        """
+        Parse a value of this type.
+        """
+        return None
+
+    def __str__(self):
+        """
+        Parse a value of this type.
+        """
+        return self.name + ',' + self.type_name
+
+
+class NominalAttribute(Attribute):
+
+    type_name = 'nominal'
+
+    def __init__(self, name, values):
+        super().__init__(name)
+        self.values = values
+        self.range = values
+        self.dtype = (np.string_, max(len(i) for i in values))
+
+    @staticmethod
+    def _get_nom_val(atrv):
+        """Given a string containing a nominal type, returns a tuple of the
+        possible values.
+
+        A nominal type is defined as something framed between braces ({}).
+
+        Parameters
+        ----------
+        atrv : str
+           Nominal type definition
+
+        Returns
+        -------
+        poss_vals : tuple
+           possible values
+
+        Examples
+        --------
+        >>> get_nom_val("{floup, bouga, fl, ratata}")
+        ('floup', 'bouga', 'fl', 'ratata')
+        """
+        m = r_nominal.match(atrv)
+        if m:
+            attrs, _ = split_data_line(m.group(1))
+            return tuple(attrs)
+        else:
+            raise ValueError("This does not look like a nominal string")
+
+    @classmethod
+    def parse_attribute(cls, name, attr_string):
+        """
+        Parse the attribute line if it knows how. Returns the parsed
+        attribute, or None.
+
+        For nominal attributes, the attribute string would be like '{<attr_1>,
+         <attr2>, <attr_3>}'.
+        """
+        if attr_string[0] == '{':
+            values = cls._get_nom_val(attr_string)
+            return cls(name, values)
+        else:
+            return None
+
+    def parse_data(self, data_str):
+        """
+        Parse a value of this type.
+        """
+        if data_str in self.values:
+            return data_str
+        elif data_str == '?':
+            return data_str
+        else:
+            raise ValueError("%s value not in %s" % (str(data_str),
+                                                     str(self.values)))
+
+    def __str__(self):
+        msg = self.name + ",{"
+        for i in range(len(self.values)-1):
+            msg += self.values[i] + ","
+        msg += self.values[-1]
+        msg += "}"
+        return msg
+
+
+class NumericAttribute(Attribute):
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.type_name = 'numeric'
+        self.dtype = np.float_
+
+    @classmethod
+    def parse_attribute(cls, name, attr_string):
+        """
+        Parse the attribute line if it knows how. Returns the parsed
+        attribute, or None.
+
+        For numeric attributes, the attribute string would be like
+        'numeric' or 'int' or 'real'.
+        """
+
+        attr_string = attr_string.lower().strip()
+
+        if(attr_string[:len('numeric')] == 'numeric' or
+           attr_string[:len('int')] == 'int' or
+           attr_string[:len('real')] == 'real'):
+            return cls(name)
+        else:
+            return None
+
+    def parse_data(self, data_str):
+        """
+        Parse a value of this type.
+
+        Parameters
+        ----------
+        data_str : str
+           string to convert
+
+        Returns
+        -------
+        f : float
+           where float can be nan
+
+        Examples
+        --------
+        >>> atr = NumericAttribute('atr')
+        >>> atr.parse_data('1')
+        1.0
+        >>> atr.parse_data('1\\n')
+        1.0
+        >>> atr.parse_data('?\\n')
+        nan
+        """
+        if '?' in data_str:
+            return np.nan
+        else:
+            return float(data_str)
+
+    def _basic_stats(self, data):
+        nbfac = data.size * 1. / (data.size - 1)
+        return (np.nanmin(data), np.nanmax(data),
+                np.mean(data), np.std(data) * nbfac)
+
+
+class StringAttribute(Attribute):
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.type_name = 'string'
+
+    @classmethod
+    def parse_attribute(cls, name, attr_string):
+        """
+        Parse the attribute line if it knows how. Returns the parsed
+        attribute, or None.
+
+        For string attributes, the attribute string would be like
+        'string'.
+        """
+
+        attr_string = attr_string.lower().strip()
+
+        if attr_string[:len('string')] == 'string':
+            return cls(name)
+        else:
+            return None
+
+
+class DateAttribute(Attribute):
+
+    def __init__(self, name, date_format, datetime_unit):
+        super().__init__(name)
+        self.date_format = date_format
+        self.datetime_unit = datetime_unit
+        self.type_name = 'date'
+        self.range = date_format
+        self.dtype = np.datetime64(0, self.datetime_unit)
+
+    @staticmethod
+    def _get_date_format(atrv):
+        m = r_date.match(atrv)
+        if m:
+            pattern = m.group(1).strip()
+            # convert time pattern from Java's SimpleDateFormat to C's format
+            datetime_unit = None
+            if "yyyy" in pattern:
+                pattern = pattern.replace("yyyy", "%Y")
+                datetime_unit = "Y"
+            elif "yy":
+                pattern = pattern.replace("yy", "%y")
+                datetime_unit = "Y"
+            if "MM" in pattern:
+                pattern = pattern.replace("MM", "%m")
+                datetime_unit = "M"
+            if "dd" in pattern:
+                pattern = pattern.replace("dd", "%d")
+                datetime_unit = "D"
+            if "HH" in pattern:
+                pattern = pattern.replace("HH", "%H")
+                datetime_unit = "h"
+            if "mm" in pattern:
+                pattern = pattern.replace("mm", "%M")
+                datetime_unit = "m"
+            if "ss" in pattern:
+                pattern = pattern.replace("ss", "%S")
+                datetime_unit = "s"
+            if "z" in pattern or "Z" in pattern:
+                raise ValueError("Date type attributes with time zone not "
+                                 "supported, yet")
+
+            if datetime_unit is None:
+                raise ValueError("Invalid or unsupported date format")
+
+            return pattern, datetime_unit
+        else:
+            raise ValueError("Invalid or no date format")
+
+    @classmethod
+    def parse_attribute(cls, name, attr_string):
+        """
+        Parse the attribute line if it knows how. Returns the parsed
+        attribute, or None.
+
+        For date attributes, the attribute string would be like
+        'date <format>'.
+        """
+
+        attr_string_lower = attr_string.lower().strip()
+
+        if attr_string_lower[:len('date')] == 'date':
+            date_format, datetime_unit = cls._get_date_format(attr_string)
+            return cls(name, date_format, datetime_unit)
+        else:
+            return None
+
+    def parse_data(self, data_str):
+        """
+        Parse a value of this type.
+        """
+        date_str = data_str.strip().strip("'").strip('"')
+        if date_str == '?':
+            return np.datetime64('NaT', self.datetime_unit)
+        else:
+            dt = datetime.datetime.strptime(date_str, self.date_format)
+            return np.datetime64(dt).astype(
+                "datetime64[%s]" % self.datetime_unit)
+
+    def __str__(self):
+        return super(DateAttribute, self).__str__() + ',' + self.date_format
+
+
+class RelationalAttribute(Attribute):
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.type_name = 'relational'
+        self.dtype = np.object_
+        self.attributes = []
+        self.dialect = None
+
+    @classmethod
+    def parse_attribute(cls, name, attr_string):
+        """
+        Parse the attribute line if it knows how. Returns the parsed
+        attribute, or None.
+
+        For date attributes, the attribute string would be like
+        'date <format>'.
+        """
+
+        attr_string_lower = attr_string.lower().strip()
+
+        if attr_string_lower[:len('relational')] == 'relational':
+            return cls(name)
+        else:
+            return None
+
+    def parse_data(self, data_str):
+        # Copy-pasted
+        elems = list(range(len(self.attributes)))
+
+        escaped_string = data_str.encode().decode("unicode-escape")
+
+        row_tuples = []
+
+        for raw in escaped_string.split("\n"):
+            row, self.dialect = split_data_line(raw, self.dialect)
+
+            row_tuples.append(tuple(
+                [self.attributes[i].parse_data(row[i]) for i in elems]))
+
+        return np.array(row_tuples,
+                        [(a.name, a.dtype) for a in self.attributes])
+
+    def __str__(self):
+        return (super(RelationalAttribute, self).__str__() + '\n\t' +
+                '\n\t'.join(str(a) for a in self.attributes))
+
+
+# -----------------
 # Various utilities
-#------------------
+# -----------------
+def to_attribute(name, attr_string):
+    attr_classes = (NominalAttribute, NumericAttribute, DateAttribute,
+                    StringAttribute, RelationalAttribute)
 
-# An attribute  is defined as @attribute name value
+    for cls in attr_classes:
+        attr = cls.parse_attribute(name, attr_string)
+        if attr is not None:
+            return attr
 
-
-def parse_type(attrtype):
-    """Given an arff attribute value (meta data), returns its type.
-
-    Expect the value to be a name."""
-    uattribute = attrtype.lower().strip()
-    if uattribute[0] == '{':
-        return 'nominal'
-    elif uattribute[:len('real')] == 'real':
-        return 'numeric'
-    elif uattribute[:len('integer')] == 'integer':
-        return 'numeric'
-    elif uattribute[:len('numeric')] == 'numeric':
-        return 'numeric'
-    elif uattribute[:len('string')] == 'string':
-        return 'string'
-    elif uattribute[:len('relational')] == 'relational':
-        return 'relational'
-    elif uattribute[:len('date')] == 'date':
-        return 'date'
-    else:
-        raise ParseArffError("unknown attribute %s" % uattribute)
+    raise ParseArffError("unknown attribute %s" % attr_string)
 
 
-def get_nominal(attribute):
-    """If attribute is nominal, returns a list of the values"""
-    return attribute.split(',')
-
-
-def read_data_list(ofile):
-    """Read each line of the iterable and put it in a list."""
-    data = [next(ofile)]
-    if data[0].strip()[0] == '{':
-        raise ValueError("This looks like a sparse ARFF: not supported yet")
-    data.extend([i for i in ofile])
-    return data
-
-
-def get_ndata(ofile):
-    """Read the whole file to get number of data attributes."""
-    data = [next(ofile)]
-    loc = 1
-    if data[0].strip()[0] == '{':
-        raise ValueError("This looks like a sparse ARFF: not supported yet")
-    for i in ofile:
-        loc += 1
-    return loc
-
-
-def maxnomlen(atrv):
-    """Given a string containing a nominal type definition, returns the
-    string len of the biggest component.
-
-    A nominal type is defined as seomthing framed between brace ({}).
-
-    Parameters
-    ----------
-    atrv : str
-       Nominal type definition
-
-    Returns
-    -------
-    slen : int
-       length of longest component
-
-    Examples
-    --------
-    maxnomlen("{floup, bouga, fl, ratata}") returns 6 (the size of
-    ratata, the longest nominal value).
-
-    >>> maxnomlen("{floup, bouga, fl, ratata}")
-    6
+def csv_sniffer_has_bug_last_field():
     """
-    nomtp = get_nom_val(atrv)
-    return max(len(i) for i in nomtp)
-
-
-def get_nom_val(atrv):
-    """Given a string containing a nominal type, returns a tuple of the
-    possible values.
-
-    A nominal type is defined as something framed between braces ({}).
-
-    Parameters
-    ----------
-    atrv : str
-       Nominal type definition
-
-    Returns
-    -------
-    poss_vals : tuple
-       possible values
-
-    Examples
-    --------
-    >>> get_nom_val("{floup, bouga, fl, ratata}")
-    ('floup', 'bouga', 'fl', 'ratata')
+    Checks if the bug https://bugs.python.org/issue30157 is unpatched.
     """
-    r_nominal = re.compile('{(.+)}')
-    m = r_nominal.match(atrv)
-    if m:
-        return tuple(i.strip() for i in m.group(1).split(','))
-    else:
-        raise ValueError("This does not look like a nominal string")
+
+    # We only compute this once.
+    has_bug = getattr(csv_sniffer_has_bug_last_field, "has_bug", None)
+
+    if has_bug is None:
+        dialect = csv.Sniffer().sniff("3, 'a'")
+        csv_sniffer_has_bug_last_field.has_bug = dialect.quotechar != "'"
+        has_bug = csv_sniffer_has_bug_last_field.has_bug
+
+    return has_bug
 
 
-def get_date_format(atrv):
-    r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
-    m = r_date.match(atrv)
-    if m:
-        pattern = m.group(1).strip()
-        # convert time pattern from Java's SimpleDateFormat to C's format
-        datetime_unit = None
-        if "yyyy" in pattern:
-            pattern = pattern.replace("yyyy", "%Y")
-            datetime_unit = "Y"
-        elif "yy":
-            pattern = pattern.replace("yy", "%y")
-            datetime_unit = "Y"
-        if "MM" in pattern:
-            pattern = pattern.replace("MM", "%m")
-            datetime_unit = "M"
-        if "dd" in pattern:
-            pattern = pattern.replace("dd", "%d")
-            datetime_unit = "D"
-        if "HH" in pattern:
-            pattern = pattern.replace("HH", "%H")
-            datetime_unit = "h"
-        if "mm" in pattern:
-            pattern = pattern.replace("mm", "%M")
-            datetime_unit = "m"
-        if "ss" in pattern:
-            pattern = pattern.replace("ss", "%S")
-            datetime_unit = "s"
-        if "z" in pattern or "Z" in pattern:
-            raise ValueError("Date type attributes with time zone not "
-                             "supported, yet")
+def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
+    """
+    Workaround for the bug https://bugs.python.org/issue30157 if is unpatched.
+    """
+    if csv_sniffer_has_bug_last_field():
+        # Reuses code from the csv module
+        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'
 
-        if datetime_unit is None:
-            raise ValueError("Invalid or unsupported date format")
+        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",
+                      right_regex,  # ,".*?"
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)
+            regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
+            matches = regexp.findall(sniff_line)
+            if matches:
+                break
 
-        return pattern, datetime_unit
-    else:
-        raise ValueError("Invalid or no date format")
+        # If it does not match the expression that was bugged, then this bug does not apply
+        if restr != right_regex:
+            return
+
+        groupindex = regexp.groupindex
+
+        # There is only one end of the string
+        assert len(matches) == 1
+        m = matches[0]
+
+        n = groupindex['quote'] - 1
+        quote = m[n]
+
+        n = groupindex['delim'] - 1
+        delim = m[n]
+
+        n = groupindex['space'] - 1
+        space = bool(m[n])
+
+        dq_regexp = re.compile(
+            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
+            {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
+        )
+
+        doublequote = bool(dq_regexp.search(sniff_line))
+
+        dialect.quotechar = quote
+        if delim in delimiters:
+            dialect.delimiter = delim
+        dialect.doublequote = doublequote
+        dialect.skipinitialspace = space
 
 
-def go_data(ofile):
-    """Skip header.
+def split_data_line(line, dialect=None):
+    delimiters = ",\t"
 
-    the first next() call of the returned iterator will be the @data line"""
-    return itertools.dropwhile(lambda x: not r_datameta.match(x), ofile)
+    # This can not be done in a per reader basis, and relational fields
+    # can be HUGE
+    csv.field_size_limit(int(ctypes.c_ulong(-1).value // 2))
+
+    # Remove the line end if any
+    if line[-1] == '\n':
+        line = line[:-1]
+
+    sniff_line = line
+
+    # Add a delimiter if none is present, so that the csv.Sniffer
+    # does not complain for a single-field CSV.
+    if not any(d in line for d in delimiters):
+        sniff_line += ","
+
+    if dialect is None:
+        dialect = csv.Sniffer().sniff(sniff_line, delimiters=delimiters)
+        workaround_csv_sniffer_bug_last_field(sniff_line=sniff_line,
+                                              dialect=dialect,
+                                              delimiters=delimiters)
+
+    row = next(csv.reader([line], dialect))
+
+    return row, dialect
 
 
-#----------------
+# --------------
 # Parsing header
-#----------------
+# --------------
 def tokenize_attribute(iterable, attribute):
     """Parse a raw string in header (eg starts by @attribute).
 
@@ -276,13 +556,16 @@ def tokenize_attribute(iterable, attribute):
             # Not sure we should support this, as it does not seem supported by
             # weka.
             raise ValueError("multi line not supported yet")
-            #name, type, next_item = tokenize_multilines(iterable, atrv)
     else:
         raise ValueError("First line unparsable: %s" % sattr)
 
-    if type == 'relational':
-        raise ValueError("relational attributes not supported yet")
-    return name, type, next_item
+    attribute = to_attribute(name, type)
+
+    if type.lower() == 'relational':
+        next_item = read_relational_attribute(iterable, attribute, next_item)
+    #    raise ValueError("relational attributes not supported yet")
+
+    return attribute, next_item
 
 
 def tokenize_single_comma(val):
@@ -315,6 +598,28 @@ def tokenize_single_wcomma(val):
     return name, type
 
 
+def read_relational_attribute(ofile, relational_attribute, i):
+    """Read the nested attributes of a relational attribute"""
+
+    r_end_relational = re.compile(r'^@[Ee][Nn][Dd]\s*' +
+                                  relational_attribute.name + r'\s*$')
+
+    while not r_end_relational.match(i):
+        m = r_headerline.match(i)
+        if m:
+            isattr = r_attribute.match(i)
+            if isattr:
+                attr, i = tokenize_attribute(ofile, i)
+                relational_attribute.attributes.append(attr)
+            else:
+                raise ValueError("Error parsing line %s" % i)
+        else:
+            i = next(ofile)
+
+    i = next(ofile)
+    return i
+
+
 def read_header(ofile):
     """Read the header of the iterable ofile."""
     i = next(ofile)
@@ -331,8 +636,8 @@ def read_header(ofile):
         if m:
             isattr = r_attribute.match(i)
             if isattr:
-                name, type, i = tokenize_attribute(ofile, i)
-                attributes.append((name, type))
+                attr, i = tokenize_attribute(ofile, i)
+                attributes.append(attr)
             else:
                 isrel = r_relation.match(i)
                 if isrel:
@@ -344,57 +649,6 @@ def read_header(ofile):
             i = next(ofile)
 
     return relation, attributes
-
-
-#--------------------
-# Parsing actual data
-#--------------------
-def safe_float(x):
-    """given a string x, convert it to a float. If the stripped string is a ?,
-    return a Nan (missing value).
-
-    Parameters
-    ----------
-    x : str
-       string to convert
-
-    Returns
-    -------
-    f : float
-       where float can be nan
-
-    Examples
-    --------
-    >>> safe_float('1')
-    1.0
-    >>> safe_float('1\\n')
-    1.0
-    >>> safe_float('?\\n')
-    nan
-    """
-    if '?' in x:
-        return np.nan
-    else:
-        return float(x)
-
-
-def safe_nominal(value, pvalue):
-    svalue = value.strip()
-    if svalue in pvalue:
-        return svalue
-    elif svalue == '?':
-        return svalue
-    else:
-        raise ValueError("%s value not in %s" % (str(svalue), str(pvalue)))
-
-
-def safe_date(value, date_format, datetime_unit):
-    date_str = value.strip().strip("'").strip('"')
-    if date_str == '?':
-        return np.datetime64('NaT', datetime_unit)
-    else:
-        dt = datetime.datetime.strptime(date_str, date_format)
-        return np.datetime64(dt).astype("datetime64[%s]" % datetime_unit)
 
 
 class MetaData(object):
@@ -415,6 +669,11 @@ class MetaData(object):
         # Getting attribute type
         types = meta.types()
 
+    Methods
+    -------
+    names
+    types
+
     Notes
     -----
     Also maintains the list of attributes in order, i.e. doing for i in
@@ -423,43 +682,48 @@ class MetaData(object):
     """
     def __init__(self, rel, attr):
         self.name = rel
+
         # We need the dictionary to be ordered
-        # XXX: may be better to implement an ordered dictionary
-        self._attributes = {}
-        self._attrnames = []
-        for name, value in attr:
-            tp = parse_type(value)
-            self._attrnames.append(name)
-            if tp == 'nominal':
-                self._attributes[name] = (tp, get_nom_val(value))
-            elif tp == 'date':
-                self._attributes[name] = (tp, get_date_format(value)[0])
-            else:
-                self._attributes[name] = (tp, None)
+        self._attributes = OrderedDict((a.name, a) for a in attr)
 
     def __repr__(self):
         msg = ""
         msg += "Dataset: %s\n" % self.name
-        for i in self._attrnames:
-            msg += "\t%s's type is %s" % (i, self._attributes[i][0])
-            if self._attributes[i][1]:
-                msg += ", range is %s" % str(self._attributes[i][1])
+        for i in self._attributes:
+            msg += "\t%s's type is %s" % (i, self._attributes[i].type_name)
+            if self._attributes[i].range:
+                msg += ", range is %s" % str(self._attributes[i].range)
             msg += '\n'
         return msg
 
     def __iter__(self):
-        return iter(self._attrnames)
+        return iter(self._attributes)
 
     def __getitem__(self, key):
-        return self._attributes[key]
+        attr = self._attributes[key]
+
+        return (attr.type_name, attr.range)
 
     def names(self):
-        """Return the list of attribute names."""
-        return self._attrnames
+        """Return the list of attribute names.
+
+        Returns
+        -------
+        attrnames : list of str
+            The attribute names.
+        """
+        return list(self._attributes)
 
     def types(self):
-        """Return the list of attribute types."""
-        attr_types = [self._attributes[name][0] for name in self._attrnames]
+        """Return the list of attribute types.
+
+        Returns
+        -------
+        attr_types : list of str
+            The attribute types.
+        """
+        attr_types = [self._attributes[name].type_name
+                      for name in self._attributes]
         return attr_types
 
 
@@ -554,9 +818,8 @@ def _loadarff(ofile):
 
     # Check whether we have a string attribute (not supported yet)
     hasstr = False
-    for name, value in attr:
-        type = parse_type(value)
-        if type == 'string':
+    for a in attr:
+        if isinstance(a, StringAttribute):
             hasstr = True
 
     meta = MetaData(rel, attr)
@@ -568,36 +831,13 @@ def _loadarff(ofile):
 
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
-    acls2dtype = {'real': float, 'integer': float, 'numeric': float}
-    acls2conv = {'real': safe_float,
-                 'integer': safe_float,
-                 'numeric': safe_float}
-    descr = []
-    convertors = []
-    if not hasstr:
-        for name, value in attr:
-            type = parse_type(value)
-            if type == 'date':
-                date_format, datetime_unit = get_date_format(value)
-                descr.append((name, "datetime64[%s]" % datetime_unit))
-                convertors.append(partial(safe_date, date_format=date_format,
-                                          datetime_unit=datetime_unit))
-            elif type == 'nominal':
-                n = maxnomlen(value)
-                descr.append((name, 'S%d' % n))
-                pvalue = get_nom_val(value)
-                convertors.append(partial(safe_nominal, pvalue=pvalue))
-            else:
-                descr.append((name, acls2dtype[type]))
-                convertors.append(safe_float)
-                #dc.append(acls2conv[type])
-                #sdescr.append((name, acls2sdtype[type]))
-    else:
+
+    if hasstr:
         # How to support string efficiently ? Ideally, we should know the max
         # size of the string before allocating the numpy array.
         raise NotImplementedError("String attributes not supported yet, sorry")
 
-    ni = len(convertors)
+    ni = len(attr)
 
     def generator(row_iter, delim=','):
         # TODO: this is where we are spending times (~80%). I think things
@@ -616,40 +856,38 @@ def _loadarff(ofile):
         # row elements and got slightly worse performance.
         elems = list(range(ni))
 
+        dialect = None
         for raw in row_iter:
             # We do not abstract skipping comments and empty lines for
             # performance reasons.
             if r_comment.match(raw) or r_empty.match(raw):
                 continue
-            row = raw.split(delim)
-            yield tuple([convertors[i](row[i]) for i in elems])
 
-    a = generator(ofile)
+            row, dialect = split_data_line(raw, dialect)
+
+            yield tuple([attr[i].parse_data(row[i]) for i in elems])
+
+    a = list(generator(ofile))
     # No error should happen here: it is a bug otherwise
-    data = np.fromiter(a, descr)
+    data = np.array(a, [(a.name, a.dtype) for a in attr])
     return data, meta
 
 
-#-----
+# ----
 # Misc
-#-----
+# ----
 def basic_stats(data):
     nbfac = data.size * 1. / (data.size - 1)
     return np.nanmin(data), np.nanmax(data), np.mean(data), np.std(data) * nbfac
 
 
 def print_attribute(name, tp, data):
-    type = tp[0]
+    type = tp.type_name
     if type == 'numeric' or type == 'real' or type == 'integer':
         min, max, mean, std = basic_stats(data)
         print("%s,%s,%f,%f,%f,%f" % (name, type, min, max, mean, std))
     else:
-        msg = name + ",{"
-        for i in range(len(tp[1])-1):
-            msg += tp[1][i] + ","
-        msg += tp[1][-1]
-        msg += "}"
-        print(msg)
+        print(str(tp))
 
 
 def test_weka(filename):

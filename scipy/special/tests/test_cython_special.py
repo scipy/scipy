@@ -81,6 +81,7 @@ PARAMS = [
     (special.ellipj, cython_special._ellipj_pywrap, ('dd',), None),
     (special.ellipkinc, cython_special.ellipkinc, ('dd',), None),
     (special.ellipkm1, cython_special.ellipkm1, ('d',), None),
+    (special.ellipk, cython_special.ellipk, ('d',), None),
     (special.entr, cython_special.entr, ('d',), None),
     (special.erf, cython_special.erf, ('d', 'D'), None),
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
@@ -142,10 +143,7 @@ PARAMS = [
     (special.huber, cython_special.huber, ('dd',), None),
     (special.hyp0f1, cython_special.hyp0f1, ('dd', 'dD'), None),
     (special.hyp1f1, cython_special.hyp1f1, ('ddd', 'ddD'), None),
-    (special.hyp1f2, cython_special._hyp1f2_pywrap, ('dddd',), None),
-    (special.hyp2f0, cython_special._hyp2f0_pywrap, ('dddl', 'dddd'), None),
     (special.hyp2f1, cython_special.hyp2f1, ('dddd', 'dddD'), None),
-    (special.hyp3f0, cython_special._hyp3f0_pywrap, ('dddd',), None),
     (special.hyperu, cython_special.hyperu, ('ddd',), None),
     (special.i0, cython_special.i0, ('d',), None),
     (special.i0e, cython_special.i0e, ('d',), None),
@@ -282,10 +280,9 @@ def _generate_test_points(typecodes):
 
 def test_cython_api_completeness():
     # Check that everything is tested
-    skip = []
     for name in dir(cython_special):
         func = getattr(cython_special, name)
-        if callable(func) and not (name.startswith('_bench') or name in skip):
+        if callable(func) and not name.startswith('_'):
             for _, cyfun, _, _ in PARAMS:
                 if cyfun is func:
                     break
@@ -316,10 +313,9 @@ def test_cython_api(param):
     # Check results
     for typecodes in specializations:
         # Pick the correct specialized function
-        signature = []
-        for j, code in enumerate(typecodes):
-            if is_fused_code[j]:
-                signature.append(CYTHON_SIGNATURE_MAP[code])
+        signature = [CYTHON_SIGNATURE_MAP[code]
+                     for j, code in enumerate(typecodes)
+                     if is_fused_code[j]]
 
         if signature:
             cy_spec_func = cyfunc[tuple(signature)]

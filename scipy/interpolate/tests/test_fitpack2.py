@@ -141,6 +141,26 @@ class TestUnivariateSpline(object):
         assert_allclose(spl2(0.6) - spl2(0.2),
                         spl.integral(0.2, 0.6))
 
+    def test_derivative_extrapolation(self):
+        # Regression test for gh-10195: for a const-extrapolation spline
+        # its derivative evaluates to zero for extrapolation
+        x_values = [1, 2, 4, 6, 8.5]
+        y_values = [0.5, 0.8, 1.3, 2.5, 5]
+        f = UnivariateSpline(x_values, y_values, ext='const', k=3)
+
+        x = [-1, 0, -0.5, 9, 9.5, 10]
+        assert_allclose(f.derivative()(x), 0, atol=1e-15)
+
+    def test_integral_out_of_bounds(self):
+        # Regression test for gh-7906: .integral(a, b) is wrong if both 
+        # a and b are out-of-bounds
+        x = np.linspace(0., 1., 7)
+        for ext in range(4):
+            f = UnivariateSpline(x, x, s=0, ext=ext)
+            for (a, b) in [(1, 1), (1, 5), (2, 5),
+                           (0, 0), (-2, 0), (-2, -1)]:
+                assert_allclose(f.integral(a, b), 0, atol=1e-15)
+
     def test_nan(self):
         # bail out early if the input data contains nans
         x = np.arange(10, dtype=float)
@@ -167,11 +187,33 @@ class TestUnivariateSpline(object):
             assert_raises(ValueError, LSQUnivariateSpline,
                     **dict(x=x, y=y, t=t, w=w, check_finite=True))
 
-    def test_increasing_x(self):
+    def test_strictly_increasing_x(self):
+        # Test the x is required to be strictly increasing for
+        # UnivariateSpline if s=0 and for InterpolatedUnivariateSpline,
+        # but merely increasing for UnivariateSpline if s>0
+        # and for LSQUnivariateSpline; see gh-8535
         xx = np.arange(10, dtype=float)
         yy = xx**3
         x = np.arange(10, dtype=float)
         x[1] = x[0]
+        y = x**3
+        w = np.ones_like(x)
+        # also test LSQUnivariateSpline [which needs explicit knots]
+        spl = UnivariateSpline(xx, yy, check_finite=True)
+        t = spl.get_knots()[3:4]  # interior knots w/ default k=3
+        spl2 = UnivariateSpline(x=x, y=y, w=w, s=1, check_finite=True)
+        spl3 = LSQUnivariateSpline(x=x, y=y, t=t, w=w, check_finite=True)
+        assert_raises(ValueError, UnivariateSpline,
+                **dict(x=x, y=y, s=0, check_finite=True))
+        assert_raises(ValueError, InterpolatedUnivariateSpline,
+                **dict(x=x, y=y, check_finite=True))
+
+    def test_increasing_x(self):
+        # Test that x is required to be increasing, see gh-8535
+        xx = np.arange(10, dtype=float)
+        yy = xx**3
+        x = np.arange(10, dtype=float)
+        x[1] = x[0] - 1.0
         y = x**3
         w = np.ones_like(x)
         # also test LSQUnivariateSpline [which needs explicit knots]

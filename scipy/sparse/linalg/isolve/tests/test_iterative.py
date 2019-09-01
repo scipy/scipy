@@ -24,13 +24,21 @@ from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minr
 
 
 class Case(object):
-    def __init__(self, name, A, skip=None):
+    def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
+        if b is None:
+            self.b = arange(A.shape[0], dtype=float)
+        else:
+            self.b = b
         if skip is None:
             self.skip = []
         else:
             self.skip = skip
+        if nonconvergence is None:
+            self.nonconvergence = []
+        else:
+            self.nonconvergence = nonconvergence
 
     def __repr__(self):
         return "<%s>" % self.name
@@ -138,6 +146,24 @@ class IterativeParams(object):
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
+        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
+        A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -0, -0, -1, -0],
+                      [0, 0, 0, 0, 0, 1, -0, -0, -0, -0, -1],
+                      [1, 2, 2, 2, 1, 0, -0, -0, -0, -0, -0],
+                      [-1, 0, 0, 0, 0, 0, -1, -0, -0, -0, -0],
+                      [0, -1, 0, 0, 0, 0, -0, -1, -0, -0, -0],
+                      [0, 0, -1, 0, 0, 0, -0, -0, -1, -0, -0],
+                      [0, 0, 0, -1, 0, 0, -0, -0, -0, -1, -0],
+                      [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1]], dtype=float)
+        b = np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype=float)
+        assert (A == A.T).all()
+        self.cases.append(Case("sym-nonpd", A, b,
+                               skip=posdef_solvers,
+                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
+
 
 params = IterativeParams()
 
@@ -146,7 +172,7 @@ def check_maxiter(solver, case):
     A = case.A
     tol = 1e-12
 
-    b = arange(A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     residuals = []
@@ -185,14 +211,18 @@ def check_convergence(solver, case):
     else:
         tol = 1e-2
 
-    b = arange(A.shape[0], dtype=A.dtype)
+    b = case.b
     x0 = 0*b
 
     x, info = solver(A, b, x0=x0, tol=tol)
 
     assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
-    assert_equal(info,0)
-    assert_normclose(A.dot(x), b, tol=tol)
+    if solver not in case.nonconvergence:
+        assert_equal(info,0)
+        assert_normclose(A.dot(x), b, tol=tol)
+    else:
+        assert_(info != 0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
 
 
 def test_convergence():
@@ -217,7 +247,7 @@ def check_precond_dummy(solver, case):
     M,N = A.shape
     D = spdiags([1.0/A.diagonal()], [0], M, N)
 
-    b = arange(A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
@@ -275,7 +305,7 @@ def check_precond_inverse(solver, case):
         matvec_count[0] += 1
         return case.A.T.dot(b)
 
-    b = arange(case.A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
@@ -418,6 +448,39 @@ def test_zero_rhs(solver):
                 assert_allclose(x, 0, atol=1e-300)
 
 
+@pytest.mark.parametrize("solver", [
+    gmres, qmr, lgmres,
+    pytest.param(cgs, marks=pytest.mark.xfail),
+    pytest.param(bicg, marks=pytest.mark.xfail),
+    pytest.param(bicgstab, marks=pytest.mark.xfail),
+    pytest.param(gcrotmk, marks=pytest.mark.xfail)])
+def test_maxiter_worsening(solver):
+    # Check error does not grow (boundlessly) with increasing maxiter.
+    # This can occur due to the solvers hitting close to breakdown,
+    # which they should detect and halt as necessary.
+    # cf. gh-9100
+
+    # Singular matrix, rhs numerically not in range
+    A = np.array([[-0.1112795288033378, 0, 0, 0.16127952880333685],
+                  [0, -0.13627952880333782+6.283185307179586j, 0, 0],
+                  [0, 0, -0.13627952880333782-6.283185307179586j, 0],
+                  [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
+    v = np.ones(4)
+    best_error = np.inf
+
+    for maxiter in range(1, 20):
+        x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
+
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - v) <= 1e-8*np.linalg.norm(v))
+
+        error = np.linalg.norm(A.dot(x) - v)
+        best_error = min(best_error, error)
+
+        # Check with slack
+        assert_(error <= 5*best_error)
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR(object):
@@ -481,7 +544,7 @@ class TestGMRES(object):
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
 
-        # Expected output from Scipy 1.0.0
+        # Expected output from SciPy 1.0.0
         assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
 
         # Test preconditioned callback
@@ -492,7 +555,7 @@ class TestGMRES(object):
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter, callback=callback)
 
-        # Expected output from Scipy 1.0.0 (callback has preconditioned residual!)
+        # Expected output from SciPy 1.0.0 (callback has preconditioned residual!)
         assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
     def test_abi(self):
@@ -527,7 +590,8 @@ class TestGMRES(object):
             assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5*np.linalg.norm(b))
             assert_allclose(x, b, atol=0, rtol=1e-8)
 
-            A = np.random.rand(30, 30)
+            rndm = np.random.RandomState(12345)
+            A = rndm.rand(30, 30)
             b = 1e-6 * ones(30)
             x, info = gmres(A, b, tol=1e-7, restart=20)
             assert_(np.linalg.norm(A.dot(x) - b) > 1e-7)
@@ -536,3 +600,102 @@ class TestGMRES(object):
         b = 1e-10 * ones(2)
         x, info = gmres(A, b, tol=1e-8, atol=0)
         assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+    def test_defective_precond_breakdown(self):
+        # Breakdown due to defective preconditioner
+        M = np.eye(3)
+        M[2,2] = 0
+
+        b = np.array([0, 1, 1])
+        x = np.array([1, 0, 0])
+        A = np.diag([2, 3, 4])
+
+        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of M
+        assert_allclose(M.dot(A.dot(x)), M.dot(b))
+
+    def test_defective_matrix_breakdown(self):
+        # Breakdown due to defective matrix
+        A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
+        b = np.array([1, 0, 1])
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of A
+        assert_allclose(A.dot(A.dot(x)), A.dot(b))
+
+    def test_callback_type(self):
+        # The legacy callback type changes meaning of 'maxiter'
+        np.random.seed(1)
+        A = np.random.rand(20, 20)
+        b = np.random.rand(20)
+
+        cb_count = [0]
+
+        def pr_norm_cb(r):
+            cb_count[0] += 1
+            assert_(isinstance(r, float))
+
+        def x_cb(x):
+            cb_count[0] += 1
+            assert_(isinstance(x, np.ndarray))
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            # 2 iterations is not enough to solve the problem
+            cb_count = [0]
+            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
+            assert info == 2
+            assert cb_count[0] == 2
+
+        # With `callback_type` specified, no warning should be raised
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='legacy')
+        assert info == 2
+        assert cb_count[0] == 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='pr_norm')
+        assert info == 0
+        assert cb_count[0] > 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
+                        callback_type='x')
+        assert info == 0
+        assert cb_count[0] == 2
+
+    def test_callback_x_monotonic(self):
+        # Check that callback_type='x' gives monotonic norm decrease
+        np.random.seed(1)
+        A = np.random.rand(20, 20) + np.eye(20)
+        b = np.random.rand(20)
+
+        prev_r = [np.inf]
+        count = [0]
+
+        def x_cb(x):
+            r = np.linalg.norm(A.dot(x) - b)
+            assert r <= prev_r[0]
+            prev_r[0] = r
+            count[0] += 1
+
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
+                        callback_type='x')
+        assert info == 20
+        assert count[0] == 21
+        x_cb(x)

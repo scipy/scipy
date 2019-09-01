@@ -10,14 +10,14 @@ cdef extern from "_complexstuff.h":
     np.npy_cdouble npy_cexp(np.npy_cdouble x) nogil
 
 
-cdef extern from "c_misc/double2.h":
-    ctypedef struct double2_t:
+cdef extern from "cephes/dd_real.h":
+    ctypedef struct double2:
         double x[2]
 
-    void double2_init(double2_t* a, double y) nogil
-    void double2_add(double2_t* a, double2_t* b, double2_t* c) nogil
-    void double2_mul(double2_t* a, double2_t* b, double2_t* c) nogil
-    double double2_double(double2_t* a) nogil
+    double2 dd_create_d(double x) nogil
+    double2 dd_add(const double2 a, const double2 b) nogil
+    double2 dd_mul(const double2 a, const double2 b) nogil
+    double dd_to_double(const double2 a) nogil
 
 from ._cephes cimport log1p, expm1, cosm1
 
@@ -67,19 +67,19 @@ cdef inline double complex clog1p(double complex z) nogil:
 
 cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     cdef double x, y
-    cdef double2_t r, i, two, rsqr, isqr, rtwo, absm1
+    cdef double2 r, i, two, rsqr, isqr, rtwo, absm1
 
-    double2_init(&r, zr)
-    double2_init(&i, zi)
-    double2_init(&two, 2.0)
+    r = dd_create_d(zr)
+    i = dd_create_d(zi)
+    two = dd_create_d(2.0)
 
-    double2_mul(&r, &r, &rsqr)
-    double2_mul(&i, &i, &isqr)
-    double2_mul(&two, &r, &rtwo)
-    double2_add(&rsqr, &isqr, &absm1)
-    double2_add(&absm1, &rtwo, &absm1)
+    rsqr = dd_mul(r, r)
+    isqr = dd_mul(i, i)
+    rtwo = dd_mul(two, r)
+    absm1 = dd_add(rsqr, isqr)
+    absm1 = dd_add(absm1, rtwo)
 
-    x = 0.5 * log1p(double2_double(&absm1))
+    x = 0.5 * log1p(dd_to_double(absm1))
     y = npy_atan2(zi, zr+1.0)
     return zpack(x, y)
 

@@ -1,7 +1,7 @@
 """Docstring components common to several ndimage functions."""
 from __future__ import division, print_function, absolute_import
 
-from scipy.misc import doccer
+from scipy._lib import doccer
 
 __all__ = ['docfiller']
 
@@ -34,8 +34,8 @@ footprint : array, optional
 _mode_doc = (
 """mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
     The `mode` parameter determines how the input array is extended
-    when the filter overlaps a border. Default is 'reflect'. Behavior
-    for each valid value is as follows:
+    beyond its boundaries. Default is 'reflect'. Behavior for each valid
+    value is as follows:
 
     'reflect' (`d c b a | a b c d | d c b a`)
         The input is extended by reflecting about the edge of the last

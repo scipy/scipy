@@ -102,9 +102,9 @@ c     smout   ARPACK utility routine that prints matrices.
 c     svout   ARPACK utility routine that prints vectors.
 c     slabad  LAPACK routine that computes machine constants.
 c     slacpy  LAPACK matrix copy routine.
-c     wslamch  LAPACK routine that determines machine constants. 
-c     wslanhs  LAPACK routine that computes various norms of a matrix.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants. 
+c     slanhs  LAPACK routine that computes various norms of a matrix.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     slarf   LAPACK routine that applies Householder reflection to
 c             a matrix.
 c     slarfg  LAPACK Householder reflection construction routine.
@@ -196,8 +196,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wslamch, wslanhs, wslapy2
-      external   wslamch, wslanhs, wslapy2
+     &           slamch, slanhs, slapy2
+      external   slamch, slanhs, slapy2
 c
 c     %----------------------%
 c     | Intrinsics Functions |
@@ -224,10 +224,10 @@ c        | overflow should not occur.                    |
 c        | REFERENCE: LAPACK subroutine slahqr           |
 c        %-----------------------------------------------%
 c
-         unfl = wslamch( 'safe minimum' )
+         unfl = slamch( 'safe minimum' )
          ovfl = one / unfl
          call slabad( unfl, ovfl )
-         ulp = wslamch( 'precision' )
+         ulp = slamch( 'precision' )
          smlnum = unfl*( n / ulp )
          first = .false.
       end if
@@ -332,7 +332,7 @@ c           %----------------------------------------%
 c
             tst1 = abs( h( i, i ) ) + abs( h( i+1, i+1 ) )
             if( tst1.eq.zero )
-     &         tst1 = wslanhs( '1', kplusp-jj+1, h, ldh, workl )
+     &         tst1 = slanhs( '1', kplusp-jj+1, h, ldh, workl )
             if( abs( h( i+1,i ) ).le.max( ulp*tst1, smlnum ) ) then
                if (msglvl .gt. 0) then
                   call ivout (logfil, 1, i, ndigit, 
@@ -465,7 +465,7 @@ c           | Compute 1st column of (H - shift*I)*(H - conj(shift)*I) |
 c           %---------------------------------------------------------%
 c
             s    = 2.0*sigmar
-            t = wslapy2 ( sigmar, sigmai ) 
+            t = slapy2 ( sigmar, sigmai ) 
             u(1) = ( h11 * (h11 - s) + t * t ) / h21 + h12
             u(2) = h11 + h22 - s 
             u(3) = h32
@@ -567,7 +567,7 @@ c        %--------------------------------------------%
 c
          tst1 = abs( h( i, i ) ) + abs( h( i+1, i+1 ) )
          if( tst1.eq.zero )
-     &       tst1 = wslanhs( '1', kev, h, ldh, workl )
+     &       tst1 = slanhs( '1', kev, h, ldh, workl )
          if( h( i+1,i ) .le. max( ulp*tst1, smlnum ) ) 
      &       h(i+1,i) = zero
  130  continue

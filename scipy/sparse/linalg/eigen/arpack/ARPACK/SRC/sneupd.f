@@ -234,8 +234,8 @@ c             a matrix.
 c     slacpy  LAPACK matrix copy routine.
 c     slahqr  LAPACK routine to compute the real Schur form of an
 c             upper Hessenberg matrix.
-c     wslamch  LAPACK routine that determines machine constants.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     slaset  LAPACK matrix initialization routine.
 c     sorm2r  LAPACK routine that applies an orthogonal matrix in 
 c             factored form.
@@ -245,8 +245,8 @@ c     strsen  LAPACK routine that re-orders the Schur form.
 c     strmm   Level 3 BLAS matrix times an upper triangular matrix.
 c     sger    Level 2 BLAS rank one update to a matrix.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     wsdot    Level 1 BLAS that computes the scalar product of two vectors.
-c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
+c     sdot    Level 1 BLAS that computes the scalar product of two vectors.
+c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c
 c\Remarks
@@ -373,8 +373,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real 
-     &           wslapy2, wsnrm2, wslamch, wsdot
-      external   wslapy2, wsnrm2, wslamch, wsdot
+     &           slapy2, snrm2, slamch, sdot
+      external   slapy2, snrm2, slamch, sdot
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -399,7 +399,7 @@ c     %---------------------------------%
 c     | Get machine dependent constant. |
 c     %---------------------------------%
 c
-      eps23 = wslamch('Epsilon-Machine')
+      eps23 = slamch('Epsilon-Machine')
       eps23 = eps23**(2.0E+0  / 3.0E+0 )
 c
 c     %--------------%
@@ -583,7 +583,7 @@ c
          numcnv = 0
          do 11 j = 1,ncv
             temp1 = max(eps23,
-     &                 wslapy2( workl(irr+ncv-j), workl(iri+ncv-j) ))
+     &                 slapy2( workl(irr+ncv-j), workl(iri+ncv-j) ))
             jj = workl(bounds + ncv - j)
             if (numcnv .lt. nconv .and.
      &          workl(ibd+jj-1) .le. tol*temp1) then
@@ -797,7 +797,7 @@ c                 %----------------------%
 c                 | real eigenvalue case |
 c                 %----------------------%
 c     
-                  temp = wsnrm2( ncv, workl(invsub+(j-1)*ldq), 1 )
+                  temp = snrm2( ncv, workl(invsub+(j-1)*ldq), 1 )
                   call sscal( ncv, one / temp, 
      &                 workl(invsub+(j-1)*ldq), 1 )
 c
@@ -812,10 +812,10 @@ c                 | square root of two.                       |
 c                 %-------------------------------------------%
 c
                   if (iconj .eq. 0) then
-                     temp = wslapy2(wsnrm2(ncv, 
+                     temp = slapy2(snrm2(ncv, 
      &                                   workl(invsub+(j-1)*ldq), 
      &                                   1),
-     &                             wsnrm2(ncv, 
+     &                             snrm2(ncv, 
      &                                   workl(invsub+j*ldq),
      &                                   1))  
                      call sscal(ncv, one/temp, 
@@ -845,7 +845,7 @@ c                 | the eigenvector are stored in consecutive |
 c                 %-------------------------------------------%
 c
                   if (iconj .eq. 0) then
-                     workev(j) = wslapy2(workev(j), workev(j+1))
+                     workev(j) = slapy2(workev(j), workev(j+1))
                      workev(j+1) = workev(j)
                      iconj = 1
                   else
@@ -940,7 +940,7 @@ c
      &         call sscal(ncv, rnorm, workl(ihbds), 1)
 c
             do 50 k=1, ncv
-               temp = wslapy2( workl(iheigr+k-1), 
+               temp = slapy2( workl(iheigr+k-1), 
      &                        workl(iheigi+k-1) )
                workl(ihbds+k-1) = abs( workl(ihbds+k-1) ) 
      &                          / temp / temp
@@ -971,7 +971,7 @@ c
          if (type .eq. 'SHIFTI') then 
 c
             do 80 k=1, ncv
-               temp = wslapy2( workl(iheigr+k-1), 
+               temp = slapy2( workl(iheigr+k-1), 
      &                        workl(iheigi+k-1) )
                workl(iheigr+k-1) = workl(iheigr+k-1)/temp/temp 
      &                           + sigmar   
@@ -1032,7 +1032,7 @@ c
                workev(j) =  workl(invsub+(j-1)*ldq+ncv-1) /
      &                      workl(iheigr+j-1)
             else if (iconj .eq. 0) then
-               temp = wslapy2( workl(iheigr+j-1), workl(iheigi+j-1) )
+               temp = slapy2( workl(iheigr+j-1), workl(iheigi+j-1) )
                workev(j) = ( workl(invsub+(j-1)*ldq+ncv-1) * 
      &                       workl(iheigr+j-1) +
      &                       workl(invsub+j*ldq+ncv-1) * 

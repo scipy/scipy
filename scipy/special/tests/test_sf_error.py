@@ -113,18 +113,3 @@ def test_errstate_all_but_one():
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1.0)
     assert_equal(olderr, sc.geterr())
-
-
-def test_errprint():
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "`errprint` is deprecated!")
-        flag = sc.errprint(True)
-
-    try:
-        assert_(isinstance(flag, bool))
-        with pytest.warns(sc.SpecialFunctionWarning):
-            sc.loggamma(0)
-    finally:
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
-            sc.errprint(flag)

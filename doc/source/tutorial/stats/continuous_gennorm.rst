@@ -14,20 +14,20 @@ Functions
 .. math::
     :nowrap:
 
-    \begin{eqnarray*} f\left(x; \right) & = &\frac{\beta}{2\Gamma(1/\beta)} e^{-\left|x\right|^{\beta}} \end{eqnarray*}
+    \begin{eqnarray*} f\left(x; \beta\right) & = &\frac{\beta}{2\Gamma(1/\beta)} e^{-\left|x\right|^{\beta}} \end{eqnarray*}
 
 .. math::
     :nowrap:
 
-    \begin{eqnarray*} F\left(x; \right) & = & \frac{1}{2} + \mathrm{sgn}\left(x\right) \frac{\gamma\left(1/\beta, x^{\beta}\right)}{2\Gamma\left(1/\beta\right)} \end{eqnarray*}
+    \begin{eqnarray*} F\left(x; \beta\right) & = & \frac{1}{2} + \mathrm{sgn}\left(x\right) \frac{\gamma\left(1/\beta, x^{\beta}\right)}{2\Gamma\left(1/\beta\right)} \end{eqnarray*}
      
 :math:`\gamma` is the lower incomplete gamma function. 
-:math:`\gamma\left(s, x\right) = \int_0^x t^{s-1} e^{-t} dt` 
+:math:`\gamma\left(s, x\right) = \int_0^x t^{s-1} e^{-t} dt`.
 
 .. math::
     :nowrap:
 
-    \begin{eqnarray*} h\left[X; \right] = \frac{1}{\beta} - \log\left[\frac{\beta}{2\Gamma\left(1/\beta\right)}\right]\end{eqnarray*} 
+    \begin{eqnarray*} h\left[X; \beta\right] = \frac{1}{\beta} - \log\left(\frac{\beta}{2\Gamma\left(1/\beta\right)}\right)\end{eqnarray*}
 
 Moments
 -------
@@ -49,7 +49,7 @@ Special Cases
 -------------
 * Laplace distribution (:math:`\beta = 1`)
 * Normal distribution with :math:`\mu_2 = 1/2` (:math:`\beta = 2`)
-* Uniform distribution over the interval :math:`[-1, 1]` 
+* Uniform distribution over the interval :math:`[-1, 1]`
   (:math:`\beta \rightarrow \infty`)
 
 Sources

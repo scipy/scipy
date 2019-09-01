@@ -7,10 +7,11 @@ import warnings
 import re
 import sys
 import pickle
+import os
 
-from numpy.testing import (assert_equal,
-    assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns)
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_almost_equal, assert_array_almost_equal,
+                           assert_allclose, assert_, assert_warns)
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
@@ -18,6 +19,7 @@ from scipy._lib._numpy_compat import suppress_warnings
 import numpy
 import numpy as np
 from numpy import typecodes, array
+from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy.integrate import IntegrationWarning
 import scipy.stats as stats
@@ -31,23 +33,6 @@ from .test_continuous_basic import distcont
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
-# Generate test cases to test cdf and distribution consistency.
-# Note that this list does not include all distributions.
-dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
-         'powerlaw', 'bradford', 'burr', 'fisk', 'cauchy', 'halfcauchy',
-         'foldcauchy', 'gamma', 'gengamma', 'loggamma',
-         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma', 'moyal',
-         'exponnorm', 'exponweib', 'exponpow', 'frechet_l', 'frechet_r',
-         'gilbrat', 'f', 'ncf', 'chi2', 'chi', 'nakagami', 'genpareto',
-         'genextreme', 'genhalflogistic', 'pareto', 'lomax', 'halfnorm',
-         'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
-         'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
-         'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
-         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus', 'crystalball']
-
-
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
         msg = '%s does not have attribute %s' % (a, b)
@@ -57,53 +42,6 @@ def _assert_hasattr(a, b, msg=None):
 def test_api_regression():
     # https://github.com/scipy/scipy/issues/3802
     _assert_hasattr(scipy.stats.distributions, 'f_gen')
-
-
-# check function for test generator
-def check_distribution(dist, args, alpha):
-    with suppress_warnings() as sup:
-        # frechet_l and frechet_r are deprecated, so all their
-        # methods generate DeprecationWarnings.
-        sup.filter(category=DeprecationWarning, message=".*frechet_")
-        D, pval = stats.kstest(dist, '', args=args, N=1000)
-        if (pval < alpha):
-            D, pval = stats.kstest(dist, '', args=args, N=1000)
-            assert_(pval > alpha,
-                    msg="D = {}; pval = {}; alpha = {}; args = {}".format(
-                        D, pval, alpha, args))
-
-
-def cases_test_all_distributions():
-    np.random.seed(1234)
-
-    for dist in dists:
-        distfunc = getattr(stats, dist)
-        nargs = distfunc.numargs
-        alpha = 0.01
-        if dist == 'fatiguelife':
-            alpha = 0.001
-
-        if dist == 'trapz':
-            args = tuple(np.sort(np.random.random(nargs)))
-        elif dist == 'triang':
-            args = tuple(np.random.random(nargs))
-        elif dist == 'reciprocal' or dist == 'truncnorm':
-            vals = np.random.random(nargs)
-            vals[1] = vals[0] + 1.0
-            args = tuple(vals)
-        elif dist == 'vonmises':
-            yield dist, (10,), alpha
-            yield dist, (101,), alpha
-            args = tuple(1.0 + np.random.random(nargs))
-        else:
-            args = tuple(1.0 + np.random.random(nargs))
-
-        yield dist, args, alpha
-
-
-@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-def test_all_distributions(dist, args, alpha):
-    check_distribution(dist, args, alpha)
 
 
 def check_vonmises_pdf_periodic(k, l, s, x):
@@ -138,10 +76,11 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
-@pytest.mark.parametrize('dist', ['alpha', 'betaprime', 'burr', 'burr12',
-             'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
-             'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
-             'powerlognorm', 'rayleigh', 'wald'])
+@pytest.mark.parametrize('dist',
+                         ['alpha', 'betaprime',
+                          'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
+                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+                          'powerlognorm', 'rayleigh', 'wald'])
 def test_support(dist):
     """gh-6235"""
     dct = dict(distcont)
@@ -179,7 +118,7 @@ class TestRandInt(object):
         assert_array_almost_equal(vals, out)
 
     def test_cdf(self):
-        x = numpy.r_[0:36:100j]
+        x = np.linspace(0, 36, 100)
         k = numpy.floor(x)
         out = numpy.select([k >= 30, k >= 5], [1.0, (k-5.0+1)/(30-5.0)], 0)
         vals = stats.randint.cdf(x, 5, 30)
@@ -383,6 +322,10 @@ class TestGeom(object):
         expected = array([1.0, 2.0, 3.0])
         assert_array_almost_equal(vals, expected)
 
+    def test_ppf_underflow(self):
+        # this should not underflow
+        assert_allclose(stats.geom.ppf(1e-20, 1e-20), 1.0, atol=1e-14)
+
 
 class TestPlanck(object):
     def setup_method(self):
@@ -390,7 +333,9 @@ class TestPlanck(object):
 
     def test_sf(self):
         vals = stats.planck.sf([1, 2, 3], 5.)
-        expected = array([4.5399929762484854e-05, 3.0590232050182579e-07, 2.0611536224385579e-09])
+        expected = array([4.5399929762484854e-05,
+                          3.0590232050182579e-07,
+                          2.0611536224385579e-09])
         assert_array_almost_equal(vals, expected)
 
     def test_logsf(self):
@@ -464,6 +409,13 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
+    def test_moments(self):
+        m, v, s, k = stats.truncnorm.stats(-30, 30, moments='mvsk')
+        assert_almost_equal(m, 0)
+        assert_almost_equal(v, 1)
+        assert_almost_equal(s, 0.0)
+        assert_almost_equal(k, 0.0)
+
     @pytest.mark.xfail(reason="truncnorm rvs is know to fail at extreme tails")
     def test_gh_2477_large_values(self):
         # Check a case that fails because of extreme tailness.
@@ -525,10 +477,8 @@ class TestHypergeom(object):
         pears = 1.1e5
         fruits_eaten = np.array([3, 3.8, 3.9, 4, 4.1, 4.2, 5]) * 1e4
         quantile = 2e4
-        res = []
-        for eaten in fruits_eaten:
-            res.append(stats.hypergeom.sf(quantile, oranges + pears, oranges,
-                                          eaten))
+        res = [stats.hypergeom.sf(quantile, oranges + pears, oranges, eaten)
+               for eaten in fruits_eaten]
         expected = np.array([0, 1.904153e-114, 2.752693e-66, 4.931217e-32,
                              8.265601e-11, 0.1237904, 1])
         assert_allclose(res, expected, atol=0, rtol=5e-7)
@@ -563,8 +513,63 @@ class TestHypergeom(object):
         N = 5e4
 
         result = stats.hypergeom.logsf(k, M, n, N)
-        exspected = -2239.771   # From R
-        assert_almost_equal(result, exspected, decimal=3)
+        expected = -2239.771   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        k = 1
+        M = 1600
+        n = 600
+        N = 300
+
+        result = stats.hypergeom.logsf(k, M, n, N)
+        expected = -2.566567e-68   # From R
+        assert_almost_equal(result, expected, decimal=15)
+
+    def test_logcdf(self):
+        # Test logcdf for very large numbers. See issue #8692
+        # Results compare with those from R (v3.3.2):
+        # phyper(k, n, M-n, N, lower.tail=TRUE, log.p=TRUE)
+        # -5273.335
+
+        k = 1
+        M = 1e7
+        n = 1e6
+        N = 5e4
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -5273.335   # From R
+        assert_almost_equal(result, expected, decimal=3)
+
+        # Same example as in issue #8692
+        k = 40
+        M = 1600
+        n = 50
+        N = 300
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -7.565148879229e-23    # From R
+        assert_almost_equal(result, expected, decimal=15)
+
+        k = 125
+        M = 1600
+        n = 250
+        N = 500
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = -4.242688e-12    # From R
+        assert_almost_equal(result, expected, decimal=15)
+
+        # test broadcasting robustness based on reviewer
+        # concerns in PR 9603; using an array version of
+        # the example from issue #8692
+        k = np.array([40, 40, 40])
+        M = 1600
+        n = 50
+        N = 300
+
+        result = stats.hypergeom.logcdf(k, M, n, N)
+        expected = np.full(3, -7.565148879229e-23)  # filled from R result
+        assert_almost_equal(result, expected, decimal=15)
 
 
 class TestLoggamma(object):
@@ -647,6 +652,12 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
+class TestNorm(object):
+    def test_bad_keyword_arg(self):
+        x = [1, 2, 3]
+        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
+
+
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
@@ -723,13 +734,14 @@ class TestGenpareto(object):
         for c in [1., 0.]:
             c = np.asarray(c)
             stats.genpareto._argcheck(c)  # ugh
-            assert_equal(stats.genpareto.a, 0.)
-            assert_(np.isposinf(stats.genpareto.b))
+            a, b = stats.genpareto._get_support(c)
+            assert_equal(a, 0.)
+            assert_(np.isposinf(b))
 
         # c < 0: a=0, b=1/|c|
         c = np.asarray(-2.)
         stats.genpareto._argcheck(c)
-        assert_allclose([stats.genpareto.a, stats.genpareto.b], [0., 0.5])
+        assert_allclose(stats.genpareto._get_support(c), [0., 0.5])
 
     def test_c0(self):
         # with c=0, genpareto reduces to the exponential distribution
@@ -1062,6 +1074,17 @@ class TestInvGamma(object):
 
 
 class TestF(object):
+    def test_endpoints(self):
+        # Compute the pdf at the left endpoint dst.a.
+        data = [[stats.f, (2, 1), 1.0]]
+        for _f, _args, _correct in data:
+            ans = _f.pdf(_f.a, *_args)
+            print(_f, (_args), ans, _correct, ans == _correct)
+
+        ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [_correct_ for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
     def test_f_moments(self):
         # n-th moment of F distributions is only finite for n < dfd / 2
         m, v, s, k = stats.f.stats(11, 6.5, moments='mvsk')
@@ -1085,6 +1108,22 @@ class TestF(object):
 def test_rvgeneric_std():
     # Regression test for #1191
     assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
+
+
+def test_moments_t():
+    # regression test for #8786
+    assert_equal(stats.t.stats(df=1, moments='mvsk'),
+                 (np.inf, np.nan, np.nan, np.nan))
+    assert_equal(stats.t.stats(df=1.01, moments='mvsk'),
+                 (0.0, np.inf, np.nan, np.nan))
+    assert_equal(stats.t.stats(df=2, moments='mvsk'),
+                 (0.0, np.inf, np.nan, np.nan))
+    assert_equal(stats.t.stats(df=2.01, moments='mvsk'),
+                 (0.0, 2.01/(2.01-2.0), np.nan, np.inf))
+    assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
+    assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
+    assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
+    assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
 
 
 class TestRvDiscrete(object):
@@ -1169,6 +1208,15 @@ class TestRvDiscrete(object):
 
         assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
 
+    def test_multidimension(self):
+        xk = np.arange(12).reshape((3, 4))
+        pk = np.array([[0.1, 0.1, 0.15, 0.05],
+                       [0.1, 0.1, 0.05, 0.05],
+                       [0.1, 0.1, 0.05, 0.05]])
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
+
     def test_bad_input(self):
         xk = [1, 2, 3]
         pk = [0.5, 0.5]
@@ -1176,6 +1224,29 @@ class TestRvDiscrete(object):
 
         pk = [1, 2, 3]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        xk = [1, 2, 3]
+        pk = [0.5, 1.2, -0.7]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        xk = [1, 2, 3, 4, 5]
+        pk = [0.3, 0.3, 0.3, 0.3, -0.2]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+    def test_shape_rv_sample(self):
+        # tests added for gh-9565
+
+        # mismatch of 2d inputs
+        xk, pk = np.arange(4).reshape((2, 2)), np.full((2, 3), 1/6)
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        # same number of elements, but shapes not compatible
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((2, 3), 1/6)
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        # same shapes => no error
+        xk, pk = np.arange(6).reshape((3, 2)), np.full((3, 2), 1/6)
+        assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
 
 
 class TestSkewNorm(object):
@@ -1275,6 +1346,9 @@ class TestExponNorm(object):
         # Test for extreme values against overflows
         assert_almost_equal(stats.exponnorm.pdf(-900, 1), 0.0)
         assert_almost_equal(stats.exponnorm.pdf(+900, 1), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(1, 0.01), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(-900, 0.01), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(+900, 0.01), 0.0)
 
 
 class TestGenExpon(object):
@@ -1374,6 +1448,17 @@ class TestBeta(object):
         assert_allclose(b.logpdf(x).sum(), -1201.699061824062)
         assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
+    def test_fit_bad_keyword_args(self):
+        x = [0.1, 0.5, 0.6]
+        assert_raises(TypeError, stats.beta.fit, x, floc=0, fscale=1,
+                      plate="shrimp")
+
+    def test_fit_duplicated_fixed_parameter(self):
+        # At most one of 'f0', 'fa' or 'fix_a' can be given to the fit method.
+        # More than one raises a ValueError.
+        x = [0.1, 0.5, 0.6]
+        assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
+
 
 class TestBetaPrime(object):
     def test_logpdf(self):
@@ -1415,6 +1500,10 @@ class TestGamma(object):
         logpdf = stats.gamma.logpdf(0, 1)
         assert_almost_equal(logpdf, 0)
 
+    def test_fit_bad_keyword_args(self):
+        x = [0.1, 0.5, 0.6]
+        assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
+
 
 class TestChi2(object):
     # regression tests after precision improvements, ticket:1041, not verified
@@ -1423,6 +1512,21 @@ class TestChi2(object):
                             decimal=14)
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778,
                             decimal=14)
+
+    def test_ppf(self):
+        # Expected values computed with mpmath.
+        df = 4.8
+        x = stats.chi2.ppf(2e-47, df)
+        assert_allclose(x, 1.098472479575179840604902808e-19, rtol=1e-10)
+        x = stats.chi2.ppf(0.5, df)
+        assert_allclose(x, 4.15231407598589358660093156, rtol=1e-10)
+
+        df = 13
+        x = stats.chi2.ppf(2e-77, df)
+        assert_allclose(x, 1.0106330688195199050507943e-11, rtol=1e-10)
+        x = stats.chi2.ppf(0.1, df)
+        assert_allclose(x, 7.041504580095461859307179763, rtol=1e-10)
+
 
 class TestGumbelL(object):
     # gh-6228
@@ -1446,6 +1550,170 @@ class TestGumbelL(object):
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
 
+class TestLevyStable(object):
+
+    def test_fit(self):
+        # construct data to have percentiles that match
+        # example in McCulloch 1986.
+        x = [-.05413,-.05413,
+               0.,0.,0.,0.,
+               .00533,.00533,.00533,.00533,.00533,
+               .03354,.03354,.03354,.03354,.03354,
+               .05309,.05309,.05309,.05309,.05309]
+        alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
+        assert_allclose(alpha1, 1.48, rtol=0, atol=0.01)
+        assert_almost_equal(beta1, -.22, 2)
+        assert_almost_equal(scale1, 0.01717, 4)
+        assert_almost_equal(loc1, 0.00233, 2)  # to 2 dps due to rounding error in McCulloch86
+
+        # cover alpha=2 scenario
+        x2 = x + [.05309,.05309,.05309,.05309,.05309]
+        alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(x2)
+        assert_equal(alpha2, 2)
+        assert_equal(beta2, -1)
+        assert_almost_equal(scale2, .02503, 4)
+        assert_almost_equal(loc2, .03354, 4)
+
+    @pytest.mark.slow
+    def test_pdf_nolan_samples(self):
+        """ Test pdf values against Nolan's stablec.exe output
+            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
+
+            There's a known limitation of Nolan's executable for alpha < 0.2.
+
+            Repeat following with beta = -1, -.5, 0, .5 and 1
+                stablec.exe <<
+                1 # pdf
+                1 # Nolan S equivalent to S0 in scipy
+                .25,2,.25 # alpha
+                -1,-1,0 # beta
+                -10,10,1 # x
+                1,0 # gamma, delta
+                2 # output file
+        """
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-pdf-sample-data.npy')))
+
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
+
+        # support numpy 1.8.2 for travis
+        npisin = np.isin if hasattr(np, "isin") else np.in1d
+
+        tests = [
+            # best selects
+            ['best', None, 8, None],
+
+            # quadrature is accurate for most alpha except 0.25; perhaps limitation of Nolan stablec?
+            # we reduce size of x to speed up computation as numerical integration slow.
+            ['quadrature', None, 8, lambda r: (r['alpha'] > 0.25) & (npisin(r['x'], [-10,-5,0,5,10]))],
+
+            # zolatarev is accurate except at alpha==1, beta != 0
+            ['zolotarev', None, 8, lambda r: r['alpha'] != 1],
+            ['zolotarev', None, 8, lambda r: (r['alpha'] == 1) & (r['beta'] == 0)],
+            ['zolotarev', None, 1, lambda r: (r['alpha'] == 1) & (r['beta'] != 0)],
+
+            # fft accuracy reduces as alpha decreases, fails at low values of alpha and x=0
+            ['fft', 0, 4, lambda r: r['alpha'] > 1],
+            ['fft', 0, 3, lambda r: (r['alpha'] < 1) & (r['alpha'] > 0.25)],
+            ['fft', 0, 1, lambda r: (r['alpha'] == 0.25) & (r['x'] != 0)],  # not useful here
+        ]
+        for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
+            stats.levy_stable.pdf_default_method = default_method
+            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
+            subdata = data[filter_func(data)] if filter_func is not None else data
+            with suppress_warnings() as sup:
+                sup.record(RuntimeWarning, "Density calculation unstable for alpha=1 and beta!=0.*")
+                sup.record(RuntimeWarning, "Density calculations experimental for FFT method.*")
+                p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+                subdata2 = rec_append_fields(subdata, 'calc', p)
+                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
+                assert_almost_equal(p, subdata['p'], decimal_places, "pdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)
+
+    @pytest.mark.slow
+    def test_cdf_nolan_samples(self):
+        """ Test cdf values against Nolan's stablec.exe output
+            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
+
+            There's a known limitation of Nolan's executable for alpha < 0.2.
+
+            Repeat following with beta = -1, -.5, 0, .5 and 1
+                stablec.exe <<
+                2 # cdf
+                1 # Nolan S equivalent to S0 in scipy
+                .25,2,.25 # alpha
+                -1,-1,0 # beta
+                -10,10,1 # x
+                1,0 # gamma, delta
+                2 # output file
+        """
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-cdf-sample-data.npy')))
+
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
+
+        tests = [
+            # zolatarev is accurate for all values
+            ['zolotarev', None, 8, None],
+
+            # fft accuracy poor, very poor alpha < 1
+            ['fft', 0, 2, lambda r: r['alpha'] > 1],
+        ]
+        for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
+            stats.levy_stable.pdf_default_method = default_method
+            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
+            subdata = data[filter_func(data)] if filter_func is not None else data
+            with suppress_warnings() as sup:
+                sup.record(RuntimeWarning, 'FFT method is considered ' +
+                           'experimental for cumulative distribution ' +
+                           'function evaluations.*')
+                p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+                subdata2 = rec_append_fields(subdata, 'calc', p)
+                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
+                assert_almost_equal(p, subdata['p'], decimal_places, "cdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)
+
+    def test_pdf_alpha_equals_one_beta_non_zero(self):
+        """ sample points extracted from Tables and Graphs of Stable Probability
+            Density Functions - Donald R Holt - 1973 - p 187.
+        """
+        xs = np.array([0, 0, 0, 0,
+                       1, 1, 1, 1,
+                       2, 2, 2, 2,
+                       3, 3, 3, 3,
+                       4, 4, 4, 4])
+        density = np.array([.3183, .3096, .2925, .2622,
+                            .1591, .1587, .1599, .1635,
+                            .0637, .0729, .0812, .0955,
+                            .0318, .0390, .0458, .0586,
+                            .0187, .0236, .0285, .0384])
+        betas = np.array([0, .25, .5, 1,
+                          0, .25, .5, 1,
+                          0, .25, .5, 1,
+                          0, .25, .5, 1,
+                          0, .25, .5, 1])
+
+        tests = [
+            ['quadrature', None, 4],
+            #['fft', 0, 4],
+            ['zolotarev', None, 1],
+        ]
+
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=RuntimeWarning, message="Density calculation unstable.*")
+            for default_method, fft_min_points, decimal_places in tests:
+                stats.levy_stable.pdf_default_method = default_method
+                stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
+                #stats.levy_stable.fft_grid_spacing = 0.0001
+                pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
+                assert_almost_equal(pdf, density, decimal_places, default_method)
+
+    def test_stats(self):
+        param_sets = [
+            [(1.48,-.22, 0, 1), (0,np.inf,np.NaN,np.NaN)],
+            [(2,.9, 10, 1.5), (10,4.5,0,0)]
+        ]
+        for args, exp_stats in param_sets:
+            calc_stats = stats.levy_stable.stats(args[0], args[1], loc=args[2], scale=args[3], moments='mvsk')
+            assert_almost_equal(calc_stats, exp_stats)
 
 class TestArrayArgument(object):  # test for ticket:992
     def setup_method(self):
@@ -1513,6 +1781,44 @@ class TestEntropy(object):
         assert_array_almost_equal(stats.entropy(pk, qk),
                                   [0.17403988, 0.18609809])
 
+    def test_entropy_base_2d_nondefault_axis(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        assert_array_almost_equal(stats.entropy(pk, axis=1),
+                                  [0.63651417, 0.63651417, 0.66156324])
+
+    def test_entropy_2d_nondefault_axis(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
+        assert_array_almost_equal(stats.entropy(pk, qk, axis=1),
+                                  [0.231049, 0.231049, 0.127706])
+
+    def test_entropy_raises_value_error(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.1, 0.2], [0.6, 0.3]]
+        assert_raises(ValueError, stats.entropy, pk, qk)
+
+    def test_base_entropy_with_axis_0_is_equal_to_default(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        assert_array_almost_equal(stats.entropy(pk, axis=0),
+                                  stats.entropy(pk))
+
+    def test_entropy_with_axis_0_is_equal_to_default(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
+        assert_array_almost_equal(stats.entropy(pk, qk, axis=0),
+                                  stats.entropy(pk, qk))
+
+    def test_base_entropy_transposed(self):
+        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        assert_array_almost_equal(stats.entropy(pk.T).T,
+                                  stats.entropy(pk, axis=1))
+
+    def test_entropy_transposed(self):
+        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
+        qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
+        assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
+                                  stats.entropy(pk, qk, axis=1))
+
 
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
@@ -1535,53 +1841,6 @@ class TestFitMethod(object):
 
     def setup_method(self):
         np.random.seed(1234)
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-    def test_fit(self, dist, args, alpha):
-        if dist in self.skip:
-            pytest.skip("%s fit known to fail" % dist)
-        distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
-            res = distfunc.rvs(*args, **{'size': 200})
-            vals = distfunc.fit(res)
-            vals2 = distfunc.fit(res, optimizer='powell')
-        # Only check the length of the return
-        # FIXME: should check the actual results to see if we are 'close'
-        #   to what was created --- but what is 'close' enough
-        assert_(len(vals) == 2+len(args))
-        assert_(len(vals2) == 2+len(args))
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
-    def test_fix_fit(self, dist, args, alpha):
-        # Not sure why 'ncf', and 'beta' are failing
-        # frechet has different len(args) than distfunc.numargs
-        if dist in self.skip + ['frechet']:
-            pytest.skip("%s fit known to fail" % dist)
-        distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
-            res = distfunc.rvs(*args, **{'size': 200})
-            vals = distfunc.fit(res, floc=0)
-            vals2 = distfunc.fit(res, fscale=1)
-            assert_(len(vals) == 2+len(args))
-            assert_(vals[-2] == 0)
-            assert_(vals2[-1] == 1)
-            assert_(len(vals2) == 2+len(args))
-            if len(args) > 0:
-                vals3 = distfunc.fit(res, f0=args[0])
-                assert_(len(vals3) == 2+len(args))
-                assert_(vals3[0] == args[0])
-            if len(args) > 1:
-                vals4 = distfunc.fit(res, f1=args[1])
-                assert_(len(vals4) == 2+len(args))
-                assert_(vals4[1] == args[1])
-            if len(args) > 2:
-                vals5 = distfunc.fit(res, f2=args[2])
-                assert_(len(vals5) == 2+len(args))
-                assert_(vals5[2] == args[2])
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
@@ -1935,14 +2194,14 @@ class TestFrozen(object):
         # depends on the value of the shape parameter:
         # for c > 0: a, b = 0, inf
         # for c < 0: a, b = 0, -1/c
-        rv = stats.genpareto(c=-0.1)
-        a, b = rv.dist.a, rv.dist.b
+        c = -0.1
+        rv = stats.genpareto(c=c)
+        a, b = rv.dist._get_support(c)
         assert_equal([a, b], [0., 10.])
-        assert_equal([rv.a, rv.b], [0., 10.])
 
-        stats.genpareto.pdf(0, c=0.1)  # this changes genpareto.b
-        assert_equal([rv.dist.a, rv.dist.b], [a, b])
-        assert_equal([rv.a, rv.b], [a, b])
+        c = 0.1
+        stats.genpareto.pdf(0, c=c)
+        assert_equal(rv.dist._get_support(c), [0, np.inf])
 
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
@@ -2138,18 +2397,18 @@ class TestExpect(object):
         lo, hi = 0, 113
         res = stats.randint.expect(lambda x: x, (lo, hi))
         assert_allclose(res,
-            sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
+                        sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
 
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
         assert_warns(RuntimeWarning, stats.zipf.expect,
-            lambda x: x**2, (2,))
+                     lambda x: x**2, (2,))
 
     def test_discrete_kwds(self):
         # check that discrete expect accepts keywords to control the summation
         n0 = stats.poisson.expect(lambda x: 1, args=(2,))
         n1 = stats.poisson.expect(lambda x: 1, args=(2,),
-            maxcount=1001, chunksize=32, tolerance=1e-8)
+                                  maxcount=1001, chunksize=32, tolerance=1e-8)
         assert_almost_equal(n0, n1, decimal=14)
 
     def test_moment(self):
@@ -2427,8 +2686,10 @@ class TestTrapz(object):
         # edge cases
         assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
         assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8),
+                            1.11111111111111111)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0),
+                            1.11111111111111111)
 
         # straightforward case
         assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
@@ -2476,6 +2737,95 @@ class TestTriang(object):
             assert_equal(stats.triang.cdf(0., 1.), 0.)
             assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
             assert_equal(stats.triang.cdf(1., 1.), 1)
+
+
+class TestMielke(object):
+    def test_moments(self):
+        k, s = 4.642, 0.597
+        # n-th moment exists only if n < s
+        assert_equal(stats.mielke(k, s).moment(1), np.inf)
+        assert_equal(stats.mielke(k, 1.0).moment(1), np.inf)
+        assert_(np.isfinite(stats.mielke(k, 1.01).moment(1)))
+
+    def test_burr_equivalence(self):
+        x = np.linspace(0.01, 100, 50)
+        k, s = 2.45, 5.32
+        assert_allclose(stats.burr.pdf(x, s, k/s), stats.mielke.pdf(x, k, s))
+
+
+class TestBurr(object):
+    def test_endpoints_7491(self):
+        # gh-7491
+        # Compute the pdf at the left endpoint dst.a.
+        data = [
+            [stats.fisk, (1,), 1],
+            [stats.burr, (0.5, 2), 1],
+            [stats.burr, (1, 1), 1],
+            [stats.burr, (2, 0.5), 1],
+            [stats.burr12, (1, 0.5), 0.5],
+            [stats.burr12, (1, 1), 1.0],
+            [stats.burr12, (1, 2), 2.0]]
+
+        ans = [_f.pdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [_correct_ for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
+        ans = [_f.logpdf(_f.a, *_args) for _f, _args, _ in data]
+        correct = [np.log(_correct_) for _f, _args, _correct_ in data]
+        assert_array_almost_equal(ans, correct)
+
+    def test_burr_stats_9544(self):
+        # gh-9544.  Test from gh-9978
+        c, d = 5.0, 3
+        mean, variance = stats.burr(c, d).stats()
+        # mean = sc.beta(3 + 1/5, 1. - 1/5) * 3  = 1.4110263...
+        # var =  sc.beta(3 + 2 / 5, 1. - 2 / 5) * 3 - (sc.beta(3 + 1 / 5, 1. - 1 / 5) * 3) ** 2
+        mean_hc, variance_hc = 1.4110263183925857, 0.22879948026191643
+        assert_allclose(mean, mean_hc)
+        assert_allclose(variance, variance_hc)
+
+    def test_burr_nan_mean_var_9544(self):
+        # gh-9544.  Test from gh-9978
+        c, d = 0.5, 3
+        mean, variance = stats.burr(c, d).stats()
+        assert_(np.isnan(mean))
+        assert_(np.isnan(variance))
+        c, d = 1.5, 3
+        mean, variance = stats.burr(c, d).stats()
+        assert_(np.isfinite(mean))
+        assert_(np.isnan(variance))
+
+        c, d = 0.5, 3
+        e1, e2, e3, e4 = stats.burr._munp(np.array([1, 2, 3, 4]), c, d)
+        assert_(np.isnan(e1))
+        assert_(np.isnan(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 1.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isnan(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 2.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isnan(e3))
+        assert_(np.isnan(e4))
+        c, d = 3.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isfinite(e3))
+        assert_(np.isnan(e4))
+        c, d = 4.5, 3
+        e1, e2, e3, e4 = stats.burr._munp([1, 2, 3, 4], c, d)
+        assert_(np.isfinite(e1))
+        assert_(np.isfinite(e2))
+        assert_(np.isfinite(e3))
+        assert_(np.isfinite(e4))
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
@@ -2636,7 +2986,7 @@ def test_powerlaw_stats():
     variance:
         sigma**2 = a / ((a + 2) * (a + 1) ** 2)
     skewness:
-        One formula (see http://en.wikipedia.org/wiki/Skewness) is
+        One formula (see https://en.wikipedia.org/wiki/Skewness) is
             gamma_1 = (E[X**3] - 3*mu*E[X**2] + 2*mu**3) / sigma**3
         A short calculation shows that E[X**k] is a / (a + k), so gamma_1
         can be implemented as
@@ -2646,7 +2996,7 @@ def test_powerlaw_stats():
         Either by simplifying, or by a direct calculation of mu_3 / sigma**3,
         one gets the more concise formula:
             gamma_1 = -2.0 * ((a - 1) / (a + 3)) * sqrt((a + 2) / a)
-    kurtosis: (See http://en.wikipedia.org/wiki/Kurtosis)
+    kurtosis: (See https://en.wikipedia.org/wiki/Kurtosis)
         The excess kurtosis is
             gamma_2 = mu_4 / sigma**4 - 3
         A bit of calculus and algebra (sympy helps) shows that
@@ -2712,7 +3062,8 @@ def test_ksone_fit_freeze():
         olderr = np.seterr(invalid='ignore')
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
-                       "The maximum number of subdivisions .50. has been achieved.")
+                       "The maximum number of subdivisions .50. has been "
+                       "achieved.")
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
@@ -2841,6 +3192,34 @@ def test_ncx2_tails_pdf():
         logval = stats.ncx2.logpdf(1, np.arange(340, 350), 2)
 
     assert_(np.isneginf(logval).all())
+
+
+@pytest.mark.parametrize('method, expected', [
+    ('cdf', np.array([2.497951336e-09, 3.437288941e-10])),
+    ('pdf', np.array([1.238579980e-07, 1.710041145e-08])),
+    ('logpdf', np.array([-15.90413011, -17.88416331])),
+    ('ppf', np.array([4.865182052, 7.017182271]))
+])
+def test_ncx2_zero_nc(method, expected):
+    # gh-5441
+    # ncx2 with nc=0 is identical to chi2
+    # Comparison to R (v3.5.1)
+    # > options(digits=10)
+    # > pchisq(0.1, df=10, ncp=c(0,4))
+    # > dchisq(0.1, df=10, ncp=c(0,4))
+    # > dchisq(0.1, df=10, ncp=c(0,4), log=TRUE)
+    # > qchisq(0.1, df=10, ncp=c(0,4))
+
+    result = getattr(stats.ncx2, method)(0.1, nc=[0, 4], df=10)
+    assert_allclose(result, expected, atol=1e-15)
+
+
+def test_ncx2_zero_nc_rvs():
+    # gh-5441
+    # ncx2 with nc=0 is identical to chi2
+    result = stats.ncx2.rvs(df=10, nc=0, random_state=1)
+    expected = stats.chi2.rvs(df=10, random_state=1)
+    assert_allclose(result, expected, atol=1e-15)
 
 
 def test_foldnorm_zero():
@@ -3054,12 +3433,7 @@ class TestSubclassingNoShapes(object):
 
     def test_signature_inspection_2args_incorrect_shapes(self):
         # both _pdf and _cdf defined, but shapes are inconsistent: raises
-        try:
-            _distr3_gen(name='dummy')
-        except TypeError:
-            pass
-        else:
-            raise AssertionError('TypeError not raised.')
+        assert_raises(TypeError, _distr3_gen, name='dummy')
 
     def test_defaults_raise(self):
         # default arguments should raise
@@ -3208,17 +3582,19 @@ def test_burr12_ppf_small_arg():
     quantile = stats.burr12.ppf(prob, 2, 3)
     # The expected quantile was computed using mpmath:
     #   >>> import mpmath
+    #   >>> mpmath.mp.dps = 100
     #   >>> prob = mpmath.mpf('1e-16')
     #   >>> c = mpmath.mpf(2)
     #   >>> d = mpmath.mpf(3)
-    #   >>> float(((1-q)**(-1/d) - 1)**(1/c))
+    #   >>> float(((1-prob)**(-1/d) - 1)**(1/c))
     #   5.7735026918962575e-09
     assert_allclose(quantile, 5.7735026918962575e-09)
 
 
 def test_crystalball_function():
     """
-    All values are calculated using the independent implementation of the ROOT framework (see https://root.cern.ch/).
+    All values are calculated using the independent implementation of the
+    ROOT framework (see https://root.cern.ch/).
     Corresponding ROOT code is given in the comments.
     """
     X = np.linspace(-5.0, 5.0, 21)[:-1]
@@ -3243,8 +3619,10 @@ def test_crystalball_function():
                          0.000131497, 1.57051e-05])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5) {
+    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5);
+    #   std::cout << ", ";
+    # }
     calculated = stats.crystalball.pdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
     expected = np.array([0.00785921, 0.0111902, 0.0167037, 0.0265249,
                          0.0423866, 0.0636298, 0.0897324, 0.118876, 0.147944,
@@ -3272,8 +3650,10 @@ def test_crystalball_function():
                          0.999997])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5) {
+    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5);
+    #   std::cout << ", ";
+    # }
     calculated = stats.crystalball.cdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
     expected = np.array([0.0176832, 0.0223803, 0.0292315, 0.0397873, 0.0567945,
                          0.0830763, 0.121242, 0.173323, 0.24011, 0.320592,
@@ -3284,7 +3664,8 @@ def test_crystalball_function():
 
 def test_crystalball_function_moments():
     """
-    All values are calculated using the pdf formula and the integrate function of Mathematica
+    All values are calculated using the pdf formula and the integrate function
+    of Mathematica
     """
     # The Last two (alpha, n) pairs test the special case n == alpha**2
     beta = np.array([2.0, 1.0, 3.0, 2.0, 3.0])
@@ -3297,34 +3678,42 @@ def test_crystalball_function_moments():
 
     # calculated using wolframalpha.com
     # e.g. for beta = 2 and m = 3 we calculate the norm like this:
-    # integrate exp(-x^2/2) from -2 to infinity + integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
+    #   integrate exp(-x^2/2) from -2 to infinity +
+    #   integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
     norm = np.array([2.5511, 3.01873, 2.51065, 2.53983, 2.507410455])
 
-    expected_1th_moment = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174]) / norm
+    a = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174])
+    expected_1th_moment = a / norm
     calculated_1th_moment = stats.crystalball._munp(1, beta, m)
     assert_allclose(expected_1th_moment, calculated_1th_moment, rtol=0.001)
 
-    expected_2th_moment = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908]) / norm
+    a = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908])
+    expected_2th_moment = a / norm
     calculated_2th_moment = stats.crystalball._munp(2, beta, m)
     assert_allclose(expected_2th_moment, calculated_2th_moment, rtol=0.001)
 
-    expected_3th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668]) / norm
+    a = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668])
+    expected_3th_moment = a / norm
     calculated_3th_moment = stats.crystalball._munp(3, beta, m)
     assert_allclose(expected_3th_moment, calculated_3th_moment, rtol=0.001)
 
-    expected_4th_moment = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468]) / norm
+    a = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468])
+    expected_4th_moment = a / norm
     calculated_4th_moment = stats.crystalball._munp(4, beta, m)
     assert_allclose(expected_4th_moment, calculated_4th_moment, rtol=0.001)
 
-    expected_5th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086]) / norm
+    a = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086])
+    expected_5th_moment = a / norm
     calculated_5th_moment = stats.crystalball._munp(5, beta, m)
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
 def test_argus_function():
     # There is no usable reference implementation.
-    # (RooFit implementation returns unreasonable results which are not normalized correctly)
-    # Instead we do some tests if the distribution behaves as expected for different shapes and scales
+    # (RootFit implementation returns unreasonable results which are not
+    # normalized correctly.)
+    # Instead we do some tests if the distribution behaves as expected for
+    # different shapes and scales.
     for i in range(1, 10):
         for j in range(1, 10):
             assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
@@ -3334,7 +3723,19 @@ def test_argus_function():
 
     for i in range(1, 10):
         assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
-        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0 - stats.argus.sf(1.0, chi=i))
+        assert_equal(stats.argus.cdf(1.0, chi=i),
+                     1.0 - stats.argus.sf(1.0, chi=i))
+
+
+def test_ncf_variance():
+    # Regression test for gh-10658 (incorrect variance formula for ncf).
+    # The correct value of ncf.var(2, 6, 4), 42.75, can be verified with, for
+    # example, Wolfram Alpha with the expression
+    #     Variance[NoncentralFRatioDistribution[2, 6, 4]]
+    # or with the implementation of the noncentral F distribution in the C++
+    # library Boost.
+    v = stats.ncf.var(2, 6, 4)
+    assert_allclose(v, 42.75, rtol=1e-14)
 
 
 class TestHistogram(object):
@@ -3350,7 +3751,7 @@ class TestHistogram(object):
                                   6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
         self.template = stats.rv_histogram(histogram)
 
-        data = stats.norm.rvs(loc=1.0, scale=2.5,size=10000, random_state=123)
+        data = stats.norm.rvs(loc=1.0, scale=2.5, size=10000, random_state=123)
         norm_histogram = np.histogram(data, bins=50)
         self.norm_template = stats.rv_histogram(norm_histogram)
 
@@ -3432,4 +3833,3 @@ class TestHistogram(object):
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
-

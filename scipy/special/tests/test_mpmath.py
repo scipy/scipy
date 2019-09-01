@@ -1,5 +1,5 @@
 """
-Test Scipy functions versus mpmath, if available.
+Test SciPy functions versus mpmath, if available.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -102,6 +102,28 @@ def test_hyp0f1_gh_1609():
 
 
 # ------------------------------------------------------------------------------
+# hyperu
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '1.1.0')
+def test_hyperu_around_0():
+    dataset = []
+    # DLMF 13.2.14-15 test points.
+    for n in np.arange(-5, 5):
+        for b in np.linspace(-5, 5, 20):
+            a = -n
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+            a = -n + b - 1
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+    # DLMF 13.2.16-22 test points.
+    for a in [-10.5, -1.5, -0.5, 0, 0.5, 1, 10]:
+        for b in [-1.0, -0.5, 0, 0.5, 1, 1.5, 2, 2.5]:
+            dataset.append((a, b, 0, float(mpmath.hyperu(a, b, 0))))
+    dataset = np.array(dataset)
+
+    FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-13).check()
+
+# ------------------------------------------------------------------------------
 # hyp2f1
 # ------------------------------------------------------------------------------
 
@@ -189,7 +211,7 @@ def test_hyp2f1_real_some():
                 for z in [-10, -1.01, -0.99, 0, 0.6, 0.95, 1.5, 10]:
                     try:
                         v = float(mpmath.hyp2f1(a, b, c, z))
-                    except:
+                    except Exception:
                         continue
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
@@ -365,9 +387,7 @@ def test_loggamma_taylor_transition():
     dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))
+    dataset = [(z0, complex(mpmath.loggamma(z0))) for z0 in z]
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -383,9 +403,7 @@ def test_loggamma_taylor():
     dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))
+    dataset = [(z0, complex(mpmath.loggamma(z0))) for z0 in z]
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -409,10 +427,8 @@ def test_rgamma_zeros():
     dz = dx + 1j*dy
     zeros = np.arange(0, -170, -1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
     with mpmath.workdps(100):
-        for z0 in z:
-            dataset.append((z0, complex(mpmath.rgamma(z0))))
+        dataset = [(z0, complex(mpmath.rgamma(z0))) for z0 in z]
 
     dataset = np.array(dataset)
     FuncData(sc.rgamma, dataset, 0, 1, rtol=1e-12).check()
@@ -438,10 +454,8 @@ def test_digamma_roots():
     dx, dy = np.meshgrid(dx, dy)
     dz = dx + 1j*dy
     z = (roots + np.dstack((dz,)*roots.size)).flatten()
-    dataset = []
     with mpmath.workdps(30):
-        for z0 in z:
-            dataset.append((z0, complex(mpmath.digamma(z0))))
+        dataset = [(z0, complex(mpmath.digamma(z0))) for z0 in z]
 
     dataset = np.array(dataset)
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-14).check()
@@ -460,11 +474,8 @@ def test_digamma_negreal():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
     with mpmath.workdps(40):
-        for z0 in z:
-            res = digamma(z0)
-            dataset.append((z0, complex(res)))
+        dataset = [(z0, complex(digamma(z0))) for z0 in z]
     dataset = np.asarray(dataset)
 
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
@@ -480,11 +491,8 @@ def test_digamma_boundary():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
     with mpmath.workdps(30):
-        for z0 in z:
-            res = mpmath.digamma(z0)
-            dataset.append((z0, complex(res)))
+        dataset = [(z0, complex(mpmath.digamma(z0))) for z0 in z]
     dataset = np.asarray(dataset)
 
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
@@ -503,10 +511,9 @@ def test_gammainc_boundary():
     x = a.copy()
     a, x = np.meshgrid(a, x)
     a, x = a.flatten(), x.flatten()
-    dataset = []
     with mpmath.workdps(100):
-        for a0, x0 in zip(a, x):
-            dataset.append((a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True))))
+        dataset = [(a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True)))
+                   for a0, x0 in zip(a, x)]
     dataset = np.array(dataset)
 
     FuncData(sc.gammainc, dataset, (0, 1), 2, rtol=1e-12).check()
@@ -528,11 +535,8 @@ def test_spence_circle():
     r = np.linspace(0.5, 1.5)
     theta = np.linspace(0, 2*pi)
     z = (1 + np.outer(r, np.exp(1j*theta))).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, spence(z0)))
+    dataset = np.asarray([(z0, spence(z0)) for z0 in z])
 
-    dataset = np.array(dataset)
     FuncData(sc.spence, dataset, 0, 1, rtol=1e-14).check()
 
 
@@ -549,11 +553,8 @@ def test_sinpi_zeros():
     dz = dx + 1j*dy
     zeros = np.arange(-100, 100, 1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.sinpi(z0))))
-
-    dataset = np.array(dataset)
+    dataset = np.asarray([(z0, complex(mpmath.sinpi(z0)))
+                          for z0 in z])
     FuncData(_sinpi, dataset, 0, 1, rtol=2*eps).check()
 
 
@@ -566,11 +567,9 @@ def test_cospi_zeros():
     dz = dx + 1j*dy
     zeros = (np.arange(-100, 100, 1) + 0.5).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.cospi(z0))))
+    dataset = np.asarray([(z0, complex(mpmath.cospi(z0)))
+                          for z0 in z])
 
-    dataset = np.array(dataset)
     FuncData(_cospi, dataset, 0, 1, rtol=2*eps).check()
 
 
@@ -628,10 +627,8 @@ def test_wrightomega_branch():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
 
@@ -645,10 +642,8 @@ def test_wrightomega_region1():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
 
@@ -662,10 +657,8 @@ def test_wrightomega_region2():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(_mpmath_wrightomega(z0, 25)))
+                          for z0 in z])
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
 
@@ -681,10 +674,8 @@ def test_lambertw_smallz():
     x, y = np.meshgrid(x, y)
     z = (x + 1j*y).flatten()
 
-    dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.lambertw(z0))))
-    dataset = np.asarray(dataset)
+    dataset = np.asarray([(z0, complex(mpmath.lambertw(z0)))
+                          for z0 in z])
 
     FuncData(sc.lambertw, dataset, 0, 1, rtol=1e-13).check()
 
@@ -1367,12 +1358,20 @@ class TestSystematic(object):
         # in the intermediate calculations. Can be fixed by implementing an
         # asymptotic expansion for Bessel functions for large order.
 
-    @pytest.mark.xfail(run=False)
     def test_hyp1f1(self):
-        assert_mpmath_equal(inf_to_nan(sc.hyp1f1),
-                            exception_to_nan(lambda a, b, x: mpmath.hyp1f1(a, b, x, **HYPERKW)),
-                            [Arg(-1e5, 1e5), Arg(-1e5, 1e5), Arg()],
-                            n=2000)
+        def mpmath_hyp1f1(a, b, x):
+            try:
+                return mpmath.hyp1f1(a, b, x)
+            except ZeroDivisionError:
+                return np.inf
+
+        assert_mpmath_equal(
+            sc.hyp1f1,
+            mpmath_hyp1f1,
+            [Arg(-50, 50), Arg(1, 50, inclusive_a=False), Arg(-50, 50)],
+            n=500,
+            nan_ok=False
+        )
 
     @pytest.mark.xfail(run=False)
     def test_hyp1f1_complex(self):
@@ -1381,39 +1380,9 @@ class TestSystematic(object):
                             [Arg(-1e3, 1e3), Arg(-1e3, 1e3), ComplexArg()],
                             n=2000)
 
-    @pytest.mark.xfail(run=False)
-    def test_hyp1f2(self):
-        def hyp1f2(a, b, c, x):
-            v, err = sc.hyp1f2(a, b, c, x)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp1f2,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp1f2(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=20000)
-
-    @pytest.mark.xfail(run=False)
-    def test_hyp2f0(self):
-        def hyp2f0(a, b, x):
-            v, err = sc.hyp2f0(a, b, x, 1)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp2f0,
-                            lambda a, b, x: time_limited(0.1)(exception_to_nan(trace_args(mpmath.hyp2f0)))(
-                                a, b, x, **HYPERKW),
-                            [Arg(), Arg(), Arg()])
-
-    @pytest.mark.xfail(run=False, reason="spurious inf (or inf with wrong sign) for some argument values")
-    def test_hyp2f1(self):
-        assert_mpmath_equal(sc.hyp2f1,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()])
-
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
-        # Scipy's hyp2f1 seems to have performance and accuracy problems
+        # SciPy's hyp2f1 seems to have performance and accuracy problems
         assert_mpmath_equal(lambda a, b, c, x: sc.hyp2f1(a.real, b.real, c.real, x),
                             exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
                             [Arg(-1e2, 1e2), Arg(-1e2, 1e2), Arg(-1e2, 1e2), ComplexArg()],
@@ -1739,11 +1708,11 @@ class TestSystematic(object):
         # is thus accurate in only a very small range.
         assert_mpmath_equal(pcfw,
                             mpmath.pcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-8, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-8, n=100)
 
         assert_mpmath_equal(dpcfw,
                             mpmath_dpcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-9, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-9, n=100)
 
     @pytest.mark.xfail(run=False, reason="issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
     def test_polygamma(self):
@@ -1888,11 +1857,26 @@ class TestSystematic(object):
                             lambda z: _mpmath_wrightomega(z, 25),
                             [ComplexArg()], rtol=1e-14, nan_ok=False)
 
-    def test_zeta(self):
+    def test_hurwitz_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_riemann_zeta(self):
+        assert_mpmath_equal(
+            sc.zeta,
+            mpmath.zeta,
+            [Arg(-100, 100)],
+            nan_ok=False,
+            rtol=1e-13,
+        )
+
+    def test_zetac(self):
+        assert_mpmath_equal(sc.zetac,
+                            lambda x: mpmath.zeta(x) - 1,
+                            [Arg(-100, 100)],
+                            nan_ok=False, dps=45, rtol=1e-13)
 
     def test_boxcox(self):
 

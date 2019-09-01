@@ -262,6 +262,11 @@ class TestQuad(object):
         args = 1, 2
         assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
 
+    def test_double_integral3(self):
+        def func(x0, x1):
+            return x0 + x1 + 1 + 2
+        assert_quad(dblquad(func, 1, 2, 1, 2),6.)
+        
     def test_triple_integral(self):
         # 9) Triple Integral test
         def simpfunc(z, y, x, t):      # Note order of arguments.

@@ -497,6 +497,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     npy_intp out_sz = 0, dims[2];
     int k, ntimes, crit_ind = 0;
     int allocated = 0, full_output = 0, numcrit = 0;
+    int t0count;
     double *yout, *yout_ptr, *tout_ptr, *tcrit;
     double *wa;
     static char *kwlist[] = {"fun", "y0", "t", "args", "Dfun", "col_deriv",
@@ -591,7 +592,16 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     tout = (double *) PyArray_DATA(ap_tout);
     ntimes = PyArray_Size((PyObject *)ap_tout);
     dims[0] = ntimes;
-    t = tout[0];
+
+    t0count = 0;
+    if (ntimes > 0) {
+        /* Copy tout[0] to t, and count how many times it occurs. */
+        t = tout[0];
+        t0count = 1;
+        while ((t0count < ntimes) && (tout[t0count] == t)) {
+            ++t0count;
+        }
+    }
 
     /* Setup array to hold the output evaluations*/
     ap_yout= (PyArrayObject *) PyArray_SimpleNew(2,dims,NPY_DOUBLE);
@@ -599,9 +609,13 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
     yout = (double *) PyArray_DATA(ap_yout);
-    /* Copy initial vector into first row of output */
-    memcpy(yout, y, neq*sizeof(double));  /* copy initial value to output */
-    yout_ptr = yout + neq;    /* set output pointer to next position */
+
+    /* Copy initial vector into first row(s) of output */
+    yout_ptr = yout;
+    for (k = 0; k < t0count; ++k) {
+        memcpy(yout_ptr, y, neq*sizeof(double));
+        yout_ptr += neq;
+    }
 
     itol = setup_extra_inputs(&ap_rtol, o_rtol, &ap_atol, o_atol, &ap_tcrit,
                               o_tcrit, &numcrit, neq);
@@ -643,7 +657,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         iopt = 1;
     }
     istate = 1;
-    k = 1;
+    k = t0count;
 
     /* If full output make some useful output arrays */
     if (full_output) {

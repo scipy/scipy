@@ -100,8 +100,8 @@
 *     .. Local Scalars ..
       INTEGER          MAXIT, R, Z, P, Q, NEED1, NEED2
       <_t>             ALPHA, BETA, RHO, RHO1,
-     $     <xdot=wsdot,ddot,wcdotc,wzdotc>
-      <rt>             <rc=ws,d,wsc,dz>NRM2, TOL
+     $     <xdot=sdot,ddot,wcdotc,wzdotc>
+      <rt>             <rc=s,d,sc,dz>NRM2, TOL
 *
 *     indicates where to resume from. Only valid when IJOB = 2!
       INTEGER RLBL

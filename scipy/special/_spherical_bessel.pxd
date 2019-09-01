@@ -118,7 +118,7 @@ cdef inline double complex spherical_jn_complex(long n, double complex z) nogil:
         sf_error.error("spherical_jn", sf_error.DOMAIN, NULL)
         return nan
     if z.real == inf or z.real == -inf:
-        # http://dlmf.nist.gov/10.52.E3
+        # https://dlmf.nist.gov/10.52.E3
         if z.imag == 0:
             return 0
         else:
@@ -182,10 +182,10 @@ cdef inline double complex spherical_yn_complex(long n, double complex z) nogil:
         sf_error.error("spherical_yn", sf_error.DOMAIN, NULL)
         return nan
     if z.real == 0 and z.imag == 0:
-        # http://dlmf.nist.gov/10.52.E2
+        # https://dlmf.nist.gov/10.52.E2
         return nan
     if z.real == inf or z.real == -inf:
-        # http://dlmf.nist.gov/10.52.E3
+        # https://dlmf.nist.gov/10.52.E3
         if z.imag == 0:
             return 0
         else:
@@ -203,13 +203,13 @@ cdef inline double spherical_in_real(long n, double z) nogil:
         sf_error.error("spherical_in", sf_error.DOMAIN, NULL)
         return nan
     if z == 0:
-        # http://dlmf.nist.gov/10.52.E1
+        # https://dlmf.nist.gov/10.52.E1
         if n == 0:
             return 1
         else:
             return 0
     if npy_isinf(z):
-        # http://dlmf.nist.gov/10.49.E8
+        # https://dlmf.nist.gov/10.49.E8
         if z == -inf:
             return (-1)**n*inf
         else:
@@ -228,13 +228,13 @@ cdef inline double complex spherical_in_complex(long n, double complex z) nogil:
         sf_error.error("spherical_in", sf_error.DOMAIN, NULL)
         return nan
     if zabs(z) == 0:
-        # http://dlmf.nist.gov/10.52.E1
+        # https://dlmf.nist.gov/10.52.E1
         if n == 0:
             return 1
         else:
             return 0
     if zisinf(z):
-        # http://dlmf.nist.gov/10.52.E5
+        # https://dlmf.nist.gov/10.52.E5
         if z.imag == 0:
             if z.real == -inf:
                 return (-1)**n*inf
@@ -258,7 +258,7 @@ cdef inline double spherical_kn_real(long n, double z) nogil:
     if z == 0:
         return inf
     if npy_isinf(z):
-        # http://dlmf.nist.gov/10.52.E6
+        # https://dlmf.nist.gov/10.52.E6
         if z == inf:
             return 0
         else:
@@ -278,7 +278,7 @@ cdef inline double complex spherical_kn_complex(long n, double complex z) nogil:
     if zabs(z) == 0:
         return nan
     if zisinf(z):
-        # http://dlmf.nist.gov/10.52.E6
+        # https://dlmf.nist.gov/10.52.E6
         if z.imag == 0:
             if z.real == inf:
                 return 0

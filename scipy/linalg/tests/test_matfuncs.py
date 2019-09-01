@@ -10,18 +10,18 @@ import random
 import functools
 
 import numpy as np
-from numpy import array, matrix, identity, dot, sqrt, double
+from numpy import array, identity, dot, sqrt
 from numpy.testing import (
         assert_array_equal, assert_array_less, assert_equal,
-        assert_array_almost_equal, assert_array_almost_equal_nulp,
+        assert_array_almost_equal,
         assert_allclose, assert_)
 import pytest
 
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
+from scipy._lib._numpy_compat import _assert_warns
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond, norm)
+                          expm, expm_frechet, expm_cond, norm)
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
@@ -260,7 +260,7 @@ class TestSqrtM(object):
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_bad(self):
-        # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
+        # See https://web.archive.org/web/20051220232650/http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
         se = sqrt(e)
         a = array([[1.0,0,0,1],

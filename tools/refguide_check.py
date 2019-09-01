@@ -70,6 +70,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'fft',
     'fftpack',
     'fftpack.convolve',
     'integrate',
@@ -92,9 +93,11 @@ PUBLIC_SUBMODULES = [
     'sparse.linalg',
     'spatial',
     'spatial.distance',
+    'spatial.transform',
     'special',
     'stats',
     'stats.mstats',
+    'stats.contingency',
 ]
 
 # Docs for these modules are included in the parent module
@@ -130,6 +133,9 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
+    r'scipy\.stats\.contingency\.chi2_contingency',
+    r'scipy\.stats\.contingency\.expected_freq',
+    r'scipy\.stats\.contingency\.margins',
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -259,7 +265,7 @@ def is_deprecated(f):
             f(**{"not a kwarg":None})
         except DeprecationWarning:
             return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -321,7 +327,7 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'versionchanged', 'module', 'class',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
@@ -422,7 +428,7 @@ def check_rest(module, names, dots=True):
         else:
             try:
                 text = str(get_doc_object(obj))
-            except:
+            except Exception:
                 import traceback
                 results.append((full_name, False,
                                 "Error in docstring format!\n" +
@@ -566,7 +572,21 @@ class Checker(doctest.OutputChecker):
         try:
             a_want = eval(want, dict(self.ns))
             a_got = eval(got, dict(self.ns))
-        except:
+        except Exception:
+            # Maybe we're printing a numpy array? This produces invalid python
+            # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
+            # values. So, reinsert commas and retry.
+            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            #              (2) n-dim arrays with n > 1
+            s_want = want.strip()
+            s_got = got.strip()
+            cond = (s_want.startswith("[") and s_want.endswith("]") and
+                    s_got.startswith("[") and s_got.endswith("]"))
+            if cond:
+                s_want = ", ".join(s_want[1:-1].split())
+                s_got = ", ".join(s_got[1:-1].split())
+                return self.check_output(s_want, s_got, optionflags)
+
             if not self.parse_namedtuples:
                 return False
             # suppose that "want"  is a tuple, and "got" is smth like
@@ -630,6 +650,12 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
             else:
                 out(msg)
 
+        # a flush method is required when a doctest uses multiprocessing
+        # multiprocessing/popen_fork.py flushes sys.stderr
+        def flush(self):
+            if doctest_warnings:
+                sys.stdout.flush()
+
     # Run tests, trying to restore global state afterward
     old_printoptions = np.get_printoptions()
     old_errstate = np.seterr()
@@ -688,7 +714,7 @@ def check_doctests(module, verbose, ns=None,
         finder = doctest.DocTestFinder()
         try:
             tests = finder.find(obj, name, globs=dict(ns))
-        except:
+        except Exception:
             import traceback
             results.append((full_name, False,
                             "Failed to get doctests!\n" +
@@ -755,7 +781,12 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    text = open(fname).read()
+    if sys.version_info.major <= 2:
+        with open(fname) as f:
+            text = f.read()
+    else:
+        with open(fname, encoding='utf-8') as f:
+            text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it

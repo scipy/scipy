@@ -5,7 +5,7 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, newaxis, hstack, product, array, frombuffer, load
+from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
            'electrocardiogram']
@@ -43,7 +43,7 @@ def central_diff_weights(Np, ndiv=1):
     X = x**0.0
     for k in range(1,Np):
         X = hstack([X,x**k])
-    w = product(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
+    w = prod(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
     return w
 
 
@@ -117,7 +117,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     ho = order >> 1
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
-    return val / product((dx,)*n,axis=0)
+    return val / prod((dx,)*n,axis=0)
 
 
 def ascent():
@@ -231,12 +231,12 @@ def electrocardiogram():
     ----------
     .. [1] Moody GB, Mark RG. The impact of the MIT-BIH Arrhythmia Database.
            IEEE Eng in Med and Biol 20(3):45-50 (May-June 2001).
-           (PMID: 11446209); https://doi.org/10.13026/C2F305
+           (PMID: 11446209); :doi:`10.13026/C2F305`
     .. [2] Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh,
            Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank,
            PhysioToolkit, and PhysioNet: Components of a New Research Resource
            for Complex Physiologic Signals. Circulation 101(23):e215-e220;
-           https://doi.org/10.1161/01.CIR.101.23.e215
+           :doi:`10.1161/01.CIR.101.23.e215`
 
     Examples
     --------

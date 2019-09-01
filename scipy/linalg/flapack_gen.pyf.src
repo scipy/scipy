@@ -1,0 +1,1373 @@
+! Signatures for f2py-wrappers of FORTRAN LAPACK General Matrix functions.
+!
+
+subroutine <prefix>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
+    !
+    ! ba,lo,hi,pivscale,info = gebal(a,scale=0,permute=0,overwrite_a=0)
+    ! Balance general matrix a.
+    ! hi,lo are such that ba[i][j]==0 if i>j and j=0...lo-1 or i=hi+1..n-1
+    ! pivscale([0:lo], [lo:hi+1], [hi:n+1]) = (p1,d,p2) where (p1,p2)[j] is
+    ! the index of the row and column interchanged with row and column j.
+    ! d[j] is the scaling factor applied to row and column j.
+    ! The order in which the interchanges are made is n-1 to hi+1, then 0 to lo-1.
+    !
+    ! P * A * P = [[T1,X,Y],[0,B,Z],[0,0,T2]]
+    ! BA = [[T1,X*D,Y],[0,inv(D)*B*D,ind(D)*Z],[0,0,T2]]
+    ! where D = diag(d), T1,T2 are upper triangular matrices.
+    ! lo,hi mark the starting and ending columns of submatrix B.
+
+    callstatement { (*f2py_func)((permute?(scale?"B":"P"):(scale?"S":"N")),&n,a,&m,&lo,&hi,pivscale,&info); hi--; lo--; }
+    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,int*
+    integer intent(in),optional :: permute = 0
+    integer intent(in),optional :: scale = 0
+    integer intent(hide),depend(a,n) :: m = shape(a,0)
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    check(m>=n) m
+    integer intent(out) :: hi,lo
+    <ftypereal> dimension(n),intent(out),depend(n) :: pivscale
+    <ftype> dimension(m,n),intent(in,out,copy,out=ba) :: a
+    integer intent(out) :: info
+ 
+end subroutine <prefix>gebal
+
+subroutine <prefix>gehrd(n,lo,hi,a,tau,work,lwork,info)
+    !
+    ! hq,tau,info = gehrd(a,lo=0,hi=n-1,lwork=n,overwrite_a=0)
+    ! Reduce general matrix A to upper Hessenberg form H by unitary similarity
+    ! transform Q^H * A * Q = H
+    !
+    ! Q = H(lo) * H(lo+1) * ... * H(hi-1)
+    ! H(i) = I - tau * v * v^H
+    ! v[0:i+1] = 0, v[i+1]=1, v[hi+1:n] = 0
+    ! v[i+2:hi+1] is stored in hq[i+2:hi+i,i]
+    ! tau is tau[i]
+    !
+    ! hq for n=7,lo=1,hi=5:
+    ! [a a h h h h a
+    !    a h h h h a
+    !    h h h h h h
+    !    v2h h h h h
+    !    v2v3h h h h
+    !    v2v3v4h h h
+    !              a]
+    !
+    callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
+    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
+    integer intent(in),optional :: lo = 0
+    integer intent(in),optional,depend(n) :: hi = n-1
+    <ftype> dimension(n-1),intent(out),depend(n) :: tau
+    <ftype> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+    integer intent(in),optional,depend(n),check(lwork>=MAX(n,1)) :: lwork = MAX(n,1)
+    integer intent(out) :: info
+    
+end subroutine <prefix>gehrd
+   
+subroutine <prefix>gehrd_lwork(n,lo,hi,a,tau,work,lwork,info)
+    ! LWORK computation for GEHRD
+    fortranname <prefix>gehrd
+    callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+    callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    integer intent(in) :: n
+    <ftype> intent(hide) :: a
+    integer intent(in),optional :: lo = 0
+    integer intent(in),optional,depend(n) :: hi = n-1
+    <ftype> intent(hide) :: tau
+    <ftype> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+end subroutine <prefix>gehrd_lwork
+
+subroutine <prefix>gesv(n,nrhs,a,piv,b,info)
+    ! lu,piv,x,info = gesv(a,b,overwrite_a=0,overwrite_b=0)
+    ! Solve A * X = B.
+    ! A = P * L * U
+    ! U is upper diagonal triangular, L is unit lower triangular,
+    ! piv pivots columns.
+
+    callstatement {int i;(*f2py_func)(&n,&nrhs,a,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+
+    integer depend(a),intent(hide):: n = shape(a,0)
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)) :: a
+    integer dimension(n),depend(n),intent(out) :: piv
+    <ftype> dimension(n,nrhs),check(shape(a,0)==shape(b,0)),depend(n) :: b
+    integer intent(out)::info
+    intent(in,out,copy,out=x) b
+    intent(in,out,copy,out=lu) a
+end subroutine <prefix>gesv
+
+subroutine <prefix2>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
+    ! Solve A * X = B using LU decomposition
+    ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
+    ! This part takes care of the data types, single and double reals (sgesvx and dgesvx)
+    threadsafe
+    callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
+
+    character optional,intent(in):: trans = "N"
+    character optional,intent(in):: fact = "E"
+    integer depend(a),intent(hide):: n = shape(a,0)
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
+    integer depend(a),intent(hide):: lda = shape(a,0)
+    <ftype2> optional,dimension(n,n),intent(in,out,out=lu):: af
+    integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
+    integer optional,dimension(n),depend(n),intent(in,out):: ipiv
+    character optional,intent(in,out):: equed = "B"
+    <ftype2> optional,dimension(n),depend(n),intent(in,out,out=rs):: r
+    <ftype2> optional,dimension(n),depend(n),intent(in,out,out=cs):: c
+    <ftype2> depend(n),dimension(n,nrhs),intent(in,out,copy,out=bs):: b
+    integer depend(b),intent(hide):: ldb = shape(b,0)
+    <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
+    integer depend(n),intent(hide):: ldx = n
+    <ftype2> intent(out):: rcond
+    <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr
+    <ftype2> intent(out),dimension(nrhs),depend(nrhs):: berr
+    <ftype2> dimension(4*n),depend(n),intent(hide,cache):: work
+    integer intent(hide,cache),dimension(n),depend(n) :: iwork
+    integer intent(out):: info
+
+end subroutine <prefix2>gesvx
+
+subroutine <prefix2c>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
+    ! Solve A * X = B using LU decomposition
+    ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
+    ! This part takes care of the data types, complex and double complex (cgesvx and zgesvx)
+    threadsafe
+    callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
+
+    character optional,intent(in):: trans = "N"
+    character optional,intent(in):: fact = "E"
+    integer depend(a),intent(hide):: n = shape(a,0)
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
+    integer depend(a),intent(hide):: lda = shape(a,0)
+    <ftype2c> optional,dimension(n,n),depend(n),intent(in,out,out=lu):: af
+    integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
+    integer optional,dimension(n),depend(n),intent(in,out):: ipiv
+    character optional,intent(in,out):: equed = "B"
+    <ftype2> optional,dimension(n),depend(n),intent(in,out,out=rs):: r
+    <ftype2> optional,dimension(n),depend(n),intent(in,out,out=cs):: c
+    <ftype2c> depend(n),dimension(n,nrhs),intent(in,out,copy,out=bs):: b
+    integer depend(b),intent(hide):: ldb = shape(b,0)
+    <ftype2c> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
+    integer depend(n),intent(hide):: ldx = n
+    <ftype2> intent(out):: rcond
+    <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr
+    <ftype2> intent(out),dimension(nrhs),depend(nrhs):: berr
+    <ftype2c> dimension(2*n),depend(n),intent(hide,cache):: work
+    <ftype2> intent(hide,cache),dimension(2*n),depend(n) :: rwork
+    integer intent(out):: info
+
+end subroutine <prefix2c>gesvx
+
+subroutine <prefix>gecon(norm,n,a,lda,anorm,rcond,work,irwork,info)
+   ! Computes the 1- or inf- norm reciprocal condition number estimate.
+    threadsafe
+    callstatement (*f2py_func)(norm,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
+    callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+
+    character optional,intent(in):: norm = '1'
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in):: a
+    integer depend(a),intent(hide):: lda = shape(a,0)
+    <ftypereal> intent(in):: anorm
+    <ftypereal> intent(out):: rcond
+    <ftype> depend(n),dimension(<4*n,4*n,2*n,2*n>),intent(hide,cache):: work
+    <integer,integer,real, double precision> depend(n),dimension(<n,n,2*n,2*n>),intent(hide,cache):: irwork
+    integer intent(out):: info
+
+end subroutine <prefix>gecon
+   
+subroutine <prefix>getrf(m,n,a,piv,info)
+    ! lu,piv,info = getrf(a,overwrite_a=0)
+    ! Compute an LU factorization of a  general  M-by-N  matrix  A.
+    ! A = P * L * U
+    threadsafe
+    callstatement {int i;(*f2py_func)(&m,&n,a,&m,piv,&info);for(i=0,n=MIN(m,n);i\<n;--piv[i++]);}
+    callprotoargument int*,int*,<ctype>*,int*,int*,int*
+
+    integer depend(a),intent(hide):: m = shape(a,0)
+    integer depend(a),intent(hide):: n = shape(a,1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=lu) :: a
+    integer dimension(MIN(m,n)),depend(m,n),intent(out) :: piv
+    integer intent(out):: info
+
+end subroutine <prefix>getrf
+
+subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
+    ! x,info = getrs(lu,piv,b,trans=0,overwrite_b=0)
+    ! Solve  A  * X = B if trans=0
+    ! Solve A^T * X = B if trans=1
+    ! Solve A^H * X = B if trans=2
+    ! A = P * L * U
+    threadsafe
+    callstatement {int i;for(i=0;i\<n;++piv[i++]);(*f2py_func)((trans?(trans==2?"C":"T"):"N"),&n,&nrhs,lu,&n,piv,b,&n,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument char*,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+
+    integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+
+    integer depend(lu),intent(hide):: n = shape(lu,0)
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype> dimension(n,n),intent(in) :: lu
+    check(shape(lu,0)==shape(lu,1)) :: lu
+    integer dimension(n),intent(in),depend(n) :: piv
+    <ftype> dimension(n,nrhs),intent(in,out,copy,out=x),depend(n),check(shape(lu,0)==shape(b,0)) :: b
+    integer intent(out):: info
+
+end subroutine <prefix>getrs
+
+subroutine <prefix>getri(n,lu,piv,work,lwork,info)
+    ! inv_a,info = getri(lu,piv,lwork=3*n,overwrite_lu=0)
+    ! Find A inverse A^-1.
+    ! A = P * L * U
+
+    callstatement {int i;for(i=0;i\<n;++piv[i++]);(*f2py_func)(&n,lu,&n,piv,work,&lwork,&info);for(i=0;i\<n;--piv[i++]);}
+    callprotoargument int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+
+    integer depend(lu),intent(hide):: n = shape(lu,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=inv_a) :: lu
+    check(shape(lu,0)==shape(lu,1)) :: lu
+    integer dimension(n),intent(in),depend(n) :: piv
+    integer intent(out):: info
+    integer optional,intent(in),depend(n),check(lwork>=n) :: lwork=max(3*n,1)
+    <ftype> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+
+end subroutine <prefix>getri
+
+subroutine <prefix>getri_lwork(n,lu,piv,work,lwork,info)
+    ! *GETRI LWORK query
+    fortranname <prefix>getri
+    callstatement (*f2py_func)(&n,&lu,&n,&piv,&work,&lwork,&info)
+    callprotoargument int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+
+    integer intent(in):: n
+    <ftype> intent(hide) :: lu
+    integer intent(hide) :: piv
+    integer intent(out):: info
+    integer intent(hide) :: lwork=-1
+    <ftype> intent(out) :: work
+end subroutine <prefix>getri_lwork
+
+subroutine <prefix2>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
+    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
+    ! Compute the singular value decomposition (SVD) using divide and conquer:
+    !   A = U * SIGMA * transpose(V)
+    ! A - M x N matrix
+    ! U - M x M matrix or min(M,N) x N if full_matrices=False
+    ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+    !               singular values
+    ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
+
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,iwork,&info)
+    callprotoargument char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+    <ftype2> dimension(m,n),intent(in,copy,aligned8) :: a
+    <ftype2> dimension(minmn),intent(out),depend(minmn) :: s
+    <ftype2> dimension(u0,u1),intent(out),depend(u0, u1) :: u
+    <ftype2> dimension(vt0,vt1),intent(out),depend(vt0, vt1) :: vt
+    <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+    integer optional,intent(in),depend(minmn,compute_uv) &
+        :: lwork = max((compute_uv?4*minmn*minmn+MAX(m,n)+9*minmn:MAX(14*minmn+4,10*minmn+2+25*(25+8))+MAX(m,n)),1)
+    integer intent(hide,cache),dimension(8*minmn),depend(minmn) :: iwork
+    integer intent(out)::info
+
+end subroutine <prefix2>gesdd
+
+subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
+    ! LWORK computation for (S/D)GESDD
+
+    fortranname <prefix2>gesdd
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&iwork,&info)
+    callprotoargument char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+    
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(in) :: m
+    integer intent(in) :: n
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    <ftype2> intent(hide) :: a
+    <ftype2> intent(hide) :: s
+    <ftype2> intent(hide) :: u
+    <ftype2> intent(hide) :: vt
+    <ftype2> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(hide) :: iwork
+    integer intent(out) :: info
+    
+end subroutine <prefix2>gesdd_lwork
+
+subroutine <prefix2c>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
+    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
+    ! Compute the singular value decomposition (SVD) using divide and conquer:
+    !   A = U * SIGMA * conjugate-transpose(V)
+    ! A - M x N matrix
+    ! U - M x M matrix or min(M,N) x N if full_matrices=False
+    ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+    !               singular values
+    ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
+
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,iwork,&info)
+    callprotoargument char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+   
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+    <ftype2c> dimension(m,n),intent(in,copy) :: a
+    <ftype2> dimension(minmn),intent(out),depend(minmn) :: s
+    <ftype2c> dimension(u0,u1),intent(out),depend(u0,u1) :: u
+    <ftype2c> dimension(vt0,vt1),intent(out),depend(vt0,vt1) :: vt
+    <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+    <ftype2> dimension((compute_uv?minmn*MAX(5*minmn+7, 2*MAX(m,n)+2*minmn+1):7*minmn)),intent(hide,cache),depend(minmn,compute_uv) :: rwork
+    integer optional,intent(in),depend(minmn,compute_uv) &
+         :: lwork = max((compute_uv?2*minmn*minmn+MAX(m,n)+2*minmn:2*minmn+MAX(m,n)),1)
+    integer intent(hide,cache),dimension(8*minmn),depend(minmn) :: iwork
+    integer intent(out)::info
+
+end subroutine <prefix2c>gesdd
+
+subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
+    ! (C/Z)GESDD call with LWORK=-1 -- copypaste of above gesdd with dummy arrays
+
+    fortranname <prefix2c>gesdd
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&iwork,&info)
+    callprotoargument char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+    
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(in),depend(a):: m
+    integer intent(in),depend(a):: n
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    <ftype2c> intent(hide) :: a
+    <ftype2> intent(hide) :: s
+    <ftype2c> intent(hide) :: u
+    <ftype2c> intent(hide) :: vt
+    <ftype2c> intent(out) :: work
+    <ftype2> intent(hide) :: rwork
+    integer intent(hide) :: lwork = -1
+    integer intent(hide) :: iwork
+    integer intent(out) :: info
+    
+end subroutine <prefix2c>gesdd_lwork
+
+subroutine <prefix2>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
+    ! u,s,vt,info = gesvd(a,compute_uv=1,lwork=..,overwrite_a=0)
+    ! Compute the singular value decomposition (SVD):
+    !   A = U * SIGMA * transpose(V)
+    ! A - M x N matrix
+    ! U - M x M matrix or min(M,N) x N if full_matrices=False
+    ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+    !               singular values
+    ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
+  
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+    <ftype2> dimension(m,n),intent(in,copy,aligned8) :: a
+    <ftype2> dimension(minmn),intent(out),depend(minmn) :: s
+    <ftype2> dimension(u0,u1),intent(out),depend(u0, u1) :: u
+    <ftype2> dimension(vt0,vt1),intent(out),depend(vt0, vt1) :: vt
+    <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+    integer optional,intent(in),depend(minmn) :: lwork = max(MAX(3*minmn+MAX(m,n),5*minmn),1)
+    integer intent(out) :: info
+
+end subroutine <prefix2>gesvd
+
+subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
+    ! LWORK computation for (S/D)GESVD
+
+    fortranname <prefix2>gesvd
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+    
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(in) :: m
+    integer intent(in) :: n
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    <ftype2> intent(hide) :: a
+    <ftype2> intent(hide) :: s
+    <ftype2> intent(hide) :: u
+    <ftype2> intent(hide) :: vt
+    integer intent(hide) :: lwork = -1
+    <ftype2> intent(out) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>gesvd_lwork
+
+subroutine <prefix2c>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
+    ! u,s,vt,info = gesvd(a,compute_uv=1,lwork=..,overwrite_a=0)
+    ! Compute the singular value decomposition (SVD):
+    !   A = U * SIGMA * conjugate-transpose(V)
+    ! A - M x N matrix
+    ! U - M x M matrix or min(M,N) x N if full_matrices=False
+    ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+    !               singular values
+    ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
+ 
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,&info)
+    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+ 
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+    <ftype2c> dimension(m,n),intent(in,copy) :: a
+    <ftype2> dimension(minmn),intent(out),depend(minmn) :: s
+    <ftype2c> dimension(u0,u1),intent(out),depend(u0,u1) :: u
+    <ftype2c> dimension(vt0,vt1),intent(out),depend(vt0,vt1) :: vt
+    <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+    <ftype2> dimension((MAX(1,5*minmn))),intent(hide,cache),depend(minmn) :: rwork
+    integer optional,intent(in),depend(minmn) :: lwork = MAX(2*minmn+MAX(m,n),1)
+    integer intent(out) :: info
+ 
+end subroutine <prefix2c>gesvd
+
+subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
+    ! (C/Z)GESVD call with LWORK=-1 -- copypaste of above gesvd with dummy arrays
+
+    fortranname <prefix2c>gesvd
+    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&info)
+    callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+  
+    integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+    integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+    integer intent(in),depend(a):: m
+    integer intent(in),depend(a):: n
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+    integer intent(hide) :: lwork = -1
+    <ftype2c> intent(hide) :: a
+    <ftype2> intent(hide) :: s
+    <ftype2c> intent(hide) :: u
+    <ftype2c> intent(hide) :: vt
+    <ftype2c> intent(out) :: work
+    <ftype2> intent(hide) :: rwork
+    integer intent(out) :: info
+  
+end subroutine <prefix2c>gesvd_lwork
+
+subroutine <prefix>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+    ! lqr,x,info = gels(a,b,lwork=..,overwrite_a=False,overwrite_b=False)
+    ! Solve Minimize 2-norm(A * X - B).
+
+    callstatement (*f2py_func)(trans,&m,&n,&nrhs,a,&lda,b,&ldb,work,&lwork,&info)
+    callprotoargument char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*trans=='N'||*trans==<'T',\0,'C',\2>):: trans = 'N'
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(b):: nrhs = shape(b,1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=lqr):: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    <ftype> intent(in,out,copy,out=x),depend(trans,m,n),dimension(MAX(m,n),nrhs),check(shape(b,0)==MAX(m,n)) :: b
+    integer depend(b),intent(hide):: ldb = MAX(1,MAX(m,n))
+    integer optional,intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1)::lwork=MAX(MIN(m,n)+MAX(MIN(m,n),nrhs),1)
+    <ftype> depend(lwork),dimension(MAX(1,lwork)),intent(hide,cache):: work
+    integer intent(out)::info
+
+end subroutine <prefix>gels
+
+subroutine <prefix>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+    ! ?GELS LWORK Query for optimal block size
+
+    fortranname <prefix>gels
+    callstatement (*f2py_func)(trans,&m,&n,&nrhs,&a,&lda,&b,&ldb,&work,&lwork,&info)
+    callprotoargument char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,int*
+  
+    character optional,intent(in),check(*trans=='N'||*trans==<'T',\0,'C',\2>):: trans = 'N'
+    integer intent(in),check(m>=0) :: m
+    integer intent(in),check(n>=0) :: n
+    integer intent(in),check(nrhs>=0) :: nrhs
+  
+    <ftype> intent(hide):: a
+    integer intent(hide):: lda = MAX(1,m)
+    <ftype> intent(hide):: b
+    integer intent(hide):: ldb = MAX(1,MAX(m,n))
+    integer intent(hide):: lwork=-1
+  
+    <ftype> intent(out):: work
+    integer intent(out)::info
+  
+end subroutine <prefix>gels_lwork
+
+subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
+    ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
+    ! Solve Minimize 2-norm(A * X - B).
+  
+    callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*
+  
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2> dimension(m,n),intent(in,out,copy,out=v) :: a
+  
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
+    intent(in,out,copy,out=x) b
+  
+    <ftype2> intent(in),optional :: cond = -1.0
+    integer intent(out,out=rank) :: r
+    <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
+  
+    integer optional,intent(in),depend(nrhs,minmn,maxmn),&
+       check(lwork>=1||lwork==-1) &
+       :: lwork=max(3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)),1)
+       !check(lwork>=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)))
+    <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out)::info
+  
+end subroutine <prefix2>gelss
+
+subroutine <prefix2>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
+   ! work,info = gelss_lwork(m,n,nrhs,cond=-1.0)
+   ! Query for optimal lwork size
+    fortranname <prefix2>gelss
+    callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer intent(in):: m
+    integer intent(in):: n
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2> intent(hide) :: a
+
+    integer intent(in):: nrhs
+    <ftype2> intent(hide) :: b
+
+    <ftype2> intent(in),optional :: cond = -1.0
+    integer intent(hide) :: r
+    <ftype2> intent(hide) :: s
+
+    integer optional,intent(in) :: lwork=-1
+    <ftype2> intent(out) :: work
+    integer intent(out)::info
+
+end subroutine <prefix2>gelss_lwork
+
+subroutine <prefix2c>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,info)
+    ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
+    ! Solve Minimize 2-norm(A * X - B).
+
+    callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,rwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+  
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2c> dimension(m,n),intent(in,out,copy,out=v) :: a
+  
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2c> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
+    intent(in,out,copy,out=x) b
+  
+    <ftype2> intent(in),optional :: cond = -1.0
+    integer intent(out,out=rank) :: r
+    <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
+  
+    integer optional,intent(in),depend(nrhs,minmn,maxmn),&
+        check(lwork>=1||lwork==-1) &
+        :: lwork=max(2*minmn+MAX(maxmn,nrhs),1)
+        ! check(lwork>=2*minmn+MAX(maxmn,nrhs))
+    <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    <ftype2> dimension(5*minmn),intent(hide),depend(lwork) :: rwork
+    integer intent(out)::info
+  
+end subroutine <prefix2c>gelss
+
+subroutine <prefix2c>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,info)
+    ! work,info = gelss_lwork(m,n,nrhs,cond=-1.0)
+    ! Query for optimal lwork size
+
+    fortranname <prefix2c>gelss
+    callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&rwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer intent(in):: m
+    integer intent(in):: n
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2c> intent(hide) :: a
+
+    integer intent(in):: nrhs
+    <ftype2c> intent(hide) :: b
+
+    <ftype2> intent(in),optional :: cond = -1.0
+    integer intent(hide) :: r
+    <ftype2> intent(hide) :: s
+
+    integer optional,intent(in) :: lwork=-1
+    <ftype2c> intent(out) :: work
+    <ftype2> intent(hide) :: rwork
+    integer intent(out)::info
+
+end subroutine <prefix2>gelss_lwork
+
+subroutine <prefix2>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
+    ! v,x,j,rank,info = dgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
+    ! Solve Minimize 2-norm(A * X - B).
+
+    callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    <ftype2> dimension(m,n),intent(in,out,copy,out=v) :: a
+
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
+    intent(in,out,copy,out=x) b
+
+    <ftype2> intent(in) :: cond
+    integer intent(out,out=rank) :: r
+    integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
+
+    ! LWORK is obtained by the query call
+    integer intent(in),depend(nrhs,m,n,minmn) :: lwork
+    check(lwork>=MAX(minmn+3*n+1, 2*minmn+nrhs)) :: lwork
+    <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+    integer intent(out)::info
+
+end subroutine <prefix2>gelsy
+
+subroutine <prefix2>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
+    ! work,info = dgelsy_lwork(m,n,nrhs,cond)
+    ! Query for optimal lwork size
+
+    fortranname <prefix2>gelsy
+    callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&jptv,&cond,&r,&work,&lwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer intent(in) :: m
+    integer intent(in) :: n
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2> intent(hide) :: a
+
+    integer intent(in):: nrhs
+    <ftype2> intent(hide):: b
+
+    <ftype2> intent(in) :: cond
+    integer intent(hide) :: r
+    integer intent(hide):: jptv
+
+    integer intent(in),optional :: lwork = -1
+    <ftype2> intent(out) :: work
+    integer intent(out)::info
+
+end subroutine <prefix2>gelsy_lwork
+
+subroutine <prefix2c>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
+    ! v,x,j,rank,info = zgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
+    ! Solve Minimize 2-norm(A * X - B).
+
+    callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,rwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    integer intent(hide), depend(m,n) :: minmn = MIN(m,n)
+    <ftype2c> dimension(m,n),intent(in,out,copy,out=v) :: a
+
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2c> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
+    intent(in,out,copy,out=x) b
+
+    <ftype2> intent(in) :: cond
+    integer intent(out,out=rank) :: r
+    integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
+
+    ! LWORK is obtained by the query call
+    integer intent(in),depend(nrhs,m,n,minmn) :: lwork
+    check(lwork>=minmn+MAX(MAX(2*minmn, n+1), minmn+nrhs)) :: lwork
+    <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+    <ftype2> dimension(2*n),intent(hide,cache),depend(n) :: rwork
+    integer intent(out)::info
+
+end subroutine <prefix2c>gelsy
+
+subroutine <prefix2c>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
+    ! work,info = zgelsy_lwork(m,n,nrhs,cond)
+    ! Query for optimal lwork size
+
+    fortranname <prefix2c>gelsy
+    callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&jptv,&cond,&r,&work,&lwork,&rwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer intent(in) :: m
+    integer intent(in) :: n
+    integer intent(hide) :: maxmn = MAX(m,n)
+    <ftype2c> intent(hide) :: a
+
+    integer intent(in):: nrhs
+    <ftype2c> intent(hide) :: b
+
+    <ftype2> intent(in) :: cond
+    integer intent(hide) :: r
+    integer intent(hide) :: jptv
+
+    integer intent(in),optional :: lwork = -1
+    <ftype2c> intent(out) :: work
+    <ftype2> intent(hide) :: rwork
+    integer intent(out)::info
+
+end subroutine <prefix2c>gelsy_lwork
+
+subroutine <prefix2>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_iwork,iwork,info)
+    ! x,s,rank,info = dgelsd(a,b,lwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
+    ! Solve Minimize 2-norm(A * X - B).
+
+    callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,iwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2> dimension(m,n),intent(in,copy) :: a
+
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
+    intent(in,out,copy,out=x) b
+
+    <ftype2> intent(in),optional :: cond=-1.0
+    integer intent(out,out=rank) :: r
+    <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
+
+    integer intent(in),check(lwork>=1) :: lwork
+    ! Impossible to calculate lwork explicitly, need to obtain it from query call first
+    ! Same for size_iwork
+    <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+
+    integer intent(in) :: size_iwork
+    integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork
+    integer intent(out)::info
+
+end subroutine <prefix2>gelsd
+
+subroutine <prefix2>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,iwork,info)
+   ! work,iwork,info = dgelsd_lwork(m,n,nrhs,cond=-1.0)
+   ! Query for optimal lwork size
+
+    fortranname <prefix2>gelsd
+    callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&iwork,&info)
+    callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+    integer intent(in) :: m
+    integer intent(in) :: n
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2> intent(hide) :: a
+
+    integer intent(in):: nrhs
+    <ftype2> intent(hide) :: b
+
+    <ftype2> intent(in),optional :: cond=-1.0
+    integer intent(hide) :: r
+    <ftype2> intent(hide) :: s
+
+    integer intent(in),optional :: lwork = -1
+    <ftype2> intent(out) :: work
+
+    integer intent(out) :: iwork
+    integer intent(out)::info
+
+end subroutine <prefix2>gelsd_lwork
+
+subroutine <prefix2c>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_rwork,rwork, size_iwork,iwork,info)
+    ! x,s,rank,info = zgelsd(a,b,lwork,size_rwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
+    ! Solve Minimize 2-norm(A * X - B).
+
+    callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork, rwork, iwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*, <ctype2c>*,int*,<ctype2>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2c> dimension(m,n),intent(in,copy) :: a
+
+    integer depend(b),intent(hide):: nrhs = shape(b,1)
+    <ftype2c> dimension(maxmn,nrhs),check(maxmn==shape(b,0)),depend(maxmn) :: b
+    intent(in,out,copy,out=x) b
+
+    <ftype2> intent(in),optional :: cond=-1.0
+    integer intent(out,out=rank) :: r
+    <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
+
+    integer intent(in),check(lwork>=1||lwork==-1) :: lwork
+    ! Impossible to calculate lwork explicitly, need to obtain it from query call first
+    ! Same for size_rwork, size_iwork
+    <ftype2c> dimension(MAX(lwork,1)),intent(cache,hide),depend(lwork) :: work
+
+    integer intent(in) :: size_rwork
+    <ftype2> intent(cache,hide),dimension(MAX(1,size_rwork)),depend(size_rwork) :: rwork
+
+    integer intent(in) :: size_iwork
+    integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork
+    integer intent(out)::info
+
+end subroutine <prefix2c>gelsd
+
+subroutine <prefix2c>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,rwork,iwork,info)
+    ! work,rwork,iwork,info = zgelsd_lwork(m,n,nrhs,lwork=-1.0,cond=-1.0)
+    ! Query for optimal lwork size
+
+    fortranname <prefix2c>gelsd
+    callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork, &rwork, &iwork,&info)
+    callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*, <ctype2c>*,int*,<ctype2>*,int*,int*
+
+    integer intent(in) :: m
+    integer intent(in) :: n
+    integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+    <ftype2c> intent(hide) :: a
+
+    integer intent(in):: nrhs
+    <ftype2c> intent(hide) :: b
+
+    <ftype2> intent(in),optional :: cond=-1.0
+    integer intent(hide) :: r
+    <ftype2> intent(hide) :: s
+
+    integer intent(in),optional :: lwork = -1
+    <ftype2c> intent(out) :: work
+    <ftype2> intent(out) :: rwork
+
+    integer intent(out) :: iwork
+    integer intent(out)::info
+
+end subroutine <prefix2c>gelsd_lwork
+
+subroutine <prefix2>geqp3(m,n,a,jpvt,tau,work,lwork,info)
+   ! qr_a,jpvt,tau,work,info = geqp3(a,lwork=3*(n+1),overwrite_a=0)
+   ! Compute a QR factorization of a real M-by-N matrix A with column pivoting:
+   !   A * P = Q * R.
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,&info)
+    callprotoargument int*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,int*,int*
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    <ftype2> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
+    integer dimension(n),intent(out) :: jpvt
+    <ftype2> dimension(MIN(m,n)),intent(out) :: tau
+
+    integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*(n+1),1)
+    <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+end subroutine <prefix2>geqp3
+
+subroutine <prefix2c>geqp3(m,n,a,jpvt,tau,work,lwork,rwork,info)
+    ! qr_a,jpvt,tau,work,info = geqp3(a,lwork,overwrite_a=0)
+    ! Compute a QR factorization of a complex M-by-N matrix A with column pivoting:
+    !   A * P = Q * R.
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,rwork,&info)
+    callprotoargument int*,int*,<ctype2c>*,int*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    <ftype2c> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
+    integer dimension(n),intent(out) :: jpvt
+    <ftype2c> dimension(MIN(m,n)),intent(out) :: tau
+
+    integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*(n+1),1)
+    <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    <ftype2> dimension(2*n),intent(hide),depend(n) :: rwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>geqp3
+
+subroutine <prefix>geqrf(m,n,a,tau,work,lwork,info)
+    ! qr_a,tau,work,info = geqrf(a,lwork=3*n,overwrite_a=0)
+    ! Compute a QR factorization of a real M-by-N matrix A:
+    !   A = Q * R.
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
+    <ftype> dimension(MIN(m,n)),intent(out) :: tau
+
+    integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*n,1)
+    <ftype> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrf
+
+subroutine <prefix>gerqf(m,n,a,tau,work,lwork,info)
+   ! rq_a,tau,work,info = gerqf(a,lwork=3*n,overwrite_a=0)
+   ! Compute an RQ factorization of a real M-by-N matrix A:
+   !   A = R * Q.
+
+    threadsafe
+    callstatement (*f2py_func)(&m,&n,a,&m,tau,work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(hide),depend(a):: m = shape(a,0)
+    integer intent(hide),depend(a):: n = shape(a,1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
+    <ftype> dimension(MIN(m,n)),intent(out) :: tau
+
+    integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=max(3*m,1)
+    <ftype> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix>gerqf
+
+subroutine <prefix2>geev(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
+    ! wr,wi,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=4*n,overwrite_a=0)
+
+    callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,wr,wi,vl,&ldvl,vr,&ldvr,work,&lwork,&info);}
+    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2>  dimension(n,n),intent(in,copy,aligned8) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype2> dimension(n),intent(out),depend(n) :: wr
+    <ftype2> dimension(n),intent(out),depend(n) :: wi
+
+    <ftype2> dimension(ldvl,n),intent(out) :: vl
+    integer intent(hide),depend(n,compute_vl) :: ldvl=(compute_vl?n:1)
+
+    <ftype2> dimension(ldvr,n),intent(out) :: vr
+    integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
+
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=max(4*n,1)
+    check(lwork>=((compute_vl||compute_vr)?4*n:3*n)) :: lwork
+    <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+
+    integer intent(out):: info
+
+end subroutine <prefix2>geev
+
+subroutine <prefix2>geev_lwork(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
+    ! LWORK=-1 call for (S/D)GEEV --- keep in sync with above (S/D)GEEV definition
+
+    fortranname <prefix2>geev
+    callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&wr,&wi,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&info);}
+    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(in) :: n
+    <ftype2> intent(hide) :: a
+
+    <ftype2> intent(hide) :: wr
+    <ftype2> intent(hide) :: wi
+
+    <ftype2> intent(hide) :: vl
+    integer intent(hide),depend(n,compute_vl) :: ldvl=(compute_vl?n:1)
+
+    <ftype2> intent(hide) :: vr
+    integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
+
+    integer intent(hide) :: lwork = -1
+    <ftype2> intent(out) :: work
+
+    integer intent(out):: info
+
+end subroutine <prefix2>geev_lwork
+
+subroutine <prefix2c>geev(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
+    ! w,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0)
+
+    callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,w,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info)
+    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2c>  dimension(n,n),intent(in,copy) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype2c>  dimension(n),intent(out),depend(n) :: w
+
+    <ftype2c>  dimension(ldvl,n),depend(ldvl),intent(out) :: vl
+    integer intent(hide),depend(compute_vl,n) :: ldvl=(compute_vl?n:1)
+
+    <ftype2c>  dimension(ldvr,n),depend(ldvr),intent(out) :: vr
+    integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
+
+    integer optional,intent(in),depend(n) :: lwork=max(2*n,1)
+    check(lwork>=2*n) :: lwork
+    <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
+    <ftype2> dimension(2*n),intent(hide,cache),depend(n) :: rwork
+
+    integer intent(out):: info
+
+end subroutine <prefix2c>geev
+
+subroutine <prefix2c>geev_lwork(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
+    ! LWORK=-1 call for (C/Z)GEEV --- keep in sync with above (C/Z)GEEV definition
+
+    fortranname <prefix2c>geev
+    callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&w,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&rwork,&info)
+    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(in) :: n
+    <ftype2c> intent(hide) :: a
+
+    <ftype2c> intent(hide) :: w
+
+    <ftype2c> intent(hide) :: vl
+    integer intent(hide),depend(compute_vl,n) :: ldvl=(compute_vl?n:1)
+
+    <ftype2c> intent(hide) :: vr
+    integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
+
+    integer intent(hide) :: lwork = -1
+    <ftype2c> intent(out) :: work
+    <ftype2> intent(hide) :: rwork
+
+    integer intent(out):: info
+
+end subroutine <prefix2c>geev_lwork
+
+subroutine <prefix2>gegv(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,vr,ldvr,work,lwork,info)
+    ! Compute the generalized eigenvalues (alphar +/- alphai*i, beta)
+    ! of the real nonsymmetric matrices A and B: det(A-w*B)=0 where w=alpha/beta.
+    ! Optionally, compute the left and/or right generalized eigenvectors:
+    ! (A - w B) r = 0, l^H * (A - w B) = 0
+    !
+    ! alphar,alphai,beta,vl,vr,info = gegv(a,b,compute_vl=1,compute_vr=1,lwork=8*n,overwrite_a=0,overwrite_b=0)
+
+    callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alphar,alphai,beta,vl,&ldvl,vr,&ldvr,work,&lwork,&info)
+    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2>  dimension(n,n),intent(in,copy) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype2>  dimension(n,n),depend(n),intent(in,copy) :: b
+    check(shape(b,0)==shape(b,1) && shape(b,0)==n) :: b
+
+    <ftype2> dimension(n),depend(n),intent(out) :: alphar
+    <ftype2> dimension(n),depend(n),intent(out) :: alphai
+    <ftype2> dimension(n),depend(n),intent(out) :: beta
+
+    <ftype2>  dimension(ldvl,n),intent(out),depend(ldvl) :: vl
+    integer intent(hide),depend(compute_vl,n) :: ldvl=(compute_vl?n:1)
+
+    <ftype2>  dimension(ldvr,n),intent(out),depend(ldvr) :: vr
+    integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
+
+    integer optional,intent(in),depend(n) :: lwork=max(8*n,1)
+    check(lwork>=8*n) :: lwork
+    <ftype2> dimension(lwork),intent(hide),depend(lwork) :: work
+
+    integer intent(out):: info
+
+end subroutine <prefix2>gegv
+
+subroutine <prefix2c>gegv(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
+    ! Compute the generalized eigenvalues (alpha, beta)
+    ! of the comples nonsymmetric matrices A and B: det(A-w*B)=0 where w=alpha/beta.
+    ! Optionally, compute the left and/or right generalized eigenvectors:
+    ! (A - w B) r = 0, l^H * (A - w B) = 0
+    !
+    ! alpha,beta,vl,vr,info = gegv(a,b,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0,overwrite_b=0)
+
+    callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alpha,beta,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info)
+    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2c>  dimension(n,n),intent(in,copy) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype2c>  dimension(n,n),depend(n),intent(in,copy) :: b
+    check(shape(b,0)==shape(b,1) && shape(b,0)==n) :: b
+
+    <ftype2c> dimension(n),depend(n),intent(out) :: alpha
+    <ftype2c> dimension(n),depend(n),intent(out) :: beta
+
+    <ftype2c>  dimension(ldvl,n),intent(out),depend(ldvl) :: vl
+    integer intent(hide),depend(compute_vl,n) :: ldvl=(compute_vl?n:1)
+
+    <ftype2c>  dimension(ldvr,n),intent(out),depend(ldvr) :: vr
+    integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
+
+    integer optional,intent(in),depend(n) :: lwork=max(2*n,1)
+    check(lwork>=2*n) :: lwork
+    <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
+    <ftype2> dimension(8*n),intent(hide),depend(n) :: rwork
+
+    integer intent(out):: info
+
+end subroutine <prefix2c>gegv
+
+subroutine <prefix2c>gees(compute_v,sort_t,<prefix2c>select,n,a,nrows,sdim,w,vs,ldvs,work,lwork,rwork,bwork,info)
+    ! t,sdim,w,vs,work,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
+    ! For an NxN matrix compute the eigenvalues, the schur form T, and optionally
+    !  the matrix of Schur vectors Z.  This gives the Schur factorization
+    !  A = Z * T * Z^H  -- a complex matrix is in Schur form if it is upper
+    !  triangular
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gees__user__routines,&n,a,&nrows,&sdim,w,vs,&ldvs,work,&lwork,rwork,bwork,&info,1,1)
+    callprotoargument char*,char*,int(*)(<ctype2c>*),int*,<ctype2c>*,int*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*,int,int
+
+    use gees__user__routines
+
+    integer optional,intent(in),check(compute_v==0||compute_v==1) :: compute_v = 1
+    integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t = 0
+    external <prefix2c>select
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    <ftype2c> intent(in,out,copy,out=t),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
+    integer intent(hide),depend(a) :: nrows=shape(a,0)
+    integer intent(out) :: sdim=0
+    <ftype2c> intent(out),dimension(n) :: w
+    <ftype2c> intent(out),depend(ldvs,n),dimension(ldvs,n) :: vs
+    integer intent(hide),depend(compute_v,n) :: ldvs=((compute_v==1)?n:1)
+    <ftype2c> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
+    integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = max(3*n,1)
+    <ftype2> optional,intent(hide),depend(n),dimension(n) :: rwork
+    logical optional,intent(hide),depend(n),dimension(n) :: bwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>gees
+
+subroutine <prefix2>gees(compute_v,sort_t,<prefix2>select,n,a,nrows,sdim,wr,wi,vs,ldvs,work,lwork,bwork,info)
+    ! t,sdim,w,vs,work,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
+    ! For an NxN matrix compute the eigenvalues, the schur form T, and optionally
+    !  the matrix of Schur vectors Z.  This gives the Schur factorization
+    !  A = Z * T * Z^H  -- a real matrix is in Schur form if it is upper quasi-
+    !  triangular with 1x1 and 2x2 blocks.
+
+    callstatement (*f2py_func)((compute_v?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gees__user__routines,&n,a,&nrows,&sdim,wr,wi,vs,&ldvs,work,&lwork,bwork,&info,1,1)
+    callprotoargument char*,char*,int(*)(<ctype2>*,<ctype2>*),int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*,int,int
+
+    use gees__user__routines
+
+    integer optional,intent(in),check(compute_v==0||compute_v==1) :: compute_v = 1
+    integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t = 0
+    external <prefix2>select
+    integer intent(hide),depend(a) :: n = shape(a,1)
+    <ftype2> intent(in,out,copy,out=t,aligned8),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
+    integer intent(hide),depend(a) :: nrows=shape(a,0)
+    integer intent(out) :: sdim=0
+    <ftype2> intent(out),dimension(n) :: wr
+    <ftype2> intent(out),dimension(n) :: wi
+    <ftype2> intent(out),depend(ldvs,n),dimension(ldvs,n) :: vs
+    integer intent(hide),depend(compute_v,n) :: ldvs=((compute_v==1)?n:1)
+    <ftype2> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
+    integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = max(3*n,1)
+    <ftype2> optional,intent(hide),depend(n),dimension(n) :: rwork
+    logical optional,intent(hide),depend(n),dimension(n) :: bwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gees
+
+subroutine <prefix2>gges(jobvsl,jobvsr,sort_t,<prefix2>select,n,a,lda,b,ldb,sdim,alphar,alphai,beta,vsl,ldvsl,vsr,ldvsr,work,lwork,bwork,info)
+    ! For a pair of N-by-N real nonsymmetric matrices (A,B) computes
+    ! the generalized eigenvalues, the generalized real Schur form (S,T),
+    ! optionally, the left and/or right matrices of Schur vectors (VSL
+    ! and VSR).
+    ! (A,B) = ( (VSL)*S*(VSR)**T, (VSL)*T*(VSR)**T )
+
+    callstatement (*f2py_func)((jobvsl?"V":"N"),(jobvsr?"V":"N"),(sort_t?"S":"N"),cb_<prefix2>select_in_gges__user__routines,&n,a,&lda,b,&ldb,&sdim,alphar,alphai,beta,vsl,&ldvsl,vsr,&ldvsr,work,&lwork,bwork,&info)
+    callprotoargument char*,char*,char*,int(*)(<ctype2>*,<ctype2>*,<ctype2>*),int*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+    use gges__user__routines
+
+    integer optional,intent(in),check(jobvsl==0||jobvsl==1) :: jobvsl=1
+    integer optional,intent(in),check(jobvsr==0||jobvsr==1) :: jobvsr=1
+    integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t=0
+    external <prefix2>select
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2> intent(in,out,copy),dimension(lda,n) :: a
+    integer intent(hide),depend(a) :: lda=shape(a,0)
+    <ftype2> intent(in,out,copy),dimension(ldb,n) :: b
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(out) :: sdim=0
+    <ftype2> intent(out),dimension(n) :: alphar
+    <ftype2> intent(out),dimension(n) :: alphai
+    <ftype2> intent(out),dimension(n) :: beta
+    <ftype2> intent(out),depend(ldvsl,n),dimension(ldvsl,n) :: vsl
+    integer optional,intent(in),depend(jobvsl,n) :: ldvsl=((jobvsl==1)?n:1)
+    <ftype2> intent(out),depend(ldvsr,n),dimension(ldvsr,n) :: vsr
+    integer optional,intent(in),depend(jobvsr,n) :: ldvsr=((jobvsr==1)?n:1)
+    <ftype2> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
+    integer optional,intent(in),depend(n),check(lwork>=MAX(1,MAX(8*n, 6*n+16))||lwork==-1):: lwork=max(8*n+16,1)
+    logical optional,intent(hide),depend(n),dimension(n) :: bwork
+    integer intent(out):: info
+
+end subroutine <prefix2>gges
+
+subroutine <prefix2c>gges(jobvsl,jobvsr,sort_t,<prefix2c>select,n,a,lda,b,ldb,sdim,alpha,beta,vsl,ldvsl,vsr,ldvsr,work,lwork,rwork,bwork,info)
+    ! For a pair of N-by-N complex nonsymmetric matrices (A,B) computes
+    ! the generalized eigenvalues, the generalized real Schur form (S,T),
+    ! optionally, the left and/or right matrices of Schur vectors (VSL
+    ! and VSR).
+    ! (A,B) = ( (VSL)*S*(VSR)**T, (VSL)*T*(VSR)**H )
+
+    callstatement (*f2py_func)((jobvsl?"V":"N"),(jobvsr?"V":"N"),(sort_t?"S":"N"),cb_<prefix2c>select_in_gges__user__routines,&n,a,&lda,b,&ldb,&sdim,alpha,beta,vsl,&ldvsl,vsr,&ldvsr,work,&lwork,rwork,bwork,&info)
+    callprotoargument char*,char*,char*,int(*)(<ctype2c>*,<ctype2c>*),int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+
+    use gges__user__routines
+
+    integer optional,intent(in),check(jobvsl==0||jobvsl==1) :: jobvsl=1
+    integer optional,intent(in),check(jobvsr==0||jobvsr==1) :: jobvsr=1
+    integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t=0
+    external <prefix2c>select
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2c> intent(in,out,copy),dimension(lda,n) :: a
+    integer intent(hide),depend(a) :: lda=shape(a,0)
+    <ftype2c> intent(in,out,copy),dimension(ldb,n) :: b
+    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(out) :: sdim=0
+    <ftype2c> intent(out),dimension(n) :: alpha
+    <ftype2c> intent(out),dimension(n) :: beta
+    <ftype2c> intent(out),depend(ldvsl,n),dimension(ldvsl,n) :: vsl
+    integer optional,intent(in),depend(jobvsl,n) :: ldvsl=((jobvsl==1)?n:1)
+    <ftype2c> intent(out),depend(ldvsr,n),dimension(ldvsr,n) :: vsr
+    integer optional,intent(in),depend(jobvsr,n) :: ldvsr=((jobvsr==1)?n:1)
+    <ftype2c> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
+    integer optional,intent(in),depend(n),check(lwork>=MAX(1,2*n)||lwork==-1):: lwork=max(2*n,1)
+    <ftype2> intent(hide),dimension(8*n) :: rwork
+    logical optional,intent(hide),depend(n),dimension(n) :: bwork
+    integer intent(out):: info
+
+end subroutine <prefix2c>gges
+
+subroutine <prefix2>ggev(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,vr,ldvr,work,lwork,info)
+
+    callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alphar,alphai,beta,vl,&ldvl,vr,&ldvr,work,&lwork,&info);}
+    callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2>  dimension(n,n),intent(in,copy) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype2> intent(in,copy), dimension(n,n) :: b
+    check(shape(b,0)==shape(b,1)) :: b
+
+    <ftype2> intent(out), dimension(n), depend(n) :: alphar
+    <ftype2> intent(out), dimension(n), depend(n) :: alphai
+    <ftype2> intent(out), dimension(n), depend(n) :: beta
+
+    <ftype2>  depend(ldvl,n), dimension(ldvl,n),intent(out) :: vl
+    integer intent(hide),depend(n,compute_vl) :: ldvl=(compute_vl?n:1)
+
+    <ftype2>  depend(ldvr,n), dimension(ldvr,n),intent(out) :: vr
+    integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
+
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=max(8*n,1)
+    check((lwork==-1) || (lwork>=MAX(1,8*n))) :: lwork
+    <ftype2> intent(out), dimension(MAX(lwork,1)), depend(lwork) :: work
+
+    integer intent(out):: info
+
+end subroutine <prefix2>ggev
+
+subroutine <prefix2c>ggev(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
+
+    callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,a,&n,b,&n,alpha,beta,vl,&ldvl,vr,&ldvr,work,&lwork,rwork,&info);}
+    callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+    integer optional,intent(in):: compute_vl = 1
+    check(compute_vl==1||compute_vl==0) compute_vl
+    integer optional,intent(in):: compute_vr = 1
+    check(compute_vr==1||compute_vr==0) compute_vr
+
+    integer intent(hide),depend(a) :: n = shape(a,0)
+    <ftype2c> dimension(n,n),intent(in,copy) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+
+    <ftype2c> intent(in,copy), dimension(n,n) :: b
+    check(shape(b,0)==shape(b,1)) :: b
+
+    <ftype2c> intent(out), dimension(n), depend(n) :: alpha
+    <ftype2c> intent(out), dimension(n), depend(n) :: beta
+
+    <ftype2c>  depend(ldvl,n), dimension(ldvl,n),intent(out) :: vl
+    integer intent(hide),depend(n,compute_vl) :: ldvl=(compute_vl?n:1)
+
+    <ftype2c>  depend(ldvr,n), dimension(ldvr,n),intent(out) :: vr
+    integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
+
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=max(2*n,1)
+    check((lwork==-1) || (lwork>=MAX(1,2*n))) :: lwork
+    <ftype2c> intent(out), dimension(MAX(lwork,1)), depend(lwork) :: work
+    <ftype2> intent(hide), dimension(8*n), depend(n) :: rwork
+
+    integer intent(out):: info
+
+end subroutine <prefix2>ggev

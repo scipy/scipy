@@ -382,7 +382,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             else:
                 return retval[:-1] + (msg,)
         else:
-            warnings.warn(msg, IntegrationWarning)
+            warnings.warn(msg, IntegrationWarning, stacklevel=2)
             return retval[:-1]
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
@@ -526,11 +526,11 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         first argument and x the second argument.
     a, b : float
         The limits of integration in x: `a` < `b`
-    gfun : callable
+    gfun : callable or float
         The lower boundary curve in y which is a function taking a single
-        floating point argument (x) and returning a floating point result: a
-        lambda function can be useful here.
-    hfun : callable
+        floating point argument (x) and returning a floating point result
+        or a float indicating a constant boundary curve.
+    hfun : callable or float
         The upper boundary curve in y (same requirements as `gfun`).
     args : sequence, optional
         Extra arguments to pass to `func`.
@@ -572,8 +572,11 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.6666666666666667, 7.401486830834377e-15)
 
     """
+
     def temp_ranges(*args):
-        return [gfun(args[0]), hfun(args[0])]
+        return [gfun(args[0]) if callable(gfun) else gfun,
+                hfun(args[0]) if callable(hfun) else hfun]
+
     return nquad(func, [temp_ranges, [a, b]], args=args,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
@@ -593,16 +596,17 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         order (z, y, x).
     a, b : float
         The limits of integration in x: `a` < `b`
-    gfun : function
+    gfun : function or float
         The lower boundary curve in y which is a function taking a single
-        floating point argument (x) and returning a floating point result:
-        a lambda function can be useful here.
-    hfun : function
+        floating point argument (x) and returning a floating point result
+        or a float indicating a constant boundary curve.
+    hfun : function or float
         The upper boundary curve in y (same requirements as `gfun`).
-    qfun : function
+    qfun : function or float
         The lower boundary surface in z.  It must be a function that takes
-        two floats in the order (x, y) and returns a float.
-    rfun : function
+        two floats in the order (x, y) and returns a float or a float
+        indicating a constant boundary surface.
+    rfun : function or float
         The upper boundary surface in z. (Same requirements as `qfun`.)
     args : tuple, optional
         Extra arguments to pass to `func`.
@@ -635,7 +639,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     Examples
     --------
 
-    Compute the triple integral of ``x * y * z``, over ``x`` ranging 
+    Compute the triple integral of ``x * y * z``, over ``x`` ranging
     from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
 
     >>> from scipy import integrate
@@ -654,10 +658,12 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # Stupid different API...
 
     def ranges0(*args):
-        return [qfun(args[1], args[0]), rfun(args[1], args[0])]
+        return [qfun(args[1], args[0]) if callable(qfun) else qfun,
+                rfun(args[1], args[0]) if callable(rfun) else rfun]
 
     def ranges1(*args):
-        return [gfun(args[0]), hfun(args[0])]
+        return [gfun(args[0]) if callable(gfun) else gfun,
+                hfun(args[0]) if callable(hfun) else hfun]
 
     ranges = [ranges0, ranges1, [a, b]]
     return nquad(func, ranges, args=args,

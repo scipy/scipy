@@ -62,8 +62,8 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     >>> savgol_coeffs(5, 2)
     array([-0.08571429,  0.34285714,  0.48571429,  0.34285714, -0.08571429])
     >>> savgol_coeffs(5, 2, deriv=1)
-    array([  2.00000000e-01,   1.00000000e-01,   2.00607895e-16,
-            -1.00000000e-01,  -2.00000000e-01])
+    array([ 2.00000000e-01,  1.00000000e-01,  2.07548111e-16, -1.00000000e-01,
+           -2.00000000e-01])
 
     Note that use='dot' simply reverses the coefficients.
 
@@ -80,7 +80,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     >>> x = np.array([1, 0, 1, 4, 9])
     >>> c = savgol_coeffs(5, 2, pos=4, deriv=1, use='dot')
     >>> c.dot(x)
-    6.0000000000000018
+    6.0
     """
 
     # An alternative method for finding the coefficients when deriv=0 is
@@ -112,6 +112,10 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
 
     if use not in ['conv', 'dot']:
         raise ValueError("`use` must be 'conv' or 'dot'")
+
+    if deriv > polyorder:
+        coeffs = np.zeros(window_length)
+        return coeffs
 
     # Form the design matrix A.  The columns of A are powers of the integers
     # from -pos to window_length - pos - 1.  The powers (i.e. rows) range
@@ -231,7 +235,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     ----------
     x : array_like
         The data to be filtered.  If `x` is not a single or double precision
-        floating point array, it will be converted to type `numpy.float64`
+        floating point array, it will be converted to type ``numpy.float64``
         before filtering.
     window_length : int
         The length of the filter window (i.e. the number of coefficients).
@@ -310,7 +314,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     the defaults for all other parameters.
 
     >>> savgol_filter(x, 5, 2)
-    array([ 1.66,  3.17,  3.54,  2.86,  0.66,  0.17,  1.  ,  4.  ,  9.  ])
+    array([1.66, 3.17, 3.54, 2.86, 0.66, 0.17, 1.  , 4.  , 9.  ])
 
     Note that the last five values in x are samples of a parabola, so
     when mode='interp' (the default) is used with polyorder=2, the last
@@ -318,7 +322,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     `mode='nearest'`:
 
     >>> savgol_filter(x, 5, 2, mode='nearest')
-    array([ 1.74,  3.03,  3.54,  2.86,  0.66,  0.17,  1.  ,  4.6 ,  7.97])
+    array([1.74, 3.03, 3.54, 2.86, 0.66, 0.17, 1.  , 4.6 , 7.97])
 
     """
     if mode not in ["mirror", "constant", "nearest", "interp", "wrap"]:

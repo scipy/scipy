@@ -33,7 +33,7 @@ from __future__ import division, print_function, absolute_import
 # otherwise the key would be inserted into userspace attributes.
 
 
-__all__ = ['netcdf_file']
+__all__ = ['netcdf_file', 'netcdf_variable']
 
 
 import sys
@@ -192,9 +192,9 @@ class netcdf_file(object):
     >>> time.units = 'days since 2008-01-01'
     >>> f.close()
 
-    Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
+    Note the assignment of ``arange(10)`` to ``time[:]``.  Exposing the slice
     of the time variable allows for the data to be set in the object, rather
-    than letting ``range(10)`` overwrite the ``time`` variable.
+    than letting ``arange(10)`` overwrite the ``time`` variable.
 
     To read the NetCDF file we just created:
 
@@ -810,7 +810,7 @@ class netcdf_file(object):
 
 class netcdf_variable(object):
     """
-    A data object for the `netcdf` module.
+    A data object for netcdf files.
 
     `netcdf_variable` objects are constructed by calling the method
     `netcdf_file.createVariable` on the `netcdf_file` object. `netcdf_variable`

@@ -9,7 +9,7 @@ can either be python callables or low-level compiled functions.  Using
 compiled callback functions can improve performance somewhat by
 avoiding wrapping data in Python objects.
 
-Such low-level functions in Scipy are wrapped in `LowLevelCallable`
+Such low-level functions in SciPy are wrapped in `LowLevelCallable`
 objects, which can be constructed from function pointers obtained from
 ctypes, cffi, Cython, or contained in Python `PyCapsule` objects.
 

@@ -9,7 +9,7 @@ Compressed Sparse Graph Routines (`scipy.sparse.csgraph`)
 Example: Word Ladders
 ---------------------
 
-A `Word Ladder <http://en.wikipedia.org/wiki/Word_ladder>`_ is a word game
+A `Word Ladder <https://en.wikipedia.org/wiki/Word_ladder>`_ is a word game
 invented by Lewis Carroll in which players find paths between words by
 switching one letter at a time.  For example, one can link "ape" and "man"
 in the following way:
@@ -80,7 +80,7 @@ converting each word to a three-dimensional vector:
     (586, 3)    # may vary
 
 Now we'll use the
-`Hamming distance <http://en.wikipedia.org/wiki/Hamming_distance>`_
+`Hamming distance <https://en.wikipedia.org/wiki/Hamming_distance>`_
 between each point to determine which pairs of words are connected.
 The Hamming distance measures the fraction of entries between two vectors
 which differ: any two words with a hamming distance equal to :math:`1/N`,
@@ -152,7 +152,7 @@ the list of components::
 There is one large connected set, and 14 smaller ones.  Let's look at the
 words in the smaller ones::
 
-    >>> [list(word_list[np.where(component_list == i)]) for i in range(1, N_components)]
+    >>> [list(word_list[np.nonzero(component_list == i)]) for i in range(1, N_components)]
     [['aha'],    # may vary
      ['chi'],
      ['ebb'],
@@ -185,7 +185,7 @@ we'll need to remove these before finding the maximum::
 So there is at least one pair of words which takes 13 steps to get from one
 to the other!  Let's determine which these are::
 
-    >>> i1, i2 = np.where(distances == max_distance)
+    >>> i1, i2 = np.nonzero(distances == max_distance)
     >>> list(zip(word_list[i1], word_list[i2]))
     [('imp', 'ohm'),    # may vary
      ('imp', 'ohs'),

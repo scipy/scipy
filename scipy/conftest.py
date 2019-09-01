@@ -5,12 +5,23 @@ import os
 import pytest
 import warnings
 
+from distutils.version import LooseVersion
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers",
+        "slow: Tests that are very slow.")
+    config.addinivalue_line("markers",
+        "xslow: mark test as extremely slow (not run unless explicitly requested)")
+
+
 def pytest_runtest_setup(item):
-    mark = item.get_marker("xslow")
+    if LooseVersion(pytest.__version__) >= LooseVersion("3.6.0"):
+        mark = item.get_closest_marker("xslow")
+    else:
+        mark = item.get_marker("xslow")
     if mark is not None:
         try:
             v = int(os.environ.get('SCIPY_XSLOW', '0'))

@@ -131,10 +131,6 @@ double hyp1f1_wrap(double a, double b, double x) {
    double outy;
 
    F_FUNC(chgm,CHGM)(&a, &b, &x, &outy);
-   if (outy == 1e300) {
-     sf_error("hyp1f1", SF_ERROR_OVERFLOW, NULL);
-     outy = NPY_INFINITY;
-   }
    return outy;
 }
 
@@ -418,7 +414,7 @@ double cem_cva_wrap(double m, double q) {
   }
   int_m = (int )m;
   if (q < 0) {
-    /* http://dlmf.nist.gov/28.2#E26 */
+    /* https://dlmf.nist.gov/28.2#E26 */
     if (int_m % 2 == 0) {
       return cem_cva_wrap(m, -q);
     }
@@ -442,7 +438,7 @@ double sem_cva_wrap(double m, double q) {
   }
   int_m = (int)m;
   if (q < 0) {
-    /* http://dlmf.nist.gov/28.2#E26 */
+    /* https://dlmf.nist.gov/28.2#E26 */
     if (int_m % 2 == 0) {
       return sem_cva_wrap(m, -q);
     }
@@ -468,7 +464,7 @@ int cem_wrap(double m, double q, double x, double *csf, double *csd)
   }
   int_m = (int)m;
   if (q < 0) {
-      /* http://dlmf.nist.gov/28.2#E34 */
+      /* https://dlmf.nist.gov/28.2#E34 */
       if (int_m % 2 == 0) {
         sgn = ((int_m/2) % 2 == 0) ? 1 : -1;
         cem_wrap(m, -q, 90 - x, &f, &d);
@@ -505,7 +501,7 @@ int sem_wrap(double m, double q, double x, double *csf, double *csd)
     return 0;
   }
   if (q < 0) {
-      /* http://dlmf.nist.gov/28.2#E34 */
+      /* https://dlmf.nist.gov/28.2#E34 */
       if (int_m % 2 == 0) {
         sgn = ((int_m/2) % 2 == 0) ? -1 : 1;
         sem_wrap(m, -q, 90 - x, &f, &d);
