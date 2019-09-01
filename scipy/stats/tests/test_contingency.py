@@ -227,6 +227,7 @@ def test_bad_association_args():
 
 
 def test_cramersv():
+
     # 2d Array
     obs = [[12, 13, 14, 15, 16],
            [17, 16, 18, 19, 11],
@@ -356,7 +357,9 @@ def test_phi():
     assert_array_almost_equal(c, correctc)
     assert_array_almost_equal(cx, correctcx)
 
+
 def test_c():
+
     # 2d Array
     obsA = [[12, 13, 14, 15, 16],
             [17, 16, 18, 19, 11],

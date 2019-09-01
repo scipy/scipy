@@ -134,7 +134,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         If True, *and* the degrees of freedom is 1, apply Yates' correction
         for continuity.  The effect of the correction is to adjust each
         observed value by 0.5 towards the corresponding expected value.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
@@ -378,7 +378,8 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
 def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     """Calculates degree of association between variables that are nominal or greater.
 
-    Allows for specification of one of three related methods, Tschuprow's T, Pearson's Contingency Coefficient (C), Cramer's V and Phi.
+    Allows for specification of one of three related methods, Tschuprow's T, Pearson's Contingency Coefficient,
+    Cramer's V and Phi.
 
     Parameters
     ----------
@@ -391,7 +392,7 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
         scipy.contingency.chi2_contingency() method.
     correct_bias : boolean, optional (default = True)
         If True, bias correction will be applied to phi as per Bergsma (2013).
-        Does not apply to Pearsons Contingency Coeffiect
+        Does not apply to Pearson's Contingency Coefficient
 
     Returns
     -------
@@ -420,9 +421,9 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     >>> from scipy.stats.contingency import association
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
 
-    Pearson's contingency coefficient (C)
+    Pearson's contingency coefficient
     >>> association(obs, stat="C")
-    [0.42731574]
+    [ 0.42731574]
 
     Cramer's V with bias correction
     >>> association(observed=obs, stat="V")
@@ -457,27 +458,27 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
 
     Pearson's contingency coefficient (C)
     >>> association(obs, stat="C")
-    [[0.31443609 0.40299424]
-     [0.21905398 0.30859905]]
+    [[ 0.31443609  0.40299424]
+     [ 0.21905398  0.30859905]]
 
     Cramer's V with bias correction
     >>> association(observed=obs, stat="V")
-    [[ 0.32170191  0.4363003 ]
+    [[ 0.32170191  0.4363003]
      [ 0.20704285  0.31591398]]
 
     Cramer's V without bias correction
     >>> association(observed=obs, stat="V", correct_bias=False)
-    [[ 0.33123688  0.4403334 ]
+    [[ 0.33123688  0.4403334]
      [ 0.22450663  0.32443396]]
 
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
-    [[ 0.32170191  0.4363003 ]
+    [[ 0.32170191  0.4363003]
      [ 0.20704285  0.31591398]]
 
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
-    [[ 0.33123688  0.4403334 ]
+    [[ 0.33123688  0.4403334]
      [ 0.22450663  0.32443396]]
 
     Phi with bias correction
@@ -487,7 +488,7 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
 
     Phi without bias correction
     >>> association(observed=obs, stat="phi", correct_bias=False)
-    [[ 0.33123688  0.4403334 ]
+    [[ 0.33123688  0.4403334]
      [ 0.22450663  0.32443396]]
 
     Notes
@@ -504,6 +505,8 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     be similar or even equivalent. They are likely to diverge more as the array shape diverges from a 2x2.
     As is seen in the examples above.
 
+    The evaluation of Pearsons Contingency Coefficient is not effected by the bias correction metric, because
+    it was not included as a part of the supporting academic paper.
     """
     arrs, values_lst = [], []
     obs_arr = np.array(observed)
@@ -561,4 +564,3 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     if len(arr_shape) > 2:
         value_array = value_array.reshape(arr_shape[:len(arr_shape) - 2])
     return value_array
-
