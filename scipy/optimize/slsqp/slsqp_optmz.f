@@ -420,7 +420,8 @@ C   UPDATE MULTIPLIERS FOR L1-TEST
 C   CHECK CONVERGENCE
 
       mode = 0
-      IF (h1.LT.acc .AND. h2.LT.acc .AND. .NOT. badlin) GO TO 330
+      IF (h1.LT.acc .AND. h2.LT.acc .AND. .NOT. badlin
+     *     .AND. f .EQ. f) GO TO 330
       h1 = ZERO
       DO 180 j=1,m
          IF (j.LE.meq) THEN
@@ -492,7 +493,7 @@ C   CHECK CONVERGENCE
          h3 = h3 + MAX(-c(j),h1)
   250 CONTINUE
       IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc
-     *     .AND. .NOT. badlin)
+     *     .AND. .NOT. badlin .AND. f .EQ. f)
      *   THEN
             mode = 0
          ELSE
@@ -504,7 +505,7 @@ C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
       IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
-     *     .AND. .NOT. badlin)
+     *     .AND. .NOT. badlin .AND. f .EQ. f)
      *   THEN
             mode = 0
          ELSE
