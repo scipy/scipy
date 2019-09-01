@@ -222,7 +222,8 @@ def test_bad_association_args():
 
     # Invalid Test Statistic
     obs = np.array([[15, 25], [35, 45]])
-    assert_raises(ValueError, association, obs, "C", None, True)
+    assert_raises(ValueError, association, obs, "X", None, True)
+
 
 
 def test_cramersv():
@@ -354,3 +355,36 @@ def test_phi():
     correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
     assert_array_almost_equal(c, correctc)
     assert_array_almost_equal(cx, correctcx)
+
+def test_c():
+    # 2d Array
+    obsA = [[12, 13, 14, 15, 16],
+            [17, 16, 18, 19, 11],
+            [9, 15, 14, 12, 11]]
+    a = association(observed=obsA, stat="c")
+    correcta = np.array([0.10962956])
+    assert_array_almost_equal(a, correcta)
+
+    # 3d Array
+    obsB = [[[13, 23, 10],
+             [33, 43, 21]],
+            [[35, 36, 15],
+             [37, 38, 18]],
+            [[22, 21, 13],
+             [12, 18, 13]]]
+    b = association(observed=obsB, stat="c")
+    correctb = np.array([0.23942225, 0.01761448, 0.16985789])
+    assert_array_almost_equal(b, correctb)
+
+    # 4d Array
+    obsC = [[[[56, 23],
+              [21, 45]],
+             [[13, 16],
+              [76, 99]]],
+            [[[21, 22],
+              [41, 44]],
+             [[22, 32],
+              [33, 53]]]]
+    c = association(observed=obsC, stat="c")
+    correctc = np.array([[0.31443609, 0.42354437], [0.21905398, 0.12438315]])
+    assert_array_almost_equal(c, correctc)

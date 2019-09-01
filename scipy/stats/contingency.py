@@ -279,20 +279,20 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
 def _find_subarrays(subarray_list, obs, target_shape):
     """Deconstruct an nd-array into a list of equal subarrays matching target shape
-    
+
     Parameters
     ----------
     subarray_list : empty list or list of 2d-arrays
         list of 2d arrays matching target_shape parameter
     obs : nd-array
         Contingency table
-    target_shape : tuple 
+    target_shape : tuple
         number of rows and columns in each subarray
-    
+
     Returns
     -------
     subarray_list : list of 2d-arrays
-    
+
     """
     subarr = np.asarray(obs)
     if subarr.shape == target_shape:
@@ -305,17 +305,17 @@ def _find_subarrays(subarray_list, obs, target_shape):
 
 def _check_array_values(observed):
     """Check the values of the contingency table.
-    
+
     Parameters
     ----------
     observed : list of 2d-arrays
         Deconstructed list of contingency tables
-    
+
     Returns
     -------
     observed : list of 2d-arrays
         Deconstructed list contingency tables
-    
+
     """
     for subarray in observed:
         for row in subarray:
@@ -341,7 +341,7 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
         Unadjusted number of columns
     n_obs : int
         Total number of observations
-    
+
     Returns
     -------
     adj_phisq : float
@@ -354,18 +354,18 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
 
     References
     ----------
-    .. [1] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
+    .. [1] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T",
            London School of Econ. and Pol. Sci., pp. 2-4. http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
     .. [2] https://en.wikipedia.org/wiki/Cramer's_V
-    
+
 
     Notes
     ------
     Improves accuracy of estimators with tables > 2x2 and smaller sample sizes [1]
-    
-    Cramer's V can be a heavily biased estimator of its population counterpart 
+
+    Cramer's V can be a heavily biased estimator of its population counterpart
     and will tend to overestimate the strength of association. The adjusted statistic
-    estimates the same population quantity as the original statistic but with typically 
+    estimates the same population quantity as the original statistic but with typically
     much smaller mean squared error. [2]
     """
     phi_squared = phi_squared - (((n_rows - 1) * (n_cols - 1)) / (n_obs - 1))
@@ -376,104 +376,115 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
 
 
 def association(observed, stat="V", chi2_stat=None, correct_bias=True):
-    """Calculates degree of association between variables that are nominal or greater. 
-    
-    Allows for specification of one of three related methods, Tschuprow's T, Cramer's V, and phi.
+    """Calculates degree of association between variables that are nominal or greater.
+
+    Allows for specification of one of three related methods, Tschuprow's T, Pearson's Contingency Coefficient (C), Cramer's V and Phi.
 
     Parameters
     ----------
-    stat : {"V", "T", "phi"} (default = "V")
-        The association test statistic. 
+    stat : {"V", "T", "C", "phi"} (default = "V")
+        The association test statistic.
     observed : iterable object
-        The contingency table. 
+        The contingency table.
     chi2_stat : float or None, optional (default = None)
         The chi squared statistic. If equal to None, chi squared value will be automatically calculated using
         scipy.contingency.chi2_contingency() method.
     correct_bias : boolean, optional (default = True)
-        If True, bias correction will be applied to phi as per Bergsma (2013). 
-    
+        If True, bias correction will be applied to phi as per Bergsma (2013).
+        Does not apply to Pearsons Contingency Coeffiect
+
     Returns
     -------
-    value_array : float array 
+    value_array : float array
         Values of the test statistic
-        
+
     References
     ----------
     .. [1] "Tschuprow's T",
            https://en.wikipedia.org/wiki/Tschuprow's_T
-    .. [2] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
-           London School of Econ. and Pol. Sci., pp. 5-7. 
+    .. [2] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T",
+           London School of Econ. and Pol. Sci., pp. 5-7.
            http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
-    .. [3] Tschuprow, A. A. (1939) Principles of the Mathematical Theory of Correlation; 
+    .. [3] Tschuprow, A. A. (1939) Principles of the Mathematical Theory of Correlation;
            translated by M. Kantorowitsch. W. Hodge & Co.
     .. [4] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
     .. [5] "Nominal Association: Phi and Cramer's V",
            http://www.people.vcu.edu/~pdattalo/702SuppRead/MeasAssoc/NominalAssoc.html
+    .. [6] Gingrich, Paul, "Association Between Variables", http://uregina.ca/~gingrich/ch11a.pdf
 
 
     Examples
     --------
-    
+
     2-way Example
     >>> from scipy.stats.contingency import association
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
-    
+
+    Pearson's contingency coefficient (C)
+    >>> association(obs, stat="C")
+    [0.42731574]
+
     Cramer's V with bias correction
     >>> association(observed=obs, stat="V")
     [ 0.46927187]
-    
+
     Cramer's V without bias correction
     >>> association(observed=obs, stat="V", correct_bias=False)
     [ 0.47264083]
-    
+
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
     [ 0.35677355]
-    
+
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
     [ 0.35912937]
-    
+
     Phi with bias correction
     >>> association(observed=obs, stat="phi")
     [ 0.46900394]
-    
+
     Phi without bias correction
     >>> association(observed=obs, stat="phi", correct_bias=False)
     [ 0.47264083]
-    
+
     4-way Example
-    
+
     >>> obs = [[[[56, 23], [21, 45]],
     ...         [[13, 42], [76, 99]]],
     ...        [[[21, 22], [41, 44]],
     ...         [[12, 34], [43, 77]]]]
-    
+
+    Pearson's contingency coefficient (C)
+    >>> association(obs, stat="C")
+    [[0.31443609 0.40299424]
+     [0.21905398 0.30859905]]
+
     Cramer's V with bias correction
     >>> association(observed=obs, stat="V")
     [[ 0.32170191  0.4363003 ]
      [ 0.20704285  0.31591398]]
-    
+
     Cramer's V without bias correction
     >>> association(observed=obs, stat="V", correct_bias=False)
     [[ 0.33123688  0.4403334 ]
      [ 0.22450663  0.32443396]]
-    
+
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
     [[ 0.32170191  0.4363003 ]
      [ 0.20704285  0.31591398]]
-    
+
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
     [[ 0.33123688  0.4403334 ]
      [ 0.22450663  0.32443396]]
-    
+
     Phi with bias correction
     >>> association(observed=obs, stat="phi")
     [[ 0.32058294  0.43534663]
      [ 0.20622611  0.31495521]]
-    
+
     Phi without bias correction
     >>> association(observed=obs, stat="phi", correct_bias=False)
     [[ 0.33123688  0.4403334 ]
@@ -481,21 +492,22 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
 
     Notes
     ------
-    Cramer's V and Tschuprow's T measure degree to which two variables are related, or the level of 
+    Cramer's V and Tschuprow's T measure degree to which two variables are related, or the level of
     their association. This differs from correlation, although many often mistakenly consider them equivalent.
     Correlation measures in what way two variables are related, whereas, association measures
-    how related the variables are. As such, association does not subsume independent variables, and is 
-    rather a test of independence. Where a value of 1.0 = perfect association or dependent variables, and 
+    how related the variables are. As such, association does not subsume independent variables, and is
+    rather a test of independence. Where a value of 1.0 = perfect association or dependent variables, and
     0.0 = no association or entirely independent variables.
-    
-    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient. Moreover, due 
+
+    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient. Moreover, due
     to the close relationship between the Cramer's V and Tschuprow's T the returned values can often
     be similar or even equivalent. They are likely to diverge more as the array shape diverges from a 2x2.
-    As is seen in the examples above. 
-    
+    As is seen in the examples above.
+
     """
     arrs, values_lst = [], []
     obs_arr = np.array(observed)
+
     arr_shape = obs_arr.shape
     try:
         n_rows = arr_shape[len(arr_shape) - 2]
@@ -506,7 +518,7 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
         if len(arr_shape) == 2:
             arrs.append(obs_arr)
         elif len(arr_shape) > 2:
-            _find_subarrays(subarray_list=arrs, obs=obs_arr, target_shape=(n_rows, n_cols))
+            arrs = _find_subarrays(subarray_list=arrs, obs=obs_arr, target_shape=(n_rows, n_cols))
         else:
             raise IndexError("Invalid array size. Array must be at least 2d")
 
@@ -523,26 +535,30 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
             raise TypeError("Invalid chi2_stat value")
 
         if correct_bias is True:
-            phi_sq, nrows, ncols = _association_bias_correction(phi_squared=phi2, n_rows=n_rows, n_cols=n_cols, n_obs=n_obs)
+            if stat.lower() != "c":
+                phi2, n_rows, n_cols = _association_bias_correction(phi_squared=phi2, n_rows=n_rows, n_cols=n_cols,
+                                                                    n_obs=n_obs)
+            else:
+                pass
         elif correct_bias is False:
-            phi_sq = phi2
-            nrows = n_rows
-            ncols = n_cols
+            pass
         else:
             raise TypeError("invalid argument type: 'correct_bias' must be boolean")
 
         if stat.lower() == "v":
-            value = math.sqrt(phi_sq / min(ncols - 1, nrows - 1))
+            value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))
         elif stat.lower() == "t":
-            value = math.sqrt(phi_sq / math.sqrt((nrows - 1) * (ncols - 1)))
+            value = math.sqrt(phi2 / math.sqrt((n_rows - 1) * (n_cols - 1)))
+        elif stat.lower() == 'c':
+            value = math.sqrt(phi2 / (1 + phi2))
         elif stat.lower() == "phi":
-            value = math.sqrt(phi_sq)
+            value = math.sqrt(phi2)
         else:
             raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
 
         values_lst.append(value)
     value_array = np.array(values_lst)
     if len(arr_shape) > 2:
-        value_array = value_array.reshape(arr_shape[:len(arr_shape)-2])
-
+        value_array = value_array.reshape(arr_shape[:len(arr_shape) - 2])
     return value_array
+
