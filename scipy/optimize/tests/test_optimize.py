@@ -933,6 +933,50 @@ class TestOptimizeSimple(CheckOptimize):
                 # search makes many small steps
                 pass
 
+    @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                                        'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
+                                        'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'])
+    def test_nan_values(self, method):
+        # Check nan values result to failed exit status
+        np.random.seed(1234)
+
+        count = [0]
+
+        def func(x):
+            return np.nan
+
+        def func2(x):
+            count[0] += 1
+            if count[0] > 2:
+                return np.nan
+            else:
+                return np.random.rand()
+
+        def grad(x):
+            return np.array([1.0])
+
+        def hess(x):
+            return np.array([[1.0]])
+
+        x0 = np.array([1.0])
+
+        needs_grad = method in ('newton-cg', 'trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg')
+        needs_hess = method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg')
+
+        funcs = [func, func2]
+        grads = [grad] if needs_grad else [grad, None]
+        hesss = [hess] if needs_hess else [hess, None]
+
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
+            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+
+            for f, g, h in itertools.product(funcs, grads, hesss):
+                count = [0]
+                sol = optimize.minimize(f, x0, jac=g, hess=h, method=method, options=dict(maxiter=20))
+                assert_equal(sol.success, False)
+
 
 class TestLBFGSBBounds(object):
     def setup_method(self):
@@ -1129,6 +1173,33 @@ class TestOptimizeScalar(object):
     def test_minimize_scalar_coerce_args_param(self):
         # Regression test for gh-3503
         optimize.minimize_scalar(self.fun, args=1.5)
+
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_nan_values(self, method):
+        # Check nan values result to failed exit status
+        np.random.seed(1234)
+
+        count = [0]
+
+        def func(x):
+            count[0] += 1
+            if count[0] > 4:
+                return np.nan
+            else:
+                return x**2 + 0.1 * np.sin(x)
+
+        bracket = (-1, 0, 1)
+        bounds = (-1, 1)
+
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
+            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+
+            count = [0]
+            sol = optimize.minimize_scalar(func, bracket=bracket, bounds=bounds, method=method,
+                                           options=dict(maxiter=20))
+            assert_equal(sol.success, False)
 
 
 def test_brent_negative_tolerance():
