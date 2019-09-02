@@ -70,7 +70,7 @@ class CheckOptimize(object):
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         f = logZ - np.dot(self.K, x)
-        self.trace.append(x)
+        self.trace.append(np.copy(x))
         return f
 
     def grad(self, x):
@@ -572,8 +572,9 @@ class TestOptimizeSimple(CheckOptimize):
         assert_(self.gradcalls == 5, self.gradcalls)
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
+        # test fixed in gh10673
         assert_allclose(self.trace[3:5],
-                        [[0., -0.52489628, 0.48753042],
+                        [[8.117083e-16, -5.196198e-01, 4.897617e-01],
                          [0., -0.52489628, 0.48753042]],
                         atol=1e-14, rtol=1e-7)
 
