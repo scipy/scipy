@@ -339,7 +339,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     The scheme 'cs' is, potentially, the most accurate but it
     requires the function to correctly handles complex inputs and to
     be differentiable in the complex plane. The scheme '3-point' is more
-    accurate than '2-point' but requires twice as much operations.
+    accurate than '2-point' but requires twice as many operations.
 
     **Custom minimizers**
 

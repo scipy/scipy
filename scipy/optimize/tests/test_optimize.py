@@ -385,7 +385,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.funccalls <= 7, self.funccalls)   # gh10673
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
@@ -419,7 +419,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 7, self.funccalls)
+        assert_(self.funccalls <= 7, self.funccalls)   # gh10673
         assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
         # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0

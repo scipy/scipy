@@ -166,7 +166,8 @@ def vecnorm(x, ord=2):
 
 
 def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
-                             epsilon=None, finite_diff_rel_step=None):
+                             epsilon=None, finite_diff_rel_step=None,
+                             hess=None):
     """
     Creates a ScalarFunction object for use with scalar minimizers
     (BFGS/LBFGSB/SLSQP/TNC/CG/etc).
@@ -224,15 +225,17 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         grad = '2-point'
         epsilon = epsilon
 
-    def fake_hess(x, *args):
-        return x
+    fhess = hess
+    if hess is None:
+        def fhess(x, *args):
+            return x
 
     if bounds is None:
         bounds = (-np.inf, np.inf)
 
     # ScalarFunction caches. Reuse of fun(x) during grad
     # calculation reduces overall function evaluations.
-    sf = ScalarFunction(fun, x0, args, grad, fake_hess,
+    sf = ScalarFunction(fun, x0, args, grad, fhess,
                         finite_diff_rel_step, bounds, epsilon=epsilon)
 
     return sf
@@ -1622,40 +1625,41 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     maxiter : int
         Maximum number of iterations to perform.
     eps : float or ndarray
-        If `jac` is approximated, use this value for the step size.
-
+        If `hessp` is approximated, use this value for the step size.
     """
     _check_unknown_options(unknown_options)
     if jac is None:
         raise ValueError('Jacobian is required for Newton-CG method')
-    f = fun
-    fprime = jac
     fhess_p = hessp
     fhess = hess
     avextol = xtol
     epsilon = eps
     retall = return_all
 
+    x0 = asarray(x0).flatten()
+    # TODO: allow hess to be approximated by FD?
+    # TODO: add hessp (callable or FD) to ScalarFunction?
+    sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps, hess=fhess)
+    f = sf.fun
+    fprime = sf.grad
+
     def terminate(warnflag, msg):
         if disp:
             print(msg)
             print("         Current function value: %f" % old_fval)
             print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Function evaluations: %d" % sf.nfev)
+            print("         Gradient evaluations: %d" % sf.ngev)
             print("         Hessian evaluations: %d" % hcalls)
         fval = old_fval
-        result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0],
-                                njev=gcalls[0], nhev=hcalls, status=warnflag,
+        result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
+                                njev=sf.ngev, nhev=hcalls, status=warnflag,
                                 success=(warnflag == 0), message=msg, x=xk,
                                 nit=k)
         if retall:
             result['allvecs'] = allvecs
         return result
 
-    x0 = asarray(x0).flatten()
-    fcalls, f = wrap_function(f, args)
-    gcalls, fprime = wrap_function(fprime, args)
     hcalls = 0
     if maxiter is None:
         maxiter = len(x0)*200
@@ -1688,7 +1692,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         dri0 = numpy.dot(ri, ri)
 
         if fhess is not None:             # you want to compute hessian once.
-            A = fhess(*(xk,) + args)
+            A = sf.hess(xk)
             hcalls = hcalls + 1
 
         for k2 in xrange(cg_maxiter):
