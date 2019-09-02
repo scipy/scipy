@@ -19,7 +19,8 @@ Development Environment
 -----------------------
 - :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS.
 - :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu.
-- :ref:`building` - If you don't have macOS or Ubuntu, try these instructions to help you build SciPy on your operating system.
+- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker. If you don't have macOS or Ubuntu, or if you have trouble with the instructions above, this may be your best option.
+- :ref:`building` may have some helpful hints if you need to deviate from the guides above.
 - :ref:`recommended-development-setup` includes additional notes about the development setup. All of this information is contained elsewhere, but it is retained as a legacy document.
 
 .. _editing-scipy:
