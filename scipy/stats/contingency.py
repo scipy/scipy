@@ -292,7 +292,6 @@ def _find_subarrays(subarray_list, obs, target_shape):
     Returns
     -------
     subarray_list : list of 2d-arrays
-
     """
     subarr = np.asarray(obs)
     if subarr.shape == target_shape:
@@ -315,7 +314,6 @@ def _check_array_values(observed):
     -------
     observed : list of 2d-arrays
         Deconstructed list contingency tables
-
     """
     for subarray in observed:
         for row in subarray:
@@ -378,7 +376,7 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
 def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     """Calculates degree of association between variables that are nominal or greater.
 
-    Allows for specification of one of three related methods, Tschuprow's T, Pearson's Contingency Coefficient,
+    Allows for specification of one of four related methods, Tschuprow's T, Pearson's Contingency Coefficient,
     Cramer's V and Phi.
 
     Parameters
@@ -391,8 +389,8 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
         The chi squared statistic. If equal to None, chi squared value will be automatically calculated using
         scipy.contingency.chi2_contingency() method.
     correct_bias : boolean, optional (default = True)
-        If True, bias correction will be applied to phi as per Bergsma (2013).
-        Does not apply to Pearson's Contingency Coefficient
+        If True, bias correction will be applied to phi as per Bergsma (2013) &
+        does not apply to Pearson's Contingency Coefficient.
 
     Returns
     -------
@@ -418,6 +416,7 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     --------
 
     2-way Example
+
     >>> from scipy.stats.contingency import association
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
 
