@@ -225,7 +225,6 @@ def test_bad_association_args():
     assert_raises(ValueError, association, obs, "X", None, True)
 
 
-
 def test_cramersv():
 
     # 2d Array
@@ -352,7 +351,7 @@ def test_phi():
              [33, 53]]]]
     c = association(observed=obs, stat="phi")
     cx = association(observed=obs, stat="phi", correct_bias=False)
-    correctc = np.array([[0.32058294, 0.46232834], [0.2066736 , 0.09379639]])
+    correctc = np.array([[0.32058294, 0.46232834], [0.2066736, 0.09379639]])
     correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
     assert_array_almost_equal(c, correctc)
     assert_array_almost_equal(cx, correctcx)
