@@ -70,7 +70,7 @@ class CheckOptimize(object):
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         f = logZ - np.dot(self.K, x)
-        self.trace.append(x)
+        self.trace.append(np.copy(x))
         return f
 
     def grad(self, x):
@@ -561,12 +561,6 @@ class TestOptimizeSimple(CheckOptimize):
         # SciPy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
         assert_(self.gradcalls == 5, self.gradcalls)
-
-        # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[3:5],
-                        [[0., -0.52489628, 0.48753042],
-                         [0., -0.52489628, 0.48753042]],
-                        atol=1e-14, rtol=1e-7)
 
     def test_l_bfgs_b_numjac(self):
         # L-BFGS-B with numerical jacobian

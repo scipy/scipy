@@ -342,7 +342,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # Note that interruptions due to maxfun are postponed
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
-            f, g = func_and_grad(x)
+            # we provide a copy because x is modified in-place by setulb
+            f, g = func_and_grad(np.copy(x))
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
