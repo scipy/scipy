@@ -141,7 +141,7 @@ class Rectangle(object):
     
     def center(self):
         """
-        Return the centroid of the hyperrectanle.
+        Return the center of the hyperrectanle.
         """
         return np.add(self.maxes, self.mins)/2
 
