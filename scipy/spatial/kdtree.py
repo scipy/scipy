@@ -140,12 +140,23 @@ class Rectangle(object):
         return minkowski_distance(0, np.maximum(0,np.maximum(self.mins-x,x-self.maxes)),p)
     
     def center(self):
+        """
+        Return the centroid of the hyperrectanle.
+        """
         return np.add(self.maxes, self.mins)/2
 
     def contains(self, x):
-        if self.min_distance_point(x) == 0:
-            return True
-        return False
+        """
+        Return if input is contained inside the hyperrectangle
+
+        Parameters
+        ----------
+
+        x : array_like
+            Input array.
+
+        """
+        return self.min_distance_point(x) == 0
     
     def max_distance_point(self, x, p=2.):
         """
