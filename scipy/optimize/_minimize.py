@@ -92,12 +92,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             ``jac(x, *args) -> array_like, shape (n,)``
 
         where ``x`` is an array with shape (n,) and ``args`` is a tuple with
-        the fixed parameters. Methods 'Newton-CG', 'trust-ncg', 'dogleg',
-        'trust-exact', 'trust-krylov' require that a callable be supplied.
-        If `jac` is a Boolean and is True, `fun` is assumed to return the
-        gradient along with the objective function. If None or False, the
-        gradient will be estimated using 2-point finite difference
-        estimation with an absolute step size.
+        the fixed parameters. If `jac` is a Boolean and is True, `fun` is
+        assumed to return and objective and gradient as and ``(f, g)`` tuple.
+        Methods 'Newton-CG', 'trust-ncg', 'dogleg', 'trust-exact', and
+        'trust-krylov' require that either a callable be supplied, or that
+        `fun` return the objective and gradient.
+        If None or False, the gradient will be estimated using 2-point finite
+        difference estimation with an absolute step size.
         Alternatively, the keywords  {'2-point', '3-point', 'cs'} can be used
         to select a finite difference scheme for numerical estimation of the
         gradient with a relative step size. These finite difference schemes
