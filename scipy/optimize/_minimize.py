@@ -39,6 +39,11 @@ from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
 
 
+MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                    'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
+                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+
+
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
