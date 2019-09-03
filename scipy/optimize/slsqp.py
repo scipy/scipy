@@ -246,7 +246,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         automatically.
     """
     _check_unknown_options(unknown_options)
-    fprime = jac
     iter = maxiter
     acc = ftol
     epsilon = eps
@@ -281,12 +280,17 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check Jacobian
         cjac = con.get('jac')
         if cjac is None:
-            # TODO use approx_derivative instead of approx_jacobian
             # approximate Jacobian function.  The factory function is needed
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
                 def cjac(x, *args):
-                    return approx_jacobian(x, fun, epsilon, *args)
+                    if jac in ['2-point', '3-point', 'cs']:
+                        return approx_derivative(fun, x, method=jac, args=args,
+                                                 rel_step=finite_diff_rel_step)
+                    else:
+                        return approx_derivative(fun, x, method='2-point',
+                                                 abs_step=epsilon, args=args)
+
                 return cjac
             cjac = cjac_factory(con['fun'])
 
