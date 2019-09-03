@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_, assert_equal, assert_allclose
 
 import scipy.special as sc
+from scipy.special._testutils import assert_func_equal
 
 
 def test_wrightomega_nan():
@@ -114,9 +115,5 @@ def test_wrightomega_exp_approximation_crossover():
 
 def test_wrightomega_real_versus_complex():
     x = np.linspace(-500, 500, 1001)
-    assert_allclose(
-        sc.wrightomega(x),
-        sc.wrightomega(x + 0j).real,
-        atol=0,
-        rtol=1e-14,
-    )
+    results = sc.wrightomega(x + 0j).real
+    assert_func_equal(sc.wrightomega, results, x, atol=0, rtol=1e-15)

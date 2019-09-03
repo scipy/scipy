@@ -1856,11 +1856,14 @@ class TestSystematic(object):
         def mpmath_wrightomega_real(x):
             return mpmath.lambertw(mpmath.exp(x), mpmath.mpf('-0.5'))
 
+        # For x < -1000 the Wright Omega function is just 0 to double
+        # precision, and for x > 1e21 it is just x to double
+        # precision.
         assert_mpmath_equal(
             sc.wrightomega,
             mpmath_wrightomega_real,
-            [Arg()],
-            rtol=1e-15,
+            [Arg(-1000, 1e21)],
+            rtol=5e-15,
             atol=0,
             nan_ok=False,
         )
