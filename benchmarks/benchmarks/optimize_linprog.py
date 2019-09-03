@@ -9,6 +9,9 @@ try:
     from scipy.linalg import toeplitz
     from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
     from numpy.testing import suppress_warnings
+    from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
+    from scipy.optimize._linprog_util import _presolve, _clean_inputs
+    from scipy.sparse import csc_matrix, issparse
     import numpy as np
     import os
 except ImportError:
@@ -32,6 +35,11 @@ problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'SHIP08S', 'SHIP12L', 'SHIP12S', 'SIERRA', 'STAIR', 'STANDATA',
             'STANDMPS', 'STOCFOR1', 'STOCFOR2', 'TRUSS', 'TUFF', 'VTP-BASE',
             'WOOD1P', 'WOODW']
+rr_methods = [_remove_redundancy, _remove_redundancy_dense,
+              _remove_redundancy_sparse]
+rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
+               'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
+               'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
 
 
 def klee_minty(D):
@@ -51,7 +59,8 @@ class MagicSquare(Benchmark):
 
     params = [
         methods,
-        [(3, 1.7305505947214375), (4, 1.5485271031586025)]
+        [(3, 1.7305505947214375), (4, 1.5485271031586025),
+         (5, 1.807494583582637), (6, 1.747266446858304)]
     ]
     param_names = ['method', '(dimensions, objective)']
 
@@ -147,3 +156,60 @@ class Netlib(Benchmark):
 
     def teardown(self, meth, prob):
         np.testing.assert_allclose(self.obj, self.fun, rtol=1e-4, atol=1e-4)
+
+
+class Netlib_RR(Benchmark):
+    params = [
+        rr_methods,
+        rr_problems
+    ]
+    param_names = ['method', 'problems']
+    # sparse routine returns incorrect matrix on BORE3D and PILOTNOV
+    # SVD fails (doesn't converge) on QAP8
+    known_fails = {('_remove_redundancy', 'QAP8'),
+                   ('_remove_redundancy_sparse', 'BORE3D'),
+                   ('_remove_redundancy_sparse', 'PILOTNOV')}
+
+    def setup(self, meth, prob):
+        if (meth.__name__, prob) in self.known_fails:
+            raise NotImplementedError("Known issues with these benchmarks.")
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        data = np.load(dir_path + "/linprog_benchmark_files/" + prob + ".npz",
+                       allow_pickle=True)
+
+        c, A_eq, A_ub, b_ub, b_eq = (data["c"], data["A_eq"], data["A_ub"],
+                                     data["b_ub"], data["b_eq"])
+        bounds = np.squeeze(data["bounds"])
+        x0 = np.zeros(c.shape)
+
+        cleaned = _clean_inputs(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+        c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = cleaned
+
+        res = _presolve(c, A_ub, b_ub, A_eq, b_eq,
+                        bounds, x0=x0, rr=False, tol=1e-9)
+        self.A_eq, self.b_eq = res[4], res[5]
+        self.true_rank = np.linalg.matrix_rank(self.A_eq)
+        if meth == _remove_redundancy_sparse:
+            self.A_eq = csc_matrix(self.A_eq)
+
+    def time_netlib(self, meth, prob):
+        self.rr_A, b, status, message = meth(self.A_eq, self.b_eq)
+
+    def teardown(self, meth, prob):
+        if (meth.__name__, prob) in self.known_fails:
+            return
+
+        if meth == _remove_redundancy_sparse:
+            self.rr_A = self.rr_A.todense()
+
+        rr_rank = np.linalg.matrix_rank(self.rr_A)
+        rr_rows = self.rr_A.shape[0]
+
+        np.testing.assert_equal(rr_rank, self.true_rank)
+        if prob == 'WOOD1P':
+            # both dense methods return matrix with 243 rows,
+            # but matrix_rank thinks rank=242
+            np.testing.assert_equal(rr_rows, 243)
+        else:
+            np.testing.assert_equal(rr_rows, self.true_rank)
