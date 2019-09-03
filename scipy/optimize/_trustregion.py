@@ -6,7 +6,7 @@ import math
 import numpy as np
 import scipy.linalg
 from .optimize import (_check_unknown_options, wrap_function, _status_message,
-                       OptimizeResult)
+                       OptimizeResult, _prepare_scalar_function)
 
 __all__ = []
 
@@ -66,7 +66,7 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def jac_mag(self):
-        """Magniture of jacobian of objective function at current iteration."""
+        """Magnitude of jacobian of objective function at current iteration."""
         if self._g_mag is None:
             self._g_mag = scipy.linalg.norm(self.jac)
         return self._g_mag
@@ -154,12 +154,14 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     # force the initial guess into a nice format
     x0 = np.asarray(x0).flatten()
 
-    # Wrap the functions, for a couple reasons.
-    # This tracks how many times they have been called
-    # and it automatically passes the args.
-    nfun, fun = wrap_function(fun, args)
-    njac, jac = wrap_function(jac, args)
-    nhess, hess = wrap_function(hess, args)
+    # A ScalarFunction representing the problem. This caches calls to fun, jac,
+    # hess.
+    sf = _prepare_scalar_function(fun, x0, jac=jac, hess=hess, args=args)
+    fun = sf.fun
+    jac = sf.grad
+    if hess is not None:
+        hess = sf.hess
+    # ScalarFunction doesn't represent hessp
     nhessp, hessp = wrap_function(hessp, args)
 
     # limit the number of iterations
@@ -248,13 +250,13 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print('Warning: ' + status_messages[warnflag])
         print("         Current function value: %f" % m.fun)
         print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % nfun[0])
-        print("         Gradient evaluations: %d" % njac[0])
-        print("         Hessian evaluations: %d" % (nhess[0] + nhessp[0]))
+        print("         Function evaluations: %d" % sf.nfev)
+        print("         Gradient evaluations: %d" % sf.ngev)
+        print("         Hessian evaluations: %d" % (sf.nhev + nhessp[0]))
 
     result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
-                            fun=m.fun, jac=m.jac, nfev=nfun[0], njev=njac[0],
-                            nhev=nhess[0] + nhessp[0], nit=k,
+                            fun=m.fun, jac=m.jac, nfev=sf.nfev, njev=sf.ngev,
+                            nhev=sf.nhev + nhessp[0], nit=k,
                             message=status_messages[warnflag])
 
     if hess is not None:
