@@ -507,8 +507,14 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     The evaluation of Pearsons Contingency Coefficient is not effected by the bias correction metric, because
     it was not included as a part of the supporting academic paper.
     """
+
     arrs, values_lst = [], []
-    obs_arr = np.array(observed)
+    if type(observed) == list:
+        obs_arr = np.array(observed)
+    elif type(observed) == np.ndarray:
+        obs_arr = observed
+    else:
+        raise ValueError("Observed must be a list or numpy.ndarray")
 
     arr_shape = obs_arr.shape
     try:
