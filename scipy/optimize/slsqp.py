@@ -59,16 +59,12 @@ def approx_jacobian(x, func, epsilon, *args):
     The approximation is done using forward differences.
 
     """
-    x0 = asfarray(x)
-    f0 = atleast_1d(func(*((x0,)+args)))
-    jac = zeros([len(x0), len(f0)])
-    dx = zeros(len(x0))
-    for i in range(len(x0)):
-        dx[i] = epsilon
-        jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
-        dx[i] = 0.0
-
-    return jac.transpose()
+    # approx_derivative returns (m, n) == (lenf, lenx)
+    jac = approx_derivative(func, x, method='2-point', abs_step=epsilon,
+                            args=args)
+    # if func returns a scalar jac.shape will be (lenx,). Make sure
+    # it's at least a 2D array.
+    return np.atleast_2d(jac)
 
 
 def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
