@@ -186,10 +186,14 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         Initial guess. Array of real elements of size (n,),
         where 'n' is the number of independent variables.
     jac : {callable,  '2-point', '3-point', 'cs', None}, optional
-        Method for computing the gradient vector. If one of
-        `{'2-point', '3-point', 'cs'}` is selected then the gradient is
-        calculated with a relative step for finite differences. If `None`, the
-        two step finite differences with an absolute step is used.
+        Method for computing the gradient vector. If it is a callable, it
+        should be a function that returns the gradient vector:
+
+            ``jac(x, *args) -> array_like, shape (n,)``
+
+        If one of `{'2-point', '3-point', 'cs'}` is selected then the gradient
+        is calculated with a relative step for finite differences. If `None`,
+        then two-point finite differences with an absolute step is used.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (`fun`, `jac` functions).
@@ -205,16 +209,27 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    hess : {callable,  '2-point', '3-point', 'cs', None}
+        Computes the Hessian matrix. If it is callable, it should return the
+        Hessian matrix:
+
+            ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
+
+        Alternatively, the keywords {'2-point', '3-point', 'cs'} select a
+        finite difference scheme for numerical estimation.
+        Whenever the gradient is estimated via finite-differences, the Hessian
+        cannot be estimated with options {'2-point', '3-point', 'cs'} and needs
+        to be estimated using one of the quasi-Newton strategies.
 
     Returns
     -------
-    func_calls, sf : list, ScalarFunction
+    sf : ScalarFunction
     """
     if callable(jac):
         grad = jac
     elif jac in FD_METHODS:
         # epsilon is set to None so that ScalarFunction is made to use
-        # rel_steps
+        # rel_step
         epsilon = None
         grad = jac
     else:
