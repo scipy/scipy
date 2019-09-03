@@ -469,6 +469,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     unit_diagonal : bool, optional
         If True, diagonal elements of `a` are assumed to be 1 and will not be
         referenced.
+
         .. versionadded:: 1.4.0
 
     Returns
