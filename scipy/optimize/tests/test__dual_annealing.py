@@ -272,3 +272,15 @@ class TestDualAnnealing(TestCase):
         ret = dual_annealing(rosen, self.ld_bounds,
                              local_search_options=minimizer_opts)
         assert ret.njev == self.ngev
+
+    def test_from_docstring(self):
+        func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+        lw = [-5.12] * 10
+        up = [5.12] * 10
+        ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
+        assert_allclose(ret.x,
+                        [-4.26437714e-09, -3.91699361e-09, -1.86149218e-09,
+                         -3.97165720e-09, -6.29151648e-09, -6.53145322e-09,
+                         -3.93616815e-09, -6.55623025e-09, -6.05775280e-09,
+                         -5.00668935e-09], atol=4e-8)
+        assert_allclose(ret.fun, 0.000000, atol=5e-13)

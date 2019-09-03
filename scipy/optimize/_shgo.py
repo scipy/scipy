@@ -400,9 +400,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          fun: 29.894378159142136
         funl: array([29.89437816])
      message: 'Optimization terminated successfully.'
-        nfev: 119
+        nfev: 114
          nit: 3
-       nlfev: 40
+       nlfev: 35
        nlhev: 0
        nljev: 5
      success: True
