@@ -27,25 +27,31 @@ def klee_minty(D):
     A_ub = toeplitz(A_1, A1_)
     b_ub = np.array([5**(i + 1) for i in range(D)])
     c = -np.array([2**(D - i - 1) for i in range(D)])
-    return c, A_ub, b_ub
+    xf = np.zeros(D)
+    xf[-1] = 5**D
+    obj = c @ xf
+    return c, A_ub, b_ub, xf, obj
 
 
 class MagicSquare(Benchmark):
 
     params = [
         methods,
-        [3, 4]
+        [(3, 1.7305505947214375), (4, 1.5485271031586025)]
     ]
-    param_names = ['method', 'dimensions']
+    param_names = ['method', '(dimensions, objective)']
 
-    def setup(self, meth, dims):
+    def setup(self, meth, prob):
+        dims, obj = prob
         self.A_eq, self.b_eq, self.c, numbers = magic_square(dims)
 
-    def time_magic_square(self, meth, dims):
+    def time_magic_square(self, meth, prob):
+        dims, obj = prob
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear")
-            linprog(c=self.c, A_eq=self.A_eq, b_eq=self.b_eq,
-                    bounds=(0, 1), method=meth)
+            res = linprog(c=self.c, A_eq=self.A_eq, b_eq=self.b_eq,
+                          bounds=(0, 1), method=meth)
+            np.testing.assert_allclose(obj, res.fun, rtol=1e-6, atol=1e-3)
 
 
 class KleeMinty(Benchmark):
@@ -57,11 +63,13 @@ class KleeMinty(Benchmark):
     param_names = ['method', 'dimensions']
 
     def setup(self, meth, dims):
-        self.c, self.A_ub, self.b_ub = klee_minty(dims)
+        self.c, self.A_ub, self.b_ub, self.xf, self.obj = klee_minty(dims)
         self.meth = meth
 
     def time_klee_minty(self, meth, dims):
-        linprog(c=self.c, A_ub=self.A_ub, b_ub=self.b_ub, method=self.meth)
+        res = linprog(c=self.c, A_ub=self.A_ub, b_ub=self.b_ub, method=self.meth)
+        np.testing.assert_allclose(self.obj, res.fun, rtol=1e-6, atol=1e-3)
+        np.testing.assert_allclose(self.xf, res.x, rtol=1e-6, atol=1e-3)
 
 
 class LpGen(Benchmark):
