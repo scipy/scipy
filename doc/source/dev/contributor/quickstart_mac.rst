@@ -82,12 +82,15 @@ the software we will use to compile C, C++, and Fortran code included in SciPy.
 
 #. Use Homebrew to install ``gcc`` by entering the command ``brew install gcc``.
 
-#. In the terminal, update/upgrade all of SciPy's build dependencies:
-``conda update cython numpy pytest pybind11``
+<<<<<<< HEAD
+
+#. In the terminal, ensure that all of SciPy's build dependencies are up to
+date: ``conda install pybind11``, then ``conda update cython numpy pytest
+pybind11``.
 
 #. (Optional) Check your present working directory by entering ``pwd`` at the
-terminal. You should be in the root ``/scipy`` directory, not in the directory
-ending with ``/scipy/scipy``.
+terminal. You should be in the root ``/scipy`` directory, not in a directory
+ending ``/scipy/scipy``.
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br|
 This will compile the C, C++, and Fortran code that comes with SciPy.
@@ -96,7 +99,7 @@ directory of SciPy, which is why you have to be in the SciPy root directory to
 call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace``
 is an option we'll use to ensure that the compiling happens in the SciPy
 directory you already have rather than the default location for Python packages.
-By building in place, you avoid having to re-build SciPy before you can test
+By building in-place, you avoid having to re-build SciPy before you can test
 changes to the Python code.
 
 #. Test the build: enter ``python3 runtests.py -v``. ``runtests.py`` is another
@@ -115,6 +118,7 @@ Anaconda rather than the development version you just built.
 (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`__
 for much more information about how Python imports modules.)
 
+
 .. _quickstart-mac-install:
 
 Installing SciPy
@@ -122,10 +126,12 @@ Installing SciPy
 
 *Consider following along with the companion video* `Anaconda SciPy Dev: Part II (macOS)`_
 
+<<<<<<< HEAD
+
 Currently we have *two* versions of SciPy: the latest release as installed by
 Anaconda, and the development version we just built. Ideally, we'd like to be
 able to switch between the two as needed. `Virtual environments <https://medium.freecodecamp.org/why-you-need-python-environments-and-how-to-manage-them-with-conda-85f155f4353c>`_
-can do just that. With a few keystrokes in the terminal or even a click on an
+can do just that. With a few keystrokes in the terminal or even the click of an
 icon, we can enable or disable our development version. Let's set that up.
 
 #. In a terminal window, enter ``conda list``. |br| This shows a list of all
@@ -142,26 +148,29 @@ by entering ``conda activate scipydev``. |br| If you're working with an old
 version of ``conda``, you might need to type ``source activate scipydev``
 instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
 
+#. You're still in the base environment. Activate your new virtual environment
+by entering ``conda activate scipydev``. |br| If you're working with an old
+version of ``conda``, you might need to type ``source activate scipydev``
+instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
+
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment
 has no packages installed. If you were to open a Python interpreter now, you
-wouldn't be able to import ``numpy``, ``scipy``, etc.
+wouldn't be able to import ``numpy``, ``scipy``, etc...
 
 #. Enter ``conda install cython numpy pytest spyder pybind11``. |br| Note
 that we're only installing SciPy's build dependencies (and Spyder so we can
 use the IDE), but not SciPy itself.
 
 #. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the
-full path of the SciPy root directory. |br| This instructs ``conda`` to add
-the root SciPy directory to the |PYTHONPATH|_ environment variable whenever
-our ``scipydev`` virtual environment is activated. That way, when we
-``import`` SciPy code, the code is imported from our development version of SciPy.
-*Note: this step differs from the process shown in* `Anaconda SciPy Dev:
-Part II (macOS)`_ *, which involves creating special folders and files deep
-within the Anaconda directory. You can ignore that part of the video from 0:38
-to 1:38; this is much simpler!*
+full path of the SciPy root directory. |br| This will allow us to ``import``
+the development version of SciPy in Python regardless of Python's working
+directory. *Note: this step replace the steps shown in*
+`Anaconda SciPy Dev: Part II (macOS)`_ *that modify the ``PYTHONPATH``
+environment variable when the ``scipydev`` virtual environment is activated.
+You can ignore that part of the video from 0:38 to 1:38; this is much simpler!*
 
 #. In a new terminal window, test your setup. If you activate your virtual
-environment (e.g., ``conda activate scipydev``) and run Python code that imports
+environment (e.g. ``conda activate scipydev``) and run Python code that imports
 from SciPy, any changes you make to the SciPy code should be reflected when
 the code runs. After deactivating the virtual environment (``conda deactivate``),
 Python imports from the version of SciPy installed by Anaconda. You can also

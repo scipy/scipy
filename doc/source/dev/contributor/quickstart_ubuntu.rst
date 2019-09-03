@@ -58,11 +58,11 @@ Building SciPy
 
 #. Use Homebrew to install ``gcc`` by entering the command ``brew install gcc``.
 
-#. In the terminal, ensure that all of SciPy's build dependencies are up to date: ``conda install pybind11``, then ``conda update cython numpy matplotlib pytest pybind11``
+#. In the terminal, ensure that all of SciPy's build dependencies are up to date: ``conda install pybind11``, then ``conda update cython numpy pytest pybind11``.
 
- .. note::
+   .. note::
 
-	If ``conda`` is not a recognized command, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
+      If ``conda`` is not a recognized command, try restarting your terminal. If it is still not recognized, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
 
 #. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``..../scipy`` directory, not in a directory ending ``..../scipy/scipy``.
 
@@ -85,15 +85,15 @@ Currently we have *two* versions of SciPy: the latest release as installed by An
 
 #. Enter ``conda create --name scipydev``. |br| This tells ``conda`` to create a virtual environment named ``scipydev``. Note that ``scipydev`` can be replaced with any name you'd like to refer to your virtual environment.
 
-#. Rename the file ``anaconda3/envs/scipydev/lib/libgfortran.so`` to ``anaconda3/envs/scipydev/lib/libgfortran.so_backup``, where ``anaconda3`` is to be replaced with the full path of your Anaconda installation. This file provides an incorrect Fortran shared library; renaming it forces the system to find the right one. *Note: this needs to be repeated whenever you create a new virtual environment in which you want to build SciPy.*
-
 #. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no packages installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
 
-#. Enter ``conda install cython numpy matplotlib pytest spyder pybind11``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
+#. Enter ``conda install cython numpy pytest spyder pybind11``. |br| Note that we're only installing SciPy's build dependencies (and Spyder so we can use the IDE), but not SciPy itself.
 
-#. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the full path of the SciPy root directory. |br| This instructs ``conda`` to add the root SciPy directory to the |PYTHONPATH|_ environment variable whenever our ``scipydev`` virtual environment is activated. That way, when we ``import`` SciPy code, the code is imported from our development version of SciPy.
+#. Rename the file ``anaconda3/envs/scipydev/lib/libgfortran.so`` to ``anaconda3/envs/scipydev/lib/libgfortran.so_backup``, where ``anaconda3`` is to be replaced with the full path of your Anaconda installation. *Note: this ``libgfortran.so`` file is in a different location from the one we renamed already; it was created when we installed packages in the new virtual environment. This file needs to be renamed whenever setting up a new virtual environment for SciPy development.*
+
+#. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the full path of the SciPy root directory. |br| This will allow us to ``import`` the development version of SciPy in Python regardless of Python's working directory.
 
 #. In a new terminal window, test your setup. If you activate your virtual environment (e.g. ``conda activate scipydev``) and run Python code that imports from SciPy, any changes you make to the SciPy code should be reflected when the code runs. After deactivating the virtual environment (``conda deactivate``), Python imports from the version of SciPy installed by Anaconda. You can also check which version of SciPy you're using by executing in Python::
 
