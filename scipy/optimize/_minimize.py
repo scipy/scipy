@@ -279,10 +279,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     each vector of the directions set (`direc` field in `options` and
     `info`), which is updated at each iteration of the main
     minimization loop. The function need not be differentiable, and no
-    derivatives are taken. If bounds are provided, they will be
-    respected at every iteration, and a bounded line search method will
-    be used. If bounds are not provided, then an unbounded line search
-    method will be used.
+    derivatives are taken. If bounds are not provided, then an
+    unbounded line search will be used. If bounds are provided and
+    the initial guess is within the bounds, then every function
+    evaluation throughout the minimization procedure will be within
+    the bounds. If bounds are provided, the initial guess is outside
+    the bounds, and `direc` is full rank (or left to default), then
+    some function evaluations during the first iteration may be
+    outside the bounds, but every function evaluation after the first
+    iteration will be within the bounds. If `direc` is not full rank,
+    then some parameters may not be optimized and the solution is not
+    guarenteed to be within the bounds.
 
     Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
     algorithm [6]_, [7]_ for bound constrained minimization.
