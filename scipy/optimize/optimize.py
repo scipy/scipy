@@ -2636,8 +2636,17 @@ def _minimize_powell(func, x0, args=(), bounds=None, callback=None,
         Initial set of direction vectors for the Powell method.
     bounds : sequence
         Sequence of ``(min, max)`` pairs for each element in ``x0``. None
-        is used to specify no bound. Note that bounds will be respected at
-        every iteration.
+        is used to specify no bound. If bounds are not provided, then an
+        unbounded line search will be used. If bounds are provided and
+        the initial guess is within the bounds, then every function
+        evaluation throughout the minimization procedure will be within
+        the bounds. If bounds are provided, the initial guess is outside
+        the bounds, and `direc` is full rank (or left to default), then
+        some function evaluations during the first iteration may be
+        outside the bounds, but every function evaluation after the first
+        iteration will be within the bounds. If `direc` is not full rank,
+        then some parameters may not be optimized and the solution is not
+        guarenteed to be within the bounds.
 
     """
     _check_unknown_options(unknown_options)
