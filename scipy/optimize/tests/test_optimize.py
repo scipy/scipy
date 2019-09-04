@@ -755,6 +755,10 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
 
+        # cobyla doesn't have callback
+        if method == 'cobyla':
+            return
+
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
             func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
         else:
@@ -779,14 +783,14 @@ class TestOptimizeSimple(CheckOptimize):
                 kw['method'] = method
                 return optimize.minimize(*a, **kw)
 
-            if method == 'TNC':
+            if method == 'tnc':
                 kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
         if method in ('fmin_ncg',):
             kwargs['fprime'] = jac
-        elif method in ('Newton-CG',):
+        elif method in ('newton-cg',):
             kwargs['jac'] = jac
         elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
                         'trust-constr'):
@@ -1232,7 +1236,7 @@ class TestOptimizeResultAttributes(object):
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
                       'message']
-        skip = {'COBYLA': ['nit']}
+        skip = {'cobyla': ['nit']}
         for method in MINIMIZE_METHODS:
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning,
