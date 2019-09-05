@@ -237,7 +237,7 @@ def r2r_fftpack(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
     workers = _workers(None)
 
     if tmp.dtype.kind == 'c':
-        raise ValueError('x must be a real sequence')
+        raise TypeError('x must be a real sequence')
 
     if n is not None:
         tmp, copied = _fix_shape_1d(tmp, n, axis)
