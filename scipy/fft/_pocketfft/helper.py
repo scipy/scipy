@@ -4,10 +4,12 @@ import operator
 from .pypocketfft import good_size
 import operator
 import sys
+import os
+import threading
+import contextlib
 
-
-# TODO: Build with OpenMp and add configuration support
-_default_workers = 1
+_config = threading.local()
+_cpu_count = os.cpu_count()
 
 
 def _iterable_of_int(x, name=None):
@@ -150,6 +152,63 @@ def _normalization(norm, forward):
 
     raise ValueError(
         "Invalid norm value {}, should be None or \"ortho\".".format(norm))
+
+
+def _workers(workers):
+    if workers is None:
+        return getattr(_config, 'default_workers', 1)
+
+    if workers < 0:
+        if workers >= -_cpu_count:
+            workers += 1 + _cpu_count
+        else:
+            raise ValueError("workers value out of range; got {}, must not be"
+                             " less than {}".format(workers, -_cpu_count))
+    elif workers == 0:
+        raise ValueError("workers must not be zero")
+
+    return workers
+
+
+@contextlib.contextmanager
+def set_workers(workers):
+    """Context manager for the default number of workers used in `scipy.fft`
+
+    Parameters
+    ----------
+    workers : int
+        The default number of workers to use
+
+    Examples
+    --------
+    >>> from scipy import fft, signal
+    >>> x = np.random.randn(128, 64)
+    >>> with fft.set_workers(4):
+    ...     y = signal.fftconvolve(x, x)
+
+    """
+    old_workers = get_workers()
+    _config.default_workers = _workers(operator.index(workers))
+    try:
+        yield
+    finally:
+        _config.default_workers = old_workers
+
+
+def get_workers():
+    """Returns the default number of workers within the current context
+
+    Examples
+    --------
+    >>> from scipy import fft
+    >>> fft.get_workers()
+    1
+    >>> with fft.set_workers(4):
+    ...     fft.get_workers()
+    4
+    """
+    return getattr(_config, 'default_workers', 1)
+
 
 def next_fast_len(target, kind='C2C'):
     try:

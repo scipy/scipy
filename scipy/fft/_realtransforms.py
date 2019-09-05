@@ -6,7 +6,8 @@ __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
 @_dispatch
-def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -32,6 +33,10 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -59,7 +64,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+          workers=None):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -85,6 +91,10 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -112,7 +122,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -138,6 +149,10 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -165,7 +180,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+          workers=None):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -191,6 +207,10 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -218,7 +238,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     r"""
     Return the Discrete Cosine Transform of arbitrary type sequence x.
 
@@ -239,6 +259,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -364,7 +388,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
 
@@ -385,6 +410,10 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -423,7 +452,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     r"""
     Return the Discrete Sine Transform of arbitrary type sequence x.
 
@@ -444,6 +473,10 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -536,7 +569,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
 
@@ -557,6 +591,10 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------

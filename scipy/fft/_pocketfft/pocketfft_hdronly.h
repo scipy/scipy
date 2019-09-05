@@ -62,10 +62,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <array>
 #include <mutex>
 #endif
-#ifdef POCKETFFT_OPENMP
-#include <omp.h>
-#endif
 
+#ifndef POCKETFFT_NO_MULTITHREADING
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <queue>
+#include <atomic>
+#include <functional>
+
+#ifdef POCKETFFT_PTHREADS
+#  include <pthread.h>
+#endif
+#endif
 
 #if defined(__GNUC__)
 #define POCKETFFT_NOINLINE __attribute__((noinline))
@@ -235,14 +244,19 @@ template<typename T> struct cmplx {
                : Tres(r*other.r-i*other.i, r*other.i+i*other.r);
     }
 };
+template<typename T> inline void PM(T &a, T &b, T c, T d)
+  { a=c+d; b=c-d; }
 template<typename T> inline void PMINPLACE(T &a, T &b)
   { T t = a; a+=b; b=t-b; }
 template<typename T> inline void MPINPLACE(T &a, T &b)
   { T t = a; a-=b; b=t+b; }
-template<typename T> void PMC(T &a, T &b, const T &c, const T &d)
-  { a = c+d; b = c-d; }
 template<typename T> cmplx<T> conj(const cmplx<T> &a)
   { return {a.r, -a.i}; }
+template<bool fwd, typename T, typename T2> void special_mul (const cmplx<T> &v1, const cmplx<T2> &v2, cmplx<T> &res)
+  {
+  res = fwd ? cmplx<T>(v1.r*v2.r+v1.i*v2.i, v1.i*v2.r-v1.r*v2.i)
+            : cmplx<T>(v1.r*v2.r-v1.i*v2.i, v1.r*v2.i+v1.i*v2.r);
+  }
 
 template<typename T> void ROT90(cmplx<T> &a)
   { auto tmp_=a.r; a.r=-a.i; a.i=tmp_; }
@@ -253,49 +267,178 @@ template<bool fwd, typename T> void ROTX90(cmplx<T> &a)
 // twiddle factor section
 //
 
+/** Approximate sin(pi*a) within the range [-0.25, 0.25] */
+inline float sinpi0(float a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  float s = a * a;
+  float r =      -5.957031250000000000e-01f;
+  r = fma (r, s,  2.550399541854858398e+00f);
+  r = fma (r, s, -5.167724132537841797e+00f);
+  r = (a * s) * r;
+  return fma (a, 3.141592741012573242e+00f, r);
+  }
+
+/** Approximate sin(pi*a) within the range [-0.25, 0.25] */
+inline double sinpi0(double a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  double s = a * a;
+  double r =      4.6151442520157035e-4;
+  r = fma (r, s, -7.3700183130883555e-3);
+  r = fma (r, s,  8.2145868949323936e-2);
+  r = fma (r, s, -5.9926452893214921e-1);
+  r = fma (r, s,  2.5501640398732688e+0);
+  r = fma (r, s, -5.1677127800499516e+0);
+  s = s * a;
+  r = r * s;
+  return fma (a, 3.1415926535897931e+0, r);
+  }
+
+/** Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
+inline float cosm1pi0(float a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  float s = a * a;
+  float r =        2.313842773437500000e-01f;
+  r = fmaf (r, s, -1.335021972656250000e+00f);
+  r = fmaf (r, s,  4.058703899383544922e+00f);
+  r = fmaf (r, s, -4.934802055358886719e+00f);
+  return r*s;
+  }
+
+/** Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
+inline double cosm1pi0(double a)
+  {
+  // adapted from https://stackoverflow.com/questions/42792939/
+  double s = a * a;
+  double r =     -1.0369917389758117e-4;
+  r = fma (r, s,  1.9294935641298806e-3);
+  r = fma (r, s, -2.5806887942825395e-2);
+  r = fma (r, s,  2.3533063028328211e-1);
+  r = fma (r, s, -1.3352627688538006e+0);
+  r = fma (r, s,  4.0587121264167623e+0);
+  r = fma (r, s, -4.9348022005446790e+0);
+  return r*s;
+  }
+
+template <typename T> void sincosm1pi0(T a_, T *POCKETFFT_RESTRICT res)
+  {
+  if (sizeof(T)>sizeof(double)) // don't have the code for long double
+    {
+    constexpr T pi = T(3.141592653589793238462643383279502884197L);
+    auto s = sin(pi*a_);
+    res[1] = s;
+    res[0] = (s*s)/(-sqrt((1-s)*(1+s))-1);
+    return;
+    }
+  res[0] = T(cosm1pi0(double(a_)));
+  res[1] = T(sinpi0(double(a_)));
+  }
+
+template <typename T> T sinpi(T a)
+  {
+  // reduce argument to primary approximation interval (-0.25, 0.25)
+  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
+  auto i = (int64_t)r;
+  auto t = fma (T(-0.5), r, a);
+
+  switch (i%4)
+    {
+    case 0:
+      return sinpi0(t);
+    case 1: case -3:
+      return cosm1pi0(t) + T(1.);
+    case 2: case -2:
+      return T(0.) - sinpi0(t);
+    case 3: case -1:
+      return T(-1.) - cosm1pi0(t);
+    }
+  throw runtime_error("cannot happen");
+  }
+
+template <typename T> T cospi(T a)
+  {
+  // reduce argument to primary approximation interval (-0.25, 0.25)
+  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
+  auto i = (int64_t)r;
+  auto t = fma (T(-0.5), r, a);
+
+  switch (i%4)
+    {
+    case 0:
+      return cosm1pi0(t) + T(1.);
+    case 1: case -3:
+      return T(0.) - sinpi0(t);
+    case 2: case -2:
+      return T(-1.) - cosm1pi0(t);
+    case 3: case -1:
+      return sinpi0(t);
+    }
+  throw runtime_error("cannot happen");
+  }
+
+inline long double cospi(long double a)
+  {
+  constexpr auto pi = 3.141592653589793238462643383279502884197L;
+  return sizeof(long double) > sizeof(double) ? cos(a * pi) :
+    static_cast<long double>(cospi(static_cast<double>(a)));
+  }
+
+inline long double sinpi(long double a)
+  {
+  constexpr auto pi = 3.141592653589793238462643383279502884197L;
+  return sizeof(long double) > sizeof(double) ? sin(a * pi) :
+    static_cast<long double>(sinpi(static_cast<double>(a)));
+  }
+
+template <typename T> void sincospi(T a, T *POCKETFFT_RESTRICT res)
+  {
+  // reduce argument to primary approximation interval (-0.25, 0.25)
+  auto r = nearbyint (a + a); // must use IEEE-754 "to nearest" rounding
+  auto i = (int64_t)r;
+  auto t = fma (T(-0.5), r, a);
+
+  auto c=cosm1pi0(t)+T(1.);
+  auto s=sinpi0(t);
+
+  // map results according to quadrant
+  if (i & 2)
+    {
+    s = T(0.)-s;
+    c = T(0.)-c;
+    }
+  if (i & 1)
+    {
+    swap(s, c);
+    c = T(0.)-c;
+    }
+  res[0]=c;
+  res[1]=s;
+  }
+
+inline void sincospi(long double a, long double *POCKETFFT_RESTRICT res)
+  {
+  if (sizeof(long double) > sizeof(double))
+    {
+    constexpr auto pi = 3.141592653589793238462643383279502884197L;
+    res[0] = cos(pi * a);
+    res[1] = sin(pi * a);
+    }
+  else
+    {
+    double sincos[2];
+    sincospi(static_cast<double>(a), sincos);
+    res[0] = static_cast<long double>(sincos[0]);
+    res[1] = static_cast<long double>(sincos[1]);
+    }
+  }
+
 template<typename T> class sincos_2pibyn
   {
   private:
     using Thigh = typename conditional<(sizeof(T)>sizeof(double)), T, double>::type;
     arr<T> data;
-
-    void my_sincosm1pi (Thigh a_, Thigh *POCKETFFT_RESTRICT res)
-      {
-      if (sizeof(Thigh)>sizeof(double)) // don't have the code for long double
-        {
-        constexpr Thigh pi = Thigh(3.141592653589793238462643383279502884197L);
-        auto s = sin(pi*a_);
-        res[1] = s;
-        res[0] = (s*s)/(-sqrt((1-s)*(1+s))-1);
-        return;
-        }
-      // adapted from https://stackoverflow.com/questions/42792939/
-      // CAUTION: this function only works for arguments in the range
-      //          [-0.25; 0.25]!
-      double a = double(a_);
-      double s = a * a;
-      /* Approximate cos(pi*x)-1 for x in [-0.25,0.25] */
-      double r =     -1.0369917389758117e-4;
-      r = fma (r, s,  1.9294935641298806e-3);
-      r = fma (r, s, -2.5806887942825395e-2);
-      r = fma (r, s,  2.3533063028328211e-1);
-      r = fma (r, s, -1.3352627688538006e+0);
-      r = fma (r, s,  4.0587121264167623e+0);
-      r = fma (r, s, -4.9348022005446790e+0);
-      double c = r*s;
-      /* Approximate sin(pi*x) for x in [-0.25,0.25] */
-      r =             4.6151442520157035e-4;
-      r = fma (r, s, -7.3700183130883555e-3);
-      r = fma (r, s,  8.2145868949323936e-2);
-      r = fma (r, s, -5.9926452893214921e-1);
-      r = fma (r, s,  2.5501640398732688e+0);
-      r = fma (r, s, -5.1677127800499516e+0);
-      s = s * a;
-      r = r * s;
-      s = fma (a, 3.1415926535897931e+0, r);
-      res[0] = c;
-      res[1] = s;
-      }
 
     POCKETFFT_NOINLINE void calc_first_octant(size_t den,
       T * POCKETFFT_RESTRICT res)
@@ -308,7 +451,7 @@ template<typename T> class sincos_2pibyn
       arr<Thigh> tmp(2*l1);
       for (size_t i=1; i<l1; ++i)
         {
-        my_sincosm1pi(Thigh(2*i)/Thigh(den),&tmp[2*i]);
+        sincosm1pi0(Thigh(2*i)/Thigh(den),&tmp[2*i]);
         res[2*i  ] = T(tmp[2*i]+1);
         res[2*i+1] = T(tmp[2*i+1]);
         }
@@ -316,7 +459,7 @@ template<typename T> class sincos_2pibyn
       while(start<n)
         {
         Thigh cs[2];
-        my_sincosm1pi((Thigh(2*start))/Thigh(den),cs);
+        sincosm1pi0((Thigh(2*start))/Thigh(den),cs);
         res[2*start] = T(cs[0]+1);
         res[2*start+1] = T(cs[1]);
         size_t end = l1;
@@ -552,21 +695,226 @@ struct util // hack to avoid duplicate symbols
     if (axis>=shape.size()) throw invalid_argument("bad axis number");
     }
 
-#ifdef POCKETFFT_OPENMP
-    static size_t nthreads() { return size_t(omp_get_num_threads()); }
-    static size_t thread_num() { return size_t(omp_get_thread_num()); }
-    static size_t thread_count (size_t nthreads, const shape_t &shape,
-      size_t axis)
-      {
-      if (nthreads==1) return 1;
-      if (prod(shape) < 20*shape[axis]) return 1;
-      return (nthreads==0) ? size_t(omp_get_max_threads()) : nthreads;
-      }
+#ifdef POCKETFFT_NO_MULTITHREADING
+  static size_t thread_count (size_t /*nthreads*/, const shape_t &/*shape*/,
+    size_t /*axis*/, size_t /*vlen*/)
+    { return 1; }
 #else
-    static constexpr size_t nthreads() { return 1; }
-    static constexpr size_t thread_num() { return 0; }
+  static size_t thread_count (size_t nthreads, const shape_t &shape,
+    size_t axis, size_t vlen)
+    {
+    if (nthreads==1) return 1;
+    size_t size = prod(shape);
+    size_t parallel = size / (shape[axis] * vlen);
+    if (shape[axis] < 1000)
+      parallel /= 4;
+    size_t max_threads = nthreads == 0 ?
+      thread::hardware_concurrency() : nthreads;
+    return max(size_t(1), min(parallel, max_threads));
+    }
 #endif
   };
+
+namespace threading {
+
+#ifdef POCKETFFT_NO_MULTITHREADING
+
+constexpr size_t thread_id = 0;
+constexpr size_t num_threads = 1;
+constexpr size_t max_threads = 1;
+
+template <typename Func>
+void thread_map(size_t /* nthreads */, Func f)
+  { f(); }
+
+#else
+
+thread_local size_t thread_id = 0;
+thread_local size_t num_threads = 1;
+static const size_t max_threads = max(1u, thread::hardware_concurrency());
+
+class latch
+  {
+    atomic<size_t> num_left_;
+    mutex mut_;
+    condition_variable completed_;
+    using lock_t = unique_lock<mutex>;
+
+  public:
+    latch(size_t n): num_left_(n) {}
+
+    void count_down()
+      {
+      lock_t lock(mut_);
+      if (--num_left_)
+        return;
+      completed_.notify_all();
+      }
+
+    void wait()
+      {
+      lock_t lock(mut_);
+      completed_.wait(lock, [this]{ return is_ready(); });
+      }
+    bool is_ready() { return num_left_ == 0; }
+  };
+
+template <typename T> class concurrent_queue
+  {
+    queue<T> q_;
+    mutex mut_;
+    condition_variable item_added_;
+    bool shutdown_;
+    using lock_t = unique_lock<mutex>;
+
+  public:
+    concurrent_queue(): shutdown_(false) {}
+
+    void push(T val)
+      {
+      {
+      lock_t lock(mut_);
+      if (shutdown_)
+        throw runtime_error("Item added to queue after shutdown");
+      q_.push(move(val));
+      }
+      item_added_.notify_one();
+      }
+
+    bool pop(T & val)
+      {
+      lock_t lock(mut_);
+      item_added_.wait(lock, [this] { return (!q_.empty() || shutdown_); });
+      if (q_.empty())
+        return false;  // We are shutting down
+
+      val = std::move(q_.front());
+      q_.pop();
+      return true;
+      }
+
+    void shutdown()
+      {
+      {
+      lock_t lock(mut_);
+      shutdown_ = true;
+      }
+      item_added_.notify_all();
+      }
+
+    void restart() { shutdown_ = false; }
+  };
+
+class thread_pool
+  {
+    concurrent_queue<function<void()>> work_queue_;
+    vector<thread> threads_;
+
+    void worker_main()
+      {
+      function<void()> work;
+      while (work_queue_.pop(work))
+        work();
+      }
+
+    void create_threads()
+      {
+      size_t nthreads = threads_.size();
+      for (size_t i=0; i<nthreads; ++i)
+        {
+        try { threads_[i] = thread([this]{ worker_main(); }); }
+        catch (...)
+          {
+          shutdown();
+          throw;
+          }
+        }
+      }
+
+  public:
+    explicit thread_pool(size_t nthreads):
+      threads_(nthreads)
+      { create_threads(); }
+
+    thread_pool(): thread_pool(max_threads) {}
+
+    ~thread_pool() { shutdown(); }
+
+    void submit(function<void()> work)
+      {
+      work_queue_.push(move(work));
+      }
+
+    void shutdown()
+      {
+      work_queue_.shutdown();
+      for (auto &thread : threads_)
+        if (thread.joinable())
+          thread.join();
+      }
+
+    void restart()
+      {
+      work_queue_.restart();
+      create_threads();
+      }
+  };
+
+thread_pool & get_pool()
+  {
+  static thread_pool pool;
+#ifdef POCKETFFT_PTHREADS
+  static once_flag f;
+  call_once(f,
+    []{
+    pthread_atfork(
+      +[]{ get_pool().shutdown(); },  // prepare
+      +[]{ get_pool().restart(); },   // parent
+      +[]{ get_pool().restart(); }    // child
+      );
+    });
+#endif
+
+  return pool;
+  }
+
+/** Map a function f over nthreads */
+template <typename Func>
+void thread_map(size_t nthreads, Func f)
+  {
+  if (nthreads == 0)
+    nthreads = max_threads;
+
+  if (nthreads == 1)
+    { f(); return; }
+
+  auto & pool = get_pool();
+  latch counter(nthreads);
+  exception_ptr ex;
+  mutex ex_mut;
+  for (size_t i=0; i<nthreads; ++i)
+    {
+    pool.submit(
+      [&f, &counter, &ex, &ex_mut, i, nthreads] {
+      thread_id = i;
+      num_threads = nthreads;
+      try { f(); }
+      catch (...)
+        {
+        lock_guard<mutex> lock(ex_mut);
+        ex = current_exception();
+        }
+      counter.count_down();
+      });
+    }
+  counter.wait();
+  if (ex)
+    rethrow_exception(ex);
+  }
+
+#endif
+
+}
 
 //
 // complex FFTPACK transforms
@@ -590,7 +938,7 @@ template<typename T0> class cfftp
 
 template<bool fwd, typename T> void pass2 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=2;
 
@@ -615,34 +963,31 @@ template<bool fwd, typename T> void pass2 (size_t ido, size_t l1,
       for (size_t i=1; i<ido; ++i)
         {
         CH(i,k,0) = CC(i,0,k)+CC(i,1,k);
-        CH(i,k,1) = (CC(i,0,k)-CC(i,1,k)).template special_mul<fwd>(WA(0,i));
+        special_mul<fwd>(CC(i,0,k)-CC(i,1,k),WA(0,i),CH(i,k,1));
         }
       }
   }
 
 #define POCKETFFT_PREP3(idx) \
         T t0 = CC(idx,0,k), t1, t2; \
-        PMC (t1,t2,CC(idx,1,k),CC(idx,2,k)); \
+        PM (t1,t2,CC(idx,1,k),CC(idx,2,k)); \
         CH(idx,k,0)=t0+t1;
 #define POCKETFFT_PARTSTEP3a(u1,u2,twr,twi) \
         { \
-        T ca,cb; \
-        ca=t0+t1*twr; \
-        cb=t2*twi; ROT90(cb); \
-        PMC(CH(0,k,u1),CH(0,k,u2),ca,cb) ;\
+        T ca=t0+t1*twr; \
+        T cb{-t2.i*twi, t2.r*twi}; \
+        PM(CH(0,k,u1),CH(0,k,u2),ca,cb) ;\
         }
 #define POCKETFFT_PARTSTEP3b(u1,u2,twr,twi) \
         { \
-        T ca,cb,da,db; \
-        ca=t0+t1*twr; \
-        cb=t2*twi; ROT90(cb); \
-        PMC(da,db,ca,cb); \
-        CH(i,k,u1) = da.template special_mul<fwd>(WA(u1-1,i)); \
-        CH(i,k,u2) = db.template special_mul<fwd>(WA(u2-1,i)); \
+        T ca=t0+t1*twr; \
+        T cb{-t2.i*twi, t2.r*twi}; \
+        special_mul<fwd>(ca+cb,WA(u1-1,i),CH(i,k,u1)); \
+        special_mul<fwd>(ca-cb,WA(u2-1,i),CH(i,k,u2)); \
         }
 template<bool fwd, typename T> void pass3 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=3;
   constexpr T0 tw1r=-0.5,
@@ -682,7 +1027,7 @@ template<bool fwd, typename T> void pass3 (size_t ido, size_t l1,
 
 template<bool fwd, typename T> void pass4 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=4;
 
@@ -697,43 +1042,42 @@ template<bool fwd, typename T> void pass4 (size_t ido, size_t l1,
     for (size_t k=0; k<l1; ++k)
       {
       T t1, t2, t3, t4;
-      PMC(t2,t1,CC(0,0,k),CC(0,2,k));
-      PMC(t3,t4,CC(0,1,k),CC(0,3,k));
+      PM(t2,t1,CC(0,0,k),CC(0,2,k));
+      PM(t3,t4,CC(0,1,k),CC(0,3,k));
       ROTX90<fwd>(t4);
-      PMC(CH(0,k,0),CH(0,k,2),t2,t3);
-      PMC(CH(0,k,1),CH(0,k,3),t1,t4);
+      PM(CH(0,k,0),CH(0,k,2),t2,t3);
+      PM(CH(0,k,1),CH(0,k,3),t1,t4);
       }
   else
     for (size_t k=0; k<l1; ++k)
       {
       {
       T t1, t2, t3, t4;
-      PMC(t2,t1,CC(0,0,k),CC(0,2,k));
-      PMC(t3,t4,CC(0,1,k),CC(0,3,k));
+      PM(t2,t1,CC(0,0,k),CC(0,2,k));
+      PM(t3,t4,CC(0,1,k),CC(0,3,k));
       ROTX90<fwd>(t4);
-      PMC(CH(0,k,0),CH(0,k,2),t2,t3);
-      PMC(CH(0,k,1),CH(0,k,3),t1,t4);
+      PM(CH(0,k,0),CH(0,k,2),t2,t3);
+      PM(CH(0,k,1),CH(0,k,3),t1,t4);
       }
       for (size_t i=1; i<ido; ++i)
         {
-        T c2, c3, c4, t1, t2, t3, t4;
+        T t1, t2, t3, t4;
         T cc0=CC(i,0,k), cc1=CC(i,1,k),cc2=CC(i,2,k),cc3=CC(i,3,k);
-        PMC(t2,t1,cc0,cc2);
-        PMC(t3,t4,cc1,cc3);
+        PM(t2,t1,cc0,cc2);
+        PM(t3,t4,cc1,cc3);
         ROTX90<fwd>(t4);
-        PMC(CH(i,k,0),c3,t2,t3);
-        PMC(c2,c4,t1,t4);
-        CH(i,k,1) = c2.template special_mul<fwd>(WA(0,i));
-        CH(i,k,2) = c3.template special_mul<fwd>(WA(1,i));
-        CH(i,k,3) = c4.template special_mul<fwd>(WA(2,i));
+        CH(i,k,0) = t2+t3;
+        special_mul<fwd>(t1+t4,WA(0,i),CH(i,k,1));
+        special_mul<fwd>(t2-t3,WA(1,i),CH(i,k,2));
+        special_mul<fwd>(t1-t4,WA(2,i),CH(i,k,3));
         }
       }
   }
 
 #define POCKETFFT_PREP5(idx) \
         T t0 = CC(idx,0,k), t1, t2, t3, t4; \
-        PMC (t1,t4,CC(idx,1,k),CC(idx,4,k)); \
-        PMC (t2,t3,CC(idx,2,k),CC(idx,3,k)); \
+        PM (t1,t4,CC(idx,1,k),CC(idx,4,k)); \
+        PM (t2,t3,CC(idx,2,k),CC(idx,3,k)); \
         CH(idx,k,0).r=t0.r+t1.r+t2.r; \
         CH(idx,k,0).i=t0.i+t1.i+t2.i;
 
@@ -744,7 +1088,7 @@ template<bool fwd, typename T> void pass4 (size_t ido, size_t l1,
         ca.i=t0.i+twar*t1.i+twbr*t2.i; \
         cb.i=twai*t4.r twbi*t3.r; \
         cb.r=-(twai*t4.i twbi*t3.i); \
-        PMC(CH(0,k,u1),CH(0,k,u2),ca,cb); \
+        PM(CH(0,k,u1),CH(0,k,u2),ca,cb); \
         }
 
 #define POCKETFFT_PARTSTEP5b(u1,u2,twar,twbr,twai,twbi) \
@@ -754,13 +1098,12 @@ template<bool fwd, typename T> void pass4 (size_t ido, size_t l1,
         ca.i=t0.i+twar*t1.i+twbr*t2.i; \
         cb.i=twai*t4.r twbi*t3.r; \
         cb.r=-(twai*t4.i twbi*t3.i); \
-        PMC(da,db,ca,cb); \
-        CH(i,k,u1) = da.template special_mul<fwd>(WA(u1-1,i)); \
-        CH(i,k,u2) = db.template special_mul<fwd>(WA(u2-1,i)); \
+        special_mul<fwd>(ca+cb,WA(u1-1,i),CH(i,k,u1)); \
+        special_mul<fwd>(ca-cb,WA(u2-1,i),CH(i,k,u2)); \
         }
 template<bool fwd, typename T> void pass5 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=5;
   constexpr T0 tw1r= T0(0.3090169943749474241022934171828191L),
@@ -805,9 +1148,9 @@ template<bool fwd, typename T> void pass5 (size_t ido, size_t l1,
 
 #define POCKETFFT_PREP7(idx) \
         T t1 = CC(idx,0,k), t2, t3, t4, t5, t6, t7; \
-        PMC (t2,t7,CC(idx,1,k),CC(idx,6,k)); \
-        PMC (t3,t6,CC(idx,2,k),CC(idx,5,k)); \
-        PMC (t4,t5,CC(idx,3,k),CC(idx,4,k)); \
+        PM (t2,t7,CC(idx,1,k),CC(idx,6,k)); \
+        PM (t3,t6,CC(idx,2,k),CC(idx,5,k)); \
+        PM (t4,t5,CC(idx,3,k),CC(idx,4,k)); \
         CH(idx,k,0).r=t1.r+t2.r+t3.r+t4.r; \
         CH(idx,k,0).i=t1.i+t2.i+t3.i+t4.i;
 
@@ -818,7 +1161,7 @@ template<bool fwd, typename T> void pass5 (size_t ido, size_t l1,
         ca.i=t1.i+x1*t2.i+x2*t3.i+x3*t4.i; \
         cb.i=y1*t7.r y2*t6.r y3*t5.r; \
         cb.r=-(y1*t7.i y2*t6.i y3*t5.i); \
-        PMC(out1,out2,ca,cb); \
+        PM(out1,out2,ca,cb); \
         }
 #define POCKETFFT_PARTSTEP7a(u1,u2,x1,x2,x3,y1,y2,y3) \
         POCKETFFT_PARTSTEP7a0(u1,u2,x1,x2,x3,y1,y2,y3,CH(0,k,u1),CH(0,k,u2))
@@ -826,13 +1169,13 @@ template<bool fwd, typename T> void pass5 (size_t ido, size_t l1,
         { \
         T da,db; \
         POCKETFFT_PARTSTEP7a0(u1,u2,x1,x2,x3,y1,y2,y3,da,db) \
-        CH(i,k,u1) = da.template special_mul<fwd>(WA(u1-1,i)); \
-        CH(i,k,u2) = db.template special_mul<fwd>(WA(u2-1,i)); \
+        special_mul<fwd>(da,WA(u1-1,i),CH(i,k,u1)); \
+        special_mul<fwd>(db,WA(u2-1,i),CH(i,k,u2)); \
         }
 
 template<bool fwd, typename T> void pass7(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=7;
   constexpr T0 tw1r= T0(0.6234898018587335305250048840042398L),
@@ -881,7 +1224,7 @@ template<bool fwd, typename T> void pass7(size_t ido, size_t l1,
 #undef POCKETFFT_PARTSTEP7a
 #undef POCKETFFT_PREP7
 
-template <bool fwd, typename T> void ROTX45(T &a)
+template <bool fwd, typename T> void ROTX45(T &a) const
   {
   constexpr T0 hsqt2=T0(0.707106781186547524400844362104849L);
   if (fwd)
@@ -889,7 +1232,7 @@ template <bool fwd, typename T> void ROTX45(T &a)
   else
     { auto tmp_=a.r; a.r=hsqt2*(a.r-a.i); a.i=hsqt2*(a.i+tmp_); }
   }
-template <bool fwd, typename T> void ROTX135(T &a)
+template <bool fwd, typename T> void ROTX135(T &a) const
   {
   constexpr T0 hsqt2=T0(0.707106781186547524400844362104849L);
   if (fwd)
@@ -900,7 +1243,7 @@ template <bool fwd, typename T> void ROTX135(T &a)
 
 template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=8;
 
@@ -915,8 +1258,8 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
     for (size_t k=0; k<l1; ++k)
       {
       T a0, a1, a2, a3, a4, a5, a6, a7;
-      PMC(a1,a5,CC(0,1,k),CC(0,5,k));
-      PMC(a3,a7,CC(0,3,k),CC(0,7,k));
+      PM(a1,a5,CC(0,1,k),CC(0,5,k));
+      PM(a3,a7,CC(0,3,k),CC(0,7,k));
       PMINPLACE(a1,a3);
       ROTX90<fwd>(a3);
 
@@ -925,21 +1268,21 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
       ROTX45<fwd>(a5);
       ROTX135<fwd>(a7);
 
-      PMC(a0,a4,CC(0,0,k),CC(0,4,k));
-      PMC(a2,a6,CC(0,2,k),CC(0,6,k));
-      PMC(CH(0,k,0),CH(0,k,4),a0+a2,a1);
-      PMC(CH(0,k,2),CH(0,k,6),a0-a2,a3);
+      PM(a0,a4,CC(0,0,k),CC(0,4,k));
+      PM(a2,a6,CC(0,2,k),CC(0,6,k));
+      PM(CH(0,k,0),CH(0,k,4),a0+a2,a1);
+      PM(CH(0,k,2),CH(0,k,6),a0-a2,a3);
       ROTX90<fwd>(a6);
-      PMC(CH(0,k,1),CH(0,k,5),a4+a6,a5);
-      PMC(CH(0,k,3),CH(0,k,7),a4-a6,a7);
+      PM(CH(0,k,1),CH(0,k,5),a4+a6,a5);
+      PM(CH(0,k,3),CH(0,k,7),a4-a6,a7);
       }
   else
     for (size_t k=0; k<l1; ++k)
       {
       {
       T a0, a1, a2, a3, a4, a5, a6, a7;
-      PMC(a1,a5,CC(0,1,k),CC(0,5,k));
-      PMC(a3,a7,CC(0,3,k),CC(0,7,k));
+      PM(a1,a5,CC(0,1,k),CC(0,5,k));
+      PM(a3,a7,CC(0,3,k),CC(0,7,k));
       PMINPLACE(a1,a3);
       ROTX90<fwd>(a3);
 
@@ -948,38 +1291,38 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
       ROTX45<fwd>(a5);
       ROTX135<fwd>(a7);
 
-      PMC(a0,a4,CC(0,0,k),CC(0,4,k));
-      PMC(a2,a6,CC(0,2,k),CC(0,6,k));
-      PMC(CH(0,k,0),CH(0,k,4),a0+a2,a1);
-      PMC(CH(0,k,2),CH(0,k,6),a0-a2,a3);
+      PM(a0,a4,CC(0,0,k),CC(0,4,k));
+      PM(a2,a6,CC(0,2,k),CC(0,6,k));
+      PM(CH(0,k,0),CH(0,k,4),a0+a2,a1);
+      PM(CH(0,k,2),CH(0,k,6),a0-a2,a3);
       ROTX90<fwd>(a6);
-      PMC(CH(0,k,1),CH(0,k,5),a4+a6,a5);
-      PMC(CH(0,k,3),CH(0,k,7),a4-a6,a7);
+      PM(CH(0,k,1),CH(0,k,5),a4+a6,a5);
+      PM(CH(0,k,3),CH(0,k,7),a4-a6,a7);
       }
       for (size_t i=1; i<ido; ++i)
         {
         T a0, a1, a2, a3, a4, a5, a6, a7;
-        PMC(a1,a5,CC(i,1,k),CC(i,5,k));
-        PMC(a3,a7,CC(i,3,k),CC(i,7,k));
+        PM(a1,a5,CC(i,1,k),CC(i,5,k));
+        PM(a3,a7,CC(i,3,k),CC(i,7,k));
         ROTX90<fwd>(a7);
         PMINPLACE(a1,a3);
         ROTX90<fwd>(a3);
         PMINPLACE(a5,a7);
         ROTX45<fwd>(a5);
         ROTX135<fwd>(a7);
-        PMC(a0,a4,CC(i,0,k),CC(i,4,k));
-        PMC(a2,a6,CC(i,2,k),CC(i,6,k));
+        PM(a0,a4,CC(i,0,k),CC(i,4,k));
+        PM(a2,a6,CC(i,2,k),CC(i,6,k));
         PMINPLACE(a0,a2);
         CH(i,k,0) = a0+a1;
-        CH(i,k,4) = (a0-a1).template special_mul<fwd>(WA(3,i));
-        CH(i,k,2) = (a2+a3).template special_mul<fwd>(WA(1,i));
-        CH(i,k,6) = (a2-a3).template special_mul<fwd>(WA(5,i));
+        special_mul<fwd>(a0-a1,WA(3,i),CH(i,k,4));
+        special_mul<fwd>(a2+a3,WA(1,i),CH(i,k,2));
+        special_mul<fwd>(a2-a3,WA(5,i),CH(i,k,6));
         ROTX90<fwd>(a6);
         PMINPLACE(a4,a6);
-        CH(i,k,1) = (a4+a5).template special_mul<fwd>(WA(0,i));
-        CH(i,k,5) = (a4-a5).template special_mul<fwd>(WA(4,i));
-        CH(i,k,3) = (a6+a7).template special_mul<fwd>(WA(2,i));
-        CH(i,k,7) = (a6-a7).template special_mul<fwd>(WA(6,i));
+        special_mul<fwd>(a4+a5,WA(0,i),CH(i,k,1));
+        special_mul<fwd>(a4-a5,WA(4,i),CH(i,k,5));
+        special_mul<fwd>(a6+a7,WA(2,i),CH(i,k,3));
+        special_mul<fwd>(a6-a7,WA(6,i),CH(i,k,7));
         }
       }
    }
@@ -987,11 +1330,11 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
 
 #define POCKETFFT_PREP11(idx) \
         T t1 = CC(idx,0,k), t2, t3, t4, t5, t6, t7, t8, t9, t10, t11; \
-        PMC (t2,t11,CC(idx,1,k),CC(idx,10,k)); \
-        PMC (t3,t10,CC(idx,2,k),CC(idx, 9,k)); \
-        PMC (t4,t9 ,CC(idx,3,k),CC(idx, 8,k)); \
-        PMC (t5,t8 ,CC(idx,4,k),CC(idx, 7,k)); \
-        PMC (t6,t7 ,CC(idx,5,k),CC(idx, 6,k)); \
+        PM (t2,t11,CC(idx,1,k),CC(idx,10,k)); \
+        PM (t3,t10,CC(idx,2,k),CC(idx, 9,k)); \
+        PM (t4,t9 ,CC(idx,3,k),CC(idx, 8,k)); \
+        PM (t5,t8 ,CC(idx,4,k),CC(idx, 7,k)); \
+        PM (t6,t7 ,CC(idx,5,k),CC(idx, 6,k)); \
         CH(idx,k,0).r=t1.r+t2.r+t3.r+t4.r+t5.r+t6.r; \
         CH(idx,k,0).i=t1.i+t2.i+t3.i+t4.i+t5.i+t6.i;
 
@@ -1001,7 +1344,7 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
           cb; \
         cb.i=y1*t11.r y2*t10.r y3*t9.r y4*t8.r y5*t7.r; \
         cb.r=-(y1*t11.i y2*t10.i y3*t9.i y4*t8.i y5*t7.i ); \
-        PMC(out1,out2,ca,cb); \
+        PM(out1,out2,ca,cb); \
         }
 #define POCKETFFT_PARTSTEP11a(u1,u2,x1,x2,x3,x4,x5,y1,y2,y3,y4,y5) \
         POCKETFFT_PARTSTEP11a0(u1,u2,x1,x2,x3,x4,x5,y1,y2,y3,y4,y5,CH(0,k,u1),CH(0,k,u2))
@@ -1009,13 +1352,13 @@ template<bool fwd, typename T> void pass8 (size_t ido, size_t l1,
         { \
         T da,db; \
         POCKETFFT_PARTSTEP11a0(u1,u2,x1,x2,x3,x4,x5,y1,y2,y3,y4,y5,da,db) \
-        CH(i,k,u1) = da.template special_mul<fwd>(WA(u1-1,i)); \
-        CH(i,k,u2) = db.template special_mul<fwd>(WA(u2-1,i)); \
+        special_mul<fwd>(da,WA(u1-1,i),CH(i,k,u1)); \
+        special_mul<fwd>(db,WA(u2-1,i),CH(i,k,u2)); \
         }
 
 template<bool fwd, typename T> void pass11 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const cmplx<T0> * POCKETFFT_RESTRICT wa)
+  const cmplx<T0> * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=11;
   constexpr T0 tw1r= T0(0.8412535328311811688618116489193677L),
@@ -1077,7 +1420,7 @@ template<bool fwd, typename T> void pass11 (size_t ido, size_t l1,
 template<bool fwd, typename T> void passg (size_t ido, size_t ip,
   size_t l1, T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
   const cmplx<T0> * POCKETFFT_RESTRICT wa,
-  const cmplx<T0> * POCKETFFT_RESTRICT csarr)
+  const cmplx<T0> * POCKETFFT_RESTRICT csarr) const
   {
   const size_t cdim=ip;
   size_t ipph = (ip+1)/2;
@@ -1105,7 +1448,7 @@ template<bool fwd, typename T> void passg (size_t ido, size_t ip,
   for (size_t j=1, jc=ip-1; j<ipph; ++j, --jc)
     for (size_t k=0; k<l1; ++k)
       for (size_t i=0; i<ido; ++i)
-        PMC(CH(i,k,j),CH(i,k,jc),CC(i,j,k),CC(i,jc,k));
+        PM(CH(i,k,j),CH(i,k,jc),CC(i,j,k),CC(i,jc,k));
   for (size_t k=0; k<l1; ++k)
     for (size_t i=0; i<ido; ++i)
       {
@@ -1161,7 +1504,7 @@ template<bool fwd, typename T> void passg (size_t ido, size_t ip,
       for (size_t ik=0; ik<idl1; ++ik)
         {
         T t1=CX2(ik,j), t2=CX2(ik,jc);
-        PMC(CX2(ik,j),CX2(ik,jc),t1,t2);
+        PM(CX2(ik,j),CX2(ik,jc),t1,t2);
         }
   else
     {
@@ -1169,21 +1512,21 @@ template<bool fwd, typename T> void passg (size_t ido, size_t ip,
       for (size_t k=0; k<l1; ++k)
         {
         T t1=CX(0,k,j), t2=CX(0,k,jc);
-        PMC(CX(0,k,j),CX(0,k,jc),t1,t2);
+        PM(CX(0,k,j),CX(0,k,jc),t1,t2);
         for (size_t i=1; i<ido; ++i)
           {
           T x1, x2;
-          PMC(x1,x2,CX(i,k,j),CX(i,k,jc));
+          PM(x1,x2,CX(i,k,j),CX(i,k,jc));
           size_t idij=(j-1)*(ido-1)+i-1;
-          CX(i,k,j) = x1.template special_mul<fwd>(wa[idij]);
+          special_mul<fwd>(x1,wa[idij],CX(i,k,j));
           idij=(jc-1)*(ido-1)+i-1;
-          CX(i,k,jc) = x2.template special_mul<fwd>(wa[idij]);
+          special_mul<fwd>(x2,wa[idij],CX(i,k,jc));
           }
         }
     }
   }
 
-template<bool fwd, typename T> void pass_all(T c[], T0 fct)
+template<bool fwd, typename T> void pass_all(T c[], T0 fct) const
   {
   if (length==1) { c[0]*=fct; return; }
   size_t l1=1;
@@ -1232,11 +1575,8 @@ template<bool fwd, typename T> void pass_all(T c[], T0 fct)
   }
 
   public:
-    template<typename T> void forward(T c[], T0 fct)
-      { pass_all<true>(c, fct); }
-
-    template<typename T> void backward(T c[], T0 fct)
-      { pass_all<false>(c, fct); }
+    template<typename T> void exec(T c[], T0 fct, bool fwd) const
+      { fwd ? pass_all<true>(c, fct) : pass_all<false>(c, fct); }
 
   private:
     POCKETFFT_NOINLINE void factorize()
@@ -1333,17 +1673,14 @@ template<typename T0> class rfftp
     void add_factor(size_t factor)
       { fact.push_back({factor, nullptr, nullptr}); }
 
-template<typename T> inline void PM(T &a, T &b, T c, T d)
-  { a=c+d; b=c-d; }
-
 /* (a+ib) = conj(c+id) * (e+if) */
 template<typename T1, typename T2, typename T3> inline void MULPM
-  (T1 &a, T1 &b, T2 c, T2 d, T3 e, T3 f)
+  (T1 &a, T1 &b, T2 c, T2 d, T3 e, T3 f) const
   {  a=c*e+d*f; b=c*f-d*e; }
 
 template<typename T> void radf2 (size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=2;
 
@@ -1382,7 +1719,7 @@ template<typename T> void radf2 (size_t ido, size_t l1,
 
 template<typename T> void radf3(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=3;
   constexpr T0 taur=-0.5, taui=T0(0.8660254037844386467637231707529362L);
@@ -1422,7 +1759,7 @@ template<typename T> void radf3(size_t ido, size_t l1,
 
 template<typename T> void radf4(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=4;
   constexpr T0 hsqt2=T0(0.707106781186547524400844362104849L);
@@ -1470,7 +1807,7 @@ template<typename T> void radf4(size_t ido, size_t l1,
 
 template<typename T> void radf5(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=5;
   constexpr T0 tr11= T0(0.3090169943749474241022934171828191L),
@@ -1527,7 +1864,7 @@ template<typename T> void radf5(size_t ido, size_t l1,
 
 template<typename T> void radfg(size_t ido, size_t ip, size_t l1,
   T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa, const T0 * POCKETFFT_RESTRICT csarr)
+  const T0 * POCKETFFT_RESTRICT wa, const T0 * POCKETFFT_RESTRICT csarr) const
   {
   const size_t cdim=ip;
   size_t ipph=(ip+1)/2;
@@ -1557,15 +1894,13 @@ template<typename T> void radfg(size_t ido, size_t ip, size_t l1,
         for (size_t i=1; i<=ido-2; i+=2)                      // 112
           {
           T t1=C1(i,k,j ), t2=C1(i+1,k,j ),
-                 t3=C1(i,k,jc), t4=C1(i+1,k,jc);
+            t3=C1(i,k,jc), t4=C1(i+1,k,jc);
           T x1=wa[idij]*t1 + wa[idij+1]*t2,
-                 x2=wa[idij]*t2 - wa[idij+1]*t1,
-                 x3=wa[idij2]*t3 + wa[idij2+1]*t4,
-                 x4=wa[idij2]*t4 - wa[idij2+1]*t3;
-          C1(i  ,k,j ) = x1+x3;
-          C1(i  ,k,jc) = x2-x4;
-          C1(i+1,k,j ) = x2+x4;
-          C1(i+1,k,jc) = x3-x1;
+            x2=wa[idij]*t2 - wa[idij+1]*t1,
+            x3=wa[idij2]*t3 + wa[idij2+1]*t4,
+            x4=wa[idij2]*t4 - wa[idij2+1]*t3;
+          PM(C1(i,k,j),C1(i+1,k,jc),x3,x1);
+          PM(C1(i+1,k,j),C1(i,k,jc),x2,x4);
           idij+=2;
           idij2+=2;
           }
@@ -1575,11 +1910,7 @@ template<typename T> void radfg(size_t ido, size_t ip, size_t l1,
 
   for (size_t j=1, jc=ip-1; j<ipph; ++j,--jc)                // 123
     for (size_t k=0; k<l1; ++k)                              // 122
-      {
-      T t1=C1(0,k,j), t2=C1(0,k,jc);
-      C1(0,k,j ) = t1+t2;
-      C1(0,k,jc) = t2-t1;
-      }
+      MPINPLACE(C1(0,k,jc), C1(0,k,j));
 
 //everything in C
 //memset(ch,0,ip*l1*ido*sizeof(double));
@@ -1675,7 +2006,7 @@ template<typename T> void radfg(size_t ido, size_t ip, size_t l1,
 
 template<typename T> void radb2(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=2;
 
@@ -1707,7 +2038,7 @@ template<typename T> void radb2(size_t ido, size_t l1,
 
 template<typename T> void radb3(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=3;
   constexpr T0 taur=-0.5, taui=T0(0.8660254037844386467637231707529362L);
@@ -1748,7 +2079,7 @@ template<typename T> void radb3(size_t ido, size_t l1,
 
 template<typename T> void radb4(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=4;
   constexpr T0 sqrt2=T0(1.414213562373095048801688724209698L);
@@ -1801,7 +2132,7 @@ template<typename T> void radb4(size_t ido, size_t l1,
 
 template<typename T> void radb5(size_t ido, size_t l1,
   const T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa)
+  const T0 * POCKETFFT_RESTRICT wa) const
   {
   constexpr size_t cdim=5;
   constexpr T0 tr11= T0(0.3090169943749474241022934171828191L),
@@ -1861,7 +2192,7 @@ template<typename T> void radb5(size_t ido, size_t l1,
 
 template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
   T * POCKETFFT_RESTRICT cc, T * POCKETFFT_RESTRICT ch,
-  const T0 * POCKETFFT_RESTRICT wa, const T0 * POCKETFFT_RESTRICT csarr)
+  const T0 * POCKETFFT_RESTRICT wa, const T0 * POCKETFFT_RESTRICT csarr) const
   {
   const size_t cdim=ip;
   size_t ipph=(ip+1)/ 2;
@@ -1961,10 +2292,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
       CH2(ik,0) += CH2(ik,j);
   for (size_t j=1, jc=ip-1; j<ipph; ++j,--jc)   // 124
     for (size_t k=0; k<l1; ++k)
-      {
-      CH(0,k,j ) = C1(0,k,j)-C1(0,k,jc);
-      CH(0,k,jc) = C1(0,k,j)+C1(0,k,jc);
-      }
+      PM(CH(0,k,jc),CH(0,k,j),C1(0,k,j),C1(0,k,jc));
 
   if (ido==1) return;
 
@@ -1997,7 +2325,7 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
     }
   }
 
-    template<typename T> void copy_and_norm(T *c, T *p1, size_t n, T0 fct)
+    template<typename T> void copy_and_norm(T *c, T *p1, size_t n, T0 fct) const
       {
       if (p1!=c)
         {
@@ -2014,60 +2342,51 @@ template<typename T> void radbg(size_t ido, size_t ip, size_t l1,
       }
 
   public:
-    template<typename T> void forward(T c[], T0 fct)
+    template<typename T> void exec(T c[], T0 fct, bool r2hc) const
       {
       if (length==1) { c[0]*=fct; return; }
-      size_t n=length;
-      size_t l1=n, nf=fact.size();
+      size_t n=length, nf=fact.size();
       arr<T> ch(n);
       T *p1=c, *p2=ch.data();
 
-      for(size_t k1=0; k1<nf;++k1)
-        {
-        size_t k=nf-k1-1;
-        size_t ip=fact[k].fct;
-        size_t ido=n / l1;
-        l1 /= ip;
-        if(ip==4)
-          radf4(ido, l1, p1, p2, fact[k].tw);
-        else if(ip==2)
-          radf2(ido, l1, p1, p2, fact[k].tw);
-        else if(ip==3)
-          radf3(ido, l1, p1, p2, fact[k].tw);
-        else if(ip==5)
-          radf5(ido, l1, p1, p2, fact[k].tw);
-        else
-          { radfg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws); swap (p1,p2); }
-        swap (p1,p2);
-        }
-      copy_and_norm(c,p1,n,fct);
-      }
+      if (r2hc)
+        for(size_t k1=0, l1=n; k1<nf;++k1)
+          {
+          size_t k=nf-k1-1;
+          size_t ip=fact[k].fct;
+          size_t ido=n / l1;
+          l1 /= ip;
+          if(ip==4)
+            radf4(ido, l1, p1, p2, fact[k].tw);
+          else if(ip==2)
+            radf2(ido, l1, p1, p2, fact[k].tw);
+          else if(ip==3)
+            radf3(ido, l1, p1, p2, fact[k].tw);
+          else if(ip==5)
+            radf5(ido, l1, p1, p2, fact[k].tw);
+          else
+            { radfg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws); swap (p1,p2); }
+          swap (p1,p2);
+          }
+      else
+        for(size_t k=0, l1=1; k<nf; k++)
+          {
+          size_t ip = fact[k].fct,
+                 ido= n/(ip*l1);
+          if(ip==4)
+            radb4(ido, l1, p1, p2, fact[k].tw);
+          else if(ip==2)
+            radb2(ido, l1, p1, p2, fact[k].tw);
+          else if(ip==3)
+            radb3(ido, l1, p1, p2, fact[k].tw);
+          else if(ip==5)
+            radb5(ido, l1, p1, p2, fact[k].tw);
+          else
+            radbg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws);
+          swap (p1,p2);
+          l1*=ip;
+          }
 
-    template<typename T> void backward(T c[], T0 fct)
-      {
-      if (length==1) { c[0]*=fct; return; }
-      size_t n=length;
-      size_t l1=1, nf=fact.size();
-      arr<T> ch(n);
-      T *p1=c, *p2=ch.data();
-
-      for(size_t k=0; k<nf; k++)
-        {
-        size_t ip = fact[k].fct,
-               ido= n/(ip*l1);
-        if(ip==4)
-          radb4(ido, l1, p1, p2, fact[k].tw);
-        else if(ip==2)
-          radb2(ido, l1, p1, p2, fact[k].tw);
-        else if(ip==3)
-          radb3(ido, l1, p1, p2, fact[k].tw);
-        else if(ip==5)
-          radb5(ido, l1, p1, p2, fact[k].tw);
-        else
-          radbg(ido, ip, l1, p1, p2, fact[k].tw, fact[k].tws);
-        swap (p1,p2);
-        l1*=ip;
-        }
       copy_and_norm(c,p1,n,fct);
       }
 
@@ -2165,25 +2484,25 @@ template<typename T0> class fftblue
     arr<cmplx<T0>> mem;
     cmplx<T0> *bk, *bkf;
 
-    template<bool fwd, typename T> void fft(cmplx<T> c[], T0 fct)
+    template<bool fwd, typename T> void fft(cmplx<T> c[], T0 fct) const
       {
       arr<cmplx<T>> akf(n2);
 
       /* initialize a_k and FFT it */
       for (size_t m=0; m<n; ++m)
-        akf[m] = c[m].template special_mul<fwd>(bk[m]);
+        special_mul<fwd>(c[m],bk[m],akf[m]);
       auto zero = akf[0]*T0(0);
       for (size_t m=n; m<n2; ++m)
         akf[m]=zero;
 
-      plan.forward (akf.data(),1.);
+      plan.exec (akf.data(),1.,true);
 
       /* do the convolution */
       for (size_t m=0; m<n2; ++m)
         akf[m] = akf[m].template special_mul<!fwd>(bkf[m]);
 
       /* inverse FFT */
-      plan.backward (akf.data(),1.);
+      plan.exec (akf.data(),1.,false);
 
       /* multiply by b_k */
       for (size_t m=0; m<n; ++m)
@@ -2215,40 +2534,38 @@ template<typename T0> class fftblue
         bkf[m] = bkf[n2-m] = bk[m]*xn2;
       for (size_t m=n;m<=(n2-n);++m)
         bkf[m].Set(0.,0.);
-      plan.forward(bkf,1.);
+      plan.exec(bkf,1.,true);
       }
 
-    template<typename T> void backward(cmplx<T> c[], T0 fct)
-      { fft<false>(c,fct); }
+    template<typename T> void exec(cmplx<T> c[], T0 fct, bool fwd) const
+      { fwd ? fft<true>(c,fct) : fft<false>(c,fct); }
 
-    template<typename T> void forward(cmplx<T> c[], T0 fct)
-      { fft<true>(c,fct); }
-
-    template<typename T> void backward_r(T c[], T0 fct)
+    template<typename T> void exec_r(T c[], T0 fct, bool fwd)
       {
       arr<cmplx<T>> tmp(n);
-      tmp[0].Set(c[0],c[0]*0);
-      memcpy (reinterpret_cast<void *>(tmp.data()+1),
-              reinterpret_cast<void *>(c+1), (n-1)*sizeof(T));
-      if ((n&1)==0) tmp[n/2].i=T0(0)*c[0];
-      for (size_t m=1; 2*m<n; ++m)
-        tmp[n-m].Set(tmp[m].r, -tmp[m].i);
-      fft<false>(tmp.data(),fct);
-      for (size_t m=0; m<n; ++m)
-        c[m] = tmp[m].r;
+      if (fwd)
+        {
+        auto zero = T0(0)*c[0];
+        for (size_t m=0; m<n; ++m)
+          tmp[m].Set(c[m], zero);
+        fft<true>(tmp.data(),fct);
+        c[0] = tmp[0].r;
+        memcpy (c+1, tmp.data()+1, (n-1)*sizeof(T));
+        }
+      else
+        {
+        tmp[0].Set(c[0],c[0]*0);
+        memcpy (reinterpret_cast<void *>(tmp.data()+1),
+                reinterpret_cast<void *>(c+1), (n-1)*sizeof(T));
+        if ((n&1)==0) tmp[n/2].i=T0(0)*c[0];
+        for (size_t m=1; 2*m<n; ++m)
+          tmp[n-m].Set(tmp[m].r, -tmp[m].i);
+        fft<false>(tmp.data(),fct);
+        for (size_t m=0; m<n; ++m)
+          c[m] = tmp[m].r;
+        }
       }
-
-    template<typename T> void forward_r(T c[], T0 fct)
-      {
-      arr<cmplx<T>> tmp(n);
-      auto zero = T0(0)*c[0];
-      for (size_t m=0; m<n; ++m)
-        tmp[m].Set(c[m], zero);
-      fft<true>(tmp.data(),fct);
-      c[0] = tmp[0].r;
-      memcpy (c+1, tmp.data()+1, (n-1)*sizeof(T));
-      }
-    };
+  };
 
 //
 // flexible (FFTPACK/Bluestein) complex 1D transform
@@ -2281,11 +2598,8 @@ template<typename T0> class pocketfft_c
         packplan=unique_ptr<cfftp<T0>>(new cfftp<T0>(length));
       }
 
-    template<typename T> POCKETFFT_NOINLINE void backward(cmplx<T> c[], T0 fct) const
-      { packplan ? packplan->backward(c,fct) : blueplan->backward(c,fct); }
-
-    template<typename T> POCKETFFT_NOINLINE void forward(cmplx<T> c[], T0 fct) const
-      { packplan ? packplan->forward(c,fct) : blueplan->forward(c,fct); }
+    template<typename T> POCKETFFT_NOINLINE void exec(cmplx<T> c[], T0 fct, bool fwd) const
+      { packplan ? packplan->exec(c,fct,fwd) : blueplan->exec(c,fct,fwd); }
 
     size_t length() const { return len; }
   };
@@ -2321,17 +2635,8 @@ template<typename T0> class pocketfft_r
         packplan=unique_ptr<rfftp<T0>>(new rfftp<T0>(length));
       }
 
-    template<typename T> POCKETFFT_NOINLINE void backward(T c[], T0 fct) const
-      {
-      packplan ? packplan->backward(c,fct)
-               : blueplan->backward_r(c,fct);
-      }
-
-    template<typename T> POCKETFFT_NOINLINE void forward(T c[], T0 fct) const
-      {
-      packplan ? packplan->forward(c,fct)
-               : blueplan->forward_r(c,fct);
-      }
+    template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool fwd) const
+      { packplan ? packplan->exec(c,fct,fwd) : blueplan->exec_r(c,fct,fwd); }
 
     size_t length() const { return len; }
   };
@@ -2361,12 +2666,12 @@ template<typename T0> class T_dct1
       tmp[0] = c[0];
       for (size_t i=1; i<n; ++i)
         tmp[i] = tmp[N-i] = c[i];
-      fftplan.forward(tmp.data(), fct);
+      fftplan.exec(tmp.data(), fct, true);
       c[0] = tmp[0];
       for (size_t i=1; i<n; ++i)
         c[i] = tmp[2*i-1];
       if (ortho)
-        { c[0]/=sqrt2; c[n-1]/=sqrt2; }
+        { c[0]*=sqrt2*T0(0.5); c[n-1]*=sqrt2*T0(0.5); }
       }
 
     size_t length() const { return fftplan.length()/2+1; }
@@ -2389,7 +2694,7 @@ template<typename T0> class T_dst1
       tmp[0] = tmp[n+1] = c[0]*0;
       for (size_t i=0; i<n; ++i)
         { tmp[i+1]=c[i]; tmp[N-1-i]=-c[i]; }
-      fftplan.forward(tmp.data(), fct);
+      fftplan.exec(tmp.data(), fct, true);
       for (size_t i=0; i<n; ++i)
         c[i] = -tmp[2*i+2];
       }
@@ -2407,9 +2712,9 @@ template<typename T0> class T_dcst23
     POCKETFFT_NOINLINE T_dcst23(size_t length)
       : fftplan(length), twiddle(length)
       {
-      constexpr T0 pi = T0(3.141592653589793238462643383279502884197L);
+      const auto oo2n = T0(0.5)/T0(length);
       for (size_t i=0; i<length; ++i)
-        twiddle[i] = T0(cos(0.5*pi*T0(i+1)/T0(length)));
+        twiddle[i] = cospi(oo2n*T0(i+1));
       }
 
     template<typename T> POCKETFFT_NOINLINE void exec(T c[], T0 fct, bool ortho,
@@ -2427,7 +2732,7 @@ template<typename T0> class T_dcst23
         if ((N&1)==0) c[N-1]*=2;
         for (size_t k=1; k<N-1; k+=2)
           MPINPLACE(c[k+1], c[k]);
-        fftplan.backward(c, fct);
+        fftplan.exec(c, fct, false);
         for (size_t k=1, kc=N-1; k<NS2; ++k, --kc)
           {
           T t1 = twiddle[k-1]*c[kc]+twiddle[kc-1]*c[k];
@@ -2439,7 +2744,7 @@ template<typename T0> class T_dcst23
         if (!cosine)
           for (size_t k=0, kc=N-1; k<kc; ++k, --kc)
             swap(c[k], c[kc]);
-        if (ortho) c[0]/=sqrt2;
+        if (ortho) c[0]*=sqrt2*T0(0.5);
         }
       else
         {
@@ -2455,7 +2760,7 @@ template<typename T0> class T_dcst23
           }
         if ((N&1)==0)
           c[NS2] *= 2*twiddle[NS2-1];
-        fftplan.forward(c, fct);
+        fftplan.exec(c, fct, true);
         for (size_t k=1; k<N-1; k+=2)
           MPINPLACE(c[k], c[k+1]);
         if (!cosine)
@@ -2469,8 +2774,6 @@ template<typename T0> class T_dcst23
 
 template<typename T0> class T_dcst4
   {
-  // even length algorithm from
-  // https://www.appletonaudio.com/blog/2013/derivation-of-fast-dct-4-algorithm-based-on-dft/
   private:
     size_t N;
     unique_ptr<pocketfft_c<T0>> fft;
@@ -2484,12 +2787,13 @@ template<typename T0> class T_dcst4
         rfft((N&1)? new pocketfft_r<T0>(N) : nullptr),
         C2((N&1) ? 0 : N/2)
       {
-      constexpr T0 pi = T0(3.141592653589793238462643383279502884197L);
+      const auto oon = -T0(1.)/T0(N);
       if ((N&1)==0)
         for (size_t i=0; i<N/2; ++i)
           {
-          T0 ang = -pi/T0(N)*(T0(i)+T0(0.125));
-          C2[i].Set(cos(ang), sin(ang));
+          T0 sincos[2];
+          sincospi(oon*(T0(i)+T0(0.125)), sincos);
+          C2[i].Set(sincos[0], sincos[1]);
           }
       }
 
@@ -2505,9 +2809,8 @@ template<typename T0> class T_dcst4
         {
         // The following code is derived from the FFTW3 function apply_re11()
         // and is released under the 3-clause BSD license with friendly
-        // permission of Matteo Frigo.
+        // permission of Matteo Frigo and Steven G. Johnson.
 
-        auto SGN_SET = [](T x, size_t i) {return (i%2) ? -x : x;};
         arr<T> y(N);
         {
         size_t i=0, m=n2;
@@ -2519,30 +2822,27 @@ template<typename T0> class T_dcst4
           y[i] = -c[m-2*N];
         for (; m<4*N; ++i, m+=4)
           y[i] = c[4*N-m-1];
-        m -= 4*N;
         for (; i<N; ++i, m+=4)
-          y[i] = c[m];
+          y[i] = c[m-4*N];
         }
-        rfft->forward(y.data(), fct);
+        rfft->exec(y.data(), fct, true);
         {
-        size_t i=0;
-        for (; i+i+1<n2; ++i)
+        auto SGN = [sqrt2](size_t i) {return (i&2) ? -sqrt2 : sqrt2;};
+        c[n2] = y[0]*SGN(n2+1);
+        size_t i=0, i1=1, k=1;
+        for (; k<n2; ++i, ++i1, k+=2)
           {
-          size_t k = i+i+1;
-          T c1=y[2*k-1], s1=y[2*k], c2=y[2*k+1], s2=y[2*k+2];
-          c[i] = sqrt2 * (SGN_SET(c1, (i+1)/2) + SGN_SET(s1, i/2));
-          c[N-(i+1)] = sqrt2 * (SGN_SET(c1, (N-i)/2) - SGN_SET(s1, (N-(i+1))/2));
-          c[n2-(i+1)] = sqrt2 * (SGN_SET(c2, (n2-i)/2) - SGN_SET(s2, (n2-(i+1))/2));
-          c[n2+(i+1)] = sqrt2 * (SGN_SET(c2, (n2+i+2)/2) + SGN_SET(s2, (n2+(i+1))/2));
+          c[i    ] = y[2*k-1]*SGN(i1)     + y[2*k  ]*SGN(i);
+          c[N -i1] = y[2*k-1]*SGN(N -i)   - y[2*k  ]*SGN(N -i1);
+          c[n2-i1] = y[2*k+1]*SGN(n2-i)   - y[2*k+2]*SGN(n2-i1);
+          c[n2+i1] = y[2*k+1]*SGN(n2+i+2) + y[2*k+2]*SGN(n2+i1);
           }
-        if (i+i+1 == n2)
+        if (k == n2)
           {
-          T cx=y[2*n2-1], sx=y[2*n2];
-          c[i] = sqrt2 * (SGN_SET(cx, (i+1)/2) + SGN_SET(sx, i/2));
-          c[N-(i+1)] = sqrt2 * (SGN_SET(cx, (i+2)/2) + SGN_SET(sx, (i+1)/2));
+          c[i   ] = y[2*k-1]*SGN(i+1) + y[2*k]*SGN(i);
+          c[N-i1] = y[2*k-1]*SGN(i+2) + y[2*k]*SGN(i1);
           }
         }
-        c[n2] = sqrt2 * SGN_SET(y[0], (n2+1)/2);
 
         // FFTW-derived code ends here
         }
@@ -2556,7 +2856,7 @@ template<typename T0> class T_dcst4
           y[i].Set(c[2*i],c[N-1-2*i]);
           y[i] *= C2[i];
           }
-        fft->forward(y.data(), fct);
+        fft->exec(y.data(), fct, true);
         for(size_t i=0, ic=n2-1; i<n2; ++i, --ic)
           {
           c[2*i  ] =  2*(y[i ].r*C2[i ].r-y[i ].i*C2[i ].i);
@@ -2699,10 +2999,10 @@ template<size_t N> class multi_iter
         str_i(iarr.stride(idim_)), p_oi(0), str_o(oarr.stride(idim_)),
         idim(idim_), rem(iarr.size()/iarr.shape(idim))
       {
-      auto nshares = util::nthreads();
+      auto nshares = threading::num_threads;
       if (nshares==1) return;
       if (nshares==0) throw runtime_error("can't run with zero threads");
-      auto myshare = util::thread_num();
+      auto myshare = threading::thread_id;
       if (myshare>=nshares) throw runtime_error("impossible share requested");
       size_t nbase = rem/nshares;
       size_t additional = rem%nshares;
@@ -2836,8 +3136,10 @@ class rev_iter
     size_t remaining() const { return rem; }
   };
 
-#ifndef POCKETFFT_NO_VECTORS
 template<typename T> struct VTYPE {};
+template <typename T> using vtype_t = typename VTYPE<T>::type;
+
+#ifndef POCKETFFT_NO_VECTORS
 template<> struct VTYPE<float>
   {
   using type = float __attribute__ ((vector_size (VLEN<float>::val*sizeof(float))));
@@ -2874,387 +3176,310 @@ template<typename T> arr<char> alloc_tmp(const shape_t &shape,
   return arr<char>(tmpsize*elemsize);
   }
 
-#ifdef POCKETFFT_OPENMP
-#define POCKETFFT_NTHREADS nthreads
-#else
-#define POCKETFFT_NTHREADS
-#endif
-
-template<typename T> POCKETFFT_NOINLINE void general_c(
-  const cndarr<cmplx<T>> &in, ndarr<cmplx<T>> &out,
-  const shape_t &axes, bool forward, T fct, size_t POCKETFFT_NTHREADS)
+template <typename T, size_t vlen> void copy_input(const multi_iter<vlen> &it,
+  const cndarr<cmplx<T>> &src, cmplx<vtype_t<T>> *POCKETFFT_RESTRICT dst)
   {
-  shared_ptr<pocketfft_c<T>> plan;
+  for (size_t i=0; i<it.length_in(); ++i)
+    for (size_t j=0; j<vlen; ++j)
+      {
+      dst[i].r[j] = src[it.iofs(j,i)].r;
+      dst[i].i[j] = src[it.iofs(j,i)].i;
+      }
+  }
+
+template <typename T, size_t vlen> void copy_input(const multi_iter<vlen> &it,
+  const cndarr<T> &src, vtype_t<T> *POCKETFFT_RESTRICT dst)
+  {
+  for (size_t i=0; i<it.length_in(); ++i)
+    for (size_t j=0; j<vlen; ++j)
+      dst[i][j] = src[it.iofs(j,i)];
+  }
+
+template <typename T, size_t vlen> void copy_input(const multi_iter<vlen> &it,
+  const cndarr<T> &src, T *POCKETFFT_RESTRICT dst)
+  {
+  if (dst == &src[it.iofs(0)]) return;  // in-place
+  for (size_t i=0; i<it.length_in(); ++i)
+    dst[i] = src[it.iofs(i)];
+  }
+
+template<typename T, size_t vlen> void copy_output(const multi_iter<vlen> &it,
+  const cmplx<vtype_t<T>> *POCKETFFT_RESTRICT src, ndarr<cmplx<T>> &dst)
+  {
+  for (size_t i=0; i<it.length_out(); ++i)
+    for (size_t j=0; j<vlen; ++j)
+      dst[it.oofs(j,i)].Set(src[i].r[j],src[i].i[j]);
+  }
+
+template<typename T, size_t vlen> void copy_output(const multi_iter<vlen> &it,
+  const vtype_t<T> *POCKETFFT_RESTRICT src, ndarr<T> &dst)
+  {
+  for (size_t i=0; i<it.length_out(); ++i)
+    for (size_t j=0; j<vlen; ++j)
+      dst[it.oofs(j,i)] = src[i][j];
+  }
+
+template<typename T, size_t vlen> void copy_output(const multi_iter<vlen> &it,
+  const T *POCKETFFT_RESTRICT src, ndarr<T> &dst)
+  {
+  if (src == &dst[it.oofs(0)]) return;  // in-place
+  for (size_t i=0; i<it.length_out(); ++i)
+    dst[it.oofs(i)] = src[i];
+  }
+
+template <typename T> struct add_vec { using type = vtype_t<T>; };
+template <typename T> struct add_vec<cmplx<T>>
+  { using type = cmplx<vtype_t<T>>; };
+template <typename T> using add_vec_t = typename add_vec<T>::type;
+
+template<typename Tplan, typename T, typename T0, typename Exec>
+POCKETFFT_NOINLINE void general_nd(const cndarr<T> &in, ndarr<T> &out,
+  const shape_t &axes, T0 fct, size_t nthreads, const Exec & exec,
+  const bool allow_inplace=true)
+  {
+  shared_ptr<Tplan> plan;
 
   for (size_t iax=0; iax<axes.size(); ++iax)
     {
-    constexpr auto vlen = VLEN<T>::val;
     size_t len=in.shape(axes[iax]);
     if ((!plan) || (len!=plan->length()))
-      plan = get_plan<pocketfft_c<T>>(len);
+      plan = get_plan<Tplan>(len);
 
-#ifdef POCKETFFT_OPENMP
-#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axes[iax]))
-#endif
-{
-    auto storage = alloc_tmp<T>(in.shape(), len, sizeof(cmplx<T>));
-    const auto &tin(iax==0? in : out);
-    multi_iter<vlen> it(tin, out, axes[iax]);
+    threading::thread_map(
+      util::thread_count(nthreads, in.shape(), axes[iax], VLEN<T>::val),
+      [&] {
+        constexpr auto vlen = VLEN<T0>::val;
+        auto storage = alloc_tmp<T0>(in.shape(), len, sizeof(T));
+        const auto &tin(iax==0? in : out);
+        multi_iter<vlen> it(tin, out, axes[iax]);
 #ifndef POCKETFFT_NO_VECTORS
-    if (vlen>1)
-      while (it.remaining()>=vlen)
-        {
-        using vtype = typename VTYPE<T>::type;
-        it.advance(vlen);
-        auto tdatav = reinterpret_cast<cmplx<vtype> *>(storage.data());
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
+        if (vlen>1)
+          while (it.remaining()>=vlen)
             {
-            tdatav[i].r[j] = tin[it.iofs(j,i)].r;
-            tdatav[i].i[j] = tin[it.iofs(j,i)].i;
+            it.advance(vlen);
+            auto tdatav = reinterpret_cast<add_vec_t<T> *>(storage.data());
+            exec(it, tin, out, tdatav, *plan, fct);
             }
-        forward ? plan->forward (tdatav, fct) : plan->backward(tdatav, fct);
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
-            out[it.oofs(j,i)].Set(tdatav[i].r[j],tdatav[i].i[j]);
-        }
 #endif
-    while (it.remaining()>0)
-      {
-      it.advance(1);
-      auto buf = it.stride_out() == sizeof(cmplx<T>) ?
-        &out[it.oofs(0)] : reinterpret_cast<cmplx<T> *>(storage.data());
-
-      if (buf != &tin[it.iofs(0)])
-        for (size_t i=0; i<len; ++i)
-          buf[i] = tin[it.iofs(i)];
-      forward ? plan->forward (buf, fct) : plan->backward(buf, fct);
-      if (buf != &out[it.oofs(0)])
-        for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = buf[i];
-      }
-} // end of parallel region
-    fct = T(1); // factor has been applied, use 1 for remaining axes
+        while (it.remaining()>0)
+          {
+          it.advance(1);
+          auto buf = allow_inplace && it.stride_out() == sizeof(T) ?
+            &out[it.oofs(0)] : reinterpret_cast<T *>(storage.data());
+          exec(it, tin, out, buf, *plan, fct);
+          }
+      });  // end of parallel region
+    fct = T0(1); // factor has been applied, use 1 for remaining axes
     }
   }
 
-template<typename T> POCKETFFT_NOINLINE void general_hartley(
-  const cndarr<T> &in, ndarr<T> &out, const shape_t &axes, T fct,
-  size_t POCKETFFT_NTHREADS)
+struct ExecC2C
   {
-  shared_ptr<pocketfft_r<T>> plan;
+  bool forward;
 
-  for (size_t iax=0; iax<axes.size(); ++iax)
+  template <typename T0, typename T, size_t vlen> void operator () (
+    const multi_iter<vlen> &it, const cndarr<cmplx<T0>> &in,
+    ndarr<cmplx<T0>> &out, T * buf, const pocketfft_c<T0> &plan, T0 fct) const
     {
-    constexpr auto vlen = VLEN<T>::val;
-    size_t len=in.shape(axes[iax]);
-    if ((!plan) || (len!=plan->length()))
-      plan = get_plan<pocketfft_r<T>>(len);
+    copy_input(it, in, buf);
+    plan.exec(buf, fct, forward);
+    copy_output(it, buf, out);
+    }
+  };
 
-#ifdef POCKETFFT_OPENMP
-#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axes[iax]))
-#endif
-{
+template <typename T, size_t vlen> void copy_hartley(const multi_iter<vlen> &it,
+  const vtype_t<T> *POCKETFFT_RESTRICT src, ndarr<T> &dst)
+  {
+  for (size_t j=0; j<vlen; ++j)
+    dst[it.oofs(j,0)] = src[0][j];
+  size_t i=1, i1=1, i2=it.length_out()-1;
+  for (i=1; i<it.length_out()-1; i+=2, ++i1, --i2)
+    for (size_t j=0; j<vlen; ++j)
+      {
+        dst[it.oofs(j,i1)] = src[i][j]+src[i+1][j];
+        dst[it.oofs(j,i2)] = src[i][j]-src[i+1][j];
+      }
+  if (i<it.length_out())
+    for (size_t j=0; j<vlen; ++j)
+      dst[it.oofs(j,i1)] = src[i][j];
+  }
+
+template <typename T, size_t vlen> void copy_hartley(const multi_iter<vlen> &it,
+  const T *POCKETFFT_RESTRICT src, ndarr<T> &dst)
+  {
+  dst[it.oofs(0)] = src[0];
+  size_t i=1, i1=1, i2=it.length_out()-1;
+  for (i=1; i<it.length_out()-1; i+=2, ++i1, --i2)
+    {
+    dst[it.oofs(i1)] = src[i]+src[i+1];
+    dst[it.oofs(i2)] = src[i]-src[i+1];
+    }
+  if (i<it.length_out())
+    dst[it.oofs(i1)] = src[i];
+  }
+
+struct ExecHartley
+  {
+  template <typename T0, typename T, size_t vlen> void operator () (
+    const multi_iter<vlen> &it, const cndarr<T0> &in, ndarr<T0> &out,
+    T * buf, const pocketfft_r<T0> &plan, T0 fct) const
+    {
+    copy_input(it, in, buf);
+    plan.exec(buf, fct, true);
+    copy_hartley(it, buf, out);
+    }
+  };
+
+struct ExecDcst
+  {
+  bool ortho;
+  int type;
+  bool cosine;
+
+  template <typename T0, typename T, typename Tplan, size_t vlen>
+  void operator () (const multi_iter<vlen> &it, const cndarr<T0> &in,
+    ndarr<T0> &out, T * buf, const Tplan &plan, T0 fct) const
+    {
+    copy_input(it, in, buf);
+    plan.exec(buf, fct, ortho, type, cosine);
+    copy_output(it, buf, out);
+    }
+  };
+
+template<typename T> POCKETFFT_NOINLINE void general_r2c(
+  const cndarr<T> &in, ndarr<cmplx<T>> &out, size_t axis, bool forward, T fct,
+  size_t nthreads)
+  {
+  auto plan = get_plan<pocketfft_r<T>>(in.shape(axis));
+  size_t len=in.shape(axis);
+  threading::thread_map(
+    util::thread_count(nthreads, in.shape(), axis, VLEN<T>::val),
+    [&] {
+    constexpr auto vlen = VLEN<T>::val;
     auto storage = alloc_tmp<T>(in.shape(), len, sizeof(T));
-    const auto &tin(iax==0 ? in : out);
-    multi_iter<vlen> it(tin, out, axes[iax]);
+    multi_iter<vlen> it(in, out, axis);
 #ifndef POCKETFFT_NO_VECTORS
     if (vlen>1)
       while (it.remaining()>=vlen)
         {
-        using vtype = typename VTYPE<T>::type;
         it.advance(vlen);
-        auto tdatav = reinterpret_cast<vtype *>(storage.data());
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
-            tdatav[i][j] = tin[it.iofs(j,i)];
-        plan->forward(tdatav, fct);
+        auto tdatav = reinterpret_cast<vtype_t<T> *>(storage.data());
+        copy_input(it, in, tdatav);
+        plan->exec(tdatav, fct, true);
         for (size_t j=0; j<vlen; ++j)
-          out[it.oofs(j,0)] = tdatav[0][j];
-        size_t i=1, i1=1, i2=len-1;
-        for (i=1; i<len-1; i+=2, ++i1, --i2)
-          for (size_t j=0; j<vlen; ++j)
-            {
-            out[it.oofs(j,i1)] = tdatav[i][j]+tdatav[i+1][j];
-            out[it.oofs(j,i2)] = tdatav[i][j]-tdatav[i+1][j];
-            }
+          out[it.oofs(j,0)].Set(tdatav[0][j]);
+        size_t i=1, ii=1;
+        if (forward)
+          for (; i<len-1; i+=2, ++ii)
+            for (size_t j=0; j<vlen; ++j)
+              out[it.oofs(j,ii)].Set(tdatav[i][j], tdatav[i+1][j]);
+        else
+          for (; i<len-1; i+=2, ++ii)
+            for (size_t j=0; j<vlen; ++j)
+              out[it.oofs(j,ii)].Set(tdatav[i][j], -tdatav[i+1][j]);
         if (i<len)
           for (size_t j=0; j<vlen; ++j)
-            out[it.oofs(j,i1)] = tdatav[i][j];
+            out[it.oofs(j,ii)].Set(tdatav[i][j]);
         }
 #endif
     while (it.remaining()>0)
       {
       it.advance(1);
       auto tdata = reinterpret_cast<T *>(storage.data());
-      for (size_t i=0; i<len; ++i)
-        tdata[i] = tin[it.iofs(i)];
-      plan->forward(tdata, fct);
-      // Hartley order
-      out[it.oofs(0)] = tdata[0];
-      size_t i=1, i1=1, i2=len-1;
-      for (i=1; i<len-1; i+=2, ++i1, --i2)
-        {
-        out[it.oofs(i1)] = tdata[i]+tdata[i+1];
-        out[it.oofs(i2)] = tdata[i]-tdata[i+1];
-        }
-      if (i<len)
-        out[it.oofs(i1)] = tdata[i];
-      }
-} // end of parallel region
-    fct = T(1); // factor has been applied, use 1 for remaining axes
-    }
-  }
-
-template<typename Trafo, typename T> POCKETFFT_NOINLINE void general_dcst(
-  const cndarr<T> &in, ndarr<T> &out, const shape_t &axes,
-  T fct, bool ortho, int type, bool cosine, size_t POCKETFFT_NTHREADS)
-  {
-  shared_ptr<Trafo> plan;
-
-  for (size_t iax=0; iax<axes.size(); ++iax)
-    {
-    constexpr auto vlen = VLEN<T>::val;
-    size_t len=in.shape(axes[iax]);
-    if ((!plan) || (len!=plan->length()))
-      plan = get_plan<Trafo>(len);
-
-#ifdef POCKETFFT_OPENMP
-#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axes[iax]))
-#endif
-{
-    auto storage = alloc_tmp<T>(in.shape(), len, sizeof(T));
-    const auto &tin(iax==0 ? in : out);
-    multi_iter<vlen> it(tin, out, axes[iax]);
-#ifndef POCKETFFT_NO_VECTORS
-    if (vlen>1)
-      while (it.remaining()>=vlen)
-        {
-        using vtype = typename VTYPE<T>::type;
-        it.advance(vlen);
-        auto tdatav = reinterpret_cast<vtype *>(storage.data());
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
-            tdatav[i][j] = tin[it.iofs(j,i)];
-        plan->exec(tdatav, fct, ortho, type, cosine);
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
-            out[it.oofs(j,i)] = tdatav[i][j];
-        }
-#endif
-    while (it.remaining()>0)
-      {
-      it.advance(1);
-      auto buf = it.stride_out() == sizeof(T) ? &out[it.oofs(0)]
-        : reinterpret_cast<T *>(storage.data());
-
-      if (buf != &tin[it.iofs(0)])
-        for (size_t i=0; i<len; ++i)
-          buf[i] = tin[it.iofs(i)];
-      plan->exec(buf, fct, ortho, type, cosine);
-      if (buf != &out[it.oofs(0)])
-        for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = buf[i];
-      }
-} // end of parallel region
-    fct = T(1); // factor has been applied, use 1 for remaining axes
-    }
-  }
-
-template<typename T> POCKETFFT_NOINLINE void general_r2c(
-  const cndarr<T> &in, ndarr<cmplx<T>> &out, size_t axis, bool forward, T fct,
-  size_t POCKETFFT_NTHREADS)
-  {
-  auto plan = get_plan<pocketfft_r<T>>(in.shape(axis));
-  constexpr auto vlen = VLEN<T>::val;
-  size_t len=in.shape(axis);
-#ifdef POCKETFFT_OPENMP
-#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axis))
-#endif
-{
-  auto storage = alloc_tmp<T>(in.shape(), len, sizeof(T));
-  multi_iter<vlen> it(in, out, axis);
-#ifndef POCKETFFT_NO_VECTORS
-  if (vlen>1)
-    while (it.remaining()>=vlen)
-      {
-      using vtype = typename VTYPE<T>::type;
-      it.advance(vlen);
-      auto tdatav = reinterpret_cast<vtype *>(storage.data());
-      for (size_t i=0; i<len; ++i)
-        for (size_t j=0; j<vlen; ++j)
-          tdatav[i][j] = in[it.iofs(j,i)];
-      plan->forward(tdatav, fct);
-      for (size_t j=0; j<vlen; ++j)
-        out[it.oofs(j,0)].Set(tdatav[0][j]);
+      copy_input(it, in, tdata);
+      plan->exec(tdata, fct, true);
+      out[it.oofs(0)].Set(tdata[0]);
       size_t i=1, ii=1;
       if (forward)
         for (; i<len-1; i+=2, ++ii)
-          for (size_t j=0; j<vlen; ++j)
-            out[it.oofs(j,ii)].Set(tdatav[i][j], tdatav[i+1][j]);
+          out[it.oofs(ii)].Set(tdata[i], tdata[i+1]);
       else
         for (; i<len-1; i+=2, ++ii)
-          for (size_t j=0; j<vlen; ++j)
-            out[it.oofs(j,ii)].Set(tdatav[i][j], -tdatav[i+1][j]);
+          out[it.oofs(ii)].Set(tdata[i], -tdata[i+1]);
       if (i<len)
-        for (size_t j=0; j<vlen; ++j)
-          out[it.oofs(j,ii)].Set(tdatav[i][j]);
+        out[it.oofs(ii)].Set(tdata[i]);
       }
-#endif
-  while (it.remaining()>0)
-    {
-    it.advance(1);
-    auto tdata = reinterpret_cast<T *>(storage.data());
-    for (size_t i=0; i<len; ++i)
-      tdata[i] = in[it.iofs(i)];
-    plan->forward(tdata, fct);
-    out[it.oofs(0)].Set(tdata[0]);
-    size_t i=1, ii=1;
-    if (forward)
-      for (; i<len-1; i+=2, ++ii)
-        out[it.oofs(ii)].Set(tdata[i], tdata[i+1]);
-    else
-      for (; i<len-1; i+=2, ++ii)
-        out[it.oofs(ii)].Set(tdata[i], -tdata[i+1]);
-    if (i<len)
-      out[it.oofs(ii)].Set(tdata[i]);
-    }
-} // end of parallel region
+    });  // end of parallel region
   }
 template<typename T> POCKETFFT_NOINLINE void general_c2r(
   const cndarr<cmplx<T>> &in, ndarr<T> &out, size_t axis, bool forward, T fct,
-  size_t POCKETFFT_NTHREADS)
+  size_t nthreads)
   {
   auto plan = get_plan<pocketfft_r<T>>(out.shape(axis));
-  constexpr auto vlen = VLEN<T>::val;
   size_t len=out.shape(axis);
-#ifdef POCKETFFT_OPENMP
-#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axis))
-#endif
-{
-  auto storage = alloc_tmp<T>(out.shape(), len, sizeof(T));
-  multi_iter<vlen> it(in, out, axis);
+  threading::thread_map(
+    util::thread_count(nthreads, in.shape(), axis, VLEN<T>::val),
+    [&] {
+      constexpr auto vlen = VLEN<T>::val;
+      auto storage = alloc_tmp<T>(out.shape(), len, sizeof(T));
+      multi_iter<vlen> it(in, out, axis);
 #ifndef POCKETFFT_NO_VECTORS
-  if (vlen>1)
-    while (it.remaining()>=vlen)
-      {
-      using vtype = typename VTYPE<T>::type;
-      it.advance(vlen);
-      auto tdatav = reinterpret_cast<vtype *>(storage.data());
-      for (size_t j=0; j<vlen; ++j)
-        tdatav[0][j]=in[it.iofs(j,0)].r;
-      {
-      size_t i=1, ii=1;
-      if (forward)
-        for (; i<len-1; i+=2, ++ii)
+      if (vlen>1)
+        while (it.remaining()>=vlen)
+          {
+          it.advance(vlen);
+          auto tdatav = reinterpret_cast<vtype_t<T> *>(storage.data());
           for (size_t j=0; j<vlen; ++j)
-            in[it.iofs(j,ii)].SplitConj(tdatav[i][j], tdatav[i+1][j]);
-      else
-        for (; i<len-1; i+=2, ++ii)
-          for (size_t j=0; j<vlen; ++j)
-            in[it.iofs(j,ii)].Split(tdatav[i][j], tdatav[i+1][j]);
-      if (i<len)
-        for (size_t j=0; j<vlen; ++j)
-          tdatav[i][j] = in[it.iofs(j,ii)].r;
-      }
-      plan->backward(tdatav, fct);
-      for (size_t i=0; i<len; ++i)
-        for (size_t j=0; j<vlen; ++j)
-          out[it.oofs(j,i)] = tdatav[i][j];
-      }
+            tdatav[0][j]=in[it.iofs(j,0)].r;
+          {
+          size_t i=1, ii=1;
+          if (forward)
+            for (; i<len-1; i+=2, ++ii)
+              for (size_t j=0; j<vlen; ++j)
+                in[it.iofs(j,ii)].SplitConj(tdatav[i][j], tdatav[i+1][j]);
+          else
+            for (; i<len-1; i+=2, ++ii)
+              for (size_t j=0; j<vlen; ++j)
+                in[it.iofs(j,ii)].Split(tdatav[i][j], tdatav[i+1][j]);
+          if (i<len)
+            for (size_t j=0; j<vlen; ++j)
+              tdatav[i][j] = in[it.iofs(j,ii)].r;
+          }
+          plan->exec(tdatav, fct, false);
+          copy_output(it, tdatav, out);
+          }
 #endif
-  while (it.remaining()>0)
-    {
-    it.advance(1);
-    auto tdata = reinterpret_cast<T *>(storage.data());
-    tdata[0]=in[it.iofs(0)].r;
-    {
-    size_t i=1, ii=1;
-    if (forward)
-      for (; i<len-1; i+=2, ++ii)
-        in[it.iofs(ii)].SplitConj(tdata[i], tdata[i+1]);
-    else
-      for (; i<len-1; i+=2, ++ii)
-        in[it.iofs(ii)].Split(tdata[i], tdata[i+1]);
-    if (i<len)
-      tdata[i] = in[it.iofs(ii)].r;
-    }
-    plan->backward(tdata, fct);
-    for (size_t i=0; i<len; ++i)
-      out[it.oofs(i)] = tdata[i];
-    }
-} // end of parallel region
-  }
-
-template<typename T> POCKETFFT_NOINLINE void general_r(
-  const cndarr<T> &in, ndarr<T> &out, const shape_t &axes, bool r2c,
-  bool forward, T fct, size_t POCKETFFT_NTHREADS)
-  {
-  shared_ptr<pocketfft_r<T>> plan;
-
-  for (size_t iax=0; iax<axes.size(); ++iax)
-    {
-    constexpr auto vlen = VLEN<T>::val;
-    size_t len=in.shape(axes[iax]);
-    if ((!plan) || (len!=plan->length()))
-      plan = get_plan<pocketfft_r<T>>(len);
-
-#ifdef POCKETFFT_OPENMP
-#pragma omp parallel num_threads(util::thread_count(nthreads, in.shape(), axes[iax]))
-#endif
-{
-    auto storage = alloc_tmp<T>(in.shape(), len, sizeof(T));
-    const auto &tin(iax==0 ? in : out);
-    multi_iter<vlen> it(tin, out, axes[iax]);
-#ifndef POCKETFFT_NO_VECTORS
-    if (vlen>1)
-      while (it.remaining()>=vlen)
+      while (it.remaining()>0)
         {
-        using vtype = typename VTYPE<T>::type;
-        it.advance(vlen);
-        auto tdatav = reinterpret_cast<vtype *>(storage.data());
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
-            tdatav[i][j] = tin[it.iofs(j,i)];
-        if ((!r2c) && forward)
-          for (size_t i=2; i<len; i+=2)
-            tdatav[i] = -tdatav[i];
-        forward ? plan->forward (tdatav, fct)
-                : plan->backward(tdatav, fct);
-        if (r2c && (!forward))
-          for (size_t i=2; i<len; i+=2)
-            tdatav[i] = -tdatav[i];
-        for (size_t i=0; i<len; ++i)
-          for (size_t j=0; j<vlen; ++j)
-            out[it.oofs(j,i)] = tdatav[i][j];
+        it.advance(1);
+        auto tdata = reinterpret_cast<T *>(storage.data());
+        tdata[0]=in[it.iofs(0)].r;
+        {
+        size_t i=1, ii=1;
+        if (forward)
+          for (; i<len-1; i+=2, ++ii)
+            in[it.iofs(ii)].SplitConj(tdata[i], tdata[i+1]);
+        else
+          for (; i<len-1; i+=2, ++ii)
+            in[it.iofs(ii)].Split(tdata[i], tdata[i+1]);
+        if (i<len)
+          tdata[i] = in[it.iofs(ii)].r;
         }
-#endif
-    while (it.remaining()>0)
-      {
-      it.advance(1);
-      auto buf = it.stride_out() == sizeof(T) ?
-        &out[it.oofs(0)] : reinterpret_cast<T *>(storage.data());
-
-      if (buf != &tin[it.iofs(0)])
-        for (size_t i=0; i<len; ++i)
-          buf[i] = tin[it.iofs(i)];
-      if ((!r2c) && forward)
-        for (size_t i=2; i<len; i+=2)
-          buf[i] = -buf[i];
-      forward ? plan->forward(buf, fct) : plan->backward(buf, fct);
-      if (r2c && (!forward))
-        for (size_t i=2; i<len; i+=2)
-          buf[i] = -buf[i];
-      if (buf != &out[it.oofs(0)])
-        for (size_t i=0; i<len; ++i)
-          out[it.oofs(i)] = buf[i];
-      }
-} // end of parallel region
-    fct = T(1); // factor has been applied, use 1 for remaining axes
-    }
+        plan->exec(tdata, fct, false);
+        copy_output(it, tdata, out);
+        }
+    });  // end of parallel region
   }
 
-#undef POCKETFFT_NTHREADS
+struct ExecR2R
+  {
+  bool r2c, forward;
+
+  template <typename T0, typename T, size_t vlen> void operator () (
+    const multi_iter<vlen> &it, const cndarr<T0> &in, ndarr<T0> &out, T * buf,
+    const pocketfft_r<T0> &plan, T0 fct) const
+    {
+    copy_input(it, in, buf);
+    if ((!r2c) && forward)
+      for (size_t i=2; i<it.length_out(); i+=2)
+        buf[i] = -buf[i];
+    plan.exec(buf, fct, forward);
+    if (r2c && (!forward))
+      for (size_t i=2; i<it.length_out(); i+=2)
+        buf[i] = -buf[i];
+    copy_output(it, buf, out);
+    }
+  };
 
 template<typename T> void c2c(const shape_t &shape, const stride_t &stride_in,
   const stride_t &stride_out, const shape_t &axes, bool forward,
@@ -3265,7 +3490,7 @@ template<typename T> void c2c(const shape_t &shape, const stride_t &stride_in,
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<cmplx<T>> ain(data_in, shape, stride_in);
   ndarr<cmplx<T>> aout(data_out, shape, stride_out);
-  general_c(ain, aout, axes, forward, fct, nthreads);
+  general_nd<pocketfft_c<T>>(ain, aout, axes, fct, nthreads, ExecC2C{forward});
   }
 
 template<typename T> void dct(const shape_t &shape,
@@ -3277,12 +3502,13 @@ template<typename T> void dct(const shape_t &shape,
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<T> ain(data_in, shape, stride_in);
   ndarr<T> aout(data_out, shape, stride_out);
+  const ExecDcst exec{ortho, type, true};
   if (type==1)
-    general_dcst<T_dct1<T>>(ain, aout, axes, fct, ortho, type, true, nthreads);
+    general_nd<T_dct1<T>>(ain, aout, axes, fct, nthreads, exec);
   else if (type==4)
-    general_dcst<T_dcst4<T>>(ain, aout, axes, fct, ortho, type, true, nthreads);
+    general_nd<T_dcst4<T>>(ain, aout, axes, fct, nthreads, exec);
   else
-    general_dcst<T_dcst23<T>>(ain, aout, axes, fct, ortho, type, true, nthreads);
+    general_nd<T_dcst23<T>>(ain, aout, axes, fct, nthreads, exec);
   }
 
 template<typename T> void dst(const shape_t &shape,
@@ -3294,12 +3520,13 @@ template<typename T> void dst(const shape_t &shape,
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<T> ain(data_in, shape, stride_in);
   ndarr<T> aout(data_out, shape, stride_out);
+  const ExecDcst exec{ortho, type, false};
   if (type==1)
-    general_dcst<T_dst1<T>>(ain, aout, axes, fct, ortho, type, false, nthreads);
+    general_nd<T_dst1<T>>(ain, aout, axes, fct, nthreads, exec);
   else if (type==4)
-    general_dcst<T_dcst4<T>>(ain, aout, axes, fct, ortho, type, false, nthreads);
+    general_nd<T_dcst4<T>>(ain, aout, axes, fct, nthreads, exec);
   else
-    general_dcst<T_dcst23<T>>(ain, aout, axes, fct, ortho, type, false, nthreads);
+    general_nd<T_dcst23<T>>(ain, aout, axes, fct, nthreads, exec);
   }
 
 template<typename T> void r2c(const shape_t &shape_in,
@@ -3383,7 +3610,8 @@ template<typename T> void r2r_fftpack(const shape_t &shape,
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<T> ain(data_in, shape, stride_in);
   ndarr<T> aout(data_out, shape, stride_out);
-  general_r(ain, aout, axes, real2hermitian, forward, fct, nthreads);
+  general_nd<pocketfft_r<T>>(ain, aout, axes, fct, nthreads,
+    ExecR2R{real2hermitian, forward});
   }
 
 template<typename T> void r2r_separable_hartley(const shape_t &shape,
@@ -3394,7 +3622,8 @@ template<typename T> void r2r_separable_hartley(const shape_t &shape,
   util::sanity_check(shape, stride_in, stride_out, data_in==data_out, axes);
   cndarr<T> ain(data_in, shape, stride_in);
   ndarr<T> aout(data_out, shape, stride_out);
-  general_hartley(ain, aout, axes, fct, nthreads);
+  general_nd<pocketfft_r<T>>(ain, aout, axes, fct, nthreads, ExecHartley{},
+    false);
   }
 
 } // namespace detail
