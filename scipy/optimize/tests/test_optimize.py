@@ -848,6 +848,58 @@ class TestOptimizeSimple(CheckOptimize):
                                 constraints={'type': 'ineq', 'fun': cons})
         assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
 
+    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B',
+                                        #  'TNC', 'SLSQP',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
+    def test_respect_maxiter(self, method):
+        # Check that the number of iterations equals max_iter, assuming convergence
+        # doesn't establish before
+        MAXITER = 4
+
+        func = optimize.rosen
+        jac = optimize.rosen_der
+        hess = optimize.rosen_hess
+
+        x0 = np.zeros(10)
+
+        # Set options
+        kwargs = {'method': method, 'options': dict(maxiter=MAXITER)}
+
+        if method in ('Newton-CG',):
+            kwargs['jac'] = jac
+        elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
+                        'trust-constr'):
+            kwargs['jac'] = jac
+            kwargs['hess'] = hess
+
+        sol = optimize.minimize(func, x0, **kwargs)
+
+        n_iter = sol.get('nit', sol.get('niter'))
+
+        assert_(n_iter == MAXITER)
+
+    def test_respect_maxiter_trust_constr_ineq_constraints(self):
+        def f(x):
+            return x**2
+
+        def cons(x):
+            return x - 2
+
+        x0 = np.array([10.])
+        # sol_0 = optimize.minimize(f, x0, method='trust-constr')
+        # sol_1 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], method='trust-constr')
+        # sol_2 = optimize.minimize(f, x0, bounds=[(5, 10)])
+        sol_3 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(5, 10)])
+        # sol_4 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(1, 10)])
+        # for sol in [sol_0, sol_1, sol_2, sol_3, sol_4]:
+        #     assert_(sol.success)
+        # assert_allclose(sol_0.x, 0, atol=1e-7)
+        # assert_allclose(sol_1.x, 2, atol=1e-7)
+        # assert_allclose(sol_2.x, 5, atol=1e-7)
+        assert_allclose(sol_3.x, 5, atol=1e-7)
+        # assert_allclose(sol_4.x, 2, atol=1e-7)
+
     def test_minimize_automethod(self):
         def f(x):
             return x**2
