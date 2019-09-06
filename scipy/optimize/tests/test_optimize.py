@@ -874,31 +874,25 @@ class TestOptimizeSimple(CheckOptimize):
             kwargs['hess'] = hess
 
         sol = optimize.minimize(func, x0, **kwargs)
-
         n_iter = sol.get('nit', sol.get('niter'))
-
         assert_(n_iter == MAXITER)
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
-        def f(x):
-            return x**2
+        # special case of minimization with trust-constr and inequality constraints
+        # to check maxiter limit is obeyed when using internal method 'tr_interior_point'
+        MAXITER = 4
+        f = optimize.rosen
+        jac = optimize.rosen_der
+        hess = optimize.rosen_hess
 
-        def cons(x):
-            return x - 2
+        cons = ({'type': 'ineq',
+                 'fun': lambda x: np.array([0.2 * x[0] - 0.4 * x[1] - 0.33 * x[2]])},)
 
-        x0 = np.array([10.])
-        # sol_0 = optimize.minimize(f, x0, method='trust-constr')
-        # sol_1 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], method='trust-constr')
-        # sol_2 = optimize.minimize(f, x0, bounds=[(5, 10)])
-        sol_3 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(5, 10)])
-        # sol_4 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(1, 10)])
-        # for sol in [sol_0, sol_1, sol_2, sol_3, sol_4]:
-        #     assert_(sol.success)
-        # assert_allclose(sol_0.x, 0, atol=1e-7)
-        # assert_allclose(sol_1.x, 2, atol=1e-7)
-        # assert_allclose(sol_2.x, 5, atol=1e-7)
-        assert_allclose(sol_3.x, 5, atol=1e-7)
-        # assert_allclose(sol_4.x, 2, atol=1e-7)
+        x0 = np.zeros(10)
+        sol = optimize.minimize(f, x0, constraints=cons, jac=jac, hess=hess,
+                                method='trust-constr',
+                                options=dict(maxiter=MAXITER))
+        assert_(sol.nit == MAXITER)
 
     def test_minimize_automethod(self):
         def f(x):
