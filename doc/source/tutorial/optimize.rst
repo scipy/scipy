@@ -401,7 +401,7 @@ Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
 
 All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
-gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
+gradient algorithm approximately solve the trust-region subproblem (or invert the Hessian)
 by iterations without the explicit Hessian factorization. Since only the product of the Hessian
 with an arbitrary vector is needed, the algorithm is specially suited for dealing
 with sparse Hessians, allowing low storage requirements and significant time savings for
