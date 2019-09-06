@@ -721,6 +721,21 @@ class TestOptimizeSimple(CheckOptimize):
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
 
+    def test_gh10771(self):
+        # check that minimize passes bounds and constraints to a custom
+        # minimizer without altering them.
+        bounds = [(-2, 2), (0, 3)]
+        constraints = 'constraints'
+
+        def custmin(fun, x0, **options):
+            assert options['bounds'] is bounds
+            assert options['constraints'] is constraints
+            return optimize.OptimizeResult()
+
+        x0 = [1, 1]
+        res = optimize.minimize(optimize.rosen, x0, method=custmin,
+                                bounds=bounds, constraints=constraints)
+
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something
         def func(z):

@@ -575,17 +575,21 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
             options.setdefault('barrier_tol', tol)
 
+    if meth == '_custom':
+        # custom method called before bounds and constraints are 'standardised'
+        # custom method should be able to accept whatever bounds/constraints
+        # are provided to it.
+        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
+                      bounds=bounds, constraints=constraints,
+                      callback=callback, **options)
+
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
 
     if constraints is not None:
         constraints = standardize_constraints(constraints, x0, meth)
 
-    if meth == '_custom':
-        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
-                      bounds=bounds, constraints=constraints,
-                      callback=callback, **options)
-    elif meth == 'nelder-mead':
+    if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, **options)
