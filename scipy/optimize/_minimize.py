@@ -31,6 +31,7 @@ from .lbfgsb import _minimize_lbfgsb
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
+from ._differentialevolution import differential_evolution
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
@@ -38,7 +39,8 @@ from ._differentiable_functions import FD_METHODS
 
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
-                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov',
+                    'differential-evolution']
 
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
@@ -79,6 +81,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
+            - 'differential-evolution' :ref:`(see here) <`scipy.optimize.differential_evolution`>`
             - custom - a callable object (added in version 0.14.0),
               see below for description.
 
@@ -143,17 +146,19 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and `args` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for L-BFGS-B, TNC, SLSQP and
-        trust-constr methods. There are two ways to specify the bounds:
+        Bounds on variables for L-BFGS-B, TNC, SLSQP, trust-constr and
+        differential-evolution methods. There are two ways to specify the bounds:
 
             1. Instance of `Bounds` class.
             2. Sequence of ``(min, max)`` pairs for each element in `x`. None
                is used to specify no bound.
 
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-        Constraints definition (only for COBYLA, SLSQP and trust-constr).
-        Constraints for 'trust-constr' are defined as a single object or a
-        list of objects specifying constraints to the optimization problem.
+        Constraints definition (only for COBYLA, SLSQP, trust-constr and
+        differential-evolution).
+        Constraints for 'trust-constr' and 'differential-evolution' are defined
+        as a single object or a list of objects specifying constraints to the
+        optimization problem.
         Available constraints are:
 
             - `LinearConstraint`
@@ -333,6 +338,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     used to solve the subproblems with increasing levels of accuracy
     as the iterate gets closer to a solution.
 
+    Method :ref:`trust-constr <scipy.optimize.differential_evolution>` uses
+    differential evolution for constrained optimization.
+
     **Finite-Difference Options**
 
     For Method :ref:`trust-constr <optimize.minimize-trustconstr>`
@@ -503,7 +511,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         options = {}
     # check if optional parameters are supported by the selected method
     # - jac
-    if meth in ('nelder-mead', 'powell', 'cobyla') and bool(jac):
+    if meth in ('nelder-mead', 'powell', 'cobyla',
+                'differential-evolution') and bool(jac):
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
@@ -528,11 +537,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
+    if meth == 'differential-evolution' and bounds is None:
+        warn('Method %s requires bounds.' % method,
+             RuntimeWarning)
+
     # - callback
     if (meth in ('cobyla',) and callback is not None):
         warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
-    if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
+    if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp',
+                 'differential-evolution') and
             options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
@@ -571,7 +585,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if meth in ('bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
                     'trust-ncg', 'trust-exact', 'trust-krylov'):
             options.setdefault('gtol', tol)
-        if meth in ('cobyla', '_custom'):
+        if meth in ('cobyla', '_custom', 'differential-evolution'):
             options.setdefault('tol', tol)
         if meth == 'trust-constr':
             options.setdefault('xtol', tol)
@@ -630,6 +644,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-exact':
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
+    elif meth == 'differential-evolution':
+        return differential_evolution(fun, bounds, args=args, constraints=constraints,
+                                      callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
@@ -798,7 +815,7 @@ def standardize_bounds(bounds, x0, meth):
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp', 'differential-evolution'):
         if isinstance(bounds, Bounds):
             bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds
@@ -812,7 +829,7 @@ def standardize_constraints(constraints, x0, meth):
         constraints = [constraints]
     constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth == 'trust-constr':
+    if meth in ('trust-constr', 'differential-evolution'):
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)

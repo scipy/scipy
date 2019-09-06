@@ -5,8 +5,11 @@ Added by Andrew Nelson 2014
 import warnings
 
 import numpy as np
-from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize.optimize import _status_message
+from scipy.optimize import OptimizeResult
+from ._trustregion_constr import _minimize_trustregion_constr
+from .lbfgsb import _minimize_lbfgsb
+
+from scipy.optimize.optimize import _status_message, _check_unknown_options
 from scipy._lib._util import check_random_state, MapWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
@@ -24,7 +27,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=()):
+                           workers=1, constraints=(), **unknown_options):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -289,6 +292,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            Evolutionary Computation. CEC'02 (Cat. No. 02TH8600). Vol. 2. IEEE,
            2002.
     """
+    _check_unknown_options(unknown_options)
 
     # using a context manager means that any created Pool objects are
     # cleared up.
@@ -794,11 +798,7 @@ class DifferentialEvolutionSolver(object):
             success=(warning_flag is not True))
 
         if self.polish:
-            polish_method = 'L-BFGS-B'
-
             if self._wrapped_constraints:
-                polish_method = 'trust-constr'
-
                 constr_violation = self._constraint_violation_fn(DE_result.x)
                 if np.any(constr_violation > 0.):
                     warnings.warn("differential evolution didn't find a"
@@ -806,11 +806,17 @@ class DifferentialEvolutionSolver(object):
                                   " attempting to polish from the least"
                                   " infeasible solution", UserWarning)
 
-            result = minimize(self.func,
-                              np.copy(DE_result.x),
-                              method=polish_method,
-                              bounds=self.limits.T,
-                              constraints=self.constraints)
+                result = _minimize_trustregion_constr(
+                    self.func, np.copy(DE_result.x), (), '2-point',
+                    None, None, Bounds(self.limits[0], self.limits[1]),
+                    self.constraints)
+            else:
+                bnds = new_bounds_to_old(self.limits[0],
+                                         self.limits[1],
+                                         len(self.x))
+
+                result = _minimize_lbfgsb(self.func, np.copy(DE_result.x),
+                                          bounds=bnds)
 
             self._nfev += result.nfev
             DE_result.nfev = self._nfev

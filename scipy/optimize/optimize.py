@@ -3192,6 +3192,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
     - :ref:`trust-ncg   <optimize.minimize-trustncg>`
+    - :ref:`differential-evolution <scipy.optimize.differential_evolution>`
 
     `scipy.optimize.root`
 
@@ -3233,6 +3234,8 @@ def show_options(solver=None, method=None, disp=True):
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
             ('trust-ncg', 'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
+            ('differential-evolution',
+             'scipy.optimize._differentialevolution.differential_evolution'),
         ),
         'root': (
             ('hybr', 'scipy.optimize.minpack._root_hybr'),

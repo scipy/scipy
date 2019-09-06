@@ -440,6 +440,20 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
+    def test_differential_evolution(self):
+        bounds = [(-10., 10.), (-10., 10.), (-10, 10.)]
+        if self.use_wrapper:
+            # No test for when wrapper not used. They're done in
+            # test__differential_evolution
+            opts = {'maxiter': self.maxiter, 'disp': self.disp}
+            res = optimize.minimize(self.func, self.startparams, args=(),
+                                    bounds=bounds,
+                                    method='differential-evolution',
+                                    options=opts)
+            params = res.x
+            assert_allclose(self.func(params), self.func(self.solution),
+                            atol=1e-6)
+
 
 def test_obj_func_returns_scalar():
     match = ("The user-provided "
