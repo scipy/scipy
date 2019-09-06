@@ -338,7 +338,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     used to solve the subproblems with increasing levels of accuracy
     as the iterate gets closer to a solution.
 
-    Method :ref:`trust-constr <scipy.optimize.differential_evolution>` uses
+    Method :ref:`differential-evolution <scipy.optimize.differential_evolution>` uses
     differential evolution for constrained optimization.
 
     **Finite-Difference Options**
