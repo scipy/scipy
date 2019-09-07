@@ -1340,7 +1340,8 @@
     },
     "wrightomega": {
         "_wright.h++": {
-            "wrightomega": "D->D"
+            "wrightomega": "D->D",
+            "wrightomega_real": "d->d"
         }
     },
     "xlog1py": {
