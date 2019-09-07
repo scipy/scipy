@@ -2166,10 +2166,7 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
 
-    if np.isnan(x) or np.isnan(fval):
-        success = False
-    else:
-        success = nit < maxiter
+    success = nit < maxiter and not (np.isnan(x) or np.isnan(fval))
 
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
                           success=success)
@@ -2313,10 +2310,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         xmin = x2
         fval = f2
 
-    if np.isnan(fval) or np.isnan(xmin):
-        success = False
-    else:
-        success = nit < maxiter
+    success = nit < maxiter and not (np.isnan(fval) or np.isnan(xmin))
 
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
                           success=success)
