@@ -462,8 +462,8 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
 
     Cramer's V with bias correction
     >>> association(observed=obs, stat="V")
-    array([[0.32170191, 0.4363003],
-           [0.20704285, 0.31591398]])
+    array([[0.32170191, 0.4378863],
+           [0.208639, 0.31929737]])
 
     Cramer's V without bias correction
     >>> association(observed=obs, stat="V", correct_bias=False)
@@ -472,8 +472,8 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
 
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
-    array([[0.32170191, 0.4363003],
-           [0.20704285, 0.31591398]])
+    array([[0.32170191, 0.4378863],
+           [0.208639, 0.31929737]])
 
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
