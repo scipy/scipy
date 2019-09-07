@@ -40,7 +40,7 @@ use the following binaries:
 See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
 
 Unless you are building from released source packages, the `Cython
-<http://cython.org/>`__ compiler is also needed.
+<https://cython.org/>`__ compiler is also needed.
 
 BLAS/LAPACK Installation
 ------------------------

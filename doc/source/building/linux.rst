@@ -34,7 +34,7 @@ SciPy depend on
 * Python header files (typically a package named ``python-dev`` or ``python-devel``)
 
 * Unless you are building from released source packages, the `Cython
-  <http://cython.org/>`__ compiler is necessary (typically in a
+  <https://cython.org/>`__ compiler is necessary (typically in a
   package named ``cython``). For building recent SciPy, it is possible
   that you need Cython in a newer version than is available in your
   distribution.

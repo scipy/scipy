@@ -181,7 +181,7 @@ on other Python versions, see the WindowsCompilers_ page.
 
 1) Install Microsoft Visual Studio 2015 or 2017 Community Edition (use the `build tools`_
    from Microsoft)
-2) Finally, install Python from https://python.org/ (make sure to check the box to install
+2) Finally, install Python from https://www.python.org/ (make sure to check the box to install
    pip)
 
 After you've installed the required software, open an MSYS2 terminal, change to a good
