@@ -10,7 +10,7 @@ from .stats import power_divergence, chisquare
 import math
 from warnings import warn
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'association']
+__all__ = ['chi2_contingency']
 
 
 def margins(a):

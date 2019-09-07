@@ -331,7 +331,6 @@ Contingency table functions
    contingency.expected_freq
    contingency.margins
    contingency.association
-   
    fisher_exact
 
 Plot-tests
@@ -386,7 +385,8 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from ._multivariate import *
-from .contingency import *
+from . import contingency
+from .contingency import chi2_contingency
 
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
