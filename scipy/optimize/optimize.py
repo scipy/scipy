@@ -1877,7 +1877,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             flag = 1
             break
 
-    if np.isnan(xf) or np.isnan(fx):
+    if np.isnan(xf) or np.isnan(fx) or np.isnan(fu):
         flag = 2
 
     fval = fx
@@ -2165,8 +2165,14 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
+
+    if np.isnan(x) or np.isnan(fval):
+        success = False
+    else:
+        success = nit < maxiter
+
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
-                          success=nit < maxiter)
+                          success=success)
 
 
 def golden(func, args=(), brack=None, tol=_epsilon,
@@ -2307,8 +2313,13 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         xmin = x2
         fval = f2
 
+    if np.isnan(fval) or np.isnan(xmin):
+        success = False
+    else:
+        success = nit < maxiter
+
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
-                          success=nit < maxiter)
+                          success=success)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
