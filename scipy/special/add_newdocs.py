@@ -2601,16 +2601,90 @@ add_newdoc("exp2",
     """)
 
 add_newdoc("expi",
-    """
-    expi(x)
+    r"""
+    expi(x, out=None)
 
-    Exponential integral Ei
+    Exponential integral Ei.
 
-    Defined as::
+    For real :math:`x`, the exponential integral is defined as [1]_
 
-        integral(exp(t)/t, t=-inf..x)
+    .. math::
 
-    See `expn` for a different exponential integral.
+        Ei(x) = \int_{-\infty}^x \frac{e^t}{t} dt.
+
+    For :math:`x > 0` the integral is understood as a Cauchy principle
+    value.
+
+    It is extended to the complex plane by analytic continuation of
+    the function on the interval :math:`(0, \infty)`. The complex
+    variant has a branch cut on the negative real axis.
+
+    Parameters
+    ----------
+    x: array_like
+        Real or complex valued argument
+    out: ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the exponential integral
+
+    Notes
+    -----
+    The exponential integrals :math:`E_1` and :math:`Ei` satisfy the
+    relation
+
+    .. math::
+
+        E_1(x) = -Ei(-x)
+
+    for :math:`x > 0`.
+
+    See Also
+    --------
+    exp1: Exponential integral :math:`E_1`
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 6.2.5
+           https://dlmf.nist.gov/6.2#E5
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is related to `exp1`.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> -sc.expi(-x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+    >>> sc.exp1(x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+
+    The complex variant has a branch cut on the negative real axis.
+
+    >>> import scipy.special as sc
+    >>> sc.expi(-1 + 1e-12j)
+    (-0.21938393439552062+3.1415926535894254j)
+    >>> sc.expi(-1 - 1e-12j)
+    (-0.21938393439552062-3.1415926535894254j)
+
+    As the complex variant approaches the branch cut, the real parts
+    approach the value of the real variant.
+
+    >>> sc.expi(-1)
+    -0.21938393439552062
+
+    The SciPy implementation returns the real variant for complex
+    values on the branch cut.
+
+    >>> sc.expi(complex(-1, 0.0))
+    (-0.21938393439552062-0j)
+    >>> sc.expi(complex(-1, -0.0))
+    (-0.21938393439552062-0j)
+
     """)
 
 add_newdoc('expit',
