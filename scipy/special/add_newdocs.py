@@ -2427,14 +2427,83 @@ add_newdoc("eval_hermitenorm",
     """)
 
 add_newdoc("exp1",
-    """
-    exp1(z)
+    r"""
+    exp1(z, out=None)
 
-    Exponential integral E_1 of complex argument z
+    Exponential integral E1.
 
-    ::
+    For complex :math:`z \ne 0` the exponential integral can be defined as
+    [1]_
 
-        integral(exp(-z*t)/t, t=1..inf).
+    .. math::
+
+       E_1(z) = \int_z^\infty \frac{e^{-t}}{t} dt,
+
+    where the path of the integral does not cross the negative real
+    axis or pass through the origin.
+
+    Parameters
+    ----------
+    z: array_like
+        Real or complex argument.
+    out: ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the exponential integral E1
+
+    See Also
+    --------
+    expi : exponential integral :math:`Ei`
+    expn : generalization of :math:`E_1`
+
+    Notes
+    -----
+    For :math:`x > 0` it is related to the exponential integral
+    :math:`Ei` (see `expi`) via the relation
+
+    .. math::
+
+       E_1(x) = -Ei(-x).
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 6.2.1
+           https://dlmf.nist.gov/6.2#E1
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has a pole at 0.
+
+    >>> sc.exp1(0)
+    inf
+
+    It has a branch cut on the negative real axis.
+
+    >>> sc.exp1(-1)
+    nan
+    >>> sc.exp1(complex(-1, 0))
+    (-1.8951178163559368-3.141592653589793j)
+    >>> sc.exp1(complex(-1, -0.0))
+    (-1.8951178163559368+3.141592653589793j)
+
+    It approaches 0 along the positive real axis.
+
+    >>> sc.exp1([1, 10, 100, 1000])
+    array([2.19383934e-01, 4.15696893e-06, 3.68359776e-46, 0.00000000e+00])
+
+    It is related to `expi`.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> sc.exp1(x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+    >>> -sc.expi(-x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+
     """)
 
 add_newdoc("exp10",
