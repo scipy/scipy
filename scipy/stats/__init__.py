@@ -385,7 +385,6 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from ._multivariate import *
-from . import contingency
 from .contingency import chi2_contingency
 
 
