@@ -386,7 +386,7 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from ._multivariate import *
-from .contingency import chi2_contingency
+from .contingency import *
 
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
