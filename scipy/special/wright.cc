@@ -438,7 +438,7 @@ wright::wrightomega_real(double x)
   w = w*(1.0+e);
 
   /* Iteration two (if needed based on the condition number) */
-  if (abs((2.0*w*w-8.0*w-1.0)*pow(abs(r),4.0)) >= TWOITERTOL*72.0*pow(abs(wp1),6.0))
+  if (fabs((2.0*w*w-8.0*w-1.0)*pow(fabs(r),4.0)) >= TWOITERTOL*72.0*pow(fabs(wp1),6.0))
     {
       r = x - w - log(w);
       wp1 = w+1.0;
