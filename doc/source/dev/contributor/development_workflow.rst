@@ -273,7 +273,7 @@ Checklist before submitting a PR
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.
 -  Is the code style correct? See :ref:`pep8-scipy`.
 -  Are there benchmarks? See :ref:`benchmarking-with-asv`.
--  Is the commit message `formatted correctly`_?
+-  Is the commit message :ref:`formatted correctly <numpy:writing-the-commit-message>`?
 -  Is the docstring of the new functionality tagged with
    ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
    next release? See the ``updating``, ``workers``, and ``constraints``
@@ -295,8 +295,6 @@ Checklist before submitting a PR
 .. _Setting your commit email address in Git: https://help.github.com/en/articles/setting-your-commit-email-address-in-git
 
 .. _"remotes": https://help.github.com/en/categories/managing-remotes
-
-.. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
 .. _NumPy/SciPy Testing Guidelines: https://docs.scipy.org/doc/numpy/reference/testing.html
 

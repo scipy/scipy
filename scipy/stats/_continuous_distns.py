@@ -6312,7 +6312,7 @@ class skew_norm_gen(rv_continuous):
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        http://azzalini.stat.unipd.it/SN/faq-r.html
+        https://arxiv.org/abs/0911.2093
 
     """
     def _argcheck(self, a):
