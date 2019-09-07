@@ -457,38 +457,38 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
 
     Pearson's contingency coefficient (C)
     >>> association(obs, stat="C")
-    [[ 0.31443609  0.40299424]
-     [ 0.21905398  0.30859905]]
+    array([[0.31443609, 0.40299424],
+           [0.21905398, 0.30859905]])
 
     Cramer's V with bias correction
     >>> association(observed=obs, stat="V")
-    [[ 0.32170191  0.4363003]
-     [ 0.20704285  0.31591398]]
+    array([[0.32170191, 0.4363003],
+           [0.20704285, 0.31591398]])
 
     Cramer's V without bias correction
     >>> association(observed=obs, stat="V", correct_bias=False)
-    [[ 0.33123688  0.4403334]
-     [ 0.22450663  0.32443396]]
+    array([[0.33123688, 0.4403334],
+           [0.22450663, 0.32443396]])
 
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
-    [[ 0.32170191  0.4363003]
-     [ 0.20704285  0.31591398]]
+    array([[0.32170191, 0.4363003],
+           [0.20704285, 0.31591398]])
 
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
-    [[ 0.33123688  0.4403334]
-     [ 0.22450663  0.32443396]]
+    array([[0.33123688, 0.4403334],
+           [0.22450663, 0.32443396]])
 
     Phi with bias correction
     >>> association(observed=obs, stat="phi")
-    [[ 0.32058294  0.43534663]
-     [ 0.20622611  0.31495521]]
+    array([[0.32058294, 0.43534663],
+           [0.20622611, 0.31495521]])
 
     Phi without bias correction
     >>> association(observed=obs, stat="phi", correct_bias=False)
-    [[ 0.33123688  0.4403334]
-     [ 0.22450663  0.32443396]]
+    array([[0.33123688, 0.4403334],
+           [0.22450663, 0.32443396]])
 
     Notes
     ------
