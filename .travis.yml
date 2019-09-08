@@ -107,6 +107,16 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
+    - name: "pip install scipy fails on Python 3.8 beta 4"
+      language: python
+      python: 3.8-dev
+      before_install: true  # override
+      install: pip install scipy
+      script: true  # override
+      after_script: true  # override
+  allow_failures:
+    - name: "pip install scipy fails on Python 3.8 beta 4"
+
 cache:
   directories:
     - $HOME/.ccache
