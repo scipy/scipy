@@ -2644,7 +2644,8 @@ add_newdoc("expi",
 
     See Also
     --------
-    exp1: Exponential integral :math:`E_1`
+    exp1 : Exponential integral :math:`E_1`
+    expn : Generalized exponential integral :math:`E_n`
 
     References
     ----------
