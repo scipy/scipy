@@ -5276,7 +5276,7 @@ C       Output:  EI --- Ei(x)
 C       ============================================
 C
         IMPLICIT NONE
-        DOUBLE COMPLEX Z, CEI, IMF
+        DOUBLE COMPLEX Z, CEI
         DOUBLE PRECISION PI
         PI=3.141592653589793D0
         CALL E1Z(-Z, CEI)
@@ -5287,7 +5287,7 @@ C
            CEI = CEI - (0d0,1d0)*PI
         ELSE IF (DIMAG(Z).EQ.0) THEN
            IF (DBLE(Z).GT.0) THEN
-              CEI = CEI - (0d0,1d0)*PI
+              CEI = CEI + (0d0,1d0)*DSIGN(PI,DIMAG(Z))
            ENDIF
         ENDIF
         RETURN

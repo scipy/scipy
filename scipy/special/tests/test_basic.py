@@ -321,9 +321,6 @@ class TestCephes(object):
     def test_erfc(self):
         assert_equal(cephes.erfc(0), 1.0)
 
-    def test_expi(self):
-        cephes.expi(1)
-
     def test_expn(self):
         cephes.expn(1,1)
 
