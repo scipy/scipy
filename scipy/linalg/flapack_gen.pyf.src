@@ -237,6 +237,24 @@ subroutine <prefix>getc2(n,a,ipiv,jpiv,info)
 
 end subroutine <prefix>getc2
 
+subroutine <prefix>gesc2(n,lu,rhs,ipiv,jpiv,scale)
+    ! x,scale = gesc2(lu,rhs,ipiv,jpiv,overwrite_b=0)
+    ! Solve  A * X = scale * RHS
+    ! A = P * L * U * Q
+    threadsafe
+    callstatement {int i;for(i=0;i\<n;++ipiv[i],++jpiv[i++]);(*f2py_func)(&n,lu,&n,rhs,ipiv,jpiv,&scale);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument int*,<ctype>*,int*,<ctype>*,int*,int*,<ctypereal>*
+
+    integer depend(lu),intent(hide):: n = shape(lu,0)
+    <ftype> dimension(n,n),intent(in) :: lu
+    check(shape(lu,0)==shape(lu,1)) :: lu
+    <ftype> dimension(n),intent(in,out,copy,out=x),depend(n),check(shape(lu,0)==len(rhs)) :: rhs
+    integer dimension(n),intent(in),depend(n) :: ipiv
+    integer dimension(n),intent(in),depend(n) :: jpiv
+    <ftype2> intent(out):: scale
+
+end subroutine <prefix>gesc2
+
 subroutine <prefix>getri(n,lu,piv,work,lwork,info)
     ! inv_a,info = getri(lu,piv,lwork=3*n,overwrite_lu=0)
     ! Find A inverse A^-1.
