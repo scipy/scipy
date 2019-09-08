@@ -1756,9 +1756,21 @@ add_newdoc("erf",
 
 add_newdoc("erfc",
     """
-    erfc(x)
+    erfc(x, out=None)
 
     Complementary error function, ``1 - erf(x)``.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the complementary error function
 
     See Also
     --------
@@ -1783,9 +1795,21 @@ add_newdoc("erfc",
 
 add_newdoc("erfi",
     """
-    erfi(z)
+    erfi(z, out=None)
 
     Imaginary error function, ``-i erf(i z)``.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the imaginary error function
 
     See Also
     --------
@@ -1815,9 +1839,22 @@ add_newdoc("erfi",
 
 add_newdoc("erfcx",
     """
-    erfcx(x)
+    erfcx(x, out=None)
 
     Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the scaled complementary error function
+
 
     See Also
     --------
