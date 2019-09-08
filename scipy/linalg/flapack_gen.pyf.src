@@ -221,6 +221,22 @@ subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
 
 end subroutine <prefix>getrs
 
+subroutine <prefix>getc2(n,a,ipiv,jpiv,info)
+    ! lu,ipiv,jpiv,info = getc2(a,overwrite_a=0)
+    ! Compute an LU factorization of with complete pivoting of a general n-by-n matrix.
+    ! A = P * L * U * Q
+    threadsafe
+    callstatement {int i;(*f2py_func)(&n,a,&n,ipiv,jpiv,&info);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument int*,<ctype>*,int*,int*,int*,int*
+
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=lu) :: a
+    integer dimension(n),depend(n),intent(out) :: ipiv
+    integer dimension(n),depend(n),intent(out) :: jpiv
+    integer intent(out):: info
+
+end subroutine <prefix>getc2
+
 subroutine <prefix>getri(n,lu,piv,work,lwork,info)
     ! inv_a,info = getri(lu,piv,lwork=3*n,overwrite_lu=0)
     ! Find A inverse A^-1.
