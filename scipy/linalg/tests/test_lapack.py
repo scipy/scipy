@@ -1594,6 +1594,7 @@ def test_geequ():
             assert_allclose(desired_cplx.astype(dtype), r[:, None]*A*c,
                             rtol=0, atol=1e-4)
 
+<<<<<<< HEAD
 
 def test_syequb():
     desired_log2s = np.array([0, 0, 0, 0, 0, 0, -1, -1, -2, -3])
@@ -1628,3 +1629,44 @@ def test_heequb():
         post3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[1, :]
 
         assert pre3_7_lapack_result.all() or post3_7_lapack_result.all()
+=======
+        getrs = get_lapack_funcs('getrs', dtype=dtype)
+        x, info = getrs(lu, piv, b, trans=False, overwrite_b=False)
+        if ind < 2:
+            assert_array_almost_equal(desired_x_real.astype(dtype),
+                                      x, decimal=4)
+        else:
+            assert_array_almost_equal(desired_x_cplx.astype(dtype),
+                                      x, decimal=4)
+
+
+def test_getc2_gesc2():
+    np.random.seed(42)
+    n = 10
+    desired_real = np.random.rand(n)
+    desired_cplx = np.random.rand(n) + np.random.rand(n)*1j
+
+    for ind, dtype in enumerate(DTYPES):
+        if ind < 2:
+            A = np.random.rand(n, n)
+            A = A.astype(dtype)
+            b = A @ desired_real
+            b = b.astype(dtype)
+        else:
+            A = np.random.rand(n, n) + np.random.rand(n, n)*1j
+            A = A.astype(dtype)
+            b = A @ desired_cplx
+            b = b.astype(dtype)
+
+        getc2 = get_lapack_funcs('getc2', dtype=dtype)
+        gesc2 = get_lapack_funcs('gesc2', dtype=dtype)
+        lu, ipiv, jpiv, info = getc2(A, overwrite_a=0)
+        x, scale = gesc2(lu, b, ipiv, jpiv, overwrite_rhs=0)
+
+        if ind < 2:
+            assert_array_almost_equal(desired_real.astype(dtype),
+                                      x, decimal=4)
+        else:
+            assert_array_almost_equal(desired_cplx.astype(dtype),
+                                      x, decimal=4)
+>>>>>>> Fixed minor mistakes in ?gesc2 wrapper, added tests
