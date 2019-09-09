@@ -1,7 +1,6 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
 language: python
-sudo: false
 addons:
   apt:
     packages: &common_packages
@@ -38,8 +37,6 @@ matrix:
         - |
           grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
     - python: 3.7
-      dist: xenial # travis-ci/travis-ci/issues/9815
-      sudo: true
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -49,8 +46,6 @@ matrix:
         # specify in pyproject.toml (will be older than --pre --upgrade) works
         - USE_SDIST=1
     - python: 3.7
-      dist: xenial # travis-ci/travis-ci/issues/9815
-      sudo: true
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
@@ -59,7 +54,6 @@ matrix:
     # However travis only specifies regular or development builds of Python
     # so we must install python3.5-dbg using apt.
     - language: generic
-      dist: xenial  # Requires Xenial(ubunu 18.04) as python-dbg uses py3.5
       env:
         - USE_DEBUG=python3.5-dbg
         - TESTMODE=fast
@@ -71,8 +65,6 @@ matrix:
             - python3.5-dbg
             - python3.5-dev
     - python: 3.8-dev
-      dist: xenial
-      sudo: true
       env:
         - TESTMODE=fast
         - NUMPYSPEC="numpy"
