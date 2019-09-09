@@ -1551,7 +1551,6 @@ def test_geequ():
                              [0.8607+0.1393*1j,
                               -0.2759+0.7241*1j,
                               -0.1642-0.1365*1j]])
-
     for ind, dtype in enumerate(DTYPES):
         if ind < 2:
             # Use examples from the NAG documentation
