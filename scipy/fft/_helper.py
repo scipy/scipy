@@ -1,9 +1,13 @@
-from . import _pocketfft
-from ._pocketfft import helper as _helper
+from functools import lru_cache
 from bisect import bisect_left
+
 import numpy as np
 
+from . import _pocketfft
+from ._pocketfft import helper as _helper
 
+
+@lru_cache()
 def next_fast_len(target, kind='C2C'):
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.
 
