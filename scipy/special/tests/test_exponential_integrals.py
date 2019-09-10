@@ -67,3 +67,9 @@ class TestExpi(object):
             atol=0,
             rtol=1e-15
         )
+
+
+class TestExpn(object):
+
+    def test_out_of_domain(self):
+        assert all(np.isnan([sc.expn(-1, 1.0), sc.expn(1, -1.0)]))
