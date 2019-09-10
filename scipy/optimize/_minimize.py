@@ -273,6 +273,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Bound-Constrained minimization**
 
+    Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
+    algorithm [6]_, [7]_ for bound constrained minimization.
+
     Method :ref:`Powell <optimize.minimize-powell>` is a modification
     of Powell's method [3]_, [4]_ which is a conjugate direction
     method. It performs sequential one-dimensional minimizations along
@@ -290,9 +293,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     iteration will be within the bounds. If `direc` is not full rank,
     then some parameters may not be optimized and the solution is not
     guarenteed to be within the bounds.
-
-    Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
-    algorithm [6]_, [7]_ for bound constrained minimization.
 
     Method :ref:`TNC <optimize.minimize-tnc>` uses a truncated Newton
     algorithm [5]_, [8]_ to minimize a function with variables subject
@@ -800,7 +800,11 @@ def standardize_bounds(bounds, x0, meth):
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp', 'powell'):
+    elif meth == 'powell':
+        if isinstance(bounds, Bounds):
+            bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
+        bounds = old_bound_to_new(bounds)
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
         if isinstance(bounds, Bounds):
             bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds

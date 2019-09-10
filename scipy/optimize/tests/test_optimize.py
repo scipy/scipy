@@ -1348,7 +1348,7 @@ def test_linesearch_powell():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi, fval, tol=1e-5)
+        f, p, direction = linesearch_powell(func, p0, xi, fval=fval, tol=1e-5)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1379,9 +1379,9 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi, fval,
+        f, p, direction = linesearch_powell(func, p0, xi,
                                             lower_bound, upper_bound,
-                                            tol=1e-5)
+                                            fval=fval, tol=1e-5)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1401,9 +1401,9 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi, fval,
+        f, p, direction = linesearch_powell(func, p0, xi,
                                             lower_bound, upper_bound,
-                                            tol=1e-5)
+                                            fval=fval, tol=1e-5)
         assert_allclose(f, func(l * xi), atol=1e-6)
         assert_allclose(p, l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
@@ -1420,9 +1420,9 @@ def test_linesearch_powell_bounded():
     )
 
     for xi, l in all_tests:
-        f, p, direction = linesearch_powell(func, p0, xi, fval,
+        f, p, direction = linesearch_powell(func, p0, xi,
                                             lower_bound, upper_bound,
-                                            tol=1e-5)
+                                            fval=fval, tol=1e-5)
         assert_allclose(f, func(p0 + l * xi), atol=1e-6)
         assert_allclose(p, p0 + l * xi, atol=1e-6)
         assert_allclose(direction, l * xi, atol=1e-6)
