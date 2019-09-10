@@ -2795,15 +2795,72 @@ add_newdoc("expm1",
     """)
 
 add_newdoc("expn",
-    """
-    expn(n, x)
+    r"""
+    expn(n, x, out=None)
 
-    Exponential integral E_n
+    Generalized exponential integral En.
 
-    Returns the exponential integral for integer `n` and non-negative `x` and
-    `n`::
+    For integer :math:`n \geq 0` and real :math:`x \geq 0` the
+    generalized exponential integral is defined as [dlmf]_
 
-        integral(exp(-x*t) / t**n, t=1..inf).
+    .. math::
+
+        E_n(x) = x^{n - 1} \int_x^\infty \frac{e^{-t}}{t^n} dt.
+
+    Parameters
+    ----------
+    n: array_like
+        Non-negative integers
+    x: array_like
+        Real argument
+    out: ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the generalized exponential integral
+
+    See Also
+    --------
+    exp1 : special case of :math:`E_n` for :math:`n = 1`
+    expi : related to :math:`E_n` when :math:`n = 1`
+
+    References
+    ----------
+    .. [dlmf] Digital Library of Mathematical Functions, 8.19.2
+              https://dlmf.nist.gov/8.19#E2
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    Its domain is nonnegative n and x.
+
+    >>> sc.expn(-1, 1.0), sc.expn(1, -1.0)
+    (nan, nan)
+
+    It has a pole at ``x = 0`` for ``n = 1, 2``; for larger ``n`` it
+    is equal to ``1 / (n - 1)``.
+
+    >>> sc.expn([0, 1, 2, 3, 4], 0)
+    array([       inf,        inf, 1.        , 0.5       , 0.33333333])
+
+    For n equal to 0 it reduces to ``exp(-x) / x``.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> sc.expn(0, x)
+    array([0.36787944, 0.06766764, 0.01659569, 0.00457891])
+    >>> np.exp(-x) / x
+    array([0.36787944, 0.06766764, 0.01659569, 0.00457891])
+
+    For n equal to 1 it reduces to `exp1`.
+
+    >>> sc.expn(1, x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+    >>> sc.exp1(x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+
     """)
 
 add_newdoc("exprel",
