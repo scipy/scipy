@@ -119,6 +119,9 @@ class NextFastLen(Benchmark):
             raise NotImplementedError
 
     def time_next_fast_len(self, size):
+        scipy_fft.next_fast_len.__wrapped__(size)
+
+    def time_next_fast_len_cached(self, size):
         scipy_fft.next_fast_len(size)
 
 
