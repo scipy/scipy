@@ -12,13 +12,13 @@ import numpy as np
 __all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
 
 
-class FortranEOFError(TypeError):
+class FortranEOFError(TypeError, IOError):
     # The code used to raise TypeErrors at the end of the file
     # so we want to make sure they catch this error.
     pass
 
 
-class FortranFormattingError(TypeError):
+class FortranFormattingError(TypeError, IOError):
     pass
 
 
@@ -171,6 +171,14 @@ class FortranFile(object):
         -------
         data : ndarray
             A one-dimensional array object.
+
+        Raises
+        ------
+        FortranEOFError
+            To signal that no further records are available
+        FortranFormattingError
+            To signal that the end of the file was encountered
+            part-way through a record
 
         Notes
         -----

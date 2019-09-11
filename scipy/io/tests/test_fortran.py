@@ -164,7 +164,7 @@ def test_fortran_roundtrip(tmpdir):
 
 
 def test_fortran_eof_ok(tmpdir):
-    filename = path.join(tmpdir, "scratch")
+    filename = path.join(str(tmpdir), "scratch")
     np.random.seed(1)
     with FortranFile(filename, 'w') as f:
         f.write_record(np.random.randn(5))
@@ -177,7 +177,7 @@ def test_fortran_eof_ok(tmpdir):
 
 
 def test_fortran_eof_broken_size(tmpdir):
-    filename = path.join(tmpdir, "scratch")
+    filename = path.join(str(tmpdir), "scratch")
     np.random.seed(1)
     with FortranFile(filename, 'w') as f:
         f.write_record(np.random.randn(5))
@@ -192,7 +192,7 @@ def test_fortran_eof_broken_size(tmpdir):
 
 
 def test_fortran_bogus_size(tmpdir):
-    filename = path.join(tmpdir, "scratch")
+    filename = path.join(str(tmpdir), "scratch")
     np.random.seed(1)
     with FortranFile(filename, 'w') as f:
         f.write_record(np.random.randn(5))
@@ -205,7 +205,7 @@ def test_fortran_bogus_size(tmpdir):
 
 
 def test_fortran_eof_broken_record(tmpdir):
-    filename = path.join(tmpdir, "scratch")
+    filename = path.join(str(tmpdir), "scratch")
     np.random.seed(1)
     with FortranFile(filename, 'w') as f:
         f.write_record(np.random.randn(5))
@@ -219,7 +219,7 @@ def test_fortran_eof_broken_record(tmpdir):
 
 
 def test_fortran_eof_multidimensional(tmpdir):
-    filename = path.join(tmpdir, "scratch")
+    filename = path.join(str(tmpdir), "scratch")
     n, m, q = 3, 5, 7
     dt = np.dtype([("field", np.float, (n, m))])
     a = np.zeros(q, dtype=dt)
