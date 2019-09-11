@@ -34,7 +34,7 @@ rules for what is and isn't public in Python are:
           the absence of underscores do not mark something as public.
 
 In SciPy there are modules whose names don't start with an underscore, but that
-should be considered private.  To clarify which modules these are, we define
+should be considered private. To clarify which modules these are, we define
 below what the public API is for SciPy, and give some recommendations for how
 to import modules/functions/objects from SciPy.
 
