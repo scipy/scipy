@@ -405,13 +405,12 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     if len(axes):
         if not complex_result:
             fft, ifft = sp_fft.rfftn, sp_fft.irfftn
-            kind = 'R2C'
         else:
             fft, ifft = sp_fft.fftn, sp_fft.ifftn
-            kind = 'C2C'
 
         # Speed up FFT by padding to optimal size
-        fshape = [sp_fft.next_fast_len(shape[a], kind) for a in axes]
+        fshape = [
+            sp_fft.next_fast_len(shape[a], not complex_result) for a in axes]
         fslice = tuple([slice(sz) for sz in shape])
         sp1 = fft(in1, fshape, axes=axes)
         sp2 = fft(in2, fshape, axes=axes)
