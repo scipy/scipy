@@ -3230,10 +3230,12 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         if nmask.all():
             res = np.nan
         else:
+            # Find out if any of the axis that are being averaged consist
+            # entirely of NaN.  If one exists, set the result (res) to NaN
             smask = np.ones(shape=nmask.shape,
                             dtype=int).sum(axis=axis) == nmask.sum(axis=axis)
             if smask.any():
-                np.copyto(res, np.nan, where=smask, casting='unsafe')
+                res[smask] = np.nan
 
     return res*(high - low)/2.0/pi + low
 
@@ -3281,11 +3283,8 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         S = sin(sin_ang).mean(axis=axis)
         C = cos(cos_ang).mean(axis=axis)
     else:
-        nsum = np.sum(~mask, axis=axis).astype(float)
-        if nsum.ndim > 0:
-            np.copyto(nsum, np.nan, where=(nsum == 0), casting='unsafe')
-        elif nsum == 0.0:
-            nsum = np.nan
+        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
+        nsum[nsum == 0] = np.nan
         S = sin(sin_ang).sum(axis=axis) / nsum
         C = cos(cos_ang).sum(axis=axis) / nsum
     R = hypot(S, C)
@@ -3338,11 +3337,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         S = sin(sin_ang).mean(axis=axis)
         C = cos(cos_ang).mean(axis=axis)
     else:
-        nsum = np.sum(~mask, axis=axis).astype(float)
-        if nsum.ndim > 0:
-            np.copyto(nsum, np.nan, where=(nsum == 0), casting='unsafe')
-        elif nsum == 0.0:
-            nsum = np.nan
+        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
+        nsum[nsum == 0] = np.nan
         S = sin(sin_ang).sum(axis=axis) / nsum
         C = cos(cos_ang).sum(axis=axis) / nsum
     R = hypot(S, C)
