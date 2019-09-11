@@ -203,7 +203,7 @@ can be calculated as
 (0.20000000000002294, 1.2239614263187945e-08)
 
 Note that the order of arguments for `f` must match the order of the
-integration bounds; i.e. the inner integral with respect to :math:`t` is on
+integration bounds; i.e., the inner integral with respect to :math:`t` is on
 the interval :math:`[1, \infty]` and the outer integral with respect to
 :math:`x` is on the interval :math:`[0, \infty]`.
 
@@ -235,15 +235,15 @@ Gaussian quadrature
 -------------------
 
 A few functions are also provided in order to perform simple Gaussian
-quadrature over a fixed interval. The first is :obj:`fixed_quad` which
+quadrature over a fixed interval. The first is :obj:`fixed_quad`, which
 performs fixed-order Gaussian quadrature. The second function is
-:obj:`quadrature` which performs Gaussian quadrature of multiple
+:obj:`quadrature`, which performs Gaussian quadrature of multiple
 orders until the difference in the integral estimate is beneath some
 tolerance supplied by the user. These functions both use the module
-``scipy.special.orthogonal`` which can calculate the roots and quadrature
+``scipy.special.orthogonal``, which can calculate the roots and quadrature
 weights of a large variety of orthogonal polynomials (the polynomials
 themselves are available as special functions returning instances of
-the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
+the polynomial class --- e.g., :obj:`special.legendre <scipy.special.legendre>`).
 
 
 Romberg Integration
@@ -347,7 +347,7 @@ to arbitrary additional data you want to provide.
 
 2.) Now compile this file to a shared/dynamic library (a quick search will help
 with this as it is OS-dependent). The user must link any math libraries,
-etc. used.  On linux this looks like::
+etc., used.  On linux this looks like::
 
     $ gcc -shared -fPIC -o testlib.so testlib.c
 
@@ -513,7 +513,7 @@ Solving a system with a banded Jacobian matrix
 system of differential equations that are known to be stiff, this
 can improve performance significantly.
 
-As an example, we'll solve the one-dimensional Gray-Scott partial
+As an example, we'll solve the 1-D Gray-Scott partial
 differential equations using the method of lines [MOL]_.  The Gray-Scott equations
 for the functions :math:`u(x, t)` and :math:`v(x, t)` on the interval
 :math:`x \in [0, L]` are
@@ -530,7 +530,7 @@ components :math:`u` and :math:`v`, respectively, and :math:`f` and :math:`k`
 are constants.  (For more information about the system, see
 http://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/)
 
-We'll assume Neumann (i.e. "no flux") boundary conditions:
+We'll assume Neumann (i.e., "no flux") boundary conditions:
 
 .. math::
 
