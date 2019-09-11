@@ -95,7 +95,7 @@ def next_fast_len(target):
 
     """
     # Real transforms use regular sizes so this is backwards compatible
-    return _helper.next_fast_len(target, True)
+    return _helper.good_size(target, True)
 
 
 def _good_shape(x, shape, axes):
