@@ -203,7 +203,6 @@ def _remove_redundancy_dense(A, rhs):
         # not efficient, but this is not the time sink...
         js = np.array(list(k-set(b)))
         batch = 50
-        dependent = True
 
         # This is a tiny bit faster than looping over columns indivually,
         # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
@@ -215,9 +214,8 @@ def _remove_redundancy_dense(A, rhs):
                 j = js[j_index + np.argmax(c)]  # very independent column
                 B[:, i] = A[:, j]
                 b[i] = j
-                dependent = False
                 break
-        if dependent:
+        else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))
             bnorm = np.linalg.norm(rhs)
             if abs(bibar)/(1+bnorm) > tolprimal:  # inconsistent
