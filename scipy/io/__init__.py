@@ -46,6 +46,8 @@ Unformatted Fortran files
    :toctree: generated/
 
    FortranFile - A file object for unformatted sequential Fortran files
+   FortranEOFError - Exception indicating the end of a well-formed file
+   FortranFormattingError - Exception indicating an inappropriate end
 
 Netcdf
 ======

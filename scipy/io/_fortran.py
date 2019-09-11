@@ -13,12 +13,22 @@ __all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
 
 
 class FortranEOFError(TypeError, IOError):
-    # The code used to raise TypeErrors at the end of the file
-    # so we want to make sure they catch this error.
+    """Indicates that the file ended properly.
+
+    This error descends from TypeError because the code used to raise
+    TypeError (and this was the only way to know that the file had
+    ended) so users might have ``except TypeError:``.
+
+    """
     pass
 
 
 class FortranFormattingError(TypeError, IOError):
+    """Indicates that the file ended mid-record.
+
+    Descends from TypeError for backward compatibility.
+
+    """
     pass
 
 
