@@ -1,14 +1,11 @@
-from functools import lru_cache
-from bisect import bisect_left
-
+from functools import update_wrapper, lru_cache
 import numpy as np
 
 from . import _pocketfft
 from ._pocketfft import helper as _helper
 
 
-@lru_cache()
-def next_fast_len(target, kind='C2C'):
+def next_fast_len(target, real=False):
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.
 
     SciPy's FFT algorithms gain their speed by a recursive divide and conquer
@@ -23,11 +20,9 @@ def next_fast_len(target, kind='C2C'):
     ----------
     target : int
         Length to start searching from.  Must be a positive integer.
-    kind : {'C2C', 'C2R', 'R2C'}, optional
-        Kind of transform to be performed
-        - 'C2C': Complex to complex (e.g. `fft`, `ifft`)
-        - 'C2R': Complex to real (e.g. `irfft`, `hfft`)
-        - 'R2C': Real to complex (e.g. `rfft`, `ihfft`)
+    real : bool, optional
+        True if the FFT involves real input or output (e.g. `rfft` or `hfft` but
+        not `fft`). Defaults to False.
 
     Returns
     -------
@@ -64,7 +59,11 @@ def next_fast_len(target, kind='C2C'):
     >>> b = fft.fft(a, 131072)
 
     """
-    return _helper.next_fast_len(target, kind)
+    pass
+
+
+next_fast_len = update_wrapper(lru_cache()(_helper.good_size), next_fast_len)
+next_fast_len.__wrapped__ = _helper.good_size
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
