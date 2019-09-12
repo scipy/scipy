@@ -195,14 +195,14 @@ same answer as shown in the following example:
     array([[-4. ],
           [ 4.5]])
     >>> A.dot(linalg.inv(A).dot(b)) - b  # check
-    array([[  8.88178420e-16],
-          [  2.66453526e-15]])
-    >>> np.linalg.solve(A, b)  # fast
+    array([[5],
+           [6]])
+    >>> linalg.solve(A, b)  # fast
     array([[-4. ],
           [ 4.5]])
-    >>> A.dot(np.linalg.solve(A, b)) - b  # check
-    array([[ 0.],
-          [ 0.]])
+    >>> A.dot(linalg.solve(A, b)) - b  # check
+    array([[5],
+           [6]])
 
 
 Finding Determinant
