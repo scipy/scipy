@@ -3073,25 +3073,64 @@ add_newdoc("fdtridfn",
     """)
 
 add_newdoc("fresnel",
-    """
-    fresnel(z)
+    r"""
+    fresnel(z, out=None)
 
-    Fresnel sin and cos integrals
+    Fresnel integrals.
 
-    Defined as::
+    The Fresnel integrals are defined as
 
-        ssa = integral(sin(pi/2 * t**2), t=0..z)
-        csa = integral(cos(pi/2 * t**2), t=0..z)
+    .. math::
+
+       S(z) &= \int_0^z \cos(\pi t^2 /2) dt \\
+       C(z) &= \int_0^z \sin(\pi t^2 /2) dt.
+
+    See [dlmf]_ for details.
 
     Parameters
     ----------
-    z : float or complex array_like
-        Argument
+    z : array_like
+        Real or complex valued argument
+    out : 2-tuple of ndarrays, optional
+        Optional output arrays for the function results
 
     Returns
     -------
-    ssa, csa
-        Fresnel sin and cos integral values
+    S, C : 2-tuple of scalar or ndarray
+        Values of the Fresnel integrals
+
+    See Also
+    --------
+    fresnel_zeros : zeros of the Fresnel integrals
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/7.2#iii
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    As x goes to infinity, S and C converge to 0.5.
+
+    >>> S, C = sc.fresnel([0.1, 1, 10, 100, np.inf])
+    >>> S
+    array([0.00052359, 0.43825915, 0.46816998, 0.4968169 , 0.5       ])
+    >>> C
+    array([0.09999753, 0.7798934 , 0.49989869, 0.4999999 , 0.5       ])
+
+    They are related to the error function `erf`.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> zeta = 0.5 * np.sqrt(np.pi) * (1 - 1j) * x
+    >>> S, C = sc.fresnel(x)
+    >>> C + 1j*S
+    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
+           0.60572079+0.496313j  , 0.49842603+0.42051575j])
+    >>> 0.5 * (1 + 1j) * sc.erf(zeta)
+    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
+           0.60572079+0.496313j  , 0.49842603+0.42051575j])
 
     """)
 
