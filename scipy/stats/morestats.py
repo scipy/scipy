@@ -3151,24 +3151,24 @@ def _circfuncs_common(samples, high, low, nan_policy='propagate'):
     # Ensure samples are array-like and size is not zero
     samples = np.asarray(samples)
     if samples.size == 0:
-        return np.nan, np.nan, np.nan, None
+        return np.nan, np.asarray(np.nan), np.asarray(np.nan), None
 
-    # Recast samples as radians that range between 0 and 2 pi for use in
-    # calculating the sine and cosine
-    sin_ang = (samples - low)*2.*pi / (high - low)
-    cos_ang = (samples - low)*2.*pi / (high - low)
+    # Recast samples as radians that range between 0 and 2 pi and calculate
+    # the sine and cosine
+    sin_samp = sin((samples - low)*2.*pi / (high - low))
+    cos_samp = cos((samples - low)*2.*pi / (high - low))
 
     # Apply the NaN policy
     contains_nan, nan_policy = _contains_nan(samples, nan_policy)
     if contains_nan and nan_policy == 'omit':
         mask = np.isnan(samples)
-        # Set NaN to values that will be zero when taking the sine or cosine
-        np.copyto(sin_ang, 0.0, where=mask, casting='unsafe')
-        np.copyto(cos_ang, np.pi/2.0, where=mask, casting='unsafe')
+        # Set the sines and cosines that are NaN to zero
+        sin_samp[mask] = 0.0
+        cos_samp[mask] = 0.0
     else:
         mask = None
 
-    return samples, sin_ang, cos_ang, mask
+    return samples, sin_samp, cos_samp, mask
 
 
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3207,11 +3207,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.4
 
     """
-    samples, sin_ang, cos_ang, nmask = _circfuncs_common(samples, high, low,
-                                                         nan_policy=nan_policy)
-    S = sin(sin_ang).sum(axis=axis)
-    C = cos(cos_ang).sum(axis=axis)
-    res = arctan2(S, C)
+    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,\
+                                                        nan_policy=nan_policy)
+    sin_sum = sin_samp.sum(axis=axis)
+    cos_sum = cos_samp.sum(axis=axis)
+    res = arctan2(sin_sum, cos_sum)
 
     mask_nan = ~np.isnan(res)
     if mask_nan.ndim > 0:
@@ -3232,7 +3232,8 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         else:
             # Find out if any of the axis that are being averaged consist
             # entirely of NaN.  If one exists, set the result (res) to NaN
-            smask = nmask.shape[axis] == nmask.sum(axis=axis)
+            nshape = 0 if axis is None else axis
+            smask = nmask.shape[nshape] == nmask.sum(axis=axis)
             if smask.any():
                 res[smask] = np.nan
 
@@ -3276,17 +3277,17 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     2.19722457734
 
     """
-    samples, sin_ang, cos_ang, mask = _circfuncs_common(samples, high, low,
-                                                        nan_policy=nan_policy)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
+                                                          nan_policy=nan_policy)
     if mask is None:
-        S = sin(sin_ang).mean(axis=axis)
-        C = cos(cos_ang).mean(axis=axis)
+        sin_mean = sin_samp.mean(axis=axis)
+        cos_mean = cos_samp.mean(axis=axis)
     else:
         nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
         nsum[nsum == 0] = np.nan
-        S = sin(sin_ang).sum(axis=axis) / nsum
-        C = cos(cos_ang).sum(axis=axis) / nsum
-    R = hypot(S, C)
+        sin_mean = sin_samp.sum(axis=axis) / nsum
+        cos_mean = cos_samp.sum(axis=axis) / nsum
+    R = hypot(sin_mean, cos_mean)
 
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
@@ -3330,16 +3331,16 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.063564063306
 
     """
-    samples, sin_ang, cos_ang, mask = _circfuncs_common(samples, high, low,
-                                                        nan_policy=nan_policy)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
+                                                          nan_policy=nan_policy)
     if mask is None:
-        S = sin(sin_ang).mean(axis=axis)
-        C = cos(cos_ang).mean(axis=axis)
+        sin_mean = sin_samp.mean(axis=axis)
+        cos_mean = cos_samp.mean(axis=axis)
     else:
         nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
         nsum[nsum == 0] = np.nan
-        S = sin(sin_ang).sum(axis=axis) / nsum
-        C = cos(cos_ang).sum(axis=axis) / nsum
-    R = hypot(S, C)
+        sin_mean = sin_samp.sum(axis=axis) / nsum
+        cos_mean = cos_samp.sum(axis=axis) / nsum
+    R = hypot(sin_mean, cos_mean)
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
