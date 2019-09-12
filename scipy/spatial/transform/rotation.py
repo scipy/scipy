@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import scipy.linalg
 from scipy._lib._util import check_random_state
+from ._rotation_groups import create_group
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -211,6 +212,7 @@ class Rotation(object):
     __mul__
     inv
     magnitude
+    create_group
     __getitem__
     random
     match_vectors
@@ -1460,6 +1462,44 @@ class Rotation(object):
             return angles[0]
         else:
             return angles
+
+    @classmethod
+    def create_group(cls, group, axis='Z'):
+        """Create a 3D rotation group.
+
+        Parameters
+        ----------
+        group : string
+            The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
+            where `n` is a positive integer. The groups are:
+
+                * I: Icosahedral group
+                * O: Octahedral group
+                * T: Tetrahedral group
+                * D: Dicyclic group
+                * C: Cyclic group
+
+        axis : integer
+            The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or
+            lowercase). Default is 'Z'. Ignored for groups 'I', 'O', and 'T'.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            Object containing the elements of the rotation group.
+
+        Notes
+        -----
+        This method generates rotation groups only. The full 3-dimensional
+        point groups [PointGroups]_ also contain reflections.
+
+        References
+        ----------
+        .. [PointGroups] `Point groups
+           <https://en.wikipedia.org/wiki/Point_groups_in_three_dimensions>`_
+           on Wikipedia.
+        """
+        return create_group(cls, group, axis=axis)
 
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
