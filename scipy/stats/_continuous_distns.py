@@ -6087,19 +6087,32 @@ class reciprocal_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `reciprocal` is:
+    The probability density function for this class is:
 
     .. math::
 
         f(x, a, b) = \frac{1}{x \log(b/a)}
 
-    for :math:`a \le x \le b`, :math:`b > a > 0`.
+    for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
+    :math:`a` and :math:`b` as shape parameters.
 
-    `reciprocal` takes :math:`a` and :math:`b` as shape parameters.
+    This class implements a log-uniform random variable. That is, the
+    outcomes ``1``, ``10`` and ``100`` are all equally likely when
+    ``a=10**0`` and ``b=10**2``.
 
     %(after_notes)s
 
     %(example)s
+
+    Specifically, this is uniform in log-space:
+
+    >>> rv = reciprocal(10 ** -3, 10 ** -1)
+    >>>
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log10(rv.rvs(size=1000)))
+    >>> ax.set_xscale("log", basex=10)
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xlabel("value = 10 ** x")
 
     """
     def _argcheck(self, a, b):
@@ -6129,6 +6142,7 @@ class reciprocal_gen(rv_continuous):
 
 
 reciprocal = reciprocal_gen(name="reciprocal")
+loguniform = reciprocal_gen(name="loguniform")
 
 
 class rice_gen(rv_continuous):
