@@ -3228,7 +3228,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     # Set output to NaN if no samples went into the mean
     if nmask is not None:
         if nmask.all():
-            res = np.nan
+            res = np.full(shape=res.shape, fill_value=np.nan)
         else:
             # Find out if any of the axis that are being averaged consist
             # entirely of NaN.  If one exists, set the result (res) to NaN
