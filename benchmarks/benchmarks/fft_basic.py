@@ -103,6 +103,28 @@ class Fft(Benchmark):
         self.ifft(self.x)
 
 
+class NextFastLen(Benchmark):
+    params = [
+        [12, 13,  # small ones
+         1021, 1024,  # 2 ** 10 and a prime
+         16381, 16384,  # 2 ** 14 and a prime
+         262139, 262144,  # 2 ** 17 and a prime
+         999983, 1048576,  # 2 ** 20 and a prime
+         ],
+    ]
+    param_names = ['size']
+
+    def setup(self, size):
+        if not has_scipy_fft:
+            raise NotImplementedError
+
+    def time_next_fast_len(self, size):
+        scipy_fft.next_fast_len.__wrapped__(size)
+
+    def time_next_fast_len_cached(self, size):
+        scipy_fft.next_fast_len(size)
+
+
 class RFft(Benchmark):
     params = [
         [100, 256, 313, 512, 1000, 1024, 2048, 2048*2, 2048*4],

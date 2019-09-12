@@ -208,18 +208,3 @@ def get_workers():
     4
     """
     return getattr(_config, 'default_workers', 1)
-
-
-def next_fast_len(target, kind='C2C'):
-    try:
-        real = {'C2C': False, 'R2C': True, 'C2R': True}[kind]
-    except KeyError:
-        raise ValueError('Unknown transform kind: {}'.format(kind))
-
-    target = operator.index(target)
-
-    # Error if a size_t result could overflow
-    if (target-1)*11 > sys.maxsize:
-        raise ValueError(
-            'Target length is too large to perform an FFT: {}' .format(target))
-    return good_size(target, real)
