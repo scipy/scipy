@@ -1687,6 +1687,15 @@ class TestCircFuncs(object):
         x = [np.nan, np.nan, np.nan, np.nan, np.nan]
         assert_(np.isnan(test_func(x, nan_policy='omit')))
 
+    @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
+                                           stats.circstd])
+    def test_nan_omit_all_axis(self, test_func):
+        x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
+                      [np.nan, np.nan, np.nan, np.nan, np.nan]])
+        out = test_func(x, nan_policy='omit', axis=1)
+        assert_(np.isnan(out).all())
+        assert_(len(out) == 2)
+
     @pytest.mark.parametrize("x",
                              [[355, 5, 2, 359, 10, 350, np.nan],
                               np.array([[355, 5, 2, 359, 10, 350, np.nan],
