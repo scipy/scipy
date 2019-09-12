@@ -3837,8 +3837,8 @@ class TestHistogram(object):
 
 def test_loguniform():
     # This test: make sure the alias of "loguniform" is log-uniform
-    rv = stats.reciprocal(a=10 ** -3, b=10 ** 0)
-    rvs = rv.rvs(size=10_000, random_state=42)
+    rv = stats.loguniform(10 ** -3, 10 ** 0)
+    rvs = rv.rvs(size=10000, random_state=42)
     vals, _ = np.histogram(np.log10(rvs), bins=10)
     assert 922 <= vals.min() <= vals.max() <= 1033
     assert np.median(vals) == 1007.0

@@ -6106,13 +6106,14 @@ class reciprocal_gen(rv_continuous):
 
     Specifically, this is uniform in log-space:
 
-    >>> rv = reciprocal(10 ** -3, 10 ** -1)
-    >>>
+    >>> rv = %(name)s(10 ** -3, 10 ** -1)
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.hist(np.log10(rv.rvs(size=1000)))
-    >>> ax.set_xscale("log", basex=10)
     >>> ax.set_ylabel("Frequency")
-    >>> ax.set_xlabel("value = 10 ** x")
+    >>> ax.set_xticks([-3, -2, -1])
+    >>> ax.set_xticklabels(["$10^{-3}$", "$10^{-2}$", "$10^{-1}$"])
+
+    `reciprocal` and `loguniform` are aliases.
 
     """
     def _argcheck(self, a, b):
