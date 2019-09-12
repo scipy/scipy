@@ -257,7 +257,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
-   poisson_etest
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/

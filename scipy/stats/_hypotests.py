@@ -133,27 +133,50 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
-def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
-    """
-    Calculate E-test for the mean difference of two samples
+PoissonMeansTestResult = namedtuple('PoissonMeansTestResult', ('statistic', 'pvalue'))
 
-    The test requires two samples coming from poisson distribution. This is a
-    right-sided and two-sided test.
+
+def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-sided'):
+    r"""
+    Calculate E-test for the mean difference of two samples that follow a Poisson
+    distribution from descriptive statistics
+
+    Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be independent
+    samples respectively, from :math:`Poisson(\lambda_1)` and :math:`Poisson(\lambda_2)` distributions. It is well known that
+    
+    .. math:: X_1 = \sum_{i=1}^{n_1} X_{1i} \sim Poisson(n_1\lambda_1)
+    
+    independently of
+    
+    .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
+    
+    Let `count1` and `count1` be the observed values of :math:`X_1` and :math:`X_2`,
+    respectively. The problem of interest here is to test
+    
+    .. math::
+       H_0: \lambda_1 - \lambda_2 \le \mathtt{diff} \quad vs. \quad
+       H_a: \lambda_1 - \lambda_2 > \mathtt{diff}
+    
+    for right sided `greater` hypothesis where :math:`\mathtt{diff} \ge 0` is a given
+    number, based on (`nobs1`, `count1`, `nobs2`, `count2`). `two-sided` and `greater`
+    cases are demonstrated by [1]_.The `less` hypothesis performed by switching the
+    arguments on `greater` hypothesis.
 
     Parameters
     ----------
-    k1, k2 : int or float
-        Count from the first and second samples respectively
-    n1, n2 : int or float
-        Sample size of each sample
+    count1, count2 : int
+        Count event of interest from the first and second samples respectively
+    nobs1, nobs2 : int
+        Sample size observed
     diff : int of float, optional
         The difference of mean between two samples under null hypothesis
-    alternative : {'two-sided', 'greater'}, optional
-        Whether to get p-value for two-sided hypothesis or right sided hypothesis.
-        Right-sided test that mean from sample one is greater than sample two
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Which alternative hypothesis to test
 
     Returns
     -------
+    statistic : float
+        The test statistic calculated from observed samples
     pvalue : float
         The associated p-value based on estimated p-value of the standardized
         difference.
@@ -161,7 +184,7 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
     Notes
     -----
     The Poisson distribution is commonly used to model many processes such as
-    transactions per user. The usual test to compare difference between two
+    transactions per user. A simple test to compare difference between two
     means of Poisson samples is C-test, based on conditional distribution.
     Meanwhile the E-test is an unconditional test
 
@@ -171,13 +194,18 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
 
     References
     ----------
-    .. [1]  https://userweb.ucs.louisiana.edu/~kxk4695/JSPI-04.pdf
+    .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
+       comparing two Poisson means. Journal of Statistical Planning and Inference,
+       119(1), 23-35.
+    .. [2]  Przyborowski, J., & Wilenski, H. (1940). Homogeneity of results in
+       testing samples from Poisson series: With an application to testing clover
+       seed for dodder. Biometrika, 31(3/4), 313-323.
 
     Examples
     --------
     >>> from scipy import stats
 
-    Taken from Przyborowski and Wilenski (1940). Suppose that a purchaser wishes to
+    Taken from Przyborowski and Wilenski (1940) [2]_. Suppose that a purchaser wishes to
     test the number of dodder seeds (a weed) in a sack of clover seeds that he bought
     from a seed manufacturing company. A 100 g sample is drawn from a sack of clover
     seeds prior to being shipped to the purchaser. The sample is analyzed and found to
@@ -186,35 +214,60 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
     that is, k2 = 3. The purchaser wishes to determine if the difference between the
     samples could not be due to chance.
 
-    >>> stats.poisson_etest(0, 3, 100, 100)
-    0.08837900929018155
+    >>> stats.poisson_means_test(0, 100, 3, 100)
+    PoissonMeansTestResult(statistic=-1.7320508075688772, pvalue=0.08837900929018155)
+    >>> stats.ttest_ind_from_stats(mean1=0, std1=0, nobs1=100, equal_var=False,
+    ...                            mean2=3.0/100, std2=np.sqrt(.03), nobs2=100)
+    Ttest_indResult(statistic=-1.7320508075688772, pvalue=0.0863790757063214)
+
+    The result above show evidence that the difference between two samples is significant
+    at the level of significance 0.1. Both t-test and e-test show similar p-value, but
+    will be different if the sample size is small
+
+    >>> stats.poisson_means_test(0, 10, 3, 10)
+    PoissonMeansTestResult(statistic=-1.7320508075688772, pvalue=0.08837900929018155)
+    >>> stats.ttest_ind_from_stats(mean1=0, std1=0, nobs1=10, equal_var=False,
+    ...                            mean2=3.0/10, std2=np.sqrt(.3), nobs2=10)
+    Ttest_indResult(statistic=-1.7320508075688774, pvalue=0.11730680301423814)
+
+    The t-test need n=100 to arrive at the similar p-value of e-test whereas the e-test
+    produce similar p-value either with nobs=10 or nobs=100
     """
 
-    if k1 < 0 or k2 < 0:
+    if any(not isinstance(item, int) for item in [count1, count2, nobs1, nobs2]):
+        raise TypeError('int arguments required for count1, count2, nobs1, and nobs2')
+
+    if count1 < 0 or count2 < 0:
         raise ValueError('k1 and k2 should have values greater than or equal to 0')
 
-    if n1 <= 0 or n2 <= 0:
+    if nobs1 <= 0 or nobs2 <= 0:
         raise ValueError('n1 and n2 should have values greater than 0')
 
     if diff < 0:
         raise ValueError('diff can not have negative values')
 
-    if alternative not in ['two-sided', 'greater']:
-        raise ValueError("alternative should be one of {'two-sided', 'greater'}")
+    if alternative not in ['two-sided', 'less', 'greater']:
+        raise ValueError("alternative should be one of {'two-sided', 'less', 'greater'}")
 
-    lmbd_hat2 = (k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2)
+    # reverse the arguments of sample one and sample two if the hypothesis selected
+    # is `less`
+    if alternative == 'less':
+        count1, count2 = count2, count1
+        nobs1, nobs2 = nobs2, nobs1
 
-    # based on paper explanation, we do not need to calculate p-value
-    # if the `lmbd_hat2` less than or equals zero, see paper page 26 below eq. 3.6
-    if lmbd_hat2 <= diff:
-        return 1
+    lmbd_hat2 = (count1 + count2) / (nobs1 + nobs2) - diff * nobs1 / (nobs1 + nobs2)
 
-    var = k1 / n1 ** 2 + k2 / n2 ** 2
+    # based on paper explanation, we do not need to calculate p-value if the `lmbd_hat2`
+    # has value less than or equals zero, see Reference 1 page 26 below eq. 3.6
+    if lmbd_hat2 <= 0:
+        return PoissonMeansTestResult(None, 1)
 
-    t_k1k2 = (k1 / n1 - k2 / n2 - diff) / np.sqrt(var)
+    var = count1 / nobs1 ** 2 + count2 / nobs2 ** 2
 
-    nlmbd_hat1 = n1 * (lmbd_hat2 + diff)
-    nlmbd_hat2 = n2 * lmbd_hat2
+    t_k1k2 = (count1 / nobs1 - count2 / nobs2 - diff) / np.sqrt(var)
+
+    nlmbd_hat1 = nobs1 * (lmbd_hat2 + diff)
+    nlmbd_hat2 = nobs2 * lmbd_hat2
 
     x1_lb, x1_ub = poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat1)
     x2_lb, x2_ub = poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat2)
@@ -225,11 +278,11 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
     prob_x1 = poisson.pmf(x1, nlmbd_hat1)
     prob_x2 = poisson.pmf(x2, nlmbd_hat2)
 
-    lmbd_hat_x1 = x1 / n1
-    lmbd_hat_x2 = x2 / n2
+    lmbd_hat_x1 = x1 / nobs1
+    lmbd_hat_x2 = x2 / nobs2
 
     diff_lmbd_x1x2 = lmbd_hat_x1 - lmbd_hat_x2 - diff
-    var_x1x2 = lmbd_hat_x1 / n1 + lmbd_hat_x2 / n2
+    var_x1x2 = lmbd_hat_x1 / nobs1 + lmbd_hat_x2 / nobs2
 
     if alternative == 'two-sided':
         t_x1x2 = np.divide(
@@ -260,4 +313,4 @@ def poisson_etest(k1, k2, n1, n2, diff=0, alternative='two-sided'):
 
     pvalue = np.sum(p_x1x2)
 
-    return pvalue
+    return PoissonMeansTestResult(t_k1k2, pvalue)
