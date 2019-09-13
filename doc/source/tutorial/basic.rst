@@ -19,7 +19,7 @@ use NumPy functions:
 Rather than giving a detailed description of each of these functions
 (which is available in the NumPy Reference Guide or by using the
 :func:`help`, :func:`info` and :func:`source` commands), this tutorial
-will discuss some of the more useful commands which require a little
+will discuss some of the more useful commands, which require a little
 introduction to use to their full potential.
 
 To use functions from some of the SciPy modules, you can do:
@@ -31,7 +31,7 @@ The top level of :mod:`scipy` also contains functions from
 :mod:`numpy` and :mod:`numpy.lib.scimath`. However, it is better to
 use them directly from the :mod:`numpy` module instead.
 
-Index Tricks
+Index tricks
 ^^^^^^^^^^^^
 
 There are some class instances that make special use of the slicing
@@ -61,18 +61,18 @@ fashion. When the number of points is specified in this way, the end-
 point is inclusive.
 
 The "r" stands for row concatenation because if the objects between
-commas are 2 dimensional arrays, they are stacked by rows (and thus
+commas are 2-D arrays, they are stacked by rows (and thus
 must have commensurate columns). There is an equivalent command
-:obj:`c_` that stacks 2d arrays by columns but works identically to
-:obj:`r_` for 1d arrays.
+:obj:`c_` that stacks 2-D arrays by columns but works identically to
+:obj:`r_` for 1-D arrays.
 
 Another very useful class instance which makes use of extended slicing
 notation is the function :obj:`mgrid`. In the simplest case, this
-function can be used to construct 1d ranges as a convenient substitute
+function can be used to construct 1-D ranges as a convenient substitute
 for arange. It also allows the use of complex-numbers in the step-size
 to indicate the number of points to place between the (inclusive)
 end-points. The real purpose of this function however is to produce N,
-N-d arrays which provide coordinate arrays for an N-dimensional
+N-D arrays, which provide coordinate arrays for an N-D
 volume. The easiest way to understand this is with an example of its
 usage:
 
@@ -98,23 +98,23 @@ usage:
             [ 0.    ,  1.6667,  3.3333,  5.    ]]])
 
 Having meshed arrays like this is sometimes very useful. However, it
-is not always needed just to evaluate some N-dimensional function over
+is not always needed just to evaluate some N-D function over
 a grid due to the array-broadcasting rules of NumPy and SciPy. If this
 is the only purpose for generating a meshgrid, you should instead use
 the function :obj:`ogrid` which generates an "open" grid using :obj:`newaxis`
-judiciously to create N, N-d arrays where only one dimension in each
+judiciously to create N, N-D arrays where only one dimension in each
 array has length greater than 1. This will save memory and create the
 same result if the only purpose for the meshgrid is to generate sample
-points for evaluation of an N-d function.
+points for evaluation of an N-D function.
 
 
 Shape manipulation
 ^^^^^^^^^^^^^^^^^^
 
 In this category of functions are routines for squeezing out length-
-one dimensions from N-dimensional arrays, ensuring that an array is at
-least 1-, 2-, or 3-dimensional, and stacking (concatenating) arrays by
-rows, columns, and "pages "(in the third dimension). Routines for
+one dimensions from N-D arrays, ensuring that an array is at
+least 1-, 2-, or 3-D, and stacking (concatenating) arrays by
+rows, columns, and "pages" (in the third dimension). Routines for
 splitting arrays (roughly the opposite of stacking arrays) are also
 available.
 
@@ -122,7 +122,7 @@ available.
 Polynomials
 ^^^^^^^^^^^
 
-There are two (interchangeable) ways to deal with 1-d polynomials in
+There are two (interchangeable) ways to deal with 1-D polynomials in
 SciPy. The first is to use the :class:`poly1d` class from NumPy. This
 class accepts coefficients or polynomial roots to initialize a
 polynomial. The polynomial object can then be manipulated in algebraic
@@ -158,7 +158,7 @@ Vectorizing functions (vectorize)
 One of the features that NumPy provides is a class :obj:`vectorize` to
 convert an ordinary Python function which accepts scalars and returns
 scalars into a "vectorized-function" with the same broadcasting rules
-as other NumPy functions (*i.e.* the Universal functions, or
+as other NumPy functions (i.e., the Universal functions, or
 ufuncs). For example, suppose you have a Python function named
 ``addsubtract`` defined as:
 
@@ -169,7 +169,7 @@ ufuncs). For example, suppose you have a Python function named
     ...        return a + b
 
 which defines a function of two scalar variables and returns a scalar
-result. The class vectorize can be used to "vectorize "this function so that ::
+result. The class vectorize can be used to "vectorize" this function so that ::
 
     >>> vec_addsubtract = np.vectorize(addsubtract)
 
@@ -188,8 +188,8 @@ Type handling
 
 Note the difference between :func:`numpy.iscomplex`/:func:`numpy.isreal` and
 :func:`numpy.iscomplexobj`/:func:`numpy.isrealobj`. The former command is
-array based and returns byte arrays of ones and zeros providing the
-result of the element-wise test. The latter command is object based
+array-based and returns byte arrays of ones and zeros providing the
+result of the element-wise test. The latter command is object-based
 and returns a scalar describing the result of the test on the entire
 object.
 
@@ -199,7 +199,7 @@ return those values, if one is not sure whether or not the object will
 be complex-valued, it is better to use the functional forms
 :func:`numpy.real` and :func:`numpy.imag` . These functions succeed for anything
 that can be turned into a NumPy array. Consider also the function
-:func:`numpy.real_if_close` which transforms a complex-valued number with
+:func:`numpy.real_if_close` which transforms a complex-valued number with a
 tiny imaginary part into a real number.
 
 Occasionally the need to check whether or not a number is a scalar
@@ -223,7 +223,7 @@ is a vectorized form of the multiple if-statement. It allows rapid
 construction of a function which returns an array of results based on
 a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
-``condlist`` that is true. For example
+``condlist`` that is true. For example:
 
     >>> x = np.arange(10)
     >>> condlist = [x<3, x>5]
