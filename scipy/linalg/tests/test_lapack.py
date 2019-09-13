@@ -1594,7 +1594,6 @@ def test_geequ():
             assert_allclose(desired_cplx.astype(dtype), r[:, None]*A*c,
                             rtol=0, atol=1e-4)
 
-<<<<<<< HEAD
 
 def test_syequb():
     desired_log2s = np.array([0, 0, 0, 0, 0, 0, -1, -1, -2, -3])
@@ -1629,15 +1628,6 @@ def test_heequb():
         post3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[1, :]
 
         assert pre3_7_lapack_result.all() or post3_7_lapack_result.all()
-=======
-        getrs = get_lapack_funcs('getrs', dtype=dtype)
-        x, info = getrs(lu, piv, b, trans=False, overwrite_b=False)
-        if ind < 2:
-            assert_array_almost_equal(desired_x_real.astype(dtype),
-                                      x, decimal=4)
-        else:
-            assert_array_almost_equal(desired_x_cplx.astype(dtype),
-                                      x, decimal=4)
 
 
 def test_getc2_gesc2():
@@ -1665,8 +1655,7 @@ def test_getc2_gesc2():
 
         if ind < 2:
             assert_array_almost_equal(desired_real.astype(dtype),
-                                      x, decimal=4)
+                                      x/scale, decimal=4)
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
-                                      x, decimal=4)
->>>>>>> Fixed minor mistakes in ?gesc2 wrapper, added tests
+                                      x/scale, decimal=4)
