@@ -34,7 +34,7 @@ your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
 
 
 numpy.matrix vs 2-D numpy.ndarray
---------------------------------
+---------------------------------
 
 The classes that represent matrices, and basic operations, such as
 matrix multiplications and transpose are a part of ``numpy``.
