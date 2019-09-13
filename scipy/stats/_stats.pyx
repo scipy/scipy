@@ -511,3 +511,66 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
     b = (<double *>user_data)[1]
 
     return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
+
+    
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
+                              double[:, :] xi, double[:, :] precision):
+    """
+    def gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
+                                  double[:, :] xi, double[:, :] precision)
+
+    Evaluate a multivariate Gaussian kernel estimate.
+
+    Parameters
+    ----------
+    points : double[:, :] with shape (n, d)
+        Data points to estimate from in d dimenions.
+    values : double[:, :] with shape (n, p)
+        Multivariate values associated with the data points.
+    xi : double[:, :] with shape (m, d)
+        Coordinates to evaluate the estimate at in d dimensions.
+    precision : double[:, :] with shape (d, d)
+        Precision matrix for the Gaussian kernel.
+
+    Returns
+    -------
+    estimate : double[:, :] with shape (m, p)
+        Multivariate Gaussian kernel estimate evaluated at the input coordinates.
+    """
+    cdef:
+        double[:, :] estimate
+        int i, j, k
+        int n = points.shape[0]
+        int d = points.shape[1]
+        int p = values.shape[1]
+        int m = xi.shape[0]
+        double arg, residual, norm
+
+    assert xi.shape[1] == d, "points and xi must have same trailing dim"
+    assert precision.shape[0] == d and precision.shape[1] == d, \
+        "precision matrix must match data dims"
+
+    # Evaluate the normalisation
+    norm = np.sqrt(np.linalg.det(precision) / (2 * np.pi) ** d)
+
+    # Rescale the data
+    whitening = np.linalg.cholesky(precision)
+    points = np.dot(points, whitening)
+    xi = np.dot(xi, whitening)
+
+    # Create the result array and evaluate the weighted sum
+    estimate = np.zeros((m, p))
+    for i in range(n):
+        for j in range(m):
+            arg = 0
+            for k in range(d):
+                residual = (points[i, k] - xi[j, k])
+                arg += residual * residual
+
+            arg = math.exp(-arg / 2) * norm
+            for k in range(p):
+                estimate[j, k] += values[i, k] * arg
+
+    return np.asarray(estimate)
