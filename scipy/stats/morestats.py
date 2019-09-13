@@ -3207,8 +3207,8 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     0.4
 
     """
-    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,\
-                                                        nan_policy=nan_policy)
+    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
+                                                           nan_policy=nan_policy)
     sin_sum = sin_samp.sum(axis=axis)
     cos_sum = cos_samp.sum(axis=axis)
     res = arctan2(sin_sum, cos_sum)
