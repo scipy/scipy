@@ -20,22 +20,81 @@ from . import orthogonal
 from ._comb import _comb_int
 
 
-__all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
-           'ber_zeros', 'bernoulli', 'berp_zeros',
-           'bessel_diff_formula', 'bi_zeros', 'clpmn', 'comb',
-           'digamma', 'diric', 'erf_zeros', 'erfcinv',
-           'erfinv', 'euler', 'factorial', 'factorialk', 'factorial2',
-           'fresnel_zeros', 'fresnelc_zeros', 'fresnels_zeros',
-           'gamma', 'h1vp', 'h2vp', 'hankel1', 'hankel2', 'hyp0f1',
-           'iv', 'ivp', 'jn_zeros', 'jnjnp_zeros', 'jnp_zeros',
-           'jnyn_zeros', 'jv', 'jvp', 'kei_zeros', 'keip_zeros',
-           'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv', 'kvp',
-           'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
-           'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef',
-           'ndtri', 'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
-           'perm', 'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn',
-           'riccati_yn', 'sinc', 'voigt', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+__all__ = [
+    'ai_zeros',
+    'assoc_laguerre',
+    'bei_zeros',
+    'beip_zeros',
+    'ber_zeros',
+    'bernoulli',
+    'berp_zeros',
+    'bi_zeros',
+    'clpmn',
+    'comb',
+    'digamma',
+    'diric',
+    'erf_zeros',
+    'erfcinv',
+    'erfinv',
+    'euler',
+    'factorial',
+    'factorial2',
+    'factorialk',
+    'fresnel_zeros',
+    'fresnelc_zeros',
+    'fresnels_zeros',
+    'gamma',
+    'h1vp',
+    'h2vp',
+    'hankel1',
+    'hankel2',
+    'hyp0f1',
+    'iv',
+    'ivp',
+    'jn_zeros',
+    'jnjnp_zeros',
+    'jnp_zeros',
+    'jnyn_zeros',
+    'jv',
+    'jvp',
+    'kei_zeros',
+    'keip_zeros',
+    'kelvin_zeros',
+    'ker_zeros',
+    'kerp_zeros',
+    'kv',
+    'kvp',
+    'lmbda',
+    'lpmn',
+    'lpn',
+    'lqmn',
+    'lqn',
+    'mathieu_a',
+    'mathieu_b',
+    'mathieu_even_coef',
+    'mathieu_odd_coef',
+    'ndtri',
+    'obl_cv_seq',
+    'pbdn_seq',
+    'pbdv_seq',
+    'pbvv_seq',
+    'perm',
+    'polygamma',
+    'pro_cv_seq',
+    'psi',
+    'riccati_jn',
+    'riccati_yn',
+    'sinc',
+    'voigt',
+    'y0_zeros',
+    'y1_zeros',
+    'y1p_zeros',
+    'yn_zeros',
+    'ynp_zeros',
+    'yv',
+    'yvp',
+    'zeta'
+]
 
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
@@ -427,10 +486,6 @@ def _bessel_diff_formula(v, z, n, L, phase):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
-
-
-bessel_diff_formula = np.deprecate(_bessel_diff_formula,
-    message="bessel_diff_formula is a private function, do not use it!")
 
 
 def jvp(v, z, n=1):
