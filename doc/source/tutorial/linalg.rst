@@ -151,7 +151,7 @@ The following example demonstrates this computation in SciPy
     >>> A.dot(linalg.inv(A)) #double check
     array([[  1.00000000e+00,  -1.11022302e-16,  -5.55111512e-17],
           [  3.05311332e-16,   1.00000000e+00,   1.87350135e-16],
-          [  2.22044605e-16,  -1.11022302e-16,   1.00000000e+00]]).
+          [  2.22044605e-16,  -1.11022302e-16,   1.00000000e+00]])
 
 Solving a linear system
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -244,7 +244,7 @@ In SciPy, this is computed as shown in this example:
     array([[1, 2],
           [3, 4]])
     >>> linalg.det(A)
-    -2.0.
+    -2.0
 
 
 Computing norms
