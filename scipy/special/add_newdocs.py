@@ -3112,7 +3112,7 @@ add_newdoc("fresnel",
     --------
     >>> import scipy.special as sc
 
-    As x goes to infinity, S and C converge to 0.5.
+    As z goes to infinity along the real axis, S and C converge to 0.5.
 
     >>> S, C = sc.fresnel([0.1, 1, 10, 100, np.inf])
     >>> S
@@ -3122,9 +3122,9 @@ add_newdoc("fresnel",
 
     They are related to the error function `erf`.
 
-    >>> x = np.array([1, 2, 3, 4])
-    >>> zeta = 0.5 * np.sqrt(np.pi) * (1 - 1j) * x
-    >>> S, C = sc.fresnel(x)
+    >>> z = np.array([1, 2, 3, 4])
+    >>> zeta = 0.5 * np.sqrt(np.pi) * (1 - 1j) * z
+    >>> S, C = sc.fresnel(z)
     >>> C + 1j*S
     array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
            0.60572079+0.496313j  , 0.49842603+0.42051575j])
