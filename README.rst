@@ -10,18 +10,21 @@ SciPy
 .. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
   :target: https://circleci.com/gh/scipy/scipy
 
-.. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/scipy/scipy
+.. image:: https://dev.azure.com/scipy-org/SciPy/_apis/build/status/scipy.scipy?branchName=master
+  :target: https://dev.azure.com/scipy-org/SciPy/_build/latest?definitionId=1?branchName=master
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering.  It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
-- **Website (including documentation):** https://www.scipy.org/
+- **Website:** https://www.scipy.org/
+- **Documentation:** https://docs.scipy.org/
 - **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
-- **Source:** https://github.com/scipy/scipy
+- **Source code:** https://github.com/scipy/scipy
 - **Bug reports:** https://github.com/scipy/scipy/issues
+- **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
+- **Report a security vulnerability:** https://tidelift.com/docs/security
 
 SciPy depends on NumPy, which provides convenient and fast
 N-dimensional array manipulation. SciPy is built to work with
@@ -33,17 +36,11 @@ upon by some of the world's leading scientists and engineers. If you need to
 manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
-For installation instructions, see ``INSTALL.rst.txt``.
+For installation instructions, see INSTALL.rst.txt_.
 
-Developer information
----------------------
+We appreciate and welcome contributions.  If you would like to take part in
+SciPy development, take a look at the file CONTRIBUTING.rst_.
 
-If you would like to take part in SciPy development, take a look
-at the file ``CONTRIBUTING``.
 
-License information
--------------------
-
-See the file ``LICENSE.txt`` for information on the history of this
-software, terms & conditions for usage, and a DISCLAIMER OF ALL
-WARRANTIES.
+.. _CONTRIBUTING.rst:  https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
+.. _INSTALL.rst.txt:   https://github.com/scipy/scipy/blob/master/INSTALL.rst.txt

@@ -135,10 +135,10 @@ class TestUpfirdn(object):
 
         # Simple combinations of factors
         for x_dtype, h in product(try_types, (1., 1j)):
-                tests.append(UpFIRDnCase(1, 1, h, x_dtype))
-                tests.append(UpFIRDnCase(2, 2, h, x_dtype))
-                tests.append(UpFIRDnCase(3, 2, h, x_dtype))
-                tests.append(UpFIRDnCase(2, 3, h, x_dtype))
+            tests.append(UpFIRDnCase(1, 1, h, x_dtype))
+            tests.append(UpFIRDnCase(2, 2, h, x_dtype))
+            tests.append(UpFIRDnCase(3, 2, h, x_dtype))
+            tests.append(UpFIRDnCase(2, 3, h, x_dtype))
 
         # mixture of big, small, and both directions (net up and net down)
         # use all combinations of data and filter dtypes

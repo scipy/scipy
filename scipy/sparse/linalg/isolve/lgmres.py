@@ -1,5 +1,5 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
-# Distributed under the same license as Scipy.
+# Distributed under the same license as SciPy.
 
 from __future__ import division, print_function, absolute_import
 
@@ -29,6 +29,9 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0  : {array, matrix}

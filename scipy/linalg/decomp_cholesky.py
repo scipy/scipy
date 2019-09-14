@@ -252,6 +252,11 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     -------
     c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
+        
+    See also
+    --------
+    cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
+                of a banded hermitian.
 
     Examples
     --------

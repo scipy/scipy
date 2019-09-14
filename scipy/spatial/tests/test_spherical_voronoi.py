@@ -5,60 +5,12 @@ from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
+import warnings
 from pytest import raises as assert_raises
+from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
-
-
-class TestCircumcenters(object):
-
-    def test_circumcenters(self):
-        tetrahedrons = np.array([
-            [[1, 2, 3],
-             [-1.1, -2.1, -3.1],
-             [-1.2, 2.2, 3.2],
-             [-1.3, -2.3, 3.3]],
-            [[10, 20, 30],
-             [-10.1, -20.1, -30.1],
-             [-10.2, 20.2, 30.2],
-             [-10.3, -20.3, 30.3]]
-        ])
-
-        result = spherical_voronoi.calc_circumcenters(tetrahedrons)
-
-        expected = [
-            [-0.5680861153262529, -0.133279590288315, 0.1843323216995444],
-            [-0.5965330784014926, -0.1480377040397778, 0.1981967854886021]
-        ]
-
-        assert_array_almost_equal(result, expected)
-
-
-class TestProjectToSphere(object):
-
-    def test_unit_sphere(self):
-        points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        center = np.array([0, 0, 0])
-        radius = 1
-        projected = spherical_voronoi.project_to_sphere(points, center, radius)
-        assert_array_almost_equal(points, projected)
-
-    def test_scaled_points(self):
-        points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        center = np.array([0, 0, 0])
-        radius = 1
-        scaled = points * 2
-        projected = spherical_voronoi.project_to_sphere(scaled, center, radius)
-        assert_array_almost_equal(points, projected)
-
-    def test_translated_sphere(self):
-        points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        center = np.array([1, 2, 3])
-        translated = points + center
-        radius = 1
-        projected = spherical_voronoi.project_to_sphere(translated, center,
-                                                        radius)
-        assert_array_almost_equal(translated, projected)
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 class TestSphericalVoronoi(object):
@@ -75,6 +27,27 @@ class TestSphericalVoronoi(object):
             [0.79979205, 0.54555747, 0.25039913]]
         )
 
+        # Issue #9386
+        self.hemisphere_points = np.array([
+            [0.88610999, -0.42383021, 0.18755541],
+            [0.51980039, -0.72622668, 0.4498915],
+            [0.56540011, -0.81629197, -0.11827989],
+            [0.69659682, -0.69972598, 0.15854467]])
+
+        # Issue #8859
+        phi = np.linspace(0, 2 * np.pi, 10, endpoint=False)    # azimuth angle
+        theta = np.linspace(0.001, np.pi * 0.4, 5)    # polar angle
+        theta = theta[np.newaxis, :].T
+
+        phiv, thetav = np.meshgrid(phi, theta)
+        phiv = np.reshape(phiv, (50, 1))
+        thetav = np.reshape(thetav, (50, 1))
+
+        x = np.cos(phiv) * np.sin(thetav)
+        y = np.sin(phiv) * np.sin(thetav)
+        z = np.cos(thetav)
+        self.hemisphere_points2 = np.concatenate([x, y, z], axis=1)
+
     def test_constructor(self):
         center = np.array([1, 2, 3])
         radius = 2
@@ -83,7 +56,7 @@ class TestSphericalVoronoi(object):
         # the radius / center to match the generators so adjust
         # accordingly here
         s2 = SphericalVoronoi(self.points * radius, radius)
-        s3 = SphericalVoronoi(self.points + center, None, center)
+        s3 = SphericalVoronoi(self.points + center, center=center)
         s4 = SphericalVoronoi(self.points * radius + center, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
         assert_equal(s1.radius, 1)
@@ -97,7 +70,7 @@ class TestSphericalVoronoi(object):
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)
         center = np.array([1, 1, 1])
-        sv_translated = SphericalVoronoi(self.points + center, None, center)
+        sv_translated = SphericalVoronoi(self.points + center, center=center)
         assert_array_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
@@ -108,6 +81,29 @@ class TestSphericalVoronoi(object):
         assert_array_equal(sv_unit.regions, sv_scaled.regions)
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
+
+    def test_old_radius_api(self):
+        sv_unit = SphericalVoronoi(self.points, radius=1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`radius` is `None`")
+            sv = SphericalVoronoi(self.points, None)
+            assert_array_almost_equal(sv_unit.vertices, sv.vertices)
+
+    def test_old_radius_api_warning(self):
+        with assert_warns(DeprecationWarning):
+            sv = SphericalVoronoi(self.points, None)
+
+    def test_old_center_api(self):
+        sv_unit = SphericalVoronoi(self.points, radius=1, center=(0, 0, 0))
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`radius` is `None`")
+            sup.filter(DeprecationWarning, "`center` is `None`")
+            sv = SphericalVoronoi(self.points, None, None)
+            assert_array_almost_equal(sv_unit.vertices, sv.vertices)
+
+    def test_old_center_api_warning(self):
+        with assert_warns(DeprecationWarning):
+            sv = SphericalVoronoi(self.points, None, None)
 
     def test_sort_vertices_of_regions(self):
         sv = SphericalVoronoi(self.points)
@@ -164,3 +160,13 @@ class TestSphericalVoronoi(object):
         with assert_raises(ValueError):
             sv = spherical_voronoi.SphericalVoronoi(self.points,
                                                     center=[0.1,0,0])
+
+    def test_single_hemisphere_handling(self):
+        # Test solution of Issues #9386, #8859
+
+        for points in [self.hemisphere_points, self.hemisphere_points2]:
+            sv = SphericalVoronoi(points)
+            triangles = sv._tri.points[sv._tri.simplices]
+            dots = np.einsum('ij,ij->i', sv.vertices, triangles[:, 0])
+            circumradii = np.arccos(np.clip(dots, -1, 1))
+            assert np.max(circumradii) > np.pi / 2

@@ -47,7 +47,7 @@ import warnings
 import numpy as np
 
 from scipy.sparse import isspmatrix
-from scipy.sparse.sputils import isshape, isintlike
+from scipy.sparse.sputils import isshape, isintlike, asmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 
@@ -112,6 +112,11 @@ class LinearOperator(object):
     other and exponentiated, all lazily: the result of these operations
     is always a new, composite LinearOperator, that defers linear
     operations to the original operators and combines the results.
+
+    More details regarding how to subclass a LinearOperator and several
+    examples of concrete LinearOperator instances can be found in the
+    external project `PyLops <https://pylops.readthedocs.io>`_.
+
 
     Examples
     --------
@@ -222,7 +227,7 @@ class LinearOperator(object):
         y = self._matvec(x)
 
         if isinstance(x, np.matrix):
-            y = np.asmatrix(y)
+            y = asmatrix(y)
         else:
             y = np.asarray(y)
 
@@ -269,7 +274,7 @@ class LinearOperator(object):
         y = self._rmatvec(x)
 
         if isinstance(x, np.matrix):
-            y = np.asmatrix(y)
+            y = asmatrix(y)
         else:
             y = np.asarray(y)
 
@@ -329,7 +334,7 @@ class LinearOperator(object):
         Y = self._matmat(X)
 
         if isinstance(Y, np.matrix):
-            Y = np.asmatrix(Y)
+            Y = asmatrix(Y)
 
         return Y
 
@@ -444,10 +449,11 @@ class LinearOperator(object):
 
     def _adjoint(self):
         """Default implementation of _adjoint; defers to rmatvec."""
-        shape = (self.shape[1], self.shape[0])
-        return _CustomLinearOperator(shape, matvec=self.rmatvec,
-                                     rmatvec=self.matvec,
-                                     dtype=self.dtype)
+        return _AdjointLinearOperator(self)
+
+    def _transpose(self):
+        """ Default implementation of _transpose; defers to rmatvec + conj"""
+        return _TransposedLinearOperator(self)
 
 
 class _CustomLinearOperator(LinearOperator):
@@ -484,6 +490,37 @@ class _CustomLinearOperator(LinearOperator):
                                      matvec=self.__rmatvec_impl,
                                      rmatvec=self.__matvec_impl,
                                      dtype=self.dtype)
+
+
+class _AdjointLinearOperator(LinearOperator):
+    """Adjoint of arbitrary Linear Operator"""
+    def __init__(self, A):
+        shape = (A.shape[1], A.shape[0])
+        super(_AdjointLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        self.A = A
+        self.args = (A,)
+
+    def _matvec(self, x):
+        return self.A._rmatvec(x)
+
+    def _rmatvec(self, x):
+        return self.A._matvec(x)
+
+
+class _TransposedLinearOperator(LinearOperator):
+    """Transposition of arbitrary Linear Operator"""
+    def __init__(self, A):
+        shape = (A.shape[1], A.shape[0])
+        super(_TransposedLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        self.A = A
+        self.args = (A,)
+
+    def _matvec(self, x):
+        # NB. np.conj works also on sparse matrices
+        return np.conj(self.A._rmatvec(np.conj(x)))
+
+    def _rmatvec(self, x):
+        return np.conj(self.A._matvec(np.conj(x)))
 
 
 def _get_dtype(operators, dtypes=None):
@@ -616,7 +653,6 @@ class MatrixLinearOperator(LinearOperator):
         if self.__adj is None:
             self.__adj = _AdjointMatrixOperator(self)
         return self.__adj
-
 
 class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint):

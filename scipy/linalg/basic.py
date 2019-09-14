@@ -34,9 +34,9 @@ def _solve_check(n, info, lamch=None, rcond=None):
         return
     E = lamch('E')
     if rcond < E:
-        warn('scipy.linalg.solve\nIll-conditioned matrix detected. Result '
-             'is not guaranteed to be accurate.\nReciprocal condition '
-             'number{:.6e}'.format(rcond), LinAlgWarning, stacklevel=3)
+        warn('Ill-conditioned matrix (rcond={:.6g}): '
+             'result may not be accurate.'.format(rcond),
+             LinAlgWarning, stacklevel=3)
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
@@ -690,9 +690,8 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     else:
         b_shape = b.shape
         b = b.reshape(b.shape[0], -1)
-        x = np.column_stack(
-            (levinson(vals, np.ascontiguousarray(b[:, i]))[0])
-            for i in range(b.shape[1]))
+        x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
+                             for i in range(b.shape[1])])
         x = x.reshape(*b_shape)
 
     return x
@@ -1038,13 +1037,8 @@ def det(a, overwrite_a=False, check_finite=True):
                          'det.getrf' % -info)
     return a_det
 
+
 # Linear Least Squares
-
-
-class LstsqLapackError(LinAlgError):
-    pass
-
-
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
@@ -1055,9 +1049,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     Parameters
     ----------
     a : (M, N) array_like
-        Left hand side matrix (2-D array).
+        Left hand side array
     b : (M,) or (M, K) array_like
-        Right hand side matrix or vector (1-D or 2-D array).
+        Right hand side array
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
         rank of a. Singular values smaller than
@@ -1083,16 +1077,15 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     -------
     x : (N,) or (N, K) ndarray
         Least-squares solution.  Return shape matches shape of `b`.
-    residues : (0,) or () or (K,) ndarray
-        Sums of residues, squared 2-norm for each column in ``b - a x``.
-        If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
-        this is a length zero array. If b was 1-D, this is a () shape array
-        (numpy scalar), otherwise the shape is (K,).
+    residues : (K,) ndarray or float
+        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
+        ``ndim(A) == n`` (returns a scalar if b is 1-D). Otherwise a
+        (0,)-shaped array is returned.
     rank : int
-        Effective rank of matrix `a`.
-    s : (min(M,N),) ndarray or None
+        Effective rank of `a`.
+    s : (min(M, N),) ndarray or None
         Singular values of `a`. The condition number of a is
-        ``abs(s[0] / s[-1])``. None is returned when ``'gelsy'`` is used.
+        ``abs(s[0] / s[-1])``.
 
     Raises
     ------
@@ -1100,11 +1093,16 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         If computation does not converge.
 
     ValueError
-        When parameters are wrong.
+        When parameters are not compatible.
 
     See Also
     --------
-    optimize.nnls : linear least squares with non-negativity constraint
+    scipy.optimize.nnls : linear least squares with non-negativity constraint
+
+    Notes
+    -----
+    When ``'gelsy'`` is used as a driver, `residues` is set to a (0,)-shaped
+    array and `s` is always ``None``.
 
     Examples
     --------
@@ -1154,14 +1152,15 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
+        raise ValueError('Input array a should be 2-D')
     m, n = a1.shape
     if len(b1.shape) == 2:
         nrhs = b1.shape[1]
     else:
         nrhs = 1
     if m != b1.shape[0]:
-        raise ValueError('incompatible dimensions')
+        raise ValueError('Shape mismatch: a and b should have the same number'
+                         ' of rows ({} != {}).'.format(m, b1.shape[0]))
     if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
         x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
         if n == 0:
@@ -1208,29 +1207,6 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         elif driver == 'gelsd':
             if real_data:
                 lwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-                if iwork == 0:
-                    # this is LAPACK bug 0038: dgelsd does not provide the
-                    # size of the iwork array in query mode.  This bug was
-                    # fixed in LAPACK 3.2.2, released July 21, 2010.
-                    mesg = ("internal gelsd driver lwork query error, "
-                            "required iwork dimension not returned. "
-                            "This is likely the result of LAPACK bug "
-                            "0038, fixed in LAPACK 3.2.2 (released "
-                            "July 21, 2010). ")
-
-                    if lapack_driver is None:
-                        # restart with gelss
-                        lstsq.default_lapack_driver = 'gelss'
-                        mesg += "Falling back to 'gelss' driver."
-                        warn(mesg, RuntimeWarning, stacklevel=2)
-                        return lstsq(a, b, cond, overwrite_a, overwrite_b,
-                                     check_finite, lapack_driver='gelss')
-
-                    # can't proceed, bail out
-                    mesg += ("Use a different lapack_driver when calling lstsq"
-                             " or upgrade LAPACK.")
-                    raise LstsqLapackError(mesg)
-
                 x, s, rank, info = lapack_func(a1, b1, lwork,
                                                iwork, cond, False, False)
             else:  # complex data
@@ -1280,9 +1256,16 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
-        Cutoff for 'small' singular values in the least-squares solver.
-        Singular values smaller than ``rcond * largest_singular_value``
-        are considered zero.
+        Cutoff factor for 'small' singular values. In `lstsq`, 
+        singular values less than ``cond*largest_singular_value`` will be
+        considered as zero. If both are omitted, the default value
+        ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the
+        corresponding machine precision value of the datatype of ``a``.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just `eps` without the
+            factor ``max(M, N)``.
+
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
@@ -1315,8 +1298,12 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     a = _asarray_validated(a, check_finite=check_finite)
     b = np.identity(a.shape[0], dtype=a.dtype)
+
     if rcond is not None:
         cond = rcond
+
+    if cond is None:
+        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
 
     x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
 
@@ -1339,12 +1326,17 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float or None
-        Cutoff for 'small' singular values.
-        Singular values smaller than ``rcond*largest_singular_value``
-        are considered zero.
-        If None or -1, suitable machine precision is used.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered as zero. If both are omitted, the default value
+        ``max(M,N)*largest_singular_value*eps`` is used where ``eps`` is the
+        machine precision value of the datatype of ``a``.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
+
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1355,7 +1347,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.  Returned if `return_rank` is True.
 
     Raises
     ------
@@ -1380,10 +1372,9 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         cond = rcond
     if cond in [None, -1]:
         t = u.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
+        cond = np.max(s) * max(a.shape) * np.finfo(t).eps
 
-    rank = np.sum(s > cond * np.max(s))
+    rank = np.sum(s > cond)
 
     u = u[:, :rank]
     u /= s[:rank]
@@ -1409,16 +1400,20 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
     cond, rcond : float or None
-        Cutoff for 'small' eigenvalues.
-        Singular values smaller than rcond * largest_eigenvalue are considered
-        zero.
+        Cutoff for 'small' singular values; singular values smaller than this
+        value are considered as zero. If both are omitted, the default
+        ``max(M,N)*largest_eigenvalue*eps`` is used where ``eps`` is the
+        machine precision value of the datatype of ``a``.
 
-        If None or -1, suitable machine precision is used.
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
+
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of a. (Default: lower)
+        triangle of `a`. (Default: lower)
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1429,7 +1424,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     B : (N, N) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.  Returned if `return_rank` is True.
 
     Raises
     ------
@@ -1455,11 +1450,10 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         cond = rcond
     if cond in [None, -1]:
         t = u.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
+        cond = np.max(np.abs(s)) * max(a.shape) * np.finfo(t).eps
 
     # For Hermitian matrices, singular values equal abs(eigenvalues)
-    above_cutoff = (abs(s) > cond * np.max(abs(s)))
+    above_cutoff = (abs(s) > cond)
     psigma_diag = 1.0 / s[above_cutoff]
     u = u[:, above_cutoff]
 
@@ -1523,8 +1517,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         ``T`` above, the scaling and the permutation vectors are given
         separately as a tuple without allocating the full array ``T``.
 
-    .. versionadded:: 0.19.0
-
     Notes
     -----
 
@@ -1540,6 +1532,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     The code is a wrapper around LAPACK's xGEBAL routine family for matrix
     balancing.
+
+    .. versionadded:: 0.19.0
 
     Examples
     --------

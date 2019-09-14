@@ -9,6 +9,7 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_)
+import pytest
 from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
@@ -282,7 +283,7 @@ class TestMultivariateNormal(object):
         x = np.random.randn(n, n)
         cov = np.dot(x, x.T)
         s, u = scipy.linalg.eigh(cov)
-        s = 0.5 * np.ones(n)
+        s = np.full(n, 0.5)
         s[0] = 1.0
         s[-1] = 1e-7
         cov = np.dot(u, np.dot(np.diag(s), u.T))
@@ -460,9 +461,9 @@ class TestMatrixNormal(object):
         # Check that bad inputs raise errors
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
 
         # Incorrect dimensions
         assert_raises(ValueError, matrix_normal, np.zeros((5,4,3)))
@@ -481,9 +482,9 @@ class TestMatrixNormal(object):
         # Check that default argument handling works
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         Z = np.zeros((num_rows, num_cols))
         Zr = np.zeros((num_rows, 1))
         Zc = np.zeros((1, num_cols))
@@ -520,10 +521,10 @@ class TestMatrixNormal(object):
         # Check that covariance can be specified with scalar or vector
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        Uv = 0.2*np.ones(num_rows)
+        M = np.full((num_rows, num_cols), 0.3)
+        Uv = np.full(num_rows, 0.2)
         Us = 0.2
-        Vv = 0.1*np.ones(num_cols)
+        Vv = np.full(num_cols, 0.1)
         Vs = 0.1
 
         Ir = np.identity(num_rows)
@@ -541,9 +542,9 @@ class TestMatrixNormal(object):
     def test_frozen_matrix_normal(self):
         for i in range(1,5):
             for j in range(1,5):
-                M = 0.3 * np.ones((i,j))
-                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
-                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+                M = np.full((i,j), 0.3)
+                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
 
                 frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
 
@@ -567,9 +568,9 @@ class TestMatrixNormal(object):
         # treating as a multivariate normal.
         for i in range(1,5):
             for j in range(1,5):
-                M = 0.3 * np.ones((i,j))
-                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
-                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+                M = np.full((i,j), 0.3)
+                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
 
                 frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
                 X = frozen.rvs(random_state=1234)
@@ -589,9 +590,9 @@ class TestMatrixNormal(object):
         # Check array of inputs has the same output as the separate entries.
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 10
 
         frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
@@ -612,9 +613,9 @@ class TestMatrixNormal(object):
         # Check that the sample moments match the parameters
         num_rows = 4
         num_cols = 3
-        M = 0.3 * np.ones((num_rows,num_cols))
-        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
-        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 1000
 
         frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
@@ -707,37 +708,37 @@ class TestDirichlet(object):
 
     def test_data_too_deep_c(self):
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.ones((2, 7, 7)) / 14
+        x = np.full((2, 7, 7), 1 / 14)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_too_deep(self):
         alpha = np.array([[1.0, 2.0], [3.0, 4.0]])
-        x = np.ones((2, 2, 7)) / 4
+        x = np.full((2, 2, 7), 1 / 4)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_correct_depth(self):
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.ones((3, 7)) / 3
+        x = np.full((3, 7), 1 / 3)
         dirichlet.pdf(x, alpha)
         dirichlet.logpdf(x, alpha)
 
     def test_non_simplex_data(self):
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.ones((3, 7)) / 2
+        x = np.full((3, 7), 1 / 2)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_vector_too_short(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
-        x = np.ones((2, 7)) / 2
+        x = np.full((2, 7), 1 / 2)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_data_vector_too_long(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
-        x = np.ones((5, 7)) / 5
+        x = np.full((5, 7), 1 / 5)
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
@@ -1039,7 +1040,7 @@ class TestMultinomial(object):
 
         vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
         assert_allclose(vals3, np.NAN, rtol=1e-8)
-        
+
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
         # case
@@ -1092,7 +1093,7 @@ class TestMultinomial(object):
 
         vals4 = multinomial.pmf([1,2], 4, (.3, .7))
         assert_allclose(vals4, 0, rtol=1e-8)
-        
+
         vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
         assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
@@ -1474,6 +1475,7 @@ class TestOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    @pytest.mark.slow
     def test_pairwise_distances(self):
         # Test that the distribution of pairwise distances is close to correct.
         np.random.seed(514)
@@ -1630,7 +1632,7 @@ class TestUnitaryGroup(object):
 
         # The angles "x" of the eigenvalues should be uniformly distributed
         # Overall this seems to be a necessary but weak test of the distribution.
-        eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
+        eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
         x = np.arctan2(eigs.imag, eigs.real)
         res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
         assert_(res.pvalue > 0.05)

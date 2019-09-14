@@ -253,7 +253,7 @@ class VarReader4(object):
         '''
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
-        # All numbers are float64 in Matlab, but Scipy sparse expects int shape
+        # All numbers are float64 in Matlab, but SciPy sparse expects int shape
         dims = (int(res[-1,0]), int(res[-1,1]))
         I = np.ascontiguousarray(tmp[:,0],dtype='intc')  # fixes byte order also
         J = np.ascontiguousarray(tmp[:,1],dtype='intc')
@@ -551,7 +551,7 @@ class VarWriter4(object):
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
             # Recode unicode to latin1
-            n_chars = np.product(dims)
+            n_chars = np.prod(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)

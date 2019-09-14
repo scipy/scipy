@@ -81,9 +81,7 @@ def test_d():
                    (9, 0, -mp.mpf('0.596761290192746250124390067179e-3')),
                    (9, 12, mp.mpf('0.870823417786464116761231237189e-6'))]
         d = compute_d(10, 13)
-        res = []
-        for k, n, std in dataset:
-            res.append(d[k][n])
+        res = [d[k][n] for k, n, std in dataset]
         std = map(lambda x: x[2], dataset)
         mp_assert_allclose(res, std)
 

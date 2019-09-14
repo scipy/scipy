@@ -382,7 +382,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             else:
                 return retval[:-1] + (msg,)
         else:
-            warnings.warn(msg, IntegrationWarning)
+            warnings.warn(msg, IntegrationWarning, stacklevel=2)
             return retval[:-1]
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
@@ -572,11 +572,11 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.6666666666666667, 7.401486830834377e-15)
 
     """
-    
+
     def temp_ranges(*args):
         return [gfun(args[0]) if callable(gfun) else gfun,
                 hfun(args[0]) if callable(hfun) else hfun]
-        
+
     return nquad(func, [temp_ranges, [a, b]], args=args,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
@@ -639,7 +639,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     Examples
     --------
 
-    Compute the triple integral of ``x * y * z``, over ``x`` ranging 
+    Compute the triple integral of ``x * y * z``, over ``x`` ranging
     from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
 
     >>> from scipy import integrate

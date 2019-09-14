@@ -17,9 +17,9 @@ cdef extern from "numpy/npy_math.h" nogil:
     double npy_isnan(double)
     double nan "NPY_NAN"
 
-from ._cephes cimport (bdtrc, bdtr, bdtri, expn, hyp2f0, nbdtrc,
+from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
                        nbdtr, nbdtri, pdtrc, pdtr, pdtri, kn, yn,
-                       smirnov, smirnovi)
+                       smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
 cdef extern from "amos_wrappers.h":
     double cbesk_wrap_real_int(int n, double z) nogil
@@ -73,13 +73,6 @@ cdef inline double expn_unsafe(double n, double x) nogil:
         return n
     _legacy_cast_check("expn", n, 0)
     return expn(<int>n, x)
-
-cdef inline double hyp2f0_unsafe(double a, double b, double x,
-                                 double type, double *err) nogil:
-    if npy_isnan(type):
-        return type
-    _legacy_cast_check("hyp2f0", type, 0)
-    return hyp2f0(a, b, x, <int>type, err)
 
 cdef inline double nbdtrc_unsafe(double k, double n, double p) nogil:
     if npy_isnan(k) or npy_isnan(n):
@@ -135,8 +128,26 @@ cdef inline double smirnov_unsafe(double n, double e) nogil:
     _legacy_cast_check("smirnov", n, 0)
     return smirnov(<int>n, e)
 
+cdef inline double smirnovc_unsafe(double n, double e) nogil:
+    if npy_isnan(n):
+        return n
+    _legacy_cast_check("smirnovc", n, 0)
+    return smirnovc(<int>n, e)
+
+cdef inline double smirnovp_unsafe(double n, double e) nogil:
+    if npy_isnan(n):
+        return n
+    _legacy_cast_check("smirnovp", n, 0)
+    return smirnovp(<int>n, e)
+
 cdef inline double smirnovi_unsafe(double n, double p) nogil:
     if npy_isnan(n):
         return n
     _legacy_cast_check("smirnovi", n, 0)
     return smirnovi(<int>n, p)
+
+cdef inline double smirnovci_unsafe(double n, double p) nogil:
+    if npy_isnan(n):
+        return n
+    _legacy_cast_check("smirnovci", n, 0)
+    return smirnovci(<int>n, p)

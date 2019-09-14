@@ -1,10 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-
-from distutils.version import LooseVersion
-
 import functools
+import operator
+from distutils.version import LooseVersion
 
 import numpy as np
 from numpy.testing import assert_
@@ -94,8 +93,8 @@ class FuncData(object):
     ----------
     func : function
         Function to test
-    filename : str
-        Input file name
+    data : numpy array
+        columnar data to use for testing
     param_columns : int or tuple of ints
         Columns indices in which the parameters to `func` lie.
         Can be imaginary integers to indicate that the parameter
@@ -172,8 +171,11 @@ class FuncData(object):
             atol = 5*info.tiny
         return rtol, atol
 
-    def check(self, data=None, dtype=None):
+    def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = operator.methodcaller(
+            'errisinstance', AssertionError
+        )
 
         if self.knownfailure:
             pytest.xfail(reason=self.knownfailure)
@@ -198,10 +200,12 @@ class FuncData(object):
 
         # Pick parameters from the correct columns
         params = []
-        for j in self.param_columns:
+        for idx, j in enumerate(self.param_columns):
             if np.iscomplexobj(j):
                 j = int(j.imag)
                 params.append(data[:,j].astype(complex))
+            elif dtypes and idx < len(dtypes):
+                params.append(data[:, j].astype(dtypes[idx]))
             else:
                 params.append(data[:,j])
 
@@ -290,8 +294,8 @@ class FuncData(object):
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff.max())
-                msg.append("Max |rdiff|: %g" % rdiff.max())
+                msg.append("Max |adiff|: %g" % diff[bad_j].max())
+                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:

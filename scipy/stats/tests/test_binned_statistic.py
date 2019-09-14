@@ -19,6 +19,7 @@ class TestBinnedStatistic(object):
         cls.v = np.random.random(100)
         cls.X = np.random.random((100, 3))
         cls.w = np.random.random(100)
+        cls.u = np.random.random(100) + 1e6
 
     def test_1d_count(self):
         x = self.x
@@ -38,6 +39,17 @@ class TestBinnedStatistic(object):
         statistics = [u'mean', u'median', u'count', u'sum']
         for statistic in statistics:
             res = binned_statistic(x, v, statistic, bins=10)
+
+    def test_big_number_std(self):
+        # tests for numerical stability of std calculation
+        # see issue gh-10126 for more
+        x = self.x
+        u = self.u
+
+        stat1, edges1, bc = binned_statistic(x, u, 'std', bins=10)
+        stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
+
+        assert_allclose(stat1, stat2)
 
     def test_1d_result_attributes(self):
         x = self.x

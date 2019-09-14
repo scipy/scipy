@@ -88,7 +88,7 @@ class CanonicalConstraint(object):
         def hess(x, v_eq, v_ineq):
             return empty_hess
 
-        return cls(0, 0, fun, jac, hess, np.empty(0))
+        return cls(0, 0, fun, jac, hess, np.empty(0, dtype=np.bool))
 
     @classmethod
     def concatenate(cls, canonical_constraints, sparse_jacobian):
@@ -99,12 +99,11 @@ class CanonicalConstraint(object):
         must have their Jacobians in the same format.
         """
         def fun(x):
-            eq_all = []
-            ineq_all = []
-            for c in canonical_constraints:
-                eq, ineq = c.fun(x)
-                eq_all.append(eq)
-                ineq_all.append(ineq)
+            if canonical_constraints:
+                eq_all, ineq_all = zip(
+                        *[c.fun(x) for c in canonical_constraints])
+            else:
+                eq_all, ineq_all = [], []
 
             return np.hstack(eq_all), np.hstack(ineq_all)
 
@@ -114,12 +113,12 @@ class CanonicalConstraint(object):
             vstack = np.vstack
 
         def jac(x):
-            eq_all = []
-            ineq_all = []
-            for c in canonical_constraints:
-                eq, ineq = c.jac(x)
-                eq_all.append(eq)
-                ineq_all.append(ineq)
+            if canonical_constraints:
+                eq_all, ineq_all = zip(
+                        *[c.jac(x) for c in canonical_constraints])
+            else:
+                eq_all, ineq_all = [], []
+
             return vstack(eq_all), vstack(ineq_all)
 
         def hess(x, v_eq, v_ineq):
@@ -144,8 +143,8 @@ class CanonicalConstraint(object):
 
         n_eq = sum(c.n_eq for c in canonical_constraints)
         n_ineq = sum(c.n_ineq for c in canonical_constraints)
-        keep_feasible = np.array(np.hstack((
-            c.keep_feasible for c in canonical_constraints)), dtype=bool)
+        keep_feasible = np.hstack([c.keep_feasible for c in
+                                   canonical_constraints])
 
         return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 

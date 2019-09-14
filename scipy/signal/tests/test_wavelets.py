@@ -126,7 +126,7 @@ class TestWavelets(object):
 
         widths = [len_data * 10]
         #Note: this wavelet isn't defined quite right, but is fine for this test
-        flat_wavelet = lambda l, w: np.ones(w) / w
+        flat_wavelet = lambda l, w: np.full(w, 1 / w)
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
 

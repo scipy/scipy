@@ -105,7 +105,7 @@ The solution can be found using the `newton_krylov` solver:
 
 """
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
-# Distributed under the same license as Scipy.
+# Distributed under the same license as SciPy.
 
 from __future__ import division, print_function, absolute_import
 
@@ -264,7 +264,9 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
        https://archive.siam.org/books/kelley/fr16/
 
     """
-
+    # Can't use default parameters because it's being explicitly passed as None
+    # from the calling function, so we need to set it here.
+    tol_norm = maxnorm if tol_norm is None else tol_norm
     condition = TerminationCondition(f_tol=f_tol, f_rtol=f_rtol,
                                      x_tol=x_tol, x_rtol=x_rtol,
                                      iter=iter, norm=tol_norm)
@@ -340,8 +342,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Print status
         if verbose:
-            sys.stdout.write("%d:  |F(x)| = %g; step %g; tol %g\n" % (
-                n, norm(Fx), s, eta))
+            sys.stdout.write("%d:  |F(x)| = %g; step %g\n" % (
+                n, tol_norm(Fx), s))
             sys.stdout.flush()
     else:
         if raise_exception:
@@ -443,10 +445,7 @@ class TerminationCondition(object):
         self.f_tol = f_tol
         self.f_rtol = f_rtol
 
-        if norm is None:
-            self.norm = maxnorm
-        else:
-            self.norm = norm
+        self.norm = norm
 
         self.iter = iter
 
@@ -466,7 +465,7 @@ class TerminationCondition(object):
             return 1
 
         if self.iter is not None:
-            # backwards compatibility with Scipy 0.6.0
+            # backwards compatibility with SciPy 0.6.0
             return 2 * (self.iteration > self.iter)
 
         # NB: condition must succeed for rtol=inf even if norm == 0
@@ -921,6 +920,11 @@ class BroydenFirst(GenericBroyden):
     %(broyden_params)s
     %(params_extra)s
 
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='broyden1'`` in particular.
+
     Notes
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
@@ -1014,6 +1018,11 @@ class BroydenSecond(BroydenFirst):
     %(broyden_params)s
     %(params_extra)s
 
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='broyden2'`` in particular.
+
     Notes
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
@@ -1065,6 +1074,11 @@ class Anderson(GenericBroyden):
         Regularization parameter for numerical stability.
         Compared to unity, good values of the order of 0.01.
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='anderson'`` in particular.
 
     References
     ----------
@@ -1200,6 +1214,11 @@ class DiagBroyden(GenericBroyden):
     alpha : float, optional
         Initial guess for the Jacobian is (-1/alpha).
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='diagbroyden'`` in particular.
     """
 
     def __init__(self, alpha=None):
@@ -1208,7 +1227,7 @@ class DiagBroyden(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.d = np.ones((self.shape[0],), dtype=self.dtype) / self.alpha
+        self.d = np.full((self.shape[0],), 1 / self.alpha, dtype=self.dtype) 
 
     def solve(self, f, tol=0):
         return -f / self.d
@@ -1244,6 +1263,12 @@ class LinearMixing(GenericBroyden):
     alpha : float, optional
         The Jacobian approximation is (-1/alpha).
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='linearmixing'`` in particular.
+
     """
 
     def __init__(self, alpha=None):
@@ -1263,7 +1288,7 @@ class LinearMixing(GenericBroyden):
         return -f/np.conj(self.alpha)
 
     def todense(self):
-        return np.diag(-np.ones(self.shape[0])/self.alpha)
+        return np.diag(np.full(self.shape[0], -1/self.alpha))
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         pass
@@ -1279,6 +1304,11 @@ class ExcitingMixing(GenericBroyden):
 
        This algorithm may be useful for specific problems, but whether
        it will work may depend strongly on the problem.
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1299,7 +1329,7 @@ class ExcitingMixing(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.beta = self.alpha * np.ones((self.shape[0],), dtype=self.dtype)
+        self.beta = np.full((self.shape[0],), self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
         return -f*self.beta
@@ -1367,6 +1397,8 @@ class KrylovJacobian(Jacobian):
 
     See Also
     --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 
@@ -1382,7 +1414,7 @@ class KrylovJacobian(Jacobian):
     Due to the use of iterative matrix inverses, these methods can
     deal with large nonlinear problems.
 
-    Scipy's `scipy.sparse.linalg` module offers a selection of Krylov
+    SciPy's `scipy.sparse.linalg` module offers a selection of Krylov
     solvers to choose from. The default here is `lgmres`, which is a
     variant of restarted GMRES iteration that reuses some of the
     information obtained in the previous Newton steps to invert

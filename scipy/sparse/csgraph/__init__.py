@@ -1,5 +1,4 @@
 r"""
-==============================================================
 Compressed Sparse Graph Routines (:mod:`scipy.sparse.csgraph`)
 ==============================================================
 
@@ -8,7 +7,7 @@ Compressed Sparse Graph Routines (:mod:`scipy.sparse.csgraph`)
 Fast graph algorithms based on sparse matrix representations.
 
 Contents
-========
+--------
 
 .. autosummary::
    :toctree: generated/
@@ -42,7 +41,7 @@ Contents
    reconstruct_path
 
 Graph Representations
-=====================
+---------------------
 This module uses graphs which are stored in a matrix format.  A
 graph with N nodes can be represented by an (N x N) adjacency matrix G.
 If there is a connection from node i to node j, then G[i, j] = w, where
@@ -116,7 +115,7 @@ understood by the algorithms in submodule.  By viewing the data array, we
 can see that the zero values are explicitly encoded in the graph.
 
 Directed vs. Undirected
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 Matrices may represent either directed or undirected graphs.  This is
 specified throughout the csgraph module by a boolean keyword.  Graphs are
 assumed to be directed by default. In a directed graph, traversal from node

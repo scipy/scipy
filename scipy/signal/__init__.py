@@ -171,7 +171,7 @@ Continuous-Time Linear Systems
    lsim2            -- like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- impulse response of linear, time-invariant (LTI) system.
    impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
-   step             -- step response of continous-time LTI system.
+   step             -- step response of continuous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
    freqresp         -- frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
@@ -228,38 +228,15 @@ Waveforms
 Window functions
 ================
 
-Most window functions are available in the `scipy.signal.windows` namespace,
-but we list them here for convenience:
+For window functions, see the `scipy.signal.windows` namespace.
+
+In the `scipy.signal` namespace, there is a convenience function to
+obtain these windows by name:
 
 .. autosummary::
    :toctree: generated/
 
-   get_window                -- Return a window of a given length and type.
-
-   windows.barthann          -- Bartlett-Hann window
-   windows.bartlett          -- Bartlett window
-   windows.blackman          -- Blackman window
-   windows.blackmanharris    -- Minimum 4-term Blackman-Harris window
-   windows.bohman            -- Bohman window
-   windows.boxcar            -- Boxcar window
-   windows.chebwin           -- Dolph-Chebyshev window
-   windows.cosine            -- Cosine window
-   windows.dpss              -- Discrete prolate spheroidal sequences
-   windows.exponential       -- Exponential window
-   windows.flattop           -- Flat top window
-   windows.gaussian          -- Gaussian window
-   windows.general_cosine    -- Generalized Cosine window
-   windows.general_gaussian  -- Generalized Gaussian window
-   windows.general_hamming   -- Generalized Hamming window
-   windows.hamming           -- Hamming window
-   windows.hann              -- Hann window
-   windows.hanning           -- Hann window
-   windows.kaiser            -- Kaiser window
-   windows.nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
-   windows.parzen            -- Parzen window
-   windows.slepian           -- Slepian window
-   windows.triang            -- Triangular window
-   windows.tukey             -- Tukey window
+   get_window -- Return a window of a given length and type.
 
 Wavelets
 ========
@@ -304,6 +281,7 @@ Spectral Analysis
    stft           -- Compute the Short Time Fourier Transform
    istft          -- Compute the Inverse Short Time Fourier Transform
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction
+   check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction
 
 """
 from __future__ import division, print_function, absolute_import

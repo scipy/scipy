@@ -345,16 +345,23 @@ def _root_broyden1_doc():
                 method and values for additional parameters.
 
                 Methods available:
-                    - ``restart``: drop all matrix columns. Has no
+
+                    - ``restart``
+                        Drop all matrix columns. Has no
                         extra parameters.
-                    - ``simple``: drop oldest matrix column. Has no
+                    - ``simple``
+                        Drop oldest matrix column. Has no
                         extra parameters.
-                    - ``svd``: keep only the most significant SVD
+                    - ``svd``
+                        Keep only the most significant SVD
                         components.
-                      Extra parameters:
-                          - ``to_retain``: number of SVD components to
-                              retain when rank reduction is done.
-                              Default is ``max_rank - 2``.
+
+                        Extra parameters:
+
+                            - ``to_retain``
+                                Number of SVD components to
+                                retain when rank reduction is done.
+                                Default is ``max_rank - 2``.
             max_rank : int, optional
                 Maximum rank for the Broyden matrix.
                 Default is infinity (ie., no rank reduction).
@@ -403,16 +410,23 @@ def _root_broyden2_doc():
             method and values for additional parameters.
 
             Methods available:
-                - ``restart``: drop all matrix columns. Has no
+
+                - ``restart``
+                    Drop all matrix columns. Has no
                     extra parameters.
-                - ``simple``: drop oldest matrix column. Has no
+                - ``simple``
+                    Drop oldest matrix column. Has no
                     extra parameters.
-                - ``svd``: keep only the most significant SVD
+                - ``svd``
+                    Keep only the most significant SVD
                     components.
-                  Extra parameters:
-                      - ``to_retain``: number of SVD components to
-                          retain when rank reduction is done.
-                          Default is ``max_rank - 2``.
+
+                    Extra parameters:
+                  
+                        - ``to_retain``
+                            Number of SVD components to
+                            retain when rank reduction is done.
+                            Default is ``max_rank - 2``.
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (ie., no rank reduction).

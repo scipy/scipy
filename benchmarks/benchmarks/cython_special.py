@@ -10,7 +10,7 @@ try:
 except ImportError:
     pass
 
-from .common import Benchmark, with_attributes
+from .common import with_attributes
 
 
 FUNC_ARGS = {

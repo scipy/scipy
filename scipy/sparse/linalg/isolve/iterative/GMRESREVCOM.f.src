@@ -110,9 +110,10 @@
       <_t>  <xdot=sdot,ddot,wcdotc,wzdotc>
       <_t>  toz
       <_t>    TMPVAL
-      <rt>    RNORM,
+      <rt>    RNORM, EPS,
      $     <rc=s,d,sc,dz>NRM2,
-     $     <rc>APPROXRES
+     $     <rc>APPROXRES,
+     $     <sdsd=s,d,s,d>LAMCH
 
       LOGICAL BRKDWN
 *
@@ -124,7 +125,8 @@
 *
 *     ..
 *     .. External Routines ..
-      EXTERNAL     <_c>AXPY, <_c>COPY, <xdot>, <rc>NRM2, <_c>SCAL
+      EXTERNAL     <_c>AXPY, <_c>COPY, <xdot>, <rc>NRM2, <_c>SCAL,
+     $     <sdsd>LAMCH
 *     ..
 *     .. Executable Statements ..
 *
@@ -152,6 +154,7 @@
       INFO = 0
       MAXIT = ITER
       BRKDWN = .FALSE.
+      EPS = <sdsd>LAMCH('EPS')
 *
 *     Alias workspace columns.
 *
@@ -307,7 +310,7 @@
 *           the previous I-1 columns.
 *
             CALL <_c>ORTHOH( I, N, WORK2( 1,I+H-1 ), WORK( 1,V ), LDW,
-     $                   WORK( 1,W ), BRKDWN )
+     $                   WORK( 1,W ), BRKDWN, EPS )
 *
             IF ( I.GT.0 )
 *
@@ -409,31 +412,35 @@
 *     END SUBROUTINE <_c>GMRESREVCOM
 *
 *     =========================================================
-      SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W, BRKDWN )
+      SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W, BRKDWN, EPS )
 *
       IMPLICIT NONE
       INTEGER            I, N, LDV
       <_t>   H( * ), W( * ), V( LDV,* )
       LOGICAL            BRKDWN
+      <rt=real,double precision,real,double precision> EPS
 *
 *     Construct the I-th column of the upper Hessenberg matrix H
 *     using the Gram-Schmidt process on V and W.
 *
       INTEGER            K
-      <rt=real,double precision,real,double precision>    
-     $     <rc=s,d,sc,dz>NRM2, ONE
+      <rt>    <rc=s,d,sc,dz>NRM2, ONE, H0, H1
       PARAMETER        ( ONE = 1.0D+0 )
       <_t>    <xdot=sdot,ddot,wcdotc,wzdotc>
       <_t>    TMPVAL
       EXTERNAL         <_c>AXPY, <_c>COPY, <xdot>, <rc>NRM2, <_c>SCAL
 *
+      H0 = <rc>NRM2( N, W, 1 )
       DO 10 K = 1, I
          H( K ) = <xdot>( N, V( 1,K ), 1, W, 1 )
          CALL <_c>AXPY( N, -H( K ), V( 1,K ), 1, W, 1 )
    10 CONTINUE
-      H( I+1 ) = <rc>NRM2( N, W, 1 )
+      H1 = <rc>NRM2( N, W, 1 )
+      H( I+1 ) = H1
       CALL <_c>COPY( N, W, 1, V( 1,I+1 ), 1 )
-      IF (H(I+1).EQ.0) THEN
+      IF (.NOT.(H1.GT.EPS*H0)) THEN
+*        Set to exactly 0: handled in UPDATE
+         H( I+1 ) = 0d0
          BRKDWN = .TRUE.
       ELSE
          BRKDWN = .FALSE.

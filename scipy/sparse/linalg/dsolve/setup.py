@@ -23,7 +23,7 @@ def configuration(parent_package='',top_path=None):
 
     superlu_src = join(dirname(__file__), 'SuperLU', 'SRC')
 
-    sources = list(glob.glob(join(superlu_src, '*.c')))
+    sources = sorted(glob.glob(join(superlu_src, '*.c')))
     headers = list(glob.glob(join(superlu_src, '*.h')))
 
     config.add_library('superlu_src',

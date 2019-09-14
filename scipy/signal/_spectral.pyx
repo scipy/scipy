@@ -25,7 +25,7 @@ def _lombscargle(np.ndarray[np.float64_t, ndim=1] x,
     _lombscargle(x, y, freqs)
 
     Computes the Lomb-Scargle periodogram.
-    
+
     Parameters
     ----------
     x : array_like
@@ -75,7 +75,7 @@ def _lombscargle(np.ndarray[np.float64_t, ndim=1] x,
 
             c = cos(freqs[i] * x[j])
             s = sin(freqs[i] * x[j])
-            
+
             xc += y[j] * c
             xs += y[j] * s
             cc += c * c
@@ -95,4 +95,3 @@ def _lombscargle(np.ndarray[np.float64_t, ndim=1] x,
             (c_tau2 * ss - cs_tau * cs + s_tau2 * cc)))
 
     return pgram
-

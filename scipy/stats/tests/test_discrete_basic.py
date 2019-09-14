@@ -80,7 +80,7 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    if distname not in ['zipf']:
+    if distname not in ['zipf', 'yulesimon']:
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
@@ -100,7 +100,7 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['skellam']
+    shape_only = dist in ['skellam', 'yulesimon']
 
     try:
         distfunc = getattr(stats, dist)
@@ -115,7 +115,7 @@ def test_rvs_broadcast(dist, shape_args):
     for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)
         param_val = shape_args[k]
-        allargs.append(param_val*np.ones(shp, dtype=np.array(param_val).dtype))
+        allargs.append(np.full(shp, param_val))
         bshape.insert(0, shp[0])
     allargs.append(loc)
     bshape.append(loc.size)
@@ -132,7 +132,8 @@ def check_cdf_ppf(distfn, arg, supp, msg):
                            supp, msg + '-roundtrip')
 
     if not hasattr(distfn, 'xk'):
-        supp1 = supp[supp < distfn.b]
+        _a, _b = distfn.support(*arg)
+        supp1 = supp[supp < _b]
         npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
                                supp1 + distfn.inc, msg + ' ppf-cdf-next')
         # -1e-8 could cause an error if pmf < 1e-8
@@ -195,8 +196,10 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     # construct intervals with minimum mass `wsupp`.
     # intervals are left-half-open as in a cdf difference
-    lo = int(max(distfn.a, -1000))
-    distsupport = xrange(lo, int(min(distfn.b, 1000)) + 1)
+    _a, _b = distfn.support(*arg)
+    lo = int(max(_a, -1000))
+    high = int(min(_b, 1000)) + 1
+    distsupport = xrange(lo, high)
     last = 0
     distsupp = [lo]
     distmass = []
@@ -208,15 +211,15 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
             last = current
             if current > (1 - wsupp):
                 break
-    if distsupp[-1] < distfn.b:
-        distsupp.append(distfn.b)
+    if distsupp[-1] < _b:
+        distsupp.append(_b)
         distmass.append(1 - last)
     distsupp = np.array(distsupp)
     distmass = np.array(distmass)
 
     # convert intervals to right-half-open as required by histogram
     histsupp = distsupp + 1e-8
-    histsupp[0] = distfn.a
+    histsupp[0] = _a
 
     # find sample frequencies and perform chisquare test
     freq, hsupp = np.histogram(rvs, histsupp)
