@@ -1702,7 +1702,8 @@ def _herm(x):
 
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-         maxiter=None, return_singular_vectors=True):
+         maxiter=None, return_singular_vectors=True,
+         solver='arpack'):
     """Compute the largest or smallest k singular values/vectors for a sparse matrix.
 
     Parameters
@@ -1746,6 +1747,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         - "vh": only return the vh matrix, without computing u (if N <= M).
 
         .. versionadded:: 0.16.0
+    solver : str, optional
+            Eigenvalue solver to use. Should be 'arpack' or 'lobpcg'.
+            Default: 'arpack'
 
     Returns
     -------
@@ -1763,7 +1767,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Notes
     -----
-    This is a naive implementation using ARPACK as an eigensolver
+    This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
 
     Examples
@@ -1822,8 +1826,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
-    eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                  ncv=ncv, which=which, v0=v0)
+    if solver == 'lobpcg':
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                          ncv=ncv, which=which, v0=v0)
+    else:
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                          ncv=ncv, which=which, v0=v0)
 
     # In 'LM' mode try to be clever about small eigenvalues.
     # Otherwise in 'SM' mode do not try to be clever.
