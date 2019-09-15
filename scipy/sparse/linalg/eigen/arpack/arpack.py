@@ -50,6 +50,7 @@ from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
+from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
 
@@ -1827,11 +1828,25 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
     if solver == 'lobpcg':
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                          ncv=ncv, which=which, v0=v0)
+
+        if which == 'LM':
+            largest = True
+        elif which == 'SM':
+            largest = False
+        else:
+            raise ValueError("which must be either 'LM' or 'SM'.")
+
+        if k == 1:
+            X = v0
+        else:
+            X = np.random.randn(min(A.shape), k)
+
+        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+                          largest=largest)
+
     else:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                          ncv=ncv, which=which, v0=v0)
+                                      ncv=ncv, which=which, v0=v0)
 
     # In 'LM' mode try to be clever about small eigenvalues.
     # Otherwise in 'SM' mode do not try to be clever.
