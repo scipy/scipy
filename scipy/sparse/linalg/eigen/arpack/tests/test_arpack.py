@@ -586,15 +586,16 @@ def test_svd_simple_real():
                   [0, 0, 1, 0]], float)
     z = csc_matrix(x)
 
-    for m in [x.T, x, y, z, z.T]:
-        for k in range(1, min(m.shape)):
-            u, s, vh = sorted_svd(m, k)
-            su, ss, svh = svds(m, k)
+    for solver in [None, 'arpack', 'lobpcg']:
+        for m in [x.T, x, y, z, z.T]:
+            for k in range(1, min(m.shape)):
+                u, s, vh = sorted_svd(m, k)
+                su, ss, svh = svds(m, k, solver=solver)
 
-            m_hat = svd_estimate(u, s, vh)
-            sm_hat = svd_estimate(su, ss, svh)
+                m_hat = svd_estimate(u, s, vh)
+                sm_hat = svd_estimate(su, ss, svh)
 
-            assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+                assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
 
 
 def test_svd_simple_complex():
@@ -608,26 +609,29 @@ def test_svd_simple_complex():
                   [0, 0, 1, 0]], complex)
     z = csc_matrix(x)
 
-    for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
-        for k in range(1, min(m.shape) - 1):
-            u, s, vh = sorted_svd(m, k)
-            su, ss, svh = svds(m, k)
+    for solver in [None, 'arpack', 'lobpcg']:
+        for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
+            for k in range(1, min(m.shape) - 1):
+                u, s, vh = sorted_svd(m, k)
+                su, ss, svh = svds(m, k, solver=solver)
 
-            m_hat = svd_estimate(u, s, vh)
-            sm_hat = svd_estimate(su, ss, svh)
+                m_hat = svd_estimate(u, s, vh)
+                sm_hat = svd_estimate(su, ss, svh)
 
-            assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+                assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
 
 
 def test_svd_maxiter():
     # check that maxiter works as expected
     x = hilbert(6)
-    # ARPACK shouldn't converge on such an ill-conditioned matrix with just
-    # one iteration
-    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
-    # but 100 iterations should be more than enough
-    u, s, vt = svds(x, 1, maxiter=100, ncv=3)
-    assert_allclose(s, [1.7], atol=0.5)
+    for solver in [None, 'arpack', 'lobpcg']:
+        # ARPACK shouldn't converge on such an ill-conditioned matrix with just
+        # one iteration
+        assert_raises(NoConvergence, svds, x, 1, maxiter=1, ncv=3,
+                      solver=solver)
+        # but 100 iterations should be more than enough
+        u, s, vt = svds(x, 1, maxiter=100, ncv=3, solver=solver)
+        assert_allclose(s, [1.7], atol=0.5)
 
 
 def test_svd_return():
@@ -643,19 +647,22 @@ def test_svd_which():
     x = hilbert(6)
     for which in ['LM', 'SM']:
         _, s, _ = sorted_svd(x, 2, which=which)
-        ss = svds(x, 2, which=which, return_singular_vectors=False)
-        ss.sort()
-        assert_allclose(s, ss, atol=np.sqrt(1e-15))
+        for solver in [None, 'arpack', 'lobpcg']:
+            ss = svds(x, 2, which=which, return_singular_vectors=False,
+                      solver=solver)
+            ss.sort()
+            assert_allclose(s, ss, atol=np.sqrt(1e-15))
 
 
 def test_svd_v0():
     # check that the v0 parameter works as expected
     x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
 
-    u, s, vh = svds(x, 1)
-    u2, s2, vh2 = svds(x, 1, v0=u[:,0])
+    for solver in [None, 'arpack', 'lobpcg']:
+        u, s, vh = svds(x, 1, solver=solver)
+        u2, s2, vh2 = svds(x, 1, v0=u[:, 0], solver=solver)
 
-    assert_allclose(s, s2, atol=np.sqrt(1e-15))
+        assert_allclose(s, s2, atol=np.sqrt(1e-15))
 
 
 def _check_svds(A, k, U, s, VH):
@@ -688,15 +695,16 @@ def test_svd_LM_ones_matrix():
     for n, m in (6, 5), (5, 5), (5, 6):
         for t in float, complex:
             A = np.ones((n, m), dtype=t)
-            U, s, VH = svds(A, k)
+            for solver in [None, 'arpack', 'lobpcg']:
+                U, s, VH = svds(A, k, solver=solver)
 
-            # Check some generic properties of svd.
-            _check_svds(A, k, U, s, VH)
+                # Check some generic properties of svd.
+                _check_svds(A, k, U, s, VH)
 
-            # Check that the largest singular value is near sqrt(n*m)
-            # and the other singular values have been forced to zero.
-            assert_allclose(np.max(s), np.sqrt(n*m))
-            assert_array_equal(sorted(s)[:-1], 0)
+                # Check that the largest singular value is near sqrt(n*m)
+                # and the other singular values have been forced to zero.
+                assert_allclose(np.max(s), np.sqrt(n*m))
+                assert_array_equal(sorted(s)[:-1], 0)
 
 
 def test_svd_LM_zeros_matrix():
@@ -705,13 +713,14 @@ def test_svd_LM_zeros_matrix():
     for n, m in (3, 4), (4, 4), (4, 3):
         for t in float, complex:
             A = np.zeros((n, m), dtype=t)
-            U, s, VH = svds(A, k)
+            for solver in [None, 'arpack', 'lobpcg']:
+                U, s, VH = svds(A, k, solver=solver)
 
-            # Check some generic properties of svd.
-            _check_svds(A, k, U, s, VH)
+                # Check some generic properties of svd.
+                _check_svds(A, k, U, s, VH)
 
-            # Check that the singular values are zero.
-            assert_array_equal(s, 0)
+                # Check that the singular values are zero.
+                assert_array_equal(s, 0)
 
 
 def test_svd_LM_zeros_matrix_gh_3452():
@@ -720,13 +729,14 @@ def test_svd_LM_zeros_matrix_gh_3452():
     # Note that for complex dype the size of this matrix is too small for k=1.
     n, m, k = 4, 2, 1
     A = np.zeros((n, m))
-    U, s, VH = svds(A, k)
+    for solver in [None, 'arpack', 'lobpcg']:
+        U, s, VH = svds(A, k, solver=solver)
 
-    # Check some generic properties of svd.
-    _check_svds(A, k, U, s, VH)
+        # Check some generic properties of svd.
+        _check_svds(A, k, U, s, VH)
 
-    # Check that the singular values are zero.
-    assert_array_equal(s, 0)
+        # Check that the singular values are zero.
+        assert_array_equal(s, 0)
 
 
 class CheckingLinearOperator(LinearOperator):
@@ -761,27 +771,29 @@ def test_svd_linop():
 
         v0 = np.ones(min(A.shape))
 
-        U1, s1, VH1 = reorder(svds(A, k, v0=v0))
-        U2, s2, VH2 = reorder(svds(L, k, v0=v0))
+        for solver in [None, 'arpack', 'lobpcg']:
+            U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver))
+            U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver))
 
-        assert_allclose(np.abs(U1), np.abs(U2))
-        assert_allclose(s1, s2)
-        assert_allclose(np.abs(VH1), np.abs(VH2))
-        assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                        np.dot(U2, np.dot(np.diag(s2), VH2)))
+            assert_allclose(np.abs(U1), np.abs(U2))
+            assert_allclose(s1, s2)
+            assert_allclose(np.abs(VH1), np.abs(VH2))
+            assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                            np.dot(U2, np.dot(np.diag(s2), VH2)))
 
         # Try again with which="SM".
         A = np.random.RandomState(1909).randn(n, m)
         L = CheckingLinearOperator(A)
 
-        U1, s1, VH1 = reorder(svds(A, k, which="SM"))
-        U2, s2, VH2 = reorder(svds(L, k, which="SM"))
+        for solver in [None, 'arpack', 'lobpcg']:
+            U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver))
+            U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver))
 
-        assert_allclose(np.abs(U1), np.abs(U2))
-        assert_allclose(s1, s2)
-        assert_allclose(np.abs(VH1), np.abs(VH2))
-        assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                        np.dot(U2, np.dot(np.diag(s2), VH2)))
+            assert_allclose(np.abs(U1), np.abs(U2))
+            assert_allclose(s1, s2)
+            assert_allclose(np.abs(VH1), np.abs(VH2))
+            assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                            np.dot(U2, np.dot(np.diag(s2), VH2)))
 
         if k < min(n, m) - 1:
             # Complex input and explicit which="LM".
@@ -790,8 +802,11 @@ def test_svd_linop():
                 A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                 L = CheckingLinearOperator(A)
 
-                U1, s1, VH1 = reorder(svds(A, k, which="LM"))
-                U2, s2, VH2 = reorder(svds(L, k, which="LM"))
+                for solver in [None, 'arpack', 'lobpcg']:
+                    U1, s1, VH1 = reorder(svds(A, k, which="LM",
+                                          solver=solver)
+                    U2, s2, VH2=reorder(svds(L, k, which="LM",
+                                             solver=solver))
 
                 assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                 assert_allclose(s1, s2, rtol=eps)

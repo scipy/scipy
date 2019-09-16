@@ -1801,10 +1801,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
-                dtype = A.dot(np.zeros([m,1])).dtype
+                dtype = A.dot(np.zeros([m, 1])).dtype
 
             # A^H * V; works around lack of LinearOperator.adjoint.
-            # XXX This can be slow!
+            # This can be slow!
             def X_matmat(V):
                 out = np.empty((V.shape[1], m), dtype=dtype)
                 for i, col in enumerate(V.T):
