@@ -72,10 +72,10 @@ def _get_test_tolerance(type_char, mattype=None):
     return tol, rtol, atol
 
 
-def generate_matrix(N, complex=False, hermitian=False,
+def generate_matrix(N, complex_=False, hermitian=False,
                     pos_definite=False, sparse=False):
     M = np.random.random((N,N))
-    if complex:
+    if complex_:
         M = M + 1j * np.random.random((N,N))
 
     if hermitian:
@@ -136,24 +136,24 @@ def assert_allclose_cc(actual, desired, **kw):
         assert_allclose(actual, conj(desired), **kw)
 
 
-def argsort_which(eval, typ, k, which,
+def argsort_which(eigenvalues, typ, k, which,
                   sigma=None, OPpart=None, mode=None):
     """Return sorted indices of eigenvalues using the "which" keyword
     from eigs and eigsh"""
     if sigma is None:
-        reval = np.round(eval, decimals=_ndigits[typ])
+        reval = np.round(eigenvalues, decimals=_ndigits[typ])
     else:
         if mode is None or mode == 'normal':
             if OPpart is None:
-                reval = 1. / (eval - sigma)
+                reval = 1. / (eigenvalues - sigma)
             elif OPpart == 'r':
-                reval = 0.5 * (1. / (eval - sigma)
-                               + 1. / (eval - np.conj(sigma)))
+                reval = 0.5 * (1. / (eigenvalues - sigma)
+                               + 1. / (eigenvalues - np.conj(sigma)))
             elif OPpart == 'i':
-                reval = -0.5j * (1. / (eval - sigma)
-                                 - 1. / (eval - np.conj(sigma)))
+                reval = -0.5j * (1. / (eigenvalues - sigma)
+                                 - 1. / (eigenvalues - np.conj(sigma)))
         elif mode == 'cayley':
-            reval = (eval + sigma) / (eval - sigma)
+            reval = (eigenvalues + sigma) / (eigenvalues - sigma)
         elif mode == 'buckling':
             reval = eval / (eval - sigma)
         else:
@@ -237,41 +237,41 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
         # solve
         if general:
             try:
-                eval, evec = eigs_func(ac, k, bc, **kwargs)
+                eigenvalues, evec = eigs_func(ac, k, bc, **kwargs)
             except ArpackNoConvergence:
                 kwargs['maxiter'] = 20*a.shape[0]
-                eval, evec = eigs_func(ac, k, bc, **kwargs)
+                eigenvalues, evec = eigs_func(ac, k, bc, **kwargs)
         else:
             try:
-                eval, evec = eigs_func(ac, k, **kwargs)
+                eigenvalues, evec = eigs_func(ac, k, **kwargs)
             except ArpackNoConvergence:
                 kwargs['maxiter'] = 20*a.shape[0]
-                eval, evec = eigs_func(ac, k, **kwargs)
+                eigenvalues, evec = eigs_func(ac, k, **kwargs)
 
-        ind = argsort_which(eval, typ, k, which,
+        ind = argsort_which(eigenvalues, typ, k, which,
                             sigma, OPpart, mode)
-        eval = eval[ind]
-        evec = evec[:,ind]
+        eigenvalues = eigenvalues[ind]
+        evec = evec[:, ind]
 
         # check eigenvectors
         LHS = np.dot(a, evec)
         if general:
-            RHS = eval * np.dot(b, evec)
+            RHS = eigenvalues * np.dot(b, evec)
         else:
-            RHS = eval * evec
+            RHS = eigenvalues * evec
 
             assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
 
         try:
             # check eigenvalues
-            assert_allclose_cc(eval, exact_eval, rtol=rtol, atol=atol,
+            assert_allclose_cc(eigenvalues, exact_eval, rtol=rtol, atol=atol,
                                err_msg=err)
             break
         except AssertionError:
             ntries += 1
 
     # check eigenvalues
-    assert_allclose_cc(eval, exact_eval, rtol=rtol, atol=atol, err_msg=err)
+    assert_allclose_cc(eigenvalues, exact_eval, rtol=rtol, atol=atol, err_msg=err)
 
 
 class DictWithRepr(dict):
@@ -300,7 +300,7 @@ class SymmetricParams:
         M = generate_matrix(N, hermitian=True,
                             pos_definite=True).astype('f').astype('d')
         Ac = generate_matrix(N, hermitian=True, pos_definite=True,
-                             complex=True).astype('F').astype('D')
+                             complex_=True).astype('F').astype('D')
         v0 = np.random.random(N)
 
         # standard symmetric problem
@@ -350,7 +350,7 @@ class NonSymmetricParams:
         Ar = generate_matrix(N).astype('f').astype('d')
         M = generate_matrix(N, hermitian=True,
                             pos_definite=True).astype('f').astype('d')
-        Ac = generate_matrix(N, complex=True).astype('F').astype('D')
+        Ac = generate_matrix(N, complex_=True).astype('F').astype('D')
         v0 = np.random.random(N)
 
         # standard real nonsymmetric problem
@@ -520,8 +520,8 @@ def test_eigen_bad_kwargs():
 
 def test_ticket_1459_arpack_crash():
     for dtype in [np.float32, np.float64]:
-        # XXX: this test does not seem to catch the issue for float32,
-        #      but we made the same fix there, just to be sure
+        # This test does not seem to catch the issue for float32,
+        # but we made the same fix there, just to be sure
 
         N = 6
         k = 2
@@ -804,9 +804,9 @@ def test_svd_linop():
 
                 for solver in [None, 'arpack', 'lobpcg']:
                     U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                          solver=solver))
+                                               solver=solver))
                     U2, s2, VH2 = reorder(svds(L, k, which="LM",
-                                          solver=solver))
+                                               solver=solver))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
