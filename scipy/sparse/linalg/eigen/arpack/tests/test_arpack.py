@@ -155,7 +155,7 @@ def argsort_which(eigenvalues, typ, k, which,
         elif mode == 'cayley':
             reval = (eigenvalues + sigma) / (eigenvalues - sigma)
         elif mode == 'buckling':
-            reval = eval / (eval - sigma)
+            reval = eigenvalues / (eigenvalues - sigma)
         else:
             raise ValueError("mode='%s' not recognized" % mode)
 
