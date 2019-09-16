@@ -4550,7 +4550,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     (1.0, 0.0)
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
-        raise ValueError("x and y why must be ndarrays")
+        raise ValueError("x and y must be ndarrays")
 
     # convert arrays of type (n,) to (n, 1)
     if x.ndim == 1:
