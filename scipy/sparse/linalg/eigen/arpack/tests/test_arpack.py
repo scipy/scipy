@@ -804,15 +804,16 @@ def test_svd_linop():
 
                 for solver in [None, 'arpack', 'lobpcg']:
                     U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                          solver=solver)
-                    U2, s2, VH2=reorder(svds(L, k, which="LM",
-                                             solver=solver))
+                                          solver=solver))
+                    U2, s2, VH2 = reorder(svds(L, k, which="LM",
+                                          solver=solver))
 
-                assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
-                assert_allclose(s1, s2, rtol=eps)
-                assert_allclose(np.abs(VH1), np.abs(VH2), rtol=eps)
-                assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                                np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=eps)
+                    assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
+                    assert_allclose(s1, s2, rtol=eps)
+                    assert_allclose(np.abs(VH1), np.abs(VH2), rtol=eps)
+                    assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                                    np.dot(U2, np.dot(np.diag(s2), VH2)),
+                                    rtol=eps)
 
 
 @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
