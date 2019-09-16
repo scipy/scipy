@@ -74,9 +74,9 @@ def _get_test_tolerance(type_char, mattype=None):
 
 def generate_matrix(N, complex_=False, hermitian=False,
                     pos_definite=False, sparse=False):
-    M = np.random.random((N,N))
+    M = np.random.random((N, N))
     if complex_:
-        M = M + 1j * np.random.random((N,N))
+        M = M + 1j * np.random.random((N, N))
 
     if hermitian:
         if pos_definite:
@@ -84,7 +84,7 @@ def generate_matrix(N, complex_=False, hermitian=False,
                 i = np.arange(N)
                 j = np.random.randint(N, size=N-2)
                 i, j = np.meshgrid(i, j)
-                M[i,j] = 0
+                M[i, j] = 0
             M = np.dot(M.conj(), M.T)
         else:
             M = np.dot(M.conj(), M.T)
@@ -93,13 +93,13 @@ def generate_matrix(N, complex_=False, hermitian=False,
                 j = np.random.randint(N, size=N * N // 4)
                 ind = np.nonzero(i == j)
                 j[ind] = (j[ind] + 1) % N
-                M[i,j] = 0
-                M[j,i] = 0
+                M[i, j] = 0
+                M[j, i] = 0
     else:
         if sparse:
             i = np.random.randint(N, size=N * N // 2)
             j = np.random.randint(N, size=N * N // 2)
-            M[i,j] = 0
+            M[i, j] = 0
     return M
 
 
@@ -762,7 +762,7 @@ def test_svd_linop():
     def reorder(args):
         U, s, VH = args
         j = np.argsort(s)
-        return U[:,j], s[j], VH[j,:]
+        return U[:, j], s[j], VH[j, :]
 
     for n, m, k in nmks:
         # Test svds on a LinearOperator.
@@ -803,10 +803,8 @@ def test_svd_linop():
                 L = CheckingLinearOperator(A)
 
                 for solver in [None, 'arpack', 'lobpcg']:
-                    U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                               solver=solver))
-                    U2, s2, VH2 = reorder(svds(L, k, which="LM",
-                                               solver=solver))
+                    U1, s1, VH1 = reorder(svds(A, k, which="LM", solver=solver))
+                    U2, s2, VH2 = reorder(svds(L, k, which="LM", solver=solver))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
