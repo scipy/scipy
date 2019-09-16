@@ -880,7 +880,8 @@ subroutine <prefix>syequb(lower,n,a,lda,s,scond,amax,work,info)
 
     integer intent(hide),depend(a) :: n = shape(a,1)
     integer intent(hide),depend(a) :: lda = MAX(1,shape(a,0))
-    <ftype> intent(hide,cache),depend(n),dimension(2*n) :: work
+    ! See https://github.com/Reference-LAPACK/lapack/pull/61 for the reason for 3*n
+    <ftype> intent(hide,cache),depend(n),dimension(3*n) :: work
 
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     <ftype> intent(in),dimension(lda,n),check(shape(a,0)==shape(a,1)) :: a
@@ -898,7 +899,8 @@ subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
 
     integer intent(hide),depend(a) :: n = shape(a,1)
     integer intent(hide),depend(a) :: lda = MAX(1,shape(a,0))
-    <ftype2c> intent(hide,cache),depend(n),dimension(2*n) :: work
+    ! See https://github.com/Reference-LAPACK/lapack/pull/61 for the reason for 3*n
+    <ftype2c> intent(hide,cache),depend(n),dimension(3*n) :: work
 
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     <ftype2c> intent(in),dimension(lda,n),check(shape(a,0)==shape(a,1)) :: a
