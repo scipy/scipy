@@ -624,14 +624,13 @@ def test_svd_simple_complex():
 def test_svd_maxiter():
     # check that maxiter works as expected
     x = hilbert(6)
-    for solver in [None, 'arpack', 'lobpcg']:
-        # ARPACK shouldn't converge on such an ill-conditioned matrix with just
-        # one iteration
-        assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3,
-                      solver=solver)
-        # but 100 iterations should be more than enough
-        u, s, vt = svds(x, 1, maxiter=100, ncv=3, solver=solver)
-        assert_allclose(s, [1.7], atol=0.5)
+    # ARPACK shouldn't converge on such an ill-conditioned matrix with just
+    # one iteration
+    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3,
+                  solver=solver)
+    # but 100 iterations should be more than enough
+    u, s, vt = svds(x, 1, maxiter=100, ncv=3, solver=solver)
+    assert_allclose(s, [1.7], atol=0.5)
 
 
 def test_svd_return():
