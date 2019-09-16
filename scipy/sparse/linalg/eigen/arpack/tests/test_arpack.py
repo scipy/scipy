@@ -627,7 +627,7 @@ def test_svd_maxiter():
     for solver in [None, 'arpack', 'lobpcg']:
         # ARPACK shouldn't converge on such an ill-conditioned matrix with just
         # one iteration
-        assert_raises(NoConvergence, svds, x, 1, maxiter=1, ncv=3,
+        assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3,
                       solver=solver)
         # but 100 iterations should be more than enough
         u, s, vt = svds(x, 1, maxiter=100, ncv=3, solver=solver)
