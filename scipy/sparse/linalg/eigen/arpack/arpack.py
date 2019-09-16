@@ -1837,9 +1837,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             raise ValueError("which must be either 'LM' or 'SM'.")
 
         if k == 1 and v0 is not None:
-            X = v0
+            X = np.reshape(v0, (-1, 1))
         else:
-            X = np.random.randn(min(A.shape), k)
+            X = np.random.RandomState(52).randn(min(A.shape), k)
 
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                           largest=largest)
