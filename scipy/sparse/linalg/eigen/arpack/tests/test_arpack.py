@@ -492,7 +492,7 @@ def test_general_nonsymmetric_starting_vector():
 
 def test_standard_nonsymmetric_no_convergence():
     np.random.seed(1234)
-    m = generate_matrix(30, complex=True)
+    m = generate_matrix(30, complex_=True)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
         w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)

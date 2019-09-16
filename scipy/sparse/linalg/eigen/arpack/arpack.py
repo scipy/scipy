@@ -1836,7 +1836,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         else:
             raise ValueError("which must be either 'LM' or 'SM'.")
 
-        if k == 1:
+        if k == 1 and v0 is not None:
             X = v0
         else:
             X = np.random.randn(min(A.shape), k)
