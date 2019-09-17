@@ -84,9 +84,18 @@ def test_read_fail():
         fp.close()
 
 
-def test_read_early_eof():
+def test_read_early_eof_with_data():
     for mmap in [False, True]:
         fp = open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb')
+        rate, data = wavfile.read(fp, mmap=mmap)
+        fp.close()
+
+        del data
+
+
+def test_read_early_eof():
+    for mmap in [False, True]:
+        fp = open(datafile('test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav'), 'rb')
         assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 

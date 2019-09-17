@@ -235,6 +235,7 @@ def read(filename, mmap=False):
     try:
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
+        data_chunk_received = False
         channels = 1
         bit_depth = 8
         format_tag = WAVE_FORMAT_PCM
@@ -243,7 +244,11 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
 
             if not chunk_id:
-                raise ValueError("Unexpected end of file.")
+                if data_chunk_received:
+                    # End of file but data sucessfully read
+                    break
+                else:
+                    raise ValueError("Unexpected end of file.")
             elif len(chunk_id) < 4:
                 raise ValueError("Incomplete wav chunk.")
 
@@ -258,6 +263,7 @@ def read(filename, mmap=False):
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
+                data_chunk_received = True
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
