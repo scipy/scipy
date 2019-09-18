@@ -447,3 +447,16 @@ class TestBinnedStatistic(object):
         assert_allclose(bcx, bc2[0])
         assert_allclose(bcy, bc2[1])
         assert_allclose(bcz, bc2[2])
+
+    def test_dd_binnumbers(self):
+        x = np.random.random((10000, 3))
+        v = np.random.random((10000))
+        bins = np.linspace(0, 1, 10)
+        bins = (bins, bins, bins)
+
+        stat, bins, binnumbers = binned_statistic_dd(x, v, 'mean', bins=bins)
+
+        stat2, bins, binnumbers = binned_statistic_dd(x, v, 'mean', bins=bins,
+                                                      binnumbers=binnumbers)
+
+        assert_allclose(stat, stat2)

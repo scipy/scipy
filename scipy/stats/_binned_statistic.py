@@ -356,7 +356,8 @@ BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
-                        bins=10, range=None, expand_binnumbers=False):
+                        bins=10, range=None, binnumbers=None,
+                        expand_binnumbers=False):
     """
     Compute a multidimensional binned statistic for a set of data.
 
@@ -405,6 +406,10 @@ def binned_statistic_dd(sample, values, statistic='mean',
           * A sequence of arrays describing the bin edges along each dimension.
           * The number of bins for each dimension (nx, ny, ... = bins).
           * The number of bins for all dimensions (nx = ny = ... = bins).
+
+    binnumbers : (N,) array of ints, optional
+        The bin numbers previously calculated by the function
+        with expand_binnumbers=False.
 
     range : sequence, optional
         A sequence of lower and upper bin edges to be used if the edges are
@@ -502,7 +507,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     ...     ax.bar3d(x, y, z, dx, dy, bincounts)
 
     """
-    known_stats = ['mean', 'median', 'count', 'sum', 'std','min','max']
+    known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
         raise ValueError('invalid statistic %r' % (statistic,))
 
@@ -570,26 +575,27 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     nbin = np.asarray(nbin)
 
-    # Compute the bin number each sample falls into, in each dimension
-    sampBin = [
-        np.digitize(sample[:, i], edges[i])
-        for i in xrange(Ndim)
-    ]
+    if binnumbers is None:
+        # Compute the bin number each sample falls into, in each dimension
+        sampBin = [
+            np.digitize(sample[:, i], edges[i])
+            for i in xrange(Ndim)
+        ]
 
-    # Using `digitize`, values that fall on an edge are put in the right bin.
-    # For the rightmost bin, we want values equal to the right
-    # edge to be counted in the last bin, and not as an outlier.
-    for i in xrange(Ndim):
-        # Find the rounding precision
-        decimal = int(-np.log10(dedges[i].min())) + 6
-        # Find which points are on the rightmost edge.
-        on_edge = np.where(np.around(sample[:, i], decimal) ==
-                           np.around(edges[i][-1], decimal))[0]
-        # Shift these points one bin to the left.
-        sampBin[i][on_edge] -= 1
+        # Using `digitize`, values that fall on an edge are put in the right bin.
+        # For the rightmost bin, we want values equal to the right
+        # edge to be counted in the last bin, and not as an outlier.
+        for i in xrange(Ndim):
+            # Find the rounding precision
+            decimal = int(-np.log10(dedges[i].min())) + 6
+            # Find which points are on the rightmost edge.
+            on_edge = np.where(np.around(sample[:, i], decimal) ==
+                               np.around(edges[i][-1], decimal))[0]
+            # Shift these points one bin to the left.
+            sampBin[i][on_edge] -= 1
 
-    # Compute the sample indices in the flattened statistic matrix.
-    binnumbers = np.ravel_multi_index(sampBin, nbin)
+        # Compute the sample indices in the flattened statistic matrix.
+        binnumbers = np.ravel_multi_index(sampBin, nbin)
 
     result = np.empty([Vdim, nbin.prod()], float)
 
