@@ -212,10 +212,10 @@ cpdef _label(np.ndarray input,
          "{} != {}".format((<object> input).shape, (<object> output).shape))
 
     structure = np.asanyarray(structure, dtype=np.int).copy()
-    assert input.ndim == structure.ndim, \
+    assert np.PyArray_NDIM(input) == np.PyArray_NDIM(structure), \
         ("Structuring element must have same "
          "# of dimensions as input, "
-         "{:d} != {:d}".format(input.ndim, structure.ndim))
+         "{:d} != {:d}".format(np.PyArray_NDIM(input), np.PyArray_NDIM(structure)))
 
     # Check that structuring element is of size 3 in every dimension
     assert set((<object> structure).shape) <= set([3]), \
@@ -223,11 +223,11 @@ cpdef _label(np.ndarray input,
          "was {}".format((<object> structure).shape))
 
     # check structuring element for symmetry
-    assert np.all(structure == structure[(np.s_[::-1],) * structure.ndim]), \
+    assert np.all(structure == structure[(np.s_[::-1],) * np.PyArray_NDIM(structure)]), \
         "Structuring element is not symmetric"
 
     # make sure we're dealing with a non-empty, non-scalar array
-    assert input.ndim > 0 and input.size > 0, "Cannot label scalars or empty arrays"
+    assert np.PyArray_NDIM(input) > 0 and input.size > 0, "Cannot label scalars or empty arrays"
 
     # if we're handed booleans, we treat them as uint8s
     if input.dtype == np.bool:
@@ -259,6 +259,7 @@ cpdef _label(np.ndarray input,
         np.uintp_t next_region, src_label, dest_label
         np.uintp_t mergetable_size
         np.uintp_t *mergetable
+        int output_ndim, structure_ndim
 
     axis = -1  # choose best axis based on output
     _ito = np.PyArray_IterAllButAxis(output, &axis)
@@ -304,15 +305,17 @@ cpdef _label(np.ndarray input,
         next_region = 2
 
         # Used for labeling single lines
-        temp = [1] * structure.ndim
+        temp = [1] * np.PyArray_NDIM(structure)
         temp[axis] = 0
         use_previous = (structure[tuple(temp)] != 0)
 
+        output_ndim = np.PyArray_NDIM(output)
+        structure_ndim = np.PyArray_NDIM(structure)
         with nogil:
             while PyArray_ITER_NOTDONE(iti):
                 # Optimization - for 2D, line_buffer becomes next iteration's
                 # neighbor buffer
-                if output.ndim == 2:
+                if  output_ndim == 2:
                     tmp = line_buffer
                     line_buffer = neighbor_buffer
                     neighbor_buffer = tmp
@@ -337,7 +340,7 @@ cpdef _label(np.ndarray input,
                     # Check that the neighbor line is in bounds
                     valid = True
                     total_offset = 0
-                    for idim in range(structure.ndim):
+                    for idim in range(structure_ndim):
                         if idim == axis:
                             continue
                         delta = (itstruct.coordinates[idim] - 1)  # 1,1,1... is center
@@ -350,7 +353,7 @@ cpdef _label(np.ndarray input,
                         # Optimization (see above) - for 2D, line_buffer
                         # becomes next iteration's neighbor buffer, so no
                         # need to read it here.
-                        if output.ndim != 2:
+                        if output_ndim != 2:
                             read_line(<char *> PyArray_ITER_DATA(ito) + total_offset, so,
                                       neighbor_buffer, L)
 
