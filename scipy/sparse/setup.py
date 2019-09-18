@@ -7,6 +7,7 @@ import subprocess
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('sparse',parent_package,top_path)
 
@@ -16,7 +17,9 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('csgraph')
 
     config.add_extension('_csparsetools',
-                         sources=['_csparsetools.c'])
+                         sources=['_csparsetools.c'],
+                         **numpy_nodepr_api,
+                        )
 
     def get_sparsetools_sources(ext, build_dir):
         # Defer generation of source files
@@ -44,8 +47,9 @@ def configuration(parent_package='',top_path=None):
                'sparsetools.h',
                'util.h']
     depends = [os.path.join('sparsetools', hdr) for hdr in depends],
+    macros = [('__STDC_FORMAT_MACROS', 1)] + numpy_nodepr_api['define_macros']
     config.add_extension('_sparsetools',
-                         define_macros=[('__STDC_FORMAT_MACROS', 1)],
+                         define_macros=macros,
                          depends=depends,
                          include_dirs=['sparsetools'],
                          sources=[os.path.join('sparsetools', 'sparsetools.cxx'),
@@ -53,7 +57,7 @@ def configuration(parent_package='',top_path=None):
                                   os.path.join('sparsetools', 'csc.cxx'),
                                   os.path.join('sparsetools', 'bsr.cxx'),
                                   os.path.join('sparsetools', 'other.cxx'),
-                                  get_sparsetools_sources]
+                                  get_sparsetools_sources],
                          )
 
     return config

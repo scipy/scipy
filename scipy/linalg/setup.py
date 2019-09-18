@@ -8,7 +8,8 @@ def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
     from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files)
+    from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files,
+         numpy_nodepr_api)
 
     config = Configuration('linalg', parent_package, top_path)
 
@@ -26,7 +27,8 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_fblas',
                          sources=sources,
                          depends=['fblas_l?.pyf.src'],
-                         extra_info=lapack_opt
+                         extra_info=lapack_opt,
+                         **numpy_nodepr_api,
                          )
 
     # flapack:
@@ -46,7 +48,8 @@ def configuration(parent_package='', top_path=None):
                                   'flapack_sym_herm.pyf.src',
                                   'flapack_other.pyf.src',
                                   'flapack_user.pyf.src'],
-                         extra_info=lapack_opt
+                         extra_info=lapack_opt,
+                         **numpy_nodepr_api,
                          )
 
     if atlas_version is not None:
@@ -54,20 +57,23 @@ def configuration(parent_package='', top_path=None):
         config.add_extension('_cblas',
                              sources=['cblas.pyf.src'],
                              depends=['cblas.pyf.src', 'cblas_l1.pyf.src'],
-                             extra_info=lapack_opt
+                             extra_info=lapack_opt,
+                             **numpy_nodepr_api,
                              )
 
         # clapack:
         config.add_extension('_clapack',
                              sources=['clapack.pyf.src'],
                              depends=['clapack.pyf.src'],
-                             extra_info=lapack_opt
+                             extra_info=lapack_opt,
+                             **numpy_nodepr_api,
                              )
 
     # _flinalg:
     config.add_extension('_flinalg',
                          sources=[join('src', 'det.f'), join('src', 'lu.f')],
-                         extra_info=lapack_opt
+                         extra_info=lapack_opt,
+                             **numpy_nodepr_api,
                          )
 
     # _interpolative:
@@ -119,13 +125,16 @@ def configuration(parent_package='', top_path=None):
                                  routines_to_split)
     fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
     config.add_extension('_interpolative', fnames + ["interpolative.pyf"],
-                         extra_info=lapack_opt
+                         extra_info=lapack_opt,
+                         **numpy_nodepr_api,
                          )
 
     # _solve_toeplitz:
     config.add_extension('_solve_toeplitz',
                          sources=[('_solve_toeplitz.c')],
-                         include_dirs=[get_numpy_include_dirs()])
+                         include_dirs=[get_numpy_include_dirs()],
+                         **numpy_nodepr_api,
+                        )
 
     config.add_data_dir('tests')
 
@@ -144,7 +153,9 @@ def configuration(parent_package='', top_path=None):
                                   'fortran_defs.h', '_blas_subroutines.h'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
-                         extra_info=lapack_opt)
+                         extra_info=lapack_opt,
+                         **numpy_nodepr_api,
+                        )
 
     config.add_extension('cython_lapack',
                          sources=['cython_lapack.c'],
@@ -152,10 +163,14 @@ def configuration(parent_package='', top_path=None):
                                   'fortran_defs.h', '_lapack_subroutines.h'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
-                         extra_info=lapack_opt)
+                         extra_info=lapack_opt,
+                         **numpy_nodepr_api,
+                        )
 
     config.add_extension('_decomp_update',
-                         sources=['_decomp_update.c'])
+                         sources=['_decomp_update.c'],
+                         **numpy_nodepr_api,
+                        )
 
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')

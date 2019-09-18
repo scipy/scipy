@@ -31,7 +31,9 @@ def configuration(parent_package='', top_path=None):
     # Cython wants the .c and .pyx to have the underscore.
     config.add_extension("_ni_label",
                          sources=["src/_ni_label.c",],
-                         include_dirs=['src']+[get_include()])
+                         include_dirs=['src']+[get_include()],
+                         **numpy_nodepr_api,
+                        )
 
     config.add_extension("_ctest",
                          sources=["src/_ctest.c"],
@@ -48,7 +50,9 @@ def configuration(parent_package='', top_path=None):
                          define_macros=_define_macros)
 
     config.add_extension("_cytest",
-                         sources=["src/_cytest.c"])
+                         sources=["src/_cytest.c"],
+                         **numpy_nodepr_api,
+                        )
 
     config.add_data_dir('tests')
 

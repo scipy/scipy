@@ -394,7 +394,7 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
     # of size [N, N], which is also the size of the sparse matrix
     cdef unsigned int N = graph.shape[0]
     cdef np.ndarray null_flag = np.ones((N, N), dtype=bool, order='C')
-    cdef np.npy_bool* null_ptr = <np.npy_bool*> null_flag.data
+    cdef np.npy_bool* null_ptr = <np.npy_bool*> np.PyArray_DATA(null_flag)
     cdef unsigned int row, col, i
 
     for row in range(N):

@@ -118,7 +118,7 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
 
     # M[i][j] is the inner product of the i-th obs and j-th code
     # M = obs * codes.T
-    cal_M(nobs, ncodes, nfeat, obs, code_book, <vq_type *>M.data)
+    cal_M(nobs, ncodes, nfeat, obs, code_book, <vq_type *>np.PyArray_DATA(M))
 
     for i in range(nobs):
         for j in range(ncodes):
@@ -232,13 +232,13 @@ def vq(np.ndarray obs, np.ndarray codes):
     outdists.fill(np.inf)
 
     if obs.dtype.type is np.float32:
-        _vq(<float32_t *>obs.data, <float32_t *>codes.data,
-            ncodes, nfeat, nobs, <int32_t *>outcodes.data,
-            <float32_t *>outdists.data)
+        _vq(<float32_t *>np.PyArray_DATA(obs), <float32_t *>np.PyArray_DATA(codes),
+            ncodes, nfeat, nobs, <int32_t *>np.PyArray_DATA(outcodes),
+            <float32_t *>np.PyArray_DATA(outdists))
     elif obs.dtype.type is np.float64:
-        _vq(<float64_t *>obs.data, <float64_t *>codes.data,
-            ncodes, nfeat, nobs, <int32_t *>outcodes.data,
-            <float64_t *>outdists.data)
+        _vq(<float64_t *>np.PyArray_DATA(obs), <float64_t *>np.PyArray_DATA(codes),
+            ncodes, nfeat, nobs, <int32_t *>np.PyArray_DATA(outcodes),
+            <float64_t *>np.PyArray_DATA(outdists))
 
     return outcodes, outdists
 
@@ -355,14 +355,14 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
         raise ValueError('ndim different than 1 or 2 are not supported')
 
     if obs.dtype.type is np.float32:
-        has_members = _update_cluster_means(<float32_t *>obs.data,
-                                            <int32_t *>labels.data,
-                                            <float32_t *>cb.data,
+        has_members = _update_cluster_means(<float32_t *>np.PyArray_DATA(obs),
+                                            <int32_t *>np.PyArray_DATA(labels),
+                                            <float32_t *>np.PyArray_DATA(cb),
                                             obs.shape[0], nc, nfeat)
     elif obs.dtype.type is np.float64:
-        has_members = _update_cluster_means(<float64_t *>obs.data,
-                                            <int32_t *>labels.data,
-                                            <float64_t *>cb.data,
+        has_members = _update_cluster_means(<float64_t *>np.PyArray_DATA(obs),
+                                            <int32_t *>np.PyArray_DATA(labels),
+                                            <float64_t *>np.PyArray_DATA(cb),
                                             obs.shape[0], nc, nfeat)
 
     return cb, has_members

@@ -7,12 +7,15 @@ from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('fftpack',parent_package, top_path)
 
     config.add_data_dir('tests')
 
-    config.add_extension('convolve', sources=['convolve.c'])
+    config.add_extension('convolve',
+                         sources=['convolve.c'],
+                         **numpy_nodepr_api)
     return config
 
 

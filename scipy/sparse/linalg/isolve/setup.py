@@ -6,7 +6,7 @@ from os.path import join
 def configuration(parent_package='',top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils import get_g77_abi_wrappers
+    from scipy._build_utils import get_g77_abi_wrappers, numpy_nodepr_api
 
     config = Configuration('isolve',parent_package,top_path)
 
@@ -31,7 +31,9 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_iterative',
                          sources=sources,
-                         extra_info=lapack_opt)
+                         extra_info=lapack_opt,
+                         **numpy_nodepr_api
+                        )
 
     config.add_data_dir('tests')
 

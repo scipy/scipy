@@ -205,8 +205,8 @@ cpdef _label(np.ndarray input,
              np.ndarray structure,
              np.ndarray output):
     # check dimensions
-    # To understand the need for the casts to object, see
-    # http://trac.cython.org/cython_trac/ticket/302
+    # To understand the need for the casts to object in order to use
+    # tuple.__eq__, see https://github.com/cython/cython/issues/863
     assert (<object> input).shape == (<object> output).shape, \
         ("Shapes must match for input and output,"
          "{} != {}".format((<object> input).shape, (<object> output).shape))
@@ -278,8 +278,8 @@ cpdef _label(np.ndarray input,
     L = input.shape[axis]
     _line_buffer = np.empty(L + 2, dtype=np.uintp)
     _neighbor_buffer = np.empty(L + 2, dtype=np.uintp)
-    line_buffer = <np.uintp_t *> _line_buffer.data
-    neighbor_buffer = <np.uintp_t *> _neighbor_buffer.data
+    line_buffer = <np.uintp_t *> np.PyArray_DATA(_line_buffer)
+    neighbor_buffer = <np.uintp_t *> np.PyArray_DATA(_neighbor_buffer)
 
     # Add fenceposts with background values
     line_buffer[0] = neighbor_buffer[0] = BACKGROUND

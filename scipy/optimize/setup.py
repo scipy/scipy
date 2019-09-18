@@ -83,9 +83,13 @@ def configuration(parent_package='',top_path=None):
                                           for x in ["nnls.f","nnls.pyf"]],
                          **numpy_nodepr_api)
 
-    config.add_extension('_group_columns', sources=['_group_columns.c'],)
+    config.add_extension('_group_columns', sources=['_group_columns.c'],
+                         **numpy_nodepr_api,
+                        )
 
-    config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])
+    config.add_extension('_bglu_dense', sources=['_bglu_dense.c'],
+                         **numpy_nodepr_api,
+                        )
 
     config.add_subpackage('_lsq')
 

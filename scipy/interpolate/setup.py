@@ -5,6 +5,7 @@ from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('interpolate', parent_package, top_path)
 
@@ -12,7 +13,8 @@ def configuration(parent_package='',top_path=None):
     config.add_library('fitpack', sources=fitpack_src)
 
     config.add_extension('interpnd',
-                         sources=['interpnd.c'])
+                         sources=['interpnd.c'],
+                         **numpy_nodepr_api)
 
     config.add_extension('_ppoly',
                          sources=['_ppoly.c'])
@@ -20,19 +22,22 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_bspl',
                          sources=['_bspl.c'],
                          libraries=['fitpack'],
-                         depends=['src/__fitpack.h'] + fitpack_src)
+                         depends=['src/__fitpack.h'] + fitpack_src,
+                         **numpy_nodepr_api)
 
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
                          depends=(['src/__fitpack.h','src/multipack.h']
-                                  + fitpack_src)
+                                  + fitpack_src),
+                         **numpy_nodepr_api,
                          )
 
     config.add_extension('dfitpack',
                          sources=['src/fitpack.pyf'],
                          libraries=['fitpack'],
                          depends=fitpack_src,
+                         **numpy_nodepr_api,
                          )
 
     config.add_data_dir('tests')

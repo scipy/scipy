@@ -18,10 +18,11 @@ except ImportError:
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.system_info import get_info as get_system_info
+    from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('special', parent_package, top_path)
 
-    define_macros = []
+    define_macros = numpy_nodepr_api['define_macros']
     if sys.platform == 'win32':
         # define_macros.append(('NOINFINITIES',None))
         # define_macros.append(('NONANS',None))
@@ -59,8 +60,9 @@ def configuration(parent_package='',top_path=None):
                          sources=['specfun.pyf'],
                          f2py_options=['--no-wrap-functions'],
                          depends=specfun_src,
-                         define_macros=[],
-                         libraries=['sc_specfun'])
+                         libraries=['sc_specfun'],
+                         **numpy_nodepr_api,
+                        )
 
     # Extension _ufuncs
     headers = ['*.h', join('cephes', '*.h')]
@@ -81,6 +83,7 @@ def configuration(parent_package='',top_path=None):
         ['sc_amos', 'sc_cephes', 'sc_mach', 'sc_cdf', 'sc_specfun']
     )
     cfg.setdefault('define_macros', []).extend(define_macros)
+    cfg.update(numpy_nodepr_api)
     config.add_extension('_ufuncs',
                          depends=ufuncs_dep,
                          sources=ufuncs_src,
@@ -98,9 +101,11 @@ def configuration(parent_package='',top_path=None):
                          depends=ufuncs_cxx_dep,
                          include_dirs=[curdir] + inc_dirs,
                          define_macros=define_macros,
-                         extra_info=get_info("npymath"))
+                         extra_info=get_info("npymath"),
+                        )
 
     cfg = dict(get_system_info('lapack_opt'))
+    cfg.update(numpy_nodepr_api)
     config.add_extension('_ellip_harm_2',
                          sources=['_ellip_harm_2.c', 'sf_error.c',],
                          **cfg
@@ -127,6 +132,7 @@ def configuration(parent_package='',top_path=None):
         ['sc_amos', 'sc_cephes', 'sc_mach', 'sc_cdf', 'sc_specfun']
     )
     cfg.setdefault('define_macros', []).extend(define_macros)
+    cfg.update(numpy_nodepr_api)
     config.add_extension('cython_special',
                          depends=cython_special_dep,
                          sources=cython_special_src,

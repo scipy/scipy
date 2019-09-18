@@ -4,6 +4,13 @@
  */
 
 #include <Python.h>
+
+/* uses the old numpy API since it sets the data attribute */
+#ifdef NPY_NO_DEPRECATED_API
+#undef NPY_NO_DEPRECATED_API
+#endif
+#define NPY_NO_DEPRECATED_API 0
+
 #include "numpy/arrayobject.h"
 
 #define PyInt_AsLong PyLong_AsLong

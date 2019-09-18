@@ -44,6 +44,7 @@ def configuration(parent_package='',top_path=None):
         lapack_opt = dict(lapack_opt)
         include_dirs.extend(lapack_opt.pop('include_dirs'))
 
+    lapack_opt.update(numpy_nodepr_api)
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
                          libraries=['quadpack', 'mach'] + lapack_libs,
@@ -54,7 +55,6 @@ def configuration(parent_package='',top_path=None):
 
     # odepack/lsoda-odeint
     odepack_opts = lapack_opt.copy()
-    odepack_opts.update(numpy_nodepr_api)
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
                          libraries=['lsoda', 'mach'] + lapack_libs,
@@ -79,7 +79,8 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_dop',
                          sources=['dop.pyf'],
                          libraries=['dop'],
-                         depends=dop_src)
+                         depends=dop_src,
+                         **numpy_nodepr_api)
 
     config.add_extension('_test_multivariate',
                          sources=quadpack_test_src)

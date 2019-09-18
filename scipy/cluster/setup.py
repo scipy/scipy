@@ -11,6 +11,7 @@ else:
 def configuration(parent_package='', top_path=None):
     from scipy._build_utils.system_info import get_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
+    from scipy._build_utils import numpy_nodepr_api
     config = Configuration('cluster', parent_package, top_path)
 
     blas_opt = get_info('lapack_opt')
@@ -20,15 +21,18 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_vq',
         sources=[('_vq.c')],
         include_dirs=[get_numpy_include_dirs()],
-        extra_info=blas_opt)
+        extra_info=blas_opt,
+        **numpy_nodepr_api)
 
     config.add_extension('_hierarchy',
         sources=[('_hierarchy.c')],
-        include_dirs=[get_numpy_include_dirs()])
+        include_dirs=[get_numpy_include_dirs()],
+        **numpy_nodepr_api)
 
     config.add_extension('_optimal_leaf_ordering',
         sources=[('_optimal_leaf_ordering.c')],
-        include_dirs=[get_numpy_include_dirs()])
+        include_dirs=[get_numpy_include_dirs()],
+        **numpy_nodepr_api)
 
     return config
 

@@ -91,9 +91,9 @@ def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
     output_info.strides = <np.intp_t *> out.strides
     output_info.shape = <np.intp_t *> out.shape
 
-    data_ptr = <DTYPE_t*> data.data
+    data_ptr = <DTYPE_t*> np.PyArray_DATA(data)
     filter_ptr = <DTYPE_t*> &h_trans_flip[0]
-    out_ptr = <DTYPE_t*> out.data
+    out_ptr = <DTYPE_t*> np.PyArray_DATA(out)
 
     with nogil:
         retval = _apply_axis_inner(data_ptr, data_info,

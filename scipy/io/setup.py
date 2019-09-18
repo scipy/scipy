@@ -3,10 +3,12 @@ from __future__ import division, print_function, absolute_import
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import numpy_nodepr_api
     config = Configuration('io', parent_package, top_path)
 
     config.add_extension('_test_fortran',
-                         sources=['_test_fortran.pyf', '_test_fortran.f'])
+                         sources=['_test_fortran.pyf', '_test_fortran.f'],
+                         **numpy_nodepr_api)
 
     config.add_data_dir('tests')
     config.add_subpackage('matlab')
