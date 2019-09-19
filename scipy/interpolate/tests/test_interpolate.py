@@ -2358,10 +2358,11 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
 
 
 class TestRegularGridInterpolator(object):
-    def _get_sample_4d(self):
+    def _get_sample_4d(self, n = 3):
         # create a 4d grid of 3 points in each dimension
-        points = [(0., .5, 1.)] * 4
-        values = np.asarray([0., .5, 1.])
+        base = np.linspace(0., 1, n)
+        points = [base]*4
+        values = base
         values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
         values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
@@ -2478,7 +2479,7 @@ class TestRegularGridInterpolator(object):
         points, values = self._get_sample_4d()
         interp = RegularGridInterpolator(points, values)
         sample = np.asarray([[0., 0., 0., 0.], [1., 1., 1., 1.]])
-        assert_raises(ValueError, interp, sample, "undefmethod")
+        assert_raises(ValueError, interp, sample, method="undefmethod")
         sample = np.asarray([[0., 0., 0.], [1., 1., 1.]])
         assert_raises(ValueError, interp, sample)
         sample = np.asarray([[0., 0., 0., 0.], [1., 1., 1., 1.1]])
@@ -2580,6 +2581,19 @@ class TestRegularGridInterpolator(object):
         xi = [(1, 1, 1)]
         interpolator = RegularGridInterpolator(points, values)
         interpolator = RegularGridInterpolator(points, values, fill_value=0.)
+
+    def test_two_paths(self):
+        size = 4
+        points, values = self._get_sample_4d(n=size)
+        sample = np.random.random((int((size)**4), 4))
+
+        interp1 = RegularGridInterpolator(points, values=values)
+        result1 = interp1(xi=sample)
+
+        interp2 = RegularGridInterpolator(points, xi=sample)
+        result2 = interp2(values=values)
+
+        assert_array_almost_equal(result1, result2)
 
 
 class MyValue(object):
