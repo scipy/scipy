@@ -2285,7 +2285,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     return s
 
 
-def zscore(a, axis=0, ddof=0):
+def zscore(a, axis=0, ddof=0, skipna=False):
     """
     Calculate the z score of each value in the sample, relative to the
     sample mean and standard deviation.
@@ -2300,6 +2300,8 @@ def zscore(a, axis=0, ddof=0):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
+    skipna : bool, optional
+        Allows NaNs to be ignored when calculating the z-score.
 
     Returns
     -------
@@ -2338,8 +2340,14 @@ def zscore(a, axis=0, ddof=0):
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis, keepdims=True)
-    sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
+    if skipna:
+        mns = np.nanmean(a=a, axis=axis, keepdims=True)
+        sstd = np.nanstd(a=a, axis=axis, ddof=ddof, keepdims=True)
+    else:
+        mns = a.mean(axis=axis, keepdims=True)
+        sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
     return (a - mns) / sstd
 
 
