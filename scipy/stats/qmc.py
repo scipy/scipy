@@ -1,4 +1,4 @@
-"""Design of Experiments.
+"""Quasi-Monte Carlo methods.
 
 Define function to generate sample of points in the unit hypercube.
 
@@ -353,16 +353,16 @@ def halton(dim, n_samples, bounds=None, start_index=0):
     --------
     Generate samples from a low discrepancy sequence of Halton.
 
-    >>> from scipy.stats import doe
-    >>> sample = doe.halton(dim=2, n_samples=5)
+    >>> from scipy.stats import qmc
+    >>> sample = qmc.halton(dim=2, n_samples=5)
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> uniformity = doe.discrepancy(sample)
+    >>> uniformity = qmc.discrepancy(sample)
 
     If some wants to continue an existing design, extra points can be obtained.
 
-    >>> sample_continued = doe.halton(dim=2, n_samples=5, start_index=5)
+    >>> sample_continued = qmc.halton(dim=2, n_samples=5, start_index=5)
 
     """
     base = n_primes(dim)

@@ -374,17 +374,17 @@ Univariate and multivariate kernel density estimation
    gaussian_kde
 
 
-Design of Experiments
-=====================
+Quasi-Monte Carlo
+=================
 
 .. autosummary::
    :toctree: generated/
 
-   doe.discrepancy
-   doe.halton
-   doe.orthogonal_latin_hypercube
-   doe.latin_hypercube
-   doe.optimal_design
+   qmc.discrepancy
+   qmc.halton
+   qmc.orthogonal_latin_hypercube
+   qmc.latin_hypercube
+   qmc.optimal_design
 
 
 Warnings used in :mod:`scipy.stats`
