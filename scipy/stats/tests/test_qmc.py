@@ -82,13 +82,13 @@ class TestLHS(object):
         corners = np.array([[0, 2], [10, 5]])
 
         sample = qmc.latin_hypercube(dim=2, n_samples=5, bounds=corners)
-        out = np.array([[5.746, 3.219], [5.479, 3.261], [9.246, 4.798],
-                        [9.097, 4.495], [9.753, 4.074]])
+        out = np.array([[5.7, 3.2], [5.5, 3.9], [5.2, 3.6],
+                        [5.1, 3.3], [5.8, 4.1]])
         npt.assert_almost_equal(sample, out, decimal=1)
 
         sample = qmc.latin_hypercube(dim=2, n_samples=5, centered=True)
-        out = np.array([[0.3, 0.9], [0.7, 0.7], [0.1, 0.9],
-                        [0.5, 0.5], [0.1, 0.7]])
+        out = np.array([[0.1, 0.5], [0.3, 0.1], [0.7, 0.1],
+                        [0.1, 0.1], [0.3, 0.7]])
         npt.assert_almost_equal(sample, out, decimal=1)
 
     def test_orthogonal_lhs(self):

@@ -4,14 +4,16 @@ Define function to generate sample of points in the unit hypercube.
 
 """
 
-
 from __future__ import division
 
 import copy
 import numpy as np
 from scipy.optimize import brute
+from scipy._lib._util import check_random_state
+
 try:
     from scipy.optimize import basinhopping
+
     have_basinhopping = True
 except ImportError:
     have_basinhopping = False
@@ -109,10 +111,10 @@ def update_discrepancy(x_new, sample, initial_disc, bounds=None):
     n_samples = len(sample) + 1
     abs_ = abs(x_new - 0.5)
 
-    disc1 = - 2 / n_samples * np.prod(1 + 1/2 * abs_ - 1/2 * abs_ ** 2)
-    disc2 = 2 / (n_samples ** 2) * np.sum(np.prod(1 + 1/2 * abs_ +
-                                                  1/2 * abs(sample - 0.5) -
-                                                  1/2 * abs(x_new - sample),
+    disc1 = - 2 / n_samples * np.prod(1 + 1 / 2 * abs_ - 1 / 2 * abs_ ** 2)
+    disc2 = 2 / (n_samples ** 2) * np.sum(np.prod(1 + 1 / 2 * abs_ +
+                                                  1 / 2 * abs(sample - 0.5) -
+                                                  1 / 2 * abs(x_new - sample),
                                                   axis=1))
     disc3 = 1 / (n_samples ** 2) * np.prod(1 + abs_)
 
@@ -167,10 +169,14 @@ def perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
     z_ij = sample - 0.5
 
     # Eq (19)
-    c_i1j = 1. / n_samples ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) + \
-        abs(z_ij) - abs(z_ij[i1, :] - z_ij)), axis=1)
-    c_i2j = 1. / n_samples ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) + \
-        abs(z_ij) - abs(z_ij[i2, :] - z_ij)), axis=1)
+    c_i1j = 1. / n_samples ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) +
+                                                  abs(z_ij) -
+                                                  abs(z_ij[i1, :] - z_ij)),
+                                           axis=1)
+    c_i2j = 1. / n_samples ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) +
+                                                  abs(z_ij) -
+                                                  abs(z_ij[i2, :] - z_ij)),
+                                           axis=1)
 
     # Eq (20)
     c_i1i1 = (1. / n_samples ** 2 * np.prod(1 + abs(z_ij[i1, :])) -
@@ -383,8 +389,11 @@ def halton(dim, n_samples, bounds=None, start_index=0):
 global best_doe, best_disc
 
 
-def orthogonal_latin_hypercube(dim, n_samples, bounds=None):
+def orthogonal_latin_hypercube(dim, n_samples, bounds=None, seed=None):
     """Orthogonal array-based Latin hypercube sampling (OA-LHS).
+
+    Samples are uniformly distributed over the half-open interval [low, high)
+    (includes low, but excludes high).
 
     On top of the constraints from the Latin Hypercube, an orthogonal array of
     size n_samples is defined and only one point is allowed per subspace.
@@ -394,11 +403,18 @@ def orthogonal_latin_hypercube(dim, n_samples, bounds=None):
     dim : int
         Dimension of the parameter space.
     n_samples : int
-        Number of samples to generate in the parametr space.
+        Number of samples to generate in the parameter space.
     bounds : tuple or array_like ([min, k_vars], [max, k_vars])
         Desired range of transformed data. The transformation apply the bounds
         on the sample and not the theoretical space, unit cube. Thus min and
         max values of the sample will coincide with the bounds.
+    seed : int or `np.random.RandomState`, optional
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with seed.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable sampling.
 
     Returns
     -------
@@ -414,11 +430,13 @@ def orthogonal_latin_hypercube(dim, n_samples, bounds=None):
     sample = []
     step = 1.0 / n_samples
 
+    rng = check_random_state(seed)
+
     for _ in range(dim):
         # Enforce a unique point per grid
         j = np.arange(n_samples) * step
-        temp = j + np.random.uniform(low=0, high=step, size=n_samples)
-        np.random.shuffle(temp)
+        temp = j + rng.uniform(low=0, high=step, size=n_samples)
+        rng.shuffle(temp)
 
         sample.append(temp)
 
@@ -433,8 +451,11 @@ def orthogonal_latin_hypercube(dim, n_samples, bounds=None):
     return sample
 
 
-def latin_hypercube(dim, n_samples, bounds=None, centered=False):
+def latin_hypercube(dim, n_samples, bounds=None, centered=False, seed=None):
     """Latin hypercube sampling (LHS).
+
+    Samples are uniformly distributed over the half-open interval [low, high)
+    (includes low, but excludes high).
 
     The parameter space is subdivided into an orthogonal grid of n_samples per
     dimension. Within this multi-dimensional grid, n_samples are selected by
@@ -452,6 +473,13 @@ def latin_hypercube(dim, n_samples, bounds=None, centered=False):
         max values of the sample will coincide with the bounds.
     centered : bool
         Center the point within the multi-dimensional grid.
+    seed : int or `np.random.RandomState`, optional
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with seed.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable sampling.
 
     Returns
     -------
@@ -465,12 +493,13 @@ def latin_hypercube(dim, n_samples, bounds=None, centered=False):
     Technometrics, 1979.
 
     """
+    rng = check_random_state(seed)
     if centered:
         r = 0.5
     else:
-        r = np.random.random_sample((n_samples, dim))
+        r = rng.random_sample((n_samples, dim))
 
-    q = np.random.random_integers(low=1, high=n_samples, size=(n_samples, dim))
+    q = rng.randint(low=1, high=n_samples, size=(n_samples, dim))
 
     sample = 1. / n_samples * (q - r)
 
@@ -484,7 +513,7 @@ def latin_hypercube(dim, n_samples, bounds=None, centered=False):
 
 
 def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
-                   force=False, optimization=True):
+                   force=False, optimization=True, seed=None):
     """Optimal design.
 
     Optimize the design by doing random permutations to lower the centered
@@ -515,6 +544,13 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
     optimization : bool
         Optimal design using global optimization or random generation of
         `niter` samples.
+    seed : int or `np.random.RandomState`, optional
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with seed.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable sampling.
 
     Returns
     -------
@@ -531,12 +567,14 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
     global best_doe, best_disc
     best_doe = start_design
     best_disc = np.inf
+    rng = check_random_state(seed)
 
     if (bounds is None) and (best_doe is not None):
         bounds = np.array([best_doe.min(axis=0), best_doe.max(axis=0)])
     if optimization:
         if best_doe is None:
-            best_doe = orthogonal_latin_hypercube(dim, n_samples, bounds)
+            best_doe = orthogonal_latin_hypercube(dim, n_samples, bounds,
+                                                  seed=rng)
 
         best_disc = discrepancy(best_doe, bounds)
 
@@ -601,7 +639,7 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
 
     else:
         for _ in range(niter):
-            doe = orthogonal_latin_hypercube(dim, n_samples, bounds)
+            doe = orthogonal_latin_hypercube(dim, n_samples, bounds, seed=rng)
             disc = discrepancy(doe, bounds)
             if disc < best_disc:
                 best_disc = disc
