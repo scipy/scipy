@@ -1771,23 +1771,29 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
-    def test_zscore_nan_default(self):
-        # test skipnan keyword in zscore
+    def test_zscore_nan_propagate(self):
+        # Test nan_policy set to 'propogate'
         x = np.array([1, 2, np.nan, 4, 5])
 
-        z = stats.zscore(x, skipna=False)
+        z = stats.zscore(x, nan_policy='propagate')
 
         expected = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         assert_array_equal(z, expected)
 
-    def test_zscore_ignore_nan(self):
-        # test skipnan keyword in zscore
+    def test_zscore_nan_omit(self):
+        # Test nan_policy set to 'omit'
         x = np.array([1, 2, np.nan, 4, 5])
 
-        z = stats.zscore(x, skipna=True)
+        z = stats.zscore(x, nan_policy='omit')
 
         expected = np.array([-1.2649110640673518, -0.6324555320336759, np.nan, 0.6324555320336759, 1.2649110640673518])
         assert_array_almost_equal(z, expected)
+
+    def test_zscore_nan_raise(self):
+        # Test nan_policy set to 'raise'
+        x = np.array([1, 2, np.nan, 4, 5])
+
+        assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
 
     def test_mad(self):
         dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
