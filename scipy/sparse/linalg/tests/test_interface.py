@@ -43,6 +43,7 @@ class TestLinearOperator(object):
                         'shape': A.shape,
                         'matvec': lambda x: np.dot(A, x),
                         'rmatvec': lambda x: np.dot(A.T.conj(), x),
+                        'rmatmat': lambda x: np.dot(A.T.conj(), x),
                         'matmat': lambda x: np.dot(A, x)
                     }]
 
@@ -63,22 +64,40 @@ class TestLinearOperator(object):
             assert_equal(A.dot(matrix([[1],[2],[3]])), [[14],[32]])
 
             assert_equal((2*A)*[1,1,1], [12,30])
-            assert_equal((2*A).rmatvec([1,1]), [10, 14, 18])
+            assert_equal((2 * A).rmatvec([1, 1]), [10, 14, 18])
             assert_equal((2*A).H.matvec([1,1]), [10, 14, 18])
             assert_equal((2*A)*[[1],[1],[1]], [[12],[30]])
-            assert_equal((2*A).matmat([[1],[1],[1]]), [[12],[30]])
+            assert_equal((2 * A).matmat([[1], [1], [1]]), [[12], [30]])
             assert_equal((A*2)*[1,1,1], [12,30])
             assert_equal((A*2)*[[1],[1],[1]], [[12],[30]])
             assert_equal((2j*A)*[1,1,1], [12j,30j])
             assert_equal((A+A)*[1,1,1], [12, 30])
-            assert_equal((A+A).rmatvec([1,1]), [10, 14, 18])
+            assert_equal((A + A).rmatvec([1, 1]), [10, 14, 18])
             assert_equal((A+A).H.matvec([1,1]), [10, 14, 18])
             assert_equal((A+A)*[[1],[1],[1]], [[12], [30]])
             assert_equal((A+A).matmat([[1],[1],[1]]), [[12], [30]])
             assert_equal((-A)*[1,1,1], [-6,-15])
             assert_equal((-A)*[[1],[1],[1]], [[-6],[-15]])
             assert_equal((A-A)*[1,1,1], [0,0])
-            assert_equal((A-A)*[[1],[1],[1]], [[0],[0]])
+            assert_equal((A - A) * [[1], [1], [1]], [[0], [0]])
+
+            X = np.array([[1, 2], [3, 4]])
+            # A_asarray = np.array([[1, 2, 3], [4, 5, 6]])
+            assert_equal((2 * A).rmatmat(X), np.dot((2 * self.A).T, X))
+            assert_equal((A * 2).rmatmat(X), np.dot((self.A * 2).T, X))
+            assert_equal((2j * A).rmatmat(X),
+                         np.dot((2j * self.A).T.conj(), X))
+            assert_equal((A * 2j).rmatmat(X),
+                         np.dot((self.A * 2j).T.conj(), X))
+            assert_equal((A + A).rmatmat(X),
+                         np.dot((self.A + self.A).T, X))
+            assert_equal((A + 2j * A).rmatmat(X),
+                         np.dot((self.A + 2j * self.A).T.conj(), X))
+            assert_equal((-A).rmatmat(X), np.dot((-self.A).T, X))
+            assert_equal((A - A).rmatmat(X),
+                         np.dot((self.A - self.A).T, X))
+            assert_equal((2j * A).rmatmat(2j * X),
+                         np.dot((2j * self.A).T.conj(), 2j * X))
 
             z = A+A
             assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] is A)
@@ -116,13 +135,20 @@ class TestLinearOperator(object):
                                           get_matvecs(self.B)):
             A = interface.LinearOperator(**matvecsA)
             B = interface.LinearOperator(**matvecsB)
+            # AtimesB = np.array([[22, 28], [49, 64]])
+            AtimesB = self.A.dot(self.B)
+            X = np.array([[1, 2], [3, 4]])
+
+            assert_equal((A * B).rmatmat(X), np.dot((AtimesB).T, X))
+            assert_equal((2j * A * B).rmatmat(X),
+                         np.dot((2j * AtimesB).T.conj(), X))
 
             assert_equal((A*B)*[1,1], [50,113])
             assert_equal((A*B)*[[1],[1]], [[50],[113]])
             assert_equal((A*B).matmat([[1],[1]]), [[50],[113]])
 
-            assert_equal((A*B).rmatvec([1,1]), [71,92])
-            assert_equal((A*B).H.matvec([1,1]), [71,92])
+            assert_equal((A * B).rmatvec([1, 1]), [71, 92])
+            assert_equal((A * B).H.matvec([1, 1]), [71, 92])
 
             assert_(isinstance(A*B, interface._ProductLinearOperator))
 
@@ -134,10 +160,15 @@ class TestLinearOperator(object):
 
         for matvecsC in get_matvecs(self.C):
             C = interface.LinearOperator(**matvecsC)
+            X = np.array([[1, 2], [3, 4]])
+
+            assert_equal(C.rmatmat(X), np.dot((self.C).T, X))
+            assert_equal((C**2).rmatmat(X),
+                         np.dot((np.dot(self.C, self.C)).T, X))
 
             assert_equal((C**2)*[1,1], [17,37])
-            assert_equal((C**2).rmatvec([1,1]), [22,32])
-            assert_equal((C**2).H.matvec([1,1]), [22,32])
+            assert_equal((C**2).rmatvec([1, 1]), [22, 32])
+            assert_equal((C**2).H.matvec([1, 1]), [22, 32])
             assert_equal((C**2).matmat([[1],[1]]), [[17],[37]])
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
@@ -150,6 +181,7 @@ class TestLinearOperator(object):
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
              'rmatvec': lambda x: np.dot(self.A.T.conj(),
                                          x).reshape(self.A.shape[1]),
+             'rmatmat': lambda x: np.dot(self.A.T.conj(), x),
              'matmat': lambda x: np.dot(self.A, x)}
         A = interface.LinearOperator(**D)
         B = np.array([[1, 2, 3],
@@ -306,7 +338,7 @@ def test_attributes():
 
     B = interface.LinearOperator(shape=(4, 3), matvec=always_four_ones)
 
-    for op in [A, B, A * B, A.H, A + A, B + B, A ** 4]:
+    for op in [A, B, A * B, A.H, A + A, B + B, A**4]:
         assert_(hasattr(op, "dtype"))
         assert_(hasattr(op, "shape"))
         assert_(hasattr(op, "_matvec"))
