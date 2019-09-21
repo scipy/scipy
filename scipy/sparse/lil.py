@@ -1,4 +1,4 @@
-"""LInked List sparse matrix class
+"""List of Lists sparse matrix class
 """
 
 from __future__ import division, print_function, absolute_import
@@ -21,7 +21,7 @@ from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
-    """Row-based linked list sparse matrix
+    """Row-based list of lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
     Note that inserting a single item can take linear time in the worst case;

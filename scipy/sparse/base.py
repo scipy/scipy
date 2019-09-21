@@ -29,7 +29,7 @@ class SparseEfficiencyWarning(SparseWarning):
 _formats = {'csc': [0, "Compressed Sparse Column"],
             'csr': [1, "Compressed Sparse Row"],
             'dok': [2, "Dictionary Of Keys"],
-            'lil': [3, "LInked List"],
+            'lil': [3, "List of Lists"],
             'dod': [4, "Dictionary of Dictionaries"],
             'sss': [5, "Symmetric Sparse Skyline"],
             'coo': [6, "COOrdinate"],
@@ -910,7 +910,7 @@ class spmatrix(object):
         return self.tocsr(copy=False).tocoo(copy=copy)
 
     def tolil(self, copy=False):
-        """Convert this matrix to LInked List format.
+        """Convert this matrix to List of List format.
 
         With copy=False, the data/indices may be shared between this matrix and
         the resultant lil_matrix.
