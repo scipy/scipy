@@ -56,7 +56,6 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     Examples
     --------
     >>> from scipy.linalg import lu_factor
-    >>> from numpy import tril, triu, allclose, zeros, eye
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> lu, piv = lu_factor(A)
     >>> piv
