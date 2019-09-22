@@ -7037,14 +7037,58 @@ add_newdoc("pbwa",
     """)
 
 add_newdoc("pdtr",
-    """
-    pdtr(k, m)
+    r"""
+    pdtr(k, m, out=None)
 
-    Poisson cumulative distribution function
+    Poisson cumulative distribution function.
 
-    Returns the sum of the first `k` terms of the Poisson distribution:
-    sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments
-    must both be non-negative doubles.
+    Defined as the probability that a Poisson-distributed random
+    variable with event rate :math:`m` is less than or equal to
+    :math:`k`. More concretely, this works out to be [1]_
+
+    .. math::
+
+       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{m!}.
+
+    Parameters
+    ----------
+    k : array_like
+        Nonnegative real argument
+    m : array_like
+        Nonnegative real shape parameter
+    out : ndarray
+        Optional output array for the function results
+
+    See Also
+    --------
+    pdtrc : Poisson survival function
+    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtri : inverse of `pdtr` with respect to `m`
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson cumulative distribution function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Poisson_distribution
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is a cumulative distribution function, so it converges to 1
+    monotonically as `k` goes to infinity.
+
+    >>> sc.pdtr([1, 10, 100, np.inf], 1)
+    array([0.73575888, 0.99999999, 1.        , 1.        ])
+
+    It is discontinuous at integers and constant between integers.
+
+    >>> sc.pdtr([1, 1.5, 1.9, 2], 1)
+    array([0.73575888, 0.73575888, 0.73575888, 0.9196986 ])
+
     """)
 
 add_newdoc("pdtrc",
