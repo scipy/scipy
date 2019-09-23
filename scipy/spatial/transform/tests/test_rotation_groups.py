@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import numpy as np
+from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
@@ -18,7 +19,7 @@ SIZES = [60, 24, 12] + list(NS) + [2 * n for n in NS]
 
 def _calculate_rmsd(P, Q):
     """Calculates the root-mean-square distance between the points of P and Q.
-    The distance is taken as the minimum over all possible matchings.  It is
+    The distance is taken as the minimum over all possible matchings. It is
     zero if P and Q are identical and non-zero if not.
     """
     distance_matrix = cdist(P, Q, metric='sqeuclidean')
@@ -151,3 +152,20 @@ def test_group_symmetry(name, size):
     distance = np.sort(cdist(q, q))
     deltas = np.max(distance, axis=0) - np.min(distance, axis=0)
     assert (deltas < TOL).all()
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_reduction(name):
+    """Test that the elements of the rotation group are correctly
+    mapped onto the identity rotation."""
+    g = Rotation.create_group(name)
+    f = g.reduce(g)
+    assert_array_almost_equal(f.magnitude(), np.zeros(len(g)))
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_single_reduction(name):
+    g = Rotation.create_group(name)
+    f = g[-1].reduce(g)
+    assert_array_almost_equal(f.magnitude(), 0)
+    assert f.as_quat().shape == (4,)
