@@ -6111,7 +6111,7 @@ class reciprocal_gen(rv_continuous):
     >>> ax.hist(np.log10(rv.rvs(size=1000)))
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xticks([-3, -2, -1])
-    >>> ax.set_xticklabels(["$10^{-3}$", "$10^{-2}$", "$10^{-1}$"])
+    >>> _ = ax.set_xticklabels(["$10^{-3}$", "$10^{-2}$", "$10^{-1}$"])
 
     `reciprocal` and `loguniform` are aliases.
 
