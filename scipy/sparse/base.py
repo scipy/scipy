@@ -910,7 +910,7 @@ class spmatrix(object):
         return self.tocsr(copy=False).tocoo(copy=copy)
 
     def tolil(self, copy=False):
-        """Convert this matrix to List of List format.
+        """Convert this matrix to List of Lists format.
 
         With copy=False, the data/indices may be shared between this matrix and
         the resultant lil_matrix.
