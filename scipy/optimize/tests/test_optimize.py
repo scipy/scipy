@@ -1390,61 +1390,22 @@ class TestIterationLimits(object):
                         res["nit"] >= default_iters*2)
 
 
-class TestResultXShapeWhenLenXIsOne(object):
-    def setup_method(self):
-        pass
-
-    def fun(self, x):
+def test_result_x_shape_when_len_x_is_one():
+    def fun(x):
         return x * x
 
-    def jac(self, x):
+    def jac(x):
         return 2. * x
 
-    def hess(self, x):
+    def hess(x):
         return np.array([[2.]])
 
-    def check(self, method, **kwargs):
-        res = optimize.minimize(self.fun, np.array([0.1]), method=method, **kwargs)
+    methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS',  'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP']
+    for method in methods:
+        res = optimize.minimize(fun, np.array([0.1]), method=method)
         assert res.x.shape == (1,)
-
-    def test_neldermead(self):
-        self.check("Nelder-Mead")
-
-    def test_powell(self):
-        self.check("Powell")
-
-    def test_cg(self):
-        self.check("CG")
-
-    def test_bfgs(self):
-        self.check("BFGS")
-
-    def test_newtoncg(self):
-        self.check("Newton-CG", jac=self.jac)
-
-    def test_lbfgsb(self):
-        self.check("L-BFGS-B")
-
-    def test_tnc(self):
-        self.check("TNC")
-
-    def test_cobyla(self):
-        self.check("COBYLA")
-
-    def test_slsqp(self):
-        self.check("SLSQP")
-
-    def test_trustconstr(self):
-        self.check("trust-constr", jac=self.jac)
-
-    def test_dogleg(self):
-        self.check("dogleg", jac=self.jac, hess=self.hess)
-
-    def test_trustncg(self):
-        self.check("trust-ncg", jac=self.jac, hess=self.hess)
-
-    def test_trustexact(self):
-        self.check("trust-exact", jac=self.jac, hess=self.hess)
-
-    def test_trustkrylov(self):
-        self.check("trust-krylov", jac=self.jac, hess=self.hess)
+    # use jac+hess
+    methods = ['trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov', 'Newton-CG']
+    for method in methods:
+        res = optimize.minimize(fun, np.array([0.1]), method=method, jac=jac, hess=hess)
+        assert res.x.shape == (1,)
