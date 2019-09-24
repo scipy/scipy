@@ -63,6 +63,9 @@ correct values for real-valued matrices.
 `scipy.signal` improvements
 ---------------------------
 
+Added a new function to calculate convolution using the overlap-add method,
+named `scipy.signal.oaconvolve`. Like `scipy.signal.fftconvolve`, this
+function supports specifying dimensions along which to do the convolution.
 
 `scipy.sparse` improvements
 ---------------------------
