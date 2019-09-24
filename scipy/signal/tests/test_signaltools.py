@@ -655,6 +655,19 @@ class TestFFTConvolve(object):
         out = fftconvolve(b, a, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
+    def test_valid_mode_ignore_nonaxes(self):
+        # See gh-5897
+        a = array([3, 2, 1])
+        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = array([24., 31., 41., 43., 49., 25., 12.])
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [1, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, b, 'valid', axes=1)
+        assert_array_almost_equal(out, expected)
+
     def test_empty(self):
         # Regression test for #1745: crashes with 0-length input.
         assert_(fftconvolve([], []).size == 0)
