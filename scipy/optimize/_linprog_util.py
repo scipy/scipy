@@ -52,7 +52,7 @@ _LPProblem.__doc__ = \
     >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
     >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
 
-    Note that only c is an required argument here, whereas all other arguments 
+    Note that only c is a required argument here, whereas all other arguments 
     A_ub, b_ub, A_eq, b_eq, bounds, x0 are optional with default value of None.
     """
 
