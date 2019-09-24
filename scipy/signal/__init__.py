@@ -12,6 +12,7 @@ Convolution
    convolve           -- N-dimensional convolution.
    correlate          -- N-dimensional correlation.
    fftconvolve        -- N-dimensional convolution using the FFT.
+   oaconvolve         -- N-dimensional convolution using the overlap-add method.
    convolve2d         -- 2-dimensional convolution (more options).
    correlate2d        -- 2-dimensional correlation (more options).
    sepfir2d           -- Convolve with a 2-D separable FIR filter.
