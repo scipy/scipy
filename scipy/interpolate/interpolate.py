@@ -449,6 +449,10 @@ class interp1d(_Interpolator1D):
         if not assume_sorted:
             ind = np.argsort(x)
             x = x[ind]
+            gx = x > x[0]  # prevents nan bring returned when there are duplicate values of min(x)
+            gx[0] = True
+            x = x[gx]
+            ind = ind[gx]
             y = np.take(y, ind, axis=axis)
 
         if x.ndim != 1:
