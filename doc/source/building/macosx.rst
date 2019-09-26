@@ -1,5 +1,5 @@
 ===============================
-Building From Source on Mac OSX
+Building from source on Mac OSX
 ===============================
 
 .. note::
