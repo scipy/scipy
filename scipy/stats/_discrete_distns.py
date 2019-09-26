@@ -13,6 +13,7 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
+from ._continuous_distns import beta
 from ._distn_infrastructure import (
         rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
@@ -150,6 +151,73 @@ class bernoulli_gen(binom_gen):
 
 
 bernoulli = bernoulli_gen(b=1, name='bernoulli')
+
+
+class betabinom_gen(rv_discrete):
+    r"""A beta-binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability mass function for `betabinom` is:
+
+    .. math::
+
+       f(k) = \left(\begin{array}n \\ k\end{array}\right)
+            \frac{B(k + a, n - k + b)}{B(a, b)}
+
+    for ``k`` in ``{0, 1,..., n}``, where :math:`B(a, b)` is the beta function.
+
+    `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+
+    def _rvs(self, n, a, b):
+        p = self._random_state.beta(a, b, self._size)
+        return self._random_state.binomial(n, p, self._size)
+
+    def _get_support(self, n, a, b):
+        return 0, n
+
+    def _argcheck(self, n, a, b):
+        return (n >= 0) & beta._argcheck(a, b)
+
+    def _logpmf(self, x, n, a, b):
+        k = floor(x)
+        combiln = gamln(n + 1) - (gamln(k + 1) + gamln(n - k + 1))
+        return combiln + betaln(k + a, n - k + b) - betaln(a, b)
+
+    def _pmf(self, x, n, a, b):
+        return exp(self._logpmf(x, n, a, b))
+
+    def _stats(self, n, a, b, moments = 'mv'):
+        e_p = a / (a + b)
+        e_q = 1 - e_p
+        mu = n * e_p
+        var = n * (a + b + n) * e_p * e_q / (a + b + 1)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = 1.0 / sqrt(var)
+            g1 *= (a + b + 2 * n) * (b ** 2 - a ** 2)
+            g1 /= (a + b + 2)
+        if 'k' in moments:
+            g2 = 0.0 + a + b
+            g2 *= (a + b - 1 + 6 * n)
+            g2 += 3 * a * b * (n - 2)
+            g2 += 6 * n ** 2
+            g2 -= 3 * e_p * b * n * (6 - n)
+            g2 -= 18 * e_p * e_q * n ** 2
+            g2 *= (a + b) ** 2 * (1 + a + b)
+            g2 /= (n * a * b * (a + b + 2) * (a + b + 3) * (a + b + n))
+        return mu, var, g1, g2
+
+
+betabinom = betabinom_gen(name='betabinom')
 
 
 class nbinom_gen(rv_discrete):
