@@ -548,9 +548,10 @@ def _gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
         int m = xi.shape[0]
         double arg, residual, norm
 
-    assert xi.shape[1] == d, "points and xi must have same trailing dim"
-    assert precision.shape[0] == d and precision.shape[1] == d, \
-        "precision matrix must match data dims"
+    if xi.shape[1] != d:
+        raise ValueError("points and xi must have same trailing dim")
+    if precision.shape[0] != d or precision.shape[1] != d:
+        raise ValueError("precision matrix must match data dims")
 
     # Evaluate the normalisation
     norm = np.sqrt(np.linalg.det(precision) / (2 * np.pi) ** d)
