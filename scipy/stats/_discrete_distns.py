@@ -13,7 +13,6 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
-from ._continuous_distns import beta
 from ._distn_infrastructure import (
         rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
@@ -190,7 +189,7 @@ class betabinom_gen(rv_discrete):
         return 0, n
 
     def _argcheck(self, n, a, b):
-        return (n >= 0) & beta._argcheck(a, b)
+        return (n >= 0) & (a > 0) & (b > 0)
 
     def _logpmf(self, x, n, a, b):
         k = floor(x)
