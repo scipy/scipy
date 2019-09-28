@@ -203,8 +203,8 @@ class betabinom_gen(rv_discrete):
         g1, g2 = None, None
         if 's' in moments:
             g1 = 1.0 / sqrt(var)
-            g1 *= (a + b + 2 * n) * (b ** 2 - a ** 2)
-            g1 /= (a + b + 2)
+            g1 *= (a + b + 2 * n) * (b - a)
+            g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
             g2 = 0.0 + a + b
             g2 *= (a + b - 1 + 6 * n)
