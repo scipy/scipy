@@ -171,6 +171,10 @@ class betabinom_gen(rv_discrete):
 
     `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Beta-binomial_distribution
+
     %(after_notes)s
 
     .. versionadded:: 1.4.0
