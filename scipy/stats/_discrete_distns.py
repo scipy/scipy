@@ -173,6 +173,8 @@ class betabinom_gen(rv_discrete):
 
     %(after_notes)s
 
+    .. versionadded:: 1.4.0
+
     %(example)s
 
     """
