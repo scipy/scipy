@@ -193,7 +193,7 @@ class betabinom_gen(rv_discrete):
 
     def _logpmf(self, x, n, a, b):
         k = floor(x)
-        combiln = gamln(n + 1) - (gamln(k + 1) + gamln(n - k + 1))
+        combiln = -log(n + 1) - betaln(n - k + 1, k + 1)
         return combiln + betaln(k + a, n - k + b) - betaln(a, b)
 
     def _pmf(self, x, n, a, b):
