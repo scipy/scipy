@@ -200,7 +200,7 @@ class betabinom_gen(rv_discrete):
     def _pmf(self, x, n, a, b):
         return exp(self._logpmf(x, n, a, b))
 
-    def _stats(self, n, a, b, moments = 'mv'):
+    def _stats(self, n, a, b, moments='mv'):
         e_p = a / (a + b)
         e_q = 1 - e_p
         mu = n * e_p
