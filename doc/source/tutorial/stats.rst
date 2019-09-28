@@ -106,7 +106,7 @@ introspection:
     >>> print('number of continuous distributions: %d' % len(dist_continu))
     number of continuous distributions: 98
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
-    number of discrete distributions:   14
+    number of discrete distributions:   15
 
 
 Common methods
