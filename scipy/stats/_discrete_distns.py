@@ -164,8 +164,7 @@ class betabinom_gen(rv_discrete):
 
     .. math::
 
-       f(k) = \left(\begin{array}n \\ k\end{array}\right)
-            \frac{B(k + a, n - k + b)}{B(a, b)}
+       f(k) = \binom{n}{k} \frac{B(k + a, n - k + b)}{B(a, b)}
 
     for ``k`` in ``{0, 1,..., n}``, where :math:`B(a, b)` is the beta function.
 
