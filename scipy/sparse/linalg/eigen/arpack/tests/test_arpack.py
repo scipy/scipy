@@ -208,7 +208,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     ac = mattype(a)
 
     if general:
-        b = d['bmat'].astype(typ.lower())
+        b = d['bmat'].astype(typ)
         bc = mattype(b)
 
     # get exact eigenvalues
@@ -301,6 +301,8 @@ class SymmetricParams:
                             pos_definite=True).astype('f').astype('d')
         Ac = generate_matrix(N, hermitian=True, pos_definite=True,
                              complex=True).astype('F').astype('D')
+        Mc = generate_matrix(N, hermitian=True, pos_definite=True,
+                             complex=True).astype('F').astype('D')
         v0 = np.random.random(N)
 
         # standard symmetric problem
@@ -329,8 +331,15 @@ class SymmetricParams:
         GH['v0'] = v0
         GH['eval'] = eigh(GH['mat'], GH['bmat'], eigvals_only=True)
 
+        # general hermitian problem with hermitian M
+        GHc = DictWithRepr("gen-hermitian-Mc")
+        GHc['mat'] = Ac
+        GHc['bmat'] = Mc
+        GHc['v0'] = v0
+        GHc['eval'] = eigh(GHc['mat'], GHc['bmat'], eigvals_only=True)
+
         self.real_test_cases = [SS, GS]
-        self.complex_test_cases = [SH, GH]
+        self.complex_test_cases = [SH, GH, GHc]
 
 
 class NonSymmetricParams:
