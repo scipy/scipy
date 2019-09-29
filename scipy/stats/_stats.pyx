@@ -512,26 +512,31 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
 
     return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
 
-    
+
+ctypedef fused real:
+    float
+    double
+    int
+    long
+
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
-                              double[:, :] xi, double[:, :] precision):
+def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
     """
-    def gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
-                                  double[:, :] xi, double[:, :] precision)
+    def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
 
     Evaluate a multivariate Gaussian kernel estimate.
 
     Parameters
     ----------
-    points : double[:, :] with shape (n, d)
+    points : array_like with shape (n, d)
         Data points to estimate from in d dimenions.
-    values : double[:, :] with shape (n, p)
+    values : real[:, :] with shape (n, p)
         Multivariate values associated with the data points.
-    xi : double[:, :] with shape (m, d)
+    xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in d dimensions.
-    precision : double[:, :] with shape (d, d)
+    precision : array_like with shape (d, d)
         Precision matrix for the Gaussian kernel.
 
     Returns
@@ -540,7 +545,7 @@ def _gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
         Multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
     cdef:
-        double[:, :] estimate
+        double[:, :] points_, xi_, estimate
         int i, j, k
         int n = points.shape[0]
         int d = points.shape[1]
@@ -558,8 +563,8 @@ def _gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
 
     # Rescale the data
     whitening = np.linalg.cholesky(precision)
-    points = np.dot(points, whitening)
-    xi = np.dot(xi, whitening)
+    points_ = np.dot(points, whitening).astype(np.float64, copy=False)
+    xi_ = np.dot(xi, whitening).astype(np.float64, copy=False)
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p))
@@ -567,7 +572,7 @@ def _gaussian_kernel_estimate(double[:, :] points, double[:, :] values,
         for j in range(m):
             arg = 0
             for k in range(d):
-                residual = (points[i, k] - xi[j, k])
+                residual = (points_[i, k] - xi_[j, k])
                 arg += residual * residual
 
             arg = math.exp(-arg / 2) * norm

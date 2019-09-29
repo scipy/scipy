@@ -32,7 +32,7 @@ import numpy as np
 
 # Local imports.
 from . import mvn
-from ._stats import _gaussian_kernel_estimate
+from ._stats import gaussian_kernel_estimate
 
 
 __all__ = ['gaussian_kde']
@@ -238,10 +238,8 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = _gaussian_kernel_estimate(
-            self.dataset.T.astype(float), self.weights[:, None].astype(float),
-            points.T.astype(float), self.inv_cov.astype(float)
-        )
+        result = gaussian_kernel_estimate(self.dataset.T, self.weights[:, None], points.T,
+                                          self.inv_cov)
         return result[:, 0]
 
     __call__ = evaluate
