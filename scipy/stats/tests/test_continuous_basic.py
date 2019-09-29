@@ -54,7 +54,7 @@ distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
 # skip check_fit_args (test is slow)
 skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                 'kappa4', 'ksone', 'kstwobign', 'mielke', 'ncf', 'nct',
+                 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
                  'vonmises', 'vonmises_line',
                  'levy_stable', 'rv_histogram_instance']
@@ -63,7 +63,7 @@ skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
 skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
                      'gausshyper', 'genexpon', 'halfgennorm',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
+                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
                      'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 

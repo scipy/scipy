@@ -6,7 +6,8 @@ KStwo Distribution
 
 This is the distribution of the maximum absolute differences between an
 empirical distribution function, computed from :math:`n` samples or observations,
-and a comparison (or target) cumulative distribution function.
+and a comparison (or target) cumulative distribution function, which is
+assumed to be continuous.
 (The "two" in the name is because this is the two-sided difference.
 ``ksone`` is the distribution of the positive differences, :math:`D_n^+`,
 hence it concerns one-sided differences.
@@ -47,34 +48,40 @@ a target N(0, 1) CDF.
 >>> from scipy.stats import norm
 >>> n = 5
 >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
->>> np.random.seed(seed=233423)  # Set the seed for reproducibility
+>>> np.random.seed(seed=423)  # Set the seed for reproducibility
 >>> x = np.sort(gendist.rvs(size=n))
 >>> x
-array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])
+array([-1.59113056, -0.66335147,  0.54791569,  0.78009321,  1.27641365])
 >>> target = norm(0, 1)
 >>> cdfs = target.cdf(x)
 >>> cdfs
-array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])
+array([0.0557901 , 0.25355274, 0.7081251 , 0.78233199, 0.89909533])
 # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
 >>> ecdfs = np.arange(n+1, dtype=float)/n
 >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
 >>> np.set_printoptions(precision=3)
 >>> cols
-array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],
-       [  7.169e-01,   4.000e-01,   7.633e-01,   5.633e-01,  -3.633e-01],
-       [  9.516e-01,   6.000e-01,   8.294e-01,   4.294e-01,  -2.294e-01],
-       [  1.446e+00,   8.000e-01,   9.259e-01,   3.259e-01,  -1.259e-01],
-       [  3.089e+00,   1.000e+00,   9.990e-01,   1.990e-01,   1.005e-03]])
+array([[-1.591,  0.2  ,  0.056,  0.056,  0.144],
+       [-0.663,  0.4  ,  0.254,  0.054,  0.146],
+       [ 0.548,  0.6  ,  0.708,  0.308, -0.108],
+       [ 0.78 ,  0.8  ,  0.782,  0.182,  0.018],
+       [ 1.276,  1.   ,  0.899,  0.099,  0.101]])
 >>> gaps = cols[:, -2:]
 >>> Dnpm = np.max(gaps, axis=0)
 >>> Dn = np.max(Dnpm)
->>> print('Dn-=%f, Dn+=%f, Dn=%f' % (Dnpm[0], Dnpm[1], Dn))
-Dn-=0.563278, Dn+=0.001005, Dn=0.563278
+>>> iminus, iplus = np.argmax(gaps, axis=0)
+>>> print('Dn- = %f (at x=%.2f)' % (Dnpm[0], x[iminus]))
+Dn- = 0.308125 (at x=0.55)
+>>> print('Dn+ = %f (at x=%.2f)' % (Dnpm[1], x[iplus]))
+Dn+ = 0.146447 (at x=-0.66)
+>>> print('Dn  = %f' % (Dn))
+Dn  = 0.308125
+
 >>> probs = kstwo.sf(Dn, n)
 >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
 ...      ' Kolmogorov-Smirnov 2-sided n=%d: Prob(Dn >= %f) = %.4f' % (n, Dn, probs)]))
 For a sample of size 5 drawn from a N(0, 1) distribution:
- Kolmogorov-Smirnov 2-sided n=5: Prob(Dn >= 0.563278) = 0.0500
+ Kolmogorov-Smirnov 2-sided n=5: Prob(Dn >= 0.308125) = 0.6319
 
 Plot the Empirical CDF against the target N(0, 1) CDF
 
@@ -83,10 +90,14 @@ Plot the Empirical CDF against the target N(0, 1) CDF
 >>> x3 = np.linspace(-3, 3, 100)
 >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
 >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
-# Add vertical lines marking Dn+ and Dn-
->>> iminus, iplus = np.argmax(gaps, axis=0)
->>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
->>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
+>>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='solid', lw=4)
+>>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='solid', lw=4)
+>>> plt.annotate('Dn-', xy=(x[iminus], (ecdfs[iminus]+ cdfs[iminus])/2),
+...              xytext=(x[iminus]+1, (ecdfs[iminus]+ cdfs[iminus])/2 - 0.02),
+...              arrowprops=dict(facecolor='white', edgecolor='r', shrink=0.05), size=15, color='r');
+>>> plt.annotate('Dn+', xy=(x[iplus], (ecdfs[iplus+1]+ cdfs[iplus])/2),
+...             xytext=(x[iplus]-2, (ecdfs[iplus+1]+ cdfs[iplus])/2 - 0.02),
+...             arrowprops=dict(facecolor='white', edgecolor='m', shrink=0.05), size=15, color='m');
 >>> plt.show()
 
 
