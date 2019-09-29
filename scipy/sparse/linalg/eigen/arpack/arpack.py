@@ -1844,7 +1844,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                                  largest=largest)
 
-    elif solver == 'arpack' or solver == None:
+    elif solver == 'arpack' or solver is None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
