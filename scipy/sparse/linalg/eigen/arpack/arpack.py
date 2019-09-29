@@ -1844,9 +1844,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                           largest=largest)
 
-    else:
+    elif solver == 'arpack' or solver == None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                       ncv=ncv, which=which, v0=v0)
+
+    else:
+        raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
     # In 'LM' mode try to be clever about small eigenvalues.
     # Otherwise in 'SM' mode do not try to be clever.
@@ -1869,7 +1872,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         slarge = np.sqrt(eigvals[above_cutoff])
         s = np.zeros_like(eigvals)
         s[:nlarge] = slarge
-        ii = np.argsort(s)[-k:]
         if not return_singular_vectors:
             return s
 
@@ -1888,19 +1890,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         s = np.sqrt(eigvals)
         ii = np.argsort(s)[:k]
+        s = s[ii]
         if not return_singular_vectors:
             return s
 
         if n > m:
-            v = eigvec
+            v = eigvec[ii]
             u = X_matmat(v) / s if return_singular_vectors != 'vh' else None
             vh = _herm(v)
         else:
-            u = eigvec
+            u = eigvec[ii]
             vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
 
     else:
 
         raise ValueError("which must be either 'LM' or 'SM'.")
 
-    return u[:, ii], s[ii], vh[ii]
+    return u, s, vh
