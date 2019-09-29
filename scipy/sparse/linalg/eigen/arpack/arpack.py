@@ -1889,7 +1889,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif which == 'SM':
 
         s = np.sqrt(eigvals)
-        ii = np.argsort(s)[:k]
+        ii = np.argsort(s)
         s = s[ii]
         if not return_singular_vectors:
             return s
