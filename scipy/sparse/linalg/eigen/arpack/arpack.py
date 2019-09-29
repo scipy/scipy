@@ -1873,7 +1873,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         s = np.zeros_like(eigvals)
         s[:nlarge] = slarge
         if not return_singular_vectors:
-            return s
+            return np.sort(s)
 
         if n > m:
             vlarge = eigvec[:, above_cutoff]
@@ -1889,21 +1889,26 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif which == 'SM':
 
         s = np.sqrt(eigvals)
-        ii = np.argsort(s)
-        s = s[ii]
         if not return_singular_vectors:
-            return s
+            return np.sort(s)
 
         if n > m:
-            v = eigvec[ii]
+            v = eigvec
             u = X_matmat(v) / s if return_singular_vectors != 'vh' else None
             vh = _herm(v)
         else:
-            u = eigvec[ii]
+            u = eigvec
             vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
 
     else:
 
         raise ValueError("which must be either 'LM' or 'SM'.")
+
+    indexes_sorted = np.argsort(s)
+    s = s[indexes_sorted]
+    if u is not None:
+        u = u[:, indexes_sorted]
+    if vh is not None:
+        vh = vh[indexes_sorted]
 
     return u, s, vh
