@@ -57,7 +57,7 @@ def _remove_optimizer_parameters(kwds):
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
-    r"""General Kolmogorov-Smirnov one-sided test.
+    r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
     statistics :math:`D_n^+` and :math:`D_n^-`
@@ -74,8 +74,8 @@ class ksone_gen(rv_continuous):
         D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
         D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `ksone`
-    describes the distribution under the null hypothesis of the KS test
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `ksone` describes the distribution under the null hypothesis of the KS test
     that the empirical CDF corresponds to :math:`n` i.i.d. random variates
     with CDF :math:`F`.
 
@@ -114,10 +114,10 @@ ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
 
 
 class kstwo_gen(rv_continuous):
-    r"""General Kolmogorov-Smirnov two-sided test.
+    r"""Kolmogorov-Smirnov two-sided test statistic distribution.
 
     This is the distribution of the two-sided Kolmogorov-Smirnov (KS)
-    statistics :math:`D_n` for a finite sample size ``n``
+    statistic :math:`D_n` for a finite sample size ``n``
     (the shape parameter).
 
     %(before_notes)s
@@ -130,8 +130,8 @@ class kstwo_gen(rv_continuous):
 
         D_n &= \text{sup}_x |F_n(x) - F(x)|
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwo`
-    describes the distribution under the null hypothesis of the KS test
+    where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
+    `kstwo` describes the distribution under the null hypothesis of the KS test
     that the empirical CDF corresponds to :math:`n` i.i.d. random variates
     with CDF :math:`F`.
 
@@ -174,11 +174,12 @@ kstwo = kstwo_gen(momtype=0, a=0.0, b=1.0, name='kstwo')
 
 
 class kstwobign_gen(rv_continuous):
-    r"""Kolmogorov-Smirnov two-sided test for large N.
+    r"""Limiting distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
 
     This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
     statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
-    distance of the theoretical CDF from the empirical CDF (see `kstest`).
+    distance of the theoretical (continuous) CDF from the empirical CDF.
+    (see `kstest`).
 
     %(before_notes)s
 
@@ -190,8 +191,8 @@ class kstwobign_gen(rv_continuous):
 
         D_n = \text{sup}_x |F_n(x) - F(x)|
 
-    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
-    describes the asymptotic distribution (i.e. the limit of
+    where :math:`F` is a continuous CDF and :math:`F_n` is an empirical CDF.
+    `kstwobign`  describes the asymptotic distribution (i.e. the limit of
     :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
     empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
 

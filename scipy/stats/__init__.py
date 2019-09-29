@@ -80,9 +80,9 @@ Continuous distributions
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
    kappa3            -- Kappa 3 parameter
-   ksone             -- Kolmogorov-Smirnov one-sided (no stats)
-   kstwo             -- Kolmogorov-Smirnov two-sided test
-   kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
+   ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
+   kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
+   kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
    levy              -- Levy
    levy_l
