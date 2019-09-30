@@ -311,9 +311,9 @@ def test_maxit_None():
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
     X = np.random.randn(n, m)
-    X=X.astype(np.float32)
+    X = X.astype(np.float32)
     _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
-    assert_allclose(np.shape(l_h)[0], 20+2, atol=0)
+    assert_allclose(np.shape(l_h)[0], 20+2)
 
 
 @pytest.mark.slow
