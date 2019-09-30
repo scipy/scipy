@@ -245,8 +245,16 @@ class TestAsLinearOperator(object):
                                                     dtype=self.dtype,
                                                     shape=shape)
 
+            class HasRmatmat(HasRmatvec):
+                def _matmat(self, x):
+                    return original.dot(x)
+
+                def _rmatmat(self, x):
+                    return original.T.conj().dot(x)
+
             cases.append((HasRmatvec(dtype), original))
             cases.append((HasAdjoint(dtype), original))
+            cases.append((HasRmatmat(dtype), original))
             return cases
 
         original = np.array([[1,2,3], [4,5,6]])
@@ -293,6 +301,13 @@ class TestAsLinearOperator(object):
                 assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
                 assert_equal(A.T.matvec(y), A_array.T.dot(y))
                 assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
+
+            for y in ys:
+                if y.ndim < 2:
+                    continue
+                assert_equal(A.rmatmat(y), A_array.T.conj().dot(y))
+                assert_equal(A.T.matmat(y), A_array.T.dot(y))
+                assert_equal(A.H.matmat(y), A_array.T.conj().dot(y))
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
