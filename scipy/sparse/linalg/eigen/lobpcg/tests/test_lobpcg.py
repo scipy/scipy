@@ -299,6 +299,23 @@ def test_random_initial_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
 
 
+def test_maxit_None():
+    """Check lobpcg if maxit=None runs 20 iterations (the default)
+    by checking the size of the iteration history output, which should
+    be the number of iterations plus 2 (initial and final values).
+    """
+    np.random.seed(1566950023)
+    n = 50
+    m = 4
+    vals = -np.arange(1, n + 1)
+    A = diags([vals], [0], (n, n))
+    A = A.astype(np.float32)
+    X = np.random.randn(n, m)
+    X = X.astype(np.float32)
+    _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
+    assert_allclose(np.shape(l_h)[0], 20+2)
+
+
 @pytest.mark.slow
 def test_diagonal_data_types():
     """Check lobpcg for diagonal matrices for all matrix types.
