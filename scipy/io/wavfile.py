@@ -245,7 +245,7 @@ def read(filename, mmap=False):
 
             if not chunk_id:
                 if data_chunk_received:
-                    # End of file but data sucessfully read
+                    # End of file but data successfully read
                     break
                 else:
                     raise ValueError("Unexpected end of file.")
