@@ -159,6 +159,9 @@ class betabinom_gen(rv_discrete):
 
     Notes
     -----
+    The beta-binomial distribution is a binomial distribution with a
+    probability of success `p` that follows a beta distribution.
+
     The probability mass function for `betabinom` is:
 
     .. math::
@@ -176,6 +179,10 @@ class betabinom_gen(rv_discrete):
     %(after_notes)s
 
     .. versionadded:: 1.4.0
+
+    See Also
+    --------
+    beta, binom
 
     %(example)s
 
