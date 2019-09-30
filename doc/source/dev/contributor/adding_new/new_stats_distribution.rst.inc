@@ -47,9 +47,12 @@ Implementation
 #. Write the new code, insert it into `scipy/stats/_continuous_distns.py`, which is in (mostly) alphabetical order by distribution name.
 #. Does the distribution have infinite support? If not, left and/or right endpoints `a`, `b` need to be specified.
 #. If the support depends upon the shape parameters, `_get_support()` needs to be implemented.
+#. The default `_argcheck()` implementation checks that the shape parameters are positive.  Create a more appropriate implementation.
 #. If the `ppf()` is expensive to compute relative to `pdf()`, consider setting its `momtype`.
+#. If the `rvs()` is expensive to compute, consider implementing a specific `_rvs()`.
 #. Add the name to the listing in the docstring of `scipy/stats/__init__.py`.
 #. Add the name and a good set of example shape parameters to the `distcont` list in `scipy/stats/_distr_params.py`.
+These shape parameters are used for testing and automatic documentation generation.
 #. Add a `TestXXXXX` class and any specific tests to `scipy/stats/tests/test_distributions.py`.
 #. Run and pass(!) the tests.
 
