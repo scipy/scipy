@@ -157,7 +157,7 @@ def lobpcg(A, X,
         Solver tolerance (stopping criterion).
         The default is ``tol=n*sqrt(eps)``.
     maxiter : int, optional
-        Maximum number of iterations.  The default is ``maxiter=min(n, 20)``.
+        Maximum number of iterations.  The default is ``maxiter = 20``.
     largest : bool, optional
         When True, solve for the largest eigenvalues, otherwise the smallest.
     verbosityLevel : int, optional
@@ -287,6 +287,8 @@ def lobpcg(A, X,
     blockVectorX = X
     blockVectorY = Y
     residualTolerance = tol
+    if maxiter is None:
+        maxiter = 20
 
     if blockVectorY is not None:
         sizeY = blockVectorY.shape[1]
@@ -298,9 +300,6 @@ def lobpcg(A, X,
         raise ValueError('expected rank-2 array for argument X')
 
     n, sizeX = blockVectorX.shape
-
-    if maxiter is None:
-        maxiter = min(n, 20)
 
     if verbosityLevel:
         aux = "Solving "
