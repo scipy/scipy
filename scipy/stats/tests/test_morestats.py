@@ -260,6 +260,25 @@ class TestAnderson(object):
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
+    def test_weibull_min(self):
+        rs = RandomState(1234567890)
+        x1 = rs.weibull(a=1.0,size=100)
+        x2 = np.ones(100)
+        x3 = np.array([1.02, 0.67, 0.60, 1.44, 1.69, 1.17, 1.23, 0.69, 1.13, 1.01])
+        A1, crit1, sig1 = stats.anderson(x1, 'weibull_min')
+        A2, crit2, sig2 = stats.anderson(x2, 'weibull_min')
+        A3, crit3, sig3 = stats.anderson(x3, 'weibull_min')
+
+        assert_array_less(A1, crit1[-2:])
+        assert_(A2 > crit2[-1])
+
+        # The expected statistic 0.2654900 was computed independently of scipy.
+        # For example, in R:
+        #   > library(fitdistrplus)
+        #   > a <- c(1.02, 0.67, 0.60, 1.44, 1.69, 1.17, 1.23, 0.69, 1.13, 1.01)
+        #   > gofstat(fitdist(a,"weibull"),fitnames=c("Weibull"))
+        assert_allclose(A3, 0.26549, atol=1e-3)
+
 
 class TestAndersonKSamp(object):
     def test_example1a(self):

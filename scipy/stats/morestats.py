@@ -1719,6 +1719,8 @@ def anderson(x, dist='norm'):
 
     Notes
     -----
+    According to [7] gumbel_r is related to a weibull_min by
+    gumbel_r = ln(1/weibull_min).
     Critical values provided are for the following significance levels:
 
     normal/exponenential
@@ -1750,12 +1752,13 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
+    .. [7] Karl Bury (1999). Statistical Distributions in Engineering, p. 268
 
     """
     if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic']:
+                    'gumbel_r', 'extreme1', 'logistic', 'weibull_min']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+                         "'expon', 'gumbel', 'extreme1', 'weibull_min' or 'logistic'.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
@@ -1795,6 +1798,9 @@ def anderson(x, dist='norm'):
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+    elif dist == 'weibull_min':
+        x = np.log(np.divide(1, x))
+        return anderson(x, dist="gumbel_r")
     else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
