@@ -1167,6 +1167,13 @@ class TestKSTwo(object):
 
     def test_cdf(self):
         for n in [1, 2, 3, 10, 100, 1000]:
+            # Test x-values:
+            #  0, 1/2n, where the cdf should be 0
+            #  1/n, where the cdf should be n!/n^n
+            #  0.5, where the cdf should match ksone.cdf
+            # 1-1/n, where cdf = 1-2/n^n
+            # 1, where cdf == 1
+            # (E.g. Exact values given by Eqn 1 in Simard / L'Ecuyer)
             x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
             v1 = (1.0/n)**n
             lg = scipy.special.gammaln(n+1)
@@ -1181,6 +1188,7 @@ class TestKSTwo(object):
     def test_sf(self):
         x = np.linspace(0, 1, 11)
         for n in [1, 2, 3, 10, 100, 1000]:
+            # Same x values as in test_cdf, and use sf = 1 - cdf
             x = np.array([0, 0.5/n, 1/n, 0.5, 1-1.0/n, 1])
             v1 = (1.0/n)**n
             lg = scipy.special.gammaln(n+1)
@@ -1189,12 +1197,15 @@ class TestKSTwo(object):
                                  1 - v1 * elg,
                                  2*stats.ksone.sf(0.5, n),
                                  min(2*v1, 1.0), 0])
-            vals_cdf = stats.kstwo.sf(x, n)
-            assert_allclose(vals_cdf, expected)
+            vals_sf = stats.kstwo.sf(x, n)
+            assert_allclose(vals_sf, expected)
 
     def test_cdf_sqrtn(self):
+        # For fixed a, cdf(a/sqrt(n), n) -> kstwobign(a) as n->infinity
+        # cdf(a/sqrt(n), n) is an increasing function of n (and a)
+        # Check that the function is indeed increasing (alloowing for some
+        # small floating point and algorithm differences.)
         x = np.linspace(0, 2, 11)[1:]
-        # ns = [1, 2, 3, 10, 100, 1000]
         ns = [50, 100, 200, 400, 1000, 2000]
         for _x in x:
             xn = _x / np.sqrt(ns)
