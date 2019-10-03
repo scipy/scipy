@@ -1797,19 +1797,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             XH_dot = A.rmatvec
         else:
             X_dot = A.rmatvec
+            X_matmat = A.rmatmat
             XH_dot = A.matvec
 
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
                 dtype = A.dot(np.zeros([m, 1])).dtype
 
-            # A^H * V; works around lack of LinearOperator.adjoint.
-            # This can be slow!
-            def X_matmat(V):
-                out = np.empty((V.shape[1], m), dtype=dtype)
-                for i, col in enumerate(V.T):
-                    out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
-                return out.T
+            # # A^H * V; works around lack of LinearOperator.adjoint.
+            # # XXX This can be slow!
+            # def X_matmat(V):
+            #    out = np.empty((V.shape[1], m), dtype=dtype)
+            #    for i, col in enumerate(V.T):
+            #        out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
+            #    return out.T
 
     else:
         if n > m:
@@ -1823,6 +1824,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         return XH_dot(X_dot(x))
 
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
+                          matmat=matvec_XH_X,
                           shape=(min(A.shape), min(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
