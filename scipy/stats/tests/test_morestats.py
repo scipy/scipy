@@ -1078,7 +1078,7 @@ class TestWilcoxon(object):
                      stats.wilcoxon(x, y, method="exact"))
 
         # if there are ties (i.e. zeros in d = x-y), then switch to approx
-        d = np.arange(0, 10)
+        d = np.arange(0, 13)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Exact p-value calculation")
             w, p = stats.wilcoxon(d)
