@@ -333,7 +333,7 @@ def gmean(a, axis=0, dtype=None):
     return np.exp(log_a.mean(axis=axis))
 
 
-def hmean(a, axis=0, dtype=None):
+def hmean(a, axis=0, dtype=None, allow_zero=False):
     """
     Calculate the harmonic mean along the specified axis.
 
@@ -352,6 +352,10 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    allow_zero : bool, optional
+        If `allow_zero` is False then hmean will raise a ValueError if any of
+        the elements in a are 0. If `allow_zero` is True then hmean will return
+        0 if any of the elements in a are 0.
 
     Returns
     -------
@@ -383,7 +387,7 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a > 0):
+    if np.all(a > 0) or (allow_zero and np.all(a >= 0)):
         # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
@@ -393,10 +397,12 @@ def hmean(a, axis=0, dtype=None):
                 size = a.shape[0]
             else:
                 size = a.shape[axis]
-        return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
+        with np.errstate(divide='ignore'):
+            return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
-                         "than zero")
+                         "than %szero" % \
+                            ('or equal to ' if allow_zero else ''))
 
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
@@ -4484,8 +4490,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         Sample 1    150      30         0.2        0.16
         Sample 2    200      45         0.225      0.174375
 
-    The sample mean :math:`\hat{p}` is the proportion of ones in the sample 
-    and the variance for a binary observation is estimated by 
+    The sample mean :math:`\hat{p}` is the proportion of ones in the sample
+    and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
     >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
