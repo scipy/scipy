@@ -1794,11 +1794,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if n > m:
             X_dot = A.matvec
             X_matmat = A.matmat
-            XH_dot = A.rmatmat
+            XH_dot = A.rmatvec
+            XH_mat = A.rmatmat
         else:
             X_dot = A.rmatvec
             X_matmat = A.rmatmat
             XH_dot = A.matvec
+            XH_mat = A.matmat
 
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
@@ -1815,16 +1817,19 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     else:
         if n > m:
             X_dot = X_matmat = A.dot
-            XH_dot = _herm(A).dot
+            XH_dot = XH_mat = _herm(A).dot
         else:
-            XH_dot = A.dot
+            XH_dot = XH_mat = A.dot
             X_dot = X_matmat = _herm(A).dot
 
     def matvec_XH_X(x):
         return XH_dot(X_dot(x))
 
+    def matmat_XH_X(x):
+        return XH_mat(X_mat(x))
+
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
-                          matmat=matvec_XH_X,
+                          matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
