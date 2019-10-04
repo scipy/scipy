@@ -1826,7 +1826,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         return XH_dot(X_dot(x))
 
     def matmat_XH_X(x):
-        return XH_mat(X_mat(x))
+        return XH_mat(X_matmat(x))
 
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
                           matmat=matmat_XH_X,
