@@ -1794,7 +1794,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if n > m:
             X_dot = A.matvec
             X_matmat = A.matmat
-            XH_dot = A.rmatvec
+            XH_dot = A.rmatmat
         else:
             X_dot = A.rmatvec
             X_matmat = A.rmatmat
