@@ -473,31 +473,28 @@ def _fftconv_faster(x, h, mode):
     is found in both big O constants). Regardless, this had been tuned on an
     early 2015 MacBook Pro with 8GB RAM and an Intel i5 processor.
     """
+    full_out_shape = [n + k - 1 for n, k in zip(x.shape, h.shape)]
     if mode == 'full':
-        out_shape = [n + k - 1 for n, k in zip(x.shape, h.shape)]
-        big_O_constant = 10963.92823819 if x.ndim == 1 else 8899.1104874
+        out_shape = full_out_shape
+        big_O_constant = 0.2949277303306508
+        threshold = 11782.76945483908
     elif mode == 'same':
         out_shape = x.shape
-        if x.ndim == 1:
-            if h.size <= x.size:
-                big_O_constant = 7183.41306773
-            else:
-                big_O_constant = 856.78174111
-        else:
-            big_O_constant = 34519.21021589
+        big_O_constant = 0.26570413707755003
+        threshold = 10800.50559395122
     elif mode == 'valid':
         out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
-        big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
+        big_O_constant = 0.34633506077546283
+        threshold = 4483.810300140974
     else:
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full'.")
 
     # see whether the Fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)
-    direct_time = (x.size * h.size * _prod(out_shape))
-    fft_time = sum(n * math.log(n) for n in (x.shape + h.shape +
-                                             tuple(out_shape)))
-    return big_O_constant * fft_time < direct_time
+    direct_time = min(x.size, h.size) * _prod(out_shape)
+    fft_time = _prod(full_out_shape) * sum(math.log(n) for n in full_out_shape)
+    return direct_time - big_O_constant * fft_time > threshold
 
 
 def _reverse_and_conj(x):
