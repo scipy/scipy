@@ -1059,13 +1059,13 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
             return SpLuInv(A.tocsc()).matvec
         else:
             return IterOpInv(_aslinearoperator_with_dtype(A),
-                              M, sigma, tol=tol).matvec
+                             M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not isspmatrix(A)) or
                 (not isdense(M) and not isspmatrix(M))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
-                              _aslinearoperator_with_dtype(M),
-                              sigma, tol=tol).matvec
+                             _aslinearoperator_with_dtype(M),
+                             sigma, tol=tol).matvec
         elif isdense(A) or isdense(M):
             return LuInv(A - sigma * M).matvec
         else:
@@ -1448,21 +1448,26 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
-        Return eigenvectors (True) in addition to eigenvalues. This value determines
-        the order in which eigenvalues are sorted. The sort order is also dependent on the `which` variable.
+        Return eigenvectors (True) in addition to eigenvalues.
+        This value determines the order in which eigenvalues are sorted.
+        The sort order is also dependent on the `which` variable.
 
             For which = 'LM' or 'SA':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+                If `return_eigenvectors` is True, eigenvalues are sorted by
+                algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value.
+                If `return_eigenvectors` is False, eigenvalues are sorted by
+                absolute value.
 
             For which = 'BE' or 'LA':
                 eigenvalues are always sorted by algebraic value.
 
             For which = 'SM':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+                If `return_eigenvectors` is True, eigenvalues are sorted by
+                algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
+                If `return_eigenvectors` is False, eigenvalues are sorted by
+                decreasing absolute value.
 
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
@@ -1805,14 +1810,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
                 dtype = A.dot(np.zeros([m, 1])).dtype
-
-            # # A^H * V; works around lack of LinearOperator.adjoint.
-            # # XXX This can be slow!
-            # def X_matmat(V):
-            #    out = np.empty((V.shape[1], m), dtype=dtype)
-            #    for i, col in enumerate(V.T):
-            #        out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
-            #    return out.T
 
     else:
         if n > m:
