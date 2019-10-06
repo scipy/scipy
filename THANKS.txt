@@ -218,6 +218,7 @@ Timothy C. Willard for contributions to x-value requirements in scipy.interpolat
 Andrew Knyazev, the original author of LOBPCG, for advice on and maintenance of
    sparse.linalg.lobpcg
 Michael Marien for contributing to scipy.stats.entropy
+Joseph Weston for a bug fix in scipy.optimize.zeros.
 
 Institutions
 ------------
