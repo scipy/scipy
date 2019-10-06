@@ -73,7 +73,8 @@ def _get_output(output, input, shape=None):
         shape = input.shape
     if output is None:
         output = numpy.zeros(shape, dtype=input.dtype.name)
-    elif type(output) in [type(type), type(numpy.zeros((4,)).dtype)]:
+    elif isinstance(output, (type, numpy.dtype)):
+        # Classes (like `np.float32`) and dtypes are interpreted as dtype
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, string_types):
         output = numpy.typeDict[output]
