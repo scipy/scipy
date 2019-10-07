@@ -264,6 +264,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     """
     if tol <= 0:
         raise ValueError("tol too small (%g <= 0)" % tol)
+    if not isinstance(maxiter, int):
+        raise TypeError(
+            "maxiter must be an integer, not {}".format(type(maxiter).__name__)
+        )
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if np.size(x0) > 1:
@@ -543,6 +547,10 @@ def bisect(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if not isinstance(maxiter, int):
+        raise TypeError(
+            "maxiter must be an integer, not {}".format(type(maxiter).__name__)
+        )
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -639,6 +647,10 @@ def ridder(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if not isinstance(maxiter, int):
+        raise TypeError(
+            "maxiter must be an integer, not {}".format(type(maxiter).__name__)
+        )
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -768,6 +780,10 @@ def brentq(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if not isinstance(maxiter, int):
+        raise TypeError(
+            "maxiter must be an integer, not {}".format(type(maxiter).__name__)
+        )
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -872,6 +888,10 @@ def brenth(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if not isinstance(maxiter, int):
+        raise TypeError(
+            "maxiter must be an integer, not {}".format(type(maxiter).__name__)
+        )
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
@@ -1348,6 +1368,10 @@ def toms748(f, a, b, args=(), k=1,
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol / 4:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    if not isinstance(maxiter, int):
+        raise TypeError(
+            "maxiter must be an integer, not {}".format(type(maxiter).__name__)
+        )
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if not np.isfinite(a):
