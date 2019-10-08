@@ -26,7 +26,7 @@ class TestUtils(object):
         corners = np.array([[0.5, 0.5], [6.5, 6.5]])
 
         disc_init = qmc.discrepancy(space_1[:-1], corners, iterative=True)
-        disc_iter = qmc.update_discrepancy(space_1[-1], space_1[:-1],
+        disc_iter = qmc._update_discrepancy(space_1[-1], space_1[:-1],
                                            disc_init, bounds=corners)
 
         npt.assert_allclose(disc_iter, 0.0081, atol=1e-4)
@@ -42,8 +42,8 @@ class TestUtils(object):
         doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
 
         disc_valid = qmc.discrepancy(doe, corners)
-        disc_perm = qmc.perturb_discrepancy(doe_init, row_1, row_2, col,
-                                            disc_init, corners)
+        disc_perm = qmc._perturb_discrepancy(doe_init, row_1, row_2, col,
+                                             disc_init, corners)
 
         npt.assert_allclose(disc_valid, disc_perm)
 

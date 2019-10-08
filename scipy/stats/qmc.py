@@ -10,20 +10,19 @@ import copy
 import numpy as np
 from scipy.optimize import brute
 from scipy._lib._util import check_random_state
+from scipy.optimize import basinhopping
 
-try:
-    from scipy.optimize import basinhopping
-
-    have_basinhopping = True
-except ImportError:
-    have_basinhopping = False
+__all__ = ['discrepancy', 'halton', 'orthogonal_latin_hypercube',
+           'latin_hypercube', 'optimal_design']
 
 
 def discrepancy(sample, bounds=None, iterative=False):
-    """Discrepancy.
+    """Centered discrepancy on a given sample..
 
-    Compute the centered discrepancy on a given sample.
-    It is a measure of the uniformity of the points in the parameter space.
+    The discrepancy is a uniformity criterion used to assess the space filling
+    of a number of samples in a hypercube.
+    The discrepancy measures how the spread of the points deviates from a
+    uniform distribution.
     The lower the value is, the better the coverage of the parameter space is.
 
     Parameters
@@ -79,7 +78,7 @@ def discrepancy(sample, bounds=None, iterative=False):
     return c2
 
 
-def update_discrepancy(x_new, sample, initial_disc, bounds=None):
+def _update_discrepancy(x_new, sample, initial_disc, bounds=None):
     """Update the discrepancy with a new sample.
 
     Parameters
@@ -121,7 +120,7 @@ def update_discrepancy(x_new, sample, initial_disc, bounds=None):
     return initial_disc + disc1 + disc2 + disc3
 
 
-def perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
+def _perturb_discrepancy(sample, i1, i2, k, disc, bounds=None):
     """Centered discrepancy after and elementary perturbation on a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between
@@ -529,7 +528,7 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
     dim : int
         Dimension of the parameter space.
     n_samples : int
-        Number of samples to generate in the parametr space.
+        Number of samples to generate in the parameter space.
     bounds : tuple or array_like ([min, k_vars], [max, k_vars])
         Desired range of transformed data. The transformation apply the bounds
         on the sample and not the theoretical space, unit cube. Thus min and
@@ -606,7 +605,7 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
             col, row_1, row_2 = np.round(x).astype(int)
             doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
 
-            disc = perturb_discrepancy(best_doe, row_1, row_2, col,
+            disc = _perturb_discrepancy(best_doe, row_1, row_2, col,
                                        best_disc, bounds)
 
             if disc < best_disc:
@@ -618,7 +617,7 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
         # Total number of possible design
         complexity = dim * n_samples ** 2
 
-        if have_basinhopping and ((complexity > 1e6) or force):
+        if (complexity > 1e6) or force:
             bounds_optim = ([0, dim - 1],
                             [0, n_samples - 1],
                             [0, n_samples - 1])
@@ -627,7 +626,7 @@ def optimal_design(dim, n_samples, bounds=None, start_design=None, niter=1,
                             slice(0, n_samples - 1, 1))
 
         for _ in range(niter):
-            if have_basinhopping and ((complexity > 1e6) or force):
+            if (complexity > 1e6) or force:
                 minimizer_kwargs = {"method": "L-BFGS-B",
                                     "bounds": bounds_optim,
                                     "args": (bounds,)}
