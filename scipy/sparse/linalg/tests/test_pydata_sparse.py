@@ -15,212 +15,179 @@ pytestmark = pytest.mark.skipif(sparse is None,
                                 reason="pydata/sparse not installed")
 
 
-def test_isolve_gmres():
+msg = "pydata/sparse (0.8) does not implement necessary operations"
+
+
+sparse_params = [pytest.param("COO"),
+                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]),
+                 pytest.param("CSD", marks=[pytest.mark.xfail(reason=msg)])]
+
+
+@pytest.fixture(params=sparse_params)
+def sparse_cls(request):
+    return getattr(sparse, request.param)
+
+
+@pytest.fixture
+def matrices(sparse_cls):
+    np.random.seed(1234)
+    A_dense = np.random.rand(9, 9)
+    A_dense = A_dense @ A_dense.T
+    A_sparse = sparse_cls(A_dense)
+    b = np.random.rand(9)
+    return A_dense, A_sparse, b
+
+
+def test_isolve_gmres(matrices):
     # Several of the iterative solvers use the same
     # isolve.utils.make_system wrapper code, so test just one of them.
-    np.random.seed(1234)
-
-    A = sparse.COO(np.random.rand(5, 5))
-    b = np.random.rand(5)
-
-    x, info = splin.gmres(A, b, atol=1e-15)
+    A_dense, A_sparse, b = matrices
+    x, info = splin.gmres(A_sparse, b, atol=1e-15)
     assert info == 0
     assert isinstance(x, np.ndarray)
-    assert_allclose(A @ x, b)
+    assert_allclose(A_sparse @ x, b)
 
 
-def test_lsmr():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(5, 5)
-    A = sparse.COO(A_dense)
-    b = np.random.rand(5)
-
+def test_lsmr(matrices):
+    A_dense, A_sparse, b = matrices
     res0 = splin.lsmr(A_dense, b)
-    res = splin.lsmr(A, b)
-    assert_allclose(res[0], res0[0])
+    res = splin.lsmr(A_sparse, b)
+    assert_allclose(res[0], res0[0], atol=1e-5)
 
 
-def test_lsqr():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(5, 5)
-    A = sparse.COO(A_dense)
-    b = np.random.rand(5)
-
+def test_lsqr(matrices):
+    A_dense, A_sparse, b = matrices
     res0 = splin.lsqr(A_dense, b)
-    res = splin.lsqr(A, b)
-    assert_allclose(res[0], res0[0])
+    res = splin.lsqr(A_sparse, b)
+    assert_allclose(res[0], res0[0], atol=1e-5)
 
 
-def test_eigs():
-    np.random.seed(1234)
+def test_eigs(matrices):
+    A_dense, A_sparse, v0 = matrices
 
-    A_dense = np.random.rand(10, 10)
-    A_dense = A_dense @ A_dense.T
-    A = sparse.COO(A_dense)
-
-    M_dense = np.random.rand(10, 10)
-    M_dense = M_dense @ M_dense.T
-    M = sparse.COO(M_dense)
-
-    v0 = np.random.rand(10)
+    M_dense = np.diag(v0**2)
+    M_sparse = A_sparse.__class__(M_dense)
 
     w_dense, v_dense = splin.eigs(A_dense, k=3, v0=v0)
-    w, v = splin.eigs(A, k=3, v0=v0)
+    w, v = splin.eigs(A_sparse, k=3, v0=v0)
 
     assert_allclose(w, w_dense)
     assert_allclose(v, v_dense)
 
-    w_dense, v_dense = splin.eigs(A_dense, M=M_dense, k=3, v0=v0)
-    w, v = splin.eigs(A, M=M_dense, k=3, v0=v0)
+    for M in [M_sparse, M_dense]:
+        w_dense, v_dense = splin.eigs(A_dense, M=M_dense, k=3, v0=v0)
+        w, v = splin.eigs(A_sparse, M=M, k=3, v0=v0)
 
-    assert_allclose(w, w_dense)
-    assert_allclose(v, v_dense)
+        assert_allclose(w, w_dense)
+        assert_allclose(v, v_dense)
 
-    w_dense, v_dense = splin.eigsh(A_dense, M=M_dense, k=3, v0=v0)
-    w, v = splin.eigsh(A, M=M_dense, k=3, v0=v0)
+        w_dense, v_dense = splin.eigsh(A_dense, M=M_dense, k=3, v0=v0)
+        w, v = splin.eigsh(A_sparse, M=M, k=3, v0=v0)
 
-    assert_allclose(w, w_dense)
-    assert_allclose(v, v_dense)
+        assert_allclose(w, w_dense)
+        assert_allclose(v, v_dense)
 
 
-def test_svds():
-    np.random.seed(1234)
+def test_svds(matrices):
+    A_dense, A_sparse, v0 = matrices
 
-    A_dense = np.random.rand(10, 10)
-    A_dense = A_dense @ A_dense.T
-    A = sparse.COO(A_dense)
-
-    v0 = np.random.rand(10)
-
-    u0, s0, vt0 = splin.svds(A_dense, k=3, v0=v0)
-    u, s, vt = splin.svds(A, k=3, v0=v0)
+    u0, s0, vt0 = splin.svds(A_dense, k=2, v0=v0)
+    u, s, vt = splin.svds(A_sparse, k=2, v0=v0)
 
     assert_allclose(s, s0)
     assert_allclose(u, u0)
     assert_allclose(vt, vt0)
 
 
-def test_lobpcg():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(10, 10)
-    A_dense = A_dense @ A_dense.T
-    A = sparse.COO(A_dense)
-
-    X = np.random.rand(10, 1)
+def test_lobpcg(matrices):
+    A_dense, A_sparse, x = matrices
+    X = x[:,None]
 
     w_dense, v_dense = splin.lobpcg(A_dense, X)
-    w, v = splin.lobpcg(A, X)
+    w, v = splin.lobpcg(A_sparse, X)
 
     assert_allclose(w, w_dense)
     assert_allclose(v, v_dense)
 
 
-def test_spsolve():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(10, 10) + 10*np.eye(10)
-    A = sparse.COO(A_dense)
-
-    b = np.random.rand(10)
-    b2 = np.random.rand(10, 3)
+def test_spsolve(matrices):
+    A_dense, A_sparse, b = matrices
+    b2 = np.random.rand(len(b), 3)
 
     x0 = splin.spsolve(sp.csc_matrix(A_dense), b)
-    x = splin.spsolve(A, b)
+    x = splin.spsolve(A_sparse, b)
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
     x0 = splin.spsolve(sp.csc_matrix(A_dense), b)
-    x = splin.spsolve(A, b, use_umfpack=True)
+    x = splin.spsolve(A_sparse, b, use_umfpack=True)
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
     x0 = splin.spsolve(sp.csc_matrix(A_dense), b2)
-    x = splin.spsolve(A, b2)
+    x = splin.spsolve(A_sparse, b2)
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
     x0 = splin.spsolve(sp.csc_matrix(A_dense),
                        sp.csc_matrix(A_dense))
-    x = splin.spsolve(A, A)
-    assert isinstance(x, type(A))
+    x = splin.spsolve(A_sparse, A_sparse)
+    assert isinstance(x, type(A_sparse))
     assert_allclose(x.todense(), x0.todense())
 
 
-def test_splu():
+def test_splu(matrices):
     # NB. spilu follows same code paths, so no need to test separately
-    np.random.seed(1234)
+    A_dense, A_sparse, b = matrices
+    n = len(b)
+    sparse_cls = type(A_sparse)
 
-    A_dense = np.random.rand(10, 10) + 10*np.eye(10)
-    A = sparse.COO(A_dense)
-    lu = splin.splu(A)
+    lu = splin.splu(A_sparse)
 
-    assert isinstance(lu.L, sparse.COO)
-    assert isinstance(lu.U, sparse.COO)
+    assert isinstance(lu.L, sparse_cls)
+    assert isinstance(lu.U, sparse_cls)
 
-    Pr = sparse.COO(sp.csc_matrix((np.ones(10), (lu.perm_r, np.arange(10)))))
-    Pc = sparse.COO(sp.csc_matrix((np.ones(10), (np.arange(10), lu.perm_c))))
+    Pr = sparse_cls(sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n)))))
+    Pc = sparse_cls(sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c))))
     A2 = Pr.T @ lu.L @ lu.U @ Pc.T
 
-    assert_allclose(A2.todense(), A.todense())
+    assert_allclose(A2.todense(), A_sparse.todense())
 
-    z = lu.solve(A.todense())
-    assert_allclose(z, np.eye(10), atol=1e-10)
-
-
-def test_spsolve_triangular():
-    np.random.seed(1234)
-
-    A_dense = np.tril(np.random.rand(10, 10) + 10*np.eye(10))
-    A = sparse.COO(A_dense)
-    b = np.random.rand(10)
-
-    x = splin.spsolve_triangular(A, b)
-    assert_allclose(A @ x, b)
+    z = lu.solve(A_sparse.todense())
+    assert_allclose(z, np.eye(n), atol=1e-10)
 
 
-def test_onenormest():
-    np.random.seed(1234)
+def test_spsolve_triangular(matrices):
+    A_dense, A_sparse, b = matrices
+    A_sparse = sparse.tril(A_sparse)
 
-    A_dense = np.random.rand(10, 10)
-    A = sparse.COO(A_dense)
+    x = splin.spsolve_triangular(A_sparse, b)
+    assert_allclose(A_sparse @ x, b)
 
+
+def test_onenormest(matrices):
+    A_dense, A_sparse, b = matrices
     est0 = splin.onenormest(A_dense)
-    est = splin.onenormest(A)
+    est = splin.onenormest(A_sparse)
     assert_allclose(est, est0)
 
 
-def test_inv():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(10, 10)
-    A = sparse.COO(A_dense)
-
+def test_inv(matrices):
+    A_dense, A_sparse, b = matrices
     x0 = splin.inv(sp.csc_matrix(A_dense))
-    x = splin.inv(A)
+    x = splin.inv(A_sparse)
     assert_allclose(x.todense(), x0.todense())
 
 
-def test_expm():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(10, 10)
-    A = sparse.COO(A_dense)
-
+def test_expm(matrices):
+    A_dense, A_sparse, b = matrices
     x0 = splin.expm(sp.csc_matrix(A_dense))
-    x = splin.expm(A)
+    x = splin.expm(A_sparse)
     assert_allclose(x.todense(), x0.todense())
 
 
-def test_expm_multiply():
-    np.random.seed(1234)
-
-    A_dense = np.random.rand(10, 10)
-    A = sparse.COO(A_dense)
-    b = np.random.rand(10)
-
+def test_expm_multiply(matrices):
+    A_dense, A_sparse, b = matrices
     x0 = splin.expm_multiply(A_dense, b)
-    x = splin.expm_multiply(A, b)
+    x = splin.expm_multiply(A_sparse, b)
     assert_allclose(x, x0)
