@@ -525,6 +525,17 @@ class TestExpM(object):
                 atol = 1e-13 * abs(expected).max()
                 assert_allclose(got, expected, atol=atol)
 
+    def test_matrix_input(self):
+        # Large np.matrix inputs should work, gh-5546
+        A = np.zeros((200, 200))
+        A[-1,0] = 1
+        B0 = expm(A)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "the matrix subclass.*")
+            sup.filter(PendingDeprecationWarning, "the matrix subclass.*")
+            B = expm(np.matrix(A))
+        assert_allclose(B, B0)
+
 
 class TestOperators(object):
 
