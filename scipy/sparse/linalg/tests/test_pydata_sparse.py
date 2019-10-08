@@ -137,7 +137,6 @@ def test_spsolve(matrices):
 
 
 def test_splu(matrices):
-    # NB. spilu follows same code paths, so no need to test separately
     A_dense, A_sparse, b = matrices
     n = len(b)
     sparse_cls = type(A_sparse)
@@ -155,6 +154,19 @@ def test_splu(matrices):
 
     z = lu.solve(A_sparse.todense())
     assert_allclose(z, np.eye(n), atol=1e-10)
+
+
+def test_spilu(matrices):
+    A_dense, A_sparse, b = matrices
+    sparse_cls = type(A_sparse)
+
+    lu = splin.spilu(A_sparse)
+
+    assert isinstance(lu.L, sparse_cls)
+    assert isinstance(lu.U, sparse_cls)
+
+    z = lu.solve(A_sparse.todense())
+    assert_allclose(z, np.eye(len(b)), atol=1e-3)
 
 
 def test_spsolve_triangular(matrices):
