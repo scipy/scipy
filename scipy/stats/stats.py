@@ -2337,7 +2337,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
 
-    Calculate the z score of each value in the sample, relative to the
+    Compute the z score of each value in the sample, relative to the
     sample mean and standard deviation.
 
     Parameters
@@ -2393,13 +2393,17 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis)
-    sstd = a.std(axis=axis, ddof=ddof)
-    if axis and mns.ndim < a.ndim:
-        return ((a - np.expand_dims(mns, axis=axis)) /
-                np.expand_dims(sstd, axis=axis))
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        mns = np.nanmean(a=a, axis=axis, keepdims=True)
+        sstd = np.nanstd(a=a, axis=axis, ddof=ddof, keepdims=True)
     else:
-        return (a - mns) / sstd
+        mns = a.mean(axis=axis, keepdims=True)
+        sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
+    return (a - mns) / sstd
 
 
 def zmap(scores, compare, axis=0, ddof=0):
