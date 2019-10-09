@@ -293,7 +293,7 @@ def gmean(a, axis=0, dtype=None):
     Returns
     -------
     gmean : ndarray
-        see dtype parameter above
+        See `dtype` parameter above.
 
     See Also
     --------
@@ -357,7 +357,7 @@ def hmean(a, axis=0, dtype=None):
     Returns
     -------
     hmean : ndarray
-        see `dtype` parameter above
+        See `dtype` parameter above.
 
     See Also
     --------
@@ -569,10 +569,11 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     Returns
     -------
     tmean : float
+        Trimmed mean.
 
     See Also
     --------
-    trim_mean : returns mean after trimming a proportion from both tails.
+    trim_mean : Returns mean after trimming a proportion from both tails.
 
     Examples
     --------
@@ -657,7 +658,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     lowerlimit : None or float, optional
         Values in the input array less than the given limit will be ignored.
         When lowerlimit is None, then all values are used. The default value
@@ -679,6 +680,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     Returns
     -------
     tmin : float, int or ndarray
+        Trimmed minimum.
 
     Examples
     --------
@@ -718,7 +720,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     upperlimit : None or float, optional
         Values in the input array greater than the given limit will be ignored.
         When upperlimit is None, then all values are used. The default value
@@ -740,6 +742,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     Returns
     -------
     tmax : float, int or ndarray
+        Trimmed maximum.
 
     Examples
     --------
@@ -779,7 +782,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
         upper limit will be ignored. When limits is None, then all values are
@@ -798,6 +801,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Returns
     -------
     tstd : float
+        Trimmed sample standard deviation.
 
     Notes
     -----
@@ -827,7 +831,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
         upper limit will be ignored. When limits is None, then all values are
@@ -846,6 +850,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Returns
     -------
     tsem : float
+        Trimmed standard error of the mean.
 
     Notes
     -----
@@ -883,13 +888,12 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     points. It is often used to calculate coefficients of skewness and kurtosis
     due to its close relationship with them.
 
-
     Parameters
     ----------
     a : array_like
-       data
+       Input array.
     moment : int or array_like of ints, optional
-       order of central moment that is returned. Default is 1.
+       Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
        If None, compute over the whole array `a`.
@@ -1074,7 +1078,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     Parameters
     ----------
     a : ndarray
-        data
+        Input array.
     axis : int or None, optional
         Axis along which skewness is calculated. Default is 0.
         If None, compute over the whole array `a`.
@@ -1174,7 +1178,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array
-        data for which the kurtosis is calculated
+        Data for which the kurtosis is calculated.
     axis : int or None, optional
         Axis along which the kurtosis is calculated. Default is 0.
         If None, compute over the whole array `a`.
@@ -1375,7 +1379,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array
-        The data to be tested
+        The data to be tested.
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
@@ -1392,7 +1396,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        a 2-sided p-value for the hypothesis test
+        Two-sided p-value for the hypothesis test.
 
     Notes
     -----
@@ -1460,7 +1464,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array
-        array of the sample data
+        Array of the sample data.
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
@@ -1477,7 +1481,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        The 2-sided p-value for the hypothesis test
+        The 2-sided p-value for the hypothesis test.
 
     Notes
     -----
@@ -1554,7 +1558,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     from a normal distribution.  It is based on D'Agostino and
     Pearson's [1]_, [2]_ test that combines skew and kurtosis to
     produce an omnibus test of normality.
-
 
     Parameters
     ----------
@@ -1909,7 +1912,7 @@ def percentileofscore(a, score, kind='rank'):
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='weak')
     80.0
 
-    The average between the weak and the strict scores is
+    The average between the weak and the strict scores is:
 
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
@@ -2134,7 +2137,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     frequency : ndarray
         Binned values of relative frequency.
     lowerlimit : float
-        Lower real limit
+        Lower real limit.
     binsize : float
         Width of each bin.
     extrapoints : int
@@ -2655,23 +2658,6 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     --------
     numpy.std, numpy.var
 
-    Examples
-    --------
-    >>> from scipy.stats import iqr
-    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
-    >>> x
-    array([[10,  7,  4],
-           [ 3,  2,  1]])
-    >>> iqr(x)
-    4.0
-    >>> iqr(x, axis=0)
-    array([ 3.5,  2.5,  1.5])
-    >>> iqr(x, axis=1)
-    array([ 3.,  1.])
-    >>> iqr(x, axis=1, keepdims=True)
-    array([[ 3.],
-           [ 1.]])
-
     Notes
     -----
     This function is heavily dependent on the version of `numpy` that is
@@ -2699,6 +2685,23 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
     .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
     
+    Examples
+    --------
+    >>> from scipy.stats import iqr
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> iqr(x)
+    4.0
+    >>> iqr(x, axis=0)
+    array([ 3.5,  2.5,  1.5])
+    >>> iqr(x, axis=1)
+    array([ 3.,  1.])
+    >>> iqr(x, axis=1, keepdims=True)
+    array([[ 3.],
+           [ 1.]])
+
     """
     x = asarray(x)
 
@@ -2975,7 +2978,7 @@ def sigmaclip(a, low=4., high=4.):
 
     Starting from the full sample, all elements outside the critical range are
     removed, i.e. all elements of the input array `c` that satisfy either of
-    the following conditions ::
+    the following conditions::
 
         c < mean(c) - std(c)*low
         c > mean(c) + std(c)*high
@@ -3040,14 +3043,14 @@ def sigmaclip(a, low=4., high=4.):
 
 def trimboth(a, proportiontocut, axis=0):
     """
-    Slices off a proportion of items from both ends of an array.
+    Slice off a proportion of items from both ends of an array.
 
-    Slices off the passed proportion of items from both ends of the passed
+    Slice off the passed proportion of items from both ends of the passed
     array (i.e., with `proportiontocut` = 0.1, slices leftmost 10% **and**
     rightmost 10% of scores). The trimmed values are the lowest and
     highest ones.
-    Slices off less if proportion results in a non-integer slice index (i.e.,
-    conservatively slices off`proportiontocut`).
+    Slice off less if proportion results in a non-integer slice index (i.e.
+    conservatively slices off `proportiontocut`).
 
     Parameters
     ----------
@@ -3102,20 +3105,20 @@ def trimboth(a, proportiontocut, axis=0):
 
 def trim1(a, proportiontocut, tail='right', axis=0):
     """
-    Slices off a proportion from ONE end of the passed array distribution.
+    Slice off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
     10% of scores. The lowest or highest values are trimmed (depending on
     the tail).
-    Slices off less if proportion results in a non-integer slice index
-    (i.e., conservatively slices off `proportiontocut` ).
+    Slice off less if proportion results in a non-integer slice index
+    (i.e. conservatively slices off `proportiontocut` ).
 
     Parameters
     ----------
     a : array_like
-        Input array
+        Input array.
     proportiontocut : float
-        Fraction to cut off of 'left' or 'right' of distribution
+        Fraction to cut off of 'left' or 'right' of distribution.
     tail : {'left', 'right'}, optional
         Defaults to 'right'.
     axis : int or None, optional
@@ -3165,9 +3168,9 @@ def trim_mean(a, proportiontocut, axis=0):
     Parameters
     ----------
     a : array_like
-        Input array
+        Input array.
     proportiontocut : float
-        Fraction to cut off of both tails of the distribution
+        Fraction to cut off of both tails of the distribution.
     axis : int or None, optional
         Axis along which the trimmed means are computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -3180,7 +3183,7 @@ def trim_mean(a, proportiontocut, axis=0):
     See Also
     --------
     trimboth
-    tmean : compute the trimmed mean ignoring values outside given `limits`.
+    tmean : Compute the trimmed mean ignoring values outside given `limits`.
 
     Examples
     --------
@@ -3261,7 +3264,6 @@ def f_oneway(*args):
     with some loss of power.
 
     The algorithm is from Heiman[2], pp.394-7.
-
 
     References
     ----------
@@ -3371,16 +3373,16 @@ def pearsonr(x, y):
     Parameters
     ----------
     x : (N,) array_like
-        Input
+        Input array.
     y : (N,) array_like
-        Input
+        Input array.
 
     Returns
     -------
     r : float
-        Pearson's correlation coefficient
+        Pearson's correlation coefficient.
     p-value : float
-        two-tailed p-value
+        Two-tailed p-value.
 
     Warns
     -----
@@ -3881,9 +3883,9 @@ def pointbiserialr(x, y):
     Returns
     -------
     correlation : float
-        R value
+        R value.
     pvalue : float
-        2-tailed p-value
+        2-tailed p-value.
 
     Notes
     -----
@@ -3972,7 +3974,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    method: {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [5]_.
         The following options are available (default is 'auto'):
 
@@ -4186,7 +4188,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     x, y : array_like
         Arrays of scores, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
-    rank: array_like of ints or bool, optional
+    rank : array_like of ints or bool, optional
         A nonnegative rank assigned to each element. If it is None, the
         decreasing lexicographical rank by (`x`, `y`) will be used: elements of
         higher rank will be those with larger `x`-values, using `y`-values to
@@ -4342,10 +4344,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        sample observation
+        Sample observation.
     popmean : float or array_like
-        expected value in null hypothesis. If array_like, then it must have the
-        same shape as `a` excluding the axis dimension
+        Expected value in null hypothesis. If array_like, then it must have the
+        same shape as `a` excluding the axis dimension.
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         array `a`.
@@ -4360,9 +4362,9 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     Returns
     -------
     statistic : float or array
-        t-statistic
+        t-statistic.
     pvalue : float or array
-        two-tailed p-value
+        Two-tailed p-value.
 
     Examples
     --------
@@ -4473,7 +4475,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
-        The mean(s) of sample 2
+        The mean(s) of sample 2.
     std2 : array_like
         The standard deviations(s) of sample 2.
     nobs2 : array_like
@@ -4487,7 +4489,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Returns
     -------
     statistic : float or array
-        The calculated t-statistics
+        The calculated t-statistics.
     pvalue : float or array
         The two-tailed p-value.
 
@@ -4723,9 +4725,9 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     Returns
     -------
     statistic : float or array
-        t-statistic
+        t-statistic.
     pvalue : float or array
-        two-tailed p-value
+        Two-tailed p-value.
 
     Notes
     -----
@@ -5018,10 +5020,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         apply the test.  If axis is None, all values in `f_obs` are treated
         as a single data set.  Default is 0.
     lambda_ : float or str, optional
-        `lambda_` gives the power in the Cressie-Read power divergence
-        statistic.  The default is 1.  For convenience, `lambda_` may be
-        assigned one of the following strings, in which case the
-        corresponding numerical value is used::
+        The power in the Cressie-Read power divergence statistic.  The default
+        is 1.  For convenience, `lambda_` may be assigned one of the following
+        strings, in which case the corresponding numerical value is used::
 
             String              Value   Description
             "pearson"             1     Pearson's chi-squared statistic.
@@ -5552,9 +5553,9 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Returns
     -------
     statistic : float
-        KS statistic
+        KS statistic.
     pvalue : float
-        two-tailed p-value
+        Two-tailed p-value.
 
     See Also
     --------
@@ -5885,15 +5886,15 @@ def ranksums(x, y):
     Parameters
     ----------
     x,y : array_like
-        The data from the two samples
+        The data from the two samples.
 
     Returns
     -------
     statistic : float
         The test statistic under the large-sample approximation that the
-        rank sum statistic is normally distributed
+        rank sum statistic is normally distributed.
     pvalue : float
-        The two-sided p-value of the test
+        The two-sided p-value of the test.
 
     References
     ----------
@@ -5944,16 +5945,16 @@ def kruskal(*args, **kwargs):
     Returns
     -------
     statistic : float
-       The Kruskal-Wallis H statistic, corrected for ties
+       The Kruskal-Wallis H statistic, corrected for ties.
     pvalue : float
        The p-value for the test using the assumption that H has a chi
-       square distribution
+       square distribution.
 
     See Also
     --------
-    f_oneway : 1-way ANOVA
+    f_oneway : 1-way ANOVA.
     mannwhitneyu : Mann-Whitney rank test on two samples.
-    friedmanchisquare : Friedman test for repeated measurements
+    friedmanchisquare : Friedman test for repeated measurements.
 
     Notes
     -----
@@ -6061,10 +6062,10 @@ def friedmanchisquare(*args):
     Returns
     -------
     statistic : float
-        the test statistic, correcting for ties
+        The test statistic, correcting for ties.
     pvalue : float
-        the associated p-value assuming that the test statistic has a chi
-        squared distribution
+        The associated p-value assuming that the test statistic has a chi
+        squared distribution.
 
     Notes
     -----
@@ -6134,7 +6135,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
           * 'two-sided'
           * 'less': one-sided
           * 'greater': one-sided
-    distribution: {'t', 'normal'}, optional
+    distribution : {'t', 'normal'}, optional
         Defines how to get the p-value.
         The following options are available (default is 't'):
 
