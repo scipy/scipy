@@ -318,6 +318,7 @@ def gmean(a, axis=0, dtype=None):
     2.0
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
+
     """
     if not isinstance(a, np.ndarray):
         # if not an ndarray object attempt to convert it
@@ -380,6 +381,7 @@ def hmean(a, axis=0, dtype=None):
     1.6000000000000001
     >>> hmean([1, 2, 3, 4, 5, 6, 7])
     2.6997245179063363
+
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
@@ -518,6 +520,7 @@ def _mask_to_limits(a, limits, inclusive):
     Raises
     ------
     A ValueError if there are no values within the given limits.
+
     """
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
@@ -931,6 +934,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     0.0
     >>> moment([1, 2, 3, 4, 5], moment=2)
     2.0
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1008,7 +1012,9 @@ def _moment(a, moment, axis):
 
 def variation(a, axis=0, nan_policy='propagate'):
     """
-    Compute the coefficient of variation, the ratio of the biased standard
+    Compute the coefficient of variation.
+    
+    The coefficient of variation is the ratio of the biased standard
     deviation to the mean.
 
     Parameters
@@ -1042,6 +1048,7 @@ def variation(a, axis=0, nan_policy='propagate'):
     >>> from scipy.stats import variation
     >>> variation([1, 2, 3, 4, 5])
     0.47140452079103173
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1055,7 +1062,7 @@ def variation(a, axis=0, nan_policy='propagate'):
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
-    """
+    r"""
     Compute the sample skewness of a data set.
 
     For normally distributed data, the skewness should be about zero. For
@@ -1108,7 +1115,6 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     References
     ----------
-
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
@@ -1121,6 +1127,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     0.0
     >>> skew([2, 8, 0, 4, 1, 9, 9, 0])
     0.2650554122698573
+
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
@@ -1408,6 +1415,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     SkewtestResult(statistic=3.571773510360407, pvalue=0.0003545719905823133)
     >>> skewtest([100, 100, 100, 100, 100, 100, 100, 101])
     SkewtestResult(statistic=3.5717766638478072, pvalue=0.000354567720281634)
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1490,6 +1498,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     >>> s = np.random.normal(0, 1, 1000)
     >>> kurtosistest(s)
     KurtosistestResult(statistic=1.2317590987707365, pvalue=0.21803908613450895)
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1595,6 +1604,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     ... else:
     ...     print("The null hypothesis cannot be rejected")
     The null hypothesis can be rejected
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1840,7 +1850,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
 
 def percentileofscore(a, score, kind='rank'):
     """
-    The percentile rank of a score relative to a list of scores.
+    Compute the percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
     scores in `a` are below the given score. In the case of gaps or
@@ -1934,6 +1944,8 @@ HistogramResult = namedtuple('HistogramResult',
 
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
+    Create a histogram.
+    
     Separate the range into several bins and return the number of instances
     in each bin.
 
@@ -2225,6 +2237,7 @@ def obrientransform(*args):
 
     If we require that ``p < 0.05`` for significance, we cannot conclude
     that the variances are different.
+    
     """
     TINY = np.sqrt(np.finfo(float).eps)
 
@@ -2254,6 +2267,8 @@ def obrientransform(*args):
 
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """
+    Compute standard error of the mean.
+    
     Calculate the standard error of the mean (or standard error of
     measurement) of the values in the input array.
 
@@ -2317,6 +2332,8 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
+    Compute the z score.
+
     Calculate the z score of each value in the sample, relative to the
     sample mean and standard deviation.
 
@@ -2334,6 +2351,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+
     Returns
     -------
     zscore : array_like
@@ -2369,6 +2387,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [ 0.26796377, -1.12598418,  1.23283094, -0.37481053],
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
+    
     """
     a = np.asanyarray(a)
     mns = a.mean(axis=axis, keepdims=True)
@@ -2417,6 +2436,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> b = [0, 1, 2, 3, 4]
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
+    
     """
     scores, compare = map(np.asanyarray, [scores, compare])
     mns = compare.mean(axis=axis, keepdims=True)
@@ -2425,7 +2445,8 @@ def zmap(scores, compare, axis=0, ddof=0):
 
 
 def gstd(a, axis=0, ddof=1):
-    """Calculate the geometric standard deviation of an array
+    """
+    Calculate the geometric standard deviation of an array.
 
     The geometric standard deviation describes the spread of a set of numbers
     where the geometric mean is preferred. It is a multiplicative factor, and
@@ -2517,6 +2538,7 @@ def gstd(a, axis=0, ddof=1):
       mask=[[False, False, False],
             [False,  True,  True]],
       fill_value=999999)
+    
     """
     a = np.asanyarray(a)
     log = ma.log if isinstance(a, ma.MaskedArray) else np.log
@@ -2558,7 +2580,7 @@ _scale_conversions = {'raw': 1.0,
 
 def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         interpolation='linear', keepdims=False):
-    """
+    r"""
     Compute the interquartile range of the data along the specified axis.
 
     The interquartile range (IQR) is the difference between the 75th and
@@ -2676,6 +2698,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     .. [1] "Interquartile range" https://en.wikipedia.org/wiki/Interquartile_range
     .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
     .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
+    
     """
     x = asarray(x)
 
@@ -2948,7 +2971,7 @@ SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 def sigmaclip(a, low=4., high=4.):
     """
-    Iterative sigma-clipping of array elements.
+    Perform iterative sigma-clipping of array elements.
 
     Starting from the full sample, all elements outside the critical range are
     removed, i.e. all elements of the input array `c` that satisfy either of
@@ -3205,7 +3228,7 @@ F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 def f_oneway(*args):
     """
-    Performs a 1-way ANOVA.
+    Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
     the same population mean.  The test is applied to samples from two or
@@ -3308,9 +3331,7 @@ def f_oneway(*args):
 
 
 class PearsonRConstantInputWarning(RuntimeWarning):
-    """
-    Warning generated by `pearsonr` when an input is constant.
-    """
+    """Warning generated by `pearsonr` when an input is constant."""
 
     def __init__(self, msg=None):
         if msg is None:
@@ -3320,9 +3341,7 @@ class PearsonRConstantInputWarning(RuntimeWarning):
 
 
 class PearsonRNearConstantInputWarning(RuntimeWarning):
-    """
-    Warning generated by `pearsonr` when an input is nearly constant.
-    """
+    """Warning generated by `pearsonr` when an input is nearly constant."""
 
     def __init__(self, msg=None):
         if msg is None:
@@ -3382,7 +3401,6 @@ def pearsonr(x, y):
 
     Notes
     -----
-
     The correlation coefficient is calculated as follows:
 
     .. math::
@@ -3517,7 +3535,8 @@ def pearsonr(x, y):
 
 
 def fisher_exact(table, alternative='two-sided'):
-    """Performs a Fisher exact test on a 2x2 contingency table.
+    """
+    Perform a Fisher exact test on a 2x2 contingency table.
 
     Parameters
     ----------
@@ -3602,9 +3621,7 @@ def fisher_exact(table, alternative='two-sided'):
     n = c[0, 0] + c[1, 0]
 
     def binary_search(n, n1, n2, side):
-        """Binary search for where to begin lower/upper halves in two-sided
-        test.
-        """
+        """Binary search for where to begin halves in two-sided test."""
         if side == "upper":
             minval = mode
             maxval = n
@@ -3684,17 +3701,16 @@ SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
-    Calculate a Spearman rank-order correlation coefficient and the p-value
-    to test for non-correlation.
+    Calculate a Spearman correlation coefficient with associated p-value.
 
-    The Spearman correlation is a nonparametric measure of the monotonicity
-    of the relationship between two datasets. Unlike the Pearson correlation,
-    the Spearman correlation does not assume that both datasets are normally
-    distributed. Like other correlation coefficients, this one varies
-    between -1 and +1 with 0 implying no correlation. Correlations of -1 or
-    +1 imply an exact monotonic relationship. Positive correlations imply that
-    as x increases, so does y. Negative correlations imply that as x
-    increases, y decreases.
+    The Spearman rank-order correlation coefficient is a nonparametric measure
+    of the monotonicity of the relationship between two datasets. Unlike the
+    Pearson correlation, the Spearman correlation does not assume that both
+    datasets are normally distributed. Like other correlation coefficients,
+    this one varies between -1 and +1 with 0 implying no correlation.
+    Correlations of -1 or +1 imply an exact monotonic relationship. Positive
+    correlations imply that as x increases, so does y. Negative correlations
+    imply that as x increases, y decreases.
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Spearman correlation at least as extreme
@@ -3735,7 +3751,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     References
     ----------
-
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
@@ -4482,7 +4497,6 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-
     .. versionadded:: 0.16.0
 
     References
@@ -5076,7 +5090,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Examples
     --------
-
     (See `chisquare` for more examples.)
 
     When just `f_obs` is given, it is assumed that the expected frequencies
@@ -5306,7 +5319,8 @@ Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
 def _compute_prob_inside_method(m, n, g, h):
-    """Count the proportion of paths that stay strictly inside two diagonal lines.
+    """
+    Count the proportion of paths that stay strictly inside two diagonal lines.
 
     Parameters
     ----------
@@ -5333,6 +5347,7 @@ def _compute_prob_inside_method(m, n, g, h):
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+    
     """
     # Probability is symmetrical in m, n.  Computation below uses m >= n.
     if m < n:
@@ -5385,7 +5400,8 @@ def _compute_prob_inside_method(m, n, g, h):
 
 
 def _compute_prob_outside_square(n, h):
-    """Compute the proportion of paths that pass outside the two diagonal lines.
+    """
+    Compute the proportion of paths that pass outside the two diagonal lines.
 
     Parameters
     ----------
@@ -5420,7 +5436,8 @@ def _compute_prob_outside_square(n, h):
 
 
 def _count_paths_outside_method(m, n, g, h):
-    """Count the number of paths that pass outside the specified diagonal.
+    """
+    Count the number of paths that pass outside the specified diagonal.
 
     Parameters
     ----------
@@ -5455,6 +5472,7 @@ def _count_paths_outside_method(m, n, g, h):
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
     """
     # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
     # B(x, y) = #{paths from (0,0) to (x,y) without previously crossing the boundary}
@@ -5703,8 +5721,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
 def tiecorrect(rankvals):
     """
-    Tie correction factor for ties in the Mann-Whitney U and
-    Kruskal-Wallis H tests.
+    Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
 
     Parameters
     ----------
@@ -5902,7 +5919,7 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 def kruskal(*args, **kwargs):
     """
-    Compute the Kruskal-Wallis H-test for independent samples
+    Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
     median of all of the groups are equal.  It is a non-parametric version of
@@ -6026,7 +6043,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
 
 def friedmanchisquare(*args):
     """
-    Compute the Friedman test for repeated measurements
+    Compute the Friedman test for repeated measurements.
 
     The Friedman test tests the null hypothesis that repeated measurements of
     the same individuals have the same distribution.  It is often used
@@ -6096,7 +6113,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
     when values are taken one by one from each group, the probabilities of
@@ -6236,8 +6253,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
-    Methods for combining the p-values of independent tests bearing upon the
-    same hypothesis.
+    Combine p-values from independent tests bearing upon the same hypothesis.
 
     Parameters
     ----------
@@ -6423,6 +6439,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
+
     """
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
@@ -6504,6 +6521,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> energy_distance([0.7, 7.4, 2.4, 6.8], [1.4, 8. ],
     ...                 [2.1, 4.2, 7.4, 8. ], [7.6, 8.8])
     0.88003340976158217
+
     """
     return np.sqrt(2) * _cdf_distance(2, u_values, v_values,
                                       u_weights, v_weights)
@@ -6551,6 +6569,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     .. [1] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
+    
     """
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -6613,6 +6632,7 @@ def _validate_distribution(values, weights):
         Values as ndarray.
     weights : ndarray
         Weights as ndarray.
+    
     """
     # Validate the value array.
     values = np.asarray(values, dtype=float)
@@ -6701,6 +6721,7 @@ def _sum_of_squares(a, axis=0):
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
     `_sum_of_squares`).
+    
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
@@ -6726,6 +6747,7 @@ def _square_of_sums(a, axis=0):
     See also
     --------
     _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
+    
     """
     a, axis = _chk_asarray(a, axis)
     s = np.sum(a, axis)
@@ -6786,6 +6808,7 @@ def rankdata(a, method='average'):
     array([ 1,  2,  3,  2])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
     array([ 1,  2,  4,  3])
+    
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
