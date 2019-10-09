@@ -570,7 +570,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     -------
     tmean : float
 
-    See also
+    See Also
     --------
     trim_mean : returns mean after trimming a proportion from both tails.
 
@@ -908,7 +908,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
 
-    See also
+    See Also
     --------
     kurtosis, skew, describe
 
@@ -3990,7 +3990,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
        The two-sided p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
-    See also
+    See Also
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
@@ -4213,7 +4213,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
        Presently ``np.nan``, as the null statistics is unknown (even in the
        additive hyperbolic case).
 
-    See also
+    See Also
     --------
     kendalltau : Calculates Kendall's tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
@@ -6161,7 +6161,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     Brunner and Munzel recommended to estimate the p-value by t-distribution
     when the size of data is 50 or less. If the size is lower than 10, it would
     be better to use permuted Brunner Munzel test (see [2]_).
@@ -6717,7 +6717,7 @@ def _sum_of_squares(a, axis=0):
     sum_of_squares : ndarray
         The sum along the given axis for (a**2).
 
-    See also
+    See Also
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
     `_sum_of_squares`).
@@ -6744,7 +6744,7 @@ def _square_of_sums(a, axis=0):
     square_of_sums : float or ndarray
         The square of the sum over `axis`.
 
-    See also
+    See Also
     --------
     _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
     
