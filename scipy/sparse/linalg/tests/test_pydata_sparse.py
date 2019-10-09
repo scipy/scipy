@@ -19,8 +19,7 @@ msg = "pydata/sparse (0.8) does not implement necessary operations"
 
 
 sparse_params = [pytest.param("COO"),
-                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]),
-                 pytest.param("CSD", marks=[pytest.mark.xfail(reason=msg)])]
+                 pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
 
 
 @pytest.fixture(params=sparse_params)
