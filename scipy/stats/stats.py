@@ -2393,9 +2393,13 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis, keepdims=True)
-    sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
-    return (a - mns) / sstd
+    mns = a.mean(axis=axis)
+    sstd = a.std(axis=axis, ddof=ddof)
+    if axis and mns.ndim < a.ndim:
+        return ((a - np.expand_dims(mns, axis=axis)) /
+                np.expand_dims(sstd, axis=axis))
+    else:
+        return (a - mns) / sstd
 
 
 def zmap(scores, compare, axis=0, ddof=0):
