@@ -1105,23 +1105,23 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     .. math:: 
 
-        g_1=\\frac{m_3}{m_2^{3/2}}
+        g_1=\frac{m_3}{m_2^{3/2}}
 
     where
 
     .. math:: 
 
-        m_i=\\frac{1}{N}\\sum_{n=1}^N(x[n]-\\bar{x})^i
+        m_i=\frac{1}{N}\sum_{n=1}^N(x[n]-\bar{x})^i
 
-    is the biased sample :math:`i\\texttt{th}` central moment, and :math:`\\bar{x}` is
+    is the biased sample :math:`i\texttt{th}` central moment, and :math:`\bar{x}` is
     the sample mean.  If ``bias`` is False, the calculations are
     corrected for bias and the value computed is the adjusted
     Fisher-Pearson standardized moment coefficient, i.e.
 
     .. math:: 
 
-        G_1=\\frac{k_3}{k_2^{3/2}}=
-            \\frac{\\sqrt{N(N-1)}}{N-2}\\frac{m_3}{m_2^{3/2}}.
+        G_1=\frac{k_3}{k_2^{3/2}}=
+            \frac{\sqrt{N(N-1)}}{N-2}\frac{m_3}{m_2^{3/2}}.
 
     References
     ----------
@@ -2633,7 +2633,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         result. The following string values are recognized:
 
           'raw' : No scaling, just return the raw IQR.
-          'normal' : Scale by :math:`2 \\sqrt{2} erf^{-1}(\\frac{1}{2}) \\approx 1.349`.
+          'normal' : Scale by :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
         The default is 'raw'. Array-like scale is also allowed, as long
         as it broadcasts correctly to the output such that
