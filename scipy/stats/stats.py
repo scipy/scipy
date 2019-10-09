@@ -2446,9 +2446,13 @@ def zmap(scores, compare, axis=0, ddof=0):
     
     """
     scores, compare = map(np.asanyarray, [scores, compare])
-    mns = compare.mean(axis=axis, keepdims=True)
-    sstd = compare.std(axis=axis, ddof=ddof, keepdims=True)
-    return (scores - mns) / sstd
+    mns = compare.mean(axis=axis)
+    sstd = compare.std(axis=axis, ddof=ddof)
+    if axis and mns.ndim < compare.ndim:
+        return ((scores - np.expand_dims(mns, axis=axis)) /
+                np.expand_dims(sstd, axis=axis))
+    else:
+        return (scores - mns) / sstd
 
 
 def gstd(a, axis=0, ddof=1):
