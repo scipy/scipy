@@ -438,8 +438,10 @@ class TestBasic(object):
         assert_array_equal(x0, x0_copy)
 
     def test_maxiter_int_check(self):
-        for method in [zeros.bisect, zeros.newton, zeros.ridder, zeros.brentq, zeros.brenth, zeros.toms748]:
-            with pytest.raises(TypeError, match="'float' object cannot be interpreted as an integer"):
+        for method in [zeros.bisect, zeros.newton, zeros.ridder, zeros.brentq,
+                       zeros.brenth, zeros.toms748]:
+            with pytest.raises(TypeError,
+                    match="'float' object cannot be interpreted as an integer"):
                 method(f1, 0.0, 1.0, maxiter=72.45)
 
 
