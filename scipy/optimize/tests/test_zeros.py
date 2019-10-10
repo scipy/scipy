@@ -437,6 +437,13 @@ class TestBasic(object):
         newton(np.sin, x0, np.cos)
         assert_array_equal(x0, x0_copy)
 
+    def test_maxiter_int_check(self):
+        for method in [zeros.bisect, zeros.newton, zeros.ridder, zeros.brentq,
+                       zeros.brenth, zeros.toms748]:
+            with pytest.raises(TypeError,
+                    match="'float' object cannot be interpreted as an integer"):
+                method(f1, 0.0, 1.0, maxiter=72.45)
+
 
 def test_gh_5555():
     root = 0.1
