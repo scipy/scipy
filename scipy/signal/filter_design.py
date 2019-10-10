@@ -11,11 +11,11 @@ import numpy as np
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    resize, pi, absolute, logspace, r_, sqrt, tan, log10,
                    arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   zeros, sinh, append, concatenate, prod, ones, array,
+                   zeros, sinh, append, concatenate, prod, ones, full, array,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
-from scipy import special, optimize, fftpack
+from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb, factorial
 from scipy._lib._numpy_compat import polyvalfromroots
 
@@ -347,7 +347,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
 
     1. An integer value is given for `worN`.
     2. `worN` is fast to compute via FFT (i.e.,
-       `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
+       `next_fast_len(worN) <scipy.fft.next_fast_len>` equals `worN`).
     3. The denominator coefficients are a single value (``a.shape[0] == 1``).
     4. `worN` is at least as long as the numerator coefficients
        (``worN >= b.shape[0]``).
@@ -438,17 +438,17 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         lastpoint = 2 * pi if whole else pi
         w = np.linspace(0, lastpoint, N, endpoint=False)
         if (a.size == 1 and N >= b.shape[0] and
-                fftpack.next_fast_len(N) == N and
+                sp_fft.next_fast_len(N) == N and
                 (b.ndim == 1 or (b.shape[-1] == 1))):
             # if N is fast, 2 * N will be fast, too, so no need to check
             n_fft = N if whole else N * 2
             if np.isrealobj(b) and np.isrealobj(a):
-                fft_func = np.fft.rfft
+                fft_func = sp_fft.rfft
             else:
-                fft_func = fftpack.fft
+                fft_func = sp_fft.fft
             h = fft_func(b, n=n_fft, axis=0)[:N]
             h /= a
-            if fft_func is np.fft.rfft and whole:
+            if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
                 stop = -1 if n_fft % 2 == 1 else -2
@@ -2084,7 +2084,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2215,7 +2216,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2348,7 +2350,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype in ('lowpass', 'highpass'):
         if numpy.size(Wn) != 1:
-            raise ValueError('Must specify a single critical frequency Wn')
+            raise ValueError('Must specify a single critical frequency Wn for lowpass or highpass filter')
 
         if btype == 'lowpass':
             z, p, k = lp2lp_zpk(z, p, k, wo=warped)
@@ -2359,7 +2361,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             bw = warped[1] - warped[0]
             wo = sqrt(warped[0] * warped[1])
         except IndexError:
-            raise ValueError('Wn must specify start and stop frequencies')
+            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop filter')
 
         if btype == 'bandpass':
             z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
@@ -2745,8 +2747,8 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
                         p_hp - sqrt(p_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
-    z_bs = append(z_bs, +1j*wo * ones(degree))
-    z_bs = append(z_bs, -1j*wo * ones(degree))
+    z_bs = append(z_bs, full(degree, +1j*wo))
+    z_bs = append(z_bs, full(degree, -1j*wo))
 
     # Cancel out gain change caused by inversion
     k_bs = k * real(prod(-z) / prod(-p))
@@ -2766,7 +2768,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     N : int
         The order of the filter.
     Wn : array_like
-        A scalar or length-2 sequence giving the critical frequencies.
+        The critical frequency or frequencies. For lowpass and highpass
+        filters, Wn is a scalar; for bandpass and bandstop filters,
+        Wn is a length-2 sequence.
+
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 
@@ -2783,7 +2788,8 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2890,7 +2896,8 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -3006,7 +3013,8 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -3119,7 +3127,8 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         returned.
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba'.
+        second-order sections ('sos'). Default is 'ba' for backwards
+        compatibility, but 'sos' should be used for general-purpose filtering.
     fs : float, optional
         The sampling frequency of the digital system.
 

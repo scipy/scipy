@@ -165,7 +165,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import sys
 import math
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+if sys.version_info >= (3, 5):
     from math import gcd
 else:
     from fractions import gcd
@@ -633,13 +633,12 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     a = asarray(a)
-    a = a.astype(float).ravel()
+    a = a.astype(float)
     if limits is None:
-        n = len(a)
-        return a.var() * n / (n - 1.)
+        return a.var(ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
-    return np.ma.var(am, ddof=ddof, axis=axis)
-
+    amnan = am.filled(fill_value=np.nan)
+    return np.nanvar(amnan, ddof=ddof, axis=axis)
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
@@ -1178,9 +1177,42 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Examples
     --------
+    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In the following example, the kurtosis is close to zero, because it was
+    calculated from the dataset, not from the continuous distribution.
+
+    >>> from scipy.stats import norm, kurtosis
+    >>> data = norm.rvs(size=1000, random_state=3)
+    >>> kurtosis(data)
+    -0.06928694200380558
+
+    The distribution with a higher kurtosis has a heavier tail.
+    The zero valued kurtosis of the normal distribution in Fisher's definition
+    can serve as a reference point.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import scipy.stats as stats
     >>> from scipy.stats import kurtosis
-    >>> kurtosis([1, 2, 3, 4, 5])
-    -1.3
+
+    >>> x = np.linspace(-5, 5, 100)
+    >>> ax = plt.subplot()
+    >>> distnames = ['laplace', 'norm', 'uniform']
+
+    >>> for distname in distnames:
+    ...     if distname == 'uniform':
+    ...         dist = getattr(stats, distname)(loc=-2, scale=4)
+    ...     else:
+    ...         dist = getattr(stats, distname)
+    ...     data = dist.rvs(size=1000)
+    ...     kur = kurtosis(data, fisher=True)
+    ...     y = dist.pdf(x)
+    ...     ax.plot(x, y, label="{}, {}".format(distname, round(kur, 3)))
+    ...     ax.legend()
+
+    The Laplace distribution has a heavier tail than the normal distribution.
+    The uniform distribution (which has negative kurtosis) has the thinnest
+    tail.
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -2253,7 +2285,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     return s
 
 
-def zscore(a, axis=0, ddof=0):
+def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the z score of each value in the sample, relative to the
     sample mean and standard deviation.
@@ -2268,7 +2300,10 @@ def zscore(a, axis=0, ddof=0):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
-
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
     Returns
     -------
     zscore : array_like
@@ -2306,8 +2341,16 @@ def zscore(a, axis=0, ddof=0):
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis, keepdims=True)
-    sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        mns = np.nanmean(a=a, axis=axis, keepdims=True)
+        sstd = np.nanstd(a=a, axis=axis, ddof=ddof, keepdims=True)
+    else:
+        mns = a.mean(axis=axis, keepdims=True)
+        sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
     return (a - mns) / sstd
 
 
@@ -2465,7 +2508,12 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
                 'is defined for strictly positive values only.')
-        elif np.less_equal(a, 0).any():
+        a_nan = np.isnan(a)
+        a_nan_any = a_nan.any()
+        # exclude NaN's from negativity check, but
+        # avoid expensive masking for arrays with no NaN
+        if ((a_nan_any and np.less_equal(np.nanmin(a), 0)) or
+              (not a_nan_any and np.less_equal(a, 0).any())):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
                 'deviation is defined for strictly positive values only.')
@@ -2473,7 +2521,7 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(w)
         else:
             #  Remaining warnings don't need to be exceptions.
-            warnings.warn(w)
+            return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
     except TypeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
@@ -3339,7 +3387,7 @@ def pearsonr(x, y):
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
-    to abs(r).  In terms of the object `dist` shown above, the p-value
+    to abs(r).  In terms of the object ``dist`` shown above, the p-value
     for a given r and length n can be computed as::
 
         p = 2*dist.cdf(-abs(r))
@@ -4353,7 +4401,7 @@ Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True):
-    """
+    r"""
     T-test for means of two independent samples from descriptive statistics.
 
     This is a two-sided test for the null hypothesis that two independent
@@ -4427,6 +4475,30 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> from scipy.stats import ttest_ind
     >>> ttest_ind(a, b)
     Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
+
+    Suppose we instead have binary data and would like to apply a t-test to
+    compare the proportion of 1s in two independent groups::
+
+                          Number of    Sample     Sample
+                    Size    ones        Mean     Variance
+        Sample 1    150      30         0.2        0.16
+        Sample 2    200      45         0.225      0.174375
+
+    The sample mean :math:`\hat{p}` is the proportion of ones in the sample 
+    and the variance for a binary observation is estimated by 
+    :math:`\hat{p}(1-\hat{p})`.
+
+    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
+    ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
+    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
+
+    For comparison, we could compute the t statistic and p-value using
+    arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.
+
+    >>> group1 = np.array([1]*30 + [0]*(150-30))
+    >>> group2 = np.array([1]*45 + [0]*(200-45))
+    >>> ttest_ind(group1, group2)
+    Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
     if equal_var:
@@ -5867,7 +5939,7 @@ def kruskal(*args, **kwargs):
     for i in range(num_groups):
         ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
 
-    totaln = np.sum(n)
+    totaln = np.sum(n, dtype=float)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = num_groups - 1
     h /= ties
@@ -6069,7 +6141,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             "distribution should be 't' or 'normal'")
 
     if alternative == "greater":
-        p = p
+        pass
     elif alternative == "less":
         p = 1 - p
     elif alternative == "two-sided":

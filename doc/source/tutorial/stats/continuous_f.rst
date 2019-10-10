@@ -7,7 +7,7 @@ Fratio (or F) Distribution
 The distribution of :math:`\left(X_{1}/X_{2}\right)\left(\nu_{2}/\nu_{1}\right)`
 if :math:`X_{1}` is chi-squared with :math:`v_{1}` degrees of freedom
 and :math:`X_{2}` is chi-squared with :math:`v_{2}` degrees of freedom.
-The suport is :math:`x\geq0`.
+The support is :math:`x\geq0`.
 
 .. math::
    :nowrap:

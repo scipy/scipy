@@ -842,14 +842,14 @@ CompareFunction compare_functions[] = \
 
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
-	npy_intp *a_ind, *b_ind, *temp_ind, *mode_dep, *check_ind;
-	npy_uintp *offsets, offset1;
-	npy_intp *offsets2;
+	npy_intp *a_ind=NULL, *b_ind=NULL, *temp_ind=NULL, *mode_dep=NULL, *check_ind=NULL;
+	npy_uintp *offsets=NULL, *offsets2=NULL;
+	npy_uintp offset1;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
 	int is1, os;
-	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer;
-	npy_intp *ret_ind;
+	char *op, *ap1_ptr, *ap2_ptr, *sort_buffer=NULL;
+	npy_intp *ret_ind=NULL;
 	CompareFunction compare_func;
 	char *zptr=NULL;
 	PyArray_CopySwapFunc *copyswap;
@@ -912,19 +912,23 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
 	mode_dep = malloc(bytes_in_array);
+	if (mode_dep == NULL) goto fail;
 	for (k = 0; k < PyArray_NDIM(ap1); k++) { 
 	  mode_dep[k] = -((PyArray_DIMS(ap2)[k]-1) >> 1);
 	}	
 
 	b_ind = (npy_intp *)malloc(bytes_in_array);  /* loop variables */
+	if (b_ind == NULL) goto fail;
 	memset(b_ind,0,bytes_in_array);
 	a_ind = (npy_intp *)malloc(bytes_in_array);
 	ret_ind = (npy_intp *)malloc(bytes_in_array);
+	if (a_ind == NULL || ret_ind == NULL) goto fail;
 	memset(ret_ind,0,bytes_in_array);
 	temp_ind = (npy_intp *)malloc(bytes_in_array);
 	check_ind = (npy_intp*)malloc(bytes_in_array);
 	offsets = (npy_uintp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_uintp));
 	offsets2 = (npy_intp *)malloc(PyArray_NDIM(ap1)*sizeof(npy_intp));
+	if (temp_ind == NULL || check_ind == NULL || offsets == NULL || offsets2 == NULL) goto fail;
 	offset1 = compute_offsets(offsets, offsets2, PyArray_DIMS(ap1),
                                   PyArray_DIMS(ap2), PyArray_DIMS(ret),
                                   mode_dep, PyArray_NDIM(ap1));
@@ -1011,6 +1015,15 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 fail:
 	if (zptr) PyDataMem_FREE(zptr);
+	free(sort_buffer);
+	free(mode_dep);
+	free(b_ind);
+	free(a_ind);
+	free(ret_ind);
+	free(temp_ind);
+	free(check_ind);
+    free(offsets);
+	free(offsets2);
 	Py_XDECREF(ap1);
 	Py_XDECREF(ap2);
 	Py_XDECREF(ret);
@@ -1094,6 +1107,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     }
 
     aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
+    if (aout_dimens == NULL) goto fail;
     switch(mode & OUTSIZE_MASK) {
     case VALID:
 	for (i = 0; i < PyArray_NDIM(ain1); i++) { 

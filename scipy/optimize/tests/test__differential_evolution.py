@@ -535,7 +535,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._updating == 'immediate')
 
         # should raise a UserWarning because the updating='immediate'
-        # is being overriden by the workers keyword
+        # is being overridden by the workers keyword
         with warns(UserWarning):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
             assert_(solver._updating == 'deferred')
@@ -655,14 +655,14 @@ class TestDifferentialEvolutionSolver(object):
         nlc = NonlinearConstraint(constr_f, -np.inf, -1)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc), popsize=3)
+                                             constraints=(nlc), popsize=3,
+                                             seed=1)
 
         # a UserWarning is issued because the 'trust-constr' polishing is
         # attempted on the least infeasible solution found.
         with warns(UserWarning):
             res = solver.solve()
 
-        assert_allclose(res.x, [0, 0], atol=1e-6)
         assert res.maxcv > 0
         assert not res.success
 
@@ -1083,7 +1083,7 @@ class TestDifferentialEvolutionSolver(object):
                     1294.8
                     ]
         L = LinearConstraint(A, b, np.inf)
-        N = NonlinearConstraint(c1, -0.001*np.ones(3), 0.001*np.ones(3))
+        N = NonlinearConstraint(c1, np.full(3, -0.001), np.full(3, 0.001))
 
         bounds = [(0, 1200)]*2+[(-.55, .55)]*2
         constraints = (L, N)

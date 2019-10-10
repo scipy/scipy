@@ -6,23 +6,10 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
-import numpy as np
-from scipy.fftpack import _fftpack
-from scipy.fftpack.basic import _datacopied, _fix_shape, _asfarray
-from scipy.fftpack.helper import _init_nd_shape_and_axes
+from scipy.fft import _pocketfft
+from .helper import _good_shape
 
-import atexit
-atexit.register(_fftpack.destroy_ddct1_cache)
-atexit.register(_fftpack.destroy_ddct2_cache)
-atexit.register(_fftpack.destroy_ddct4_cache)
-atexit.register(_fftpack.destroy_dct1_cache)
-atexit.register(_fftpack.destroy_dct2_cache)
-atexit.register(_fftpack.destroy_dct4_cache)
-
-atexit.register(_fftpack.destroy_ddst1_cache)
-atexit.register(_fftpack.destroy_ddst2_cache)
-atexit.register(_fftpack.destroy_dst1_cache)
-atexit.register(_fftpack.destroy_dst2_cache)
+_inverse_typemap = {1: 1, 2: 3, 3: 2, 4: 4}
 
 
 def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -74,11 +61,8 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = dct(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
-    return x
+    shape = _good_shape(x, shape, axes)
+    return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
 def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -130,12 +114,9 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = idct(x, type=type, n=n, axis=ax, norm=norm,
-                 overwrite_x=overwrite_x)
-    return x
+    type = _inverse_typemap[type]
+    shape = _good_shape(x, shape, axes)
+    return _pocketfft.dctn(x, type, shape, axes, norm, overwrite_x)
 
 
 def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -187,11 +168,8 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = dst(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
-    return x
+    shape = _good_shape(x, shape, axes)
+    return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
 def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
@@ -243,16 +221,13 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     True
 
     """
-    x = np.asanyarray(x)
-    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
-    for n, ax in zip(shape, axes):
-        x = idst(x, type=type, n=n, axis=ax, norm=norm,
-                 overwrite_x=overwrite_x)
-    return x
+    type = _inverse_typemap[type]
+    shape = _good_shape(x, shape, axes)
+    return _pocketfft.dstn(x, type, shape, axes, norm, overwrite_x)
 
 
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    """
+    r"""
     Return the Discrete Cosine Transform of arbitrary type sequence x.
 
     Parameters
@@ -294,18 +269,22 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type I**
 
     There are several definitions of the DCT-I; we use the following
-    (for ``norm=None``)::
+    (for ``norm=None``)
 
-                                         N-2
-      y[k] = x[0] + (-1)**k x[N-1] + 2 * sum x[n]*cos(pi*k*n/(N-1))
-                                         n=1
+    .. math::
 
-    If ``norm='ortho'``, ``x[0]`` and ``x[N-1]`` are multiplied by
-    a scaling factor of ``sqrt(2)``, and ``y[k]`` is multiplied by a
-    scaling factor `f`::
+       y_k = x_0 + (-1)^k x_{N-1} + 2 \sum_{n=1}^{N-2} x_n \cos\left(
+       \frac{\pi k n}{N-1} \right)
 
-      f = 0.5*sqrt(1/(N-1)) if k = 0 or N-1,
-      f = 0.5*sqrt(2/(N-1)) otherwise.
+    If ``norm='ortho'``, ``x[0]`` and ``x[N-1]`` are multiplied by a scaling
+    factor of :math:`\sqrt{2}`, and ``y[k]`` is multiplied by a scaling factor
+    ``f``
+
+    .. math::
+
+        f = \begin{cases}
+         \frac{1}{2}\sqrt{\frac{1}{N-1}} & \text{if }k=0\text{ or }N-1, \\
+         \frac{1}{2}\sqrt{\frac{2}{N-1}} & \text{otherwise} \end{cases}
 
     .. versionadded:: 1.2.0
        Orthonormalization in DCT-I.
@@ -316,35 +295,36 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type II**
 
     There are several definitions of the DCT-II; we use the following
-    (for ``norm=None``)::
+    (for ``norm=None``)
 
+    .. math::
 
-                N-1
-      y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
-                n=0
+       y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi k(2n+1)}{2N} \right)
 
-    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
 
-      f = sqrt(1/(4*N)) if k = 0,
-      f = sqrt(1/(2*N)) otherwise.
+    .. math::
+       f = \begin{cases}
+       \sqrt{\frac{1}{4N}} & \text{if }k=0, \\
+       \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
 
     Which makes the corresponding matrix of coefficients orthonormal
-    (``OO' = Id``).
+    (``O @ O.T = np.eye(N)``).
 
     **Type III**
 
-    There are several definitions, we use the following
-    (for ``norm=None``)::
+    There are several definitions, we use the following (for ``norm=None``)
 
-                        N-1
-      y[k] = x[0] + 2 * sum x[n]*cos(pi*(k+0.5)*n/N), 0 <= k < N.
-                        n=1
+    .. math::
 
-    or, for ``norm='ortho'`` and 0 <= k < N::
+       y_k = x_0 + 2 \sum_{n=1}^{N-1} x_n \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
-                                          N-1
-      y[k] = x[0] / sqrt(N) + sqrt(2/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
-                                          n=1
+    or, for ``norm='ortho'``
+
+    .. math::
+
+       y_k = \frac{x_0}{\sqrt{N}} + \sqrt{\frac{2}{N}} \sum_{n=1}^{N-1} x_n
+       \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
     to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of
@@ -353,16 +333,17 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type IV**
 
     There are several definitions of the DCT-IV; we use the following
-    (for ``norm=None``)::
+    (for ``norm=None``)
 
+    .. math::
 
-                N-1
-      y[k] = 2* sum x[n]*cos(pi*(2k+1)*(2n+1)/(4*N)), 0 <= k < N.
-                n=0
+       y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi(2k+1)(2n+1)}{4N} \right)
 
-    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
 
-      f = 0.5*sqrt(2/N)
+    .. math::
+
+        f = \frac{1}{\sqrt{2N}}
 
     .. versionadded:: 1.2.0
        Support for DCT-IV.
@@ -389,7 +370,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([ 30.,  -8.,   6.,  -2.])
 
     """
-    return _dct(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
+    return _pocketfft.dct(x, type, n, axis, norm, overwrite_x)
 
 
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -447,101 +428,12 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([  4.,   3.,   5.,  10.])
 
     """
-    # Inverse/forward type table
-    _TP = {1:1, 2:3, 3:2, 4:4}
-    return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
-
-
-def _get_dct_fun(type, dtype):
-    try:
-        name = {'float64':'ddct%d', 'float32':'dct%d'}[dtype.name]
-    except KeyError:
-        raise ValueError("dtype %s not supported" % dtype)
-    try:
-        f = getattr(_fftpack, name % type)
-    except AttributeError as e:
-        raise ValueError(str(e) + ". Type %d not understood" % type)
-    return f
-
-
-def _get_norm_mode(normalize):
-    try:
-        nm = {None:0, 'ortho':1}[normalize]
-    except KeyError:
-        raise ValueError("Unknown normalize mode %s" % normalize)
-    return nm
-
-
-def __fix_shape(x, n, axis, dct_or_dst):
-    tmp = _asfarray(x)
-    copy_made = _datacopied(tmp, x)
-    if n is None:
-        n = tmp.shape[axis]
-    elif n != tmp.shape[axis]:
-        tmp, copy_made2 = _fix_shape(tmp, n, axis)
-        copy_made = copy_made or copy_made2
-    if n < 1:
-        raise ValueError("Invalid number of %s data points "
-                         "(%d) specified." % (dct_or_dst, n))
-    return tmp, n, copy_made
-
-
-def _raw_dct(x0, type, n, axis, nm, overwrite_x):
-    f = _get_dct_fun(type, x0.dtype)
-    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
-
-
-def _raw_dst(x0, type, n, axis, nm, overwrite_x):
-    f = _get_dst_fun(type, x0.dtype)
-    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
-
-
-def _eval_fun(f, tmp, n, axis, nm, overwrite_x):
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return f(tmp, n, nm, overwrite_x)
-
-    tmp = np.swapaxes(tmp, axis, -1)
-    tmp = f(tmp, n, nm, overwrite_x)
-    return np.swapaxes(tmp, axis, -1)
-
-
-def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
-    """
-    Return Discrete Cosine Transform of arbitrary type sequence x.
-
-    Parameters
-    ----------
-    x : array_like
-        input array.
-    n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
-        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
-        default results in ``n = x.shape[axis]``.
-    axis : int, optional
-        Axis along which the dct is computed; the default is over the
-        last axis (i.e., ``axis=-1``).
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-
-    Returns
-    -------
-    z : ndarray
-
-    """
-    x0, n, copy_made = __fix_shape(x, n, axis, 'DCT')
-    if type == 1 and n < 2:
-        raise ValueError("DCT-I is not defined for size < 2")
-    overwrite_x = overwrite_x or copy_made
-    nm = _get_norm_mode(normalize)
-    if np.iscomplexobj(x0):
-        return (_raw_dct(x0.real, type, n, axis, nm, overwrite_x) + 1j *
-                _raw_dct(x0.imag, type, n, axis, nm, overwrite_x))
-    else:
-        return _raw_dct(x0, type, n, axis, nm, overwrite_x)
+    type = _inverse_typemap[type]
+    return _pocketfft.dct(x, type, n, axis, norm, overwrite_x)
 
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    """
+    r"""
     Return the Discrete Sine Transform of arbitrary type sequence x.
 
     Parameters
@@ -582,59 +474,63 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type I**
 
     There are several definitions of the DST-I; we use the following
-    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N. ::
+    for ``norm=None``. DST-I assumes the input is odd around `n=-1` and `n=N`.
 
-                 N-1
-      y[k] = 2 * sum x[n]*sin(pi*(k+1)*(n+1)/(N+1))
-                 n=0
+    .. math::
 
-    Note that the DST-I is only supported for input size > 1
+        y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(n+1)}{N+1}\right)
+
+    Note that the DST-I is only supported for input size > 1.
     The (unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
     The orthonormalized DST-I is exactly its own inverse.
 
     **Type II**
 
-    There are several definitions of the DST-II; we use the following
-    for ``norm=None``.  DST-II assumes the input is odd around n=-1/2 and
-    n=N-1/2; the output is odd around k=-1 and even around k=N-1 ::
+    There are several definitions of the DST-II; we use the following for
+    ``norm=None``. DST-II assumes the input is odd around `n=-1/2` and
+    `n=N-1/2`; the output is odd around :math:`k=-1` and even around `k=N-1`
 
-                N-1
-      y[k] = 2* sum x[n]*sin(pi*(k+1)*(n+0.5)/N), 0 <= k < N.
-                n=0
+    .. math::
 
-    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f` ::
+        y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(2n+1)}{2N}\right)
 
-        f = sqrt(1/(4*N)) if k == 0
-        f = sqrt(1/(2*N)) otherwise.
+    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
+
+    .. math::
+
+        f = \begin{cases}
+        \sqrt{\frac{1}{4N}} & \text{if }k = 0, \\
+        \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
 
     **Type III**
 
-    There are several definitions of the DST-III, we use the following
-    (for ``norm=None``).  DST-III assumes the input is odd around n=-1
-    and even around n=N-1 ::
+    There are several definitions of the DST-III, we use the following (for
+    ``norm=None``). DST-III assumes the input is odd around `n=-1` and even
+    around `n=N-1`
 
-                                 N-2
-      y[k] = x[N-1]*(-1)**k + 2* sum x[n]*sin(pi*(k+0.5)*(n+1)/N), 0 <= k < N.
-                                 n=0
+    .. math::
+
+        y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n \sin\left(
+        \frac{\pi(2k+1)(n+1)}{2N}\right)
 
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor `2N`.  The orthonormalized DST-III is exactly the inverse of
-    the orthonormalized DST-II.
+    to a factor `2N`. The orthonormalized DST-III is exactly the inverse of the
+    orthonormalized DST-II.
 
     .. versionadded:: 0.11.0
 
     **Type IV**
 
-    There are several definitions of the DST-IV, we use the following
-    (for ``norm=None``).  DST-IV assumes the input is odd around n=-0.5
-    and even around n=N-0.5 ::
+    There are several definitions of the DST-IV, we use the following (for
+    ``norm=None``). DST-IV assumes the input is odd around `n=-0.5` and even
+    around `n=N-0.5`
 
-                N-1
-      y[k] = 2* sum x[n]*sin(pi*(k+0.5)*(n+0.5)/N), 0 <= k < N.
-                n=0
+    .. math::
 
-    The (unnormalized) DST-IV is its own inverse, up
-    to a factor `2N`.  The orthonormalized DST-IV is exactly its own inverse.
+        y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(2k+1)(2n+1)}{4N}\right)
+
+    The (unnormalized) DST-IV is its own inverse, up to a factor `2N`. The
+    orthonormalized DST-IV is exactly its own inverse.
 
     .. versionadded:: 1.2.0
        Support for DST-IV.
@@ -645,7 +541,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
            https://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
-    return _dst(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
+    return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)
 
 
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
@@ -690,50 +586,5 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     .. versionadded:: 0.11.0
 
     """
-    # Inverse/forward type table
-    _TP = {1:1, 2:3, 3:2, 4:4}
-    return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
-
-
-def _get_dst_fun(type, dtype):
-    try:
-        name = {'float64':'ddst%d', 'float32':'dst%d'}[dtype.name]
-    except KeyError:
-        raise ValueError("dtype %s not supported" % dtype)
-    try:
-        f = getattr(_fftpack, name % type)
-    except AttributeError as e:
-        raise ValueError(str(e) + ". Type %d not understood" % type)
-    return f
-
-
-def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
-    """
-    Return Discrete Sine Transform of arbitrary type sequence x.
-
-    Parameters
-    ----------
-    x : array_like
-        input array.
-    n : int, optional
-        Length of the transform.
-    axis : int, optional
-        Axis along which the dst is computed. (default=-1)
-    overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
-
-    Returns
-    -------
-    z : real ndarray
-
-    """
-    x0, n, copy_made = __fix_shape(x, n, axis, 'DST')
-    if type == 1 and n < 2:
-        raise ValueError("DST-I is not defined for size < 2")
-    overwrite_x = overwrite_x or copy_made
-    nm = _get_norm_mode(normalize)
-    if np.iscomplexobj(x0):
-        return (_raw_dst(x0.real, type, n, axis, nm, overwrite_x) + 1j *
-                _raw_dst(x0.imag, type, n, axis, nm, overwrite_x))
-    else:
-        return _raw_dst(x0, type, n, axis, nm, overwrite_x)
+    type = _inverse_typemap[type]
+    return _pocketfft.dst(x, type, n, axis, norm, overwrite_x)

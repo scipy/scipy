@@ -34,5 +34,5 @@ class GetBlasLapackFuncs(Benchmark):
         self.arr1 = np.empty(size, dtype=dtype1, order=dtype1_ord)
         self.arr2 = np.empty(size, dtype=dtype2, order=dtype2_ord)
 
-    def time_find_best_blas_type(self, arr1, arr2):
-        prefix, dtype, prefer_fortran = bla.find_best_blas_type((arr1, arr2))
+    def time_find_best_blas_type(self, dtype1, dtype2, dtype1_ord, dtype2_ord, size):
+        prefix, dtype, prefer_fortran = bla.find_best_blas_type((self.arr1, self.arr2))

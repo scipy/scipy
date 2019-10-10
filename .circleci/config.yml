@@ -12,6 +12,18 @@ jobs:
       - checkout
 
       - run:
+          name: merge with upstream
+          command: |
+            echo $(git log -1 --pretty=%B) | tee gitlog.txt
+            echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
+            if [[ $(cat merge.txt) != "" ]]; then
+              echo "Merging $(cat merge.txt)";
+              git remote add upstream git://github.com/scipy/scipy.git;
+              git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
+              git fetch upstream master;
+            fi
+
+      - run:
           name: update submodules
           command: |
             git submodule init
@@ -31,19 +43,24 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
             pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
+            pip install pybind11
 
       - run:
           name: build docs
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg latex'
+            python -u runtests.py -g -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - store_artifacts:
           path: doc/build/html-scipyorg
           destination: html-scipyorg
+
+      - store_artifacts:
+          path: doc/build/latex
+          destination: latex
 
       - persist_to_workspace:
           root: doc/build

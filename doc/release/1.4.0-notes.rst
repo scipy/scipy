@@ -47,6 +47,9 @@ lambda expressions for them.
 
 `scipy.linalg` improvements
 ---------------------------
+The function ``scipy.linalg.subspace_angles(A, B)`` now gives correct
+results for complex-valued matrices. Before this, the function only returned
+correct values for real-valued matrices.
 
 
 `scipy.ndimage` improvements
@@ -82,6 +85,11 @@ Backwards incompatible changes
 `scipy.linalg` changes
 ----------------------
 
+`scipy.signal` changes
+----------------------
+:func:`scipy.signal.resample` behavior for length-1 signal inputs has been
+fixed to output a constant (DC) value rather than an impulse, consistent with
+the assumption of signal periodicity in the FFT method.
 
 `scipy.stats` changes
 ---------------------

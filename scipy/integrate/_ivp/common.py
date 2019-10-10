@@ -80,7 +80,8 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     direction : float
         Integration direction.
     order : float
-        Method order.
+        Error estimator order. It means that the error controlled by the
+        algorithm is proportional to ``step_size ** (order + 1)`.
     rtol : float
         Desired relative tolerance.
     atol : float

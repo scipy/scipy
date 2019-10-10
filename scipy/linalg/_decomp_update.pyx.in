@@ -1207,7 +1207,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     cdef void* uvoid
     cdef int qs[2]
     cdef int us[2]
-    cdef int ldu
+    cdef int ldu, p
 
     if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
         qvoid = extract(q, qs)

@@ -134,7 +134,7 @@ double m;
     double v;
 
     if ((k < 0) || (m < 0.0)) {
-        mtherr("pdtrc", DOMAIN);
+        sf_error("pdtrc", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     if (m == 0.0) {
@@ -152,7 +152,7 @@ double m;
     double v;
 
     if ((k < 0) || (m < 0.0)) {
-        mtherr("pdtr", DOMAIN);
+        sf_error("pdtr", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     if (m == 0.0) {
@@ -170,7 +170,7 @@ double y;
     double v;
 
     if ((k < 0) || (y < 0.0) || (y >= 1.0)) {
-        mtherr("pdtri", DOMAIN);
+        sf_error("pdtri", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     v = k + 1;

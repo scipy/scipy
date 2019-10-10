@@ -31,7 +31,7 @@ from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
 from scipy.linalg.misc import norm
 from scipy.linalg._decomp_qz import _select_function
 
-from numpy import array, transpose, diag, ones, linalg, \
+from numpy import array, transpose, diag, ones, full, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
      ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
      asarray, isfinite, ndarray, outer, eye, dtype, empty,\
@@ -396,24 +396,24 @@ class TestEigBanded(object):
         self.KU = 2   # number of superdiagonals (above the diagonal)
 
         # symmetric band matrix
-        self.sym_mat = (diag(1.0*ones(N))
-                     + diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.sym_mat = (diag(full(N, 1.0))
+                     + diag(full(N-1, -1.0), -1) + diag(full(N-1, -1.0), 1)
+                     + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # hermitian band matrix
-        self.herm_mat = (diag(-1.0*ones(N))
-                     + 1j*diag(1.0*ones(N-1), -1) - 1j*diag(1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.herm_mat = (diag(full(N, -1.0))
+                     + 1j*diag(full(N-1, 1.0), -1) - 1j*diag(full(N-1, 1.0), 1)
+                     + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # general real band matrix
-        self.real_mat = (diag(1.0*ones(N))
-                     + diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.real_mat = (diag(full(N, 1.0))
+                     + diag(full(N-1, -1.0), -1) + diag(full(N-1, -3.0), 1)
+                     + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # general complex band matrix
-        self.comp_mat = (1j*diag(1.0*ones(N))
-                     + diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
+        self.comp_mat = (1j*diag(full(N, 1.0))
+                     + diag(full(N-1, -1.0), -1) + 1j*diag(full(N-1, -3.0), 1)
+                     + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # Eigenvalues and -vectors from linalg.eig
         ew, ev = linalg.eig(self.sym_mat)
@@ -662,8 +662,8 @@ class TestEigTridiagonal(object):
         N = 10
 
         # symmetric band matrix
-        self.d = 1.0*ones(N)
-        self.e = -1.0*ones(N-1)
+        self.d = full(N, 1.0)
+        self.e = full(N-1, -1.0)
         self.full_mat = (diag(self.d) + diag(self.e, -1) + diag(self.e, 1))
 
         ew, ev = linalg.eig(self.full_mat)
@@ -2735,6 +2735,14 @@ def test_subspace_angles():
                   [0, 0, 1]])
     expected = np.array([np.pi/2, 0, 0])
     assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
+
+    # Complex
+    # second column in "b" does not affect result, just there so that
+    # b can have more cols than a, and vice-versa (both conditional code paths)
+    a = [[1 + 1j], [0]]
+    b = [[1 - 1j, 0], [0, 1]]
+    assert_allclose(subspace_angles(a, b), 0., atol=1e-14)
+    assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
 
 
 class TestCDF2RDF(object):

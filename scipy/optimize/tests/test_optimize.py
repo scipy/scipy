@@ -535,6 +535,17 @@ class TestOptimizeSimple(CheckOptimize):
         xs = optimize.fmin_bfgs(f, [10.], disp=False)
         assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
 
+    def test_bfgs_double_evaluations(self):
+        # check bfgs does not evaluate twice in a row at same point
+        def f(x):
+            xp = float(x)
+            assert xp not in seen
+            seen.add(xp)
+            return 10*x**2, 20*x
+
+        seen = set()
+        optimize.minimize(f, -100, method='bfgs', jac=True, tol=1e-7)
+
     def test_l_bfgs_b(self):
         # limited-memory bound-constrained BFGS algorithm
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
@@ -651,7 +662,7 @@ class TestOptimizeSimple(CheckOptimize):
         f = optimize.rosen
         g = optimize.rosen_der
         values = []
-        x0 = np.ones(7) * 1000
+        x0 = np.full(7, 1000)
 
         def objfun(x):
             value = f(x)
@@ -709,6 +720,21 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(optimize.rosen, x0, method=custmin,
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
+
+    def test_gh10771(self):
+        # check that minimize passes bounds and constraints to a custom
+        # minimizer without altering them.
+        bounds = [(-2, 2), (0, 3)]
+        constraints = 'constraints'
+
+        def custmin(fun, x0, **options):
+            assert options['bounds'] is bounds
+            assert options['constraints'] is constraints
+            return optimize.OptimizeResult()
+
+        x0 = [1, 1]
+        res = optimize.minimize(optimize.rosen, x0, method=custmin,
+                                bounds=bounds, constraints=constraints)
 
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something

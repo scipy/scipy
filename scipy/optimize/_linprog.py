@@ -25,7 +25,7 @@ from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
-    _parse_linprog, _presolve, _get_Abc, _postprocess
+    _parse_linprog, _presolve, _get_Abc, _postprocess, _autoscale, _unscale
     )
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -268,8 +268,21 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             maxiter : int
                 Maximum number of iterations to perform.
+                Default: see method-specific documentation.
             disp : bool
                 Set to ``True`` to print convergence messages.
+                Default: ``False``.
+            autoscale : bool
+                Set to ``True`` to automatically perform equilibration.
+                Consider using this option if the numerical values in the
+                constraints are separated by several orders of magnitude.
+                Default: ``False``.
+            presolve : bool
+                Set to ``False`` to disable automatic presolve.
+                Default: ``True``.
+            rr : bool
+                Set to ``False`` to disable automatic redundancy removal.
+                Default: ``True``.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
@@ -343,7 +356,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. versionadded:: 1.0.0
 
-    Method *revised simplex* uses the revised simplex method as decribed in
+    Method *revised simplex* uses the revised simplex method as described in
     [9]_, except that a factorization [11]_ of the basis matrix, rather than
     its inverse, is efficiently maintained and used to solve the linear systems
     at each iteration of the algorithm.
@@ -398,8 +411,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     the (tightened) simple bounds to upper bound constraints, introducing
     non-negative slack variables for inequality constraints, and expressing
     unbounded variables as the difference between two non-negative variables.
+    Optionally, the problem is automatically scaled via equilibration [12]_.
     The selected algorithm solves the standard form problem, and a
-    postprocessing routine converts this to a solution to the original problem.
+    postprocessing routine converts the result to a solution to the original
+    problem.
 
     References
     ----------
@@ -433,6 +448,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Geneve, 1996.
     .. [11] Bartels, Richard H. "A stabilization of the simplex method."
             Journal in  Numerische Mathematik 16.5 (1971): 414-434.
+    .. [12] Tomlin, J. A. "On scaling linear programming problems."
+            Mathematical Programming Study 4 (1975): 146-166.
 
     Examples
     --------
@@ -491,7 +508,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     """
     meth = method.lower()
-    default_tol = 1e-12 if meth == 'simplex' else 1e-9
 
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
@@ -499,7 +515,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0 = _parse_linprog(
         c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0)
-    tol = solver_options.get('tol', default_tol)
+    tol = solver_options.get('tol', 1e-9)
 
     iteration = 0
     complete = False    # will become True if solved in presolve
@@ -517,28 +533,40 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, x0, undo, complete, status,
             message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol)
 
+    C, b_scale = 1, 1  # for trivial unscaling if autoscale is not used
+    postsolve_args = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo,
+                      C, b_scale)
+
     if not complete:
         A, b, c, c0, x0 = _get_Abc(c, c0, A_ub, b_ub, A_eq,
                                    b_eq, bounds, x0, undo)
-        T_o = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
+        if solver_options.pop('autoscale', False):
+            A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
+            postsolve_args = postsolve_args[:-2] + (C, b_scale)
+
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
-                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback,
+                postsolve_args=postsolve_args, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
-                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback,
+                postsolve_args=postsolve_args, **solver_options)
         elif meth == 'revised simplex':
             x, status, message, iteration = _linprog_rs(
-                c, c0=c0, A=A, b=b, x0=x0, callback=callback, _T_o=T_o, **solver_options)
+                c, c0=c0, A=A, b=b, x0=x0, callback=callback,
+                postsolve_args=postsolve_args, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc...
     # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
-    x, fun, slack, con, status, message = _postprocess(
-        x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds,
-        complete, undo, status, message, tol, iteration, disp)
+
+    x, fun, slack, con, status, message = _postprocess(x, postsolve_args,
+                                                       complete, status,
+                                                       message, tol,
+                                                       iteration, disp)
 
     sol = {
         'x': x,

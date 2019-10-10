@@ -98,6 +98,7 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
     dW_norm_old = None
     dW = np.empty_like(W)
     converged = False
+    rate = None
     for k in range(NEWTON_MAXITER):
         for i in range(3):
             F[i] = fun(t + ch[i], y + Z[i])
@@ -118,8 +119,6 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
         dW_norm = norm(dW / scale)
         if dW_norm_old is not None:
             rate = dW_norm / dW_norm_old
-        else:
-            rate = None
 
         if (rate is not None and (rate >= 1 or
                 rate ** (NEWTON_MAXITER - k) / (1 - rate) * dW_norm > tol)):

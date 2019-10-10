@@ -658,6 +658,12 @@ class _TestCommon(object):
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(abs(A),abs(self.spmatrix(A)).todense())
 
+    def test_round(self):
+        decimal = 1
+        A = matrix([[-1.35, 0.56], [17.25, -5.98]], 'd')
+        assert_equal(np.around(A, decimals=decimal),
+                     round(self.spmatrix(A), ndigits=decimal).todense())
+
     def test_elementwise_power(self):
         A = matrix([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]], 'd')
         assert_equal(np.power(A, 2), self.spmatrix(A).power(2).todense())
@@ -748,6 +754,10 @@ class _TestCommon(object):
         # Reshape in place
         x.shape = (2, 6)
         assert_array_equal(x.A, desired)
+
+        # Reshape to bad ndim
+        assert_raises(ValueError, x.reshape, (x.size,))
+        assert_raises(ValueError, x.reshape, (1, x.size, 1))
 
     @pytest.mark.slow
     def test_setdiag_comprehensive(self):
@@ -2143,6 +2153,8 @@ class _TestGetSet(object):
                 for j in range(-N, N):
                     assert_equal(A[i,j], D[i,j])
 
+            assert_equal(type(A[1,1]), dtype)
+
             for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
                 assert_raises((IndexError, TypeError), A.__getitem__, ij)
 
@@ -2761,6 +2773,15 @@ class _TestFancyIndexing(object):
     def test_fancy_indexing_seq_assign(self):
         mat = self.spmatrix(array([[1, 0], [0, 1]]))
         assert_raises(ValueError, mat.__setitem__, (0, 0), np.array([1,2]))
+
+    def test_fancy_indexing_2d_assign(self):
+        # regression test for gh-10695
+        mat = self.spmatrix(array([[1, 0], [2, 3]]))
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning,
+                       "Changing the sparsity structure")
+            mat[[0, 1], [1, 1]] = mat[[1, 0], [0, 0]]
+        assert_equal(todense(mat), array([[1, 2], [2, 1]]))
 
     def test_fancy_indexing_empty(self):
         B = asmatrix(arange(50).reshape(5,10))

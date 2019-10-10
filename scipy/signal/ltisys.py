@@ -3013,7 +3013,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
            in linear state feedback", International Journal of Control, Vol. 41
            pp. 1129-1155, 1985.
     .. [2] A.L. Tits and Y. Yang, "Globally convergent algorithms for robust
-           pole assignment by state feedback, IEEE Transactions on Automatic
+           pole assignment by state feedback", IEEE Transactions on Automatic
            Control, Vol. 41, pp. 1432-1452, 1996.
 
     Examples

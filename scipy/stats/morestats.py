@@ -1919,11 +1919,12 @@ def anderson_ksamp(samples, midrank=True):
     statistic : float
         Normalized k-sample Anderson-Darling test statistic.
     critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+        0.5%, 0.1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
         provided samples can be rejected. The value is floored / capped at
-        1% / 25%.
+        0.1% / 25%.
 
     Raises
     ------
@@ -2877,7 +2878,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     # i.e. the sum of the ranks, so r_minus and the min can be inferred
     # (If alternative='pratt', r_plus + r_minus = count*(count+1)/2 - r_zero.)
     # [3] uses the r_plus for the one-sided test, keep min for two-sided test
-    # to keep backwards compatability
+    # to keep backwards compatibility
     if alternative == "two-sided":
         T = min(r_plus, r_minus)
     else:

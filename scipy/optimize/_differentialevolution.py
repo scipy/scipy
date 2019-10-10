@@ -106,7 +106,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         `np.random.RandomState` instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
-        Display status messages
+        Prints the evaluated `func` at every iteration.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
         the current value of ``x0``. ``val`` represents the fractional
@@ -385,7 +385,7 @@ class DifferentialEvolutionSolver(object):
         `np.random.RandomState` instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
-        Display status messages
+        Prints the evaluated `func` at every iteration.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
         the current value of ``x0``. ``val`` represents the fractional
@@ -680,8 +680,8 @@ class DifferentialEvolutionSolver(object):
                                  self.parameter_count)
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0

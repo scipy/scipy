@@ -1,4 +1,4 @@
-"""LInked List sparse matrix class
+"""List of Lists sparse matrix class
 """
 
 from __future__ import division, print_function, absolute_import
@@ -13,7 +13,7 @@ import numpy as np
 
 from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
-from ._index import IndexMixin, INT_TYPES
+from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                       get_index_dtype, check_shape, check_reshape_kwargs,
                       asmatrix)
@@ -21,7 +21,7 @@ from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
-    """Row-based linked list sparse matrix
+    """Row-based list of lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
     Note that inserting a single item can take linear time in the worst case;
@@ -225,16 +225,6 @@ class lil_matrix(spmatrix, IndexMixin):
             raise IndexError('Index dimension must be <= 2')
         return x
 
-    def __getitem__(self, key):
-        # Fast path for simple (int, int) indexing.
-        if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], INT_TYPES) and
-                isinstance(key[1], INT_TYPES)):
-            # lil_get1 handles validation for us.
-            return self._get_intXint(*key)
-        # Everything else takes the normal path.
-        return IndexMixin.__getitem__(self, key)
-
     def _get_intXint(self, row, col):
         v = _csparsetools.lil_get1(self.shape[0], self.shape[1], self.rows,
                                    self.data, row, col)
@@ -267,7 +257,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
     def _get_columnXarray(self, row, col):
         # outer indexing
-        row, col = np.broadcast_arrays(row[:,None], col)
+        row, col = _broadcast_arrays(row[:,None], col)
         return self._get_arrayXarray(row, col)
 
     def _get_arrayXarray(self, row, col):
@@ -330,7 +320,7 @@ class lil_matrix(spmatrix, IndexMixin):
             return
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, row)
+        x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
     def __setitem__(self, key, x):

@@ -997,6 +997,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if maxiter is None:
         maxiter = len(x0) * 200
     func_calls, f = wrap_function(f, args)
+
+    old_fval = f(x0)
+
     if fprime is None:
         grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
     else:
@@ -1008,7 +1011,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     Hk = I
 
     # Sets the initial step guess to dx ~ 1
-    old_fval = f(x0)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
 
     xk = x0

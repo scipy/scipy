@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import string_types, exec_, PY3
+from scipy._lib.six import string_types, exec_, PY2
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -37,11 +37,11 @@ import numpy as np
 
 from ._constants import _XMAX
 
-if PY3:
+if PY2:
+    instancemethod = types.MethodType
+else:
     def instancemethod(func, obj, cls):
         return types.MethodType(func, obj)
-else:
-    instancemethod = types.MethodType
 
 
 # These are the docstring parts used for substitution in specific
@@ -1350,6 +1350,23 @@ class rv_generic(object):
         return _a * scale + loc, _b * scale + loc
 
 
+def _get_fixed_fit_value(kwds, names):
+    """
+    Given names such as `['f0', 'fa', 'fix_a']`, check that there is
+    at most one non-None value in `kwds` associaed with those names.
+    Return that value, or None if none of the names occur in `kwds`.
+    As a side effect, all occurrences of those names in `kwds` are
+    removed.
+    """
+    vals = [(name, kwds.pop(name)) for name in names if name in kwds]
+    if len(vals) > 1:
+        repeated = [name for name, val in vals]
+        raise ValueError("fit method got multiple keyword arguments to "
+                         "specify the same fixed parameter: " +
+                         ', '.join(repeated))
+    return vals[0][1] if vals else None
+
+
 ##  continuous random variables: implement maybe later
 ##
 ##  hf  --- Hazard Function (PDF / SF)
@@ -2102,22 +2119,23 @@ class rv_continuous(rv_generic):
         loc, scale = self._fit_loc_scale_support(data, *args)
         return args + (loc, scale)
 
-    # Return the (possibly reduced) function to optimize in order to find MLE
-    #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
-        # First of all, convert fshapes params to fnum: eg for stats.beta,
-        # shapes='a, b'. To fix `a`, can specify either `f1` or `fa`.
-        # Convert the latter into the former.
+        """
+        Return the (possibly reduced) function to optimize in order to find MLE
+        estimates for the .fit method.
+        """
+        # Convert fixed shape parameters to the standard numeric form: e.g. for
+        # stats.beta, shapes='a, b'. To fix `a`, the caller can give a value
+        # for `f0`, `fa` or 'fix_a'.  The following converts the latter two
+        # into the first (numeric) form.
         if self.shapes:
             shapes = self.shapes.replace(',', ' ').split()
             for j, s in enumerate(shapes):
-                val = kwds.pop('f' + s, None) or kwds.pop('fix_' + s, None)
+                key = 'f' + str(j)
+                names = [key, 'f' + s, 'fix_' + s]
+                val = _get_fixed_fit_value(kwds, names)
                 if val is not None:
-                    key = 'f%d' % j
-                    if key in kwds:
-                        raise ValueError("Duplicate entry for %s." % key)
-                    else:
-                        kwds[key] = val
+                    kwds[key] = val
 
         args = list(args)
         Nargs = len(args)
@@ -2472,6 +2490,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
+        
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
@@ -2584,14 +2603,14 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
             return c
 
 
-def entropy(pk, qk=None, base=None):
+def entropy(pk, qk=None, base=None, axis=0):
     """Calculate the entropy of a distribution for given probability values.
 
     If only probabilities `pk` are given, the entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=0)``.
+    ``S = -sum(pk * log(pk), axis=axis)``.
 
     If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=0)``.
+    ``S = sum(pk * log(pk / qk), axis=axis)``.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
@@ -2605,24 +2624,47 @@ def entropy(pk, qk=None, base=None):
         the same format as `pk`.
     base : float, optional
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
+    axis: int, optional
+        The axis along which the entropy is calculated. Default is 0.
 
     Returns
     -------
     S : float
         The calculated entropy.
 
+    Examples
+    --------
+
+    >>> from scipy.stats import entropy
+
+    Bernoulli trial with different p.
+    The outcome of a fair coin is the most uncertain:
+
+    >>> entropy([1/2, 1/2], base=2)
+    1.0
+
+    The outcome of a biased coin is less uncertain:
+
+    >>> entropy([9/10, 1/10], base=2)
+    0.46899559358928117
+
+    Relative entropy:
+
+    >>> entropy([1/2, 1/2], qk=[9/10, 1/10])
+    0.5108256237659907
+
     """
     pk = asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=0)
+    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
         vec = entr(pk)
     else:
         qk = asarray(qk)
-        if len(qk) != len(pk):
-            raise ValueError("qk and pk must have same length.")
-        qk = 1.0*qk / np.sum(qk, axis=0)
+        if qk.shape != pk.shape:
+            raise ValueError("qk and pk must have same shape.")
+        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
         vec = rel_entr(pk, qk)
-    S = np.sum(vec, axis=0)
+    S = np.sum(vec, axis=axis)
     if base is not None:
         S /= log(base)
     return S

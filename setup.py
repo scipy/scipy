@@ -108,9 +108,9 @@ def get_version_info():
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
         # load it as a separate module to not load scipy/__init__.py
-        import imp
-        version = imp.load_source('scipy.version', 'scipy/version.py')
-        GIT_REVISION = version.git_revision
+        import runpy
+        ns = runpy.run_path('scipy/version.py')
+        GIT_REVISION = ns['git_revision']
     else:
         GIT_REVISION = "Unknown"
 
@@ -183,12 +183,40 @@ def check_submodules():
             raise ValueError('Submodule not clean: %s' % line)
 
 
+class concat_license_files():
+    """Merge LICENSE.txt and LICENSES_bundled.txt for sdist creation
+
+    Done this way to keep LICENSE.txt in repo as exact BSD 3-clause (see
+    NumPy gh-13447).  This makes GitHub state correctly how SciPy is licensed.
+    """
+    def __init__(self):
+        self.f1 = 'LICENSE.txt'
+        self.f2 = 'LICENSES_bundled.txt'
+
+    def __enter__(self):
+        """Concatenate files and remove LICENSES_bundled.txt"""
+        with open(self.f1, 'r') as f1:
+            self.bsd_text = f1.read()
+
+        with open(self.f1, 'a') as f1:
+            with open(self.f2, 'r') as f2:
+                self.bundled_text = f2.read()
+                f1.write('\n\n')
+                f1.write(self.bundled_text)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Restore content of both files"""
+        with open(self.f1, 'w') as f:
+            f.write(self.bsd_text)
+
+
 from distutils.command.sdist import sdist
 class sdist_checked(sdist):
     """ check submodules on sdist to prevent incomplete tarballs """
     def run(self):
         check_submodules()
-        sdist.run(self)
+        with concat_license_files():
+            sdist.run(self)
 
 
 def get_build_ext_override():
@@ -211,6 +239,10 @@ def get_build_ext_override():
                     # line below fixes gh-8680
                     ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            # Allow late configuration
+            if hasattr(ext, '_pre_build_hook'):
+                ext._pre_build_hook(self, ext)
 
             old_build_ext.build_extension(self, ext)
 
@@ -439,6 +471,9 @@ def setup_package():
         build_requires = (['numpy>=1.13.3'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
+    install_requires = build_requires
+    setup_requires = build_requires + ['pybind11>=2.2.4']
+
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -457,8 +492,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=build_requires,
-        install_requires=build_requires,
+        setup_requires=setup_requires,
+        install_requires=install_requires,
         python_requires='>=3.5',
     )
 

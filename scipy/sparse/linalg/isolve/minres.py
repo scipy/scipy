@@ -82,7 +82,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         maxiter = 5 * n
 
     msg = [' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
-            ' beta1 = 0.  The exact solution is  x = 0          ',   # 0
+            ' beta1 = 0.  The exact solution is x0          ',   # 0
             ' A solution to Ax = b was found, given rtol        ',   # 1
             ' A least-squares solution was found, given rtol    ',   # 2
             ' Reasonable accuracy achieved, given eps           ',   # 3
@@ -110,18 +110,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     eps = finfo(xtype).eps
 
-    x = zeros(n, dtype=xtype)
-
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
-    y = b
-    r1 = b
+    r1 = b - A*x
+    y = psolve(r1)
 
-    y = psolve(b)
-
-    beta1 = inner(b,y)
+    beta1 = inner(r1, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
@@ -348,7 +344,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
 
 if __name__ == '__main__':
-    from scipy import ones, arange
+    from numpy import zeros, arange
     from scipy.linalg import norm
     from scipy.sparse import spdiags
 
@@ -363,6 +359,6 @@ if __name__ == '__main__':
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
-    b = 0*ones(A.shape[0])
+    b = zeros(A.shape[0])
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

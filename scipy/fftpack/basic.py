@@ -7,180 +7,8 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
-from numpy import swapaxes, zeros
-import numpy
-from . import _fftpack
-from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
-
-import atexit
-atexit.register(_fftpack.destroy_zfft_cache)
-atexit.register(_fftpack.destroy_zfftnd_cache)
-atexit.register(_fftpack.destroy_drfft_cache)
-atexit.register(_fftpack.destroy_cfft_cache)
-atexit.register(_fftpack.destroy_cfftnd_cache)
-atexit.register(_fftpack.destroy_rfft_cache)
-del atexit
-
-
-def istype(arr, typeclass):
-    return issubclass(arr.dtype.type, typeclass)
-
-
-def _datacopied(arr, original):
-    """
-    Strict check for `arr` not sharing any data with `original`,
-    under the assumption that arr = asarray(original)
-
-    """
-    if arr is original:
-        return False
-    if not isinstance(original, numpy.ndarray) and hasattr(original, '__array__'):
-        return False
-    return arr.base is None
-
-# XXX: single precision FFTs partially disabled due to accuracy issues
-#      for large prime-sized inputs.
-#
-#      See http://permalink.gmane.org/gmane.comp.python.scientific.devel/13834
-#      ("fftpack test failures for 0.8.0b1", Ralf Gommers, 17 Jun 2010,
-#       @ scipy-dev)
-#
-#      These should be re-enabled once the problems are resolved
-
-
-def _is_safe_size(n):
-    """
-    Is the size of FFT such that FFTPACK can handle it in single precision
-    with sufficient accuracy?
-
-    Composite numbers of 2, 3, and 5 are accepted, as FFTPACK has those
-    """
-    n = int(n)
-
-    if n == 0:
-        return True
-
-    # Divide by 3 until you can't, then by 5 until you can't
-    for c in (3, 5):
-        while n % c == 0:
-            n //= c
-
-    # Return True if the remainder is a power of 2
-    return not n & (n-1)
-
-
-def _fake_crfft(x, n, *a, **kw):
-    if _is_safe_size(n):
-        return _fftpack.crfft(x, n, *a, **kw)
-    else:
-        return _fftpack.zrfft(x, n, *a, **kw).astype(numpy.complex64)
-
-
-def _fake_cfft(x, n, *a, **kw):
-    if _is_safe_size(n):
-        return _fftpack.cfft(x, n, *a, **kw)
-    else:
-        return _fftpack.zfft(x, n, *a, **kw).astype(numpy.complex64)
-
-
-def _fake_rfft(x, n, *a, **kw):
-    if _is_safe_size(n):
-        return _fftpack.rfft(x, n, *a, **kw)
-    else:
-        return _fftpack.drfft(x, n, *a, **kw).astype(numpy.float32)
-
-
-def _fake_cfftnd(x, shape, *a, **kw):
-    if numpy.all(list(map(_is_safe_size, shape))):
-        return _fftpack.cfftnd(x, shape, *a, **kw)
-    else:
-        return _fftpack.zfftnd(x, shape, *a, **kw).astype(numpy.complex64)
-
-
-_DTYPE_TO_FFT = {
-#        numpy.dtype(numpy.float32): _fftpack.crfft,
-        numpy.dtype(numpy.float32): _fake_crfft,
-        numpy.dtype(numpy.float64): _fftpack.zrfft,
-#        numpy.dtype(numpy.complex64): _fftpack.cfft,
-        numpy.dtype(numpy.complex64): _fake_cfft,
-        numpy.dtype(numpy.complex128): _fftpack.zfft,
-}
-
-_DTYPE_TO_RFFT = {
-#        numpy.dtype(numpy.float32): _fftpack.rfft,
-        numpy.dtype(numpy.float32): _fake_rfft,
-        numpy.dtype(numpy.float64): _fftpack.drfft,
-}
-
-_DTYPE_TO_FFTN = {
-#        numpy.dtype(numpy.complex64): _fftpack.cfftnd,
-        numpy.dtype(numpy.complex64): _fake_cfftnd,
-        numpy.dtype(numpy.complex128): _fftpack.zfftnd,
-#        numpy.dtype(numpy.float32): _fftpack.cfftnd,
-        numpy.dtype(numpy.float32): _fake_cfftnd,
-        numpy.dtype(numpy.float64): _fftpack.zfftnd,
-}
-
-
-def _asfarray(x):
-    """Like numpy asfarray, except that it does not modify x dtype if x is
-    already an array with a float dtype, and do not cast complex types to
-    real."""
-    if hasattr(x, "dtype") and x.dtype.char in numpy.typecodes["AllFloat"]:
-        # 'dtype' attribute does not ensure that the
-        # object is an ndarray (e.g. Series class
-        # from the pandas library)
-        if x.dtype == numpy.half:
-            # no half-precision routines, so convert to single precision
-            return numpy.asarray(x, dtype=numpy.float32)
-        return numpy.asarray(x, dtype=x.dtype)
-    else:
-        # We cannot use asfarray directly because it converts sequences of
-        # complex to sequence of real
-        ret = numpy.asarray(x)
-        if ret.dtype == numpy.half:
-            return numpy.asarray(ret, dtype=numpy.float32)
-        elif ret.dtype.char not in numpy.typecodes["AllFloat"]:
-            return numpy.asfarray(x)
-        return ret
-
-
-def _fix_shape(x, n, axis):
-    """ Internal auxiliary function for _raw_fft, _raw_fftnd."""
-    s = list(x.shape)
-    if s[axis] > n:
-        index = [slice(None)]*len(s)
-        index[axis] = slice(0,n)
-        x = x[tuple(index)]
-        return x, False
-    else:
-        index = [slice(None)]*len(s)
-        index[axis] = slice(0,s[axis])
-        s[axis] = n
-        z = zeros(s,x.dtype.char)
-        z[tuple(index)] = x
-        return z, True
-
-
-def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
-    """ Internal auxiliary function for fft, ifft, rfft, irfft."""
-    if n is None:
-        n = x.shape[axis]
-    elif n != x.shape[axis]:
-        x, copy_made = _fix_shape(x,n,axis)
-        overwrite_x = overwrite_x or copy_made
-
-    if n < 1:
-        raise ValueError("Invalid number of FFT data points "
-                         "(%d) specified." % n)
-
-    if axis == -1 or axis == len(x.shape)-1:
-        r = work_function(x,n,direction,overwrite_x=overwrite_x)
-    else:
-        x = swapaxes(x, axis, -1)
-        r = work_function(x,n,direction,overwrite_x=overwrite_x)
-        r = swapaxes(r, axis, -1)
-    return r
+from scipy.fft import _pocketfft
+from .helper import _good_shape
 
 
 def fft(x, n=None, axis=-1, overwrite_x=False):
@@ -258,34 +86,7 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     True
 
     """
-    tmp = _asfarray(x)
-
-    try:
-        work_function = _DTYPE_TO_FFT[tmp.dtype]
-    except KeyError:
-        raise ValueError("type %s is not supported" % tmp.dtype)
-
-    if not (istype(tmp, numpy.complex64) or istype(tmp, numpy.complex128)):
-        overwrite_x = 1
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    if n is None:
-        n = tmp.shape[axis]
-    elif n != tmp.shape[axis]:
-        tmp, copy_made = _fix_shape(tmp,n,axis)
-        overwrite_x = overwrite_x or copy_made
-
-    if n < 1:
-        raise ValueError("Invalid number of FFT data points "
-                         "(%d) specified." % n)
-
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return work_function(tmp,n,1,0,overwrite_x)
-
-    tmp = swapaxes(tmp, axis, -1)
-    tmp = work_function(tmp,n,1,0,overwrite_x)
-    return swapaxes(tmp, axis, -1)
+    return _pocketfft.fft(x, n, axis, None, overwrite_x)
 
 
 def ifft(x, n=None, axis=-1, overwrite_x=False):
@@ -341,34 +142,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     True
 
     """
-    tmp = _asfarray(x)
-
-    try:
-        work_function = _DTYPE_TO_FFT[tmp.dtype]
-    except KeyError:
-        raise ValueError("type %s is not supported" % tmp.dtype)
-
-    if not (istype(tmp, numpy.complex64) or istype(tmp, numpy.complex128)):
-        overwrite_x = 1
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    if n is None:
-        n = tmp.shape[axis]
-    elif n != tmp.shape[axis]:
-        tmp, copy_made = _fix_shape(tmp,n,axis)
-        overwrite_x = overwrite_x or copy_made
-
-    if n < 1:
-        raise ValueError("Invalid number of FFT data points "
-                         "(%d) specified." % n)
-
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return work_function(tmp,n,-1,1,overwrite_x)
-
-    tmp = swapaxes(tmp, axis, -1)
-    tmp = work_function(tmp,n,-1,1,overwrite_x)
-    return swapaxes(tmp, axis, -1)
+    return _pocketfft.ifft(x, n, axis, None, overwrite_x)
 
 
 def rfft(x, n=None, axis=-1, overwrite_x=False):
@@ -405,7 +179,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    fft, irfft, numpy.fft.rfft
+    fft, irfft, scipy.fft.rfft
 
     Notes
     -----
@@ -416,8 +190,8 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     will be converted to double precision.  Long-double precision inputs are
     not supported.
 
-    To get an output with a complex datatype, consider using the related
-    function `numpy.fft.rfft`.
+    To get an output with a complex datatype, consider using the newer
+    function `scipy.fft.rfft`.
 
     Examples
     --------
@@ -429,19 +203,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     array([  4.,   8.,  12.,  16.])
 
     """
-    tmp = _asfarray(x)
-
-    if not numpy.isrealobj(tmp):
-        raise TypeError("1st argument must be real sequence")
-
-    try:
-        work_function = _DTYPE_TO_RFFT[tmp.dtype]
-    except KeyError:
-        raise ValueError("type %s is not supported" % tmp.dtype)
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
+    return _pocketfft.rfft_fftpack(x, n, axis, None, overwrite_x)
 
 
 def irfft(x, n=None, axis=-1, overwrite_x=False):
@@ -473,7 +235,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    rfft, ifft, numpy.fft.irfft
+    rfft, ifft, scipy.fft.irfft
 
     Notes
     -----
@@ -498,7 +260,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
     For details on input parameters, see `rfft`.
 
     To process (conjugate-symmetric) frequency-domain data with a complex
-    datatype, consider using the related function `numpy.fft.irfft`.
+    datatype, consider using the newer function `scipy.fft.irfft`.
 
     Examples
     --------
@@ -510,57 +272,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
     array([1., 2., 3., 4., 5.])
 
     """
-    tmp = _asfarray(x)
-    if not numpy.isrealobj(tmp):
-        raise TypeError("1st argument must be real sequence")
-
-    try:
-        work_function = _DTYPE_TO_RFFT[tmp.dtype]
-    except KeyError:
-        raise ValueError("type %s is not supported" % tmp.dtype)
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
-
-
-def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
-    """Internal auxiliary function for fftnd, ifftnd."""
-    noaxes = axes is None
-    s, axes = _init_nd_shape_and_axes_sorted(x, s, axes)
-
-    # No need to swap axes, array is in C order
-    if noaxes:
-        for ax in axes:
-            x, copy_made = _fix_shape(x, s[ax], ax)
-            overwrite_x = overwrite_x or copy_made
-        return work_function(x, s, direction, overwrite_x=overwrite_x)
-
-    # Swap the request axes, last first (i.e. First swap the axis which ends up
-    # at -1, then at -2, etc...), such as the request axes on which the
-    # operation is carried become the last ones
-    for i in range(1, axes.size+1):
-        x = numpy.swapaxes(x, axes[-i], -i)
-
-    # We can now operate on the axes waxes, the p last axes (p = len(axes)), by
-    # fixing the shape of the input array to 1 for any axis the fft is not
-    # carried upon.
-    waxes = list(range(x.ndim - axes.size, x.ndim))
-    shape = numpy.ones(x.ndim)
-    shape[waxes] = s
-
-    for i in range(len(waxes)):
-        x, copy_made = _fix_shape(x, s[i], waxes[i])
-        overwrite_x = overwrite_x or copy_made
-
-    r = work_function(x, shape, direction, overwrite_x=overwrite_x)
-
-    # reswap in the reverse order (first axis first, etc...) to get original
-    # order
-    for i in range(len(axes), 0, -1):
-        r = numpy.swapaxes(r, -i, axes[-i])
-
-    return r
+    return _pocketfft.irfft_fftpack(x, n, axis, None, overwrite_x)
 
 
 def fftn(x, shape=None, axes=None, overwrite_x=False):
@@ -621,22 +333,8 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     True
 
     """
-    return _raw_fftn_dispatch(x, shape, axes, overwrite_x, 1)
-
-
-def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
-    tmp = _asfarray(x)
-
-    try:
-        work_function = _DTYPE_TO_FFTN[tmp.dtype]
-    except KeyError:
-        raise ValueError("type %s is not supported" % tmp.dtype)
-
-    if not (istype(tmp, numpy.complex64) or istype(tmp, numpy.complex128)):
-        overwrite_x = 1
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-    return _raw_fftnd(tmp, shape, axes, direction, overwrite_x, work_function)
+    shape = _good_shape(x, shape, axes)
+    return _pocketfft.fftn(x, shape, axes, None, overwrite_x)
 
 
 def ifftn(x, shape=None, axes=None, overwrite_x=False):
@@ -667,7 +365,8 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     True
 
     """
-    return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
+    shape = _good_shape(x, shape, axes)
+    return _pocketfft.ifftn(x, shape, axes, None, overwrite_x)
 
 
 def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):

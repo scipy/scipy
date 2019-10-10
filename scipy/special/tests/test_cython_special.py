@@ -81,6 +81,7 @@ PARAMS = [
     (special.ellipj, cython_special._ellipj_pywrap, ('dd',), None),
     (special.ellipkinc, cython_special.ellipkinc, ('dd',), None),
     (special.ellipkm1, cython_special.ellipkm1, ('d',), None),
+    (special.ellipk, cython_special.ellipk, ('d',), None),
     (special.entr, cython_special.entr, ('d',), None),
     (special.erf, cython_special.erf, ('d', 'D'), None),
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
@@ -254,6 +255,7 @@ PARAMS = [
     (special.struve, cython_special.struve, ('dd',), None),
     (special.tandg, cython_special.tandg, ('d',), None),
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
+    (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
@@ -279,10 +281,9 @@ def _generate_test_points(typecodes):
 
 def test_cython_api_completeness():
     # Check that everything is tested
-    skip = {'hyp2f0', 'hyp1f2', 'hyp3f0'}
     for name in dir(cython_special):
         func = getattr(cython_special, name)
-        if callable(func) and not (name.startswith('_') or name in skip):
+        if callable(func) and not name.startswith('_'):
             for _, cyfun, _, _ in PARAMS:
                 if cyfun is func:
                     break

@@ -623,6 +623,10 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
             temp->index = jj;
             temp->coordinates = malloc(PyArray_NDIM(input) *
                                        sizeof(npy_intp));
+            if (!temp->coordinates) {
+                PyErr_NoMemory();
+                goto exit;
+            }
             for (kk = 0; kk < PyArray_NDIM(input); kk++) {
                 temp->coordinates[kk] = ii.coordinates[kk];
             }

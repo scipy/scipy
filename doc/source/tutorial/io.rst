@@ -323,7 +323,7 @@ Matrix Market files
 Wav sound files (:mod:`scipy.io.wavfile`)
 -----------------------------------------
 
-.. module:: scipy.io.wavfile
+.. currentmodule:: scipy.io.wavfile
 
 .. autosummary::
 
@@ -333,7 +333,7 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 Arff files (:mod:`scipy.io.arff`)
 ---------------------------------
 
-.. module:: scipy.io.arff
+.. currentmodule:: scipy.io.arff
 
 .. autosummary::
 
@@ -342,7 +342,7 @@ Arff files (:mod:`scipy.io.arff`)
 Netcdf
 ------
 
-.. module:: scipy.io
+.. currentmodule:: scipy.io
 
 .. autosummary::
 
@@ -350,6 +350,6 @@ Netcdf
 
 Allows reading of  NetCDF files (version of pupynere_ package)
 
-.. _pupynere: https://pypi.python.org/pypi/pupynere/
+.. _pupynere: https://pypi.org/project/pupynere/
 .. _octave: https://www.gnu.org/software/octave
 .. _matlab: https://www.mathworks.com/
