@@ -126,7 +126,8 @@ before_install:
       export PATH=$TRAVIS_BUILD_DIR/gcc_aliases:$PATH
       popd
       touch config.sh
-      git clone --depth=1 https://github.com/matthew-brett/multibuild.git
+      git clone https://github.com/matthew-brett/multibuild.git
+      git -C multibuild checkout 65fd07a180046b4473b21e9084e01f1bf1a8dfac
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
