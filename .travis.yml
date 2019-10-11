@@ -67,7 +67,7 @@ matrix:
     - python: 3.8-dev
       env:
         - TESTMODE=fast
-        - NUMPYSPEC="numpy"
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
     - python: 3.6
       env:
         - TESTMODE=fast
