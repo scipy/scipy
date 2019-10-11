@@ -1487,7 +1487,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        The 2-sided p-value for the hypothesis test.
+        The two-sided p-value for the hypothesis test.
 
     Notes
     -----
@@ -3903,7 +3903,7 @@ def pointbiserialr(x, y):
     correlation : float
         R value.
     pvalue : float
-        2-tailed p-value.
+        Two-sided p-value.
 
     Notes
     -----
@@ -4382,7 +4382,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     statistic : float or array
         t-statistic.
     pvalue : float or array
-        Two-tailed p-value.
+        Two-sided p-value.
 
     Examples
     --------
@@ -4745,7 +4745,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     statistic : float or array
         t-statistic.
     pvalue : float or array
-        Two-tailed p-value.
+        Two-sided p-value.
 
     Notes
     -----
