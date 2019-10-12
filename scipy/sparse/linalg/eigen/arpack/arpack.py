@@ -1870,21 +1870,21 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     nlarge = above_cutoff.sum()
     nsmall = k - nlarge
     slarge = np.sqrt(eigvals[above_cutoff])
-     s = np.zeros_like(eigvals)
-      s[:nlarge] = slarge
-       if not return_singular_vectors:
-            return np.sort(s)
+    s = np.zeros_like(eigvals)
+    s[:nlarge] = slarge
+    if not return_singular_vectors:
+        return np.sort(s)
 
-        if n > m:
-            vlarge = eigvec[:, above_cutoff]
-            ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
-            vhlarge = _herm(vlarge)
-        else:
-            ularge = eigvec[:, above_cutoff]
-            vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
+    if n > m:
+        vlarge = eigvec[:, above_cutoff]
+        ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
+        vhlarge = _herm(vlarge)
+    else:
+        ularge = eigvec[:, above_cutoff]
+        vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
 
-        u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
-        vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
+    u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
+    vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
 
     indexes_sorted = np.argsort(s)
     s = s[indexes_sorted]
