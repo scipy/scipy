@@ -1855,28 +1855,24 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     else:
         raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
-    # In 'LM' mode try to be clever about small eigenvalues.
-    # Otherwise in 'SM' mode do not try to be clever.
-    if which == 'LM':
+    # Gramian matrices have real non-negative eigenvalues.
+    eigvals = np.maximum(eigvals.real, 0)
 
-        # Gramian matrices have real non-negative eigenvalues.
-        eigvals = np.maximum(eigvals.real, 0)
+    # Use the sophisticated detection of small eigenvalues from pinvh.
+    t = eigvec.dtype.char.lower()
+    factor = {'f': 1E3, 'd': 1E6}
+    cond = factor[t] * np.finfo(t).eps
+    cutoff = cond * np.max(eigvals)
 
-        # Use the sophisticated detection of small eigenvalues from pinvh.
-        t = eigvec.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
-        cutoff = cond * np.max(eigvals)
-
-        # Get a mask indicating which eigenpairs are not degenerately tiny,
-        # and create the re-ordered array of thresholded singular values.
-        above_cutoff = (eigvals > cutoff)
-        nlarge = above_cutoff.sum()
-        nsmall = k - nlarge
-        slarge = np.sqrt(eigvals[above_cutoff])
-        s = np.zeros_like(eigvals)
-        s[:nlarge] = slarge
-        if not return_singular_vectors:
+    # Get a mask indicating which eigenpairs are not degenerately tiny,
+    # and create the re-ordered array of thresholded singular values.
+    above_cutoff = (eigvals > cutoff)
+    nlarge = above_cutoff.sum()
+    nsmall = k - nlarge
+    slarge = np.sqrt(eigvals[above_cutoff])
+     s = np.zeros_like(eigvals)
+      s[:nlarge] = slarge
+       if not return_singular_vectors:
             return np.sort(s)
 
         if n > m:
@@ -1889,24 +1885,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
         vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
-
-    elif which == 'SM':
-
-        s = np.sqrt(eigvals)
-        if not return_singular_vectors:
-            return np.sort(s)
-
-        if n > m:
-            v = eigvec
-            u = X_matmat(v) / s if return_singular_vectors != 'vh' else None
-            vh = _herm(v)
-        else:
-            u = eigvec
-            vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
-
-    else:
-
-        raise ValueError("which must be either 'LM' or 'SM'.")
 
     indexes_sorted = np.argsort(s)
     s = s[indexes_sorted]
