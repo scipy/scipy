@@ -1787,6 +1787,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> np.sqrt(eigs(A.dot(A.T), k=2)[0]).real
     array([ 5.6059665 ,  2.75193379])
     """
+    if which == 'LM':
+        largest = True
+    elif which == 'SM':
+        largest = False
+    else:
+        raise ValueError("which must be either 'LM' or 'SM'.")
+
     if not (isinstance(A, LinearOperator) or isspmatrix(A)):
         A = np.asarray(A)
 
@@ -1832,13 +1839,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
     if solver == 'lobpcg':
-
-        if which == 'LM':
-            largest = True
-        elif which == 'SM':
-            largest = False
-        else:
-            raise ValueError("which must be either 'LM' or 'SM'.")
 
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
