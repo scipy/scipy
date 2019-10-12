@@ -26,7 +26,8 @@ def test_find():
 
     
 def test_basic_lookup():
-    assert_equal(codata.unit('speed of light in vacuum'), 'm s^-1')
+    assert_equal('%d %s' % (codata.value('speed of light in vacuum'), codata.unit('speed of light in vacuum')),
+     '299792458 m s^-1')
 
 
 def test_find_all():
