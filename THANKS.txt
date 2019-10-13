@@ -219,6 +219,7 @@ Andrew Knyazev, the original author of LOBPCG, for advice on and maintenance of
    sparse.linalg.lobpcg
 Michael Marien for contributing to scipy.stats.entropy
 Joseph Weston for a bug fix in scipy.optimize.zeros.
+Peyton Murray for a bug fix in scipy.optimize.curve_fit.
 
 Institutions
 ------------
