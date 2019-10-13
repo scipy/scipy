@@ -452,3 +452,24 @@ def test_transpose_noconjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.T.dot(v), Y.T.dot(v))
+
+def test_matmat_fallback_to_matvec_error():
+    dim = 2
+    shp = (dim, dim)
+    eye_matrix = np.eye(dim)
+    x = np.arange(dim)
+
+    def mv(y):
+        return x*y
+    def mm(z):
+        return x*z
+    def mm_via_mv(z):
+       return np.array([mv(y) for y in z.T])
+
+    LO_with_mm = LinearOperator(shp, matvec=mv, matmat=mm)
+    assert_equal(LO_with_mm.matmat(eye_matrix), np.diagflat(x))
+    LO_with_mm_via_mv = LinearOperator(shp, matvec=mv, matmat=mm_via_mv)
+    assert_equal(LO_with_mm_via_mv.matmat(eye_matrix), np.diagflat(x))
+
+    LO_withot_mm = LinearOperator(shp, matvec=mv)
+    mm_test = LO_withot_mm.matmat(eye_matrix)
