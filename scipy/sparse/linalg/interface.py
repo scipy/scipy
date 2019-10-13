@@ -178,8 +178,11 @@ class LinearOperator(object):
         Falls back on the user-defined _matvec method, so defining that will
         define matrix multiplication (though in a very suboptimal way).
         """
-
-        return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T])
+        try:
+            return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T])
+        except ValueError:
+            raise ValueError('The user-defined matvec(v) function must properly
+                             handle the case where v has shape (N,1).')
 
     def _matvec(self, x):
         """Default matrix-vector multiplication handler.
