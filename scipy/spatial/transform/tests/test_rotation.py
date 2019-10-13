@@ -621,6 +621,31 @@ def test_inv_single_rotation():
     assert_array_almost_equal(result2, eye3d)
 
 
+def test_identity_magnitude():
+    n = 10
+    assert_allclose(Rotation.identity(n).magnitude(), 0)
+    assert_allclose(Rotation.identity(n).inv().magnitude(), 0)
+
+
+def test_single_identity_magnitude():
+    assert Rotation.identity().magnitude() == 0
+    assert Rotation.identity().inv().magnitude() == 0
+
+
+def test_identity_invariance():
+    n = 10
+    p = Rotation.random(n)
+    result = p * Rotation.identity(n) * p.inv()
+    assert_array_almost_equal(result.magnitude(), np.zeros(n))
+
+
+def test_single_identity_invariance():
+    n = 10
+    p = Rotation.random(n)
+    result = p * Rotation.identity() * p.inv()
+    assert_array_almost_equal(result.magnitude(), np.zeros(n))
+
+
 def test_magnitude():
     r = Rotation.from_quat(np.eye(4))
     result = r.magnitude()
@@ -638,6 +663,47 @@ def test_magnitude_single_rotation():
 
     result2 = r[3].magnitude()
     assert_allclose(result2, 0)
+
+
+def test_reduction_no_indices():
+    result = Rotation.identity().reduce(return_indices=False)
+    assert isinstance(result, Rotation)
+
+
+def test_reduction_none_indices():
+    result = Rotation.identity().reduce(return_indices=True)
+    assert type(result) == tuple
+    assert len(result) == 3
+
+    reduced, left_best, right_best = result
+    assert left_best is None
+    assert right_best is None
+
+
+def test_reduction_scalar_calculation():
+    rng = np.random.RandomState(0)
+    l = Rotation.random(5, random_state=rng)
+    r = Rotation.random(10, random_state=rng)
+    p = Rotation.random(7, random_state=rng)
+    reduced, left_best, right_best = p.reduce(l, r, return_indices=True)
+
+    # Loop implementation of the vectorized calculation in Rotation.reduce
+    scalars = np.zeros((len(l), len(p), len(r)))
+    for i, li in enumerate(l):
+        for j, pj in enumerate(p):
+            for k, rk in enumerate(r):
+                scalars[i, j, k] = np.abs((li * pj * rk).as_quat()[3])
+    scalars = np.reshape(np.rollaxis(scalars, 1), (scalars.shape[1], -1))
+
+    max_ind = np.argmax(np.reshape(scalars, (len(p), -1)), axis=1)
+    left_best_check = max_ind // len(r)
+    right_best_check = max_ind % len(r)
+    assert (left_best == left_best_check).all()
+    assert (right_best == right_best_check).all()
+
+    reduced_check = l[left_best_check] * p * r[right_best_check]
+    mag = (reduced.inv() * reduced_check).magnitude()
+    assert_array_almost_equal(mag, np.zeros(len(p)))
 
 
 def test_apply_single_rotation_single_point():

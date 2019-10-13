@@ -47,6 +47,9 @@ lambda expressions for them.
 
 `scipy.linalg` improvements
 ---------------------------
+The function ``scipy.linalg.subspace_angles(A, B)`` now gives correct
+results for complex-valued matrices. Before this, the function only returned
+correct values for real-valued matrices.
 
 
 `scipy.ndimage` improvements

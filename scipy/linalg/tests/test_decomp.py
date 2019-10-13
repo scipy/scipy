@@ -2736,6 +2736,14 @@ def test_subspace_angles():
     expected = np.array([np.pi/2, 0, 0])
     assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
 
+    # Complex
+    # second column in "b" does not affect result, just there so that
+    # b can have more cols than a, and vice-versa (both conditional code paths)
+    a = [[1 + 1j], [0]]
+    b = [[1 - 1j, 0], [0, 1]]
+    assert_allclose(subspace_angles(a, b), 0., atol=1e-14)
+    assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
+
 
 class TestCDF2RDF(object):
 

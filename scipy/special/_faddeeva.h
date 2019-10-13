@@ -34,7 +34,7 @@ npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp);
 npy_cdouble faddeeva_ndtr(npy_cdouble zp);
 npy_cdouble faddeeva_log_ndtr(npy_cdouble zp);
 
-double faddeeva_voigt(double x, double sigma, double gamma, double mu);
+double faddeeva_voigt_profile(double x, double sigma, double gamma);
 
 EXTERN_C_END
 

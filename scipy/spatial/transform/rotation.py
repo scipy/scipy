@@ -212,8 +212,10 @@ class Rotation(object):
     __mul__
     inv
     magnitude
+    reduce
     create_group
     __getitem__
+    identity
     random
     match_vectors
 
@@ -1463,6 +1465,96 @@ class Rotation(object):
         else:
             return angles
 
+    def reduce(self, left=None, right=None, return_indices=False):
+        """Reduce this rotation with the provided rotation groups.
+
+        Reduction of a rotation ``p`` is a transformation of the form
+        ``q = l * p * r``, where ``l`` and ``r`` are chosen from `left` and
+        `right` respectively, such that rotation ``q`` has the smallest
+        magnitude.
+
+        If `left` and `right` are rotation groups representing symmetries of
+        two objects rotated by ``p``, then ``q`` is the rotation of the
+        smallest magnitude to align these objects considering their symmetries.
+
+        Parameters
+        ----------
+        left : `Rotation` instance, optional
+            Object containing the left rotation(s). Default value (None)
+            corresponds to the identity rotation.
+        right : `Rotation` instance, optional
+            Object containing the right rotation(s). Default value (None)
+            corresponds to the identity rotation.
+        return_indices : bool, optional
+            Whether to return the indices of the rotations from `left` and
+            `right` used for reduction.
+
+        Returns
+        -------
+        reduced : `Rotation` instance
+            Object containing reduced rotations.
+        left_best, right_best: integer ndarray
+            Indices of elements from `left` and `right` used for reduction.
+        """
+        if left is None and right is None:
+            reduced = self.__class__(self._quat, normalized=True, copy=True)
+            if return_indices:
+                return reduced, None, None
+            else:
+                return reduced
+        elif right is None:
+            right = Rotation.identity()
+        elif left is None:
+            left = Rotation.identity()
+
+        # Levi-Civita tensor for triple product computations
+        e = np.zeros((3, 3, 3))
+        e[0, 1, 2] = e[1, 2, 0] = e[2, 0, 1] = 1
+        e[0, 2, 1] = e[2, 1, 0] = e[1, 0, 2] = -1
+
+        # We want to calculate the real components of q = l * p * r. It can
+        # be shown that:
+        #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
+        #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
+        # where ls and lv denote the scalar and vector components of l.
+
+        def split_rotation(R):
+            q = np.atleast_2d(R.as_quat())
+            return q[:, -1], q[:, :-1]
+
+        p = self
+        ps, pv = split_rotation(p)
+        ls, lv = split_rotation(left)
+        rs, rv = split_rotation(right)
+
+        qs = np.abs(np.einsum('i,j,k', ls, ps, rs) -
+                    np.einsum('i,jx,kx', ls, pv, rv) -
+                    np.einsum('ix,j,kx', lv, ps, rv) -
+                    np.einsum('ix,jx,k', lv, pv, rs) -
+                    np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
+        qs = np.reshape(np.rollaxis(qs, 1), (qs.shape[1], -1))
+
+        # Find best indices from scalar components
+        max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
+        left_best = max_ind // len(right)
+        right_best = max_ind % len(right)
+
+        # Reduce the rotation using the best indices
+        reduced = left[left_best] * p * right[right_best]
+        if self._single:
+            reduced = reduced[0]
+            left_best = left_best[0]
+            right_best = right_best[0]
+
+        if return_indices:
+            if left is None:
+                left_best = None
+            if right is None:
+                right_best = None
+            return reduced, left_best, right_best
+        else:
+            return reduced
+
     @classmethod
     def create_group(cls, group, axis='Z'):
         """Create a 3D rotation group.
@@ -1550,6 +1642,30 @@ class Rotation(object):
         return self.__class__(self._quat[indexer], normalized=True)
 
     @classmethod
+    def identity(cls, num=None):
+        """Get identity rotation(s).
+
+        Composition with the identity rotation has no effect.
+
+        Parameters
+        ----------
+        num : int or None, optional
+            Number of identity rotations to generate. If None (default), then a
+            single rotation is generated.
+
+        Returns
+        -------
+        identity : Rotation object
+            The identity rotation.
+        """
+        if num is None:
+            q = [0, 0, 0, 1]
+        else:
+            q = np.zeros((num, 4))
+            q[:, 3] = 1
+        return cls(q, normalized=True)
+
+    @classmethod
     def random(cls, num=None, random_state=None):
         """Generate uniformly distributed rotations.
 
@@ -1595,7 +1711,7 @@ class Rotation(object):
         else:
             sample = random_state.normal(size=(num, 4))
 
-        return Rotation.from_quat(sample)
+        return cls(sample)
 
     @classmethod
     def match_vectors(cls, a, b, weights=None, normalized=False):

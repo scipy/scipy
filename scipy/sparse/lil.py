@@ -1,4 +1,4 @@
-"""LInked List sparse matrix class
+"""List of Lists sparse matrix class
 """
 
 from __future__ import division, print_function, absolute_import
@@ -21,7 +21,7 @@ from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
-    """Row-based linked list sparse matrix
+    """Row-based list of lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
     Note that inserting a single item can take linear time in the worst case;
@@ -224,16 +224,6 @@ class lil_matrix(spmatrix, IndexMixin):
         if x.ndim not in (1, 2):
             raise IndexError('Index dimension must be <= 2')
         return x
-
-    def __getitem__(self, key):
-        # Fast path for simple (int, int) indexing.
-        if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], INT_TYPES) and
-                isinstance(key[1], INT_TYPES)):
-            # lil_get1 handles validation for us.
-            return self._get_intXint(*key)
-        # Everything else takes the normal path.
-        return IndexMixin.__getitem__(self, key)
 
     def _get_intXint(self, row, col):
         v = _csparsetools.lil_get1(self.shape[0], self.shape[1], self.rows,
