@@ -384,3 +384,9 @@ class TestColouredNoise(object):
         h, _ = hurst_dfa(noise, s_min=5, s_max=20)
 
         assert_(np.abs(1.5 - h) <= 0.3)  # Should be 1.5
+
+    def test_random_number_setting(self):
+        noise1 = waveforms.coloured_noise(alpha=2, size=50, random_seed=1234)
+        noise2 = waveforms.coloured_noise(alpha=2, size=50, random_seed=1234)
+
+        assert_equal(noise1, noise2)

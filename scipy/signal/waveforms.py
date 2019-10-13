@@ -9,12 +9,14 @@
 #   Added coloured_noise()
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint, argmin, std, mean
 from numpy.fft import irfft, rfftfreq
 from numpy.random import normal
-import warnings
+
 from scipy._lib.six import string_types
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
@@ -477,7 +479,7 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
             # Singular point: the instantaneous frequency blows up
             # when t == sing.
             sing = -f1 * t1 / (f0 - f1)
-            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
+            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t / sing))
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic',"
@@ -685,7 +687,8 @@ def unit_impulse(shape, idx=None, dtype=float):
     return out
 
 
-def coloured_noise(alpha, size, scale_mean=True, scale_std=True):
+def coloured_noise(alpha, size, scale_mean=True, scale_std=True,
+                   cutoff_freq=0, random_seed=None):
     """
     Creates signal with colour in the form 1/f
 
@@ -696,10 +699,16 @@ def coloured_noise(alpha, size, scale_mean=True, scale_std=True):
         be one of {'white', 'pink', 'brown', 'blue', 'violet'.
     size : int
         Number of samples in the output
+    cutoff_freq : float, optional
+        Low-frequency cutoff of the generated signal in Hz.
+        Default is 0, (which corresponds to an algorithmic cutoff of 1/size).
     scale_mean : bool, optional
         If the output should be scaled to have mean = 0. Default is True.
     scale_std : bool, optional
         If the output should be scaled to have std = 1. Default is True.
+    random_seed = int or 1-d array_like, optional
+        Seed for the random number generator. Must be convertible to 32 bit
+        unsigned integers. Default is None (not specifically set)
 
     Returns
     -------
@@ -760,15 +769,21 @@ def coloured_noise(alpha, size, scale_mean=True, scale_std=True):
     if isinstance(alpha, str):
         alpha = _colours[alpha]
 
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
     # Generate fourier frequencies, multiply using alpha and draw normal
     # distributed numbers
     freqs_all = rfftfreq(size)
     freqs_cutoff = freqs_all
 
-    cutoff_index = argmin(freqs_all < 1/size)
+    # Cutoff low frequency values
+    cutoff_val = max(cutoff_freq, 1./size)
+
+    cutoff_index = argmin(freqs_all < cutoff_val)
     freqs_cutoff[:cutoff_index] = freqs_cutoff[cutoff_index]
 
-    freqs_cutoff = (1/freqs_cutoff)**(alpha / 2)
+    freqs_cutoff = (1 / freqs_cutoff) ** (alpha / 2)
 
     rand_real = normal(scale=freqs_cutoff)
     rand_imag = normal(scale=freqs_cutoff)
