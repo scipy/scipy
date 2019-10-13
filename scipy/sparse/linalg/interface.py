@@ -181,8 +181,12 @@ class LinearOperator(object):
         try:
             return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T])
         except ValueError:
-            raise ValueError('The user-defined matvec(v) function must properly'
-                             'handle the case where v has shape (N,1).')
+            col = X.T[:,0]
+            matvec_col = self.matvec(col.reshape(-1,1))
+            raise ValueError('The user-defined matvec(v) function must return'
+                             'shape (N,1) if v has shape (N,1). Instead,'
+                             'matvec(v) has shape %r, where v has shape %r.' 
+                             % (matvec_col.shape, col.shape))
 
     def _matvec(self, x):
         """Default matrix-vector multiplication handler.
