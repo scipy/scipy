@@ -461,15 +461,21 @@ def test_matmat_fallback_to_matvec_error():
 
     def mv(y):
         return x*y
+
     def mm(z):
         return x*z
-    def mm_via_mv(z):
-       return np.array([mv(y) for y in z.T])
 
-    LO_with_mm = LinearOperator(shp, matvec=mv, matmat=mm)
+    def mm_via_mv(z):
+        return np.array([mv(y) for y in z.T])
+
+    LO_with_mm = interface.LinearOperator(shp, matvec=mv, matmat=mm)
     assert_equal(LO_with_mm.matmat(eye_matrix), np.diagflat(x))
-    LO_with_mm_via_mv = LinearOperator(shp, matvec=mv, matmat=mm_via_mv)
+
+    LO_with_mm_via_mv = interface.LinearOperator(shp, matvec=mv, matmat=mm_via_mv)
     assert_equal(LO_with_mm_via_mv.matmat(eye_matrix), np.diagflat(x))
 
-    LO_withot_mm = LinearOperator(shp, matvec=mv)
-    mm_test = LO_withot_mm.matmat(eye_matrix)
+    string_expected = ('The user-defined matvec(v) function must return'
+                             'shape (N,1) if v has shape (N,1). Instead,'
+                             'matvec(v) has shape [1,2], where v has shape [2,1].') 
+    LO_withot_mm = interface.LinearOperator(shp, matvec=mv)
+    assert_equal(LO_withot_mm.matmat(eye_matrix), string_expected)
