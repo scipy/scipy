@@ -104,9 +104,49 @@ add_newdoc("_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
-add_newdoc("_voigt",
-    """
-    Internal function, use `voigt` instead.
+add_newdoc("voigt_profile",
+    r"""
+    voigt_profile(x, sigma, gamma, out=None)
+
+    Voigt profile.
+
+    The Voigt profile is a convolution of a 1D Normal distribution with
+    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    half-maximum ``gamma``.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument
+    sigma : array_like
+        The standard deviation of the Normal distribution part
+    gamma : array_like
+        The half-width at half-maximum of the Cauchy distribution part
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        The Voigt profile at the given arguments
+
+    Notes
+    -----
+    It can be expressed in terms of Faddeeva function
+
+    .. math:: V(x; \sigma, \gamma) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: z = \frac{x + i\gamma}{\sqrt{2}\sigma}
+
+    where :math:`w(z)` is the Faddeeva function.
+
+    See Also
+    --------
+    wofz : Faddeeva function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
+
     """)
 
 add_newdoc("wrightomega",
