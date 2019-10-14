@@ -246,6 +246,10 @@ def read(filename, mmap=False):
             if not chunk_id:
                 if data_chunk_received:
                     # End of file but data successfully read
+                    warnings.warn(
+                        "Reached EOF (filesize reported as {:d} by header)."
+                            .format(file_size),
+                        WavFileWarning)
                     break
                 else:
                     raise ValueError("Unexpected end of file.")
