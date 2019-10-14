@@ -755,7 +755,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         # The specification for the model function `f` does not support
         # additional arguments. Refer to the `curve_fit` docstring for
         # acceptable call signatures of `f`.
-        raise ValueError("'args' is not an acceptable keyword argument.")
+        raise ValueError("'args' is not a supported keyword argument.")
 
     if method == 'lm':
         # Remove full_output from kwargs, otherwise we're passing it in twice.
