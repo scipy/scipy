@@ -89,7 +89,7 @@ def test_read_early_eof_with_data():
         with open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb') as fp:
             with suppress_warnings() as sup:
                 sup.filter(wavfile.WavFileWarning,
-                            "Reached EOF .filesize reported as \d+ by header.\."
+                            r"Reached EOF .filesize reported as \d+ by header.\."
                            )
                 rate, data = wavfile.read(fp, mmap=mmap)
 
