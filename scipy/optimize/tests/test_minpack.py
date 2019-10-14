@@ -801,7 +801,7 @@ class TestCurveFit(object):
         def func(x, a, b):
             return a * x + b
 
-        with assert_raises(ValueError) as exc_info:
+        with assert_raises(ValueError):
             curve_fit(func,
                       xdata=[1, 2, 3, 4],
                       ydata=[5, 9, 13, 17],
