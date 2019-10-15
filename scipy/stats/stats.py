@@ -5089,20 +5089,12 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     f_obs = np.asanyarray(f_obs)
 
     if f_exp is not None:
-        f_exp = np.atleast_1d(np.asanyarray(f_exp))
+        f_exp = np.asanyarray(f_exp)
     else:
-        # Compute the equivalent of
-        #   f_exp = f_obs.mean(axis=axis, keepdims=True)
-        # Older versions of numpy do not have the 'keepdims' argument, so
-        # we have to do a little work to achieve the same result.
         # Ignore 'invalid' errors so the edge case of a data set with length 0
         # is handled without spurious warnings.
         with np.errstate(invalid='ignore'):
-            f_exp = np.atleast_1d(f_obs.mean(axis=axis))
-        if axis is not None:
-            reduced_shape = list(f_obs.shape)
-            reduced_shape[axis] = 1
-            f_exp.shape = reduced_shape
+            f_exp = f_obs.mean(axis=axis, keepdims=True)
 
     # `terms` is the array of terms that are summed along `axis` to create
     # the test statistic.  We use some specialized code for a few special
