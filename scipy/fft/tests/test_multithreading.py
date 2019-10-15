@@ -29,7 +29,7 @@ def _mt_fft(x):
     return fft.fft(x, workers=2)
 
 
-def test_mixed_threads_processes(x):
+def test_mixed_threads_processes(x, pool):
     # Test that the fft threadpool is safe to use before & after fork
     expect = fft.fft(x, workers=2)
 

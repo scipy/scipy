@@ -304,7 +304,7 @@ class TestFFTThreadSafe(object):
 
 
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
-def test_multiprocess(func):
+def test_multiprocess(func, pool):
     # Test that fft still works after fork (gh-10422)
     with multiprocessing.Pool(2) as p:
         res = p.map(func, [np.ones(100) for _ in range(4)])

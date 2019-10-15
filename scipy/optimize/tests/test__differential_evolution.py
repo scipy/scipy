@@ -540,7 +540,7 @@ class TestDifferentialEvolutionSolver(object):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
             assert_(solver._updating == 'deferred')
 
-    def test_parallel(self):
+    def test_parallel(self, pool):
         # smoke test for parallelisation with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
