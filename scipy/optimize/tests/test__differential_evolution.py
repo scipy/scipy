@@ -3,10 +3,9 @@ Unit tests for the differential global minimization algorithm.
 """
 import multiprocessing
 
-from scipy.optimize import _differentialevolution
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
-from scipy.optimize import differential_evolution, minimize
+from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
@@ -528,7 +527,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
-    def test_immediate_updating(self):
+    def test_immediate_updating(self, pool):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
         solver = DifferentialEvolutionSolver(rosen, bounds)
@@ -538,9 +537,9 @@ class TestDifferentialEvolutionSolver(object):
         # is being overridden by the workers keyword
         with warns(UserWarning):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
-            assert_(solver._updating == 'deferred')
+        assert_(solver._updating == 'deferred')
 
-    def test_parallel(self):
+    def test_parallel(self, pool):
         # smoke test for parallelisation with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(

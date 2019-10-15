@@ -1,8 +1,10 @@
 # Pytest customization
 from __future__ import division, absolute_import, print_function
 
+import gc
 import os
 import pytest
+import sys
 import warnings
 
 from distutils.version import LooseVersion
@@ -44,3 +46,16 @@ def check_fpu_mode(request):
         warnings.warn("FPU mode changed from {0:#x} to {1:#x} during "
                       "the test".format(old_mode, new_mode),
                       category=FPUModeChangeWarning, stacklevel=0)
+
+
+@pytest.yield_fixture(scope="module")
+def pool():
+    """Fixture for tests that use multiprocessing.pool."""
+    # See https://bugs.python.org/issue38501
+    # We only need to decorate tests that do not use `with mapwrapper:`
+    # because the problem occurs when close/terminate are not explicitly
+    # called, and garbage collection is supposed to take care of it.
+    if sys.version_info >= (3, 8):
+        pytest.xfail('Python 3.8 hangs when cleaning up a pool')
+    yield
+    gc.collect()  # clean up
