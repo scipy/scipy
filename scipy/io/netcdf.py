@@ -767,7 +767,7 @@ class netcdf_file(object):
         values = self.fp.read(int(count))
         self.fp.read(-count % 4)  # read padding
 
-        if typecode is not 'c':
+        if typecode != 'c':
             values = frombuffer(values, dtype='>%s' % typecode).copy()
             if values.shape == (1,):
                 values = values[0]
@@ -1095,4 +1095,3 @@ class netcdf_variable(object):
 
 NetCDFFile = netcdf_file
 NetCDFVariable = netcdf_variable
-
