@@ -23,8 +23,8 @@ from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
-    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients, detrend)
+    invres, invresz, residue, vectorstrength, lfiltic, tf2sos, sosfilt,
+    sosfiltfilt, sosfilt_zi, tf2zpk, BadCoefficients, detrend)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
@@ -2375,6 +2375,37 @@ class TestPartialFractionExpansion(object):
         k = []
         assert_raises(ValueError, invres, r, p, k, rtype='median')
 
+    def test_residue(self):
+        b = [-4, 8]
+        a = [1, 6, 8]
+        r, p, k = residue(b, a)
+        assert_allclose(r, [-12., 8.])
+        assert_allclose(p, [-4., -2.])
+        assert_allclose(k, [0.])
+
+    def test_residue_complex(self):
+        b = [4, 3]
+        a = [2, -3.4, 1.98, -0.406]
+        r, p, k = residue(b, a)
+        assert_allclose(r, [-18.125 + 13.125j, -18.125 - 13.125j, 36.25])
+        assert_allclose(p, [0.5 + 0.2j, 0.5 - 0.2j, 0.7])
+        assert_allclose(k, [0.])
+
+    def test_residue_repeated_pole(self):
+        b = [2, 1]
+        a = [1, 5, 8, 4]
+        r, p, k = residue(b, a)
+        assert_allclose(r, [1., 3., -1.])
+        assert_allclose(p, [-2., -2., -1.])
+        assert_allclose(k, [0.])
+
+    def test_residue_direct_term(self):
+        b = [7, 2, 3, -1]
+        a = [1, -3, 2]
+        r, p, k = residue(b, a)
+        assert_allclose(r, [-11., 69.])
+        assert_allclose(p, [1., 2.])
+        assert_allclose(k, [7., 23.])
 
 class TestVectorstrength(object):
 
