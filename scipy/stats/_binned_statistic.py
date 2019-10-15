@@ -694,7 +694,7 @@ def _bin_numbers(sample, nbin, edges, dedges):
         # Find the rounding precision
         try:
             decimal = int(-np.log10(dedges[i].min())) + 6
-        except RuntimeWarning:
+        except exceptions:
             raise ValueError('The smallest edge difference is numerically 0.')
         # Find which points are on the rightmost edge.
         on_edge = np.where(np.around(sample[:, i], decimal) ==
