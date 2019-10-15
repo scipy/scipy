@@ -225,6 +225,15 @@ def read(filename, mmap=False):
        Samples", August 1991
        http://www.tactilemedia.com/info/MCI_Control_Info.html
 
+    Examples
+    --------
+    >>> from scipy.io.wavfile import read
+    >>> samplerate, data = read("example.wav")
+    >>> print(f"number of channels = {data.shape[1]}")
+    number of channels = 2
+    >>> print(f"length = {data.shape[0] / samplerate}s")
+    length = 0.1s
+
     """
     if hasattr(filename, 'read'):
         fid = filename
@@ -320,6 +329,18 @@ def write(filename, rate, data):
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
        http://www.tactilemedia.com/info/MCI_Control_Info.html
+
+    Examples
+    --------
+    Create a 100Hz sine wave, sampled at 44100Hz.
+    Write to 16-bit PCM, Mono.
+
+    >>> from scipy.io.wavfile import write
+    >>> samplerate = 44100; fs = 100
+    >>> t = np.linspace(0., 1., samplerate)
+    >>> amplitude = np.iinfo(np.int16).max
+    >>> data = amplitude * np.sin(2. * np.pi * fs * t)
+    >>> write("example.wav", samplerate, data)
 
     """
     if hasattr(filename, 'write'):
