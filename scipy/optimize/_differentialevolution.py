@@ -971,6 +971,7 @@ class DifferentialEvolutionSolver(object):
 
     def __del__(self):
         # to make sure resources are closed down
+        print('deli')
         self._mapwrapper.close()
         self._mapwrapper.terminate()
 
