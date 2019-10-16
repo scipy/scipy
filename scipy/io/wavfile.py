@@ -240,8 +240,21 @@ def read(filename, mmap=False):
     >>> samplerate, data = sio.wavfile.read(wav_fname)
     >>> print(f"number of channels = {data.shape[1]}")
     number of channels = 2
-    >>> print(f"length = {data.shape[0] / samplerate}s")
+    >>> length = data.shape[0] / samplerate
+    >>> print(f"length = {length}s")
     length = 0.01s
+
+    Plot the waveform.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> time = np.linspace(0., length, data.shape[0])
+    >>> plt.plot(time, data[:, 0], label="Left channel")
+    >>> plt.plot(time, data[:, 1], label="Right channel")
+    >>> plt.legend()
+    >>> plt.xlabel("Time [s]")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.show()
 
     """
     if hasattr(filename, 'read'):
