@@ -328,7 +328,7 @@ class TestHelmert(object):
             H_full = helmert(n, full=True)
             H_partial = helmert(n)
             for U in H_full[1:, :].T, H_partial.T:
-                C = np.eye(n) - np.ones((n, n)) / n
+                C = np.eye(n) - np.full((n, n), 1 / n)
                 assert_allclose(U.dot(U.T), C)
                 assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 

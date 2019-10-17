@@ -255,6 +255,7 @@ PARAMS = [
     (special.struve, cython_special.struve, ('dd',), None),
     (special.tandg, cython_special.tandg, ('d',), None),
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
+    (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),

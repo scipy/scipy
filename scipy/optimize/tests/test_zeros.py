@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from math import sqrt, exp, sin, cos
+from functools import lru_cache
 
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
@@ -54,6 +55,12 @@ def f2_2(x):
     return exp(x) + cos(x)
 
 
+# lru cached function
+@lru_cache()
+def f_lrucached(x):
+    return x
+
+
 class TestBasic(object):
 
     def run_check_by_name(self, name, smoothness=0, **kwargs):
@@ -82,6 +89,15 @@ class TestBasic(object):
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
                             err_msg='method %s, function %s' % (name, fname))
+
+    def run_check_lru_cached(self, method, name):
+        # check that https://github.com/scipy/scipy/issues/10846 is fixed
+        a = -1
+        b = 1
+        zero, r = method(f_lrucached, a, b, full_output=True)
+        assert_(r.converged)
+        assert_allclose(zero, 0,
+                        err_msg='method %s, function %s' % (name, 'f_lrucached'))
 
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
@@ -172,16 +188,19 @@ class TestBasic(object):
 
     def test_bisect(self):
         self.run_check(zeros.bisect, 'bisect')
+        self.run_check_lru_cached(zeros.bisect, 'bisect')
         self.run_check_by_name('bisect')
         self.run_collection('aps', zeros.bisect, 'bisect', smoothness=1)
 
     def test_ridder(self):
         self.run_check(zeros.ridder, 'ridder')
+        self.run_check_lru_cached(zeros.ridder, 'ridder')
         self.run_check_by_name('ridder')
         self.run_collection('aps', zeros.ridder, 'ridder', smoothness=1)
 
     def test_brentq(self):
         self.run_check(zeros.brentq, 'brentq')
+        self.run_check_lru_cached(zeros.brentq, 'brentq')
         self.run_check_by_name('brentq')
         # Brentq/h needs a lower tolerance to be specified
         self.run_collection('aps', zeros.brentq, 'brentq', smoothness=1,
@@ -189,12 +208,14 @@ class TestBasic(object):
 
     def test_brenth(self):
         self.run_check(zeros.brenth, 'brenth')
+        self.run_check_lru_cached(zeros.brenth, 'brenth')
         self.run_check_by_name('brenth')
         self.run_collection('aps', zeros.brenth, 'brenth', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_toms748(self):
         self.run_check(zeros.toms748, 'toms748')
+        self.run_check_lru_cached(zeros.toms748, 'toms748')
         self.run_check_by_name('toms748')
         self.run_collection('aps', zeros.toms748, 'toms748', smoothness=1)
 
@@ -415,6 +436,13 @@ class TestBasic(object):
         x0_copy = x0.copy()  # Copy to test for equality.
         newton(np.sin, x0, np.cos)
         assert_array_equal(x0, x0_copy)
+
+    def test_maxiter_int_check(self):
+        for method in [zeros.bisect, zeros.newton, zeros.ridder, zeros.brentq,
+                       zeros.brenth, zeros.toms748]:
+            with pytest.raises(TypeError,
+                    match="'float' object cannot be interpreted as an integer"):
+                method(f1, 0.0, 1.0, maxiter=72.45)
 
 
 def test_gh_5555():
@@ -661,7 +689,7 @@ def test_gh_9608_preserve_array_shape():
         )
 
     def fpp_array(x):
-        return 2*np.ones(np.shape(x), dtype=np.float32)
+        return np.full(np.shape(x), 2, dtype=np.float32)
 
     result = zeros.newton(
         f, x0_array, fprime=fp, fprime2=fpp_array, full_output=True

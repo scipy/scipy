@@ -165,7 +165,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import sys
 import math
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+if sys.version_info >= (3, 5):
     from math import gcd
 else:
     from fractions import gcd
@@ -1177,9 +1177,42 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Examples
     --------
+    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In the following example, the kurtosis is close to zero, because it was
+    calculated from the dataset, not from the continuous distribution.
+
+    >>> from scipy.stats import norm, kurtosis
+    >>> data = norm.rvs(size=1000, random_state=3)
+    >>> kurtosis(data)
+    -0.06928694200380558
+
+    The distribution with a higher kurtosis has a heavier tail.
+    The zero valued kurtosis of the normal distribution in Fisher's definition
+    can serve as a reference point.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import scipy.stats as stats
     >>> from scipy.stats import kurtosis
-    >>> kurtosis([1, 2, 3, 4, 5])
-    -1.3
+
+    >>> x = np.linspace(-5, 5, 100)
+    >>> ax = plt.subplot()
+    >>> distnames = ['laplace', 'norm', 'uniform']
+
+    >>> for distname in distnames:
+    ...     if distname == 'uniform':
+    ...         dist = getattr(stats, distname)(loc=-2, scale=4)
+    ...     else:
+    ...         dist = getattr(stats, distname)
+    ...     data = dist.rvs(size=1000)
+    ...     kur = kurtosis(data, fisher=True)
+    ...     y = dist.pdf(x)
+    ...     ax.plot(x, y, label="{}, {}".format(distname, round(kur, 3)))
+    ...     ax.legend()
+
+    The Laplace distribution has a heavier tail than the normal distribution.
+    The uniform distribution (which has negative kurtosis) has the thinnest
+    tail.
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -2252,7 +2285,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     return s
 
 
-def zscore(a, axis=0, ddof=0):
+def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the z score of each value in the sample, relative to the
     sample mean and standard deviation.
@@ -2267,7 +2300,10 @@ def zscore(a, axis=0, ddof=0):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
-
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
     Returns
     -------
     zscore : array_like
@@ -2305,8 +2341,16 @@ def zscore(a, axis=0, ddof=0):
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis, keepdims=True)
-    sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        mns = np.nanmean(a=a, axis=axis, keepdims=True)
+        sstd = np.nanstd(a=a, axis=axis, ddof=ddof, keepdims=True)
+    else:
+        mns = a.mean(axis=axis, keepdims=True)
+        sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+
     return (a - mns) / sstd
 
 
@@ -5045,20 +5089,12 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     f_obs = np.asanyarray(f_obs)
 
     if f_exp is not None:
-        f_exp = np.atleast_1d(np.asanyarray(f_exp))
+        f_exp = np.asanyarray(f_exp)
     else:
-        # Compute the equivalent of
-        #   f_exp = f_obs.mean(axis=axis, keepdims=True)
-        # Older versions of numpy do not have the 'keepdims' argument, so
-        # we have to do a little work to achieve the same result.
         # Ignore 'invalid' errors so the edge case of a data set with length 0
         # is handled without spurious warnings.
         with np.errstate(invalid='ignore'):
-            f_exp = np.atleast_1d(f_obs.mean(axis=axis))
-        if axis is not None:
-            reduced_shape = list(f_obs.shape)
-            reduced_shape[axis] = 1
-            f_exp.shape = reduced_shape
+            f_exp = f_obs.mean(axis=axis, keepdims=True)
 
     # `terms` is the array of terms that are summed along `axis` to create
     # the test statistic.  We use some specialized code for a few special
@@ -5895,7 +5931,7 @@ def kruskal(*args, **kwargs):
     for i in range(num_groups):
         ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
 
-    totaln = np.sum(n)
+    totaln = np.sum(n, dtype=float)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = num_groups - 1
     h /= ties

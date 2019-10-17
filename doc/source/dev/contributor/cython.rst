@@ -64,8 +64,8 @@ extension (for consistency). When SciPy is built, ``_bglu_dense.c`` will
 be compiled to machine code, and we will be able to import the ``LU``
 and ``BGLU`` classes from the extension ``_bglu_dense``.
 
-Excercise
----------
+Exercise
+--------
 
 *See a video run-through of this exercise:* \ `Cythonizing SciPy Code`_ \
 

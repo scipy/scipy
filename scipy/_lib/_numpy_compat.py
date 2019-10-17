@@ -91,7 +91,7 @@ if NumpyVersion(np.__version__) >= '1.11.0':
     def get_randint(random_state):
         return random_state.randint
 else:
-    # In NumPy versions previous to 1.11.0 the randint funtion and the randint
+    # In NumPy versions previous to 1.11.0 the randint function and the randint
     # method of RandomState does only work with int32 values.
     def get_randint(random_state):
         def randint_patched(low, high, size, dtype=np.int32):

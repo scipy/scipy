@@ -253,7 +253,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     sequence. The primitive polynomials and various sets of initial direction
     numbers for generating Sobol sequences is provided by [3]_ by Frances Kuo
     and Stephen Joe. The original program sobol.cc (MIT) is available and
-    described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to
+    described at https://web.maths.unsw.edu.au/~fkuo/sobol/ translated to
     Python 3 by Carl Sandrock 2016-03-31.
 
     References
@@ -1297,7 +1297,7 @@ class SHGO(object):
         Carl Sandrock 2016-03-31
 
         The original program is available and described at
-        http://web.maths.unsw.edu.au/~fkuo/sobol/
+        https://web.maths.unsw.edu.au/~fkuo/sobol/
         """
         import gzip
         import os

@@ -1703,7 +1703,7 @@ def _herm(x):
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True):
-    """Compute the largest k singular values/vectors for a sparse matrix.
+    """Compute the largest or smallest k singular values/vectors for a sparse matrix.
 
     Parameters
     ----------

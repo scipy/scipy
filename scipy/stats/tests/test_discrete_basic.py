@@ -115,7 +115,7 @@ def test_rvs_broadcast(dist, shape_args):
     for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)
         param_val = shape_args[k]
-        allargs.append(param_val*np.ones(shp, dtype=np.array(param_val).dtype))
+        allargs.append(np.full(shp, param_val))
         bshape.insert(0, shp[0])
     allargs.append(loc)
     bshape.append(loc.size)

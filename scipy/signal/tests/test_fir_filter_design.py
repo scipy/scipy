@@ -565,7 +565,7 @@ class TestMinimumPhase(object):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])
         assert_raises(ValueError, minimum_phase, [1., 1.])
-        assert_raises(ValueError, minimum_phase, np.ones(10) * 1j)
+        assert_raises(ValueError, minimum_phase, np.full(10, 1j))
         assert_raises(ValueError, minimum_phase, 'foo')
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')

@@ -8,6 +8,7 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
 from scipy.fft import _pocketfft
+from .helper import _good_shape
 
 
 def fft(x, n=None, axis=-1, overwrite_x=False):
@@ -332,6 +333,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     True
 
     """
+    shape = _good_shape(x, shape, axes)
     return _pocketfft.fftn(x, shape, axes, None, overwrite_x)
 
 
@@ -363,6 +365,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     True
 
     """
+    shape = _good_shape(x, shape, axes)
     return _pocketfft.ifftn(x, shape, axes, None, overwrite_x)
 
 

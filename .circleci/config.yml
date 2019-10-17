@@ -50,13 +50,17 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg latex'
+            python -u runtests.py -g -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - store_artifacts:
           path: doc/build/html-scipyorg
           destination: html-scipyorg
+
+      - store_artifacts:
+          path: doc/build/latex
+          destination: latex
 
       - persist_to_workspace:
           root: doc/build

@@ -545,7 +545,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         float(rho_p),
         float(rho_d),
         float(rho_g),
-        float(alpha) if isinstance(alpha, numbers.Number) else alpha,
+        alpha if isinstance(alpha, str) else float(alpha),
         float(rho_mu),
         float(obj)))
 
@@ -922,7 +922,7 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
         interior point algorithm; test different values to determine which
         performs best for your problem. For more information, refer to
         ``scipy.sparse.linalg.splu``.
-    unkown_options : dict
+    unknown_options : dict
         Optional arguments not used by this particular solver. If
         `unknown_options` is non-empty a warning is issued listing all
         unused options.

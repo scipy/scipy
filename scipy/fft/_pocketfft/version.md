@@ -2,15 +2,19 @@
 pypocketfft version
 -------------------
 
-SciPy currently vendors [pypocketfft][repo] at:
+SciPy currently vendors [pypocketfft] at:
 
-    commit 656b2373624bfb83ad1bc9388fa6c561eb2bb9e0
-    Merge: 0276f55 20f3b84
-    Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Sat Jul 20 13:16:46 2019 +0200
+    commit c0f74f610adfc60b8b5e3c3bce6477e646329f63
+	Merge: c573384 dce19de
+	Author: Martin Reinecke <martin@mpa-garching.mpg.de>
+	Date:   Wed Aug 14 15:25:48 2019 +0200
 
-        Merge branch 'sincos' into 'master'
+        Merge branch 'macos-issues' into 'master'
 
-        DCT/DST support
+        macOS issues
 
-repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
+        See merge request mtr/pypocketfft!27
+
+
+
+pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

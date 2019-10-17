@@ -63,7 +63,7 @@
  *
  * The integral is
  *
- *                           x 
+ *                           x
  *                            -
  *                 2         | |          2
  *   erf(x)  =  --------     |    exp( - t  ) dt.
@@ -102,7 +102,7 @@
  *
  *  1 - erf(x) =
  *
- *                           inf. 
+ *                           inf.
  *                             -
  *                  2         | |          2
  *   erfc(x)  =  --------     |    exp( - t  ) dt
@@ -203,7 +203,7 @@ double ndtr(double a)
     double x, y, z;
 
     if (cephes_isnan(a)) {
-	mtherr("ndtr", DOMAIN);
+	sf_error("ndtr", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -229,7 +229,7 @@ double erfc(double a)
     double p, q, x, y, z;
 
     if (cephes_isnan(a)) {
-	mtherr("erfc", DOMAIN);
+        sf_error("erfc", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -245,7 +245,7 @@ double erfc(double a)
 
     if (z < -MAXLOG) {
       under:
-	mtherr("erfc", UNDERFLOW);
+	sf_error("erfc", SF_ERROR_UNDERFLOW, NULL);
 	if (a < 0)
 	    return (2.0);
 	else
@@ -280,7 +280,7 @@ double erf(double x)
     double y, z;
 
     if (cephes_isnan(x)) {
-	mtherr("erf", DOMAIN);
+	sf_error("erf", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -297,20 +297,20 @@ double erf(double x)
 
 }
 
-/* 
+/*
  * double log_ndtr(double a)
- * 
+ *
  * For a > -20, use the existing ndtr technique and take a log.
- * for a <= -20, we use the Taylor series approximation of erf to compute 
+ * for a <= -20, we use the Taylor series approximation of erf to compute
  * the log CDF directly. The Taylor series consists of two parts which we will name "left"
  * and "right" accordingly.  The right part involves a summation which we compute until the
  * difference in terms falls below the machine-specific EPSILON.
- * 
- * \Phi(z) &=& 
- *   \frac{e^{-z^2/2}}{-z\sqrt{2\pi}}  * [1 +  \sum_{n=1}^{N-1}  (-1)^n \frac{(2n-1)!!}{(z^2)^n}] 
+ *
+ * \Phi(z) &=&
+ *   \frac{e^{-z^2/2}}{-z\sqrt{2\pi}}  * [1 +  \sum_{n=1}^{N-1}  (-1)^n \frac{(2n-1)!!}{(z^2)^n}]
  *   + O(z^{-2N+2})
  *   = [\mbox{LHS}] * [\mbox{RHS}] + \mbox{error}.
- *   
+ *
  */
 
 double log_ndtr(double a)

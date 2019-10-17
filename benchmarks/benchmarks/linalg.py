@@ -231,3 +231,17 @@ class SpecialMatrices(Benchmark):
 
     def time_tri(self, size):
         sl.tri(size)
+
+
+class GetFuncs(Benchmark):
+    def setup(self):
+        self.x = np.eye(1)
+
+    def time_get_blas_funcs(self):
+        sl.blas.get_blas_funcs('gemm', dtype=float)
+
+    def time_get_blas_funcs_2(self):
+        sl.blas.get_blas_funcs(('gemm', 'axpy'), (self.x, self.x))
+
+    def time_small_cholesky(self):
+        sl.cholesky(self.x)

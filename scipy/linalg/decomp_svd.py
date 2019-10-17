@@ -472,15 +472,15 @@ def subspace_angles(A, B):
     del B
 
     # 2. Compute SVD for cosine
-    QA_T_QB = dot(QA.T, QB)
-    sigma = svdvals(QA_T_QB)
+    QA_H_QB = dot(QA.T.conj(), QB)
+    sigma = svdvals(QA_H_QB)
 
     # 3. Compute matrix B
     if QA.shape[1] >= QB.shape[1]:
-        B = QB - dot(QA, QA_T_QB)
+        B = QB - dot(QA, QA_H_QB)
     else:
-        B = QA - dot(QB, QA_T_QB.T)
-    del QA, QB, QA_T_QB
+        B = QA - dot(QB, QA_H_QB.T.conj())
+    del QA, QB, QA_H_QB
 
     # 4. Compute SVD for sine
     mask = sigma ** 2 >= 0.5
@@ -490,6 +490,7 @@ def subspace_angles(A, B):
         mu_arcsin = 0.
 
     # 5. Compute the principal angles
-    # with reverse ordering of sigma because smallest sigma belongs to largest angle theta
+    # with reverse ordering of sigma because smallest sigma belongs to largest
+    # angle theta
     theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
     return theta

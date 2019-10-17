@@ -334,7 +334,7 @@ class Test_random_ball_compiled_periodic(ball_consistency):
         np.random.seed(1234)
         self.data = np.random.uniform(size=(n,m))
         self.T = cKDTree(self.data,leafsize=2, boxsize=1)
-        self.x = np.ones(m) * 0.1
+        self.x = np.full(m, 0.1)
         self.p = 2.
         self.eps = 0
         self.d = 0.2
@@ -1308,8 +1308,8 @@ def test_ckdtree_duplicated_inputs():
     n = 1024
     for m in range(1, 8):
         data = np.concatenate([
-            np.ones((n // 2, m)) * 1,
-            np.ones((n // 2, m)) * 2], axis=0)
+            np.full((n // 2, m), 1),
+            np.full((n // 2, m), 2)], axis=0)
 
         # it shall not divide more than 3 nodes.
         # root left (1), and right (2)
@@ -1388,6 +1388,34 @@ def test_query_ball_point_length():
     assert_array_equal(length, length2)
     assert_array_equal(length, length3)
     assert_array_equal(length, length4)
+
+def test_discontiguous():
+
+    np.random.seed(1234)
+    data = np.random.normal(size=(100, 3))
+    d_contiguous = np.arange(100) * 0.04
+    d_discontiguous = np.ascontiguousarray(
+                          np.arange(100)[::-1] * 0.04)[::-1]
+    query_contiguous = np.random.normal(size=(100, 3))
+    query_discontiguous = np.ascontiguousarray(query_contiguous.T).T
+    assert query_discontiguous.strides[-1] != query_contiguous.strides[-1]
+    assert d_discontiguous.strides[-1] != d_contiguous.strides[-1]
+
+    tree = cKDTree(data)
+
+    length1 = tree.query_ball_point(query_contiguous,
+                                    d_contiguous, return_length=True)
+    length2 = tree.query_ball_point(query_discontiguous,
+                                    d_discontiguous, return_length=True)
+
+    assert_array_equal(length1, length2)
+
+    d1, i1 = tree.query(query_contiguous, 1)
+    d2, i2 = tree.query(query_discontiguous, 1)
+
+    assert_array_equal(d1, d2)
+    assert_array_equal(i1, i2)
+
 
 @pytest.mark.parametrize("balanced_tree, compact_nodes",
     [(True, False),

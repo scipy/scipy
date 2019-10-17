@@ -390,3 +390,46 @@ def test_weights_integer():
     assert_allclose(pdf_i.evaluate(xn),
                     pdf_f.evaluate(xn), atol=1e-14, rtol=1e-14)
 
+
+def test_seed():
+    # Test the seed option of the resample method
+    def test_seed_sub(gkde_trail):
+        n_sample = 200
+        # The results should be different without using seed
+        samp1 = gkde_trail.resample(n_sample)
+        samp2 = gkde_trail.resample(n_sample)
+        assert_raises(
+            AssertionError, assert_allclose, samp1, samp2, atol=1e-13
+        )
+        # Use integer seed
+        seed = 831
+        samp1 = gkde_trail.resample(n_sample, seed=seed)
+        samp2 = gkde_trail.resample(n_sample, seed=seed)
+        assert_allclose(samp1, samp2, atol=1e-13)
+        # Use RandomState
+        rstate1 = np.random.RandomState(seed=138)
+        samp1 = gkde_trail.resample(n_sample, seed=rstate1)
+        rstate2 = np.random.RandomState(seed=138)
+        samp2 = gkde_trail.resample(n_sample, seed=rstate2)
+        assert_allclose(samp1, samp2, atol=1e-13)
+
+    np.random.seed(8765678)
+    n_basesample = 500
+    wn = np.random.rand(n_basesample)
+    # Test 1D case
+    xn_1d = np.random.randn(n_basesample)
+
+    gkde_1d = stats.gaussian_kde(xn_1d)
+    test_seed_sub(gkde_1d)
+    gkde_1d_weighted = stats.gaussian_kde(xn_1d, weights=wn)
+    test_seed_sub(gkde_1d_weighted)
+
+    # Test 2D case 
+    mean = np.array([1.0, 3.0])
+    covariance = np.array([[1.0, 2.0], [2.0, 6.0]])
+    xn_2d = np.random.multivariate_normal(mean, covariance, size=n_basesample).T
+
+    gkde_2d = stats.gaussian_kde(xn_2d)
+    test_seed_sub(gkde_2d)
+    gkde_2d_weighted = stats.gaussian_kde(xn_2d, weights=wn)
+    test_seed_sub(gkde_2d_weighted)

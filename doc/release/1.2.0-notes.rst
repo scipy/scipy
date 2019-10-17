@@ -19,20 +19,20 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 
 .. note:: This will be the last SciPy release to support Python 2.7.
           Consequently, the 1.2.x series will be a long term support (LTS)
-          release; we will backport bug fixes until 1 Jan 2020.
+          release; we will backport bug-fixes until 1 Jan 2020.
 
 For running on PyPy, PyPy3 6.0+ and NumPy 1.15.0 are required.
 
 Highlights of this release
---------------------------
+===========================
 
 - 1-D root finding improvements with a new solver, ``toms748``, and a new
   unified interface, ``root_scalar``
-- New ``dual_annealing`` optimization method that combines stochastic and
+- new ``dual_annealing`` optimization method that combines stochastic and
   local deterministic searching
-- A new optimization algorithm, ``shgo`` (simplicial homology
-  global optimization) for derivative free optimization problems
-- A new category of quaternion-based transformations are available in
+- a new optimization algorithm, ``shgo`` (simplicial homology
+  global optimization), for derivative-free optimization problems
+- a new category of quaternion-based transformations are available in
   `scipy.spatial.transform`
 
 New features
@@ -42,7 +42,7 @@ New features
 --------------------------------
 
 Proper spline coefficient calculations have been added for the ``mirror``,
-``wrap``, and ``reflect`` modes of `scipy.ndimage.rotate`
+``wrap``, and ``reflect`` modes of `scipy.ndimage.rotate`.
 
 `scipy.fftpack` improvements
 --------------------------------
@@ -54,7 +54,7 @@ DCT-IV, DST-IV, DCT-I, and DST-I orthonormalization are now supported in
 --------------------------------
 
 `scipy.interpolate.pade` now accepts a new argument for the order of the
-numerator
+numerator.
 
 `scipy.cluster` improvements
 ----------------------------
@@ -79,7 +79,7 @@ bracket and the number of derivatives available.
 The so-called Algorithm 748 of Alefeld, Potra and Shi for root-finding within
 an enclosing interval has been added as `scipy.optimize.toms748`. This provides
 guaranteed convergence to a root with convergence rate per function evaluation
-of approximately 1.65 (for sufficiently well-behaved functions.)
+of approximately 1.65 (for sufficiently well-behaved functions).
 
 ``differential_evolution`` now has the ``updating`` and ``workers`` keywords.
 The first chooses between continuous updating of the best solution vector (the
@@ -90,7 +90,7 @@ generation). Supplying an ``int`` evaluates the trial solutions in N parallel
 parts. Supplying a map-like callable allows other parallelisation approaches
 (such as ``mpi4py``, or ``joblib``) to be used.
 
-``dual_annealing`` (and ``shgo`` below) is a powerful new general purpose
+``dual_annealing`` (and ``shgo`` below) is a powerful new general-purpose
 global optizimation (GO) algorithm. ``dual_annealing`` uses two annealing
 processes to accelerate the convergence towards the global minimum of an
 objective mathematical function. The first annealing process controls the
@@ -99,14 +99,14 @@ deterministic minimization. So, dual annealing is a hybrid method that takes
 advantage of stochastic and local deterministic searching in an efficient way.
 
 ``shgo`` (simplicial homology global optimization) is a similar algorithm
-appropriate for solving black box and derivative free optimization (DFO)
+appropriate for solving black box and derivative-free optimization (DFO)
 problems. The algorithm generally converges to the global solution in finite
 time. The convergence holds for non-linear inequality and
 equality constraints. In addition to returning a global minimum, the
 algorithm also returns any other global and local minima found after every
 iteration. This makes it useful for exploring the solutions in a domain.
 
-`scipy.optimize.newton` can now accept a scalar or an array
+`scipy.optimize.newton` can now accept a scalar or an array.
 
 ``MINPACK`` usage is now thread-safe, such that ``MINPACK`` + callbacks may
 be used on multiple threads.
@@ -130,7 +130,7 @@ The new keyword argument ``plateau_size`` was added to ``find_peaks``.
 flat top of a peak.
 
 ``welch()`` and ``csd()`` methods in `scipy.signal` now support calculation
-of a median average PSD, using ``average='mean'`` keyword
+of a median average PSD, using ``average='mean'`` keyword.
 
 `scipy.sparse` improvements
 ---------------------------
@@ -160,7 +160,7 @@ The function `scipy.spatial.distance.jaccard` was modified to return 0 instead
 of ``np.nan`` when two all-zero vectors are compared.
 
 Support for the Jensen Shannon distance, the square-root of the divergence, has
-been added under `scipy.spatial.distance.jensenshannon`
+been added under `scipy.spatial.distance.jensenshannon`.
 
 An optional keyword was added to the function
 `scipy.spatial.cKDTree.query_ball_point()` to sort or not sort the returned
@@ -197,7 +197,7 @@ Levy Stable Parameter Estimation, PDF, and CDF calculations are now supported
 for `scipy.stats.levy_stable`.
 
 The Brunner-Munzel test is now available as ``brunnermunzel`` in ``stats``
-and ``mstats``
+and ``mstats``.
 
 `scipy.linalg` improvements
 ---------------------------
@@ -213,7 +213,7 @@ The functions ``hyp2f0``, ``hyp1f2`` and ``hyp3f0`` in ``scipy.special`` have
 been deprecated.
 
 
-Backwards incompatible changes
+Backwards-incompatible changes
 ==============================
 
 LAPACK version 3.4.0 or later is now required. Building with
@@ -221,9 +221,9 @@ Apple Accelerate is no longer supported.
 
 The function ``scipy.linalg.subspace_angles(A, B)`` now gives correct
 results for all angles. Before this, the function only returned
-correct values for those angles which were greater than pi/4.
+correct values for those angles which were greater than π/4.
 
-Support for the Bento build system has been removed. Bento has not been
+Support for the Bento build system has been removed. Bento had not been
 maintained for several years, and did not have good Python 3 or wheel support,
 hence it was time to remove it.
 
@@ -233,12 +233,12 @@ first converts the problem into a standard form that does not, in general,
 have the same variables or constraints
 as the problem defined by the user. Previously, the simplex solver would pass a
 user-specified callback function several separate arguments, such as the
-current solution vector ``xk``, corresponding to this standard form problem.
-Unfortunately, the relationship between the standard form problem and the
+current solution vector ``xk``, corresponding to this standard-form problem.
+Unfortunately, the relationship between the standard-form problem and the
 user-defined problem was not documented, limiting the utility of the
 information passed to the callback function.
 
-In addition to numerous bug fix changes, the simplex solver now passes a
+In addition to numerous bug-fix changes, the simplex solver now passes a
 user-specified callback function a single ``OptimizeResult`` object containing
 information that corresponds directly to the user-defined problem. In future
 releases, this ``OptimizeResult`` object may be expanded to include additional
@@ -251,10 +251,7 @@ numerical values returned for both ``sparse.random`` and ``sparse.rand`` for
 some matrix shapes and a given seed.
 
 `scipy.optimize.newton` will no longer use Halley's method in cases where it
-negatively impacts convergence
-
-Other changes
-=============
+negatively impacts convergence.
 
 
 Authors

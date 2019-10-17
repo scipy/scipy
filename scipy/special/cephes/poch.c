@@ -1,13 +1,7 @@
 /*
  * Pochhammer symbol (a)_m = gamma(a + m) / gamma(a)
  */
-
-#include <Python.h>
-#include <numpy/npy_math.h>
-
-#include <math.h>
-#include "cephes.h"
-#include "misc.h"
+#include "mconf.h"
 
 static double is_nonpos_int(double x)
 {

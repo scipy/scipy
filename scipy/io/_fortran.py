@@ -9,7 +9,27 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 
-__all__ = ['FortranFile']
+__all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
+
+
+class FortranEOFError(TypeError, IOError):
+    """Indicates that the file ended properly.
+
+    This error descends from TypeError because the code used to raise
+    TypeError (and this was the only way to know that the file had
+    ended) so users might have ``except TypeError:``.
+
+    """
+    pass
+
+
+class FortranFormattingError(TypeError, IOError):
+    """Indicates that the file ended mid-record.
+
+    Descends from TypeError for backward compatibility.
+
+    """
+    pass
 
 
 class FortranFile(object):
@@ -105,8 +125,15 @@ class FortranFile(object):
 
         self._header_dtype = header_dtype
 
-    def _read_size(self):
-        return int(np.fromfile(self._fp, dtype=self._header_dtype, count=1))
+    def _read_size(self, eof_ok=False):
+        n = self._header_dtype.itemsize
+        b = self._fp.read(n)
+        if (not b) and eof_ok:
+            raise FortranEOFError("End of file occurred at end of record")
+        elif len(b) < n:
+            raise FortranFormattingError(
+                "End of file in the middle of the record size")
+        return int(np.frombuffer(b, dtype=self._header_dtype, count=1))
 
     def write_record(self, *items):
         """
@@ -154,6 +181,14 @@ class FortranFile(object):
         -------
         data : ndarray
             A one-dimensional array object.
+
+        Raises
+        ------
+        FortranEOFError
+            To signal that no further records are available
+        FortranFormattingError
+            To signal that the end of the file was encountered
+            part-way through a record
 
         Notes
         -----
@@ -216,7 +251,7 @@ class FortranFile(object):
         elif not dtypes:
             raise ValueError('Must specify at least one dtype')
 
-        first_size = self._read_size()
+        first_size = self._read_size(eof_ok=True)
 
         dtypes = tuple(np.dtype(dtype) for dtype in dtypes)
         block_size = sum(dtype.itemsize for dtype in dtypes)
@@ -236,6 +271,9 @@ class FortranFile(object):
         data = []
         for dtype in dtypes:
             r = np.fromfile(self._fp, dtype=dtype, count=num_blocks)
+            if len(r) != num_blocks:
+                raise FortranFormattingError(
+                    "End of file in the middle of a record")
             if dtype.shape != ():
                 # Squeeze outmost block dimension for array items
                 if num_blocks == 1:

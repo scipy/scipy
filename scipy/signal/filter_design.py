@@ -11,7 +11,7 @@ import numpy as np
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    resize, pi, absolute, logspace, r_, sqrt, tan, log10,
                    arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   zeros, sinh, append, concatenate, prod, ones, array,
+                   zeros, sinh, append, concatenate, prod, ones, full, array,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
@@ -2350,7 +2350,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype in ('lowpass', 'highpass'):
         if numpy.size(Wn) != 1:
-            raise ValueError('Must specify a single critical frequency Wn')
+            raise ValueError('Must specify a single critical frequency Wn for lowpass or highpass filter')
 
         if btype == 'lowpass':
             z, p, k = lp2lp_zpk(z, p, k, wo=warped)
@@ -2361,7 +2361,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             bw = warped[1] - warped[0]
             wo = sqrt(warped[0] * warped[1])
         except IndexError:
-            raise ValueError('Wn must specify start and stop frequencies')
+            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop filter')
 
         if btype == 'bandpass':
             z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
@@ -2747,8 +2747,8 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
                         p_hp - sqrt(p_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
-    z_bs = append(z_bs, +1j*wo * ones(degree))
-    z_bs = append(z_bs, -1j*wo * ones(degree))
+    z_bs = append(z_bs, full(degree, +1j*wo))
+    z_bs = append(z_bs, full(degree, -1j*wo))
 
     # Cancel out gain change caused by inversion
     k_bs = k * real(prod(-z) / prod(-p))
@@ -2768,7 +2768,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     N : int
         The order of the filter.
     Wn : array_like
-        A scalar or length-2 sequence giving the critical frequencies.
+        The critical frequency or frequencies. For lowpass and highpass
+        filters, Wn is a scalar; for bandpass and bandstop filters,
+        Wn is a length-2 sequence.
+
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 

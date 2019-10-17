@@ -24,7 +24,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray)
+                                    rv_continuous, _skew, valarray,
+                                    _get_fixed_fit_value)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
@@ -34,6 +35,24 @@ try:
     float_power = np.float_power
 except AttributeError:
     float_power = np.power
+
+
+def _remove_optimizer_parameters(kwds):
+    """
+    Remove the optimizer-related keyword arguments 'loc', 'scale' and
+    'optimizer' from `kwds`.  Then check that `kwds` is empty, and
+    raise `TypeError("Unknown arguments: %s." % kwds)` if it is not.
+
+    This function is used in the fit method of distributions that override
+    the default method and do not use the default optimization code.
+
+    `kwds` is modified in-place.
+    """
+    kwds.pop('loc', None)
+    kwds.pop('scale', None)
+    kwds.pop('optimizer', None)
+    if kwds:
+        raise TypeError("Unknown arguments: %s." % kwds)
 
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
@@ -252,8 +271,10 @@ class norm_gen(rv_continuous):
         estimation of the normal distribution parameters, so the
         `optimizer` argument is ignored.\n\n""")
     def fit(self, data, **kwds):
-        floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -287,7 +308,7 @@ class alpha_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `alpha` is:
+    The probability density function for `alpha` ([1]_, [2]_) is:
 
     .. math::
 
@@ -299,6 +320,15 @@ class alpha_gen(rv_continuous):
     `alpha` takes ``a`` as a shape parameter.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson, Kotz, and Balakrishnan, "Continuous Univariate
+           Distributions, Volume 1", Second Edition, John Wiley and Sons,
+           p. 173 (1994).
+    .. [2] Anthony A. Salvia, "Reliability applications of the Alpha
+           Distribution", IEEE Transactions on Reliability, Vol. R-34,
+           No. 3, pp. 251-252 (1985).
 
     %(example)s
 
@@ -528,16 +558,21 @@ class beta_gen(rv_continuous):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
-        f1 = (kwds.get('f1', None) or kwds.get('fb', None) or
-              kwds.get('fix_b', None))
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
         if floc is None or fscale is None:
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
+
+        # We already got these from kwds, so just pop them.
+        kwds.pop('floc', None)
+        kwds.pop('fscale', None)
+
+        f0 = _get_fixed_fit_value(kwds, ['f0', 'fa', 'fix_a'])
+        f1 = _get_fixed_fit_value(kwds, ['f1', 'fb', 'fix_b'])
+
+        _remove_optimizer_parameters(kwds)
 
         if f0 is not None and f1 is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -1398,12 +1433,7 @@ class expon_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        # Ignore the optimizer-related keyword arguments, if given.
-        kwds.pop('loc', None)
-        kwds.pop('scale', None)
-        kwds.pop('optimizer', None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
@@ -1519,19 +1549,38 @@ class exponweib_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    weibull_min, numpy.random.mtrand.RandomState.weibull
+
     Notes
     -----
     The probability density function for `exponweib` is:
 
     .. math::
 
-        f(x, a, c) = a c (1-\exp(-x^c))^{a-1} \exp(-x^c) x^{c-1}
+        f(x, a, c) = a c [1-\exp(-x^c)]^{a-1} \exp(-x^c) x^{c-1}
 
-    for :math:`x >= 0`, :math:`a > 0`, :math:`c > 0`.
+    and its cumulative distribution function is:
 
-    `exponweib` takes :math:`a` and :math:`c` as shape parameters.
+    .. math::
+
+        F(x, a, c) = [1-\exp(-x^c)]^a
+
+    for :math:`x > 0`, :math:`a > 0`, :math:`c > 0`.
+
+    `exponweib` takes :math:`a` and :math:`c` as shape parameters:
+
+    * :math:`a` is the exponentiation parameter,
+      with the special case :math:`a=1` corresponding to the
+      (non-exponentiated) Weibull distribution `weibull_min`.
+    * :math:`c` is the shape parameter of the non-exponentiated Weibull law.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Exponentiated_Weibull_distribution
 
     %(example)s
 
@@ -1872,11 +1921,14 @@ foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 class weibull_min_gen(rv_continuous):
     r"""Weibull minimum continuous random variable.
 
+    The Weibull Minimum Extreme Value distribution, from extreme value theory,
+    is also often simply called the Weibull distribution.
+
     %(before_notes)s
 
     See Also
     --------
-    weibull_max
+    weibull_max, numpy.random.mtrand.RandomState.weibull, exponweib
 
     Notes
     -----
@@ -1889,8 +1941,16 @@ class weibull_min_gen(rv_continuous):
     for :math:`x >= 0`, :math:`c > 0`.
 
     `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
+    (named :math:`k` in Wikipedia article and :math:`a` in
+    ``numpy.random.weibull``).  Special shape values are :math:`c=1` and
+    :math:`c=2` where Weibull distribution reduces to the `expon` and
+    `rayleigh` distributions respectively.
 
     %(after_notes)s
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Weibull_distribution
 
     %(example)s
 
@@ -2668,14 +2728,19 @@ class gamma_gen(rv_continuous):
         problem than the full ML optimization problem.  So in that case,
         the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
         floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
 
         if floc is None:
             # loc is not fixed.  Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
+
+        # We already have this value, so just pop it from kwds.
+        kwds.pop('floc', None)
+
+        f0 = _get_fixed_fit_value(kwds, ['f0', 'fa', 'fix_a'])
+        fscale = kwds.pop('fscale', None)
+
+        _remove_optimizer_parameters(kwds)
 
         # Special case: loc is fixed.
 
@@ -5307,10 +5372,19 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc):
-        mu = np.where(dfd <= 2, np.inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = np.where(dfd <= 4, np.inf, 2*(dfd*1.0/dfn)**2.0 *
-                       ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
-                       ((dfd-2.0)**2.0 * (dfd-4.0)))
+        # Note: the rv_continuous class ensures that dfn > 0 when this function
+        # is called, so we don't have  to check for division by zero with dfn
+        # in the following.
+        mu_num = dfd * (dfn + nc)
+        mu_den = dfn * (dfd - 2)
+        mu = np.full_like(mu_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu_num, mu_den, where=dfd > 2, out=mu)
+
+        mu2_num = 2*((dfn + nc)**2 + (dfn + 2*nc)*(dfd - 2))*(dfd/dfn)**2
+        mu2_den = (dfd - 2)**2 * (dfd - 4)
+        mu2 = np.full_like(mu2_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu2_num, mu2_den, where=dfd > 4, out=mu2)
+
         return mu, mu2, None, None
 
 
@@ -5892,7 +5966,7 @@ powernorm = powernorm_gen(name='powernorm')
 
 
 class rdist_gen(rv_continuous):
-    r"""An R-distributed continuous random variable.
+    r"""An R-distributed (symmetric beta) continuous random variable.
 
     %(before_notes)s
 
@@ -5904,7 +5978,10 @@ class rdist_gen(rv_continuous):
 
         f(x, c) = \frac{(1-x^2)^{c/2-1}}{B(1/2, c/2)}
 
-    for :math:`-1 \le x \le 1`, :math:`c > 0`.
+    for :math:`-1 \le x \le 1`, :math:`c > 0`. `rdist` is also called the
+    symmetric beta distribution: if B has a `beta` distribution with
+    parameters (c/2, c/2), then X = 2*B - 1 follows a R-distribution with
+    parameter c.
 
     `rdist` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -5912,6 +5989,7 @@ class rdist_gen(rv_continuous):
     special cases::
 
         c = 2:  uniform
+        c = 3:  `semicircular`
         c = 4:  Epanechnikov (parabolic)
         c = 6:  quartic (biweight)
         c = 8:  triweight
@@ -5921,19 +5999,21 @@ class rdist_gen(rv_continuous):
     %(example)s
 
     """
+    # use relation to the beta distribution for pdf, cdf, etc
     def _pdf(self, x, c):
-        # rdist.pdf(x, c) = (1-x**2)**(c/2-1) / B(1/2, c/2)
-        return np.power((1.0 - x**2), c / 2.0 - 1) / sc.beta(0.5, c / 2.0)
+        return 0.5*beta._pdf((x + 1)/2, c/2, c/2)
+
+    def _logpdf(self, x, c):
+        return -np.log(2) + beta._logpdf((x + 1)/2, c/2, c/2)
 
     def _cdf(self, x, c):
-        term1 = x / sc.beta(0.5, c / 2.0)
-        res = 0.5 + term1 * sc.hyp2f1(0.5, 1 - c / 2.0, 1.5, x**2)
-        # There's an issue with hyp2f1, it returns nans near x = +-1, c > 100.
-        # Use the generic implementation in that case.  See gh-1285 for
-        # background.
-        if np.any(np.isnan(res)):
-            return rv_continuous._cdf(self, x, c)
-        return res
+        return beta._cdf((x + 1)/2, c/2, c/2)
+
+    def _ppf(self, q, c):
+        return 2*beta._ppf(q, c/2, c/2) - 1
+
+    def _rvs(self, c):
+        return 2 * self._random_state.beta(c/2, c/2, self._size) - 1
 
     def _munp(self, n, c):
         numerator = (1 - (n % 2)) * sc.beta((n + 1.0) / 2, c / 2.0)
@@ -6182,7 +6262,13 @@ class semicircular_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`.
 
+    The distribution is a special case of `rdist` with `c = 3`.
+
     %(after_notes)s
+
+    See Also
+    --------
+    rdist
 
     References
     ----------
@@ -6195,8 +6281,14 @@ class semicircular_gen(rv_continuous):
     def _pdf(self, x):
         return 2.0/np.pi*np.sqrt(1-x*x)
 
+    def _logpdf(self, x):
+        return np.log(2/np.pi) + 0.5*np.log1p(-x*x)
+
     def _cdf(self, x):
         return 0.5+1.0/np.pi*(x*np.sqrt(1-x*x) + np.arcsin(x))
+
+    def _ppf(self, q):
+        return rdist._ppf(q, 3)
 
     def _rvs(self):
         # generate values uniformly distributed on the area under the pdf
@@ -6238,7 +6330,7 @@ class skew_norm_gen(rv_continuous):
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        http://azzalini.stat.unipd.it/SN/faq-r.html
+        https://arxiv.org/abs/0911.2093
 
     """
     def _argcheck(self, a):
@@ -6724,12 +6816,7 @@ class uniform_gen(rv_continuous):
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
-        # Ignore the optimizer-related keyword arguments, if given.
-        kwds.pop('loc', None)
-        kwds.pop('scale', None)
-        kwds.pop('optimizer', None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+        _remove_optimizer_parameters(kwds)
 
         if floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.

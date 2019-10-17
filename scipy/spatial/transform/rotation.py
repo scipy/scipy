@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import scipy.linalg
 from scipy._lib._util import check_random_state
+from ._rotation_groups import create_group
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -210,7 +211,11 @@ class Rotation(object):
     apply
     __mul__
     inv
+    magnitude
+    reduce
+    create_group
     __getitem__
+    identity
     random
     match_vectors
 
@@ -706,7 +711,7 @@ class Rotation(object):
         chosen to be the basis vectors.
 
         The three rotations can either be in a global frame of reference
-        (extrinsic) or in a body centred frame of refernce (intrinsic), which
+        (extrinsic) or in a body centred frame of reference (intrinsic), which
         is attached to, and moves with, the object under rotation [1]_.
 
         Parameters
@@ -1428,6 +1433,166 @@ class Rotation(object):
             quat = quat[0]
         return self.__class__(quat, normalized=True, copy=False)
 
+    def magnitude(self):
+        """Get the magnitude(s) of the rotation(s).
+
+        Returns
+        -------
+        magnitude : ndarray or float
+            Angle(s) in radians, float if object contains a single rotation
+            and ndarray if object contains multiple rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r = R.from_quat(np.eye(4))
+        >>> r.magnitude()
+        array([3.14159265, 3.14159265, 3.14159265, 0.        ])
+
+        Magnitude of a single rotation:
+
+        >>> r[0].magnitude()
+        3.141592653589793
+        """
+
+        quat = self._quat.reshape((len(self), 4))
+        s = np.linalg.norm(quat[:, :3], axis=1)
+        c = np.abs(quat[:, 3])
+        angles = 2 * np.arctan2(s, c)
+
+        if self._single:
+            return angles[0]
+        else:
+            return angles
+
+    def reduce(self, left=None, right=None, return_indices=False):
+        """Reduce this rotation with the provided rotation groups.
+
+        Reduction of a rotation ``p`` is a transformation of the form
+        ``q = l * p * r``, where ``l`` and ``r`` are chosen from `left` and
+        `right` respectively, such that rotation ``q`` has the smallest
+        magnitude.
+
+        If `left` and `right` are rotation groups representing symmetries of
+        two objects rotated by ``p``, then ``q`` is the rotation of the
+        smallest magnitude to align these objects considering their symmetries.
+
+        Parameters
+        ----------
+        left : `Rotation` instance, optional
+            Object containing the left rotation(s). Default value (None)
+            corresponds to the identity rotation.
+        right : `Rotation` instance, optional
+            Object containing the right rotation(s). Default value (None)
+            corresponds to the identity rotation.
+        return_indices : bool, optional
+            Whether to return the indices of the rotations from `left` and
+            `right` used for reduction.
+
+        Returns
+        -------
+        reduced : `Rotation` instance
+            Object containing reduced rotations.
+        left_best, right_best: integer ndarray
+            Indices of elements from `left` and `right` used for reduction.
+        """
+        if left is None and right is None:
+            reduced = self.__class__(self._quat, normalized=True, copy=True)
+            if return_indices:
+                return reduced, None, None
+            else:
+                return reduced
+        elif right is None:
+            right = Rotation.identity()
+        elif left is None:
+            left = Rotation.identity()
+
+        # Levi-Civita tensor for triple product computations
+        e = np.zeros((3, 3, 3))
+        e[0, 1, 2] = e[1, 2, 0] = e[2, 0, 1] = 1
+        e[0, 2, 1] = e[2, 1, 0] = e[1, 0, 2] = -1
+
+        # We want to calculate the real components of q = l * p * r. It can
+        # be shown that:
+        #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
+        #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
+        # where ls and lv denote the scalar and vector components of l.
+
+        def split_rotation(R):
+            q = np.atleast_2d(R.as_quat())
+            return q[:, -1], q[:, :-1]
+
+        p = self
+        ps, pv = split_rotation(p)
+        ls, lv = split_rotation(left)
+        rs, rv = split_rotation(right)
+
+        qs = np.abs(np.einsum('i,j,k', ls, ps, rs) -
+                    np.einsum('i,jx,kx', ls, pv, rv) -
+                    np.einsum('ix,j,kx', lv, ps, rv) -
+                    np.einsum('ix,jx,k', lv, pv, rs) -
+                    np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
+        qs = np.reshape(np.rollaxis(qs, 1), (qs.shape[1], -1))
+
+        # Find best indices from scalar components
+        max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
+        left_best = max_ind // len(right)
+        right_best = max_ind % len(right)
+
+        # Reduce the rotation using the best indices
+        reduced = left[left_best] * p * right[right_best]
+        if self._single:
+            reduced = reduced[0]
+            left_best = left_best[0]
+            right_best = right_best[0]
+
+        if return_indices:
+            if left is None:
+                left_best = None
+            if right is None:
+                right_best = None
+            return reduced, left_best, right_best
+        else:
+            return reduced
+
+    @classmethod
+    def create_group(cls, group, axis='Z'):
+        """Create a 3D rotation group.
+
+        Parameters
+        ----------
+        group : string
+            The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
+            where `n` is a positive integer. The groups are:
+
+                * I: Icosahedral group
+                * O: Octahedral group
+                * T: Tetrahedral group
+                * D: Dicyclic group
+                * C: Cyclic group
+
+        axis : integer
+            The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or
+            lowercase). Default is 'Z'. Ignored for groups 'I', 'O', and 'T'.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            Object containing the elements of the rotation group.
+
+        Notes
+        -----
+        This method generates rotation groups only. The full 3-dimensional
+        point groups [PointGroups]_ also contain reflections.
+
+        References
+        ----------
+        .. [PointGroups] `Point groups
+           <https://en.wikipedia.org/wiki/Point_groups_in_three_dimensions>`_
+           on Wikipedia.
+        """
+        return create_group(cls, group, axis=axis)
+
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
 
@@ -1477,6 +1642,30 @@ class Rotation(object):
         return self.__class__(self._quat[indexer], normalized=True)
 
     @classmethod
+    def identity(cls, num=None):
+        """Get identity rotation(s).
+
+        Composition with the identity rotation has no effect.
+
+        Parameters
+        ----------
+        num : int or None, optional
+            Number of identity rotations to generate. If None (default), then a
+            single rotation is generated.
+
+        Returns
+        -------
+        identity : Rotation object
+            The identity rotation.
+        """
+        if num is None:
+            q = [0, 0, 0, 1]
+        else:
+            q = np.zeros((num, 4))
+            q[:, 3] = 1
+        return cls(q, normalized=True)
+
+    @classmethod
     def random(cls, num=None, random_state=None):
         """Generate uniformly distributed rotations.
 
@@ -1522,7 +1711,7 @@ class Rotation(object):
         else:
             sample = random_state.normal(size=(num, 4))
 
-        return Rotation.from_quat(sample)
+        return cls(sample)
 
     @classmethod
     def match_vectors(cls, a, b, weights=None, normalized=False):

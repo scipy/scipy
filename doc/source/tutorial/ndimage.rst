@@ -391,7 +391,7 @@ second derivative function:
 The gradient magnitude is defined as the square root of the sum of the
 squares of the gradients in all directions. Similar to the generic
 Laplace function there is a :func:`generic_gradient_magnitude`
-function that calculats the gradient magnitude of an array.
+function that calculates the gradient magnitude of an array.
 
 - The function :func:`generic_gradient_magnitude` calculates a
   gradient magnitude using the function passed through
