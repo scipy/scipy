@@ -2168,9 +2168,9 @@ def variation(a, axis=0):
     >>> b = np.ma.masked_array(a, mask=[0,0,1,0])
     >>> variation(b)
     0.5345224838248487
-    In the example above, it can be seen that this works as same as 
+    In the example above, it can be seen that this works as same as
     `stats.variation` except 'stats.mstats.variation' ignore for
-    invalid array elements. 
+    invalid array elements.
 
     """
     a, axis = _chk_asarray(a, axis)
