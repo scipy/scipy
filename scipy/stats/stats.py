@@ -354,8 +354,10 @@ def hmean(a, axis=0, dtype=None, allow_zero=False):
         platform integer is used.
     allow_zero : bool, optional
         If `allow_zero` is False then hmean will raise a ValueError if any of
-        the elements in a are 0. If `allow_zero` is True then hmean will return
-        0 if any of the elements in a are 0.
+        the elements in `a` are 0. If `allow_zero` is True then hmean will
+        return 0 if any of the elements in `a` are 0.
+
+        .. versionadded:: 1.4.0
 
     Returns
     -------
@@ -387,7 +389,7 @@ def hmean(a, axis=0, dtype=None, allow_zero=False):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a >= 0):
+    if (allow_zero and np.all(a >= 0)) or np.all(a > 0):
         # Harmonic mean only defined if greater than or equal to to zero.
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
@@ -401,7 +403,7 @@ def hmean(a, axis=0, dtype=None, allow_zero=False):
             return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
-                         "than or equal to zero")
+                         "than %szero" % ('or equal to ' if allow_zero else ''))
 
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
