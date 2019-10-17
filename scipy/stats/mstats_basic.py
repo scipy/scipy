@@ -2165,10 +2165,10 @@ def variation(a, axis=0):
     >>> variation(a)
     0.5345224838248487
     >>> b = np.array([2,8,3,4])
-    >>> b = np.ma.masked_array(a, mask=[0,0,1,0])
-    >>> variation(b)
+    >>> c = np.ma.masked_array(b, mask=[0,0,1,0])
+    >>> variation(c)
     0.5345224838248487
-    
+
     In the example above, it can be seen that this works as same as
     `stats.variation` except 'stats.mstats.variation' ignore for
     invalid array elements.
