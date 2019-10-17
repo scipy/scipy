@@ -4326,7 +4326,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1):
     # use all cores to create function that parallelizes over number of reps
     mapwrapper = MapWrapper(workers)
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance)
-    null_dist = list(mapwrapper(parallelp, range(reps)))
+    null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
     pvalue = (null_dist >= stat).sum() / reps
