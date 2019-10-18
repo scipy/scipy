@@ -2152,10 +2152,25 @@ def variation(a, axis=0):
     -------
     variation : ndarray
         The calculated variation along the requested axis.
-
+    
     Notes
     -----
     For more details about `variation`, see `stats.variation`.
+    
+    Examples
+    --------
+    >>> from scipy.stats.mstats import variation
+    >>> a = np.array([2,8,4])
+    >>> variation(a)
+    0.5345224838248487
+    >>> b = np.array([2,8,3,4])
+    >>> c = np.ma.masked_array(b, mask=[0,0,1,0])
+    >>> variation(c)
+    0.5345224838248487
+
+    In the example above, it can be seen that this works the same as
+    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    array elements.
 
     """
     a, axis = _chk_asarray(a, axis)
