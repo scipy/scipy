@@ -454,7 +454,10 @@ class lil_matrix(spmatrix, IndexMixin):
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
         indptr = np.cumsum([0] + lst, dtype=idx_dtype)
         # choose faster construction approach depending on density 
-        if indptr[-1] / len(self.rows) >= 25:
+        if len(self.rows) == 0:
+            indices = np.empty(0, dtype=idx_dtype)
+            data = np.empty(0, dtype=self.dtype)            
+        elif indptr[-1] / len(self.rows) >= 25:
             indices = np.empty(indptr[-1], dtype=idx_dtype)
             data = np.empty(indptr[-1], dtype=self.dtype)
             start = 0
