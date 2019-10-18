@@ -2559,8 +2559,20 @@ c                               Line search is impossible.
          if (stp .eq. one) then
             call dcopy(n,z,1,x,1)
          else
+c        take step and prevent rounding error beyond bound
             do 41 i = 1, n
-               x(i) = stp*d(i) + t(i)
+               if (nbd(i) .ne. 0) then
+                  if (nbd(i) .eq. 1) then !lower bound only
+                     x(i) = max( l(i) , stp*d(i) + t(i) )
+                  else if ( nbd(i) .eq. 2) then !upper and lower bounds
+                     a1 = max( l(i), stp*d(i) + t(i) )
+                     x(i) = min( u(i), a1)
+                  else if ( nbd(i) .eq. 3) then ! upper bound only
+                     x(i) = min( u(i), stp*d(i) + t(i) )
+                  end if
+               else   ! no bounds
+                  x(i) = stp*d(i) + t(i)
+               end if
   41        continue
          endif
       else
