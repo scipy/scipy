@@ -690,10 +690,11 @@ def _bin_numbers(sample, nbin, edges, dedges):
     # Using `digitize`, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right
     # edge to be counted in the last bin, and not as an outlier.
-    exceptions = (RuntimeWarning,)
+    exceptions = (RuntimeWarning, OverflowError, FloatingPointError)
     if sys.version_info >= (3, 8):
         exceptions += (OverflowError,)  # Python3.8 int(np.inf) throws this
     for i in xrange(Ndim):
+        with np.errstate(divide='raise'):
         # Find the rounding precision
         try:
             decimal = int(-np.log10(dedges[i].min())) + 6
