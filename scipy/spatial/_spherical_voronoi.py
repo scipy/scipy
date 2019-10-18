@@ -20,18 +20,6 @@ from scipy.spatial import cKDTree
 __all__ = ['SphericalVoronoi']
 
 
-def sphere_check(points, radius, center):
-    """ Determines distance of generators from theoretical sphere
-    surface.
-
-    """
-    actual_squared_radii = (((points[...,0] - center[0]) ** 2) +
-                            ((points[...,1] - center[1]) ** 2) +
-                            ((points[...,2] - center[2]) ** 2))
-    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
-    return abs(max_discrepancy)
-
-
 class SphericalVoronoi:
     """ Voronoi diagrams on the surface of a sphere.
 
@@ -161,19 +149,59 @@ class SphericalVoronoi:
         self.points = points
         self.radius = radius
         self.center = np.array(center)
+        self.threshold = threshold
 
-        if cKDTree(self.points).query_pairs(threshold * self.radius):
+        if cKDTree(self.points).query_pairs(self.threshold * self.radius):
             raise ValueError("Duplicate generators present.")
 
-        max_discrepancy = sphere_check(self.points,
-                                       self.radius,
-                                       self.center)
-        if max_discrepancy >= threshold * self.radius:
+        radii = np.linalg.norm(self.points - self.center, axis=1)
+        max_discrepancy = np.abs(radii - self.radius).max()
+        if max_discrepancy >= self.threshold * self.radius:
             raise ValueError("Radius inconsistent with generators.")
         self.vertices = None
         self.regions = None
         self._tri = None
         self._calc_vertices_regions()
+
+    def _handle_geodesic_input(self):
+
+        # center the points
+        centered = self.points - self.center
+
+        # calculate an orthogonal transformation using SVD
+        _, _, vh = np.linalg.svd(centered)
+
+        # calculate the north and south poles in this basis
+        poles = [[0, 0, self.radius], [0, 0, -self.radius]] @ vh
+
+        # project points into inverse basis (such that z-components are zero)
+        circle = centered @ vh.T[:, :2]
+
+        # simplicial neighbors are adjacent on the circle
+        angles = np.arctan2(circle[:, 1], circle[:, 0])
+        indices = np.argsort(angles)
+
+        # Voronoi vertices lie halfway between neighboring pairs
+        vertices = centered[indices] + centered[np.roll(indices, 1)]
+        vertices /= np.linalg.norm(vertices, axis=1)[:, np.newaxis]
+        vertices *= self.radius
+
+        # north and south poles are also Voronoi vertices
+        vertices = np.concatenate((vertices, poles))
+
+        # each region contains two vertices from the plane and the north and
+        # south poles
+        invf = np.argsort(indices)
+        invb = np.argsort(np.roll(indices, 1))
+
+        n = len(self.points)
+        regions = np.vstack([invf,                           # forward neigh.
+                             [len(self.points)] * n,         # north pole
+                             invb,                           # backward neigh.
+                             [len(self.points) + 1] * n]).T  # south pole
+
+        self.regions = [list(region) for region in regions]
+        self.vertices = vertices + self.center
 
     def _calc_vertices_regions(self):
         """
@@ -184,6 +212,15 @@ class SphericalVoronoi:
         This algorithm was discussed at PyData London 2015 by
         Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
         """
+
+        # test degenerate input
+        self._rank = np.linalg.matrix_rank(self.points - self.center,
+                                           tol=self.threshold * self.radius)
+        if self._rank <= 1:
+            raise ValueError("Rank of input points must be at least 2")
+        elif self._rank == 2:
+            self._handle_geodesic_input()
+            return
 
         # get Convex Hull
         self._tri = scipy.spatial.ConvexHull(self.points)
@@ -238,5 +275,6 @@ class SphericalVoronoi:
         generator in points and obtain a sorted version of the vertices
         of its surrounding region.
         """
-
+        if self._rank == 2:
+            return  # regions are sorted by construction
         _voronoi.sort_vertices_of_regions(self._tri.simplices, self.regions)

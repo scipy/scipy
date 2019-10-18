@@ -6,11 +6,13 @@ from numpy.testing import (assert_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
 import warnings
+import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 from scipy._lib._numpy_compat import suppress_warnings
+from scipy.spatial.transform import Rotation
 
 
 class TestSphericalVoronoi(object):
@@ -170,3 +172,48 @@ class TestSphericalVoronoi(object):
             dots = np.einsum('ij,ij->i', sv.vertices, triangles[:, 0])
             circumradii = np.arccos(np.clip(dots, -1, 1))
             assert np.max(circumradii) > np.pi / 2
+
+    def test_rank_deficient(self):
+        # rank-1 input cannot be triangulated
+        points = np.array([[-1, 0, 0], [1, 0, 0]])
+        with pytest.raises(ValueError, match="Rank of input points"):
+            sv = spherical_voronoi.SphericalVoronoi(points)
+
+    @pytest.mark.parametrize("n", [8, 15, 21])
+    @pytest.mark.parametrize("radius", [0.5, 1, 2])
+    @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
+    def test_geodesic_input(self, n, radius, center):
+        np.random.seed(0)
+        U = Rotation.random().as_dcm()
+        thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
+        points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
+        points = radius * points @ U
+        sv = SphericalVoronoi(points + center, radius=radius, center=center)
+
+        # each region must have 4 vertices
+        region_sizes = np.array([len(region) for region in sv.regions])
+        assert (region_sizes == 4).all()
+        regions = np.array(sv.regions)
+
+        # vertices are those between each pair of input points + north and
+        # south poles
+        vertices = sv.vertices - center
+        assert len(vertices) == n + 2
+
+        # verify that north and south poles are orthogonal to geodesic on which
+        # input points lie
+        poles = vertices[n:]
+        assert np.abs(np.dot(points, poles.T)).max() < 1E-10
+
+        for point, region in zip(points, sv.regions):
+            cosine = np.dot(vertices[region], point)
+            sine = np.linalg.norm(np.cross(vertices[region], point), axis=1)
+            arclengths = radius * np.arctan2(sine, cosine)
+            # test arc lengths to poles
+            assert_almost_equal(arclengths[[1, 3]], radius * np.pi / 2)
+            # test arc lengths to forward and backward neighbors
+            assert_almost_equal(arclengths[[0, 2]], radius * np.pi / n)
+
+        regions = sv.regions.copy()
+        sv.sort_vertices_of_regions()
+        assert regions == sv.regions
