@@ -2169,7 +2169,7 @@ def variation(a, axis=0):
     >>> variation(c)
     0.5345224838248487
 
-    In the example above, it can be seen that this works as same as
+    In the example above, it can be seen that this works the same as
     `stats.variation` except 'stats.mstats.variation' ignore for
     invalid array elements.
 
