@@ -2159,7 +2159,6 @@ def variation(a, axis=0):
     
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.stats.mstats import variation
     >>> a = np.array([2,8,4])
     >>> variation(a)
@@ -2170,8 +2169,8 @@ def variation(a, axis=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignore for
-    invalid array elements.
+    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    array elements.
 
     """
     a, axis = _chk_asarray(a, axis)
