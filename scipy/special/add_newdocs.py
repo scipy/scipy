@@ -7083,9 +7083,9 @@ add_newdoc("poch",
     r"""
     poch(z, m)
 
-    Rising factorial (z)_m
+    Pochhammer symbol.
 
-    The Pochhammer symbol (rising factorial), is defined as
+    The Pochhammer symbol (rising factorial) is defined as
 
     .. math::
 
@@ -7097,17 +7097,47 @@ add_newdoc("poch",
 
         (z)_m = z (z + 1) ... (z + m - 1)
 
+    See [dlmf]_ for more details.
+
     Parameters
     ----------
-    z : array_like
-        (int or float)
-    m : array_like
-        (int or float)
+    z, m : array_like
+        Real-valued arguments.
 
     Returns
     -------
-    poch : ndarray
+    scalar or ndarray
         The value of the function.
+
+    References
+    ----------
+    .. [dlmf] Nist, Digital Library of Mathematical Functions
+        https://dlmf.nist.gov/5.2#iii
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is 1 when m is 0.
+
+    >>> sc.poch([1, 2, 3, 4], 0)
+    array([1., 1., 1., 1.])
+
+    For z equal to 1 it reduces to the factorial function.
+
+    >>> sc.poch(1, 5)
+    120.0
+    >>> 1 * 2 * 3 * 4 * 5
+    120
+
+    It can be expressed in terms of the Gamma function.
+
+    >>> z, m = 3.7, 2.1
+    >>> sc.poch(z, m)
+    20.529581933776953
+    >>> sc.gamma(z + m) / sc.gamma(z)
+    20.52958193377696
+
     """)
 
 add_newdoc("pro_ang1",
