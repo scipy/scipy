@@ -11,14 +11,14 @@ Introduction
 ------------
 
 Image processing and analysis are generally seen as operations on
-two-dimensional arrays of values. There are however a number of
+2-D arrays of values. There are, however, a number of
 fields where images of higher dimensionality must be analyzed. Good
 examples of these are medical imaging and biological imaging.
-:mod:`numpy` is suited very well for this type of applications due
+:mod:`numpy` is suited very well for this type of applications due to
 its inherent multidimensional nature. The :mod:`scipy.ndimage`
 packages provides a number of general image processing and analysis
 functions that are designed to operate with arrays of arbitrary
-dimensionality. The packages currently includes functions for
+dimensionality. The packages currently includes: functions for
 linear and non-linear filtering, binary morphology, B-spline
 interpolation, and object measurements.
 
@@ -29,14 +29,14 @@ Properties shared by all functions
 
 All functions share some common properties. Notably, all functions
 allow the specification of an output array with the *output*
-argument. With this argument you can specify an array that will be
-changed in-place with the result with the operation. In this case
+argument. With this argument, you can specify an array that will be
+changed in-place with the result with the operation. In this case,
 the result is not returned. Usually, using the *output* argument is
 more efficient, since an existing array is used to store the
 result.
 
 The type of arrays returned is dependent on the type of operation,
-but it is in most cases equal to the type of the input. If,
+but it is, in most cases, equal to the type of the input. If,
 however, the *output* argument is used, the type of the result is
 equal to the type of the specified output argument. If no output
 argument is given, it is still possible to specify what the result
@@ -62,8 +62,8 @@ of the values in the neighborhood of the corresponding input element. We refer
 to this neighborhood of elements as the filter kernel, which is often
 rectangular in shape but may also have an arbitrary footprint. Many
 of the functions described below allow you to define the footprint
-of the kernel, by passing a mask through the *footprint* parameter.
-For example a cross shaped kernel can be defined as follows:
+of the kernel by passing a mask through the *footprint* parameter.
+For example, a cross-shaped kernel can be defined as follows:
 
 .. code:: python
 
@@ -73,11 +73,11 @@ For example a cross shaped kernel can be defined as follows:
            [1, 1, 1],
            [0, 1, 0]])
 
-Usually the origin of the kernel is at the center calculated by
+Usually, the origin of the kernel is at the center calculated by
 dividing the dimensions of the kernel shape by two. For instance,
-the origin of a one-dimensional kernel of length three is at the
-second element. Take for example the correlation of a
-one-dimensional array with a filter of length 3 consisting of
+the origin of a 1-D kernel of length three is at the
+second element. Take, for example, the correlation of a
+1-D array with a filter of length 3 consisting of
 ones:
 
 .. code:: python
@@ -87,9 +87,9 @@ ones:
     >>> correlate1d(a, [1, 1, 1])
     array([0, 0, 1, 1, 1, 0, 0])
 
-Sometimes it is convenient to choose a different origin for the
-kernel. For this reason most functions support the *origin*
-parameter which gives the origin of the filter relative to its
+Sometimes, it is convenient to choose a different origin for the
+kernel. For this reason, most functions support the *origin*
+parameter, which gives the origin of the filter relative to its
 center. For example:
 
 .. code:: python
@@ -99,7 +99,7 @@ center. For example:
     array([0, 1, 1, 1, 0, 0, 0])
 
 The effect is a shift of the result towards the left. This feature
-will not be needed very often, but it may be useful especially for
+will not be needed very often, but it may be useful, especially for
 filters that have an even size. A good example is the calculation
 of backward and forward differences:
 
@@ -119,7 +119,7 @@ We could also have calculated the forward difference as follows:
     array([ 0,  1,  0,  0, -1,  0,  0])
 
 However, using the origin parameter instead of a larger kernel is
-more efficient. For multidimensional kernels *origin* can be a
+more efficient. For multidimensional kernels, *origin* can be a
 number, in which case the origin is assumed to be equal along all
 axes, or a sequence giving the origin along each axis.
 
@@ -127,17 +127,17 @@ Since the output elements are a function of elements in the
 neighborhood of the input elements, the borders of the array need to
 be dealt with appropriately by providing the values outside the
 borders. This is done by assuming that the arrays are extended beyond
-their boundaries according certain boundary conditions. In the
+their boundaries according to certain boundary conditions. In the
 functions described below, the boundary conditions can be selected
-using the *mode* parameter which must be a string with the name of the
+using the *mode* parameter, which must be a string with the name of the
 boundary condition. The following boundary conditions are currently
 supported:
 
  ==========   ====================================   ====================
- "nearest"    Use the value at the boundary          [1 2 3]->[1 1 2 3 3]
- "wrap"       Periodically replicate the array       [1 2 3]->[3 1 2 3 1]
- "reflect"    Reflect the array at the boundary      [1 2 3]->[1 1 2 3 3]
- "constant"   Use a constant value, default is 0.0   [1 2 3]->[0 1 2 3 0]
+ "nearest"    use the value at the boundary          [1 2 3]->[1 1 2 3 3]
+ "wrap"       periodically replicate the array       [1 2 3]->[3 1 2 3 1]
+ "reflect"    reflect the array at the boundary      [1 2 3]->[1 1 2 3 3]
+ "constant"   use a constant value, default is 0.0   [1 2 3]->[0 1 2 3 0]
  ==========   ====================================   ====================
 
 The "constant" mode is special since it needs an additional
@@ -149,31 +149,24 @@ parameter to specify the constant value that should be used.
    copy the data to a larger array and extend the data at the borders
    according to the boundary conditions. For large arrays and large
    filter kernels, this would be very memory consuming, and the
-   functions described below therefore use a different approach that
+   functions described below, therefore, use a different approach that
    does not require allocating large temporary buffers.
 
 Correlation and convolution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- The :func:`correlate1d` function calculates a one-dimensional
+- The :func:`correlate1d` function calculates a 1-D
   correlation along the given axis. The lines of the array along the
   given axis are correlated with the given *weights*. The *weights*
-  parameter must be a one-dimensional sequences of numbers.
+  parameter must be a 1-D sequence of numbers.
 
 - The function :func:`correlate` implements multidimensional
   correlation of the input array with a given kernel.
 
-- The :func:`convolve1d` function calculates a one-dimensional
+- The :func:`convolve1d` function calculates a 1-D
   convolution along the given axis. The lines of the array along the
   given axis are convoluted with the given *weights*. The *weights*
-  parameter must be a one-dimensional sequences of numbers.
-
-  .. note::
-
-     A convolution is essentially a correlation after mirroring the
-     kernel. As a result, the *origin* parameter behaves differently
-     than in the case of a correlation: the result is shifted in the
-     opposite directions.
+  parameter must be a 1-D sequence of numbers.
 
 - The function :func:`convolve` implements multidimensional
   convolution of the input array with a given kernel.
@@ -190,23 +183,23 @@ Correlation and convolution
 Smoothing filters
 ^^^^^^^^^^^^^^^^^
 
-- The :func:`gaussian_filter1d` function implements a one-dimensional
-  Gaussian filter. The standard-deviation of the Gaussian filter is
+- The :func:`gaussian_filter1d` function implements a 1-D
+  Gaussian filter. The standard deviation of the Gaussian filter is
   passed through the parameter *sigma*. Setting *order* = 0
   corresponds to convolution with a Gaussian kernel. An order of 1, 2,
-  or 3 corresponds to convolution with the first, second or third
-  derivatives of a Gaussian. Higher order derivatives are not
+  or 3 corresponds to convolution with the first, second, or third
+  derivatives of a Gaussian. Higher-order derivatives are not
   implemented.
 
 - The :func:`gaussian_filter` function implements a multidimensional
-  Gaussian filter. The standard-deviations of the Gaussian filter
+  Gaussian filter. The standard deviations of the Gaussian filter
   along each axis are passed through the parameter *sigma* as a
   sequence or numbers. If *sigma* is not a sequence but a single
   number, the standard deviation of the filter is equal along all
   directions. The order of the filter can be specified separately for
   each axis. An order of 0 corresponds to convolution with a Gaussian
   kernel. An order of 1, 2, or 3 corresponds to convolution with the
-  first, second or third derivatives of a Gaussian. Higher order
+  first, second, or third derivatives of a Gaussian. Higher-order
   derivatives are not implemented. The *order* parameter must be a
   number, to specify the same order for all axes, or a sequence of
   numbers to specify a different order for each axis.
@@ -214,26 +207,26 @@ Smoothing filters
   .. note::
 
      The multidimensional filter is implemented as a sequence of
-     one-dimensional Gaussian filters. The intermediate arrays are
-     stored in the same data type as the output.  Therefore, for
+     1-D Gaussian filters. The intermediate arrays are
+     stored in the same data type as the output. Therefore, for
      output types with a lower precision, the results may be imprecise
      because intermediate results may be stored with insufficient
      precision. This can be prevented by specifying a more precise
      output type.
 
-- The :func:`uniform_filter1d` function calculates a one-dimensional
+- The :func:`uniform_filter1d` function calculates a 1-D
   uniform filter of the given *size* along the given axis.
 
 - The :func:`uniform_filter` implements a multidimensional uniform
   filter. The sizes of the uniform filter are given for each axis as a
   sequence of integers by the *size* parameter. If *size* is not a
-  sequence, but a single number, the sizes along all axis are assumed
+  sequence, but a single number, the sizes along all axes are assumed
   to be equal.
 
   .. note::
 
      The multidimensional filter is implemented as a sequence of
-     one-dimensional uniform filters. The intermediate arrays are
+     1-D uniform filters. The intermediate arrays are
      stored in the same data type as the output. Therefore, for output
      types with a lower precision, the results may be imprecise
      because intermediate results may be stored with insufficient
@@ -243,16 +236,16 @@ Smoothing filters
 Filters based on order statistics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- The :func:`minimum_filter1d` function calculates a one-dimensional
-  minimum filter of given *size* along the given axis.
+- The :func:`minimum_filter1d` function calculates a 1-D
+  minimum filter of the given *size* along the given axis.
 
-- The :func:`maximum_filter1d` function calculates a one-dimensional
-  maximum filter of given *size* along the given axis.
+- The :func:`maximum_filter1d` function calculates a 1-D
+  maximum filter of the given *size* along the given axis.
 
 - The :func:`minimum_filter` function calculates a multidimensional
   minimum filter. Either the sizes of a rectangular kernel or the
   footprint of the kernel must be provided. The *size* parameter, if
-  provided, must be a sequence of sizes or a single number in which
+  provided, must be a sequence of sizes or a single number, in which
   case the size of the filter is assumed to be equal along each axis.
   The *footprint*, if provided, must be an array that defines the
   shape of the kernel by its non-zero elements.
@@ -260,7 +253,7 @@ Filters based on order statistics
 - The :func:`maximum_filter` function calculates a multidimensional
   maximum filter. Either the sizes of a rectangular kernel or the
   footprint of the kernel must be provided. The *size* parameter, if
-  provided, must be a sequence of sizes or a single number in which
+  provided, must be a sequence of sizes or a single number, in which
   case the size of the filter is assumed to be equal along each axis.
   The *footprint*, if provided, must be an array that defines the
   shape of the kernel by its non-zero elements.
@@ -270,7 +263,7 @@ Filters based on order statistics
   indicates the largest element. Either the sizes of a rectangular
   kernel or the footprint of the kernel must be provided. The *size*
   parameter, if provided, must be a sequence of sizes or a single
-  number in which case the size of the filter is assumed to be equal
+  number, in which case the size of the filter is assumed to be equal
   along each axis. The *footprint*, if provided, must be an array that
   defines the shape of the kernel by its non-zero elements.
 
@@ -279,14 +272,14 @@ Filters based on order statistics
   *percentile* = -20 equals *percentile* = 80. Either the sizes of a
   rectangular kernel or the footprint of the kernel must be provided.
   The *size* parameter, if provided, must be a sequence of sizes or a
-  single number in which case the size of the filter is assumed to be
+  single number, in which case the size of the filter is assumed to be
   equal along each axis. The *footprint*, if provided, must be an
   array that defines the shape of the kernel by its non-zero elements.
 
 - The :func:`median_filter` function calculates a multidimensional
   median filter. Either the sizes of a rectangular kernel or the
   footprint of the kernel must be provided. The *size* parameter, if
-  provided, must be a sequence of sizes or a single number in which
+  provided, must be a sequence of sizes or a single number, in which
   case the size of the filter is assumed to be equal along each
   axis. The *footprint* if provided, must be an array that defines the
   shape of the kernel by its non-zero elements.
@@ -295,8 +288,8 @@ Derivatives
 ^^^^^^^^^^^
 
 Derivative filters can be constructed in several ways. The function
-:func:`gaussian_filter1d` described in
-:ref:`ndimage-filter-functions-smoothing` can be used to calculate
+:func:`gaussian_filter1d`, described in
+:ref:`ndimage-filter-functions-smoothing`, can be used to calculate
 derivatives along a given axis using the *order* parameter. Other
 derivative filters are the Prewitt and Sobel filters:
 
@@ -307,11 +300,11 @@ derivative filters are the Prewitt and Sobel filters:
 
 The Laplace filter is calculated by the sum of the second derivatives
 along all axes. Thus, different Laplace filters can be constructed
-using different second derivative functions. Therefore we provide a
+using different second-derivative functions. Therefore, we provide a
 general function that takes a function argument to calculate the
 second derivative along a given direction.
 
-- The function :func:`generic_laplace` calculates a laplace filter
+- The function :func:`generic_laplace` calculates a Laplace filter
   using the function passed through ``derivative2`` to calculate
   second derivatives. The function ``derivative2`` should have the
   following signature
@@ -321,8 +314,8 @@ second derivative along a given direction.
      derivative2(input, axis, output, mode, cval, *extra_arguments, **extra_keywords)
 
   It should calculate the second derivative along the dimension
-  *axis*. If *output* is not ``None`` it should use that for the
-  output and return None, otherwise it should return the
+  *axis*. If *output* is not ``None``, it should use that for the
+  output and return ``None``, otherwise it should return the
   result. *mode*, *cval* have the usual meaning.
 
   The *extra_arguments* and *extra_keywords* arguments can be used
@@ -346,7 +339,7 @@ second derivative along a given direction.
             [ 0.,  0.,  1.,  0.,  0.],
             [ 0.,  0.,  0.,  0.,  0.]])
 
-  To demonstrate the use of the *extra_arguments* argument we could do
+  To demonstrate the use of the *extra_arguments* argument, we could do
 
   .. code:: python
 
@@ -375,22 +368,22 @@ second derivative along a given direction.
 
 The following two functions are implemented using
 :func:`generic_laplace` by providing appropriate functions for the
-second derivative function:
+second-derivative function:
 
 - The function :func:`laplace` calculates the Laplace using discrete
-  differentiation for the second derivative (i.e. convolution with
+  differentiation for the second derivative (i.e., convolution with
   ``[1, -2, 1]``).
 
 - The function :func:`gaussian_laplace` calculates the Laplace filter
   using :func:`gaussian_filter` to calculate the second
-  derivatives. The standard-deviations of the Gaussian filter along
+  derivatives. The standard deviations of the Gaussian filter along
   each axis are passed through the parameter *sigma* as a sequence or
   numbers. If *sigma* is not a sequence but a single number, the
   standard deviation of the filter is equal along all directions.
 
 The gradient magnitude is defined as the square root of the sum of the
 squares of the gradients in all directions. Similar to the generic
-Laplace function there is a :func:`generic_gradient_magnitude`
+Laplace function, there is a :func:`generic_gradient_magnitude`
 function that calculates the gradient magnitude of an array.
 
 - The function :func:`generic_gradient_magnitude` calculates a
@@ -403,8 +396,8 @@ function that calculates the gradient magnitude of an array.
      derivative(input, axis, output, mode, cval, *extra_arguments, **extra_keywords)
 
   It should calculate the derivative along the dimension *axis*. If
-  *output* is not None it should use that for the output and return
-  None, otherwise it should return the result. *mode*, *cval* have the
+  *output* is not ``None``, it should use that for the output and return
+  ``None``, otherwise it should return the result. *mode*, *cval* have the
   usual meaning.
 
   The *extra_arguments* and *extra_keywords* arguments can be used to
@@ -429,12 +422,12 @@ function that calculates the gradient magnitude of an array.
   using the *extra_arguments* and *extra_keywords* arguments.
 
 The :func:`sobel` and :func:`prewitt` functions fit the required
-signature and can therefore directly be used with
+signature and can, therefore, be used directly with
 :func:`generic_gradient_magnitude`.
 
 - The function :func:`gaussian_gradient_magnitude` calculates the
   gradient magnitude using :func:`gaussian_filter` to calculate the
-  first derivatives. The standard-deviations of the Gaussian filter
+  first derivatives. The standard deviations of the Gaussian filter
   along each axis are passed through the parameter *sigma* as a
   sequence or numbers. If *sigma* is not a sequence but a single
   number, the standard deviation of the filter is equal along all
@@ -456,16 +449,16 @@ callback function can also be written in C and passed using a
 information).
 
 - The :func:`generic_filter1d` function implements a generic
-  one-dimensional filter function, where the actual filtering
+  1-D filter function, where the actual filtering
   operation must be supplied as a python function (or other callable
   object). The :func:`generic_filter1d` function iterates over the
   lines of an array and calls ``function`` at each line. The
-  arguments that are passed to ``function`` are one-dimensional
+  arguments that are passed to ``function`` are 1-D
   arrays of the ``numpy.float64`` type. The first contains the values
-  of the current line.  It is extended at the beginning end the end,
+  of the current line. It is extended at the beginning and the end,
   according to the *filter_size* and *origin* arguments. The second
   array should be modified in-place to provide the output values of
-  the line. For example consider a correlation along one dimension:
+  the line. For example, consider a correlation along one dimension:
 
   .. code:: python
 
@@ -475,7 +468,7 @@ information).
 	    [27, 32, 38, 41],
             [51, 56, 62, 65]])
 
-  The same operation can be implemented using :func:`generic_filter1d`
+  The same operation can be implemented using :func:`generic_filter1d`,
   as follows:
 
   .. code:: python
@@ -489,12 +482,12 @@ information).
 	    [27, 32, 38, 41],
             [51, 56, 62, 65]])
 
-  Here the origin of the kernel was (by default) assumed to be in the
-  middle of the filter of length 3. Therefore, each input line was
+  Here, the origin of the kernel was (by default) assumed to be in the
+  middle of the filter of length 3. Therefore, each input line had been
   extended by one value at the beginning and at the end, before the
   function was called.
 
-  Optionally extra arguments can be defined and passed to the filter
+  Optionally, extra arguments can be defined and passed to the filter
   function. The *extra_arguments* and *extra_keywords* arguments can
   be used to pass a tuple of extra arguments and/or a dictionary of
   named arguments that are passed to derivative at each call. For
@@ -524,10 +517,10 @@ information).
   python function (or other callable object). The
   :func:`generic_filter` function iterates over the array and calls
   ``function`` at each element. The argument of ``function``
-  is a one-dimensional array of the ``numpy.float64`` type, that
+  is a 1-D array of the ``numpy.float64`` type that
   contains the values around the current element that are within the
   footprint of the filter. The function should return a single value
-  that can be converted to a double precision number. For example
+  that can be converted to a double precision number. For example,
   consider a correlation:
 
   .. code:: python
@@ -538,7 +531,7 @@ information).
 	    [12, 15, 19, 23],
             [28, 31, 35, 39]])
 
-  The same operation can be implemented using *generic_filter* as
+  The same operation can be implemented using *generic_filter*, as
   follows:
 
   .. code:: python
@@ -552,20 +545,20 @@ information).
 	    [12, 15, 19, 23],
             [28, 31, 35, 39]])
 
-  Here a kernel footprint was specified that contains only two
-  elements. Therefore the filter function receives a buffer of length
+  Here, a kernel footprint was specified that contains only two
+  elements. Therefore, the filter function receives a buffer of length
   equal to two, which was multiplied with the proper weights and the
   result summed.
 
   When calling :func:`generic_filter`, either the sizes of a
   rectangular kernel or the footprint of the kernel must be
   provided. The *size* parameter, if provided, must be a sequence of
-  sizes or a single number in which case the size of the filter is
+  sizes or a single number, in which case the size of the filter is
   assumed to be equal along each axis. The *footprint*, if provided,
   must be an array that defines the shape of the kernel by its
   non-zero elements.
 
-  Optionally extra arguments can be defined and passed to the filter
+  Optionally, extra arguments can be defined and passed to the filter
   function. The *extra_arguments* and *extra_keywords* arguments can
   be used to pass a tuple of extra arguments and/or a dictionary of
   named arguments that are passed to derivative at each call. For
@@ -592,7 +585,7 @@ information).
 	    [28, 31, 35, 39]])
 
 These functions iterate over the lines or elements starting at the
-last axis, i.e. the last index changes the fastest. This order of
+last axis, i.e., the last index changes the fastest. This order of
 iteration is guaranteed for the case that it is important to adapt the
 filter depending on spatial location. Here is an example of using a
 class that implements the filter and keeps track of the current
@@ -643,7 +636,7 @@ the current coordinates:
 	  [12, 15, 19, 23],
 	  [28, 31, 35, 39]])
 
-For the :func:`generic_filter1d` function the same approach works,
+For the :func:`generic_filter1d` function, the same approach works,
 except that this function does not iterate over the axis that is being
 filtered. The example for :func:`generic_filter1d` then becomes this:
 
@@ -690,14 +683,14 @@ Fourier domain filters
 The functions described in this section perform filtering
 operations in the Fourier domain. Thus, the input array of such a
 function should be compatible with an inverse Fourier transform
-function, such as the functions from the :mod:`numpy.fft` module. We
-therefore have to deal with arrays that may be the result of a real
+function, such as the functions from the :mod:`numpy.fft` module. We,
+therefore, have to deal with arrays that may be the result of a real
 or a complex Fourier transform. In the case of a real Fourier
-transform only half of the of the symmetric complex transform is
+transform, only half of the of the symmetric complex transform is
 stored. Additionally, it needs to be known what the length of the
 axis was that was transformed by the real fft. The functions
-described here provide a parameter *n* that in the case of a real
-transform must be equal to the length of the real transform axis
+described here provide a parameter *n* that, in the case of a real
+transform, must be equal to the length of the real transform axis
 before transformation. If this parameter is less than zero, it is
 assumed that the input array was the result of a complex Fourier
 transform. The parameter *axis* can be used to indicate along which
@@ -705,24 +698,24 @@ axis the real transform was executed.
 
 - The :func:`fourier_shift` function multiplies the input array with
   the multidimensional Fourier transform of a shift operation for the
-  given shift. The *shift* parameter is a sequences of shifts for each
-  dimension, or a single value for all dimensions.
+  given shift. The *shift* parameter is a sequence of shifts for each
+  dimension or a single value for all dimensions.
 
 - The :func:`fourier_gaussian` function multiplies the input array
   with the multidimensional Fourier transform of a Gaussian filter
-  with given standard-deviations *sigma*. The *sigma* parameter is a
-  sequences of values for each dimension, or a single value for all
+  with given standard deviations *sigma*. The *sigma* parameter is a
+  sequence of values for each dimension or a single value for all
   dimensions.
 
 - The :func:`fourier_uniform` function multiplies the input array with
   the multidimensional Fourier transform of a uniform filter with
-  given sizes *size*. The *size* parameter is a sequences of values
-  for each dimension, or a single value for all dimensions.
+  given sizes *size*. The *size* parameter is a sequence of values
+  for each dimension or a single value for all dimensions.
 
 - The :func:`fourier_ellipsoid` function multiplies the input array
-  with the multidimensional Fourier transform of a elliptically shaped
-  filter with given sizes *size*. The *size* parameter is a sequences
-  of values for each dimension, or a single value for all dimensions.
+  with the multidimensional Fourier transform of an elliptically-shaped
+  filter with given sizes *size*. The *size* parameter is a sequence
+  of values for each dimension or a single value for all dimensions.
   This function is only implemented for dimensions 1, 2, and 3.
 
 .. _ndimage-interpolation:
@@ -743,13 +736,13 @@ pre-filtering step. The interpolation functions described in section
 :func:`spline_filter`, but they can be instructed not to do this by
 setting the *prefilter* keyword equal to False. This is useful if more
 than one interpolation operation is done on the same array. In this
-case it is more efficient to do the pre-filtering only once and use a
-prefiltered array as the input of the interpolation functions. The
+case, it is more efficient to do the pre-filtering only once and use a
+pre-filtered array as the input of the interpolation functions. The
 following two functions implement the pre-filtering:
 
-- The :func:`spline_filter1d` function calculates a one-dimensional
+- The :func:`spline_filter1d` function calculates a 1-D
   spline filter along the given axis. An output array can optionally
-  be provided. The order of the spline must be larger then 1 and less
+  be provided. The order of the spline must be larger than 1 and less
   than 6.
 
 - The :func:`spline_filter` function calculates a multidimensional
@@ -758,7 +751,7 @@ following two functions implement the pre-filtering:
   .. note::
 
      The multidimensional filter is implemented as a sequence of
-     one-dimensional spline filters. The intermediate arrays are
+     1-D spline filters. The intermediate arrays are
      stored in the same data type as the output. Therefore, if an
      output with a limited precision is requested, the results may be
      imprecise because intermediate results may be stored with
@@ -768,13 +761,13 @@ following two functions implement the pre-filtering:
 Interpolation functions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Following functions all employ spline interpolation to effect some
+The following functions all employ spline interpolation to effect some
 type of geometric transformation of the input array. This requires a
 mapping of the output coordinates to the input coordinates, and
-therefore the possibility arises that input values outside the
-boundaries are needed. This problem is solved in the same way as
+therefore, the possibility arises that input values outside the
+boundaries may be needed. This problem is solved in the same way as
 described in :ref:`ndimage-filter-functions` for the multidimensional
-filter functions. Therefore these functions all support a *mode*
+filter functions. Therefore, these functions all support a *mode*
 parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
 is used.
@@ -786,7 +779,7 @@ is used.
   accepts a tuple of length equal to the output array rank and returns
   the corresponding input coordinates as a tuple of length equal to
   the input array rank. The output shape and output type can
-  optionally be provided. If not given they are equal to the input
+  optionally be provided. If not given, they are equal to the input
   shape and type.
 
   For example:
@@ -804,7 +797,7 @@ is used.
             [ 0.    ,  4.8125,  6.1875],
             [ 0.    ,  8.2625,  9.6375]])
 
-  Optionally extra arguments can be defined and passed to the filter
+  Optionally, extra arguments can be defined and passed to the filter
   function. The *extra_arguments* and *extra_keywords* arguments can
   be used to pass a tuple of extra arguments and/or a dictionary of
   named arguments that are passed to derivative at each call. For
@@ -843,7 +836,7 @@ is used.
   the first axis. The parameter *coordinates* is used to find for each
   point in the output the corresponding coordinates in the input. The
   values of *coordinates* along the first axis are the coordinates in
-  the input array at which the output value is found.  (See also the
+  the input array at which the output value is found. (See also the
   numarray `coordinates` function.) Since the coordinates may be non-
   integer coordinates, the value of the input at these coordinates is
   determined by spline interpolation of the requested order.
@@ -869,11 +862,11 @@ is used.
   corresponding coordinates in the input. The value of the input at
   the calculated coordinates is determined by spline interpolation of
   the requested order. The transformation *matrix* must be
-  two-dimensional or can also be given as a one-dimensional sequence
+  2-D or can also be given as a 1-D sequence
   or array. In the latter case, it is assumed that the matrix is
   diagonal. A more efficient interpolation algorithm is then applied
   that exploits the separability of the problem. The output shape and
-  output type can optionally be provided. If not given they are equal
+  output type can optionally be provided. If not given, they are equal
   to the input shape and type.
 
 - The :func:`shift` function returns a shifted version of the input,
@@ -903,8 +896,8 @@ Binary morphology
   *rank* of the structure must be provided. The size of the structure
   that is returned is equal to three in each direction. The value of
   each element is equal to one if the square of the Euclidean distance
-  from the element to the center is less or equal to
-  *connectivity*. For instance, two dimensional 4-connected and
+  from the element to the center is less than or equal to
+  *connectivity*. For instance, 2-D 4-connected and
   8-connected structures are generated as follows:
 
   .. code:: python
@@ -924,7 +917,7 @@ basic operations erosion and dilation.
 
 - The :func:`binary_erosion` function implements binary erosion of
   arrays of arbitrary rank with the given structuring element. The
-  origin parameter controls the placement of the structuring element
+  origin parameter controls the placement of the structuring element,
   as described in :ref:`ndimage-filter-functions`. If no structuring
   element is provided, an element with connectivity equal to one is
   generated using :func:`generate_binary_structure`. The
@@ -937,7 +930,7 @@ basic operations erosion and dilation.
 
 - The :func:`binary_dilation` function implements binary dilation of
   arrays of arbitrary rank with the given structuring element. The
-  origin parameter controls the placement of the structuring element
+  origin parameter controls the placement of the structuring element,
   as described in :ref:`ndimage-filter-functions`. If no structuring
   element is provided, an element with connectivity equal to one is
   generated using :func:`generate_binary_structure`. The
@@ -969,10 +962,10 @@ the border using the data array as the mask:
           [False, False, False, False, False]], dtype=bool)
 
 The :func:`binary_erosion` and :func:`binary_dilation` functions both
-have an *iterations* parameter which allows the erosion or dilation to
+have an *iterations* parameter, which allows the erosion or dilation to
 be repeated a number of times. Repeating an erosion or a dilation with
 a given structure *n* times is equivalent to an erosion or a dilation
-with a structure that is *n-1* times dilated with itself.  A function
+with a structure that is *n-1* times dilated with itself. A function
 is provided that allows the calculation of a structure that is dilated
 a number of times with itself:
 
@@ -1001,7 +994,7 @@ a number of times with itself:
      must also be adapted if the equivalent of the *iterations*
      erosions or dilations must be achieved with the iterated
      structure. The adapted origin is simply obtained by multiplying
-     with the number of iterations. For convenience the
+     with the number of iterations. For convenience, the
      :func:`iterate_structure` also returns the adapted origin if the
      *origin* parameter is not ``None``:
 
@@ -1014,7 +1007,7 @@ a number of times with itself:
 		[False,  True,  True,  True, False],
 		[False, False,  True, False, False]], dtype=bool), [-2, -2])
 
-Other morphology operations can be defined in terms of erosion and d
+Other morphology operations can be defined in terms of erosion and
 dilation. The following functions provide a few of these operations
 for convenience:
 
@@ -1022,7 +1015,7 @@ for convenience:
   arrays of arbitrary rank with the given structuring element. Binary
   opening is equivalent to a binary erosion followed by a binary
   dilation with the same structuring element. The origin parameter
-  controls the placement of the structuring element as described in
+  controls the placement of the structuring element, as described in
   :ref:`ndimage-filter-functions`. If no structuring element is
   provided, an element with connectivity equal to one is generated
   using :func:`generate_binary_structure`. The *iterations* parameter
@@ -1033,7 +1026,7 @@ for convenience:
   arrays of arbitrary rank with the given structuring element. Binary
   closing is equivalent to a binary dilation followed by a binary
   erosion with the same structuring element. The origin parameter
-  controls the placement of the structuring element as described in
+  controls the placement of the structuring element, as described in
   :ref:`ndimage-filter-functions`. If no structuring element is
   provided, an element with connectivity equal to one is generated
   using :func:`generate_binary_structure`. The *iterations* parameter
@@ -1043,7 +1036,7 @@ for convenience:
 - The :func:`binary_fill_holes` function is used to close holes in
   objects in a binary image, where the structure defines the
   connectivity of the holes. The origin parameter controls the
-  placement of the structuring element as described in
+  placement of the structuring element, as described in
   :ref:`ndimage-filter-functions`. If no structuring element is
   provided, an element with connectivity equal to one is generated
   using :func:`generate_binary_structure`.
@@ -1054,11 +1047,11 @@ for convenience:
   erosion of the input with the first structure, erosion of the
   logical *not* of the input with the second structure, followed by
   the logical *and* of these two erosions. The origin parameters
-  control the placement of the structuring elements as described in
-  :ref:`ndimage-filter-functions`. If *origin2* equals None it is set
+  control the placement of the structuring elements, as described in
+  :ref:`ndimage-filter-functions`. If *origin2* equals ``None``, it is set
   equal to the *origin1* parameter. If the first structuring element
   is not provided, a structuring element with connectivity equal to
-  one is generated using :func:`generate_binary_structure`, if
+  one is generated using :func:`generate_binary_structure`. If
   *structure2* is not provided, it is set equal to the logical *not*
   of *structure1*.
 
@@ -1069,16 +1062,16 @@ Grey-scale morphology
 
 Grey-scale morphology operations are the equivalents of binary
 morphology operations that operate on arrays with arbitrary values.
-Below we describe the grey-scale equivalents of erosion, dilation,
+Below, we describe the grey-scale equivalents of erosion, dilation,
 opening and closing. These operations are implemented in a similar
 fashion as the filters described in :ref:`ndimage-filter-functions`,
 and we refer to this section for the description of filter kernels and
 footprints, and the handling of array borders. The grey-scale
 morphology operations optionally take a *structure* parameter that
 gives the values of the structuring element. If this parameter is not
-given the structuring element is assumed to be flat with a value equal
+given, the structuring element is assumed to be flat with a value equal
 to zero. The shape of the structure can optionally be defined by the
-*footprint* parameter.  If this parameter is not given, the structure
+*footprint* parameter. If this parameter is not given, the structure
 is assumed to be rectangular, with sizes equal to the dimensions of
 the *structure* array, or by the *size* parameter if *structure* is
 not given. The *size* parameter is only used if both *structure* and
@@ -1090,16 +1083,16 @@ be equal along each axis. The *footprint* parameter, if provided, must
 be an array that defines the shape of the kernel by its non-zero
 elements.
 
-Similar to binary erosion and dilation there are operations for
+Similarly to binary erosion and dilation, there are operations for
 grey-scale erosion and dilation:
 
 - The :func:`grey_erosion` function calculates a multidimensional
-  grey- scale erosion.
+  grey-scale erosion.
 
 - The :func:`grey_dilation` function calculates a multidimensional
   grey-scale dilation.
 
-Grey-scale opening and closing operations can be defined similar to
+Grey-scale opening and closing operations can be defined similarly to
 their binary counterparts:
 
 - The :func:`grey_opening` function implements grey-scale opening of
@@ -1136,23 +1129,23 @@ Distance transforms
 Distance transforms are used to calculate the minimum distance from
 each element of an object to the background. The following functions
 implement distance transforms for three different distance metrics:
-Euclidean, City Block, and Chessboard distances.
+Euclidean, city block, and chessboard distances.
 
 - The function :func:`distance_transform_cdt` uses a chamfer type
   algorithm to calculate the distance transform of the input, by
   replacing each object element (defined by values larger than zero)
   with the shortest distance to the background (all non-object
   elements). The structure determines the type of chamfering that is
-  done. If the structure is equal to 'cityblock' a structure is
+  done. If the structure is equal to 'cityblock', a structure is
   generated using :func:`generate_binary_structure` with a squared
   distance equal to 1. If the structure is equal to 'chessboard', a
   structure is generated using :func:`generate_binary_structure` with
   a squared distance equal to the rank of the array. These choices
-  correspond to the common interpretations of the cityblock and the
+  correspond to the common interpretations of the city block and the
   chessboard distance metrics in two dimensions.
 
   In addition to the distance transform, the feature transform can be
-  calculated. In this case the index of the closest background element
+  calculated. In this case, the index of the closest background element
   is returned along the first axis of the result. The
   *return_distances*, and *return_indices* flags can be used to
   indicate if the distance transform, the feature transform, or both
@@ -1161,22 +1154,22 @@ Euclidean, City Block, and Chessboard distances.
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type (both
   ``numpy.int32``). The basics of the algorithm used to implement this
-  function is described in [2]_.
+  function are described in [2]_.
 
 - The function :func:`distance_transform_edt` calculates the exact
-  euclidean distance transform of the input, by replacing each object
+  Euclidean distance transform of the input, by replacing each object
   element (defined by values larger than zero) with the shortest
-  euclidean distance to the background (all non-object elements).
+  Euclidean distance to the background (all non-object elements).
 
   In addition to the distance transform, the feature transform can be
-  calculated. In this case the index of the closest background element
+  calculated. In this case, the index of the closest background element
   is returned along the first axis of the result. The
-  *return_distances*, and *return_indices* flags can be used to
+  *return_distances* and *return_indices* flags can be used to
   indicate if the distance transform, the feature transform, or both
   must be returned.
 
-  Optionally the sampling along each axis can be given by the
-  *sampling* parameter which should be a sequence of length equal to
+  Optionally, the sampling along each axis can be given by the
+  *sampling* parameter, which should be a sequence of length equal to
   the input rank, or a single number in which the sampling is assumed
   to be equal along all axes.
 
@@ -1193,17 +1186,17 @@ Euclidean, City Block, and Chessboard distances.
   "chessboard".
 
   In addition to the distance transform, the feature transform can be
-  calculated. In this case the index of the closest background element
+  calculated. In this case, the index of the closest background element
   is returned along the first axis of the result. The
-  *return_distances*, and *return_indices* flags can be used to
+  *return_distances* and *return_indices* flags can be used to
   indicate if the distance transform, the feature transform, or both
   must be returned.
 
-  Optionally the sampling along each axis can be given by the
-  *sampling* parameter which should be a sequence of length equal to
+  Optionally, the sampling along each axis can be given by the
+  *sampling* parameter, which should be a sequence of length equal to
   the input rank, or a single number in which the sampling is assumed
   to be equal along all axes. This parameter is only used in the case
-  of the euclidean distance transform.
+  of the Euclidean distance transform.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
@@ -1213,15 +1206,15 @@ Euclidean, City Block, and Chessboard distances.
 
      This function uses a slow brute-force algorithm, the function
      :func:`distance_transform_cdt` can be used to more efficiently
-     calculate cityblock and chessboard distance transforms. The
+     calculate city block and chessboard distance transforms. The
      function :func:`distance_transform_edt` can be used to more
-     efficiently calculate the exact euclidean distance transform.
+     efficiently calculate the exact Euclidean distance transform.
 
 Segmentation and labeling
 -------------------------
 
 Segmentation is the process of separating objects of interest from
-the background. The most simple approach is probably intensity
+the background. The most simple approach is, probably, intensity
 thresholding, which is easily done with :mod:`numpy` functions:
 
 .. code:: python
@@ -1245,8 +1238,8 @@ generates an array where each object is assigned a unique number:
   consisting of the array of object labels and the number of objects
   found, unless the *output* parameter is given, in which case only
   the number of objects is returned. The connectivity of the objects
-  is defined by a structuring element. For instance, in two dimensions
-  using a four-connected structuring element gives:
+  is defined by a structuring element. For instance, in 2D
+  using a 4-connected structuring element gives:
 
   .. code:: python
 
@@ -1260,7 +1253,7 @@ generates an array where each object is assigned a unique number:
 	     [0, 0, 0, 0, 2, 0]]), 2)
 
   These two objects are not connected because there is no way in which
-  we can place the structuring element such that it overlaps with both
+  we can place the structuring element, such that it overlaps with both
   objects. However, an 8-connected structuring element results in only
   a single object:
 
@@ -1280,7 +1273,7 @@ generates an array where each object is assigned a unique number:
   in 2D is the 4-connected structure of the first example). The input
   can be of any type, any value not equal to zero is taken to be part
   of an object. This is useful if you need to 're-label' an array of
-  object indices, for instance after removing unwanted objects. Just
+  object indices, for instance, after removing unwanted objects. Just
   apply the label function again to the index array. For instance:
 
   .. code:: python
@@ -1300,11 +1293,11 @@ generates an array where each object is assigned a unique number:
      symmetric.
 
 There is a large number of other approaches for segmentation, for
-instance from an estimation of the borders of the objects that can be
-obtained for instance by derivative filters. One such an approach is
+instance, from an estimation of the borders of the objects that can be
+obtained by derivative filters. One such approach is
 watershed segmentation. The function :func:`watershed_ift` generates
 an array where each object is assigned a unique label, from an array
-that localizes the object borders, generated for instance by a
+that localizes the object borders, generated, for instance, by a
 gradient magnitude filter. It uses an array containing initial markers
 for the objects:
 
@@ -1342,10 +1335,10 @@ for the objects:
             [1, 1, 2, 2, 2, 1, 1],
             [1, 1, 1, 1, 1, 1, 1]], dtype=int8)
 
-  Here two markers were used to designate an object (*marker* = 2) and
+  Here, two markers were used to designate an object (*marker* = 2) and
   the background (*marker* = 1). The order in which these are
   processed is arbitrary: moving the marker for the background to the
-  lower right corner of the array yields a different result:
+  lower-right corner of the array yields a different result:
 
   .. code:: python
 
@@ -1368,7 +1361,7 @@ for the objects:
   The result is that the object (*marker* = 2) is smaller because the
   second marker was processed earlier. This may not be the desired
   effect if the first marker was supposed to designate a background
-  object. Therefore :func:`watershed_ift` treats markers with a
+  object. Therefore, :func:`watershed_ift` treats markers with a
   negative value explicitly as background markers and processes them
   after the normal markers. For instance, replacing the first marker
   by a negative marker gives a result similar to the first example:
@@ -1459,7 +1452,7 @@ smallest sub-array that fully contains the object:
 
 The list of slices generated by :func:`find_objects` is useful to find
 the position and dimensions of the objects in the array, but can also
-be used to perform measurements on the individual objects. Say we want
+be used to perform measurements on the individual objects. Say, we want
 to find the sum of the intensities of an object in image:
 
 .. code:: python
@@ -1476,10 +1469,10 @@ Then we can calculate the sum of the elements in the second object:
    >>> np.where(labels[slices[1]] == 2, image[slices[1]], 0).sum()
    80
 
-That is however not particularly efficient, and may also be more
-complicated for other types of measurements. Therefore a few
+That is, however, not particularly efficient and may also be more
+complicated for other types of measurements. Therefore, a few
 measurements functions are defined that accept the array of object
-labels and the index of the object to be measured. For instance
+labels and the index of the object to be measured. For instance,
 calculating the sum of the intensities can be done by:
 
 .. code:: python
@@ -1488,7 +1481,7 @@ calculating the sum of the intensities can be done by:
    >>> ndi_sum(image, labels, 2)
    80
 
-For large arrays and small objects it is more efficient to call the
+For large arrays and small objects, it is more efficient to call the
 measurement functions after slicing the array:
 
 .. code:: python
@@ -1499,7 +1492,7 @@ measurement functions after slicing the array:
 Alternatively, we can do the measurements for a number of labels with
 a single function call, returning a list of results. For instance, to
 measure the sum of the values of the background and the second object
-in our example we give a list of labels:
+in our example, we give a list of labels:
 
 .. code:: python
 
@@ -1508,15 +1501,15 @@ in our example we give a list of labels:
 
 The measurement functions described below all support the *index*
 parameter to indicate which object(s) should be measured. The default
-value of *index* is None. This indicates that all elements where the
+value of *index* is ``None``. This indicates that all elements where the
 label is larger than zero should be treated as a single object and
 measured. Thus, in this case the *labels* array is treated as a mask
 defined by the elements that are larger than zero. If *index* is a
 number or a sequence of numbers it gives the labels of the objects
 that are measured. If *index* is a sequence, a list of the results is
-returned. Functions that return more than one result, return their
+returned. Functions that return more than one result return their
 result as a tuple if *index* is a single number, or as a tuple of
-lists, if *index* is a sequence.
+lists if *index* is a sequence.
 
 - The :func:`sum` function calculates the sum of the elements of the
   object with label(s) given by *index*, using the *labels* array for
@@ -1578,25 +1571,25 @@ lists, if *index* is a sequence.
   *index* is ``None``, all elements with a non-zero label value are
   treated as a single object. If *label* is ``None``, all elements of
   *input* are used in the calculation. The result is a tuple giving
-  the minimum, the maximum, the position of the minimum and the
+  the minimum, the maximum, the position of the minimum, and the
   position of the maximum. The result is the same as a tuple formed by
   the results of the functions *minimum*, *maximum*,
   *minimum_position*, and *maximum_position* that are described above.
 
 - The :func:`center_of_mass` function calculates the center of mass of
-  the of the object with label(s) given by *index*, using the *labels*
+  the object with label(s) given by *index*, using the *labels*
   array for the object labels. If *index* is ``None``, all elements
   with a non-zero label value are treated as a single object. If
   *label* is ``None``, all elements of *input* are used in the
   calculation.
 
-- The :func:`histogram` function calculates a histogram of the of the
+- The :func:`histogram` function calculates a histogram of the
   object with label(s) given by *index*, using the *labels* array for
   the object labels. If *index* is ``None``, all elements with a
   non-zero label value are treated as a single object. If *label* is
   ``None``, all elements of *input* are used in the calculation.
-  Histograms are defined by their minimum (*min*), maximum (*max*) and
-  the number of bins (*bins*). They are returned as one-dimensional
+  Histograms are defined by their minimum (*min*), maximum (*max*), and
+  the number of bins (*bins*). They are returned as 1-D
   arrays of type ``numpy.int32``.
 
 .. _ndimage-ccallbacks:
@@ -1607,8 +1600,8 @@ Extending :mod:`scipy.ndimage` in C
 A few functions in :mod:`scipy.ndimage` take a callback argument. This
 can be either a python function or a `scipy.LowLevelCallable` containing a
 pointer to a C function. Using a C function will generally be more
-efficient since it avoids the overhead of calling a python function on
-many elements of an array. To use a C function you must write a C
+efficient, since it avoids the overhead of calling a python function on
+many elements of an array. To use a C function, you must write a C
 extension that contains the callback function and a Python function
 that returns a `scipy.LowLevelCallable` containing a pointer to the
 callback.
@@ -1616,7 +1609,7 @@ callback.
 An example of a function that supports callbacks is
 :func:`geometric_transform`, which accepts a callback function that
 defines a mapping from all output coordinates to corresponding
-coordinates in the input array. Consider the following python example
+coordinates in the input array. Consider the following python example,
 which uses :func:`geometric_transform` to implement a shift function.
 
 .. code:: python
@@ -1631,7 +1624,7 @@ which uses :func:`geometric_transform` to implement a shift function.
    shift = 0.5
    print(ndimage.geometric_transform(im, transform, extra_arguments=(shift,)))
 
-We can also implement the callback function with the following C code.
+We can also implement the callback function with the following C code:
 
 .. code:: c
 
@@ -1734,14 +1727,14 @@ and now running the script
 
 produces the same result as the original python script.
 
-In the C version ``_transform`` is the callback function and the
+In the C version, ``_transform`` is the callback function and the
 parameters ``output_coordinates`` and ``input_coordinates`` play the
-same role as they do in the python version while ``output_rank`` and
+same role as they do in the python version, while ``output_rank`` and
 ``input_rank`` provide the equivalents of ``len(output_coordinates)``
 and ``len(input_coordinates)``. The variable ``shift`` is passed
 through ``user_data`` instead of
 ``extra_arguments``. Finally, the C callback function returns an integer
-status which is one upon success and zero otherwise.
+status, which is one upon success and zero otherwise.
 
 The function ``py_transform`` wraps the callback function in a
 :c:type:`PyCapsule`. The main steps are:
@@ -1749,7 +1742,7 @@ The function ``py_transform`` wraps the callback function in a
 - Initialize a :c:type:`PyCapsule`. The first argument is a pointer to
   the callback function.
 
-- The second argument is the function signature which must match exactly
+- The second argument is the function signature, which must match exactly
   the one expected by :mod:`~scipy.ndimage`.
 
 - Above, we used  `scipy.LowLevelCallable` to specify ``user_data``
@@ -1759,7 +1752,7 @@ The function ``py_transform`` wraps the callback function in a
   that can be set by `PyCapsule_SetContext` and omit specifying
   ``user_data`` in `scipy.LowLevelCallable`. However, in this approach we would
   need to deal with allocation/freeing of the data --- freeing the data
-  after the capsule is destroyed can be done by specifying a non-NULL
+  after the capsule has been destroyed can be done by specifying a non-NULL
   callback function in the third argument of `PyCapsule_New`.
 
 C callback functions for :mod:`~scipy.ndimage` all follow this scheme. The
@@ -1823,7 +1816,7 @@ We can write the above using Numba as:
 .. rubric:: Cython
 
 Functionally the same code as above can be written in Cython with
-somewhat less boilerplate as follows.
+somewhat less boilerplate as follows:
 
 .. code:: cython
 
