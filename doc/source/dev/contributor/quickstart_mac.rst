@@ -9,12 +9,12 @@ Development environment quickstart guide (macOS)
 This quickstart guide will cover:
 
 * setting up and maintaining a development environment, including installing
-compilers and SciPy build dependencies
+  compilers and SciPy build dependencies
 * creating a personal fork of the SciPy repository on GitHub
 * using git to manage a local repository with development branches
 * performing an in-place build of SciPy
 * creating a virtual environment that adds this development version of SciPy to
-the Python path
+  the Python path
 
 in macOS.
 
