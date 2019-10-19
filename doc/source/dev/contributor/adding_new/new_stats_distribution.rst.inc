@@ -18,14 +18,15 @@ articles often providing some extra details and/or graphical plots.
 How to create a new continuous distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are a few steps to be done to add continuous distribution XXXXX to SciPy.
+There are a few steps to be done to add a continuous distribution to SciPy.
 (Adding a discrete distribution is similar).
+We'll use the fictitious "Squirrel" distribution in the instructions below.
 
 
 Before Implementation
 .....................
 
-1. See if it already been implemented (that saves a lot of effort!)
+1. See if ``Squirrel`` has already been implemented (that saves a lot of effort!)
 
   - It may have been implemented with a different name.
   - It may have been implemented with a different parameterization (shape parameters).
@@ -41,46 +42,49 @@ At this time, adding new specializations/reparametrizations of existing
 distributions to SciPy is not supported,  mainly due to the increase in user
 confusion resulting from such additions.
 
-2. Create a SciPy Issue on github listing the distribution, references and
-   reasons for its inclusion.
+2. Create a `SciPy Issue on github <https://github.com/scipy/scipy/issues>`_,
+   listing the distribution, references and reasons for its inclusion.
 
 
 Implementation
 ..............
 
-#. Find an already existing distribution similar to ``XXXXX``.
-   Use its code as a template for ``XXXXX``.
+#. Find an already existing distribution similar to ``Squirrel``.
+   Use its code as a template for ``Squirrel``.
 #. Read the docstring for class ``rv_continuous`` in
-   ``scipy/stats/_distn_infrastructure.py``.
-#. Write the new code for class ``xxxx_gen`` and insert it into
-   ``scipy/stats/_continuous_distns.py``,  which is in (mostly) alphabetical
-   order by distribution name.
+   `scipy/stats/_distn_infrastructure.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distn_infrastructure.py#L1378>`_.
+#. Write the new code for class ``squirrel_gen`` and insert it into
+   `scipy/stats/_continuous_distns.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_continuous_distns.py>`_,
+   which is in (mostly) alphabetical order by distribution name.
 #. Does the distribution have infinite support? If not, left and/or right
-   endpoints ``a``, ``b`` need to be specified in the call to ``xxxx_gen()``.
+   endpoints ``a``, ``b`` need to be specified in the call to ``squirrel_gen(name='squirrel', a=?, b=?)``.
 #. If the support depends upon the shape parameters,
-   ``xxxx_gen._get_support()`` needs to be implemented.
-#. The default ``_argcheck()`` implementation checks that the shape parameters
+   ``squirrel_gen._get_support()`` needs to be implemented.
+#. The default inherited ``_argcheck()`` implementation checks that the shape parameters
    are positive.  Create a more appropriate implementation.
-#. If ``xxxx_gen.ppf()`` is expensive to compute relative to
-   ``xxxx_gen.pdf()``, consider setting the ``momtype`` in the call
-   to ``xxxx_gen()``.
-#. If ``xxxx_gen.rvs()`` is expensive to compute, consider implementing a
-   specific ``xxxx_gen._rvs()``.
+#. If ``squirrel_gen.ppf()`` is expensive to compute relative to
+   ``squirrel_gen.pdf()``, consider setting the ``momtype`` in the call
+   to ``squirrel_gen()``.
+#. If ``squirrel_gen.rvs()`` is expensive to compute, consider implementing a
+   specific ``squirrel_gen._rvs()``.
 #. Add the name to the listing in the docstring of
-   ``scipy/stats/__init__.py``.
+   `scipy/stats/__init__.py <https://github.com/scipy/scipy/blob/master/scipy/stats/__init__.py>`_.
 #. Add the name and a good set of example shape parameters to the ``distcont``
-   list in ``scipy/stats/_distr_params.py``. These shape parameters are used
-   for testing and automatic documentation generation.
-#. Add a ``TestXXXXX` class and any specific tests to
-   ``scipy/stats/tests/test_distributions.py``.
+   list in
+   `scipy/stats/_distr_params.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distr_params.py#L5>`_.
+   These shape parameters are used both for testing and automatic documentation generation.
+#. Add a ``TestSquirrel`` class and any specific tests to
+   `scipy/stats/tests/test_distributions.py <https://github.com/scipy/scipy/blob/master/scipy/stats/tests/test_distributions.py>`_.
 #. Run and pass(!) the tests.
 
 After Implementation
 ....................
 
-#. Add a tutorial ``doc/source/tutorial/stats/continuous_XXXXX.rst``
-#. Add an entry to ``doc/source/tutorial/stats/continuous.rst``.
-#. Update the ``number of continuous distributions`` in the example code in ``doc/source/tutorial/stats.rst``.
+#. Add a tutorial ``doc/source/tutorial/stats/continuous_squirrel.rst``
+#. Add it to the listing of continuous distributions in
+   `doc/source/tutorial/stats/continuous.rst <https://github.com/scipy/scipy/blob/master/doc/source/tutorial/stats/continuous.rst>`_.
+#. Update the ``number of continuous distributions`` in the example code in
+   `doc/source/tutorial/stats.rst <https://github.com/scipy/scipy/blob/master/doc/source/tutorial/stats.rst>`_.
 #. Build the documentation successfully.
 #. Submit a PR.
 
