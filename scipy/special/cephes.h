@@ -95,7 +95,7 @@ extern double erf(double x);
 extern double ndtri(double y0);
 
 extern double pdtrc(int k, double m);
-extern double pdtr(int k, double m);
+extern double pdtr(double k, double m);
 extern double pdtri(int k, double y);
 
 extern double poch(double x, double m);
