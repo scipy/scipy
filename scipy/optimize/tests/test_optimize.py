@@ -23,6 +23,7 @@ from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
+from scipy.optimize._minimize import MINIMIZE_METHODS
 
 
 def test_check_grad():
@@ -761,15 +762,17 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
-    @pytest.mark.parametrize('method', ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
-                                        'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
-                                        'fmin_slsqp',
-                                        'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B',
-                                        'TNC', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg',
-                                        'trust-exact', 'trust-krylov'])
+    @pytest.mark.parametrize('method',
+                             ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
+                              'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
+                              'fmin_slsqp'] + MINIMIZE_METHODS)
     def test_minimize_callback_copies_array(self, method):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
+
+        # cobyla doesn't have callback
+        if method == 'cobyla':
+            return
 
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
             func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
@@ -795,14 +798,14 @@ class TestOptimizeSimple(CheckOptimize):
                 kw['method'] = method
                 return optimize.minimize(*a, **kw)
 
-            if method == 'TNC':
+            if method == 'tnc':
                 kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
         if method in ('fmin_ncg',):
             kwargs['fprime'] = jac
-        elif method in ('Newton-CG',):
+        elif method in ('newton-cg',):
             kwargs['jac'] = jac
         elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
                         'trust-constr'):
@@ -1246,13 +1249,10 @@ class TestOptimizeResultAttributes(object):
         self.bounds = [(0., 10.), (0., 10.)]
 
     def test_attributes_present(self):
-        methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
-                   'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
-                   'trust-ncg']
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
                       'message']
-        skip = {'COBYLA': ['nit']}
-        for method in methods:
+        skip = {'cobyla': ['nit']}
+        for method in MINIMIZE_METHODS:
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning,
                            "Method .+ does not use (gradient|Hessian.*) information")
