@@ -2139,6 +2139,9 @@ def factorial(n, exact=False):
                     out[n == current] = val
             return out
     else:
+        if np.ndim(n) == 0:
+            return 0 if n < 0 else gamma(n + 1)
+
         n = asarray(n)
         vals = gamma(n + 1)
         return where(n >= 0, vals, 0)
