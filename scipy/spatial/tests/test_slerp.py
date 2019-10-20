@@ -66,7 +66,7 @@ class TestGeometricSlerp(object):
     def test_input_shape_flat(self, start, end):
         # geometric_slerp should handle input arrays that are
         # not flat appropriately
-        with pytest.raises(ValueError, match='flat'):
+        with pytest.raises(ValueError, match='one-dimensional'):
             geometric_slerp(start=start,
                             end=end,
                             t=np.linspace(0, 1, 10))

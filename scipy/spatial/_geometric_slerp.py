@@ -12,26 +12,28 @@ def geometric_slerp(start,
                     t,
                     tol=1e-7):
     """
-    Spherical linear interpolation along unit-radius
+    Geometric spherical linear interpolation.
+
+    The interpolation occurs along a unit-radius
     great circle arc in arbitrary dimensional space.
 
     Parameters
     ----------
-    start : (D, ) array-like
-        Single D-dimensional input coordinate in a 1-D array-like
-        object.
+    start : (n_dimensions, ) array-like
+        Single n-dimensional input coordinate in a 1-D array-like
+        object. `n` must be greater than 1.
         Starting coordinate for interpolation will be converted
-        to float64.
-    end : (D, ) array-like
-        Single D-dimensional input coordinate in a 1-D array-like
-        object.
+        to float64 and must lay on a unit sphere.
+    end : (n_dimensions, ) array-like
+        Single n-dimensional input coordinate in a 1-D array-like
+        object. `n` must be greater than 1.
         End coordinate for interpolation will be converted to
-        float64.
-    t: array
-        An array of doubles representing interpolation parameters,
-        with values required in the inclusive interval between
-        0 and 1. A common approach is to generate the array with
-        ``np.linspace(0, 1, n_pts)`` for linearly spaced points.
+        float64 and must lay on a unit sphere.
+    t: float or (n_points,) array-like
+        A float or array-like of doubles representing interpolation
+        parameters, with values required in the inclusive interval
+        between 0 and 1. A common approach is to generate the array
+        with ``np.linspace(0, 1, n_pts)`` for linearly spaced points.
         Ascending, descending, and scrambled orders are permitted.
     tol: float
         The absolute tolerance for determining if the start and end
@@ -142,7 +144,8 @@ def geometric_slerp(start,
     end = np.asanyarray(end)
 
     if start.ndim != 1 or end.ndim != 1:
-        raise ValueError("Start and end coordinates must be flat")
+        raise ValueError("Start and end coordinates "
+                         "must be one-dimensional")
 
     if start.size != end.size:
         raise ValueError("The dimensions of start and "
