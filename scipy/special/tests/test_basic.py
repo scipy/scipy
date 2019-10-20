@@ -1819,6 +1819,15 @@ class TestFactorialFunctions(object):
             assert_array_equal(special.factorial([n], True),
                                special.factorial([n], False))
 
+    @pytest.mark.parametrize('x, exact', [
+        (1, True),
+        (1, False),
+        (np.array(1), True),
+        (np.array(1), False),
+    ])
+    def test_factorial_0d_return_type(self, x, exact):
+        assert np.isscalar(special.factorial(x, exact=exact))
+
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
                                   special.factorial2([7, 8, 9], exact=False))
