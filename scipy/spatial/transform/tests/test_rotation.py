@@ -665,6 +665,33 @@ def test_magnitude_single_rotation():
     assert_allclose(result2, 0)
 
 
+def test_mean():
+    axes = np.concatenate((-np.eye(3), np.eye(3)))
+    thetas = np.linspace(0, np.pi / 2, 100)
+    for t in thetas:
+        r = Rotation.from_rotvec(t * axes)
+        assert_allclose(r.mean().magnitude(), 0, atol=1E-10)
+
+
+def test_weighted_mean():
+    # test that doubling a weight is equivalent to including a rotation twice.
+    axes = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0]])
+    thetas = np.linspace(0, np.pi / 2, 100)
+    for t in thetas:
+        rw = Rotation.from_rotvec(t * axes[:2])
+        mw = rw.mean(weights=[1, 2])
+
+        r = Rotation.from_rotvec(t * axes)
+        m = r.mean()
+        assert_allclose((m * mw.inv()).magnitude(), 0, atol=1E-10)
+
+
+def test_mean_invalid_weights():
+    with pytest.raises(ValueError, match="non-negative"):
+        r = Rotation.from_quat(np.eye(4))
+        r.mean(weights=-np.ones(4))
+
+
 def test_reduction_no_indices():
     result = Rotation.identity().reduce(return_indices=False)
     assert isinstance(result, Rotation)
