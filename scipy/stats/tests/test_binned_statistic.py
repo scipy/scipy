@@ -471,5 +471,5 @@ class TestBinnedStatistic(object):
         bins = np.linspace(0, 1, 10)
         bins = np.append(bins, 1)
         bins = (bins, bins, bins)
-        assert_raises(ValueError, binned_statistic_dd,
-                      x, v, 'mean', bins=bins)
+        with assert_raises(ValueError, match='difference is numerically 0'):
+            binned_statistic_dd(x, v, 'mean', bins=bins)

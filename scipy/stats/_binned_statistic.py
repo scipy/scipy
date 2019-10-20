@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 import numpy as np
 from scipy._lib.six import callable, xrange
 from scipy._lib._numpy_compat import suppress_warnings
@@ -685,11 +687,14 @@ def _bin_numbers(sample, nbin, edges, dedges):
     # Using `digitize`, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right
     # edge to be counted in the last bin, and not as an outlier.
+    exceptions = (RuntimeWarning,)
+    if sys.version_info >= (3, 8):
+        exceptions += (OverflowError,)  # Python3.8 int(np.inf) throws this
     for i in xrange(Ndim):
         # Find the rounding precision
         try:
             decimal = int(-np.log10(dedges[i].min())) + 6
-        except RuntimeWarning:
+        except exceptions:
             raise ValueError('The smallest edge difference is numerically 0.')
         # Find which points are on the rightmost edge.
         on_edge = np.where(np.around(sample[:, i], decimal) ==
