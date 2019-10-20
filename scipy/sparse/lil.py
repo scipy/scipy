@@ -457,18 +457,20 @@ class lil_matrix(spmatrix, IndexMixin):
         if len(self.rows) == 0:
             indices = np.empty(0, dtype=idx_dtype)
             data = np.empty(0, dtype=self.dtype)            
-        elif indptr[-1] / len(self.rows) >= 25:
-            indices = np.empty(indptr[-1], dtype=idx_dtype)
-            data = np.empty(indptr[-1], dtype=self.dtype)
-            start = 0
-            for i, stop in enumerate(indptr[1:]):
-                if stop > start:
-                    indices[start:stop] = self.rows[i]
-                    data[start:stop] = self.data[i]
-                    start = stop
         else:
-            indices = np.array([x for y in self.rows for x in y], dtype=idx_dtype)
-            data = np.array([x for y in self.data for x in y], dtype=self.dtype)
+            nnz = indptr[-1]
+            if nnz / len(self.rows) > 30:
+                indices = np.empty(nnz, dtype=idx_dtype)
+                data = np.empty(nnz, dtype=self.dtype)
+                start = 0
+                for i, stop in enumerate(indptr[1:]):
+                    if stop > start:
+                        indices[start:stop] = self.rows[i]
+                        data[start:stop] = self.data[i]
+                        start = stop
+            else:
+                indices = np.fromiter((x for y in self.rows for x in y), dtype=idx_dtype, count=nnz)
+                data = np.fromiter((x for y in self.data for x in y), dtype=self.dtype, count=nnz)
 
 
         from .csr import csr_matrix
