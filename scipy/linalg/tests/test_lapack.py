@@ -1560,10 +1560,6 @@ def test_geequ():
                           [1.58e+00, -2.69e+00, -2.90e-10, -1.04e+00],
                           [-1.11e+00, -6.60e-01, -5.90e-11, 8.00e-01]])
             A = A.astype(dtype)
-            b = np.array([[9.52, 18.47],
-                          [24.35, 2.25],
-                          [0.77, -13.28],
-                          [-6.22, -6.21]], dtype=dtype)
         else:
             A = np.array([[-1.34e+00, 0.28e+10, -6.39e+00],
                           [-1.70e+00, 3.31e+10, -0.15e+00],
@@ -1573,16 +1569,6 @@ def test_geequ():
                            [0.39e-10, 1.47e+00, -0.69e-10]])*1j
 
             A = A.astype(dtype)
-            b = np.array([[26.26, 31.32],
-                          [6.43, 15.86],
-                          [-5.75, -2.15],
-                          [1.16, -2.56]], dtype=dtype)
-            b += np.array([[51.78, -6.7],
-                           [-8.68, -1.42],
-                           [25.31, 30.19],
-                           [2.57, 7.55]])*1j
-
-            b = b.astype(dtype)
 
         geequ = get_lapack_funcs('geequ', dtype=dtype)
         r, c, rowcnd, colcnd, amax, info = geequ(A)
