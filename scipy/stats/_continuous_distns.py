@@ -6113,8 +6113,6 @@ class reciprocal_gen(rv_continuous):
     >>> ax.set_xticks([-3, -2, -1])
     >>> _ = ax.set_xticklabels(["$10^{-3}$", "$10^{-2}$", "$10^{-1}$"])
 
-    `reciprocal` and `loguniform` are aliases.
-
     """
     def _argcheck(self, a, b):
         return (a > 0) & (b > a)

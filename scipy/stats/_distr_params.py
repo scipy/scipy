@@ -90,7 +90,6 @@ distcont = [
     ['rayleigh', ()],
     ['rdist', (0.9,)],   # feels also slow
     ['recipinvgauss', (0.63004267809369119,)],
-    ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
     ['skewnorm', (4.0,)],
