@@ -212,6 +212,7 @@ class Rotation(object):
     __mul__
     inv
     magnitude
+    mean
     reduce
     create_group
     __getitem__
@@ -1464,6 +1465,58 @@ class Rotation(object):
             return angles[0]
         else:
             return angles
+
+    def mean(self, weights=None):
+        """Get the mean of the rotations.
+
+        Parameters
+        ----------
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the rotations. If
+            None (default), then all values in `weights` are assumed to be
+            equal.
+
+        Returns
+        -------
+        mean : `Rotation` instance
+            Object containing the mean of the rotations in the current
+            instance.
+
+        Notes
+        -----
+        The mean used is the chordal L2 mean (also called the projected or
+        induced arithmetic mean). If ``p`` is a set of rotations with mean
+        ``m``, then ``m`` is the rotation which minimizes
+        ``(weights[:, None, None] * (p.as_dcm() - m.as_dcm())**2).sum()``.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r = R.from_euler('zyx', [[0, 0, 0],
+        ...                          [1, 0, 0],
+        ...                          [0, 1, 0],
+        ...                          [0, 0, 1]], degrees=True)
+        >>> r.mean().as_euler('zyx', degrees=True)
+        array([0.24945696, 0.25054542, 0.24945696])
+        """
+        if weights is None:
+            weights = np.ones(len(self))
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != len(self):
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of rotations, got "
+                                 "{} values and {} rotations.".format(
+                                    weights.shape[0], len(self)))
+            if np.any(weights < 0):
+                raise ValueError("`weights` must be non-negative.")
+
+        K = np.dot(weights * self._quat.T, self._quat)
+        l, v = np.linalg.eigh(K)
+        return self.__class__(v[:, -1], normalized=True)
 
     def reduce(self, left=None, right=None, return_indices=False):
         """Reduce this rotation with the provided rotation groups.
