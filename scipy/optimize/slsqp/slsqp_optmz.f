@@ -503,6 +503,15 @@ C   CHECK CONVERGENCE
 C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
+      h3 = ZERO
+      DO 256 j=1,m
+         IF (j.LE.meq) THEN
+             h1 = c(j)
+         ELSE
+             h1 = ZERO
+         ENDIF
+         h3 = h3 + MAX(-c(j),h1)
+  256 CONTINUE
       IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
      *     .AND. .NOT. badlin)
      *   THEN
@@ -562,6 +571,10 @@ C   L*D*L'*S
           CALL dscal_sl(n, h4, u, 1)
           CALL daxpy_sl(n, one-h4, v, 1, u, 1)
       ENDIF
+      IF (h1.EQ.0 .or. h2.EQ.0) THEN
+C         Singular update: reset hessian.
+          GO TO 110
+      end if
       CALL ldl(n, l, u, +one/h1, v)
       CALL ldl(n, l, v, -one/h2, u)
 
@@ -970,7 +983,7 @@ C  TRANSFORM G AND H TO GET LEAST DISTANCE PROBLEM
       mode=5
       DO 30 i=1,mg
           DO 20 j=1,n
-              IF (ABS(e(j,j)).LT.epmach) GOTO 50
+              IF (.NOT.(ABS(e(j,j)).GE.epmach)) GOTO 50
    20         g(i,j)=(g(i,j)-ddot_sl(j-1,g(i,1),lg,e(1,j),1))/e(j,j)
    30     h(i)=h(i)-ddot_sl(n,g(i,1),lg,f,1)
 
@@ -1074,7 +1087,7 @@ C  SOLVE DUAL PROBLEM
 C  COMPUTE SOLUTION OF PRIMAL PROBLEM
 
       fac=one-ddot_sl(m,h,1,w(iy),1)
-      IF(diff(one+fac,one).LE.ZERO) GOTO 50
+      IF(.NOT.(diff(one+fac,one).GT.ZERO)) GOTO 50
       mode=1
       fac=one/fac
       DO 40 j=1,n
