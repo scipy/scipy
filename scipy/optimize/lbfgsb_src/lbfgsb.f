@@ -2941,6 +2941,11 @@ c     ************
       sbgnrm = zero
       do 15 i = 1, n
         gi = g(i)
+        if (gi.ne.gi) then
+c          NaN value in gradient: propagate it
+           sbgnrm = gi
+           return
+        endif
         if (nbd(i) .ne. 0) then
            if (gi .lt. zero) then
               if (nbd(i) .ge. 2) gi = max((x(i)-u(i)),gi)
