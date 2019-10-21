@@ -2389,11 +2389,18 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     invres, residuez, numpy.poly, unique_roots
 
     """
+    b = np.trim_zeros(np.atleast_1d(b), 'f')
+    a = np.trim_zeros(np.atleast_1d(a), 'f')
 
-    b, a = map(asarray, (b, a))
+    if a.size == 0:
+        raise ValueError("Denominator `a` is zero.")
+
+    p = roots(a)
+    if b.size == 0:
+        return np.zeros(p.shape), p, np.array([])
+
     rscale = a[0]
     k, b = polydiv(b, a)
-    p = roots(a)
     r = p * 0.0
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
     p = []
@@ -2422,7 +2429,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
             r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n]) /
                                factorial(sig - m))
         indx += sig
-    return r / rscale, p, k
+    return r / rscale, p, np.trim_zeros(k, 'f')
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
