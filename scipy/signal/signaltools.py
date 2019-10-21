@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import operator
 import sys
 import timeit
-
+from scipy.spatial import cKDTree
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
@@ -1764,39 +1764,43 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 
     >>> uniq[mult > 1]
     array([ 1.305])
-
     """
     if rtype in ['max', 'maximum']:
-        comproot = np.max
+        reduce = np.max
     elif rtype in ['min', 'minimum']:
-        comproot = np.min
+        reduce = np.min
     elif rtype in ['avg', 'mean']:
-        comproot = np.mean
+        reduce = np.mean
     else:
         raise ValueError("`rtype` must be one of "
                          "{'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}")
-    p = asarray(p) * 1.0
-    tol = abs(tol)
-    p, indx = cmplx_sort(p)
-    pout = []
-    mult = []
-    indx = -1
-    curp = p[0] + 5 * tol
-    sameroots = []
-    for k in range(len(p)):
-        tr = p[k]
-        if abs(tr - curp) < tol:
-            sameroots.append(tr)
-            curp = comproot(sameroots)
-            pout[indx] = curp
-            mult[indx] += 1
-        else:
-            pout.append(tr)
-            curp = tr
-            sameroots = [tr]
-            indx += 1
-            mult.append(1)
-    return array(pout), array(mult)
+
+    p = np.asarray(p)
+    points = np.empty((len(p), 2))
+    points[:, 0] = np.real(p)
+    points[:, 1] = np.imag(p)
+
+    tree = cKDTree(points)
+    pairs = tree.query_pairs(tol, output_type='ndarray')
+    pairs = np.sort(pairs, axis=0)
+
+    groups = dict()
+    used = set()
+    for i, j in pairs:
+        if i not in used:
+            groups.setdefault(i, [i]).append(j)
+            used.add(j)
+
+    p_unique = []
+    p_multiplicity = []
+
+    for i in range(len(p)):
+        if i not in used:
+            group = groups.get(i, [i])
+            p_unique.append(reduce(p[group]))
+            p_multiplicity.append(len(group))
+
+    return np.asarray(p_unique), np.asarray(p_multiplicity)
 
 
 def invres(r, p, k, tol=1e-3, rtype='avg'):
