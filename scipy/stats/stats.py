@@ -293,7 +293,7 @@ def gmean(a, axis=0, dtype=None):
     Returns
     -------
     gmean : ndarray
-        see dtype parameter above
+        See `dtype` parameter above.
 
     See Also
     --------
@@ -318,6 +318,7 @@ def gmean(a, axis=0, dtype=None):
     2.0
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
+
     """
     if not isinstance(a, np.ndarray):
         # if not an ndarray object attempt to convert it
@@ -356,7 +357,7 @@ def hmean(a, axis=0, dtype=None):
     Returns
     -------
     hmean : ndarray
-        see `dtype` parameter above
+        See `dtype` parameter above.
 
     See Also
     --------
@@ -380,6 +381,7 @@ def hmean(a, axis=0, dtype=None):
     1.6000000000000001
     >>> hmean([1, 2, 3, 4, 5, 6, 7])
     2.6997245179063363
+
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
@@ -417,9 +419,12 @@ def mode(a, axis=0, nan_policy='propagate'):
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -515,6 +520,7 @@ def _mask_to_limits(a, limits, inclusive):
     Raises
     ------
     A ValueError if there are no values within the given limits.
+
     """
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
@@ -563,10 +569,11 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     Returns
     -------
     tmean : float
+        Trimmed mean.
 
-    See also
+    See Also
     --------
-    trim_mean : returns mean after trimming a proportion from both tails.
+    trim_mean : Returns mean after trimming a proportion from both tails.
 
     Examples
     --------
@@ -651,7 +658,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     lowerlimit : None or float, optional
         Values in the input array less than the given limit will be ignored.
         When lowerlimit is None, then all values are used. The default value
@@ -663,13 +670,17 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     tmin : float, int or ndarray
+        Trimmed minimum.
 
     Examples
     --------
@@ -709,7 +720,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     upperlimit : None or float, optional
         Values in the input array greater than the given limit will be ignored.
         When upperlimit is None, then all values are used. The default value
@@ -721,13 +732,17 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     tmax : float, int or ndarray
+        Trimmed maximum.
 
     Examples
     --------
@@ -767,7 +782,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
         upper limit will be ignored. When limits is None, then all values are
@@ -786,6 +801,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Returns
     -------
     tstd : float
+        Trimmed sample standard deviation.
 
     Notes
     -----
@@ -815,7 +831,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
         upper limit will be ignored. When limits is None, then all values are
@@ -834,6 +850,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     Returns
     -------
     tsem : float
+        Trimmed standard error of the mean.
 
     Notes
     -----
@@ -871,20 +888,22 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     points. It is often used to calculate coefficients of skewness and kurtosis
     due to its close relationship with them.
 
-
     Parameters
     ----------
     a : array_like
-       data
+       Input array.
     moment : int or array_like of ints, optional
-       order of central moment that is returned. Default is 1.
+       Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
        If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -893,7 +912,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
 
-    See also
+    See Also
     --------
     kurtosis, skew, describe
 
@@ -919,6 +938,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     0.0
     >>> moment([1, 2, 3, 4, 5], moment=2)
     2.0
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -996,7 +1016,9 @@ def _moment(a, moment, axis):
 
 def variation(a, axis=0, nan_policy='propagate'):
     """
-    Compute the coefficient of variation, the ratio of the biased standard
+    Compute the coefficient of variation.
+    
+    The coefficient of variation is the ratio of the biased standard
     deviation to the mean.
 
     Parameters
@@ -1007,9 +1029,12 @@ def variation(a, axis=0, nan_policy='propagate'):
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -1027,6 +1052,7 @@ def variation(a, axis=0, nan_policy='propagate'):
     >>> from scipy.stats import variation
     >>> variation([1, 2, 3, 4, 5])
     0.47140452079103173
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1040,28 +1066,31 @@ def variation(a, axis=0, nan_policy='propagate'):
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
-    """
+    r"""
     Compute the sample skewness of a data set.
 
-    For normally distributed data, the skewness should be about 0. For
-    unimodal continuous distributions, a skewness value > 0 means that
-    there is more weight in the right tail of the distribution. The
+    For normally distributed data, the skewness should be about zero. For
+    unimodal continuous distributions, a skewness value greater than zero means
+    that there is more weight in the right tail of the distribution. The
     function `skewtest` can be used to determine if the skewness value
-    is close enough to 0, statistically speaking.
+    is close enough to zero, statistically speaking.
 
     Parameters
     ----------
     a : ndarray
-        data
+        Input array.
     axis : int or None, optional
         Axis along which skewness is calculated. Default is 0.
         If None, compute over the whole array `a`.
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -1074,23 +1103,28 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     The sample skewness is computed as the Fisher-Pearson coefficient
     of skewness, i.e.
 
-    .. math:: g_1=\\frac{m_3}{m_2^{3/2}}
+    .. math:: 
+
+        g_1=\frac{m_3}{m_2^{3/2}}
 
     where
 
-    .. math:: m_i=\\frac{1}{N}\\sum_{n=1}^N(x[n]-\\bar{x})^i
+    .. math:: 
 
-    is the biased sample :math:`i\\texttt{th}` central moment, and :math:`\\bar{x}` is
+        m_i=\frac{1}{N}\sum_{n=1}^N(x[n]-\bar{x})^i
+
+    is the biased sample :math:`i\texttt{th}` central moment, and :math:`\bar{x}` is
     the sample mean.  If ``bias`` is False, the calculations are
     corrected for bias and the value computed is the adjusted
     Fisher-Pearson standardized moment coefficient, i.e.
 
-    .. math:: G_1=\\frac{k_3}{k_2^{3/2}}=
-                  \\frac{\\sqrt{N(N-1)}}{N-2}\\frac{m_3}{m_2^{3/2}}.
+    .. math:: 
+
+        G_1=\frac{k_3}{k_2^{3/2}}=
+            \frac{\sqrt{N(N-1)}}{N-2}\frac{m_3}{m_2^{3/2}}.
 
     References
     ----------
-
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
@@ -1103,6 +1137,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     0.0
     >>> skew([2, 8, 0, 4, 1, 9, 9, 0])
     0.2650554122698573
+
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
@@ -1149,7 +1184,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array
-        data for which the kurtosis is calculated
+        Data for which the kurtosis is calculated.
     axis : int or None, optional
         Axis along which the kurtosis is calculated. Default is 0.
         If None, compute over the whole array `a`.
@@ -1268,9 +1303,12 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         If False, then the skewness and kurtosis calculations are corrected for
         statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -1347,21 +1385,24 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array
-        The data to be tested
+        The data to be tested.
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        a 2-sided p-value for the hypothesis test
+        Two-sided p-value for the hypothesis test.
 
     Notes
     -----
@@ -1384,6 +1425,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     SkewtestResult(statistic=3.571773510360407, pvalue=0.0003545719905823133)
     >>> skewtest([100, 100, 100, 100, 100, 100, 100, 101])
     SkewtestResult(statistic=3.5717766638478072, pvalue=0.000354567720281634)
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1428,21 +1470,24 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array
-        array of the sample data
+        Array of the sample data.
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        The 2-sided p-value for the hypothesis test
+        The two-sided p-value for the hypothesis test.
 
     Notes
     -----
@@ -1463,6 +1508,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     >>> s = np.random.normal(0, 1, 1000)
     >>> kurtosistest(s)
     KurtosistestResult(statistic=1.2317590987707365, pvalue=0.21803908613450895)
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1519,7 +1565,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Pearson's [1]_, [2]_ test that combines skew and kurtosis to
     produce an omnibus test of normality.
 
-
     Parameters
     ----------
     a : array_like
@@ -1528,9 +1573,12 @@ def normaltest(a, axis=0, nan_policy='propagate'):
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -1565,6 +1613,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     ... else:
     ...     print("The null hypothesis cannot be rejected")
     The null hypothesis can be rejected
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1706,13 +1755,14 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
         compute the percentile. Values of `a` outside
         this (closed) interval will be ignored.
     interpolation_method : {'fraction', 'lower', 'higher'}, optional
-        This optional parameter specifies the interpolation method to use,
+        Specifies the interpolation method to use,
         when the desired quantile lies between two data points `i` and `j`
+        The following options are available (default is 'fraction'):
 
-          - fraction: ``i + (j - i) * fraction`` where ``fraction`` is the
-            fractional part of the index surrounded by ``i`` and ``j``.
-          - lower: ``i``.
-          - higher: ``j``.
+          * 'fraction': ``i + (j - i) * fraction`` where ``fraction`` is the
+            fractional part of the index surrounded by ``i`` and ``j``
+          * 'lower': ``i``
+          * 'higher': ``j``
 
     axis : int, optional
         Axis along which the percentiles are computed. Default is None. If
@@ -1809,7 +1859,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
 
 def percentileofscore(a, score, kind='rank'):
     """
-    The percentile rank of a score relative to a list of scores.
+    Compute the percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
     scores in `a` are below the given score. In the case of gaps or
@@ -1822,22 +1872,18 @@ def percentileofscore(a, score, kind='rank'):
     score : int or float
         Score that is compared to the elements in `a`.
     kind : {'rank', 'weak', 'strict', 'mean'}, optional
-        This optional parameter specifies the interpretation of the
-        resulting score:
+        Specifies the interpretation of the resulting score.
+        The following options are available (default is 'rank'):
 
-        - "rank": Average percentage ranking of score.  In case of
-                  multiple matches, average the percentage rankings of
-                  all matching scores.
-        - "weak": This kind corresponds to the definition of a cumulative
-                  distribution function.  A percentileofscore of 80%
-                  means that 80% of values are less than or equal
-                  to the provided score.
-        - "strict": Similar to "weak", except that only values that are
-                    strictly less than the given score are counted.
-        - "mean": The average of the "weak" and "strict" scores, often used in
-                  testing.  See
-
-                  https://en.wikipedia.org/wiki/Percentile_rank
+          * 'rank': Average percentage ranking of score.  In case of multiple
+            matches, average the percentage rankings of all matching scores.
+          * 'weak': This kind corresponds to the definition of a cumulative
+            distribution function.  A percentileofscore of 80% means that 80%
+            of values are less than or equal to the provided score.
+          * 'strict': Similar to "weak", except that only values that are
+            strictly less than the given score are counted.
+          * 'mean': The average of the "weak" and "strict" scores, often used
+            in testing.  See https://en.wikipedia.org/wiki/Percentile_rank
 
     Returns
     -------
@@ -1872,7 +1918,7 @@ def percentileofscore(a, score, kind='rank'):
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='weak')
     80.0
 
-    The average between the weak and the strict scores is
+    The average between the weak and the strict scores is:
 
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
@@ -1907,6 +1953,8 @@ HistogramResult = namedtuple('HistogramResult',
 
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
+    Create a histogram.
+    
     Separate the range into several bins and return the number of instances
     in each bin.
 
@@ -2095,7 +2143,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     frequency : ndarray
         Binned values of relative frequency.
     lowerlimit : float
-        Lower real limit
+        Lower real limit.
     binsize : float
         Width of each bin.
     extrapoints : int
@@ -2198,6 +2246,7 @@ def obrientransform(*args):
 
     If we require that ``p < 0.05`` for significance, we cannot conclude
     that the variances are different.
+    
     """
     TINY = np.sqrt(np.finfo(float).eps)
 
@@ -2227,6 +2276,8 @@ def obrientransform(*args):
 
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """
+    Compute standard error of the mean.
+    
     Calculate the standard error of the mean (or standard error of
     measurement) of the values in the input array.
 
@@ -2243,9 +2294,12 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         for bias in limited samples relative to the population estimate
         of variance. Defaults to 1.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2287,7 +2341,9 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
-    Calculate the z score of each value in the sample, relative to the
+    Compute the z score.
+
+    Compute the z score of each value in the sample, relative to the
     sample mean and standard deviation.
 
     Parameters
@@ -2304,6 +2360,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+
     Returns
     -------
     zscore : array_like
@@ -2339,6 +2396,7 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [ 0.26796377, -1.12598418,  1.23283094, -0.37481053],
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
+    
     """
     a = np.asanyarray(a)
 
@@ -2395,6 +2453,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> b = [0, 1, 2, 3, 4]
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
+    
     """
     scores, compare = map(np.asanyarray, [scores, compare])
     mns = compare.mean(axis=axis, keepdims=True)
@@ -2403,7 +2462,8 @@ def zmap(scores, compare, axis=0, ddof=0):
 
 
 def gstd(a, axis=0, ddof=1):
-    """Calculate the geometric standard deviation of an array
+    """
+    Calculate the geometric standard deviation of an array.
 
     The geometric standard deviation describes the spread of a set of numbers
     where the geometric mean is preferred. It is a multiplicative factor, and
@@ -2495,6 +2555,7 @@ def gstd(a, axis=0, ddof=1):
       mask=[[False, False, False],
             [False,  True,  True]],
       fill_value=999999)
+    
     """
     a = np.asanyarray(a)
     log = ma.log if isinstance(a, ma.MaskedArray) else np.log
@@ -2536,7 +2597,7 @@ _scale_conversions = {'raw': 1.0,
 
 def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         interpolation='linear', keepdims=False):
-    """
+    r"""
     Compute the interquartile range of the data along the specified axis.
 
     The interquartile range (IQR) is the difference between the 75th and
@@ -2568,7 +2629,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         result. The following string values are recognized:
 
           'raw' : No scaling, just return the raw IQR.
-          'normal' : Scale by :math:`2 \\sqrt{2} erf^{-1}(\\frac{1}{2}) \\approx 1.349`.
+          'normal' : Scale by :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
         The default is 'raw'. Array-like scale is also allowed, as long
         as it broadcasts correctly to the output such that
@@ -2576,21 +2637,24 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         depend on the input array, `x`, the `axis` argument, and the
         `keepdims` flag.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        returns nan, 'raise' throws an error, 'omit' performs the
-        calculations ignoring nan values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}, optional
         Specifies the interpolation method to use when the percentile
-        boundaries lie between two data points `i` and `j`:
+        boundaries lie between two data points `i` and `j`.
+        The following options are available (default is 'linear'):
 
-          * 'linear' : `i + (j - i) * fraction`, where `fraction` is the
-              fractional part of the index surrounded by `i` and `j`.
-          * 'lower' : `i`.
-          * 'higher' : `j`.
-          * 'nearest' : `i` or `j` whichever is nearest.
-          * 'midpoint' : `(i + j) / 2`.
+          * 'linear': `i + (j - i) * fraction`, where `fraction` is the
+            fractional part of the index surrounded by `i` and `j`.
+          * 'lower': `i`.
+          * 'higher': `j`.
+          * 'nearest': `i` or `j` whichever is nearest.
+          * 'midpoint': `(i + j) / 2`.
 
-        Default is 'linear'.
     keepdims : bool, optional
         If this is set to `True`, the reduced axes are left in the
         result as dimensions with size one. With this option, the result
@@ -2607,23 +2671,6 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     See Also
     --------
     numpy.std, numpy.var
-
-    Examples
-    --------
-    >>> from scipy.stats import iqr
-    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
-    >>> x
-    array([[10,  7,  4],
-           [ 3,  2,  1]])
-    >>> iqr(x)
-    4.0
-    >>> iqr(x, axis=0)
-    array([ 3.5,  2.5,  1.5])
-    >>> iqr(x, axis=1)
-    array([ 3.,  1.])
-    >>> iqr(x, axis=1, keepdims=True)
-    array([[ 3.],
-           [ 1.]])
 
     Notes
     -----
@@ -2651,6 +2698,24 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     .. [1] "Interquartile range" https://en.wikipedia.org/wiki/Interquartile_range
     .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
     .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
+    
+    Examples
+    --------
+    >>> from scipy.stats import iqr
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> iqr(x)
+    4.0
+    >>> iqr(x, axis=0)
+    array([ 3.5,  2.5,  1.5])
+    >>> iqr(x, axis=1)
+    array([ 3.,  1.])
+    >>> iqr(x, axis=1, keepdims=True)
+    array([[ 3.],
+           [ 1.]])
+
     """
     x = asarray(x)
 
@@ -2699,7 +2764,7 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
 
     The median absolute deviation (MAD, [1]_) computes the median over the
     absolute deviations from the median. It is a measure of dispersion
-    similar to the standard deviation, but is more robust to outliers [2]_.
+    similar to the standard deviation but more robust to outliers [2]_.
 
     The MAD of an empty array is ``np.nan``.
 
@@ -2721,9 +2786,12 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         ensures consistency with the standard deviation for normally distributed
         data.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate'
-        returns nan, 'raise' throws an error, 'omit' performs the
-        calculations ignoring nan values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2920,11 +2988,11 @@ SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 def sigmaclip(a, low=4., high=4.):
     """
-    Iterative sigma-clipping of array elements.
+    Perform iterative sigma-clipping of array elements.
 
     Starting from the full sample, all elements outside the critical range are
     removed, i.e. all elements of the input array `c` that satisfy either of
-    the following conditions ::
+    the following conditions::
 
         c < mean(c) - std(c)*low
         c > mean(c) + std(c)*high
@@ -2989,14 +3057,14 @@ def sigmaclip(a, low=4., high=4.):
 
 def trimboth(a, proportiontocut, axis=0):
     """
-    Slices off a proportion of items from both ends of an array.
+    Slice off a proportion of items from both ends of an array.
 
-    Slices off the passed proportion of items from both ends of the passed
+    Slice off the passed proportion of items from both ends of the passed
     array (i.e., with `proportiontocut` = 0.1, slices leftmost 10% **and**
     rightmost 10% of scores). The trimmed values are the lowest and
     highest ones.
-    Slices off less if proportion results in a non-integer slice index (i.e.,
-    conservatively slices off`proportiontocut`).
+    Slice off less if proportion results in a non-integer slice index (i.e.
+    conservatively slices off `proportiontocut`).
 
     Parameters
     ----------
@@ -3051,20 +3119,20 @@ def trimboth(a, proportiontocut, axis=0):
 
 def trim1(a, proportiontocut, tail='right', axis=0):
     """
-    Slices off a proportion from ONE end of the passed array distribution.
+    Slice off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
     10% of scores. The lowest or highest values are trimmed (depending on
     the tail).
-    Slices off less if proportion results in a non-integer slice index
-    (i.e., conservatively slices off `proportiontocut` ).
+    Slice off less if proportion results in a non-integer slice index
+    (i.e. conservatively slices off `proportiontocut` ).
 
     Parameters
     ----------
     a : array_like
-        Input array
+        Input array.
     proportiontocut : float
-        Fraction to cut off of 'left' or 'right' of distribution
+        Fraction to cut off of 'left' or 'right' of distribution.
     tail : {'left', 'right'}, optional
         Defaults to 'right'.
     axis : int or None, optional
@@ -3114,9 +3182,9 @@ def trim_mean(a, proportiontocut, axis=0):
     Parameters
     ----------
     a : array_like
-        Input array
+        Input array.
     proportiontocut : float
-        Fraction to cut off of both tails of the distribution
+        Fraction to cut off of both tails of the distribution.
     axis : int or None, optional
         Axis along which the trimmed means are computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -3129,7 +3197,7 @@ def trim_mean(a, proportiontocut, axis=0):
     See Also
     --------
     trimboth
-    tmean : compute the trimmed mean ignoring values outside given `limits`.
+    tmean : Compute the trimmed mean ignoring values outside given `limits`.
 
     Examples
     --------
@@ -3177,7 +3245,7 @@ F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 def f_oneway(*args):
     """
-    Performs a 1-way ANOVA.
+    Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
     the same population mean.  The test is applied to samples from two or
@@ -3210,7 +3278,6 @@ def f_oneway(*args):
     with some loss of power.
 
     The algorithm is from Heiman[2], pp.394-7.
-
 
     References
     ----------
@@ -3280,9 +3347,7 @@ def f_oneway(*args):
 
 
 class PearsonRConstantInputWarning(RuntimeWarning):
-    """
-    Warning generated by `pearsonr` when an input is constant.
-    """
+    """Warning generated by `pearsonr` when an input is constant."""
 
     def __init__(self, msg=None):
         if msg is None:
@@ -3292,9 +3357,7 @@ class PearsonRConstantInputWarning(RuntimeWarning):
 
 
 class PearsonRNearConstantInputWarning(RuntimeWarning):
-    """
-    Warning generated by `pearsonr` when an input is nearly constant.
-    """
+    """Warning generated by `pearsonr` when an input is nearly constant."""
 
     def __init__(self, msg=None):
         if msg is None:
@@ -3324,16 +3387,16 @@ def pearsonr(x, y):
     Parameters
     ----------
     x : (N,) array_like
-        Input
+        Input array.
     y : (N,) array_like
-        Input
+        Input array.
 
     Returns
     -------
     r : float
-        Pearson's correlation coefficient
+        Pearson's correlation coefficient.
     p-value : float
-        two-tailed p-value
+        Two-tailed p-value.
 
     Warns
     -----
@@ -3354,7 +3417,6 @@ def pearsonr(x, y):
 
     Notes
     -----
-
     The correlation coefficient is calculated as follows:
 
     .. math::
@@ -3489,15 +3551,20 @@ def pearsonr(x, y):
 
 
 def fisher_exact(table, alternative='two-sided'):
-    """Performs a Fisher exact test on a 2x2 contingency table.
+    """
+    Perform a Fisher exact test on a 2x2 contingency table.
 
     Parameters
     ----------
     table : array_like of ints
         A 2x2 contingency table.  Elements should be non-negative integers.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Which alternative hypothesis to the null hypothesis the test uses.
-        Default is 'two-sided'.
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
 
     Returns
     -------
@@ -3570,9 +3637,7 @@ def fisher_exact(table, alternative='two-sided'):
     n = c[0, 0] + c[1, 0]
 
     def binary_search(n, n1, n2, side):
-        """Binary search for where to begin lower/upper halves in two-sided
-        test.
-        """
+        """Binary search for where to begin halves in two-sided test."""
         if side == "upper":
             minval = mode
             maxval = n
@@ -3652,17 +3717,16 @@ SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
-    Calculate a Spearman rank-order correlation coefficient and the p-value
-    to test for non-correlation.
+    Calculate a Spearman correlation coefficient with associated p-value.
 
-    The Spearman correlation is a nonparametric measure of the monotonicity
-    of the relationship between two datasets. Unlike the Pearson correlation,
-    the Spearman correlation does not assume that both datasets are normally
-    distributed. Like other correlation coefficients, this one varies
-    between -1 and +1 with 0 implying no correlation. Correlations of -1 or
-    +1 imply an exact monotonic relationship. Positive correlations imply that
-    as x increases, so does y. Negative correlations imply that as x
-    increases, y decreases.
+    The Spearman rank-order correlation coefficient is a nonparametric measure
+    of the monotonicity of the relationship between two datasets. Unlike the
+    Pearson correlation, the Spearman correlation does not assume that both
+    datasets are normally distributed. Like other correlation coefficients,
+    this one varies between -1 and +1 with 0 implying no correlation.
+    Correlations of -1 or +1 imply an exact monotonic relationship. Positive
+    correlations imply that as x increases, so does y. Negative correlations
+    imply that as x increases, y decreases.
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Spearman correlation at least as extreme
@@ -3683,9 +3747,12 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         each row represents a variable, while the columns contain observations.
         If axis=None, then both arrays will be raveled.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -3700,7 +3767,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     References
     ----------
-
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
@@ -3831,9 +3897,9 @@ def pointbiserialr(x, y):
     Returns
     -------
     correlation : float
-        R value
+        R value.
     pvalue : float
-        2-tailed p-value
+        Two-sided p-value.
 
     Notes
     -----
@@ -3916,17 +3982,21 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     initial_lexsort : bool, optional
         Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'. Note that if the input contains nan
-        'omit' delegates to mstats_basic.kendalltau(), which has a different
-        implementation.
-    method: {'auto', 'asymptotic', 'exact'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
+    method : {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [5]_.
-        'asymptotic' uses a normal approximation valid for large samples.
-        'exact' computes the exact p-value, but can only be used if no ties
-        are present. 'auto' is the default and selects the appropriate
-        method based on a trade-off between speed and accuracy.
+        The following options are available (default is 'auto'):
+
+          * 'auto': selects the appropriate method based on a trade-off between
+            speed and accuracy
+          * 'asymptotic': uses a normal approximation valid for large samples
+          * 'exact': computes the exact p-value, but can only be used if no ties
+            are present
 
     Returns
     -------
@@ -3936,7 +4006,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
        The two-sided p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
-    See also
+    See Also
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
@@ -4132,7 +4202,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     x, y : array_like
         Arrays of scores, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
-    rank: array_like of ints or bool, optional
+    rank : array_like of ints or bool, optional
         A nonnegative rank assigned to each element. If it is None, the
         decreasing lexicographical rank by (`x`, `y`) will be used: elements of
         higher rank will be those with larger `x`-values, using `y`-values to
@@ -4159,7 +4229,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
        Presently ``np.nan``, as the null statistics is unknown (even in the
        additive hyperbolic case).
 
-    See also
+    See Also
     --------
     kendalltau : Calculates Kendall's tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
@@ -4288,24 +4358,27 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        sample observation
+        Sample observation.
     popmean : float or array_like
-        expected value in null hypothesis. If array_like, then it must have the
-        same shape as `a` excluding the axis dimension
+        Expected value in null hypothesis. If array_like, then it must have the
+        same shape as `a` excluding the axis dimension.
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     statistic : float or array
-        t-statistic
+        t-statistic.
     pvalue : float or array
-        two-tailed p-value
+        Two-sided p-value.
 
     Examples
     --------
@@ -4416,7 +4489,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
-        The mean(s) of sample 2
+        The mean(s) of sample 2.
     std2 : array_like
         The standard deviations(s) of sample 2.
     nobs2 : array_like
@@ -4430,7 +4503,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Returns
     -------
     statistic : float or array
-        The calculated t-statistics
+        The calculated t-statistics.
     pvalue : float or array
         The two-tailed p-value.
 
@@ -4440,7 +4513,6 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-
     .. versionadded:: 0.16.0
 
     References
@@ -4484,8 +4556,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         Sample 1    150      30         0.2        0.16
         Sample 2    200      45         0.225      0.174375
 
-    The sample mean :math:`\hat{p}` is the proportion of ones in the sample 
-    and the variance for a binary observation is estimated by 
+    The sample mean :math:`\hat{p}` is the proportion of ones in the sample
+    and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
     >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
@@ -4535,9 +4607,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
 
         .. versionadded:: 0.11.0
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
 
     Returns
@@ -4641,7 +4716,7 @@ Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     """
-    Calculate the T-test on TWO RELATED samples of scores, a and b.
+    Calculate the t-test on TWO RELATED samples of scores, a and b.
 
     This is a two-sided test for the null hypothesis that 2 related or
     repeated samples have identical average (expected) values.
@@ -4654,20 +4729,23 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     statistic : float or array
-        t-statistic
+        t-statistic.
     pvalue : float or array
-        two-tailed p-value
+        Two-sided p-value.
 
     Notes
     -----
-    Examples for the use are scores of the same set of student in
+    Examples for use are scores of the same set of student in
     different exams, or repeated sampling from the same units. The
     test measures whether the average score differs significantly
     across samples (e.g. exams). If we observe a large p-value, for
@@ -4743,13 +4821,13 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
 
     This performs a test of the distribution F(x) of an observed
     random variable against a given distribution G(x). Under the null
-    hypothesis the two distributions are identical, F(x)=G(x). The
+    hypothesis, the two distributions are identical, F(x)=G(x). The
     alternative hypothesis can be either 'two-sided' (default), 'less'
     or 'greater'. The KS test is only valid for continuous distributions.
 
     Parameters
     ----------
-    rvs : str, array or callable
+    rvs : str, array_like, or callable
         If a string, it should be the name of a distribution in `scipy.stats`.
         If an array, it should be a 1-D array of observations of random
         variables.
@@ -4763,14 +4841,19 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
         Distribution parameters, used if `rvs` or `cdf` are strings.
     N : int, optional
         Sample size if `rvs` is string or callable.  Default is 20.
-    alternative : {'two-sided', 'less','greater'}, optional
-        Defines the alternative hypothesis (see explanation above).
-        Default is 'two-sided'.
-    mode : 'approx' (default) or 'asymp', optional
-        Defines the distribution used for calculating the p-value.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
 
-          - 'approx' : use approximation to exact distribution of test statistic
-          - 'asymp' : use asymptotic distribution of test statistic
+          * 'two-sided'
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
+    mode : {'approx', 'asymp'}, optional
+        Defines the distribution used for calculating the p-value.
+        The following options are available (default is 'approx'):
+
+          * 'approx': use approximation to exact distribution of test statistic
+          * 'asymp': use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -4778,6 +4861,10 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
         KS test statistic, either D, D+ or D-.
     pvalue :  float
         One-tailed or two-tailed p-value.
+
+    See Also
+    --------
+    ks_2samp
 
     Notes
     -----
@@ -4947,10 +5034,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         apply the test.  If axis is None, all values in `f_obs` are treated
         as a single data set.  Default is 0.
     lambda_ : float or str, optional
-        `lambda_` gives the power in the Cressie-Read power divergence
-        statistic.  The default is 1.  For convenience, `lambda_` may be
-        assigned one of the following strings, in which case the
-        corresponding numerical value is used::
+        The power in the Cressie-Read power divergence statistic.  The default
+        is 1.  For convenience, `lambda_` may be assigned one of the following
+        strings, in which case the corresponding numerical value is used::
 
             String              Value   Description
             "pearson"             1     Pearson's chi-squared statistic.
@@ -5019,7 +5105,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Examples
     --------
-
     (See `chisquare` for more examples.)
 
     When just `f_obs` is given, it is assumed that the expected frequencies
@@ -5124,9 +5209,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     """
-    Calculate a one-way chi square test.
+    Calculate a one-way chi-square test.
 
-    The chi square test tests the null hypothesis that the categorical data
+    The chi-square test tests the null hypothesis that the categorical data
     has the given frequencies.
 
     Parameters
@@ -5171,8 +5256,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     efficient maximum likelihood then the correct degrees of freedom are
     k-1-p. If the parameters are estimated in a different way, then the
     dof can be between k-1-p and k-1. However, it is also possible that
-    the asymptotic distribution is not a chisquare, in which case this
-    test is not appropriate.
+    the asymptotic distribution is not chi-square, in which case this test
+    is not appropriate.
 
     References
     ----------
@@ -5241,7 +5326,8 @@ Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
 def _compute_prob_inside_method(m, n, g, h):
-    """Count the proportion of paths that stay strictly inside two diagonal lines.
+    """
+    Count the proportion of paths that stay strictly inside two diagonal lines.
 
     Parameters
     ----------
@@ -5268,6 +5354,7 @@ def _compute_prob_inside_method(m, n, g, h):
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+    
     """
     # Probability is symmetrical in m, n.  Computation below uses m >= n.
     if m < n:
@@ -5320,7 +5407,8 @@ def _compute_prob_inside_method(m, n, g, h):
 
 
 def _compute_prob_outside_square(n, h):
-    """Compute the proportion of paths that pass outside the two diagonal lines.
+    """
+    Compute the proportion of paths that pass outside the two diagonal lines.
 
     Parameters
     ----------
@@ -5355,7 +5443,8 @@ def _compute_prob_outside_square(n, h):
 
 
 def _count_paths_outside_method(m, n, g, h):
-    """Count the number of paths that pass outside the specified diagonal.
+    """
+    Count the number of paths that pass outside the specified diagonal.
 
     Parameters
     ----------
@@ -5390,6 +5479,7 @@ def _count_paths_outside_method(m, n, g, h):
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
     """
     # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
     # B(x, y) = #{paths from (0,0) to (x,y) without previously crossing the boundary}
@@ -5443,9 +5533,8 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    are drawn from the same continuous distribution.  The
-    alternative hypothesis can be either 'two-sided' (default), 'less'
-    or 'greater'.
+    are drawn from the same continuous distribution.  The alternative hypothesis
+    can be either 'two-sided' (default), 'less' or 'greater'.
 
     Parameters
     ----------
@@ -5453,27 +5542,35 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         Two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis (see explanation above).
-        Default is 'two-sided'.
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
     mode : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
-        Default is 'auto'.
+        The following options are available (default is 'auto'):
 
-        - 'exact' : use approximation to exact distribution of test statistic
-        - 'asymp' : use asymptotic distribution of test statistic
-        - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
     statistic : float
-        KS statistic
+        KS statistic.
     pvalue : float
-        two-tailed p-value
+        Two-tailed p-value.
+
+    See Also
+    --------
+    kstest
 
     Notes
     -----
     This tests whether 2 samples are drawn from the same distribution. Note
-    that, like in the case of the one-sample K-S test, the distribution is
+    that, like in the case of the one-sample KS test, the distribution is
     assumed to be continuous.
 
     In the one-sided test, the alternative is that the empirical
@@ -5481,7 +5578,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     or "greater" than the empirical cumulative distribution function G(x)
     of the data2 variable, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
 
-    If the K-S statistic is small or the p-value is high, then we cannot
+    If the KS statistic is small or the p-value is high, then we cannot
     reject the hypothesis that the distributions of the two samples
     are the same.
 
@@ -5631,8 +5728,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
 def tiecorrect(rankvals):
     """
-    Tie correction factor for ties in the Mann-Whitney U and
-    Kruskal-Wallis H tests.
+    Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
 
     Parameters
     ----------
@@ -5689,13 +5785,19 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
     use_continuity : bool, optional
             Whether a continuity correction (1/2.) should be taken into
             account. Default is True.
-    alternative : None (deprecated), 'less', 'two-sided', or 'greater'
-            Whether to get the p-value for the one-sided hypothesis ('less'
-            or 'greater') or for the two-sided hypothesis ('two-sided').
-            Defaults to None, which results in a p-value half the size of
-            the 'two-sided' p-value and a different U statistic. The
-            default behavior is not the same as using 'less' or 'greater':
-            it only exists for backward compatibility and is deprecated.
+    alternative : {None, 'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is None):
+
+          * None: computes p-value half the size of the 'two-sided' p-value and
+            a different U statistic. The default behavior is not the same as
+            using 'less' or 'greater'; it only exists for backward compatibility
+            and is deprecated.
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        Use of the None option is deprecated.
 
     Returns
     -------
@@ -5790,15 +5892,15 @@ def ranksums(x, y):
     Parameters
     ----------
     x,y : array_like
-        The data from the two samples
+        The data from the two samples.
 
     Returns
     -------
     statistic : float
         The test statistic under the large-sample approximation that the
-        rank sum statistic is normally distributed
+        rank sum statistic is normally distributed.
     pvalue : float
-        The two-sided p-value of the test
+        The two-sided p-value of the test.
 
     References
     ----------
@@ -5824,13 +5926,13 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 def kruskal(*args, **kwargs):
     """
-    Compute the Kruskal-Wallis H-test for independent samples
+    Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
     median of all of the groups are equal.  It is a non-parametric version of
     ANOVA.  The test works on 2 or more independent samples, which may have
     different sizes.  Note that rejecting the null hypothesis does not
-    indicate which of the groups differs.  Post-hoc comparisons between
+    indicate which of the groups differs.  Post hoc comparisons between
     groups are required to determine which groups are different.
 
     Parameters
@@ -5839,23 +5941,26 @@ def kruskal(*args, **kwargs):
        Two or more arrays with the sample measurements can be given as
        arguments.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     statistic : float
-       The Kruskal-Wallis H statistic, corrected for ties
+       The Kruskal-Wallis H statistic, corrected for ties.
     pvalue : float
        The p-value for the test using the assumption that H has a chi
-       square distribution
+       square distribution.
 
     See Also
     --------
-    f_oneway : 1-way ANOVA
+    f_oneway : 1-way ANOVA.
     mannwhitneyu : Mann-Whitney rank test on two samples.
-    friedmanchisquare : Friedman test for repeated measurements
+    friedmanchisquare : Friedman test for repeated measurements.
 
     Notes
     -----
@@ -5945,7 +6050,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
 
 def friedmanchisquare(*args):
     """
-    Compute the Friedman test for repeated measurements
+    Compute the Friedman test for repeated measurements.
 
     The Friedman test tests the null hypothesis that repeated measurements of
     the same individuals have the same distribution.  It is often used
@@ -5963,10 +6068,10 @@ def friedmanchisquare(*args):
     Returns
     -------
     statistic : float
-        the test statistic, correcting for ties
+        The test statistic, correcting for ties.
     pvalue : float
-        the associated p-value assuming that the test statistic has a chi
-        squared distribution
+        The associated p-value assuming that the test statistic has a chi
+        squared distribution.
 
     Notes
     -----
@@ -6015,7 +6120,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
     when values are taken one by one from each group, the probabilities of
@@ -6029,18 +6134,26 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     ----------
     x, y : array_like
         Array of samples, should be one-dimensional.
-    alternative :  'less', 'two-sided', or 'greater', optional
-        Whether to get the p-value for the one-sided hypothesis ('less'
-        or 'greater') or for the two-sided hypothesis ('two-sided').
-        Defaults value is 'two-sided' .
-    distribution: 't' or 'normal', optional
-        Whether to get the p-value by t-distribution or by standard normal
-        distribution.
-        Defaults value is 't' .
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+    distribution : {'t', 'normal'}, optional
+        Defines how to get the p-value.
+        The following options are available (default is 't'):
+
+          * 't': get the p-value by t-distribution
+          * 'normal': get the p-value by standard normal distribution.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -6055,7 +6168,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     Brunner and Munzel recommended to estimate the p-value by t-distribution
     when the size of data is 50 or less. If the size is lower than 10, it would
     be better to use permuted Brunner Munzel test (see [2]_).
@@ -6147,26 +6260,24 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
-    Methods for combining the p-values of independent tests bearing upon the
-    same hypothesis.
+    Combine p-values from independent tests bearing upon the same hypothesis.
 
     Parameters
     ----------
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
-    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'},
-    optional.
-        Name of method to use to combine p-values. The following methods are
-        available:
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}, optional
+        Name of method to use to combine p-values.
+        The following methods are available (default is 'fisher'):
 
-        - "fisher": Fisher's method (Fisher's combined probability test),
-          the default, the sum of the logarithm of the p-values.
-        - "pearson": Pearson's method (similar to Fisher's but uses sum of the
-          complement of the p-values inside the logarithms).
-        - "tippett": Tippett's method (minimum of p-values).
-        - "stouffer": Stouffer's Z-score method.
-        - "mudholkar_george": the difference of Fisher's and Pearson's methods
-           divided by 2.
+          * 'fisher': Fisher's method (Fisher's combined probability test), the
+            sum of the logarithm of the p-values
+          * 'pearson': Pearson's method (similar to Fisher's but uses sum of the
+            complement of the p-values inside the logarithms)
+          * 'tippett': Tippett's method (minimum of p-values)
+          * 'stouffer': Stouffer's Z-score method
+          * 'mudholkar_george': the difference of Fisher's and Pearson's methods
+            divided by 2
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -6188,7 +6299,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
     method uses :math:`log(p_i)` [4]_. For Fisher's and Pearson's method, the
     sum of the logarithms is multiplied by -2 in the implementation. This
-    quantity has a chisquare distribution that determines the p-value. The
+    quantity has a chi-square distribution that determines the p-value. The
     `mudholkar_george` method is the difference of the Fisher's and Pearson's
     test statistics, each of which include the -2 factor [4]_. However, the
     `mudholkar_george` method does not include these -2 factors. The test
@@ -6335,6 +6446,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
+
     """
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
@@ -6416,6 +6528,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> energy_distance([0.7, 7.4, 2.4, 6.8], [1.4, 8. ],
     ...                 [2.1, 4.2, 7.4, 8. ], [7.6, 8.8])
     0.88003340976158217
+
     """
     return np.sqrt(2) * _cdf_distance(2, u_values, v_values,
                                       u_weights, v_weights)
@@ -6463,6 +6576,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     .. [1] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
+    
     """
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -6525,6 +6639,7 @@ def _validate_distribution(values, weights):
         Values as ndarray.
     weights : ndarray
         Weights as ndarray.
+    
     """
     # Validate the value array.
     values = np.asarray(values, dtype=float)
@@ -6609,10 +6724,11 @@ def _sum_of_squares(a, axis=0):
     sum_of_squares : ndarray
         The sum along the given axis for (a**2).
 
-    See also
+    See Also
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
     `_sum_of_squares`).
+    
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
@@ -6635,9 +6751,10 @@ def _square_of_sums(a, axis=0):
     square_of_sums : float or ndarray
         The square of the sum over `axis`.
 
-    See also
+    See Also
     --------
     _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
+    
     """
     a, axis = _chk_asarray(a, axis)
     s = np.sum(a, axis)
@@ -6658,28 +6775,22 @@ def rankdata(a, method='average'):
     ----------
     a : array_like
         The array of values to be ranked.  The array is first flattened.
-    method : str, optional
+    method : {'average', 'min', 'max', 'dense', 'ordinal'}, optional
         The method used to assign ranks to tied elements.
-        The options are 'average', 'min', 'max', 'dense' and 'ordinal'.
+        The following methods are available (default is 'average'):
 
-        'average':
-            The average of the ranks that would have been assigned to
+          * 'average': The average of the ranks that would have been assigned to
             all the tied values is assigned to each value.
-        'min':
-            The minimum of the ranks that would have been assigned to all
+          * 'min': The minimum of the ranks that would have been assigned to all
             the tied values is assigned to each value.  (This is also
             referred to as "competition" ranking.)
-        'max':
-            The maximum of the ranks that would have been assigned to all
+          * 'max': The maximum of the ranks that would have been assigned to all
             the tied values is assigned to each value.
-        'dense':
-            Like 'min', but the rank of the next highest element is assigned
-            the rank immediately after those assigned to the tied elements.
-        'ordinal':
-            All values are given a distinct rank, corresponding to the order
-            that the values occur in `a`.
-
-        The default is 'average'.
+          * 'dense': Like 'min', but the rank of the next highest element is
+            assigned the rank immediately after those assigned to the tied
+            elements.
+          * 'ordinal': All values are given a distinct rank, corresponding to
+            the order that the values occur in `a`.
 
     Returns
     -------
@@ -6704,6 +6815,7 @@ def rankdata(a, method='average'):
     array([ 1,  2,  3,  2])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
     array([ 1,  2,  4,  3])
+    
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
