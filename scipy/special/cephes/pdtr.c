@@ -149,7 +149,7 @@ double pdtr(double k, double m)
 {
     double v;
 
-    if ( k < 0.0 || m < 0.0 ) {
+    if (k < 0 || m < 0) {
         sf_error("pdtr", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
