@@ -16,6 +16,16 @@ fftpack_test_dir = join(dirname(__file__), '..', '..', '..', 'fftpack', 'tests')
 MDATA_COUNT = 8
 FFTWDATA_COUNT = 14
 
+def is_longdouble_binary_compatible():
+    try:
+        one = np.frombuffer(
+            b'\x00\x00\x00\x00\x00\x00\x00\x80\xff\x3f\x00\x00\x00\x00\x00\x00',
+            dtype='<f16')
+        return one == np.longfloat(1.)
+    except TypeError:
+        return False
+
+
 def get_reference_data():
     ref = getattr(globals(), '__reference_data', None)
     if ref is not None:
@@ -36,7 +46,7 @@ def get_reference_data():
     FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
     assert len(FFTWDATA_SIZES) == FFTWDATA_COUNT
 
-    if np.longfloat().itemsize == 16:
+    if is_longdouble_binary_compatible():
         FFTWDATA_LONGDOUBLE = np.load(
             join(fftpack_test_dir, 'fftw_longdouble_ref.npz'))
     else:
