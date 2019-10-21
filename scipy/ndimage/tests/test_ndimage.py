@@ -4509,8 +4509,6 @@ class TestNdimage:
                                       structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @pytest.mark.xfail(platform.machine() == 'ppc64le',
-                       reason="see gh-9515")
     def test_white_tophat03(self):
         array = numpy.array([[1, 0, 0, 0, 0, 0, 0],
                              [0, 1, 1, 1, 1, 1, 0],
