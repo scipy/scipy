@@ -1724,32 +1724,42 @@ def cmplx_sort(p):
 
 
 def unique_roots(p, tol=1e-3, rtype='min'):
-    """
-    Determine unique roots and their multiplicities from a list of roots.
+    """Determine unique roots and their multiplicities from a list of roots.
 
     Parameters
     ----------
     p : array_like
         The list of roots.
     tol : float, optional
-        The tolerance for two roots to be considered equal. Default is 1e-3.
-    rtype : {'max', 'min, 'avg'}, optional
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. Refer to Notes about
+        the details about roots grouping.
+    rtype : {'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}, optional
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          - 'max': pick the maximum of those roots.
-          - 'min': pick the minimum of those roots.
-          - 'avg': take the average of those roots.
+          - 'max', 'maximum': pick the maximum of those roots
+          - 'min', 'minimum': pick the minimum of those roots
+          - 'avg', 'mean': take the average of those roots
+
+        Note that complex roots are compared first by the real part and then
+        by the imaginary part.
 
     Returns
     -------
-    pout : ndarray
-        The list of unique roots, sorted from low to high.
-    mult : ndarray
+    unique : ndarray
+        The list of unique roots in the same order as in the input `p`.
+    multiplicity : ndarray
         The multiplicity of each root.
 
     Notes
     -----
+    If we have 3 roots ``a``, ``b`` and ``c``, such that ``a`` is close to
+    ``b`` and ``b`` is close to ``c`` (distance is less than `tol`), then it
+    doesn't necessarily mean that ``a`` is close to ``c``. It means that roots
+    grouping is not unique. In this function we use "greedy" grouping going
+    through the roots in the order they are given in the input `p`.
+
     This utility function is not specific to roots but can be used for any
     sequence of values for which uniqueness and multiplicity has to be
     determined. For a more general routine, see `numpy.unique`.
