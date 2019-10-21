@@ -1733,7 +1733,7 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     tol : float, optional
         The tolerance for two roots to be considered equal in terms of
         the distance between them. Default is 1e-3. Refer to Notes about
-        the details about roots grouping.
+        the details on roots grouping.
     rtype : {'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}, optional
         How to determine the returned root if multiple roots are within
         `tol` of each other.
