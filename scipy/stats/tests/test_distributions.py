@@ -2509,6 +2509,9 @@ class TestErlang(object):
             result_gamma = stats.gamma.fit(data, f0=1)
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
+    def test_gh_pr_10949_argcheck(self):
+        assert_equal(stats.erlang.pdf(0.5, a=[1, -1]), stats.gamma.pdf(0.5, a=[1, -1]))
+
 
 class TestRayleigh(object):
     # gh-6227

@@ -2822,7 +2822,6 @@ class erlang_gen(gamma_gen):
 
     def _argcheck(self, a):
         allint = np.all(np.floor(a) == a)
-        allpos = np.all(a > 0)
         if not allint:
             # An Erlang distribution shouldn't really have a non-integer
             # shape parameter, so warn the user.
@@ -2830,7 +2829,7 @@ class erlang_gen(gamma_gen):
                 'The shape parameter of the erlang distribution '
                 'has been given a non-integer value %r.' % (a,),
                 RuntimeWarning)
-        return allpos
+        return a > 0
 
     def _fitstart(self, data):
         # Override gamma_gen_fitstart so that an integer initial value is
