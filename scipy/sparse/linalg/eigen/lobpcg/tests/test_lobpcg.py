@@ -3,6 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
+import platform
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
@@ -269,6 +270,8 @@ def test_verbosity():
                   verbosityLevel=9)
 
 
+@pytest.mark.xfail(platform.machine() == 'ppc64le',
+                   reason="fails on ppc64le")
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """

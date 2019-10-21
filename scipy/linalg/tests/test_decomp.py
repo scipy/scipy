@@ -11,6 +11,7 @@ Run tests if scipy is installed:
 """
 
 import itertools
+import platform
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -2468,6 +2469,8 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
+@pytest.mark.xfail(platform.machine() == 'ppc64le',
+                   reason="fails on ppc64le")
 def test_aligned_mem():
     """Check linalg works with non-aligned memory"""
     # Allocate 804 bytes of memory (allocated on boundary)

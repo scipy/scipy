@@ -99,6 +99,12 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
+    - os: linux-ppc64le
+      python: 3.6
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--upgrade numpy"
 cache:
   directories:
     - $HOME/.ccache
