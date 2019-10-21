@@ -266,9 +266,9 @@ def ricker(points, a):
 
     It models the function:
 
-        ``A (1 - x^2/a^2) exp(-x^2/2 a^2)``,
+        ``A * (1 - (x/a)**2) * exp(-0.5*(x/a)**2)``,
 
-    where ``A = 2/sqrt(3a)pi^1/4``.
+    where ``A = 2/(sqrt(3*a)*(pi**0.25))``.
 
     Parameters
     ----------
