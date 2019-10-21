@@ -1786,28 +1786,26 @@ def unique_roots(p, tol=1e-3, rtype='min'):
                          "{'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}")
 
     p = np.asarray(p)
+
     points = np.empty((len(p), 2))
     points[:, 0] = np.real(p)
     points[:, 1] = np.imag(p)
-
     tree = cKDTree(points)
-    pairs = tree.query_pairs(tol)
-
-    groups = dict()
-    used = set()
-    for i, j in sorted(pairs):  # sort to predict the behavior
-        if i not in used:
-            groups.setdefault(i, [i]).append(j)
-            used.add(j)
 
     p_unique = []
     p_multiplicity = []
-
+    used = np.zeros(len(p), dtype=bool)
     for i in range(len(p)):
-        if i not in used:
-            group = groups.get(i, [i])
-            p_unique.append(reduce(p[group]))
-            p_multiplicity.append(len(group))
+        if used[i]:
+            continue
+
+        group = tree.query_ball_point(points[i], tol)
+        group = [x for x in group if not used[x]]
+
+        p_unique.append(reduce(p[group]))
+        p_multiplicity.append(len(group))
+
+        used[group] = True
 
     return np.asarray(p_unique), np.asarray(p_multiplicity)
 
