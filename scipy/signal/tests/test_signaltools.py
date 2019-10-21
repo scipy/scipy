@@ -2785,3 +2785,9 @@ class TestUniqueRoots(object):
         unique, multiplicity = unique_roots([1, 1 + 2e-9, 1e-9 + 1j], tol=0.1)
         assert_almost_equal(unique, [1.0, 1e-9 + 1.0j], decimal=15)
         assert_equal(multiplicity, [2, 1])
+
+    def test_single_unique_root(self):
+        p = np.random.rand(100) + 1j * np.random.rand(100)
+        unique, multiplicity = unique_roots(p, 2)
+        assert_almost_equal(unique, [np.min(p)], decimal=15)
+        assert_equal(multiplicity, [100])

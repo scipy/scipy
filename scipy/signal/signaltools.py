@@ -1748,7 +1748,7 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     Returns
     -------
     unique : ndarray
-        The list of unique roots in the same order as in the input `p`.
+        The list of unique roots.
     multiplicity : ndarray
         The multiplicity of each root.
 
@@ -1791,12 +1791,11 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     points[:, 1] = np.imag(p)
 
     tree = cKDTree(points)
-    pairs = tree.query_pairs(tol, output_type='ndarray')
-    pairs = np.sort(pairs, axis=0)
+    pairs = tree.query_pairs(tol)
 
     groups = dict()
     used = set()
-    for i, j in pairs:
+    for i, j in sorted(pairs):  # sort to predict the behavior
         if i not in used:
             groups.setdefault(i, [i]).append(j)
             used.add(j)
