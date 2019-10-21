@@ -2160,13 +2160,9 @@ def cmplx_sort(p):
     array([1.+0.j, 1.+1.j, 3.+0.j, 4.+0.j])
     >>> indx
     array([0, 2, 3, 1])
-
     """
     p = asarray(p)
-    if iscomplexobj(p):
-        indx = argsort(abs(p))
-    else:
-        indx = argsort(p)
+    indx = argsort(abs(p))
     return take(p, indx, 0), indx
 
 
