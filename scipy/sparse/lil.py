@@ -461,10 +461,10 @@ class lil_matrix(spmatrix, IndexMixin):
         np.cumsum(lengths, dtype=idx_dtype, out=indptr[1:])
         # construct indices and data array
         # using faster construction approach depending on density
-        if len(self.rows) == 0:
+        if M == 0:
             indices = np.empty(0, dtype=idx_dtype)
             data = np.empty(0, dtype=self.dtype)
-        elif nnz / len(self.rows) > 30:
+        elif nnz / M > 30:
             indices = np.empty(nnz, dtype=idx_dtype)
             data = np.empty(nnz, dtype=self.dtype)
             start = 0
