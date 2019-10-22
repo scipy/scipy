@@ -1990,8 +1990,9 @@ class Slerp(object):
 
         Parameters
         ----------
-        times : array_like, 1D
-            Times to compute the interpolations at.
+        times : array_like
+            Times to compute the interpolations at. Can be a scalar or
+            1-dimensional.
 
         Returns
         -------
@@ -2001,10 +2002,11 @@ class Slerp(object):
         """
         # Clearly differentiate from self.times property
         compute_times = np.asarray(times)
-        if compute_times.ndim != 1:
-            raise ValueError("Expected times to be specified in a 1 "
-                             "dimensional array, got {} "
-                             "dimensions.".format(compute_times.ndim))
+        if compute_times.ndim > 1:
+            raise ValueError("`times` must be at most 1-dimensional.")
+
+        single_time = compute_times.ndim == 0
+        compute_times = np.atleast_1d(compute_times)
 
         # side = 'left' (default) excludes t_min.
         ind = np.searchsorted(self.times, compute_times) - 1
@@ -2017,5 +2019,10 @@ class Slerp(object):
 
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
 
-        return (self.rotations[ind] *
-                Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
+        result = (self.rotations[ind] *
+                  Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
+
+        if single_time:
+            result = result[0]
+
+        return result
