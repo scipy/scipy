@@ -3880,11 +3880,16 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
+    sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
-    x.shape, zi.shape = x_shape, zi_shape
+    x.shape = x_shape
     x = np.moveaxis(x, -1, axis)
-    zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
-    out = (x, zi) if return_zi else x
+    if return_zi:
+        zi.shape = zi_shape
+        zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
+        out = (x, zi)
+    else:
+        out = x
     return out
 
 
