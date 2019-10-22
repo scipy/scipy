@@ -1050,7 +1050,7 @@ def test_slerp_call_time_dim_mismatch():
     s = Slerp(t, r)
 
     with pytest.raises(ValueError,
-                       match="times to be specified in a 1 dimensional array"):
+                       match="`times` must be at most 1-dimensional."):
         interp_times = np.array([[3.5],
                                  [4.2]])
         s(interp_times)
@@ -1066,3 +1066,15 @@ def test_slerp_call_time_out_of_range():
         s([0, 1, 2])
     with pytest.raises(ValueError, match="times must be within the range"):
         s([1, 2, 6])
+
+
+def test_slerp_call_scalar_time():
+    r = Rotation.from_euler('X', [0, 80], degrees=True)
+    s = Slerp([0, 1], r)
+
+    r_interpolated = s(0.25)
+    r_interpolated_expected = Rotation.from_euler('X', 20, degrees=True)
+
+    delta = r_interpolated * r_interpolated_expected.inv()
+
+    assert_allclose(delta.magnitude(), 0, atol=1e-16)
