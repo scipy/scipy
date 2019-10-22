@@ -225,7 +225,7 @@ PARAMS = [
     (special.pbvv, cython_special._pbvv_pywrap, ('dd',), None),
     (special.pbwa, cython_special._pbwa_pywrap, ('dd',), None),
     (special.pdtr, cython_special.pdtr, ('dd', 'dd'), None),
-    (special.pdtrc, cython_special.pdtrc, ('ld', 'dd'), None),
+    (special.pdtrc, cython_special.pdtrc, ('dd', 'dd'), None),
     (special.pdtri, cython_special.pdtri, ('ld', 'dd'), None),
     (special.pdtrik, cython_special.pdtrik, ('dd',), None),
     (special.poch, cython_special.poch, ('dd',), None),

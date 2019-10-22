@@ -94,7 +94,7 @@ extern double erfc(double a);
 extern double erf(double x);
 extern double ndtri(double y0);
 
-extern double pdtrc(int k, double m);
+extern double pdtrc(double k, double m);
 extern double pdtr(double k, double m);
 extern double pdtri(int k, double y);
 

@@ -127,20 +127,18 @@
 
 #include "mconf.h"
 
-double pdtrc(k, m)
-int k;
-double m;
+double pdtrc(double k, double m)
 {
     double v;
 
-    if ((k < 0) || (m < 0.0)) {
+    if (k < 0.0 || m < 0.0) {
         sf_error("pdtrc", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     if (m == 0.0) {
         return 0.0;
     }
-    v = k + 1;
+    v = floor(k) + 1;
     return (igam(v, m));
 }
 

@@ -67,7 +67,7 @@ cdef extern from "cephes.h" nogil:
     double erfc(double a)
     double erf(double x)
     double ndtri(double y0)
-    double pdtrc(int k, double m)
+    double pdtrc(double k, double m)
     double pdtr(double k, double m)
     double pdtri(int k, double y)
     double poch(double x, double m)
