@@ -400,6 +400,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             values, and outputs a single numerical statistic. This function
             will be called on the values in each bin.  Empty bins will be
             represented by function([]), or NaN if this returns an error.
+
     bins : sequence or positive int, optional
         The bin specification must be in one of the following forms:
 
