@@ -1990,8 +1990,9 @@ class Slerp(object):
 
         Parameters
         ----------
-        times : float or array_like
-            Times to compute the interpolations at.
+        times : array_like
+            Times to compute the interpolations at. Can be a scalar or
+            1-dimensional.
 
         Returns
         -------
