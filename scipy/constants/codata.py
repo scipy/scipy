@@ -1711,16 +1711,16 @@ for physical_constant in physical_constants:
          exact_values[physical_constant] = physical_constants[physical_constant]
 physical_constants.update(exact_values)        
 
-_tested_keys = ('natural unit of velocity',
-                                'natural unit of action',
-                                'natural unit of action in eV s',
-                                'natural unit of mass',
-                                'natural unit of energy',
-                                'natural unit of energy in MeV',
-                                'natural unit of mom.um',
-                                'natural unit of mom.um in MeV/c',
-                                'natural unit of length',
-                                'natural unit of time')
+_tested_keys = ['natural unit of velocity',
+                'natural unit of action',
+                'natural unit of action in eV s',
+                'natural unit of mass',
+                'natural unit of energy',
+                'natural unit of energy in MeV',
+                'natural unit of mom.um',
+                'natural unit of mom.um in MeV/c',
+                'natural unit of length',
+                'natural unit of time']
 
 # finally, insert aliases for values
 for k, v in list(_aliases.items()):
