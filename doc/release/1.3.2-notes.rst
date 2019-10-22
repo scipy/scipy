@@ -1,0 +1,17 @@
+==========================
+SciPy 1.3.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.3.2 is a bug-fix and maintenance release that adds
+support for Python 3.8.
+
+Authors
+=======
+
+Issues closed for 1.3.2
+-----------------------
+
+Pull requests for 1.3.2
+-----------------------
