@@ -461,6 +461,7 @@ class lil_matrix(spmatrix, IndexMixin):
         np.cumsum(lengths, dtype=idx_dtype, out=indptr[1:])
         # construct indices and data array
         # using faster construction approach depending on density
+        # see https://github.com/scipy/scipy/pull/10939 for details
         if M == 0:
             indices = np.empty(0, dtype=idx_dtype)
             data = np.empty(0, dtype=self.dtype)
