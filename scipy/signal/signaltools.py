@@ -1742,8 +1742,8 @@ def unique_roots(p, tol=1e-3, rtype='min'):
           - 'min', 'minimum': pick the minimum of those roots
           - 'avg', 'mean': take the average of those roots
 
-        Note that complex roots are compared first by the real part and then
-        by the imaginary part.
+        When finding minimum or maximum among complex roots they are compared
+        first by the real part and then by the imaginary part.
 
     Returns
     -------
