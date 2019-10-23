@@ -278,7 +278,7 @@ Continuous Distributions in `scipy.stats`
    continuous_rdist
    continuous_rayleigh
    continuous_rice
-   continuous_reciprocal
+   continuous_loguniform
    continuous_recipinvgauss
    continuous_semicircular
    continuous_t
