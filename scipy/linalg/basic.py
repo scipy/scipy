@@ -343,8 +343,13 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         print('solve:overwrite_b=', overwrite_b)
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
-    x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
-                    trans=trans, unitdiag=unit_diagonal)
+    if a1.flags.f_contiguous or trans == 2:
+        x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
+                        trans=trans, unitdiag=unit_diagonal)
+    else:
+        # transposed system is solved since trtrs expects Fortran ordering
+        x, info = trtrs(a1.T, b1, overwrite_b=overwrite_b, lower=not lower,
+                        trans=not trans, unitdiag=unit_diagonal)
 
     if info == 0:
         return x
@@ -1256,7 +1261,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
-        Cutoff factor for 'small' singular values. In `lstsq`, 
+        Cutoff factor for 'small' singular values. In `lstsq`,
         singular values less than ``cond*largest_singular_value`` will be
         considered as zero. If both are omitted, the default value
         ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the

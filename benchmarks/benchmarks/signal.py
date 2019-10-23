@@ -106,6 +106,25 @@ class FFTConvolve(Benchmark):
         signal.fftconvolve(self.a, self.b, mode=mode)
 
 
+class OAConvolve(Benchmark):
+    param_names = ['mode', 'size']
+    params = [
+        ['full', 'valid', 'same'],
+        [(a, b) for a, b in product((40, 200, 3000), repeat=2)
+         if b < a]
+    ]
+
+    def setup(self, mode, size):
+        np.random.seed(1234)
+        # sample a bunch of pairs of 2d arrays
+        pairs = []
+        self.a = np.random.randn(size[0])
+        self.b = np.random.randn(size[1])
+
+    def time_convolve2d(self, mode, size):
+        signal.oaconvolve(self.a, self.b, mode=mode)
+
+
 class Convolve(Benchmark):
     param_names = ['mode']
     params = [

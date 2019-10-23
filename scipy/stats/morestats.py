@@ -3147,16 +3147,31 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _circfuncs_common(samples, high, low):
+def _circfuncs_common(samples, high, low, nan_policy='propagate'):
+    # Ensure samples are array-like and size is not zero
     samples = np.asarray(samples)
     if samples.size == 0:
-        return np.nan, np.nan
+        return np.nan, np.asarray(np.nan), np.asarray(np.nan), None
 
-    ang = (samples - low)*2.*pi / (high - low)
-    return samples, ang
+    # Recast samples as radians that range between 0 and 2 pi and calculate
+    # the sine and cosine
+    sin_samp = sin((samples - low)*2.*pi / (high - low))
+    cos_samp = cos((samples - low)*2.*pi / (high - low))
+
+    # Apply the NaN policy
+    contains_nan, nan_policy = _contains_nan(samples, nan_policy)
+    if contains_nan and nan_policy == 'omit':
+        mask = np.isnan(samples)
+        # Set the sines and cosines that are NaN to zero
+        sin_samp[mask] = 0.0
+        cos_samp[mask] = 0.0
+    else:
+        mask = None
+
+    return samples, sin_samp, cos_samp, mask
 
 
-def circmean(samples, high=2*pi, low=0, axis=None):
+def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular mean for samples in a range.
 
@@ -3171,6 +3186,10 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which means are computed.  The default is to compute
         the mean of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3188,19 +3207,40 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     0.4
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
-    S = sin(ang).sum(axis=axis)
-    C = cos(ang).sum(axis=axis)
-    res = arctan2(S, C)
-    mask = res < 0
+    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
+                                                           nan_policy=nan_policy)
+    sin_sum = sin_samp.sum(axis=axis)
+    cos_sum = cos_samp.sum(axis=axis)
+    res = arctan2(sin_sum, cos_sum)
+
+    mask_nan = ~np.isnan(res)
+    if mask_nan.ndim > 0:
+        mask = res[mask_nan] < 0
+    else:
+        mask = res < 0
+
     if mask.ndim > 0:
-        res[mask] += 2*pi
+        mask_nan[mask_nan] = mask
+        res[mask_nan] += 2*pi
     elif mask:
         res += 2*pi
+
+    # Set output to NaN if no samples went into the mean
+    if nmask is not None:
+        if nmask.all():
+            res = np.full(shape=res.shape, fill_value=np.nan)
+        else:
+            # Find out if any of the axis that are being averaged consist
+            # entirely of NaN.  If one exists, set the result (res) to NaN
+            nshape = 0 if axis is None else axis
+            smask = nmask.shape[nshape] == nmask.sum(axis=axis)
+            if smask.any():
+                res[smask] = np.nan
+
     return res*(high - low)/2.0/pi + low
 
 
-def circvar(samples, high=2*pi, low=0, axis=None):
+def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular variance for samples assumed to be in a range
 
@@ -3215,6 +3255,10 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which variances are computed.  The default is to compute
         the variance of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3233,14 +3277,22 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     2.19722457734
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
-    S = sin(ang).mean(axis=axis)
-    C = cos(ang).mean(axis=axis)
-    R = hypot(S, C)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
+                                                          nan_policy=nan_policy)
+    if mask is None:
+        sin_mean = sin_samp.mean(axis=axis)
+        cos_mean = cos_samp.mean(axis=axis)
+    else:
+        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
+        nsum[nsum == 0] = np.nan
+        sin_mean = sin_samp.sum(axis=axis) / nsum
+        cos_mean = cos_samp.sum(axis=axis) / nsum
+    R = hypot(sin_mean, cos_mean)
+
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
 
-def circstd(samples, high=2*pi, low=0, axis=None):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3257,6 +3309,10 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     axis : int, optional
         Axis along which standard deviations are computed.  The default is
         to compute the standard deviation of the flattened array.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3275,8 +3331,16 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     0.063564063306
 
     """
-    samples, ang = _circfuncs_common(samples, high, low)
-    S = sin(ang).mean(axis=axis)
-    C = cos(ang).mean(axis=axis)
-    R = hypot(S, C)
+    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
+                                                          nan_policy=nan_policy)
+    if mask is None:
+        sin_mean = sin_samp.mean(axis=axis)
+        cos_mean = cos_samp.mean(axis=axis)
+    else:
+        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
+        nsum[nsum == 0] = np.nan
+        sin_mean = sin_samp.sum(axis=axis) / nsum
+        cos_mean = cos_samp.sum(axis=axis) / nsum
+    R = hypot(sin_mean, cos_mean)
+
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))

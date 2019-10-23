@@ -1,7 +1,7 @@
 .. _contributor-toc:
 
 =======================
-SciPy Contributor Guide
+SciPy contributor guide
 =======================
 
 This guide is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place.
@@ -10,61 +10,63 @@ This guide is designed to help you quickly find the information you need about S
 - :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding which module contains SciPy functionality to be edited, adding new modules to SciPy, and complying with PEP8 style standards
 - :ref:`unit-tests` - how to write and run unit tests for SciPy with the pytest framework
 - :ref:`docs` - how to write reStructuredText documentation that complies with docstring standards, build documentation locally with Sphinx, and view documentation built during continuous integration checks
-- :ref:`toc-benchmarking` - how to benchmark code with AirSpeed Velocity
+- :ref:`toc-benchmarking` - how to benchmark code with airspeed velocity
 - :ref:`toc-cython` - how to add fast, compiled code to SciPy
 
 .. _dev-env:
 
-Development Environment
+Development environment
 -----------------------
-- :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS.
-- :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu.
-- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker. If you don't have macOS or Ubuntu, or if you have trouble with the instructions above, this may be your best option.
-- :ref:`building` may have some helpful hints if you need to deviate from the guides above.
-- :ref:`recommended-development-setup` includes additional notes about the development setup. All of this information is contained elsewhere, but it is retained as a legacy document.
+- :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS
+- :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu
+- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you don't have macOS or Ubuntu, or if you have trouble with the instructions above, this may be your best option
+- :ref:`building` may have some helpful hints if you need to deviate from the guides above
+- :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
 
 .. _editing-scipy:
 
 Editing SciPy
 -------------
-- :ref:`development-workflow` lays out what to do after your development environment is set up.
-- `SciPy Development Workflow`_ is a five-minute video example of fixing a bug and submitting a pull request.
-- :ref:`pep8-scipy` gives some tips for ensuring that your code is PEP8 compliant.
-- :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world.
-- :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API. If you are going to import other SciPy code, read this first.
-- :ref:`reviewing-prs` explains how to review another author's SciPy code locally.
-- :doc:`numpy:reference/distutils_guide` - Check this out before adding any new files to SciPy.
-- :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared. It's geared toward :ref:`Core Developers<governance>`, but contains useful information for all contributors.
+- :ref:`development-workflow` lays out what to do after your development environment is set up
+- `SciPy Development Workflow`_ is a five-minute video example of fixing a bug and submitting a pull request
+- :ref:`pep8-scipy` gives some tips for ensuring that your code is PEP8 compliant
+- :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world
+- :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API; if you are going to import other SciPy code, read this first
+- :ref:`reviewing-prs` explains how to review another author's SciPy code locally
+- :doc:`numpy:reference/distutils_guide` - check this out before adding any new files to SciPy
+- :ref:`adding-new` has information on how to add new methods, functions and classes
+- :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared; it's geared toward :ref:`Core Developers <governance>`, but contains useful information for all contributors
+
 
 .. _unit-tests:
 
-Unit Tests
+Unit tests
 ----------
-- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of SciPy code.
-- :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally.
+- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of SciPy code
+- :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally
 
 .. _docs:
 
 Documentation
 -------------
-- :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_.
-- :ref:`rendering-documentation` - It's important to check how changes to the documentation render before merging a PR; this document explains how you can do that.
+- :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_
+- :ref:`rendering-documentation` it's important to check how changes to the documentation render before merging a PR; this document explains how you can do that
 
 .. _toc-benchmarking:
 
 Benchmarks
 ----------
-- :ref:`benchmarking-with-asv` explains how to add benchmarks to SciPy using `Airspeed Velocity`_.
+- :ref:`benchmarking-with-asv` explains how to add benchmarks to SciPy using `airspeed velocity`_
 
 
 .. _toc-cython:
 
 .. _compiled-code:
 
-Compiled Code
+Compiled code
 -------------
-- :ref:`adding-cython` - Extending and compiling Python code with `Cython`_ can significantly improve its performance. This document helps you get started.
-- :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy.
+- :ref:`adding-cython` extending and compiling Python code with `Cython`_ can significantly improve its performance; this document helps you get started
+- :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 

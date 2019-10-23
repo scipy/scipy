@@ -3,6 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
+import platform
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
@@ -269,6 +270,8 @@ def test_verbosity():
                   verbosityLevel=9)
 
 
+@pytest.mark.xfail(platform.machine() == 'ppc64le',
+                   reason="fails on ppc64le")
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
@@ -297,6 +300,23 @@ def test_random_initial_float32():
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
+
+
+def test_maxit_None():
+    """Check lobpcg if maxit=None runs 20 iterations (the default)
+    by checking the size of the iteration history output, which should
+    be the number of iterations plus 2 (initial and final values).
+    """
+    np.random.seed(1566950023)
+    n = 50
+    m = 4
+    vals = -np.arange(1, n + 1)
+    A = diags([vals], [0], (n, n))
+    A = A.astype(np.float32)
+    X = np.random.randn(n, m)
+    X = X.astype(np.float32)
+    _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=20, retLambdaHistory=True)
+    assert_allclose(np.shape(l_h)[0], 20+2)
 
 
 @pytest.mark.slow

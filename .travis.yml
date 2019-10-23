@@ -67,7 +67,7 @@ matrix:
     - python: 3.8-dev
       env:
         - TESTMODE=fast
-        - NUMPYSPEC="numpy"
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
     - python: 3.6
       env:
         - TESTMODE=fast
@@ -99,6 +99,12 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
+    - os: linux-ppc64le
+      python: 3.6
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--upgrade numpy"
 cache:
   directories:
     - $HOME/.ccache
@@ -126,7 +132,8 @@ before_install:
       export PATH=$TRAVIS_BUILD_DIR/gcc_aliases:$PATH
       popd
       touch config.sh
-      git clone --depth=1 https://github.com/matthew-brett/multibuild.git
+      git clone https://github.com/matthew-brett/multibuild.git
+      git -C multibuild checkout 65fd07a180046b4473b21e9084e01f1bf1a8dfac
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install

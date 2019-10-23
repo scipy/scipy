@@ -85,7 +85,6 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
-    'voigt',
     'y0_zeros',
     'y1_zeros',
     'y1p_zeros',
@@ -2140,6 +2139,9 @@ def factorial(n, exact=False):
                     out[n == current] = val
             return out
     else:
+        if np.ndim(n) == 0:
+            return 0 if n < 0 else gamma(n + 1)
+
         n = asarray(n)
         vals = gamma(n + 1)
         return where(n >= 0, vals, 0)
@@ -2255,53 +2257,6 @@ def factorialk(n, k, exact=True):
         return val
     else:
         raise NotImplementedError
-
-
-def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
-    r"""
-    Voigt profile.
-
-    The Voigt profile is a convolution of a 1D Normal distribution with
-    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
-    half-maximum ``gamma``.
-
-    Parameters
-    ----------
-    x : array_like
-        Input argument.
-    sigma : array_like, optional
-        The standard deviation of the Normal distribution part. The default is
-        1.0.
-    gamma : array_like, optional
-        The half-width at half-maximum of the Cauchy distribution part. The
-        default is 1.0.
-    mu : array_like, optional
-        The location of the peak profile. The default is 0.0.
-
-    Returns
-    -------
-    y : array_like
-        The Voigt profile at the given position. It will have the same shape as
-        `x`.
-
-    Notes
-    -----
-    It can be expressed in terms of Faddeeva function
-
-    .. math:: V(x;\sigma,\gamma,\mu) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
-    .. math:: z = \frac{x-\mu+i\gamma}{\sqrt{2}\sigma}
-
-    where :math:`w(z)` is the Faddeeva function.
-
-    See Also
-    --------
-    wofz : Faddeeva function
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
-    """
-    return ufuncs._voigt(x, sigma, gamma, mu)
 
 
 def zeta(x, q=None, out=None):

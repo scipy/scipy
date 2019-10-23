@@ -751,6 +751,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     elif jac is None and method != 'lm':
         jac = '2-point'
 
+    if 'args' in kwargs:
+        # The specification for the model function `f` does not support
+        # additional arguments. Refer to the `curve_fit` docstring for
+        # acceptable call signatures of `f`.
+        raise ValueError("'args' is not a supported keyword argument.")
+
     if method == 'lm':
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)

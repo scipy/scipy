@@ -2509,6 +2509,9 @@ class TestErlang(object):
             result_gamma = stats.gamma.fit(data, f0=1)
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
+    def test_gh_pr_10949_argcheck(self):
+        assert_equal(stats.erlang.pdf(0.5, a=[1, -1]), stats.gamma.pdf(0.5, a=[1, -1]))
+
 
 class TestRayleigh(object):
     # gh-6227
@@ -2658,13 +2661,19 @@ class TestWeibull(object):
 
 
 class TestRdist(object):
-    @pytest.mark.slow
     def test_rdist_cdf_gh1285(self):
         # check workaround in rdist._cdf for issue gh-1285.
         distfn = stats.rdist
         values = [0.001, 0.5, 0.999]
         assert_almost_equal(distfn.cdf(distfn.ppf(values, 541.0), 541.0),
                             values, decimal=5)
+
+    def test_rdist_beta(self):
+        # rdist is a special case of stats.beta
+        x = np.linspace(-0.99, 0.99, 10)
+        c = 2.7
+        assert_almost_equal(0.5*stats.beta(c/2, c/2).pdf((x + 1)/2),
+                            stats.rdist(c).pdf(x))
 
 
 class TestTrapz(object):

@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import platform
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
@@ -213,9 +214,13 @@ BOOST_TESTS = [
         data(assoc_legendre_p_boost_, 'assoc_legendre_p_ipp-assoc_legendre_p', (0,1,2), 3, rtol=1e-11),
 
         data(legendre_p_via_assoc_, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=1e-11),
-        data(legendre_p_via_assoc_, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=7e-14),
+        pytest.param(data(legendre_p_via_assoc_, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=7e-14),
+                     marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+                                             reason="fails on ppc64le")),
         data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=5e-14, vectorized=False),
-        data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=7e-14, vectorized=False),
+        pytest.param(data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=7e-14, vectorized=False),
+                     marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+                                             reason="fails on ppc64le")),
         data(lpn_, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=5e-14, vectorized=False),
         data(lpn_, 'legendre_p_large_ipp-legendre_p_large', (0,1), 2, rtol=3e-13, vectorized=False),
         data(eval_legendre_ld, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=6e-14),

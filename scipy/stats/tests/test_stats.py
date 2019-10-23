@@ -1771,6 +1771,29 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    def test_zscore_nan_propagate(self):
+        x = np.array([1, 2, np.nan, 4, 5])
+        z = stats.zscore(x, nan_policy='propagate')
+        assert all(np.isnan(z))
+
+    def test_zscore_nan_omit(self):
+        x = np.array([1, 2, np.nan, 4, 5])
+
+        z = stats.zscore(x, nan_policy='omit')
+
+        expected = np.array([-1.2649110640673518,
+                             -0.6324555320336759,
+                             np.nan,
+                             0.6324555320336759,
+                             1.2649110640673518
+                             ])
+        assert_array_almost_equal(z, expected)
+
+    def test_zscore_nan_raise(self):
+        x = np.array([1, 2, np.nan, 4, 5])
+
+        assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
+
     def test_mad(self):
         dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
                 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
@@ -4527,6 +4550,15 @@ class TestKruskal(object):
         assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
+    
+    def test_large_no_samples(self):
+        # Test to see if large samples are handled correctly.
+        n = 50000
+        x = np.random.randn(n)
+        y = np.random.randn(n) + 50
+        h, p = stats.kruskal(x, y)
+        expected = 0
+        assert_approx_equal(p, expected)
 
 
 class TestCombinePvalues(object):

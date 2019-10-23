@@ -241,6 +241,20 @@ class TestSos2Zpk(object):
         assert_allclose(_cplxpair(p2), p)
         assert_allclose(k2, k)
 
+    def test_fewer_zeros(self):
+        """Test not the expected number of p/z (effectively at origin)."""
+        sos = butter(3, 0.1, output='sos')
+        z, p, k = sos2zpk(sos)
+        assert len(z) == 4
+        assert len(p) == 4
+
+        sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
+                    output='sos')
+        with pytest.warns(BadCoefficients, match='Badly conditioned'):
+            z, p, k = sos2zpk(sos)
+        assert len(z) == 24
+        assert len(p) == 24
+
 
 class TestSos2Tf(object):
 

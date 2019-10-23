@@ -715,4 +715,7 @@ class TestSpsolveTriangular(object):
                               np.random.randint(-9, 9, (n, m)) * 1j):
                         x = spsolve_triangular(A, b, lower=lower)
                         assert_array_almost_equal(A.dot(x), b)
-
+                        x = spsolve_triangular(A, b, lower=lower,
+                                               unit_diagonal=True)
+                        A.setdiag(1)
+                        assert_array_almost_equal(A.dot(x), b)
