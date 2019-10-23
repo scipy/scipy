@@ -6081,7 +6081,7 @@ rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
 
 class reciprocal_gen(rv_continuous):
-    r"""A reciprocal continuous random variable.
+    r"""A loguniform or reciprocal continuous random variable.
 
     %(before_notes)s
 
@@ -6141,7 +6141,6 @@ class reciprocal_gen(rv_continuous):
 
 
 loguniform = reciprocal_gen(name="loguniform")
-reciprocal = reciprocal_gen(name="reciprocal")
 
 
 class rice_gen(rv_continuous):
