@@ -2403,6 +2403,9 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     k, b = polydiv(b, a)
     r = p * 0.0
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
+    pout, order = cmplx_sort(pout)
+    mult = mult[order]
+
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]] * mult[n])
