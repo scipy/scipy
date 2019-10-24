@@ -5,8 +5,7 @@ import gc
 import multiprocessing
 import sys
 
-from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
-                                                   _ConstraintWrapper)
+from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
@@ -17,6 +16,7 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_almost_equal,
                            assert_string_equal, assert_)
+import pytest
 from pytest import raises as assert_raises, warns
 
 
