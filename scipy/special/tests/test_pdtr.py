@@ -5,7 +5,6 @@ from numpy.testing import assert_almost_equal, assert_array_equal
 from numpy import isnan
 
 
-
 class TestCephes(object):
     # old tests with int args
     def test_pdtr(self):
