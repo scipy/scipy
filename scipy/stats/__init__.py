@@ -390,3 +390,9 @@ __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+_modattrs = globals()
+bad_name = "reciprocal"
+good_name = "loguniform"
+_modattrs[bad_name] = _modattrs[good_name]
+__all__.append(bad_name)

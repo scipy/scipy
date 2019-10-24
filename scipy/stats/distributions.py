@@ -22,3 +22,9 @@ __all__ = ['entropy', 'rv_discrete', 'rv_continuous', 'rv_histogram']
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names
 __all__ += _discrete_distns._distn_names
+
+_modattrs = globals()
+bad_name = "reciprocal"
+good_name = "loguniform"
+_modattrs[bad_name] = _modattrs[good_name]
+__all__.append(bad_name)
