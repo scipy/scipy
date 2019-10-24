@@ -42,12 +42,10 @@ matrix:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
         - NUMPYSPEC="numpy==1.15.4"
-    - python: 3.8-dev
-      dist: xenial
-      sudo: true
+    - python: 3.8
       env:
-        - TESTMODE=fast
-        - NUMPYSPEC="numpy"
+        - TESTMODE=full
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
     - python: 3.6
       env:
         - TESTMODE=fast
@@ -164,7 +162,7 @@ before_install:
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
+        travis_retry pip install pytest-cov coverage matplotlib==3.2.0rc1 scikit-umfpack scikit-sparse
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
