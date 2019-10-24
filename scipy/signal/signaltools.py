@@ -2380,7 +2380,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     r : ndarray
         Residues.
     p : ndarray
-        Poles.
+        Poles order by magnitude in ascending order.
     k : ndarray
         Coefficients of the direct polynomial term.
 
