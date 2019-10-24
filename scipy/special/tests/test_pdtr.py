@@ -11,7 +11,8 @@ class TestCephes(object):
     def test_pdtr(self):
         val = sc.pdtr(0, 1)
         assert_almost_equal(val, np.exp(-1))
-        # Edge case: m = 0.
+
+    def test_m_zero(self):
         val = sc.pdtr([0, 1, 2], 0)
         assert_array_equal(val, [1, 1, 1])
 
@@ -23,7 +24,8 @@ class TestCephes(object):
     def test_pdtrc(self):
         val = sc.pdtrc(0, 1)
         assert_almost_equal(val, 1 - np.exp(-1))
-        # Edge case: m = 0.
+
+    def test_m_zero(self):
         val = sc.pdtrc([0, 1, 2], 0.0)
         assert_array_equal(val, [0, 0, 0])
 
