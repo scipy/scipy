@@ -7535,3 +7535,9 @@ pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']
+
+_modattrs = globals()
+bad_name = "reciprocal"
+good_name = "loguniform"
+_modattrs[bad_name] = _modattrs[good_name]
+__all__.append(bad_name)
