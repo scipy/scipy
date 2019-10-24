@@ -2823,14 +2823,18 @@ class TestVectorstrength(object):
         assert_raises(ValueError, vectorstrength, events, period)
 
 
-def _tf2sos(b, a):
-    # Simpler version that does not require linalg
-    b, a = np.atleast_1d(b), np.atleast_1d(a)
-    sos = np.zeros((1, 6), b.dtype)
-    sos[0, :len(b)] = b
-    sos[0, 3:3+len(a)] = a
-    sos /= sos[0, 3]
-    return sos
+def cast_tf2sos(b, a):
+    """Convert TF2SOS, casting to complex128 and back to the original dtype."""
+    # tf2sos does not support all of the dtypes that we want to check, e.g.:
+    #
+    #     TypeError: array type complex256 is unsupported in linalg
+    #
+    # so let's cast, convert, and cast back -- should be fine for the
+    # systems and precisions we are testing.
+    dtype = np.asarray(b).dtype
+    b = np.array(b, np.complex128)
+    a = np.array(a, np.complex128)
+    return tf2sos(b, a).astype(dtype)
 
 
 @pytest.mark.parametrize('func', (sosfilt, lfilter))
@@ -2838,7 +2842,7 @@ def test_degenerate(func):
     if func is lfilter:
         args = [1., 1.]
     else:
-        args = [_tf2sos(1., 1.)]
+        args = [tf2sos(1., 1.)]
     with pytest.raises(NotImplementedError,
                        match='input type .* not supported'):
         func(*args, x=['foo'])
@@ -2857,15 +2861,15 @@ class TestSOSFilt(object):
 
         # Test simple IIR
         y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
-        sos = _tf2sos(b, a)
-        assert_array_almost_equal(sosfilt(_tf2sos(b, a), x), y_r)
+        sos = cast_tf2sos(b, a)
+        assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
 
         # Test simple FIR
         b = np.array([1, 1]).astype(dt)
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = np.array([1, 0]).astype(dt)
         y_r = np.array([0, 1, 3, 5, 7, 9.]).astype(dt)
-        assert_array_almost_equal(sosfilt(_tf2sos(b, a), x), y_r)
+        assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
 
         b = [1, 1, 0]
         a = [1, 0, 0]
@@ -2889,10 +2893,10 @@ class TestSOSFilt(object):
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        y = sosfilt(_tf2sos(b, a), x, axis=0)
+        y = sosfilt(cast_tf2sos(b, a), x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = sosfilt(_tf2sos(b, a), x, axis=1)
+        y = sosfilt(cast_tf2sos(b, a), x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank3(self, dt):
@@ -2903,7 +2907,7 @@ class TestSOSFilt(object):
         a = np.array([0.5, 0.5]).astype(dt)
 
         # Test last axis
-        y = sosfilt(_tf2sos(b, a), x)
+        y = sosfilt(cast_tf2sos(b, a), x)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))
