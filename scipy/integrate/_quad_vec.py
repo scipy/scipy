@@ -242,7 +242,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     mapwrapper = MapWrapper(workers)
 
-    parallel_count = 8
+    parallel_count = 128
     min_intervals = 2
 
     try:
@@ -321,11 +321,13 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
             tol = max(epsabs, epsrel*norm_func(global_integral))
 
             to_process = []
+            err_sum = 0
+
             for j in range(parallel_count):
                 if not intervals:
                     break
 
-                if j > 0 and abs(intervals[0][0]) * len(intervals) < 0.5*tol:
+                if j > 0 and err_sum > global_error - tol/8:
                     # avoid unnecessary parallel splitting
                     break
 
@@ -334,6 +336,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                 neg_old_err, a, b = interval
                 old_int = interval_cache.pop((a, b), None)
                 to_process.append(((-neg_old_err, a, b, old_int), f, norm_func, _quadrature))
+                err_sum += -neg_old_err
 
             # Subdivide intervals
             for dint, derr, dround_err, subint, dneval in mapwrapper(_subdivide_interval, to_process):
