@@ -6098,7 +6098,7 @@ class reciprocal_gen(rv_continuous):
 
     This class implements a log-uniform random variable. That is, the
     outcomes ``1``, ``10`` and ``100`` are all equally likely when
-    ``a=10**0`` and ``b=10**2``. The is best illustrated by example:
+    ``a=10**0`` and ``b=10**2``. This best illustrated with a histogram:
 
     >>> from scipy.stats import %(name)s
     >>> rv = %(name)s(10 ** 0, 10 ** 2)
