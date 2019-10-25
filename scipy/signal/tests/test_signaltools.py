@@ -18,7 +18,7 @@ from numpy import array, arange
 import numpy as np
 
 from scipy.ndimage.filters import correlate1d
-from scipy.optimize import fmin
+from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d,
@@ -2508,6 +2508,17 @@ class TestHilbert2(object):
 
 class TestPartialFractionExpansion(object):
     def test_residue_general(self):
+        def assert_rp_almost_equal(r, p, r_true, p_true):
+            r_true = np.asarray(r_true)
+            p_true = np.asarray(p_true)
+
+            distance = np.hypot(abs(p[:, None] - p_true),
+                                abs(r[:, None] - r_true))
+
+            rows, cols = linear_sum_assignment(distance)
+            assert_allclose(p[rows], p_true[cols])
+            assert_allclose(r[rows], r_true[cols])
+
         # Test are taken from issue #4464, note that poles in scipy are
         # in increasing by absolute value order, opposite to MATLAB.
         r, p, k = residue([5, 3, -2, 7], [-4, 0, 8, 3])
@@ -2526,15 +2537,13 @@ class TestPartialFractionExpansion(object):
         assert_equal(k.size, 0)
 
         r, p, k = residue([4, 3], [2, -3.4, 1.98, -0.406])
-        order = np.argsort(p)
-        assert_almost_equal(r[order],
-                            [-18.125 - 13.125j, -18.125 + 13.125j, 36.25])
-        assert_almost_equal(p[order], [0.5 - 0.2j, 0.5 + 0.2j, 0.7])
+        assert_rp_almost_equal(r, p,
+                               [-18.125 - 13.125j, -18.125 + 13.125j, 36.25],
+                               [0.5 - 0.2j, 0.5 + 0.2j, 0.7])
         assert_equal(k.size, 0)
 
         r, p, k = residue([2, 1], [1, 5, 8, 4])
-        assert_almost_equal(np.sort(r), [-1, 1, 3])
-        assert_almost_equal(np.sort(p), [-2, -2, -1])
+        assert_rp_almost_equal(r, p, [-1, 1, 3], [-1, -2, -2])
         assert_equal(k.size, 0)
 
         r, p, k = residue([3, -1.1, 0.88, -2.396, 1.348],
@@ -2549,14 +2558,11 @@ class TestPartialFractionExpansion(object):
         assert_equal(k.size, 0)
 
         r, p, k = residue([1, 0, -5], [1, 0, 0, 0, -1])
-        order = np.argsort(p)
-        assert_almost_equal(r[order], [1, 1.5j, -1.5j, -1])
-        assert_almost_equal(p[order], [-1, -1j, 1j, 1])
+        assert_rp_almost_equal(r, p, [1, 1.5j, -1.5j, -1], [-1, -1j, 1j, 1])
         assert_equal(k.size, 0)
 
         r, p, k = residue([3, 8, 6], [1, 3, 3, 1])
-        assert_almost_equal(np.sort(r), [1, 2, 3])
-        assert_allclose(p, -1)
+        assert_rp_almost_equal(r, p, [1,2, 3], [-1, -1, -1])
         assert_equal(k.size, 0)
 
         r, p, k = residue([3, -1], [1, -3, 2])
@@ -2575,9 +2581,9 @@ class TestPartialFractionExpansion(object):
         assert_almost_equal(k, [7, 23])
 
         r, p, k = residue([2, 3, -1], [1, -3, 4, -2])
-        order = np.argsort(p)
-        assert_almost_equal(r[order], [4, -1 + 3.5j, -1 - 3.5j])
-        assert_almost_equal(p[order], [1, 1 - 1j, 1 + 1j])
+        assert_rp_almost_equal(r, p,
+                              [4, -1 + 3.5j, -1 - 3.5j],
+                               [1, 1 - 1j, 1 + 1j])
         assert_almost_equal(k.size, 0)
 
     def test_residue_leading_zeros(self):
