@@ -6094,24 +6094,21 @@ class reciprocal_gen(rv_continuous):
         f(x, a, b) = \frac{1}{x \log(b/a)}
 
     for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
-    :math:`a` and :math:`b` as shape parameters.
+    :math:`a` and :math:`b` as shape parameters. %(after_notes)s
 
     This class implements a log-uniform random variable. That is, the
     outcomes ``1``, ``10`` and ``100`` are all equally likely when
-    ``a=10**0`` and ``b=10**2``.
+    ``a=10**0`` and ``b=10**2``. The is best illustrated by example:
 
-    %(after_notes)s
+    >>> from scipy.stats import %(name)s
+    >>> rv = %(name)s(10 ** 0, 10 ** 2)
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log10(rv.rvs(size=10000)))
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xticks([0, 1, 2])
+    >>> _ = ax.set_xticklabels(["$10^0$", "$10^1$", "$10^2$"])
 
     %(example)s
-
-    Specifically, this is uniform in log-space:
-
-    >>> rv = %(name)s(10 ** -3, 10 ** -1)
-    >>> fig, ax = plt.subplots(1, 1)
-    >>> ax.hist(np.log10(rv.rvs(size=1000)))
-    >>> ax.set_ylabel("Frequency")
-    >>> ax.set_xticks([-3, -2, -1])
-    >>> _ = ax.set_xticklabels(["$10^{-3}$", "$10^{-2}$", "$10^{-1}$"])
 
     """
     def _argcheck(self, a, b):
