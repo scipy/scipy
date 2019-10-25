@@ -6107,6 +6107,7 @@ class reciprocal_gen(rv_continuous):
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xticks([0, 1, 2])
     >>> _ = ax.set_xticklabels(["$10^0$", "$10^1$", "$10^2$"])
+    >>> plt.show()
 
     %(example)s
 
