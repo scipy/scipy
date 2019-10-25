@@ -6101,6 +6101,7 @@ class reciprocal_gen(rv_continuous):
     ``a=10**0`` and ``b=10**2``. This best illustrated with a histogram:
 
     >>> from scipy.stats import %(name)s
+    >>> import matplotlib.pyplot as plt
     >>> rv = %(name)s(10 ** 0, 10 ** 2)
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.hist(np.log10(rv.rvs(size=10000)))
