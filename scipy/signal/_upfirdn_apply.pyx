@@ -238,6 +238,8 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
         return -1.
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
                 object mode=0, DTYPE_t cval=0):
     """1D test function for signal extension modes.
