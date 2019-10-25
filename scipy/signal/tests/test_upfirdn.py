@@ -192,6 +192,11 @@ class TestUpfirdn(object):
         elif mode == 'smooth':
             y_expected = np.asarray(
                 [-5, -4, -3, -2, -1, 0, 1, 2, 3, 1, -1, -3, -5, -7, -9, -11])
+        elif mode == "line":
+            lin_slope = (x[-1] - x[0]) / (len(x) - 1)
+            left = x[0] + np.arange(-npre, 0, 1) * lin_slope
+            right = x[-1] + np.arange(1, npost + 1) * lin_slope
+            y_expected = np.concatenate((left, x, right))
         else:
             y_expected = np.pad(x, (npre, npost), mode=mode)
         assert_allclose(y, y_expected)
@@ -215,7 +220,7 @@ class TestUpfirdn(object):
         y = upfirdn(h, x, up=1, down=1, mode=mode)
         # expected result: pad the input, filter with zero padding, then crop
         npad = h_len - 1
-        if mode in ['antisymmetric', 'antireflect', 'smooth']:
+        if mode in ['antisymmetric', 'antireflect', 'smooth', 'line']:
             # use _pad_test test function for modes not supported by np.pad.
             xpad = _pad_test(x, npre=npad, npost=npad, mode=mode)
         else:

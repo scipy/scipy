@@ -85,6 +85,7 @@ ctypedef enum MODE:
     MODE_REFLECT = 5         #  3 2 | 1 2 3 | 2 1
     MODE_ANTISYMMETRIC = 6
     MODE_ANTIREFLECT = 7
+    MODE_LINE = 8  # slope determined by first and last entries of the array
 
 
 cpdef MODE mode_enum(mode):
@@ -104,6 +105,8 @@ cpdef MODE mode_enum(mode):
         return MODE_ANTISYMMETRIC
     elif mode == 'antireflect':
         return MODE_ANTIREFLECT
+    elif mode == 'line':
+        return MODE_LINE
     else:
         raise ValueError("Unknown mode: {}".format(mode))
 
@@ -114,6 +117,7 @@ cpdef MODE mode_enum(mode):
 cdef DTYPE_t _extend_left(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
                           MODE mode, DTYPE_t cval) nogil:
     cdef DTYPE_t le = 0.
+    cdef DTYPE_t lin_slope = 0.
 
     # note: idx will be < 0
     if mode == MODE_SYMMETRIC:
@@ -143,6 +147,9 @@ cdef DTYPE_t _extend_left(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
         return x[len_x - idx - 1]
     elif mode == MODE_SMOOTH:
         return x[0] + idx * (x[1] - x[0])
+    elif mode == MODE_LINE:
+        lin_slope = (x[len_x - 1] - x[0]) / (len_x - 1)
+        return x[0] + idx * lin_slope
     elif mode == MODE_ANTISYMMETRIC:
         if (-idx) < len_x:
             return -x[-idx - 1]
@@ -177,6 +184,7 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
                            MODE mode, DTYPE_t cval) nogil:
     # note: idx will be >= len_x
     cdef DTYPE_t re = 0.
+    cdef DTYPE_t lin_slope = 0.
 
     if mode == MODE_SYMMETRIC:
         if idx < (2 * len_x):
@@ -200,6 +208,9 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
         return x[idx % len_x]
     elif mode == MODE_SMOOTH:
         return x[len_x - 1] + (idx - len_x + 1) * (x[len_x - 1] - x[len_x - 2])
+    elif mode == MODE_LINE:
+        lin_slope = (x[len_x - 1] - x[0]) / (len_x - 1)
+        return x[len_x - 1] + (idx - len_x + 1) * lin_slope
     elif mode == MODE_CONSTANT_EDGE:
         return x[len_x - 1]
     elif mode == MODE_ANTISYMMETRIC:

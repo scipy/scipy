@@ -95,15 +95,6 @@ def _inputs_swap_needed(mode, shape1, shape2):
     return False
 
 
-def _reshape_nd(x1d, ndim, axis):
-    """
-    Reshape x1d to size 1 along all axes in ``range(ndim)`` except for ``axis``.
-    """
-    shape = [1] * ndim
-    shape[axis] = x1d.size
-    return x1d.reshape(shape)
-
-
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
     Cross-correlate two N-dimensional arrays.
@@ -2507,10 +2498,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
              'minimum': np.amin, 'maximum': np.amax}
     upfirdn_kwargs = {'mode': 'constant', 'cval': 0}
     if padtype in funcs:
-        background_line = [funcs[padtype](x, axis=axis), 0]
-    elif padtype == 'line':
-        background_line = [x.take(0, axis),
-                           (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
+        background_values = funcs[padtype](x, axis=axis, keepdims=True)
     elif padtype in _upfirdn_modes:
         upfirdn_kwargs = {'mode': padtype}
         if padtype == 'constant':
@@ -2519,15 +2507,11 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
             upfirdn_kwargs['cval'] = cval
     else:
         raise ValueError(
-            'padtype must be one of: line, maximum, mean, median, minimum, ' +
+            'padtype must be one of: maximum, mean, median, minimum, ' +
             ', '.join(_upfirdn_modes))
 
-    if padtype == 'line' or padtype in funcs:
-        rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
-        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
-        background_in = np.expand_dims(background_line[0], axis) +\
-            np.expand_dims(background_line[1], axis) * rel_len_nd
-        x = x - background_in.astype(x.dtype)
+    if padtype in funcs:
+        x = x - background_values
 
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis, **upfirdn_kwargs)
@@ -2536,12 +2520,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     y_keep = y[tuple(keep)]
 
     # Add background back
-    if padtype == 'line' or padtype in funcs:
-        rel_len = np.linspace(0.0, 1.0, n_out, endpoint=False)
-        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
-        background_out = np.expand_dims(background_line[0], axis) +\
-            np.expand_dims(background_line[1], axis) * rel_len_nd
-        y_keep += background_out.astype(x.dtype)
+    if padtype in funcs:
+        y_keep += background_values
 
     return y_keep
 

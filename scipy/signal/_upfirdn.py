@@ -39,7 +39,7 @@ __all__ = ['upfirdn', '_output_len']
 
 _upfirdn_modes = [
     'constant', 'wrap', 'edge', 'smooth', 'symmetric', 'reflect',
-    'antisymmetric', 'antireflect'
+    'antisymmetric', 'antireflect', 'line',
 ]
 
 
