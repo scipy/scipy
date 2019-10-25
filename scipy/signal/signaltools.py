@@ -2343,12 +2343,14 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
     padtype : string, optional
-        `constant`, `mean` or `line`. Changes assumptions on values beyond the
-        boundary. If `constant`, assumed to be `cval` (default zero). If `line`
-        assumed to continue a linear trend defined by the first and last
-        points. `mean`, `median`, `maximum` and `minimum` work as in `np.pad` and
-        assume that the values beyond the boundary are the mean, median,
-        maximum or minimum respectively of the array along the axis.
+        `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
+        the other signal extension modes supported by `scipy.signal.upfirdn`.
+        Changes assumptions on values beyond the boundary. If `constant`,
+        assumed to be `cval` (default zero). If `line` assumed to continue a
+        linear trend defined by the first and last points. `mean`, `median`,
+        `maximum` and `minimum` work as in `np.pad` and assume that the values
+        beyond the boundary are the mean, median, maximum or minimum
+        respectively of the array along the axis.
 
         .. versionadded:: 1.4.0
     cval : float, optional

@@ -119,13 +119,19 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
         this axis. Default is -1.
     mode : str, optional
         The signal extension mode to use. The set
-        ``{'constant', 'symmetric', 'reflect', 'edge', 'wrap'}`` correspond to
+        ``{"constant", "symmetric", "reflect", "edge", "wrap"}`` correspond to
         modes provided by ``numpy.pad``. ``"smooth"`` implements a smooth
         extension by extending based on the slope of the last 2 points at each
         end of the array. ``"antireflect"`` and ``"antisymmetric"`` are
-        anti-symmetric versions of ``"reflect"`` and ``"symmetric"``.
+        anti-symmetric versions of ``"reflect"`` and ``"symmetric"``. The mode
+        `"line"` extends the signal based on a linear trend defined by the
+        first and last points along the ``axis``.
+
+        .. versionadded:: 1.4.0
     cval : float, optional
         The constant value to use when ``mode == "constant"``.
+
+        .. versionadded:: 1.4.0
 
     Returns
     -------
