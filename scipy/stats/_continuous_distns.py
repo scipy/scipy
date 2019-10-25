@@ -6140,7 +6140,15 @@ class reciprocal_gen(rv_continuous):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
 
+def _deprecate(fn, reason):
+    def wrapped(*args, **kwargs):
+        warnings.warn(reason, DeprecationWarning)
+        return fn(*args, **kwargs)
+    return wrapped
+
 loguniform = reciprocal_gen(name="loguniform")
+reciprocal = reciprocal_gen(name="reciprocal")
+reciprocal.__init__ = _deprecate(reciprocal.__init__, "Use loguniform instead")
 
 
 class rice_gen(rv_continuous):
