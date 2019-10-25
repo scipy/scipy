@@ -247,8 +247,8 @@ class TestCorr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
-    @pytest.mark.xfail(platform.machine() == 'ppc64le',
-                       reason="fails on ppc64le")
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
         # simple case without ties
         x = ma.array(np.arange(10))
