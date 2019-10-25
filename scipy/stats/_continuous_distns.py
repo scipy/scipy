@@ -6146,6 +6146,7 @@ def _deprecate(fn, reason):
         return fn(*args, **kwargs)
     return wrapped
 
+
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
 reciprocal.__init__ = _deprecate(reciprocal.__init__, "Use loguniform instead")
