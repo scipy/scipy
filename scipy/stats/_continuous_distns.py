@@ -6096,13 +6096,16 @@ class reciprocal_gen(rv_continuous):
     for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
     :math:`a` and :math:`b` as shape parameters. %(after_notes)s
 
-    This class implements a log-uniform random variable. That is, the
+    This class implements a log-uniform random variable. For example, the
     outcomes ``1``, ``10`` and ``100`` are all equally likely when
-    ``a=10**0`` and ``b=10**2``. This best illustrated with a histogram:
+    ``a=10**0`` and ``b=10**2``. Let's specify that random variable:
 
     >>> from scipy.stats import %(name)s
     >>> rvs = %(name)s(10 ** 0, 10 ** 2).rvs(size=10000)
-    >>>
+
+    The equal probability of ``1``, ``10`` and ``100`` is best illustrated with
+    a histogram with a log-scaled x-axis:
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
