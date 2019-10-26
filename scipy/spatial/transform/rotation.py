@@ -17,10 +17,10 @@ def _elementary_basis_vector(axis):
     return b
 
 
-def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
-    # The algorithm assumes intrinsic frame transformations. For representation
-    # the paper uses transformation matrices, which are transpose of the
-    # direction cosine matrices used by our Rotation class.
+def _compute_euler_from_matrix(matrix, seq, extrinsic=False):
+    # The algorithm assumes intrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation matrices which are transposition
+    # rotation matrices used within Rotation.
     # Adapt the algorithm for our case by
     # 1. Instead of transposing our representation, use the transpose of the
     #    O matrix as defined in the paper, and be careful to swap indices
@@ -29,9 +29,9 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
     if extrinsic:
         seq = seq[::-1]
 
-    if dcm.ndim == 2:
-        dcm = dcm[None, :, :]
-    num_rotations = dcm.shape[0]
+    if matrix.ndim == 2:
+        matrix = matrix[None, :, :]
+    num_rotations = matrix.shape[0]
 
     # Step 0
     # Algorithm assumes axes as column vectors, here we use 1D vectors
@@ -54,17 +54,17 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
         [0, cl, sl],
         [0, -sl, cl],
     ])
-    res = np.einsum('...ij,...jk->...ik', c, dcm)
-    dcm_transformed = np.einsum('...ij,...jk->...ik', res, c.T.dot(rot))
+    res = np.einsum('...ij,...jk->...ik', c, matrix)
+    matrix_transformed = np.einsum('...ij,...jk->...ik', res, c.T.dot(rot))
 
     # Step 4
     angles = np.empty((num_rotations, 3))
     # Ensure less than unit norm
-    positive_unity = dcm_transformed[:, 2, 2] > 1
-    negative_unity = dcm_transformed[:, 2, 2] < -1
-    dcm_transformed[positive_unity, 2, 2] = 1
-    dcm_transformed[negative_unity, 2, 2] = -1
-    angles[:, 1] = np.arccos(dcm_transformed[:, 2, 2])
+    positive_unity = matrix_transformed[:, 2, 2] > 1
+    negative_unity = matrix_transformed[:, 2, 2] < -1
+    matrix_transformed[positive_unity, 2, 2] = 1
+    matrix_transformed[negative_unity, 2, 2] = -1
+    angles[:, 1] = np.arccos(matrix_transformed[:, 2, 2])
 
     # Steps 5, 6
     eps = 1e-7
@@ -76,10 +76,10 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # 5b
     safe_mask = np.logical_and(safe1, safe2)
-    angles[safe_mask, 0] = np.arctan2(dcm_transformed[safe_mask, 0, 2],
-                                      -dcm_transformed[safe_mask, 1, 2])
-    angles[safe_mask, 2] = np.arctan2(dcm_transformed[safe_mask, 2, 0],
-                                      dcm_transformed[safe_mask, 2, 1])
+    angles[safe_mask, 0] = np.arctan2(matrix_transformed[safe_mask, 0, 2],
+                                      -matrix_transformed[safe_mask, 1, 2])
+    angles[safe_mask, 2] = np.arctan2(matrix_transformed[safe_mask, 2, 0],
+                                      matrix_transformed[safe_mask, 2, 1])
 
     if extrinsic:
         # For extrinsic, set first angle to zero so that after reversal we
@@ -87,29 +87,29 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
         # 6a
         angles[~safe_mask, 0] = 0
         # 6b
-        angles[~safe1, 2] = np.arctan2(
-            dcm_transformed[~safe1, 1, 0] - dcm_transformed[~safe1, 0, 1],
-            dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
-        )
+        angles[~safe1, 2] = np.arctan2(matrix_transformed[~safe1, 1, 0]
+                                       - matrix_transformed[~safe1, 0, 1],
+                                       matrix_transformed[~safe1, 0, 0]
+                                       + matrix_transformed[~safe1, 1, 1])
         # 6c
-        angles[~safe2, 2] = -np.arctan2(
-            dcm_transformed[~safe2, 1, 0] + dcm_transformed[~safe2, 0, 1],
-            dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
-        )
+        angles[~safe2, 2] = -np.arctan2(matrix_transformed[~safe2, 1, 0]
+                                        + matrix_transformed[~safe2, 0, 1],
+                                        matrix_transformed[~safe2, 0, 0]
+                                        - matrix_transformed[~safe2, 1, 1])
     else:
         # For instrinsic, set third angle to zero
         # 6a
         angles[~safe_mask, 2] = 0
         # 6b
-        angles[~safe1, 0] = np.arctan2(
-            dcm_transformed[~safe1, 1, 0] - dcm_transformed[~safe1, 0, 1],
-            dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
-        )
+        angles[~safe1, 0] = np.arctan2(matrix_transformed[~safe1, 1, 0]
+                                       - matrix_transformed[~safe1, 0, 1],
+                                       matrix_transformed[~safe1, 0, 0]
+                                       + matrix_transformed[~safe1, 1, 1])
         # 6c
-        angles[~safe2, 0] = np.arctan2(
-            dcm_transformed[~safe2, 1, 0] + dcm_transformed[~safe2, 0, 1],
-            dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
-        )
+        angles[~safe2, 0] = np.arctan2(matrix_transformed[~safe2, 1, 0]
+                                       + matrix_transformed[~safe2, 0, 1],
+                                       matrix_transformed[~safe2, 0, 0]
+                                       - matrix_transformed[~safe2, 1, 1])
 
     # Step 7
     if seq[0] == seq[2]:
@@ -180,9 +180,9 @@ class Rotation(object):
     with:
 
     - Quaternions
-    - Direction Cosine Matrices
+    - Rotation Matrices
     - Rotation Vectors
-    - Euler angles
+    - Euler Angles
 
     The following operations on rotations are supported:
 
@@ -201,11 +201,11 @@ class Rotation(object):
     -------
     __len__
     from_quat
-    from_dcm
+    from_matrix
     from_rotvec
     from_euler
     as_quat
-    as_dcm
+    as_matrix
     as_rotvec
     as_euler
     apply
@@ -252,7 +252,7 @@ class Rotation(object):
     >>> r.as_euler('zyx', degrees=True)
     array([90.,  0.,  0.])
 
-    The same rotation can be initialized using a direction cosine matrix:
+    The same rotation can be initialized using a rotation matrix:
 
     >>> r = R.as_matrix(np.array([
     ... [0, -1, 0],
@@ -573,8 +573,8 @@ class Rotation(object):
             raise ValueError("Expected `matrix` to have shape (3, 3) or "
                              "(N, 3, 3), got {}".format(matrix.shape))
 
-        # If a single dcm is given, convert it to 3D 1 x 3 x 3 matrix but set
-        # self._single to True so that we can return appropriate objects in
+        # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
+        # set self._single to True so that we can return appropriate objects in
         # the `to_...` methods
         if matrix.shape == (3, 3):
             matrix = matrix.reshape((1, 3, 3))
@@ -1172,7 +1172,7 @@ class Rotation(object):
 
         seq = seq.lower()
 
-        angles = _compute_euler_from_dcm(self.as_matrix(), seq, extrinsic)
+        angles = _compute_euler_from_matrix(self.as_matrix(), seq, extrinsic)
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -1190,7 +1190,7 @@ class Rotation(object):
               frame as it rotates. In this case the vector components are
               expressed in the original frame before and after the rotation.
 
-        In terms of DCMs, this application is the same as
+        In terms of rotation matricies, this application is the same as
         ``self.as_matrix().dot(vectors)``.
 
         Parameters
@@ -1305,9 +1305,9 @@ class Rotation(object):
             single_vector = True
             vectors = vectors[None, :]
 
-        dcm = self.as_matrix()
+        matrix = self.as_matrix()
         if self._single:
-            dcm = dcm[None, :, :]
+            matrix = matrix[None, :, :]
 
         n_vectors = vectors.shape[0]
         n_rotations = len(self)
@@ -1319,9 +1319,9 @@ class Rotation(object):
                                 n_rotations, n_vectors))
 
         if inverse:
-            result = np.einsum('ikj,ik->ij', dcm, vectors)
+            result = np.einsum('ikj,ik->ij', matrix, vectors)
         else:
-            result = np.einsum('ijk,ik->ij', dcm, vectors)
+            result = np.einsum('ijk,ik->ij', matrix, vectors)
 
         if self._single and single_vector:
             return result[0]
@@ -1332,13 +1332,14 @@ class Rotation(object):
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of DCMs, the composition can
-        be expressed as `p.as_matrix().dot(q.as_matrix())`.
+        by p' is equivalent to `p * q`. In terms of rotation matrices,
+        the composition can be expressed as
+        ``p.as_matrix().dot(q.as_matrix())``.
 
         Parameters
         ----------
         other : `Rotation` instance
-            Object containing the rotaions to be composed with this one. Note
+            Object containing the rotations to be composed with this one. Note
             that rotation compositions are not commutative, so ``p * q`` is
             different from ``q * p``.
 
@@ -1779,7 +1780,7 @@ class Rotation(object):
 
         Find a rotation between frames A and B which best matches a set of unit
         vectors `a` and `b` observed in these frames. The following loss
-        function is minimized to solve for the direction cosine matrix
+        function is minimized to solve for the rotation matrix
         :math:`C`:
 
         .. math::
