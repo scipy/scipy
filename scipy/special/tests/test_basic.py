@@ -812,7 +812,7 @@ class TestCephes(object):
         val = cephes.pdtr(0, 1)
         assert_almost_equal(val, np.exp(-1))
         # Edge case: m = 0.
-        val = cephes.pdtr([0, 1, 2], 0.0)
+        val = cephes.pdtr([0, 1, 2], 0)
         assert_array_equal(val, [1, 1, 1])
 
     def test_pdtrc(self):
@@ -3278,8 +3278,6 @@ def test_legacy():
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))
-        assert_equal(special.pdtrc(1, 0.3), special.pdtrc(1.8, 0.3))
-        assert_equal(special.pdtr(1, 0.3), special.pdtr(1.8, 0.3))
         assert_equal(special.pdtri(1, 0.3), special.pdtri(1.8, 0.3))
         assert_equal(special.kn(1, 0.3), special.kn(1.8, 0.3))
         assert_equal(special.yn(1, 0.3), special.yn(1.8, 0.3))

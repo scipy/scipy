@@ -1124,19 +1124,13 @@
         }
     },
     "pdtr": {
-        "_legacy.pxd": {
-            "pdtr_unsafe": "dd->d"
-        },
         "cephes.h": {
-            "pdtr": "id->d"
+            "pdtr": "dd->d"
         }
     },
     "pdtrc": {
-        "_legacy.pxd": {
-            "pdtrc_unsafe": "dd->d"
-        },
         "cephes.h": {
-            "pdtrc": "id->d"
+            "pdtrc": "dd->d"
         }
     },
     "pdtri": {

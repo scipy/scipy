@@ -7044,7 +7044,7 @@ add_newdoc("pdtr",
 
     Returns the sum of the first `k` terms of the Poisson distribution:
     sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments
-    must both be positive and `k` an integer.
+    must both be non-negative doubles.
     """)
 
 add_newdoc("pdtrc",
@@ -7055,7 +7055,7 @@ add_newdoc("pdtrc",
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
-    k+1, m).  Arguments must both be positive and `k` an integer.
+    k+1, m).  Arguments must both be non-negative doubles.
     """)
 
 add_newdoc("pdtri",
