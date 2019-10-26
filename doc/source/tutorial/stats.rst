@@ -13,7 +13,7 @@ Introduction
 In this tutorial we discuss many, but certainly not all, features of
 ``scipy.stats``. The intention here is to provide a user with a
 working knowledge of this package. We refer to the `reference manual
-<https://docs.scipy.org/doc/scipy/reference/stats.html>`_ for further
+</doc/scipy/reference/stats.html>`_ for further
 details.
 
 
