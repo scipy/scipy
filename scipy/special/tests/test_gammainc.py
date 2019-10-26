@@ -13,7 +13,6 @@ INVALID_POINTS = [
     (1, -1),
     (0, 0),
     (-1, 1),
-    (0, 1),
     (np.nan, 1),
     (1, np.nan)
 ]
@@ -24,6 +23,9 @@ class TestGammainc(object):
     @pytest.mark.parametrize('a, x', INVALID_POINTS)
     def test_domain(self, a, x):
         assert np.isnan(sc.gammainc(a, x))
+
+    def test_a_eq_0_x_gt_0(self):
+        assert sc.gammainc(0, 1) == 1
 
     @pytest.mark.parametrize('a, x, desired', [
         (np.inf, 1, 0),
@@ -86,6 +88,9 @@ class TestGammaincc(object):
     @pytest.mark.parametrize('a, x', INVALID_POINTS)
     def test_domain(self, a, x):
         assert np.isnan(sc.gammaincc(a, x))
+
+    def test_a_eq_0_x_gt_0(self):
+        assert sc.gammaincc(0, 1) == 0
 
     @pytest.mark.parametrize('a, x, desired', [
         (np.inf, 1, 1),
