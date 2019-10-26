@@ -15,7 +15,7 @@ In this tutorial we discuss many, but certainly not all, features of
 working knowledge of this package. We refer to the reference manual
 for further details:
 
-* :ref:`stats-ref-manual`
+* :ref:`statsrefmanual`
 
 Note: This documentation is work in progress.
 

@@ -1,5 +1,5 @@
 """
-.. _stats-ref-manual
+.. _statsrefmanual
 
 ==========================================
 Statistical functions (:mod:`scipy.stats`)
