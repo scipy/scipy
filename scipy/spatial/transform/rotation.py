@@ -243,7 +243,7 @@ class Rotation(object):
 
     The rotation can be expressed in any of the other formats:
 
-    >>> r.as_dcm()
+    >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
     [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
     [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -254,7 +254,7 @@ class Rotation(object):
 
     The same rotation can be initialized using a direction cosine matrix:
 
-    >>> r = R.from_dcm(np.array([
+    >>> r = R.as_matrix(np.array([
     ... [0, -1, 0],
     ... [1, 0, 0],
     ... [0, 0, 1]]))
@@ -276,7 +276,7 @@ class Rotation(object):
 
     >>> r.as_quat()
     array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_dcm()
+    >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -293,7 +293,7 @@ class Rotation(object):
 
     >>> r.as_quat()
     array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_dcm()
+    >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -333,7 +333,7 @@ class Rotation(object):
            [0.        , 0.38268343, 0.        , 0.92387953],
            [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
     >>> p = r[0]
-    >>> p.as_dcm()
+    >>> p.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -883,7 +883,7 @@ class Rotation(object):
 
         Represent a single rotation:
 
-        >>> r = R.from_dcm([
+        >>> r = R.as_matrix([
         ... [0, -1, 0],
         ... [1, 0, 0],
         ... [0, 0, 1]])
@@ -1172,7 +1172,7 @@ class Rotation(object):
 
         seq = seq.lower()
 
-        angles = _compute_euler_from_dcm(self.as_dcm(), seq, extrinsic)
+        angles = _compute_euler_from_dcm(self.as_matrix(), seq, extrinsic)
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -1191,7 +1191,7 @@ class Rotation(object):
               expressed in the original frame before and after the rotation.
 
         In terms of DCMs, this application is the same as
-        ``self.as_dcm().dot(vectors)``.
+        ``self.as_matrix().dot(vectors)``.
 
         Parameters
         ----------
@@ -1225,7 +1225,7 @@ class Rotation(object):
 
         >>> vector = np.array([1, 0, 0])
         >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
                [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -1240,7 +1240,7 @@ class Rotation(object):
         ... [1, 0, 0],
         ... [1, 2, 3]])
         >>> r = R.from_rotvec([0, 0, np.pi/4])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[ 0.70710678, -0.70710678,  0.        ],
                [ 0.70710678,  0.70710678,  0.        ],
                [ 0.        ,  0.        ,  1.        ]])
@@ -1254,7 +1254,7 @@ class Rotation(object):
 
         >>> r = R.from_rotvec([[0, 0, np.pi/4], [np.pi/2, 0, 0]])
         >>> vector = np.array([1,2,3])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
                 [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
@@ -1305,7 +1305,7 @@ class Rotation(object):
             single_vector = True
             vectors = vectors[None, :]
 
-        dcm = self.as_dcm()
+        dcm = self.as_matrix()
         if self._single:
             dcm = dcm[None, :, :]
 
@@ -1333,7 +1333,7 @@ class Rotation(object):
 
         If `p` and `q` are two rotations, then the composition of 'q followed
         by p' is equivalent to `p * q`. In terms of DCMs, the composition can
-        be expressed as `p.as_dcm().dot(q.as_dcm())`.
+        be expressed as `p.as_matrix().dot(q.as_matrix())`.
 
         Parameters
         ----------
@@ -1363,16 +1363,16 @@ class Rotation(object):
 
         >>> p = R.from_quat([0, 0, 1, 1])
         >>> q = R.from_quat([1, 0, 0, 1])
-        >>> p.as_dcm()
+        >>> p.as_matrix()
         array([[ 0., -1.,  0.],
                [ 1.,  0.,  0.],
                [ 0.,  0.,  1.]])
-        >>> q.as_dcm()
+        >>> q.as_matrix()
         array([[ 1.,  0.,  0.],
                [ 0.,  0., -1.],
                [ 0.,  1.,  0.]])
         >>> r = p * q
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[0., 0., 1.],
                [1., 0., 0.],
                [0., 1., 0.]])
@@ -1494,7 +1494,7 @@ class Rotation(object):
         The mean used is the chordal L2 mean (also called the projected or
         induced arithmetic mean). If ``p`` is a set of rotations with mean
         ``m``, then ``m`` is the rotation which minimizes
-        ``(weights[:, None, None] * (p.as_dcm() - m.as_dcm())**2).sum()``.
+        ``(weights[:, None, None] * (p.as_matrix() - m.as_matrix())**2).sum()``.
 
         Examples
         --------
@@ -1886,7 +1886,7 @@ class Rotation(object):
         kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
         sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
                        (zeta * a.shape[0]))
-        return cls.from_dcm(C), sensitivity
+        return cls.from_matrix(C), sensitivity
 
 
 class Slerp(object):
