@@ -910,15 +910,15 @@ class Rotation(object):
         else:
             return self._quat.copy()
 
-    def as_dcm(self):
-        """Represent as direction cosine matrices.
+    def as_matrix(self):
+        """Represent as rotation matrix.
 
-        3D rotations can be represented using direction cosine matrices, which
+        3D rotations can be represented using rotation matrices, which
         are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.
 
         Returns
         -------
-        dcm : ndarray, shape (3, 3) or (N, 3, 3)
+        matrix : ndarray, shape (3, 3) or (N, 3, 3)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -932,36 +932,35 @@ class Rotation(object):
         Represent a single rotation:
 
         >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
                [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (3, 3)
 
         Represent a stack with a single rotation:
 
         >>> r = R.from_quat([[1, 1, 0, 0]])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 0.,  1.,  0.],
                 [ 1.,  0.,  0.],
                 [ 0.,  0., -1.]]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (1, 3, 3)
 
         Represent multiple rotations:
 
         >>> r = R.from_rotvec([[np.pi/2, 0, 0], [0, 0, np.pi/2]])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
                 [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
                 [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]],
                [[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
                 [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (2, 3, 3)
-
         """
         x = self._quat[:, 0]
         y = self._quat[:, 1]
@@ -981,24 +980,28 @@ class Rotation(object):
         xw = x * w
 
         num_rotations = len(self)
-        dcm = np.empty((num_rotations, 3, 3))
+        matrix = np.empty((num_rotations, 3, 3))
 
-        dcm[:, 0, 0] = x2 - y2 - z2 + w2
-        dcm[:, 1, 0] = 2 * (xy + zw)
-        dcm[:, 2, 0] = 2 * (xz - yw)
+        matrix[:, 0, 0] = x2 - y2 - z2 + w2
+        matrix[:, 1, 0] = 2 * (xy + zw)
+        matrix[:, 2, 0] = 2 * (xz - yw)
 
-        dcm[:, 0, 1] = 2 * (xy - zw)
-        dcm[:, 1, 1] = - x2 + y2 - z2 + w2
-        dcm[:, 2, 1] = 2 * (yz + xw)
+        matrix[:, 0, 1] = 2 * (xy - zw)
+        matrix[:, 1, 1] = - x2 + y2 - z2 + w2
+        matrix[:, 2, 1] = 2 * (yz + xw)
 
-        dcm[:, 0, 2] = 2 * (xz + yw)
-        dcm[:, 1, 2] = 2 * (yz - xw)
-        dcm[:, 2, 2] = - x2 - y2 + z2 + w2
+        matrix[:, 0, 2] = 2 * (xz + yw)
+        matrix[:, 1, 2] = 2 * (yz - xw)
+        matrix[:, 2, 2] = - x2 - y2 + z2 + w2
 
         if self._single:
-            return dcm[0]
+            return matrix[0]
         else:
-            return dcm
+            return matrix
+
+    @np.deprecate(message="as_dcm is renamed to as_matrix in scipy 1.4.0")
+    def as_dcm(self):
+        return self.as_matrix()
 
     def as_rotvec(self):
         """Represent as rotation vectors.
