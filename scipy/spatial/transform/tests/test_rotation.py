@@ -191,8 +191,8 @@ def test_matrix_calculation_pipeline():
 
 def test_from_matrix_ortho_output():
     np.random.seed(0)
-    dcm = np.random.random((100, 3, 3))
-    ortho_mat = Rotation.from_matrix(dcm).as_matrix()
+    mat = np.random.random((100, 3, 3))
+    ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
     mult_result = np.einsum('...ij,...jk->...ik', ortho_mat,
                             ortho_mat.transpose((0, 2, 1)))
@@ -342,12 +342,12 @@ def test_from_euler_rotation_order():
 def test_from_euler_elementary_extrinsic_rotation():
     # Simple test to check if extrinsic rotations are implemented correctly
     mat = Rotation.from_euler('zx', [90, 90], degrees=True).as_matrix()
-    expected_dcm = np.array([
+    expected_mat = np.array([
         [0, -1, 0],
         [0, 0, -1],
         [1, 0, 0]
     ])
-    assert_array_almost_equal(mat, expected_dcm)
+    assert_array_almost_equal(mat, expected_mat)
 
 
 def test_from_euler_intrinsic_rotation_312():
@@ -498,7 +498,8 @@ def test_as_euler_symmetric_axes():
 
 
 def test_as_euler_degenerate_asymmetric_axes():
-    # Since we cannot check for angle equality, we check for dcm equality
+    # Since we cannot check for angle equality, we check for rotation matrix
+    # equality
     angles = np.array([
         [45, 90, 35],
         [35, -90, 20],
@@ -534,7 +535,8 @@ def test_as_euler_degenerate_asymmetric_axes():
 
 
 def test_as_euler_degenerate_symmetric_axes():
-    # Since we cannot check for angle equality, we check for dcm equality
+    # Since we cannot check for angle equality, we check for rotation matrix
+    # equality
     angles = np.array([
         [15, 0, 60],
         [35, 0, 75],
