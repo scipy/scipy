@@ -952,7 +952,7 @@ def boxcox(x, lmbda=None, alpha=None):
     Parameters
     ----------
     x : ndarray
-        Input array.  Must be positive 1-dimensional. Must not be constant.
+        Input array.  Must be positive 1-dimensional.  Must not be constant.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
 
