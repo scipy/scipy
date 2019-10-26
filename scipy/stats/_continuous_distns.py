@@ -6101,13 +6101,16 @@ class reciprocal_gen(rv_continuous):
     ``a=10**0`` and ``b=10**2``. This best illustrated with a histogram:
 
     >>> from scipy.stats import %(name)s
+    >>> rvs = %(name)s(10 ** 0, 10 ** 2).rvs(size=10000)
+    >>>
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> rv = %(name)s(10 ** 0, 10 ** 2)
     >>> fig, ax = plt.subplots(1, 1)
-    >>> ax.hist(np.log10(rv.rvs(size=10000)))
+    >>> ax.hist(np.log10(rvs))
     >>> ax.set_ylabel("Frequency")
-    >>> ax.set_xticks([0, 1, 2])
-    >>> _ = ax.set_xticklabels(["$10^0$", "$10^1$", "$10^2$"])
+    >>> ax.set_xlabel("Value of random variable")
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([0, 1, 2]))
+    >>> ax.xaxis.set_major_formatter(plt.FormatStrFormatter("$10^{%s}$"))
     >>> plt.show()
 
     %(example)s
