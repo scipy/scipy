@@ -12,10 +12,10 @@ Introduction
 
 In this tutorial we discuss many, but certainly not all, features of
 ``scipy.stats``. The intention here is to provide a user with a
-working knowledge of this package. We refer to the `reference manual
-</doc/scipy/reference/stats.html>`_ for further
-details.
+working knowledge of this package. We refer to the reference manual
+for further details:
 
+* :ref:`stats-ref-manual`
 
 Note: This documentation is work in progress.
 
