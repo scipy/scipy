@@ -1,5 +1,4 @@
 
-.. _continuous-reciprocal:
 .. _continuous-loguniform:
 
 Log-Uniform Distribution
