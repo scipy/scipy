@@ -480,24 +480,24 @@ class Rotation(object):
         return cls(quat, normalized)
 
     @classmethod
-    def from_dcm(cls, dcm):
-        """Initialize from direction cosine matrices.
+    def from_matrix(cls, matrix):
+        """Initialize from rotation matrix.
 
-        Rotations in 3 dimensions can be represented using 3 x 3 proper
+        Rotations in 3 dimensions can be represented with 3 x 3 proper
         orthogonal matrices [1]_. If the input is not proper orthogonal,
         an approximation is created using the method described in [2]_.
 
         Parameters
         ----------
-        dcm : array_like, shape (N, 3, 3) or (3, 3)
-            A single matrix or a stack of matrices, where ``dcm[i]`` is the i-th
-            matrix.
+        matrix : array_like, shape (N, 3, 3) or (3, 3)
+            A single matrix or a stack of matrices, where ``matrix[i]`` is
+            the i-th matrix.
 
         Returns
         -------
         rotation : `Rotation` instance
-            Object containing the rotations represented by the input direction
-            cosine matrices.
+            Object containing the rotations represented by the rotation
+            matrices.
 
         References
         ----------
@@ -512,16 +512,16 @@ class Rotation(object):
 
         Initialize a single rotation:
 
-        >>> r = R.from_dcm([
+        >>> r = R.from_matrix([
         ... [0, -1, 0],
         ... [1, 0, 0],
         ... [0, 0, 1]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (3, 3)
 
         Initialize multiple rotations in a single object:
 
-        >>> r = R.from_dcm([
+        >>> r = R.from_matrix([
         ... [
         ...     [0, -1, 0],
         ...     [1, 0, 0],
@@ -532,7 +532,7 @@ class Rotation(object):
         ...     [0, 0, -1],
         ...     [0, 1, 0],
         ... ]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (2, 3, 3)
 
         If input matrices are not special orthogonal (orthogonal with
@@ -544,47 +544,46 @@ class Rotation(object):
         ... [0, 0, 0.5]])
         >>> np.linalg.det(a)
         0.12500000000000003
-        >>> r = R.from_dcm(a)
-        >>> dcm = r.as_dcm()
-        >>> dcm
+        >>> r = R.from_matrix(a)
+        >>> matrix = r.as_matrix()
+        >>> matrix
         array([[-0.38461538, -0.92307692,  0.        ],
                [ 0.92307692, -0.38461538,  0.        ],
                [ 0.        ,  0.        ,  1.        ]])
-        >>> np.linalg.det(dcm)
+        >>> np.linalg.det(matrix)
         1.0000000000000002
 
         It is also possible to have a stack containing a single rotation:
 
-        >>> r = R.from_dcm([[
+        >>> r = R.from_matrix([[
         ... [0, -1, 0],
         ... [1, 0, 0],
         ... [0, 0, 1]]])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 0., -1.,  0.],
                 [ 1.,  0.,  0.],
                 [ 0.,  0.,  1.]]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (1, 3, 3)
-
         """
         is_single = False
-        dcm = np.asarray(dcm, dtype=float)
+        matrix = np.asarray(matrix, dtype=float)
 
-        if dcm.ndim not in [2, 3] or dcm.shape[-2:] != (3, 3):
-            raise ValueError("Expected `dcm` to have shape (3, 3) or "
-                             "(N, 3, 3), got {}".format(dcm.shape))
+        if matrix.ndim not in [2, 3] or matrix.shape[-2:] != (3, 3):
+            raise ValueError("Expected `matrix` to have shape (3, 3) or "
+                             "(N, 3, 3), got {}".format(matrix.shape))
 
         # If a single dcm is given, convert it to 3D 1 x 3 x 3 matrix but set
         # self._single to True so that we can return appropriate objects in
         # the `to_...` methods
-        if dcm.shape == (3, 3):
-            dcm = dcm.reshape((1, 3, 3))
+        if matrix.shape == (3, 3):
+            matrix = matrix.reshape((1, 3, 3))
             is_single = True
 
-        num_rotations = dcm.shape[0]
+        num_rotations = matrix.shape[0]
 
         decision_matrix = np.empty((num_rotations, 4))
-        decision_matrix[:, :3] = dcm.diagonal(axis1=1, axis2=2)
+        decision_matrix[:, :3] = matrix.diagonal(axis1=1, axis2=2)
         decision_matrix[:, -1] = decision_matrix[:, :3].sum(axis=1)
         choices = decision_matrix.argmax(axis=1)
 
@@ -595,15 +594,15 @@ class Rotation(object):
         j = (i + 1) % 3
         k = (j + 1) % 3
 
-        quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * dcm[ind, i, i]
-        quat[ind, j] = dcm[ind, j, i] + dcm[ind, i, j]
-        quat[ind, k] = dcm[ind, k, i] + dcm[ind, i, k]
-        quat[ind, 3] = dcm[ind, k, j] - dcm[ind, j, k]
+        quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * matrix[ind, i, i]
+        quat[ind, j] = matrix[ind, j, i] + matrix[ind, i, j]
+        quat[ind, k] = matrix[ind, k, i] + matrix[ind, i, k]
+        quat[ind, 3] = matrix[ind, k, j] - matrix[ind, j, k]
 
         ind = np.nonzero(choices == 3)[0]
-        quat[ind, 0] = dcm[ind, 2, 1] - dcm[ind, 1, 2]
-        quat[ind, 1] = dcm[ind, 0, 2] - dcm[ind, 2, 0]
-        quat[ind, 2] = dcm[ind, 1, 0] - dcm[ind, 0, 1]
+        quat[ind, 0] = matrix[ind, 2, 1] - matrix[ind, 1, 2]
+        quat[ind, 1] = matrix[ind, 0, 2] - matrix[ind, 2, 0]
+        quat[ind, 2] = matrix[ind, 1, 0] - matrix[ind, 0, 1]
         quat[ind, 3] = 1 + decision_matrix[ind, -1]
 
         quat /= np.linalg.norm(quat, axis=1)[:, None]
@@ -612,6 +611,11 @@ class Rotation(object):
             return cls(quat[0], normalized=True, copy=False)
         else:
             return cls(quat, normalized=True, copy=False)
+
+    @classmethod
+    @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0")
+    def from_dcm(cls, dcm):
+        return cls.from_matrix(dcm)
 
     @classmethod
     def from_rotvec(cls, rotvec):
