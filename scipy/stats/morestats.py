@@ -2770,9 +2770,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null that the median is positive against
-    the alternative that the it is negative (``alternative == 'less'``),
-    or vice versa (``alternative == 'greater.'``).
+    zero. The one-sided test has the null hypothesis that the median is 
+    positive against the alternative that it is negative 
+    (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     The test uses a normal approximation to derive the p-value (if
     ``zero_method == 'pratt'``, the approximation is adjusted as in [5]_).
