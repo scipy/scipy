@@ -6114,6 +6114,7 @@ class reciprocal_gen(rv_continuous):
     >>> ax.set_xlabel("Value of random variable")
     >>> ax.xaxis.set_major_locator(plt.FixedLocator([0, 1, 2]))
     >>> ax.set_xticklabels(["$10^{}$".format(i) for i in [0, 1, 2]])
+    >>> plt.show()
 
     %(example)s
 
