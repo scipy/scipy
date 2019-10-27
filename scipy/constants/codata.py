@@ -1724,7 +1724,7 @@ _tested_keys = ['natural unit of velocity',
 
 # finally, insert aliases for values
 for k, v in list(_aliases.items()):
-    if v in _current_constants or _tested_keys:
+    if v in _current_constants or v in _tested_keys:
         physical_constants[k] = physical_constants[v]
     else:
         del _aliases[k]
