@@ -24,7 +24,7 @@ def test_find():
                                 'natural unit of length',
                                 'natural unit of time']))
 
-    
+
 def test_basic_table_parse():
     c = 'speed of light in vacuum'
     assert_equal(codata.value(c), constants.c)
