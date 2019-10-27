@@ -71,7 +71,7 @@ distcont = [
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
     ['lognorm', (0.95368226960575331,)],
-    ['loguniform', (0.001, 1.00)],
+    ['loguniform', (1, 100)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
     ['mielke', (10.4, 4.6)],
@@ -90,7 +90,7 @@ distcont = [
     ['rayleigh', ()],
     ['rdist', (0.9,)],   # feels also slow
     ['recipinvgauss', (0.63004267809369119,)],
-    ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
+    ['reciprocal', (1, 100)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
     ['skewnorm', (4.0,)],
