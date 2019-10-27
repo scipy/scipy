@@ -6096,28 +6096,33 @@ class reciprocal_gen(rv_continuous):
     for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
     :math:`a` and :math:`b` as shape parameters. %(after_notes)s
 
-    This class implements a log-uniform random variable. For example, the
-    outcomes ``1``, ``10`` and ``100`` are all equally likely when
-    ``a=10**0`` and ``b=10**2``. Let's specify that random variable:
-
     %(example)s
 
-    Let's see this PDF more clearly with a log scale
-
-    >>> from scipy.stats import %(name)s
-    >>> rvs = %(name)s(10 ** -3, 10 ** 0).rvs(size=10000)
-
-    The equal probability of ``1``, ``10`` and ``100`` is best illustrated with
-    a histogram with a log-scaled x-axis:
+    This doesn't show the equal probability of ``0.001``, ``0.01`` and
+    ``1``. This is best shown with a log-scaled x-axis:
 
     >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
-    >>> ax.hist(np.log10(rvs))
+    >>> ax.hist(np.log10(r))
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xlabel("Value of random variable")
     >>> ax.xaxis.set_major_locator(plt.FixedLocator([-3, -2, -1, 0]))
     >>> ax.set_xticklabels(["$10^{}$".format(i) for i in [-3, -2, -1, 0]])  # doctest: +SKIP
+    >>> plt.show()
+
+    This works regardless of base: it will still be uniform even with
+    base ``2``:
+
+    >>> rvs = %(name)s(2**-3, 2**0).rvs(num=1000)
+
+    Let's visualize the histogram, but with ``log2`` instead of ``log10``:
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log2(rvs))
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xlabel("Value of random variable")
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-3, -2, -1, 0]))
+    >>> ax.set_xticklabels(["$2^{}$".format(i) for i in [-3, -2, -1, 0]])  # doctest: +SKIP
     >>> plt.show()
 
     """
