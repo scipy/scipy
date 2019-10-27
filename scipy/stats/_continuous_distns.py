@@ -6113,7 +6113,7 @@ class reciprocal_gen(rv_continuous):
     This random variable will be log-uniform regardless of the base chosen for
     ``a`` and ``b``. Let's specify with base ``2`` instead:
 
-    >>> rvs = %(name)s(2**0, 2**2).rvs(num=1000)
+    >>> rvs = %(name)s(2**0, 2**2).rvs(size=1000)
 
     Let's visualize the histogram:
 
