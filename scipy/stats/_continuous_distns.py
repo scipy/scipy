@@ -6100,8 +6100,12 @@ class reciprocal_gen(rv_continuous):
     outcomes ``1``, ``10`` and ``100`` are all equally likely when
     ``a=10**0`` and ``b=10**2``. Let's specify that random variable:
 
+    %(example)s
+
+    Let's see this PDF more clearly with a log scale
+
     >>> from scipy.stats import %(name)s
-    >>> rvs = %(name)s(10 ** 0, 10 ** 2).rvs(size=10000)
+    >>> rvs = %(name)s(10 ** -3, 10 ** 0).rvs(size=10000)
 
     The equal probability of ``1``, ``10`` and ``100`` is best illustrated with
     a histogram with a log-scaled x-axis:
@@ -6112,11 +6116,9 @@ class reciprocal_gen(rv_continuous):
     >>> ax.hist(np.log10(rvs))
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xlabel("Value of random variable")
-    >>> ax.xaxis.set_major_locator(plt.FixedLocator([0, 1, 2]))
-    >>> ax.set_xticklabels(["$10^{}$".format(i) for i in [0, 1, 2]])  # doctest: +SKIP
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-3, -2, -1, 0]))
+    >>> ax.set_xticklabels(["$10^{}$".format(i) for i in [-3, -2, -1, 0]])  # doctest: +SKIP
     >>> plt.show()
-
-    %(example)s
 
     """
     def _argcheck(self, a, b):
