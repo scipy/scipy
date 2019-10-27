@@ -12,10 +12,8 @@ Introduction
 
 In this tutorial we discuss many, but certainly not all, features of
 ``scipy.stats``. The intention here is to provide a user with a
-working knowledge of this package. We refer to the reference manual
-for further details:
-
-* :ref:`statsrefmanual`
+working knowledge of this package. We refer to the
+:ref:`statsrefmanual <reference manual>` for further details.
 
 Note: This documentation is work in progress.
 
