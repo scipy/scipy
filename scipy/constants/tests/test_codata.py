@@ -25,11 +25,15 @@ def test_find():
                                 'natural unit of time']))
 
     
-def test_basic_lookup():
-    assert_equal('%d %s' % (codata.value('speed of light in vacuum'), 
-                            codata.unit('speed of light in vacuum')),
-    '299792458 m s^-1')
+def test_basic_table_parse():
+    c = 'speed of light in vacuum'
+    assert_equal(codata.value(c), constants.c)
+    assert_equal(codata.value(c), constants.speed_of_light)
 
+
+def test_basic_lookup():
+    assert_equal('%d %s' % (codata.c, codata.unit('speed of light in vacuum')),
+                 '299792458 m s^-1')
 
 
 def test_find_all():
