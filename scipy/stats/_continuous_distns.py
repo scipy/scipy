@@ -6106,7 +6106,7 @@ class reciprocal_gen(rv_continuous):
     >>> ax.hist(np.log10(r))
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xlabel("Value of random variable")
-    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-2, 1, 0]))
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-2, -1, 0]))
     >>> ticks = ["$10^{{ {} }}$".format(i) for i in [-2, -1, 0]]
     >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
     >>> plt.show()
