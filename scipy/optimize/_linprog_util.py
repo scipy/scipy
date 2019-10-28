@@ -1218,23 +1218,35 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
         Data needed by _postsolve to convert the solution to the standard-form
         problem into the solution to the original problem, including:
 
-        c : 1D array
-            Original coefficients of the linear objective function to be
-            minimized.
-        A_ub : 2D array, optional
-            2D array such that ``A_ub @ x`` gives the values of the upper-bound
-            inequality constraints at ``x``.
-        b_ub : 1D array, optional
-            1D array of values representing the upper-bound of each inequality
-            constraint (row) in ``A_ub``.
-        A_eq : 2D array, optional
-            2D array such that ``A_eq @ x`` gives the values of the equality
-            constraints at ``x``.
-        b_eq : 1D array, optional
-            1D array of values representing the RHS of each equality constraint
-            (row) in ``A_eq``.
-        bounds : sequence of tuples
-            Bounds, as modified in presolve
+        lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+            c : 1D array
+                The coefficients of the linear objective function to be minimized.
+            A_ub : 2D array, optional
+                The inequality constraint matrix. Each row of ``A_ub`` specifies the
+                coefficients of a linear inequality constraint on ``x``.
+            b_ub : 1D array, optional
+                The inequality constraint vector. Each element represents an
+                upper bound on the corresponding value of ``A_ub @ x``.
+            A_eq : 2D array, optional
+                The equality constraint matrix. Each row of ``A_eq`` specifies the
+                coefficients of a linear equality constraint on ``x``.
+            b_eq : 1D array, optional
+                The equality constraint vector. Each element of ``A_eq @ x`` must equal
+                the corresponding element of ``b_eq``.
+            bounds : sequence, optional
+                A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+                the minimum and maximum values of that decision variable. Use ``None`` to
+                indicate that there is no bound. By default, bounds are ``(0, None)``
+                (all decision variables are non-negative).
+                If a single tuple ``(min, max)`` is provided, then ``min`` and
+                ``max`` will serve as bounds for all decision variables.
+            x0 : 1D array, optional
+                Guess values of the decision variables, which will be refined by
+                the optimization algorithm. This argument is currently used only by the
+                'revised simplex' method, and can only be used if `x0` represents a
+                basic feasible solution.
+
         undo: list of tuples
             (`index`, `value`) pairs that record the original index and fixed value
             for each variable removed from the problem
