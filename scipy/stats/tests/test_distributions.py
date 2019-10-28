@@ -3842,3 +3842,12 @@ class TestHistogram(object):
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
+
+
+def test_loguniform():
+    # This test makes sure the alias of "loguniform" is log-uniform
+    rv = stats.loguniform(10 ** -3, 10 ** 0)
+    rvs = rv.rvs(size=10000, random_state=42)
+    vals, _ = np.histogram(np.log10(rvs), bins=10)
+    assert 900 <= vals.min() <= vals.max() <= 1100
+    assert np.abs(np.median(vals) - 1000) <= 10

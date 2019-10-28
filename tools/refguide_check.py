@@ -136,6 +136,7 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
+    r'scipy\.stats\.reciprocal',
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',

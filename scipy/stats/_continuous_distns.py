@@ -6086,25 +6086,52 @@ rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
 
 class reciprocal_gen(rv_continuous):
-    r"""A reciprocal continuous random variable.
+    r"""A loguniform or reciprocal continuous random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability density function for `reciprocal` is:
+    The probability density function for this class is:
 
     .. math::
 
         f(x, a, b) = \frac{1}{x \log(b/a)}
 
-    for :math:`a \le x \le b`, :math:`b > a > 0`.
-
-    `reciprocal` takes :math:`a` and :math:`b` as shape parameters.
-
-    %(after_notes)s
+    for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
+    :math:`a` and :math:`b` as shape parameters. %(after_notes)s
 
     %(example)s
+
+    This doesn't show the equal probability of ``0.01``, ``0.1`` and
+    ``1``. This is best when the x-axis is log-scaled:
+
+    >>> import numpy as np
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log10(r))
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xlabel("Value of random variable")
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-2, -1, 0]))
+    >>> ticks = ["$10^{{ {} }}$".format(i) for i in [-2, -1, 0]]
+    >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
+    >>> plt.show()
+
+    This random variable will be log-uniform regardless of the base chosen for
+    ``a`` and ``b``. Let's specify with base ``2`` instead:
+
+    >>> rvs = %(name)s(2**-2, 2**0).rvs(size=1000)
+
+    Values of ``1/4``, ``1/2`` and ``1`` are equally likely with this random
+    variable.  Here's the histogram:
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log2(rvs))
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xlabel("Value of random variable")
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-2, -1, 0]))
+    >>> ticks = ["$2^{{ {} }}$".format(i) for i in [-2, -1, 0]]
+    >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
+    >>> plt.show()
 
     """
     def _argcheck(self, a, b):
@@ -6133,6 +6160,7 @@ class reciprocal_gen(rv_continuous):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
 
+loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
 
 

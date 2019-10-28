@@ -108,6 +108,10 @@ the assumption of signal periodicity in the FFT method.
 
 `scipy.stats` changes
 ---------------------
+:func:`scipy.stats.loguniform` added with better documentation as (an alias for
+``scipy.stats.reciprocal``). ``loguniform`` generates random variables
+that are equally likely in the log space; e.g., ``1``, ``10`` and ``100``
+are all equally likely if ``loguniform(10 ** 0, 10 ** 2).rvs()`` is used.
 
 
 Other changes

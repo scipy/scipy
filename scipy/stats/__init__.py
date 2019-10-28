@@ -1,4 +1,6 @@
 """
+.. _statsrefmanual:
+
 ==========================================
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
@@ -87,6 +89,7 @@ Continuous distributions
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
+   loguniform        -- Log-Uniform
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
@@ -103,14 +106,13 @@ Continuous distributions
    powerlognorm      -- Power log normal
    powernorm         -- Power normal
    rdist             -- R-distribution
-   reciprocal        -- Reciprocal
    rayleigh          -- Rayleigh
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trapz              -- Trapezoidal
+   trapz             -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal

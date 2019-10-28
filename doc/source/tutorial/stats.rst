@@ -12,10 +12,8 @@ Introduction
 
 In this tutorial, we discuss many, but certainly not all, features of
 ``scipy.stats``. The intention here is to provide a user with a
-working knowledge of this package. We refer to the `reference manual
-<https://docs.scipy.org/doc/scipy/reference/stats.html>`_ for further
-details.
-
+working knowledge of this package. We refer to the
+:ref:`reference manual <statsrefmanual>` for further details.
 
 Note: This documentation is work in progress.
 
@@ -104,7 +102,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 98
+    number of continuous distributions: 99
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   14
 
