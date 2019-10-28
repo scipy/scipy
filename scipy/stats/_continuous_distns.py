@@ -6116,8 +6116,8 @@ class reciprocal_gen(rv_continuous):
 
     >>> rvs = %(name)s(2**-2, 2**0).rvs(size=1000)
 
-    Values ``1/4``, ``1/2`` and ``1`` are all equally likely.
-    Here's the histogram:
+    Values of ``1/4``, ``1/2`` and ``1`` are equally likely with this random
+    variable.  Here's the histogram:
 
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.hist(np.log2(rvs))
