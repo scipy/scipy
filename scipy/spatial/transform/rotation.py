@@ -254,10 +254,9 @@ class Rotation(object):
 
     The same rotation can be initialized using a rotation matrix:
 
-    >>> r = R.as_matrix(np.array([
-    ... [0, -1, 0],
-    ... [1, 0, 0],
-    ... [0, 0, 1]]))
+    >>> r = R.from_matrix([[0, -1, 0],
+    ...                    [1, 0, 0],
+    ...                    [0, 0, 1]])
 
     Representation in other formats:
 
@@ -883,10 +882,9 @@ class Rotation(object):
 
         Represent a single rotation:
 
-        >>> r = R.as_matrix([
-        ... [0, -1, 0],
-        ... [1, 0, 0],
-        ... [0, 0, 1]])
+        >>> r = R.from_matrix([[0, -1, 0],
+        ...                    [1, 0, 0],
+        ...                    [0, 0, 1]])
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         >>> r.as_quat().shape
@@ -898,7 +896,7 @@ class Rotation(object):
         >>> r.as_quat().shape
         (1, 4)
 
-        Represent multiple rotaions in a single object:
+        Represent multiple rotations in a single object:
 
         >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
         >>> r.as_quat().shape
