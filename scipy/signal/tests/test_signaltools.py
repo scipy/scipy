@@ -18,14 +18,14 @@ from numpy import array, arange
 import numpy as np
 
 from scipy.ndimage.filters import correlate1d
-from scipy.optimize import fmin
+from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots)
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
@@ -2507,6 +2507,114 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(object):
+    def test_residue_general(self):
+        def assert_rp_almost_equal(r, p, r_true, p_true):
+            r_true = np.asarray(r_true)
+            p_true = np.asarray(p_true)
+
+            distance = np.hypot(abs(p[:, None] - p_true),
+                                abs(r[:, None] - r_true))
+
+            rows, cols = linear_sum_assignment(distance)
+            assert_allclose(p[rows], p_true[cols])
+            assert_allclose(r[rows], r_true[cols])
+
+        # Test are taken from issue #4464, note that poles in scipy are
+        # in increasing by absolute value order, opposite to MATLAB.
+        r, p, k = residue([5, 3, -2, 7], [-4, 0, 8, 3])
+        assert_almost_equal(r, [1.3320, -0.6653, -1.4167], decimal=4)
+        assert_almost_equal(p, [-0.4093, -1.1644, 1.5737], decimal=4)
+        assert_almost_equal(k, [-1.2500], decimal=4)
+
+        r, p, k = residue([-4, 8], [1, 6, 8])
+        assert_almost_equal(r, [8, -12])
+        assert_almost_equal(p, [-2, -4])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([4, 1], [1, -1, -2])
+        assert_almost_equal(r, [1, 3])
+        assert_almost_equal(p, [-1, 2])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([4, 3], [2, -3.4, 1.98, -0.406])
+        assert_rp_almost_equal(r, p,
+                               [-18.125 - 13.125j, -18.125 + 13.125j, 36.25],
+                               [0.5 - 0.2j, 0.5 + 0.2j, 0.7])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([2, 1], [1, 5, 8, 4])
+        assert_rp_almost_equal(r, p, [-1, 1, 3], [-1, -2, -2])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([3, -1.1, 0.88, -2.396, 1.348],
+                          [1, -0.7, -0.14, 0.048])
+        assert_almost_equal(r, [-3, 4, 1])
+        assert_almost_equal(p, [0.2, -0.3, 0.8])
+        assert_almost_equal(k, [3, 1])
+
+        r, p, k = residue([1], [1, 2, -3])
+        assert_almost_equal(r, [0.25, -0.25])
+        assert_almost_equal(p, [1, -3])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([1, 0, -5], [1, 0, 0, 0, -1])
+        assert_rp_almost_equal(r, p, [1, 1.5j, -1.5j, -1], [-1, -1j, 1j, 1])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([3, 8, 6], [1, 3, 3, 1])
+        assert_rp_almost_equal(r, p, [1,2, 3], [-1, -1, -1])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([3, -1], [1, -3, 2])
+        assert_almost_equal(r, [-2, 5])
+        assert_almost_equal(p, [1, 2])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue([2, 3, -1], [1, -3, 2])
+        assert_almost_equal(r, [-4, 13])
+        assert_almost_equal(p, [1, 2])
+        assert_almost_equal(k, [2])
+
+        r, p, k = residue([7, 2, 3, -1], [1, -3, 2])
+        assert_almost_equal(r, [-11, 69])
+        assert_almost_equal(p, [1, 2])
+        assert_almost_equal(k, [7, 23])
+
+        r, p, k = residue([2, 3, -1], [1, -3, 4, -2])
+        assert_rp_almost_equal(r, p,
+                              [4, -1 + 3.5j, -1 - 3.5j],
+                               [1, 1 - 1j, 1 + 1j])
+        assert_almost_equal(k.size, 0)
+
+    def test_residue_leading_zeros(self):
+        # Leading zeros in numerator or denominator must not affect the answer.
+        r0, p0, k0 = residue([5, 3, -2, 7], [-4, 0, 8, 3])
+        r1, p1, k1 = residue([0, 5, 3, -2, 7], [-4, 0, 8, 3])
+        r2, p2, k2 = residue([5, 3, -2, 7], [0, -4, 0, 8, 3])
+        r3, p3, k3 = residue([0, 0, 5, 3, -2, 7], [0, 0, 0, -4, 0, 8, 3])
+        assert_almost_equal(r0, r1)
+        assert_almost_equal(r0, r2)
+        assert_almost_equal(r0, r3)
+        assert_almost_equal(p0, p1)
+        assert_almost_equal(p0, p2)
+        assert_almost_equal(p0, p3)
+        assert_almost_equal(k0, k1)
+        assert_almost_equal(k0, k2)
+        assert_almost_equal(k0, k3)
+
+    def test_resiude_degenerate(self):
+        # Several tests for zero numerator and denominator.
+        r, p, k = residue([0, 0], [1, 6, 8])
+        assert_almost_equal(r, [0, 0])
+        assert_almost_equal(p, [-4, -2])
+        assert_equal(k.size, 0)
+
+        r, p, k = residue(0, 1)
+        assert_equal(r.size, 0)
+        assert_equal(p.size, 0)
+        assert_equal(k.size, 0)
+
+        assert_raises(ValueError, residue, 1, 0)
 
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.

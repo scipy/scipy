@@ -2160,13 +2160,9 @@ def cmplx_sort(p):
     array([1.+0.j, 1.+1.j, 3.+0.j, 4.+0.j])
     >>> indx
     array([0, 2, 3, 1])
-
     """
     p = asarray(p)
-    if iscomplexobj(p):
-        indx = argsort(abs(p))
-    else:
-        indx = argsort(p)
+    indx = argsort(abs(p))
     return take(p, indx, 0), indx
 
 
@@ -2384,7 +2380,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     r : ndarray
         Residues.
     p : ndarray
-        Poles.
+        Poles order by magnitude in ascending order.
     k : ndarray
         Coefficients of the direct polynomial term.
 
@@ -2393,13 +2389,23 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     invres, residuez, numpy.poly, unique_roots
 
     """
+    b = np.trim_zeros(np.atleast_1d(b), 'f')
+    a = np.trim_zeros(np.atleast_1d(a), 'f')
 
-    b, a = map(asarray, (b, a))
+    if a.size == 0:
+        raise ValueError("Denominator `a` is zero.")
+
+    p = roots(a)
+    if b.size == 0:
+        return np.zeros(p.shape), p, np.array([])
+
     rscale = a[0]
     k, b = polydiv(b, a)
-    p = roots(a)
     r = p * 0.0
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
+    pout, order = cmplx_sort(pout)
+    mult = mult[order]
+
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]] * mult[n])
@@ -2426,7 +2432,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
             r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n]) /
                                factorial(sig - m))
         indx += sig
-    return r / rscale, p, k
+    return r / rscale, p, np.trim_zeros(k, 'f')
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
