@@ -28,6 +28,7 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
+from scipy.signal._upfirdn import _upfirdn_modes
 
 
 if sys.version_info >= (3, 5):
@@ -1064,7 +1065,8 @@ class TestWiener(object):
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
-padtype_options = ["constant", "mean", "median", "minimum", "maximum", "line"]
+padtype_options = ["mean", "median", "minimum", "maximum", "line"]
+padtype_options += _upfirdn_modes
 
 
 class TestResample(object):

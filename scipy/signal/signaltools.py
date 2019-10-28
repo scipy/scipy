@@ -8,7 +8,7 @@ import sys
 import timeit
 from scipy.spatial import cKDTree
 from . import sigtools, dlti
-from ._upfirdn import upfirdn, _output_len
+from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy._lib.six import callable
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
@@ -97,15 +97,6 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
                          "as large as the other in every dimension")
 
     return not ok1
-
-
-def _reshape_nd(x1d, ndim, axis):
-    """
-    Reshape x1d to size 1 along all axes in ``range(ndim)`` except for ``axis``.
-    """
-    shape = [1] * ndim
-    shape[axis] = x1d.size
-    return x1d.reshape(shape)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -2815,12 +2806,14 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
     padtype : string, optional
-        `constant`, `mean` or `line`. Changes assumptions on values beyond the
-        boundary. If `constant`, assumed to be `cval` (default zero). If `line`
-        assumed to continue a linear trend defined by the first and last
-        points. `mean`, `median`, `maximum` and `minimum` work as in `np.pad` and
-        assume that the values beyond the boundary are the mean, median,
-        maximum or minimum respectively of the array along the axis.
+        `constant`, `line`, `mean`, `median`, `maximum`, `minimum` or any of
+        the other signal extension modes supported by `scipy.signal.upfirdn`.
+        Changes assumptions on values beyond the boundary. If `constant`,
+        assumed to be `cval` (default zero). If `line` assumed to continue a
+        linear trend defined by the first and last points. `mean`, `median`,
+        `maximum` and `minimum` work as in `np.pad` and assume that the values
+        beyond the boundary are the mean, median, maximum or minimum
+        respectively of the array along the axis.
 
         .. versionadded:: 1.4.0
     cval : float, optional
@@ -2968,41 +2961,32 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     # Remove background depending on the padtype option
     funcs = {'mean': np.mean, 'median': np.median,
              'minimum': np.amin, 'maximum': np.amax}
-    if padtype == 'constant':
-        background_line = cval
-    elif padtype in funcs:
-        background_line = [funcs[padtype](x, axis=axis), 0]
-    elif padtype == 'line':
-        background_line = [x.take(0, axis),
-                           (x.take(-1, axis) - x.take(0, axis))*n_in/(n_in-1)]
+    upfirdn_kwargs = {'mode': 'constant', 'cval': 0}
+    if padtype in funcs:
+        background_values = funcs[padtype](x, axis=axis, keepdims=True)
+    elif padtype in _upfirdn_modes:
+        upfirdn_kwargs = {'mode': padtype}
+        if padtype == 'constant':
+            if cval is None:
+                cval = 0
+            upfirdn_kwargs['cval'] = cval
     else:
         raise ValueError(
-            'padtype must be line, maximum, mean, median, minimum or constant')
+            'padtype must be one of: maximum, mean, median, minimum, ' +
+            ', '.join(_upfirdn_modes))
 
-    if padtype == 'line' or padtype in funcs:
-        rel_len = np.linspace(0.0, 1.0, n_in, endpoint=False)
-        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
-        background_in = np.expand_dims(background_line[0], axis) +\
-            np.expand_dims(background_line[1], axis) * rel_len_nd
-        x = x - background_in.astype(x.dtype)
-    elif padtype == 'constant' and cval is not None:
-        x = x - cval
+    if padtype in funcs:
+        x = x - background_values
 
     # filter then remove excess
-    y = upfirdn(h, x, up, down, axis=axis)
+    y = upfirdn(h, x, up, down, axis=axis, **upfirdn_kwargs)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
     y_keep = y[tuple(keep)]
 
     # Add background back
-    if padtype == 'line' or padtype in funcs:
-        rel_len = np.linspace(0.0, 1.0, n_out, endpoint=False)
-        rel_len_nd = _reshape_nd(rel_len, x.ndim, axis)
-        background_out = np.expand_dims(background_line[0], axis) +\
-            np.expand_dims(background_line[1], axis) * rel_len_nd
-        y_keep += background_out.astype(x.dtype)
-    elif padtype == 'constant' and cval is not None:
-        y_keep += cval
+    if padtype in funcs:
+        y_keep += background_values
 
     return y_keep
 
