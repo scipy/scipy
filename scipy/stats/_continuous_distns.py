@@ -6106,8 +6106,8 @@ class reciprocal_gen(rv_continuous):
     >>> ax.hist(np.log10(r))
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xlabel("Value of random variable")
-    >>> ax.xaxis.set_major_locator(plt.FixedLocator([0, 1, 2]))
-    >>> ax.set_xticklabels(["$10^{}$".format(i) for i in [0, 1, 2]])  # doctest: +SKIP
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-1, 0, 1]))
+    >>> ax.set_xticklabels(["$10^{%s}$" % i for i in [-1, 0, 1]])  # doctest: +SKIP
     >>> plt.show()
 
     This random variable will be log-uniform regardless of the base chosen for
@@ -6121,8 +6121,8 @@ class reciprocal_gen(rv_continuous):
     >>> ax.hist(np.log2(rvs))
     >>> ax.set_ylabel("Frequency")
     >>> ax.set_xlabel("Value of random variable")
-    >>> ax.xaxis.set_major_locator(plt.FixedLocator([0, 1, 2]))
-    >>> ax.set_xticklabels(["$2^{}$".format(i) for i in [0, 1, 2]])  # doctest: +SKIP
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-1, 0, 1]))
+    >>> ax.set_xticklabels(["$2^{%s}$" % i for i in [-1, 0, 1]])  # doctest: +SKIP
     >>> plt.show()
 
     """
