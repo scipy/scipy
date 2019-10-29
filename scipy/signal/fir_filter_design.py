@@ -632,6 +632,10 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     if nfreqs is None:
         nfreqs = 1 + 2 ** int(ceil(log(numtaps, 2)))
 
+    d = np.diff(freq)
+    if (d == 0).any():
+        freq = np.array(freq, copy=True)
+
     # Tweak any repeated values in freq so that interp works.
     eps = np.finfo(float).eps
     for k in range(len(freq)):
