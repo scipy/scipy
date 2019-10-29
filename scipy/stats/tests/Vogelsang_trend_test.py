@@ -94,7 +94,8 @@ def vogelsang_trend(y):
     i = 1;
     for i in range(1,10):
         tt = np.array(t1)**i
-        ehat = tt - np.matmul(Xj, np.matmul( np.matmul(Xj.T, Xj), 
+        ehat = tt - np.matmul(Xj, np.matmul(inv(np.matmul(Xj.T, Xj)), 
+                                            np.matmul(Xj.T,tt)))
                                             np.matmul(Xj.T,tt)))
         ehat = ehat / np.sqrt(np.matmul(ehat.T, ehat));
         Xj = pd.concat([Xj, pd.DataFrame(ehat)], axis=1)
