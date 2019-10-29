@@ -1712,7 +1712,7 @@ mu0 = 4e-7 * pi
 epsilon0 = 1 / (mu0 * c * c)
 
 exact_values = {
-    'mag. constant': (mu0, 'N A^-2', 0.0),
+    'vacuum mag. permeability': (mu0, 'N A^-2', 0.0),
     'electric constant': (epsilon0, 'F m^-1', 0.0),
     'characteristic impedance of vacuum': (sqrt(mu0 / epsilon0), 'ohm', 0.0),
     'atomic unit of permittivity': (4 * epsilon0 * pi, 'F m^-1', 0.0),
