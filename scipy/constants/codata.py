@@ -1554,8 +1554,6 @@ for k in _physical_constants_2006:
 for k in _physical_constants_2018:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
-    if 'vacuum mag. permeability' in k:
-        _aliases[k] = k.replace('vacuum mag. permeability', 'magn. constant')
         
 
 class ConstantWarning(DeprecationWarning):
