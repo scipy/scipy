@@ -3,7 +3,7 @@
 .. _quickstart-ubuntu:
 
 =======================================================
-Development Environment Quickstart Guide (Ubuntu 16.04)
+Development environment quickstart guide (Ubuntu 16.04)
 =======================================================
 
 This quickstart guide will cover:
