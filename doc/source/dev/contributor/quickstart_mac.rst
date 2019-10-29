@@ -143,11 +143,6 @@ by entering ``conda activate scipydev``. |br| If you're working with an old
 version of ``conda``, you might need to type ``source activate scipydev``
 instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
 
-#. You're still in the base environment. Activate your new virtual environment
-by entering ``conda activate scipydev``. |br| If you're working with an old
-version of ``conda``, you might need to type ``source activate scipydev``
-instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
-
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment
 has no packages installed. If you were to open a Python interpreter now, you
 wouldn't be able to import ``numpy``, ``scipy``, etc.
