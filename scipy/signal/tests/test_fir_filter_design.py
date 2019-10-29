@@ -392,6 +392,18 @@ class TestFirwin2(object):
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
         assert_array_almost_equal(taps1, taps2)
 
+    def test_tuple(self):
+        taps1 = firwin2(150, (0.0, 0.5, 0.5, 1.0), (1.0, 1.0, 0.0, 0.0))
+        taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
+        assert_array_almost_equal(taps1, taps2)
+
+    def test_input_modyfication(self):
+        freq1 = np.array([0.0, 0.5, 0.5, 1.0])
+        freq2 = np.array(freq1)
+        firwin2(80, freq1, [1.0, 1.0, 0.0, 0.0])
+        assert_equal(freq1, freq2)
+
+
 class TestRemez(object):
 
     def test_bad_args(self):
