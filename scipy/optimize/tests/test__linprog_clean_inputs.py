@@ -14,7 +14,7 @@ def test_aliasing():
     """
     Test for ensuring that no objects referred to by `lp` attributes,
     `c`, `A_ub`, `b_ub`, `A_eq`, `b_eq`, `bounds`, have been modified
-    by `_clean_inputs` as a side effect.
+    by `_clean_inputs` as a side effect.
     """
     lp = _LPProblem(
         c=1,

@@ -47,7 +47,7 @@ _LPProblem.__doc__ = \
         basic feasible solution.
 
     Notes
-    ----------
+    -----
     This namedtuple supports 2 ways of initialization:
     >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
     >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
