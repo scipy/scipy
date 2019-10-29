@@ -24,7 +24,7 @@ from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients, detrend)
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
@@ -2668,3 +2668,78 @@ class TestDetrend(object):
         copy_array = detrend(x, overwrite_data=False)
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)
+
+
+class TestUniqueRoots(object):
+    def test_real_no_repeat(self):
+        p = [-1.0, -0.5, 0.3, 1.2, 10.0]
+        unique, multiplicity = unique_roots(p)
+        assert_almost_equal(unique, p, decimal=15)
+        assert_equal(multiplicity, np.ones(len(p)))
+
+    def test_real_repeat(self):
+        p = [-1.0, -0.95, -0.89, -0.8, 0.5, 1.0, 1.05]
+
+        unique, multiplicity = unique_roots(p, tol=1e-1, rtype='min')
+        assert_almost_equal(unique, [-1.0, -0.89, 0.5, 1.0], decimal=15)
+        assert_equal(multiplicity, [2, 2, 1, 2])
+
+        unique, multiplicity = unique_roots(p, tol=1e-1, rtype='max')
+        assert_almost_equal(unique, [-0.95, -0.8, 0.5, 1.05], decimal=15)
+        assert_equal(multiplicity, [2, 2, 1, 2])
+
+        unique, multiplicity = unique_roots(p, tol=1e-1, rtype='avg')
+        assert_almost_equal(unique, [-0.975, -0.845, 0.5, 1.025], decimal=15)
+        assert_equal(multiplicity, [2, 2, 1, 2])
+
+    def test_complex_no_repeat(self):
+        p = [-1.0, 1.0j, 0.5 + 0.5j, -1.0 - 1.0j, 3.0 + 2.0j]
+        unique, multiplicity = unique_roots(p)
+        assert_almost_equal(unique, p, decimal=15)
+        assert_equal(multiplicity, np.ones(len(p)))
+
+    def test_complex_repeat(self):
+        p = [-1.0, -1.0 + 0.05j, -0.95 + 0.15j, -0.90 + 0.15j, 0.0,
+             0.5 + 0.5j, 0.45 + 0.55j]
+
+        unique, multiplicity = unique_roots(p, tol=1e-1, rtype='min')
+        assert_almost_equal(unique, [-1.0, -0.95 + 0.15j, 0.0, 0.45 + 0.55j],
+                            decimal=15)
+        assert_equal(multiplicity, [2, 2, 1, 2])
+
+        unique, multiplicity = unique_roots(p, tol=1e-1, rtype='max')
+        assert_almost_equal(unique,
+                            [-1.0 + 0.05j, -0.90 + 0.15j, 0.0, 0.5 + 0.5j],
+                            decimal=15)
+        assert_equal(multiplicity, [2, 2, 1, 2])
+
+        unique, multiplicity = unique_roots(p, tol=1e-1, rtype='avg')
+        assert_almost_equal(
+            unique, [-1.0 + 0.025j, -0.925 + 0.15j, 0.0, 0.475 + 0.525j],
+            decimal=15)
+        assert_equal(multiplicity, [2, 2, 1, 2])
+
+    def test_gh_4915(self):
+        p = np.roots(np.convolve(np.ones(5), np.ones(5)))
+        true_roots = [-(-1)**(1/5), (-1)**(4/5), -(-1)**(3/5), (-1)**(2/5)]
+
+        unique, multiplicity = unique_roots(p)
+        unique = np.sort(unique)
+
+        assert_almost_equal(np.sort(unique), true_roots, decimal=7)
+        assert_equal(multiplicity, [2, 2, 2, 2])
+
+    def test_complex_roots_extra(self):
+        unique, multiplicity = unique_roots([1.0, 1.0j, 1.0])
+        assert_almost_equal(unique, [1.0, 1.0j], decimal=15)
+        assert_equal(multiplicity, [2, 1])
+
+        unique, multiplicity = unique_roots([1, 1 + 2e-9, 1e-9 + 1j], tol=0.1)
+        assert_almost_equal(unique, [1.0, 1e-9 + 1.0j], decimal=15)
+        assert_equal(multiplicity, [2, 1])
+
+    def test_single_unique_root(self):
+        p = np.random.rand(100) + 1j * np.random.rand(100)
+        unique, multiplicity = unique_roots(p, 2)
+        assert_almost_equal(unique, [np.min(p)], decimal=15)
+        assert_equal(multiplicity, [100])

@@ -5202,10 +5202,19 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc):
-        mu = np.where(dfd <= 2, np.inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = np.where(dfd <= 4, np.inf, 2*(dfd*1.0/dfn)**2.0 *
-                       ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
-                       ((dfd-2.0)**2.0 * (dfd-4.0)))
+        # Note: the rv_continuous class ensures that dfn > 0 when this function
+        # is called, so we don't have  to check for division by zero with dfn
+        # in the following.
+        mu_num = dfd * (dfn + nc)
+        mu_den = dfn * (dfd - 2)
+        mu = np.full_like(mu_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu_num, mu_den, where=dfd > 2, out=mu)
+
+        mu2_num = 2*((dfn + nc)**2 + (dfn + 2*nc)*(dfd - 2))*(dfd/dfn)**2
+        mu2_den = (dfd - 2)**2 * (dfd - 4)
+        mu2 = np.full_like(mu2_num, dtype=np.float64, fill_value=np.inf)
+        np.true_divide(mu2_num, mu2_den, where=dfd > 4, out=mu2)
+
         return mu, mu2, None, None
 
 

@@ -476,7 +476,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
   int full_output = 0;
   double taufac = 0.0, sstol = -1.0, partol = -1.0;
   char *errfile = NULL, *rptfile = NULL;
-  int lerrfile = 0, lrptfile = 0;
+  Py_ssize_t lerrfile = 0, lrptfile = 0;
   PyArrayObject *beta = NULL, *y = NULL, *x = NULL, *we = NULL, *wd = NULL;
   PyArrayObject *ifixb = NULL, *ifixx = NULL;
   PyArrayObject *stpb = NULL, *stpd = NULL, *sclb = NULL, *scld = NULL;

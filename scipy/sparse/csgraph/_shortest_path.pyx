@@ -293,7 +293,10 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-
+    if not isspmatrix(csgraph):
+        # for dense array input, zero entries represent non-edge
+        dist_matrix[dist_matrix == 0] = INFINITY
+        
     if unweighted:
         dist_matrix[~np.isinf(dist_matrix)] = 1
 
@@ -337,10 +340,8 @@ cdef void _floyd_warshall(
 
     # ----------------------------------------------------------------------
     #  Initialize distance matrix
-    #   - set non-edges to infinity
     #   - set diagonal to zero
     #   - symmetrize matrix if non-directed graph is desired
-    dist_matrix[dist_matrix == 0] = INFINITY
     dist_matrix.flat[::N + 1] = 0
     if not directed:
         for i in range(N):

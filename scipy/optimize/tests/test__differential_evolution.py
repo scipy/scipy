@@ -1,18 +1,28 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
+import gc
 import multiprocessing
+import sys
 
-from scipy.optimize import _differentialevolution
 from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
-from scipy.optimize._constraints import Bounds
-import numpy as np
+from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
+                                         LinearConstraint)
 from scipy.optimize import rosen
+from scipy._lib._numpy_compat import suppress_warnings
+
+import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_almost_equal,
                            assert_string_equal, assert_)
+import pytest
 from pytest import raises as assert_raises, warns
+
+
+knownfail_on_py38 = pytest.mark.xfail(
+    sys.version_info >= (3, 8), run=False,
+    reason='Python 3.8 hangs when cleaning up MapWrapper')
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -523,6 +533,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
+    @knownfail_on_py38
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -533,8 +544,11 @@ class TestDifferentialEvolutionSolver(object):
         # is being overriden by the workers keyword
         with warns(UserWarning):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
-            assert_(solver._updating == 'deferred')
+        assert_(solver._updating == 'deferred')
+        del solver
+        gc.collect()  # ensure MapWrapper cleans up properly
 
+    @knownfail_on_py38
     def test_parallel(self):
         # smoke test for parallelisation with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -549,6 +563,8 @@ class TestDifferentialEvolutionSolver(object):
             assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
+        del solver
+        gc.collect()  # ensure MapWrapper cleans up properly
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])

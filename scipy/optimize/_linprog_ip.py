@@ -561,7 +561,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         float(rho_p),
         float(rho_d),
         float(rho_g),
-        float(alpha) if isinstance(alpha, numbers.Number) else alpha,
+        alpha if isinstance(alpha, str) else float(alpha),
         float(rho_mu),
         float(obj)))
 
