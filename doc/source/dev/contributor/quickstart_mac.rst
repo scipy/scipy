@@ -82,8 +82,6 @@ the software we will use to compile C, C++, and Fortran code included in SciPy.
 
 #. Use Homebrew to install ``gcc`` by entering the command ``brew install gcc``.
 
-<<<<<<< HEAD
-
 #. In the terminal, ensure that all of SciPy's build dependencies are up to
 date: ``conda install pybind11``, then ``conda update cython numpy pytest
 pybind11``.
@@ -118,15 +116,12 @@ Anaconda rather than the development version you just built.
 (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`__
 for much more information about how Python imports modules.)
 
-
 .. _quickstart-mac-install:
 
 Installing SciPy
 ----------------
 
 *Consider following along with the companion video* `Anaconda SciPy Dev: Part II (macOS)`_
-
-<<<<<<< HEAD
 
 Currently we have *two* versions of SciPy: the latest release as installed by
 Anaconda, and the development version we just built. Ideally, we'd like to be
@@ -155,7 +150,7 @@ instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment
 has no packages installed. If you were to open a Python interpreter now, you
-wouldn't be able to import ``numpy``, ``scipy``, etc...
+wouldn't be able to import ``numpy``, ``scipy``, etc.
 
 #. Enter ``conda install cython numpy pytest spyder pybind11``. |br| Note
 that we're only installing SciPy's build dependencies (and Spyder so we can
@@ -170,7 +165,7 @@ environment variable when the ``scipydev`` virtual environment is activated.
 You can ignore that part of the video from 0:38 to 1:38; this is much simpler!*
 
 #. In a new terminal window, test your setup. If you activate your virtual
-environment (e.g. ``conda activate scipydev``) and run Python code that imports
+environment (e.g., ``conda activate scipydev``) and run Python code that imports
 from SciPy, any changes you make to the SciPy code should be reflected when
 the code runs. After deactivating the virtual environment (``conda deactivate``),
 Python imports from the version of SciPy installed by Anaconda. You can also
