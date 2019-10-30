@@ -2347,6 +2347,32 @@ def _compute_factors(roots, multiplicity):
     return result
 
 
+def _compute_residuals(poles, multiplicity, numerator):
+    denominator_factors = _compute_factors(poles, multiplicity)
+
+    residuals = []
+    for pole, mult, factor in zip(poles, multiplicity,
+                                  denominator_factors):
+        if mult == 1:
+            residuals.append(np.polyval(numerator, pole) /
+                             np.polyval(factor, pole))
+        else:
+            numer = numerator.copy()
+            monomial = np.array([1, -pole])
+            factor, d = np.polydiv(factor, monomial)
+
+            block = []
+            for _ in range(mult):
+                numer, n = np.polydiv(numer, monomial)
+                r = n[0] / d[0]
+                numer = np.polysub(numer, r * factor)
+                block.append(r)
+
+            residuals.extend(reversed(block))
+
+    return np.asarray(residuals)
+
+
 def residue(b, a, tol=1e-3, rtype='avg'):
     """Compute partial-fraction expansion of b(s) / a(s).
 
@@ -2437,30 +2463,15 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
     unique_poles, order = cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
-    denominator_factors = _compute_factors(unique_poles, multiplicity)
 
-    residuals = []
-    for pole, mult, factor in zip(unique_poles, multiplicity,
-                                  denominator_factors):
-        if mult == 1:
-            residuals.append(np.polyval(b, pole) / np.polyval(factor, pole))
-        else:
-            numer = b.copy()
-            monomial = np.array([1, -pole])
-            factor, d = np.polydiv(factor, monomial)
+    residuals = _compute_residuals(unique_poles, multiplicity, b)
 
-            block = []
-            for _ in range(mult):
-                numer, n = np.polydiv(numer, monomial)
-                r = n[0] / d[0]
-                numer = np.polysub(numer, r * factor)
-                block.append(r)
+    index = 0
+    for pole, mult in zip(unique_poles, multiplicity):
+        poles[index:index + mult] = pole
+        index += mult
 
-            residuals.extend(reversed(block))
-
-        poles[len(residuals) - mult:len(residuals)] = pole
-
-    return np.asarray(residuals) / a[0], poles, np.trim_zeros(k, 'f')
+    return residuals / a[0], poles, np.trim_zeros(k, 'f')
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
