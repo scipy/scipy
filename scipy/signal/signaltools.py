@@ -3859,7 +3859,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if zi is not None:
         inputs.append(zi)
     dtype = np.result_type(*inputs)
-    if dtype.char not in 'fdgFDG':
+    if dtype.char not in 'fdgFDGO':
         raise NotImplementedError("input type '%s' not supported" % dtype)
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place

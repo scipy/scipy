@@ -2837,8 +2837,57 @@ def cast_tf2sos(b, a):
     return tf2sos(b, a).astype(dtype)
 
 
+def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
+    """Wrap assert_allclose while casting object arrays."""
+    if actual.dtype.kind == 'O':
+        dtype = np.array(actual.flat[0]).dtype
+        actual, desired = actual.astype(dtype), desired.astype(dtype)
+    assert_allclose(actual, desired, rtol, atol)
+
+
+class flt:
+    """Dummy class to test object array filtering support.
+
+       Just wrap the necessary operations and return the same class
+       when executing them.
+    """
+
+    def __init__(self, x):
+        self.x = float(x)
+
+    def __mul__(self, other):
+        return flt(self.x * getattr(other, 'x', other))
+
+    def __add__(self, other):
+        return flt(self.x + getattr(other, 'x', other))
+
+    def __sub__(self, other):
+        return flt(self.x - other.x)
+
+    def __truediv__(self, other):
+        return flt(self.x / other.x)
+
+    def __rtruediv__(self, other):
+        return flt(getattr(other, 'x', other) / self.x)
+
+    def __eq__(self, other):
+        return self.x == other
+
+    __rmul__ = __mul__
+
+
 @pytest.mark.parametrize('func', (sosfilt, lfilter))
-def test_degenerate(func):
+def test_nonnumeric_dtypes(func):
+    x = [flt(1), flt(2), flt(3)]
+    b = [flt(1), flt(2), flt(3)]
+    a = [flt(1), flt(2), flt(3)]
+    assert np.array(x).dtype.kind == 'O'
+    desired = lfilter(b, a, x)
+    desired = [d.x for d in desired]
+    actual = sosfilt([b + a], x)
+    actual = [a.x for a in actual]
+    assert_allclose(actual, desired)
+    # Degenerate cases
     if func is lfilter:
         args = [1., 1.]
     else:
@@ -2850,7 +2899,7 @@ def test_degenerate(func):
         func(*args, x=1.)
 
 
-@pytest.mark.parametrize('dt', 'fdgFDG')
+@pytest.mark.parametrize('dt', 'fdgFDGO')
 class TestSOSFilt(object):
 
     # The test_rank* tests are pulled from _TestLinearFilter
@@ -2925,19 +2974,19 @@ class TestSOSFilt(object):
         # Stopping filtering and continuing
         y_true, zi = lfilter(b, a, x[:20], zi=np.zeros(6))
         y_true = np.r_[y_true, lfilter(b, a, x[20:], zi=zi)[0]]
-        assert_allclose(y_true, lfilter(b, a, x))
+        assert_allclose_cast(y_true, lfilter(b, a, x))
 
         y_sos, zi = sosfilt(sos, x[:20], zi=np.zeros((3, 2)))
         y_sos = np.r_[y_sos, sosfilt(sos, x[20:], zi=zi)[0]]
-        assert_allclose(y_true, y_sos)
+        assert_allclose_cast(y_true, y_sos)
 
         # Use a step function
         zi = sosfilt_zi(sos)
         x = np.ones(8, dt)
         y, zf = sosfilt(sos, x, zi=zi)
 
-        assert_allclose(y, np.ones(8))
-        assert_allclose(zf, zi)
+        assert_allclose_cast(y, np.ones(8))
+        assert_allclose_cast(zf, zi)
 
         # Initial condition shape matching
         x.shape = (1, 1) + x.shape  # 3D
@@ -2947,8 +2996,8 @@ class TestSOSFilt(object):
         assert_raises(ValueError, sosfilt, sos, x,
                       zi=zi_nd[:, :, :, [0, 1, 1]])
         y, zf = sosfilt(sos, x, zi=zi_nd)
-        assert_allclose(y[0, 0], np.ones(8))
-        assert_allclose(zf[:, 0, 0, :], zi)
+        assert_allclose_cast(y[0, 0], np.ones(8))
+        assert_allclose_cast(zf[:, 0, 0, :], zi)
 
     def test_initial_conditions_3d_axis1(self, dt):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
@@ -2980,8 +3029,8 @@ class TestSOSFilt(object):
 
         # y should equal yf, and z2 should equal zf.
         y = np.concatenate((y1, y2), axis=axis)
-        assert_allclose(y, yf, rtol=1e-10, atol=1e-13)
-        assert_allclose(z2, zf, rtol=1e-10, atol=1e-13)
+        assert_allclose_cast(y, yf, rtol=1e-10, atol=1e-13)
+        assert_allclose_cast(z2, zf, rtol=1e-10, atol=1e-13)
 
         # let's try the "step" initial condition
         zi = sosfilt_zi(sos)
@@ -2994,7 +3043,7 @@ class TestSOSFilt(object):
         zi.shape = [1, zi.size, 1]
         zi = zi * x[:, 0:1, :]
         y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
-        assert_allclose(y, y_tf, rtol=1e-10, atol=1e-13)
+        assert_allclose_cast(y, y_tf, rtol=1e-10, atol=1e-13)
 
     def test_bad_zi_shape(self, dt):
         # The shape of zi is checked before using any values in the
@@ -3013,11 +3062,11 @@ class TestSOSFilt(object):
         zi = sosfilt_zi(sos)
 
         y, zf = sosfilt(sos, np.ones(40, dt), zi=zi)
-        assert_allclose(zf, zi, rtol=1e-13)
+        assert_allclose_cast(zf, zi, rtol=1e-13)
 
         # Expected steady state value of the step response of this filter:
         ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
-        assert_allclose(y, ss, rtol=1e-13)
+        assert_allclose_cast(y, ss, rtol=1e-13)
 
 
 class TestDeconvolve(object):
