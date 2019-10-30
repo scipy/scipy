@@ -202,13 +202,13 @@ class TestDualAnnealing(TestCase):
         assert 'stop early' in ret.message[0]
         assert not ret.success
 
-    def test_neldermed_ls_minimizer(self):
+    def test_neldermead_ls_minimizer(self):
         minimizer_opts = {
             'method': 'Nelder-Mead',
         }
         ret = dual_annealing(self.func, self.ld_bounds,
                              local_search_options=minimizer_opts)
-        assert_allclose(ret.fun, 0., atol=1e-6)
+        assert_allclose(ret.fun, 0., atol=2e-5)
 
     def test_powell_ls_minimizer(self):
         minimizer_opts = {
