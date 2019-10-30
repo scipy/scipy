@@ -2348,8 +2348,7 @@ def _compute_factors(roots, multiplicity):
 
 
 def residue(b, a, tol=1e-3, rtype='avg'):
-    """
-    Compute partial-fraction expansion of b(s) / a(s).
+    """Compute partial-fraction expansion of b(s) / a(s).
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
@@ -2375,12 +2374,21 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     such as analog filters or digital filters in controls engineering.  For
     negative powers of z (typical for digital filters in DSP), use `residuez`.
 
+    See Notes for details about the algorithm.
+
     Parameters
     ----------
     b : array_like
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
+    tol : float, optional
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. See `unique_roots`
+        for further details.
+    rtype : {'avg', 'min', 'max'}, optional
+        Method for computing a root to represent a group of identical roots.
+        Default is 'avg'. See `unique_roots` for further details.
 
     Returns
     -------
@@ -2395,6 +2403,24 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     --------
     invres, residuez, numpy.poly, unique_roots
 
+    Notes
+    -----
+    The "deflation through subtraction" numerical algorithm is used for
+    computations --- method 6 in [1]_.
+
+    The form of partial fraction expansion depends on roots multiplicity in
+    the exact mathematical sense. However there is no way to exactly
+    determine multiplicity of roots in numerical computing. Thus you should
+    think of the result of `residue` with given `tol` as partial fraction
+    expansion computed for the denominator composed of the computed roots with
+    empirically determined multiplicity. The choice of `tol` can drastically
+    change the result if there are close roots of the denominator.
+
+    References
+    ----------
+    .. [1] J. F. Mahoney, B. D. Sivazlian, "Partial fractions expansion: a
+           review of computational methodology and efficiency", Journal of
+           Computational and Applied Mathematics, Vol. 9, 1983.
     """
     b = np.trim_zeros(np.atleast_1d(b), 'f')
     a = np.trim_zeros(np.atleast_1d(a), 'f')
