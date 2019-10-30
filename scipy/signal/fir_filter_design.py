@@ -505,7 +505,8 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         Nyquist.  The Nyquist frequency is half `fs`.
         The values in `freq` must be nondecreasing.  A value can be repeated
         once to implement a discontinuity.  The first value in `freq` must
-        be 0, and the last value must be ``fs/2``.
+        be 0, and the last value must be ``fs/2``. Values 0 and ``fs/2`` must
+        not be repeated.
     gain : array_like
         The filter gains at the frequency sampling points. Certain
         constraints to gain values, depending on the filter type, are applied,
