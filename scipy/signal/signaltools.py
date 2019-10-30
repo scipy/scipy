@@ -2324,6 +2324,29 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     return b, a
 
 
+def _compute_factors(roots, multiplicity):
+    """Compute the total polynomial divided by monomials for each root."""
+    suffixes = []
+    current = np.array([1])
+    for pole, mult in zip(roots[-1:0:-1], multiplicity[-1:0:-1]):
+        monomial = np.array([1, -pole])
+        for _ in range(mult):
+            current = np.polymul(current, monomial)
+        suffixes.append(current)
+    suffixes = suffixes[::-1]
+
+    result = []
+    current = np.array([1])
+    for pole, mult, suffix in zip(roots[:-1], multiplicity[:-1], suffixes):
+        result.append(np.polymul(current, suffix))
+        monomial = np.array([1, -pole])
+        for _ in range(mult):
+            current = np.polymul(current, monomial)
+    result.append(current)
+
+    return result
+
+
 def residue(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(s) / a(s).
@@ -2379,45 +2402,36 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     if a.size == 0:
         raise ValueError("Denominator `a` is zero.")
 
-    p = np.roots(a)
+    poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(p.shape), p, np.array([])
+        return np.zeros(poles.shape), poles, np.array([])
 
-    rscale = a[0]
     k, b = np.polydiv(b, a)
-    r = p * 0.0
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    pout, order = cmplx_sort(pout)
-    mult = mult[order]
 
-    p = []
-    for n in range(len(pout)):
-        p.extend([pout[n]] * mult[n])
-    p = np.asarray(p)
-    # Compute the residue from the general formula
-    indx = 0
-    for n in range(len(pout)):
-        bn = b.copy()
-        pn = []
-        for l in range(len(pout)):
-            if l != n:
-                pn.extend([pout[l]] * mult[l])
-        an = np.atleast_1d(np.poly(pn))
-        # bn(s) / an(s) is (s-po[n])**Nn * b(s) / a(s) where Nn is
-        # multiplicity of pole at po[n]
-        sig = mult[n]
-        for m in range(sig, 0, -1):
-            if sig > m:
-                # compute next derivative of bn(s) / an(s)
-                term1 = np.polymul(np.polyder(bn, 1), an)
-                term2 = np.polymul(bn, np.polyder(an, 1))
-                bn = np.polysub(term1, term2)
-                an = np.polymul(an, an)
-            r[indx + m - 1] = (np.polyval(bn, pout[n]) /
-                               np.polyval(an, pout[n]) /
-                               factorial(sig - m))
-        indx += sig
-    return r / rscale, p, np.trim_zeros(k, 'f')
+    unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
+    unique_poles, order = cmplx_sort(unique_poles)
+    multiplicity = multiplicity[order]
+    denominator_factors = _compute_factors(unique_poles, multiplicity)
+
+    residuals = []
+    for pole, mult, factor in zip(unique_poles, multiplicity,
+                                  denominator_factors):
+        if mult == 1:
+            residuals.append(np.polyval(b, pole) / np.polyval(factor, pole))
+        else:
+            numer = b.copy()
+            monomial = np.array([1, -pole])
+            factor, d = np.polydiv(factor, monomial)
+
+            for _ in range(mult):
+                numer, n = np.polydiv(numer, monomial)
+                r = n[0] / d[0]
+                numer = np.polysub(numer, r * factor)
+                residuals.append(r)
+
+        poles[len(residuals) - mult:len(residuals)] = pole
+
+    return np.asarray(residuals) / a[0], poles, np.trim_zeros(k, 'f')
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
