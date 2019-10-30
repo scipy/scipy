@@ -607,6 +607,10 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     d2 = d[:-1] + d[1:]
     if (d2 == 0).any():
         raise ValueError('A value in freq must not occur more than twice.')
+    if freq[1] == 0:
+        raise ValueError('Value 0 must not be repeated in freq')
+    if freq[-2] == nyq:
+        raise ValueError('Value fs/2 must not be repeated in freq')
 
     if antisymmetric:
         if numtaps % 2 == 0:
@@ -642,6 +646,12 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         if k < len(freq) - 1 and freq[k] == freq[k + 1]:
             freq[k] = freq[k] - eps
             freq[k + 1] = freq[k + 1] + eps
+
+    # Check if freq is strictly increasing after tweak
+    d = np.diff(freq)
+    if (d <= 0).any():
+        raise ValueError("Freq cannot contain number that is too "
+                         "close to some repeated value")
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
