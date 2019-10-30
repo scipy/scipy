@@ -12,13 +12,6 @@ from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy._lib.six import callable
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
-from numpy import (allclose, angle, arange, argsort, array, asarray,
-                   atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
-                   iscomplexobj, mean, ndarray, newaxis, ones, pi,
-                   poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
-                   prod, r_, ravel, real_if_close, reshape,
-                   roots, sort, take, transpose, unique, where, zeros,
-                   zeros_like)
 import numpy as np
 import math
 from scipy.special import factorial, lambertw
@@ -200,8 +193,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    in1 = asarray(in1)
-    in2 = asarray(in2)
+    in1 = np.asarray(in1)
+    in2 = np.asarray(in2)
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -268,8 +261,8 @@ def correlate(in1, in2, mode='full', method='auto'):
 
 def _centered(arr, newshape):
     # Return the center newshape portion of the array.
-    newshape = asarray(newshape)
-    currshape = array(arr.shape)
+    newshape = np.asarray(newshape)
+    currshape = np.array(arr.shape)
     startind = (currshape - newshape) // 2
     endind = startind + newshape
     myslice = [slice(startind[k], endind[k]) for k in range(len(endind))]
@@ -526,15 +519,15 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> fig.show()
 
     """
-    in1 = asarray(in1)
-    in2 = asarray(in2)
+    in1 = np.asarray(in1)
+    in2 = np.asarray(in2)
 
     if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return array([])
+        return np.array([])
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -739,15 +732,15 @@ def oaconvolve(in1, in2, mode="full", axes=None):
            ISBN 13: 978-0137-02741-5
 
     """
-    in1 = asarray(in1)
-    in2 = asarray(in2)
+    in1 = np.asarray(in1)
+    in2 = np.asarray(in2)
 
     if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return array([])
+        return np.array([])
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
@@ -879,7 +872,7 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
-    if type(arrays) == ndarray:
+    if type(arrays) == np.ndarray:
         return arrays.dtype.kind in kinds
     for array_ in arrays:
         if array_.dtype.kind not in kinds:
@@ -1084,8 +1077,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     >>> conv2 = signal.convolve(c, d, mode='same', method=method)
 
     """
-    volume = asarray(in1)
-    kernel = asarray(in2)
+    volume = np.asarray(in1)
+    kernel = np.asarray(in2)
 
     if measure:
         times = {}
@@ -1211,8 +1204,8 @@ def convolve(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    volume = asarray(in1)
-    kernel = asarray(in2)
+    volume = np.asarray(in1)
+    kernel = np.asarray(in2)
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
@@ -1297,7 +1290,7 @@ def order_filter(a, domain, rank):
            [ 20.,  21.,  22.,  23.,  24.]])
 
     """
-    domain = asarray(domain)
+    domain = np.asarray(domain)
     size = domain.shape
     for k in range(len(size)):
         if (size[k] % 2) != 1:
@@ -1338,10 +1331,10 @@ def medfilt(volume, kernel_size=None):
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
-    volume = atleast_1d(volume)
+    volume = np.atleast_1d(volume)
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
-    kernel_size = asarray(kernel_size)
+    kernel_size = np.asarray(kernel_size)
     if kernel_size.shape == ():
         kernel_size = np.repeat(kernel_size.item(), volume.ndim)
 
@@ -1349,9 +1342,9 @@ def medfilt(volume, kernel_size=None):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
-    domain = ones(kernel_size)
+    domain = np.ones(kernel_size)
 
-    numels = prod(kernel_size, axis=0)
+    numels = np.prod(kernel_size, axis=0)
     order = numels // 2
     return sigtools._order_filterND(volume, domain, order)
 
@@ -1381,28 +1374,28 @@ def wiener(im, mysize=None, noise=None):
         Wiener filtered result with the same shape as `im`.
 
     """
-    im = asarray(im)
+    im = np.asarray(im)
     if mysize is None:
         mysize = [3] * im.ndim
-    mysize = asarray(mysize)
+    mysize = np.asarray(mysize)
     if mysize.shape == ():
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, ones(mysize), 'same') / prod(mysize, axis=0)
+    lMean = correlate(im, np.ones(mysize), 'same') / np.prod(mysize, axis=0)
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, ones(mysize), 'same') /
-            prod(mysize, axis=0) - lMean ** 2)
+    lVar = (correlate(im ** 2, np.ones(mysize), 'same') /
+            np.prod(mysize, axis=0) - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
-        noise = mean(ravel(lVar), axis=0)
+        noise = np.mean(np.ravel(lVar), axis=0)
 
     res = (im - lMean)
     res *= (1 - noise / lVar)
     res += lMean
-    out = where(lVar < noise, lMean, res)
+    out = np.where(lVar < noise, lMean, res)
 
     return out
 
@@ -1481,8 +1474,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> fig.show()
 
     """
-    in1 = asarray(in1)
-    in2 = asarray(in2)
+    in1 = np.asarray(in1)
+    in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
         raise ValueError('convolve2d inputs must both be 2D arrays')
@@ -1571,8 +1564,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> fig.show()
 
     """
-    in1 = asarray(in1)
-    in2 = asarray(in2)
+    in1 = np.asarray(in1)
+    in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
         raise ValueError('correlate2d inputs must both be 2D arrays')
@@ -1625,10 +1618,10 @@ def medfilt2d(input, kernel_size=3):
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
-    image = asarray(input)
+    image = np.asarray(input)
     if kernel_size is None:
         kernel_size = [3] * 2
-    kernel_size = asarray(kernel_size)
+    kernel_size = np.asarray(kernel_size)
     if kernel_size.shape == ():
         kernel_size = np.repeat(kernel_size.item(), 2)
 
@@ -1875,21 +1868,21 @@ def lfiltic(b, a, y, x=None):
     N = np.size(a) - 1
     M = np.size(b) - 1
     K = max(M, N)
-    y = asarray(y)
+    y = np.asarray(y)
     if y.dtype.kind in 'bui':
         # ensure calculations are floating point
         y = y.astype(np.float64)
-    zi = zeros(K, y.dtype)
+    zi = np.zeros(K, y.dtype)
     if x is None:
-        x = zeros(M, y.dtype)
+        x = np.zeros(M, y.dtype)
     else:
-        x = asarray(x)
+        x = np.asarray(x)
         L = np.size(x)
         if L < M:
-            x = r_[x, zeros(M - L)]
+            x = np.r_[x, np.zeros(M - L)]
     L = np.size(y)
     if L < N:
-        y = r_[y, zeros(N - L)]
+        y = np.r_[y, np.zeros(N - L)]
 
     for m in range(M):
         zi[m] = np.sum(b[m + 1:] * x[:M - m], axis=0)
@@ -1941,15 +1934,15 @@ def deconvolve(signal, divisor):
                     also accepts poly1d objects)
 
     """
-    num = atleast_1d(signal)
-    den = atleast_1d(divisor)
+    num = np.atleast_1d(signal)
+    den = np.atleast_1d(divisor)
     N = len(num)
     D = len(den)
     if D > N:
         quot = []
         rem = num
     else:
-        input = zeros(N - D + 1, float)
+        input = np.zeros(N - D + 1, float)
         input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
@@ -2042,8 +2035,8 @@ def hilbert(x, N=None, axis=-1):
            ISBN 13: 978-1292-02572-8
 
     """
-    x = asarray(x)
-    if iscomplexobj(x):
+    x = np.asarray(x)
+    if np.iscomplexobj(x):
         raise ValueError("x must be real.")
     if N is None:
         N = x.shape[axis]
@@ -2051,7 +2044,7 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = zeros(N)
+    h = np.zeros(N)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
         h[1:N // 2] = 2
@@ -2060,7 +2053,7 @@ def hilbert(x, N=None, axis=-1):
         h[1:(N + 1) // 2] = 2
 
     if x.ndim > 1:
-        ind = [newaxis] * x.ndim
+        ind = [np.newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[tuple(ind)]
     x = sp_fft.ifft(Xf * h, axis=axis)
@@ -2089,10 +2082,10 @@ def hilbert2(x, N=None):
         https://en.wikipedia.org/wiki/Analytic_signal
 
     """
-    x = atleast_2d(x)
+    x = np.atleast_2d(x)
     if x.ndim > 2:
         raise ValueError("x must be 2-D.")
-    if iscomplexobj(x):
+    if np.iscomplexobj(x):
         raise ValueError("x must be real.")
     if N is None:
         N = x.shape
@@ -2105,8 +2098,8 @@ def hilbert2(x, N=None):
                          "two positive integers")
 
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = zeros(N[0], 'd')
-    h2 = zeros(N[1], 'd')
+    h1 = np.zeros(N[0], 'd')
+    h2 = np.zeros(N[1], 'd')
     for p in range(2):
         h = eval("h%d" % (p + 1))
         N1 = N[p]
@@ -2118,10 +2111,10 @@ def hilbert2(x, N=None):
             h[1:(N1 + 1) // 2] = 2
         exec("h%d = h" % (p + 1), globals(), locals())
 
-    h = h1[:, newaxis] * h2[newaxis, :]
+    h = h1[:, np.newaxis] * h2[np.newaxis, :]
     k = x.ndim
     while k > 2:
-        h = h[:, newaxis]
+        h = h[:, np.newaxis]
         k -= 1
     x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
@@ -2152,9 +2145,9 @@ def cmplx_sort(p):
     >>> indx
     array([0, 2, 3, 1])
     """
-    p = asarray(p)
-    indx = argsort(abs(p))
-    return take(p, indx, 0), indx
+    p = np.asarray(p)
+    indx = np.argsort(abs(p))
+    return np.take(p, indx, 0), indx
 
 
 def unique_roots(p, tol=1e-3, rtype='min'):
@@ -2304,14 +2297,14 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
     extra = k
     p, indx = cmplx_sort(p)
-    r = take(r, indx, 0)
+    r = np.take(r, indx, 0)
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
     p = []
     for k in range(len(pout)):
         p.extend([pout[k]] * mult[k])
-    a = atleast_1d(poly(p))
+    a = np.atleast_1d(np.poly(p))
     if len(extra) > 0:
-        b = polymul(extra, a)
+        b = np.polymul(extra, a)
     else:
         b = [0]
     indx = 0
@@ -2323,10 +2316,10 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         for m in range(mult[k]):
             t2 = temp[:]
             t2.extend([pout[k]] * (mult[k] - m - 1))
-            b = polyadd(b, r[indx] * atleast_1d(poly(t2)))
+            b = np.polyadd(b, r[indx] * np.atleast_1d(np.poly(t2)))
             indx += 1
-    b = real_if_close(b)
-    while allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+    b = np.real_if_close(b)
+    while np.allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
         b = b[1:]
     return b, a
 
@@ -2386,12 +2379,12 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     if a.size == 0:
         raise ValueError("Denominator `a` is zero.")
 
-    p = roots(a)
+    p = np.roots(a)
     if b.size == 0:
         return np.zeros(p.shape), p, np.array([])
 
     rscale = a[0]
-    k, b = polydiv(b, a)
+    k, b = np.polydiv(b, a)
     r = p * 0.0
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
     pout, order = cmplx_sort(pout)
@@ -2400,7 +2393,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]] * mult[n])
-    p = asarray(p)
+    p = np.asarray(p)
     # Compute the residue from the general formula
     indx = 0
     for n in range(len(pout)):
@@ -2409,18 +2402,19 @@ def residue(b, a, tol=1e-3, rtype='avg'):
         for l in range(len(pout)):
             if l != n:
                 pn.extend([pout[l]] * mult[l])
-        an = atleast_1d(poly(pn))
+        an = np.atleast_1d(np.poly(pn))
         # bn(s) / an(s) is (s-po[n])**Nn * b(s) / a(s) where Nn is
         # multiplicity of pole at po[n]
         sig = mult[n]
         for m in range(sig, 0, -1):
             if sig > m:
                 # compute next derivative of bn(s) / an(s)
-                term1 = polymul(polyder(bn, 1), an)
-                term2 = polymul(bn, polyder(an, 1))
-                bn = polysub(term1, term2)
-                an = polymul(an, an)
-            r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n]) /
+                term1 = np.polymul(np.polyder(bn, 1), an)
+                term2 = np.polymul(bn, np.polyder(an, 1))
+                bn = np.polysub(term1, term2)
+                an = np.polymul(an, an)
+            r[indx + m - 1] = (np.polyval(bn, pout[n]) /
+                               np.polyval(an, pout[n]) /
                                factorial(sig - m))
         indx += sig
     return r / rscale, p, np.trim_zeros(k, 'f')
@@ -2474,22 +2468,22 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     invresz, residue, unique_roots
 
     """
-    b, a = map(asarray, (b, a))
+    b, a = map(np.asarray, (b, a))
     gain = a[0]
     brev, arev = b[::-1], a[::-1]
-    krev, brev = polydiv(brev, arev)
+    krev, brev = np.polydiv(brev, arev)
     if krev == []:
         k = []
     else:
         k = krev[::-1]
     b = brev[::-1]
-    p = roots(a)
+    p = np.roots(a)
     r = p * 0.0
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]] * mult[n])
-    p = asarray(p)
+    p = np.asarray(p)
     # Compute the residue from the general formula (for discrete-time)
     #  the polynomial is in z**(-1) and the multiplication is by terms
     #  like this (1-p[i] z**(-1))**mult[i].  After differentiation,
@@ -2501,19 +2495,19 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
         for l in range(len(pout)):
             if l != n:
                 pn.extend([pout[l]] * mult[l])
-        an = atleast_1d(poly(pn))[::-1]
+        an = np.atleast_1d(np.poly(pn))[::-1]
         # bn(z) / an(z) is (1-po[n] z**(-1))**Nn * b(z) / a(z) where Nn is
         # multiplicity of pole at po[n] and b(z) and a(z) are polynomials.
         sig = mult[n]
         for m in range(sig, 0, -1):
             if sig > m:
                 # compute next derivative of bn(s) / an(s)
-                term1 = polymul(polyder(bn, 1), an)
-                term2 = polymul(bn, polyder(an, 1))
-                bn = polysub(term1, term2)
-                an = polymul(an, an)
-            r[indx + m - 1] = (polyval(bn, 1.0 / pout[n]) /
-                               polyval(an, 1.0 / pout[n]) /
+                term1 = np.polymul(np.polyder(bn, 1), an)
+                term2 = np.polymul(bn, np.polyder(an, 1))
+                bn = np.polysub(term1, term2)
+                an = np.polymul(an, an)
+            r[indx + m - 1] = (np.polyval(bn, 1.0 / pout[n]) /
+                               np.polyval(an, 1.0 / pout[n]) /
                                factorial(sig - m) / (-pout[n]) ** (sig - m))
         indx += sig
     return r / gain, p, k
@@ -2576,20 +2570,20 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     residuez, unique_roots, invres
 
     """
-    extra = asarray(k)
+    extra = np.asarray(k)
     p, indx = cmplx_sort(p)
-    r = take(r, indx, 0)
+    r = np.take(r, indx, 0)
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
     p = []
     for k in range(len(pout)):
         p.extend([pout[k]] * mult[k])
-    a = atleast_1d(poly(p))
+    a = np.atleast_1d(np.poly(p))
     if len(extra) > 0:
-        b = polymul(extra, a)
+        b = np.polymul(extra, a)
     else:
         b = [0]
     indx = 0
-    brev = asarray(b)[::-1]
+    brev = np.asarray(b)[::-1]
     for k in range(len(pout)):
         temp = []
         # Construct polynomial which does not include any of this root
@@ -2599,9 +2593,10 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
         for m in range(mult[k]):
             t2 = temp[:]
             t2.extend([pout[k]] * (mult[k] - m - 1))
-            brev = polyadd(brev, (r[indx] * atleast_1d(poly(t2)))[::-1])
+            brev = np.polyadd(brev,
+                              (r[indx] * np.atleast_1d(np.poly(t2)))[::-1])
             indx += 1
-    b = real_if_close(brev[::-1])
+    b = np.real_if_close(brev[::-1])
     return b, a
 
 
@@ -2685,7 +2680,7 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
     """
-    x = asarray(x)
+    x = np.asarray(x)
     X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
 
@@ -2702,7 +2697,7 @@ def resample(x, num, t=None, axis=0, window=None):
     if window is not None:
         if callable(window):
             W = window(sp_fft.fftfreq(Nx))
-        elif isinstance(window, ndarray):
+        elif isinstance(window, np.ndarray):
             if window.shape != (Nx,):
                 raise ValueError('window must have the same length as data')
             W = window
@@ -2730,7 +2725,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = num // 2 + 1
     else:
         newshape[axis] = num
-    Y = zeros(newshape, X.dtype)
+    Y = np.zeros(newshape, X.dtype)
 
     # Copy positive frequency components (and Nyquist, if present)
     N = min(num, Nx)
@@ -2777,7 +2772,7 @@ def resample(x, num, t=None, axis=0, window=None):
     if t is None:
         return y
     else:
-        new_t = arange(0, num) * (t[1] - t[0]) * Nx / float(num) + t[0]
+        new_t = np.arange(0, num) * (t[1] - t[0]) * Nx / float(num) + t[0]
         return y, new_t
 
 
@@ -2908,7 +2903,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> plt.show()
 
     """
-    x = asarray(x)
+    x = np.asarray(x)
     if up != int(up):
         raise ValueError("up must be an integer")
     if down != int(down):
@@ -2933,7 +2928,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_out // down + bool(n_out % down)
 
     if isinstance(window, (list, np.ndarray)):
-        window = array(window)  # use array to force a copy (we modify it)
+        window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
         half_len = (window.size - 1) // 2
@@ -3038,8 +3033,8 @@ def vectorstrength(events, period):
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
     '''
-    events = asarray(events)
-    period = asarray(period)
+    events = np.asarray(events)
+    period = np.asarray(period)
     if events.ndim > 1:
         raise ValueError('events cannot have dimensions more than 1')
     if period.ndim > 1:
@@ -3048,19 +3043,19 @@ def vectorstrength(events, period):
     # we need to know later if period was originally a scalar
     scalarperiod = not period.ndim
 
-    events = atleast_2d(events)
-    period = atleast_2d(period)
+    events = np.atleast_2d(events)
+    period = np.atleast_2d(period)
     if (period <= 0).any():
         raise ValueError('periods must be positive')
 
     # this converts the times to vectors
-    vectors = exp(dot(2j*pi/period.T, events))
+    vectors = np.exp(np.dot(2j*np.pi/period.T, events))
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
-    vectormean = mean(vectors, axis=1)
+    vectormean = np.mean(vectors, axis=1)
     strength = abs(vectormean)
-    phase = angle(vectormean)
+    phase = np.angle(vectormean)
 
     # if the original period was a scalar, return scalars
     if scalarperiod:
@@ -3110,17 +3105,17 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     """
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
-    data = asarray(data)
+    data = np.asarray(data)
     dtype = data.dtype.char
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - expand_dims(mean(data, axis), axis)
+        ret = data - np.expand_dims(np.mean(data, axis), axis)
         return ret
     else:
         dshape = data.shape
         N = dshape[axis]
-        bp = sort(unique(r_[0, bp, N]))
+        bp = np.sort(np.unique(np.r_[0, bp, N]))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                              "of data along given axis.")
@@ -3130,9 +3125,9 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
         rnk = len(dshape)
         if axis < 0:
             axis = axis + rnk
-        newdims = r_[axis, 0:axis, axis + 1:rnk]
-        newdata = reshape(transpose(data, tuple(newdims)),
-                          (N, _prod(dshape) // N))
+        newdims = np.r_[axis, 0:axis, axis + 1:rnk]
+        newdata = np.reshape(np.transpose(data, tuple(newdims)),
+                             (N, _prod(dshape) // N))
         if not overwrite_data:
             newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
@@ -3140,17 +3135,17 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
         # Find leastsq fit and remove it for each piece
         for m in range(Nreg):
             Npts = bp[m + 1] - bp[m]
-            A = ones((Npts, 2), dtype)
-            A[:, 0] = cast[dtype](arange(1, Npts + 1) * 1.0 / Npts)
+            A = np.ones((Npts, 2), dtype)
+            A[:, 0] = np.cast[dtype](np.arange(1, Npts + 1) * 1.0 / Npts)
             sl = slice(bp[m], bp[m + 1])
             coef, resids, rank, s = linalg.lstsq(A, newdata[sl])
-            newdata[sl] = newdata[sl] - dot(A, coef)
+            newdata[sl] = newdata[sl] - np.dot(A, coef)
         # Put data back in original shape.
-        tdshape = take(dshape, newdims, 0)
-        ret = reshape(newdata, tuple(tdshape))
+        tdshape = np.take(dshape, newdims, 0)
+        ret = np.reshape(newdata, tuple(tdshape))
         vals = list(range(1, rnk))
         olddims = vals[:axis] + [0] + vals[axis:]
-        ret = transpose(ret, tuple(olddims))
+        ret = np.transpose(ret, tuple(olddims))
         return ret
 
 
@@ -3861,7 +3856,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
                              'shape %r, and an sos array with %d sections, zi '
                              'must have shape %r, got %r.' %
                              (axis, x.shape, n_sections, x_zi_shape, zi.shape))
-        zf = zeros_like(zi)
+        zf = np.zeros_like(zi)
 
     for section in range(n_sections):
         if use_zi:
@@ -4032,7 +4027,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     0.18.0.
     """
 
-    x = asarray(x)
+    x = np.asarray(x)
     q = operator.index(q)
 
     if n is not None:
