@@ -228,4 +228,8 @@ class TestUpfirdn(object):
         ypad = upfirdn(h, xpad, up=1, down=1, mode='constant')
         y_expected = ypad[npad:-npad]
 
-        assert_allclose(y, y_expected, atol=1e-6, rtol=1e-6)
+        if dtype in (np.float32, np.complex64):
+            atol = rtol = 1e-5
+        else:
+            atol = rtol = 1e-12
+        assert_allclose(y, y_expected, atol=atol, rtol=rtol)
