@@ -2449,11 +2449,14 @@ def residue(b, a, tol=1e-3, rtype='avg'):
             monomial = np.array([1, -pole])
             factor, d = np.polydiv(factor, monomial)
 
+            block = []
             for _ in range(mult):
                 numer, n = np.polydiv(numer, monomial)
                 r = n[0] / d[0]
                 numer = np.polysub(numer, r * factor)
-                residuals.append(r)
+                block.append(r)
+
+            residuals.extend(reversed(block))
 
         poles[len(residuals) - mult:len(residuals)] = pole
 
