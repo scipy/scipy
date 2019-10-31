@@ -2419,7 +2419,8 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     Returns
     -------
     r : ndarray
-        Residues.
+        Residues corresponding to the poles. For repeated poles, the residues
+        are ordered to correspond to ascending by power fractions.
     p : ndarray
         Poles order by magnitude in ascending order.
     k : ndarray
@@ -2519,7 +2520,8 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     Returns
     -------
     r : ndarray
-        Residues.
+        Residues corresponding to the poles. For repeated poles, the residues
+        are ordered to correspond to ascending by power fractions.
     p : ndarray
         Poles order by magnitude in ascending order.
     k : ndarray
