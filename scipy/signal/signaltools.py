@@ -2563,7 +2563,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     residues *= (-poles) ** powers / a_rev[0]
 
-    return residues, poles, np.trim_zeros(k_rev[::-1], 'f')
+    return residues, poles, np.trim_zeros(k_rev[::-1], 'b')
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
