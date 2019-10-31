@@ -2325,7 +2325,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
 
 
 def _compute_factors(roots, multiplicity):
-    """Compute the total polynomial divided by monomials for each root."""
+    """Compute the total polynomial divided by factors for each root."""
     suffixes = []
     current = np.array([1])
     for pole, mult in zip(roots[-1:0:-1], multiplicity[-1:0:-1]):
@@ -2522,49 +2522,39 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     invresz, residue, unique_roots
 
     """
-    b, a = map(np.asarray, (b, a))
-    gain = a[0]
-    brev, arev = b[::-1], a[::-1]
-    krev, brev = np.polydiv(brev, arev)
-    if krev == []:
-        k = []
-    else:
-        k = krev[::-1]
-    b = brev[::-1]
-    p = np.roots(a)
-    r = p * 0.0
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    p = []
-    for n in range(len(pout)):
-        p.extend([pout[n]] * mult[n])
-    p = np.asarray(p)
-    # Compute the residue from the general formula (for discrete-time)
-    #  the polynomial is in z**(-1) and the multiplication is by terms
-    #  like this (1-p[i] z**(-1))**mult[i].  After differentiation,
-    #  we must divide by (-p[i])**(m-k) as well as (m-k)!
-    indx = 0
-    for n in range(len(pout)):
-        bn = brev.copy()
-        pn = []
-        for l in range(len(pout)):
-            if l != n:
-                pn.extend([pout[l]] * mult[l])
-        an = np.atleast_1d(np.poly(pn))[::-1]
-        # bn(z) / an(z) is (1-po[n] z**(-1))**Nn * b(z) / a(z) where Nn is
-        # multiplicity of pole at po[n] and b(z) and a(z) are polynomials.
-        sig = mult[n]
-        for m in range(sig, 0, -1):
-            if sig > m:
-                # compute next derivative of bn(s) / an(s)
-                term1 = np.polymul(np.polyder(bn, 1), an)
-                term2 = np.polymul(bn, np.polyder(an, 1))
-                bn = np.polysub(term1, term2)
-                an = np.polymul(an, an)
-            r[indx + m - 1] = (np.polyval(bn, 1.0 / pout[n]) /
-                               np.polyval(an, 1.0 / pout[n]) /
-                               factorial(sig - m) / (-pout[n]) ** (sig - m))
-        indx += sig
-    return r / gain, p, k
+    b = np.trim_zeros(np.atleast_1d(b), 'b')
+    a = np.trim_zeros(np.atleast_1d(a), 'b')
+
+    if a.size == 0:
+        raise ValueError("Denominator `a` is zero.")
+    elif a[0] == 0:
+        raise ValueError("First coefficient of determinant `a` must be "
+                         "non-zero.")
+
+    poles = np.roots(a)
+    if b.size == 0:
+        return np.zeros(poles.shape), poles, np.array([])
+
+    b_rev = b[::-1]
+    a_rev = a[::-1]
+    k_rev, b_rev = np.polydiv(b_rev, a_rev)
+
+    unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
+    unique_poles, order = cmplx_sort(unique_poles)
+    multiplicity = multiplicity[order]
+
+    residuals = _compute_residuals(1 / unique_poles, multiplicity, b_rev)
+
+    index = 0
+    powers = np.empty(len(residuals), dtype=int)
+    for pole, mult in zip(unique_poles, multiplicity):
+        poles[index:index + mult] = pole
+        powers[index:index + mult] = 1 + np.arange(mult)
+        index += mult
+
+    residuals *= (-poles) ** powers / a_rev[0]
+
+    return residuals, poles, np.trim_zeros(k_rev[::-1], 'f')
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
