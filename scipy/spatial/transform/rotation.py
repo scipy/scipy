@@ -613,7 +613,7 @@ class Rotation(object):
 
     @classmethod
     @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
-                          "and will be removed in scipy 1.5.0")
+                          "and will be removed in scipy 1.6.0")
     def from_dcm(cls, dcm):
         return cls.from_matrix(dcm)
 
@@ -999,7 +999,7 @@ class Rotation(object):
             return matrix
 
     @np.deprecate(message="as_dcm is renamed to as_matrix in scipy 1.4.0 "
-                          "and will be removed in scipy 1.5.0")
+                          "and will be removed in scipy 1.6.0")
     def as_dcm(self):
         return self.as_matrix()
 
