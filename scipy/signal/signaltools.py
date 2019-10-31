@@ -2457,7 +2457,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(poles.shape), poles, np.array([])
+        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
 
     k, b = np.polydiv(b, a)
 
@@ -2542,7 +2542,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(poles.shape), poles, np.array([])
+        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
 
     b_rev = b[::-1]
     a_rev = a[::-1]

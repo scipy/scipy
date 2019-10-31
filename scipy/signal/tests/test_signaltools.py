@@ -2610,7 +2610,7 @@ class TestPartialFractionExpansion(object):
         # Several tests for zero numerator and denominator.
         r, p, k = residue([0, 0], [1, 6, 8])
         assert_almost_equal(r, [0, 0])
-        assert_almost_equal(p, [-4, -2])
+        assert_almost_equal(p, [-2, -4])
         assert_equal(k.size, 0)
 
         r, p, k = residue(0, 1)
@@ -2721,7 +2721,7 @@ class TestPartialFractionExpansion(object):
     def test_residuez_degenerate(self):
         r, p, k = residuez([0, 0], [1, 6, 8])
         assert_almost_equal(r, [0, 0])
-        assert_almost_equal(p, [-4, -2])
+        assert_almost_equal(p, [-2, -4])
         assert_equal(k.size, 0)
 
         r, p, k = residuez(0, 1)
