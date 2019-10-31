@@ -2349,6 +2349,7 @@ def _compute_factors(roots, multiplicity):
 
 def _compute_residues(poles, multiplicity, numerator):
     denominator_factors = _compute_factors(poles, multiplicity)
+    numerator = numerator.astype(poles.dtype)
 
     residues = []
     for pole, mult, factor in zip(poles, multiplicity,
@@ -2449,6 +2450,16 @@ def residue(b, a, tol=1e-3, rtype='avg'):
            review of computational methodology and efficiency", Journal of
            Computational and Applied Mathematics, Vol. 9, 1983.
     """
+    b = np.asarray(b)
+    a = np.asarray(a)
+    if (np.issubdtype(b.dtype, np.complexfloating)
+            or np.issubdtype(a.dtype, np.complexfloating)):
+        b = b.astype(complex)
+        a = a.astype(complex)
+    else:
+        b = b.astype(float)
+        a = a.astype(float)
+
     b = np.trim_zeros(np.atleast_1d(b), 'f')
     a = np.trim_zeros(np.atleast_1d(a), 'f')
 
@@ -2531,6 +2542,16 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     --------
     invresz, residue, unique_roots
     """
+    b = np.asarray(b)
+    a = np.asarray(a)
+    if (np.issubdtype(b.dtype, np.complexfloating)
+            or np.issubdtype(a.dtype, np.complexfloating)):
+        b = b.astype(complex)
+        a = a.astype(complex)
+    else:
+        b = b.astype(float)
+        a = a.astype(float)
+
     b = np.trim_zeros(np.atleast_1d(b), 'b')
     a = np.trim_zeros(np.atleast_1d(a), 'b')
 
