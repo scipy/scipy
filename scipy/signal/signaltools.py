@@ -2355,7 +2355,7 @@ def _compute_residues(poles, multiplicity, numerator):
                                   denominator_factors):
         if mult == 1:
             residues.append(np.polyval(numerator, pole) /
-                             np.polyval(factor, pole))
+                            np.polyval(factor, pole))
         else:
             numer = numerator.copy()
             monomial = np.array([1, -pole])
