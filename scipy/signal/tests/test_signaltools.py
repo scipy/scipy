@@ -25,7 +25,8 @@ from scipy.signal import (
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue)
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
+    residuez)
 from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 from scipy.signal._upfirdn import _upfirdn_modes
@@ -2510,7 +2511,7 @@ class TestHilbert2(object):
 
 class TestPartialFractionExpansion(object):
     @staticmethod
-    def assert_rp_almost_equal(r, p, r_true, p_true):
+    def assert_rp_almost_equal(r, p, r_true, p_true, decimal=7):
         r_true = np.asarray(r_true)
         p_true = np.asarray(p_true)
 
@@ -2518,8 +2519,8 @@ class TestPartialFractionExpansion(object):
                             abs(r[:, None] - r_true))
 
         rows, cols = linear_sum_assignment(distance)
-        assert_allclose(p[rows], p_true[cols])
-        assert_allclose(r[rows], r_true[cols])
+        assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
+        assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
     def test_residue_general(self):
         # Test are taken from issue #4464, note that poles in scipy are
@@ -2618,6 +2619,118 @@ class TestPartialFractionExpansion(object):
         assert_equal(k.size, 0)
 
         assert_raises(ValueError, residue, 1, 0)
+
+    def test_residuez_general(self):
+        r, p, k = residuez([1, 6, 6, 2], [1, -(2 + 1j), (1 + 2j), -1j])
+        self.assert_rp_almost_equal(r, p, [-2+2.5j, 7.5+7.5j, -4.5-12j],
+                                    [1j, 1, 1])
+        assert_almost_equal(k, [2j])
+
+        r, p, k = residuez([1, 2, 1], [1, -1, 0.3561])
+        self.assert_rp_almost_equal(r, p,
+                                    [-0.9041 - 5.9928j, -0.9041 + 5.9928j],
+                                    [0.5 + 0.3257j, 0.5 - 0.3257j],
+                                    decimal=4)
+        assert_almost_equal(k, [2.8082], decimal=4)
+
+        r, p, k = residuez([1, -1], [1, -5, 6])
+        assert_almost_equal(r, [-1, 2])
+        assert_almost_equal(p, [2, 3])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez([2, 3, 4], [1, 3, 3, 1])
+        self.assert_rp_almost_equal(r, p, [4, -5, 3], [-1, -1, -1])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez([1, -10, -4, 4], [2, -2, -4])
+        assert_almost_equal(r, [0.5, -1.5])
+        assert_almost_equal(p, [-1, 2])
+        assert_almost_equal(k, [1.5, -1])
+
+        r, p, k = residuez([18], [18, 3, -4, -1])
+        self.assert_rp_almost_equal(r, p,
+                                    [0.36, 0.24, 0.4], [0.5, -1/3, -1/3])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez([2, 3], np.polymul([1, -1/2], [1, 1/4]))
+        assert_almost_equal(r, [-10/3, 16/3])
+        assert_almost_equal(p, [-0.25, 0.5])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez([1, -2, 1], [1, -1])
+        assert_almost_equal(r, [0])
+        assert_almost_equal(p, [1])
+        assert_almost_equal(k, [1, -1])
+
+        r, p, k = residuez(1, [1, -1j])
+        assert_almost_equal(r, [1])
+        assert_almost_equal(p, [1j])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez(1, [1, -1, 0.25])
+        assert_almost_equal(r, [0, 1])
+        assert_almost_equal(p, [0.5, 0.5])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez(1, [1, -0.75, .125])
+        assert_almost_equal(r, [-1, 2])
+        assert_almost_equal(p, [0.25, 0.5])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez([1, 6, 2], [1, -2, 1])
+        assert_almost_equal(r, [-10, 9])
+        assert_almost_equal(p, [1, 1])
+        assert_almost_equal(k, [2])
+
+        r, p, k = residuez([6, 2], [1, -2, 1])
+        assert_almost_equal(r, [-2, 8])
+        assert_almost_equal(p, [1, 1])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez([1, 6, 6, 2], [1, -2, 1])
+        assert_almost_equal(r, [-24, 15])
+        assert_almost_equal(p, [1, 1])
+        assert_almost_equal(k, [10, 2])
+
+        r, p, k = residuez([1, 0, 1], [1, 0, 0, 0, 0, -1])
+        self.assert_rp_almost_equal(r, p,
+                                    [0.2618 + 0.1902j, 0.2618 - 0.1902j,
+                                     0.4, 0.0382 - 0.1176j, 0.0382 + 0.1176j],
+                                    [-0.8090 + 0.5878j, -0.8090 - 0.5878j,
+                                     1.0, 0.3090 + 0.9511j, 0.3090 - 0.9511j],
+                                    decimal=4)
+        assert_equal(k.size, 0)
+
+    def test_residuez_trailing_zeros(self):
+        # Trailing zeros in numerator or denominator must not affect the
+        # answer.
+        r0, p0, k0 = residuez([5, 3, -2, 7], [-4, 0, 8, 3])
+        r1, p1, k1 = residuez([5, 3, -2, 7, 0], [-4, 0, 8, 3])
+        r2, p2, k2 = residuez([5, 3, -2, 7], [-4, 0, 8, 3, 0])
+        r3, p3, k3 = residuez([5, 3, -2, 7, 0, 0], [-4, 0, 8, 3, 0, 0, 0])
+        assert_almost_equal(r0, r1)
+        assert_almost_equal(r0, r2)
+        assert_almost_equal(r0, r3)
+        assert_almost_equal(p0, p1)
+        assert_almost_equal(p0, p2)
+        assert_almost_equal(p0, p3)
+        assert_almost_equal(k0, k1)
+        assert_almost_equal(k0, k2)
+        assert_almost_equal(k0, k3)
+
+    def test_residuez_degenerate(self):
+        r, p, k = residuez([0, 0], [1, 6, 8])
+        assert_almost_equal(r, [0, 0])
+        assert_almost_equal(p, [-4, -2])
+        assert_equal(k.size, 0)
+
+        r, p, k = residuez(0, 1)
+        assert_equal(r.size, 0)
+        assert_equal(p.size, 0)
+        assert_equal(k.size, 0)
+
+        assert_raises(ValueError, residuez, 1, 0)
+        assert_raises(ValueError, residuez, 1, [0, 1, 2, 3])
 
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
