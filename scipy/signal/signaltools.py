@@ -2475,8 +2475,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
-    """
-    Compute partial-fraction expansion of b(z) / a(z).
+    """Compute partial-fraction expansion of b(z) / a(z).
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
@@ -2501,26 +2500,34 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     This function is used for polynomials in negative powers of z,
     such as digital filters in DSP.  For positive powers, use `residue`.
 
+    See Notes of `residue` for details about the algorithm.
+
     Parameters
     ----------
     b : array_like
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
+    tol : float, optional
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. See `unique_roots`
+        for further details.
+    rtype : {'avg', 'min', 'max'}, optional
+        Method for computing a root to represent a group of identical roots.
+        Default is 'avg'. See `unique_roots` for further details.
 
     Returns
     -------
     r : ndarray
         Residues.
     p : ndarray
-        Poles.
+        Poles order by magnitude in ascending order.
     k : ndarray
         Coefficients of the direct polynomial term.
 
     See Also
     --------
     invresz, residue, unique_roots
-
     """
     b = np.trim_zeros(np.atleast_1d(b), 'b')
     a = np.trim_zeros(np.atleast_1d(a), 'b')
