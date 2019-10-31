@@ -2347,14 +2347,14 @@ def _compute_factors(roots, multiplicity):
     return result
 
 
-def _compute_residuals(poles, multiplicity, numerator):
+def _compute_residues(poles, multiplicity, numerator):
     denominator_factors = _compute_factors(poles, multiplicity)
 
-    residuals = []
+    residues = []
     for pole, mult, factor in zip(poles, multiplicity,
                                   denominator_factors):
         if mult == 1:
-            residuals.append(np.polyval(numerator, pole) /
+            residues.append(np.polyval(numerator, pole) /
                              np.polyval(factor, pole))
         else:
             numer = numerator.copy()
@@ -2368,9 +2368,9 @@ def _compute_residuals(poles, multiplicity, numerator):
                 numer = np.polysub(numer, r * factor)
                 block.append(r)
 
-            residuals.extend(reversed(block))
+            residues.extend(reversed(block))
 
-    return np.asarray(residuals)
+    return np.asarray(residues)
 
 
 def residue(b, a, tol=1e-3, rtype='avg'):
@@ -2465,14 +2465,14 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     unique_poles, order = cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
 
-    residuals = _compute_residuals(unique_poles, multiplicity, b)
+    residues = _compute_residues(unique_poles, multiplicity, b)
 
     index = 0
     for pole, mult in zip(unique_poles, multiplicity):
         poles[index:index + mult] = pole
         index += mult
 
-    return residuals / a[0], poles, np.trim_zeros(k, 'f')
+    return residues / a[0], poles, np.trim_zeros(k, 'f')
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
@@ -2552,18 +2552,18 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     unique_poles, order = cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
 
-    residuals = _compute_residuals(1 / unique_poles, multiplicity, b_rev)
+    residues = _compute_residues(1 / unique_poles, multiplicity, b_rev)
 
     index = 0
-    powers = np.empty(len(residuals), dtype=int)
+    powers = np.empty(len(residues), dtype=int)
     for pole, mult in zip(unique_poles, multiplicity):
         poles[index:index + mult] = pole
         powers[index:index + mult] = 1 + np.arange(mult)
         index += mult
 
-    residuals *= (-poles) ** powers / a_rev[0]
+    residues *= (-poles) ** powers / a_rev[0]
 
-    return residuals, poles, np.trim_zeros(k_rev[::-1], 'f')
+    return residues, poles, np.trim_zeros(k_rev[::-1], 'f')
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
