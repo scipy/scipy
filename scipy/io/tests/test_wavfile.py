@@ -7,7 +7,7 @@ from io import BytesIO
 
 import numpy as np
 from numpy.testing import assert_equal, assert_, assert_array_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns as assert_warns
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.io import wavfile
@@ -87,11 +87,10 @@ def test_read_fail():
 def test_read_early_eof_with_data():
     for mmap in [False, True]:
         with open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb') as fp:
-            with suppress_warnings() as sup:
-                sup.filter(wavfile.WavFileWarning,
-                            r"Reached EOF .filesize reported as \d+ by header.\."
-                           )
+            with assert_warns(wavfile.WavFileWarning, match='Reached EOF'):
                 rate, data = wavfile.read(fp, mmap=mmap)
+                assert_(data.size > 0)
+                assert_equal(rate, 44100)
 
         del data
 
