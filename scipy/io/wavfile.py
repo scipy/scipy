@@ -247,8 +247,9 @@ def read(filename, mmap=False):
                 if data_chunk_received:
                     # End of file but data successfully read
                     warnings.warn(
-                        "Reached EOF (filesize reported as {:d} by header)."
-                            .format(file_size),
+                        "Reached EOF prematurely; finished at {:d} bytes, "
+                        "expected {:d} bytes from header."
+                        .format(fid.tell(), file_size),
                         WavFileWarning)
                     break
                 else:
