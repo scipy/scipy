@@ -2845,48 +2845,20 @@ def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
     assert_allclose(actual, desired, rtol, atol)
 
 
-class flt:
-    """Dummy class to test object array filtering support.
-
-       Just wrap the necessary operations and return the same class
-       when executing them.
-    """
-
-    def __init__(self, x):
-        self.x = float(x)
-
-    def __mul__(self, other):
-        return flt(self.x * getattr(other, 'x', other))
-
-    def __add__(self, other):
-        return flt(self.x + getattr(other, 'x', other))
-
-    def __sub__(self, other):
-        return flt(self.x - other.x)
-
-    def __truediv__(self, other):
-        return flt(self.x / other.x)
-
-    def __rtruediv__(self, other):
-        return flt(getattr(other, 'x', other) / self.x)
-
-    def __eq__(self, other):
-        return self.x == other
-
-    __rmul__ = __mul__
-
-
 @pytest.mark.parametrize('func', (sosfilt, lfilter))
 def test_nonnumeric_dtypes(func):
-    x = [flt(1), flt(2), flt(3)]
-    b = [flt(1), flt(2), flt(3)]
-    a = [flt(1), flt(2), flt(3)]
-    assert np.array(x).dtype.kind == 'O'
-    desired = lfilter(b, a, x)
-    desired = [d.x for d in desired]
-    actual = sosfilt([b + a], x)
-    actual = [a.x for a in actual]
-    assert_allclose(actual, desired)
+    x = [Decimal(1), Decimal(2), Decimal(3)]
+    b = [Decimal(1), Decimal(2), Decimal(3)]
+    a = [Decimal(1), Decimal(2), Decimal(3)]
+    x = np.array(x)
+    assert x.dtype.kind == 'O'
+    desired = lfilter(np.array(b, float), np.array(a, float), x.astype(float))
+    if func is sosfilt:
+        actual = sosfilt([b + a], x)
+    else:
+        actual = lfilter(b, a, x)
+    assert all(isinstance(x, Decimal) for x in actual)
+    assert_allclose(actual.astype(float), desired.astype(float))
     # Degenerate cases
     if func is lfilter:
         args = [1., 1.]
