@@ -2618,7 +2618,8 @@ class TestPartialFractionExpansion(object):
         assert_equal(p.size, 0)
         assert_equal(k.size, 0)
 
-        assert_raises(ValueError, residue, 1, 0)
+        with pytest.raises(ValueError, match="Denominator `a` is zero."):
+            residue(1, 0)
 
     def test_residuez_general(self):
         r, p, k = residuez([1, 6, 6, 2], [1, -(2 + 1j), (1 + 2j), -1j])
@@ -2729,8 +2730,13 @@ class TestPartialFractionExpansion(object):
         assert_equal(p.size, 0)
         assert_equal(k.size, 0)
 
-        assert_raises(ValueError, residuez, 1, 0)
-        assert_raises(ValueError, residuez, 1, [0, 1, 2, 3])
+        with pytest.raises(ValueError, match="Denominator `a` is zero."):
+            residuez(1, 0)
+
+        with pytest.raises(ValueError,
+                           match="First coefficient of determinant `a` must "
+                                 "be non-zero."):
+            residuez(1, [0, 1, 2, 3])
 
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
