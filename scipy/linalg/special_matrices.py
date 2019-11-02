@@ -1196,12 +1196,13 @@ def fiedler_companion(a):
     return c
 
 def convmtx(a, n, mode='full'):
-    '''Construct a convolution matrix.
+    """
+    Construct a convolution matrix.
 
-    Constructs matrix
-        A = convmtx(a, n[, mode])
+    Constructs a matrix
+    `A = convmtx(a, n[, mode])`
     such that
-    np.dot(A, v) is equivalent to convolve(a, v[, mode]) but slower.
+    `np.dot(A, v)` is equivalent to `convolve(a, v[, mode])` but slower.
 
     Parameters
     ----------
@@ -1210,19 +1211,21 @@ def convmtx(a, n, mode='full'):
         This is analogous to the length of v in numpy.convolve(v, a)
     mode : This is analogous to `mode` in numpy.convolve(v, a, mode).
         It determines the number of rows in A is
-            'full'[default]: len(a) + n - 1
-            'same': max(n, len(a) )
-            'valid': max(n, len(a) ) - min(n, len(a) ) + 1
+            'full'[default]: `len(a) + n - 1`
+            'same': `max(n, len(a) )`
+            'valid': `max(n, len(a) ) - min(n, len(a) ) + 1`
 
+    Returns
+    -------
+    A : The convolution matrix
+
+    Notes
+    -----
     .. versionadded:: 1.4.0
 
     See Also
     --------
     toeplitz : Toeplitz matrix
-
-    Returns
-    -------
-    A : The convolution matrix
 
     Examples
     --------
@@ -1233,7 +1236,8 @@ def convmtx(a, n, mode='full'):
            [ 0, -1,  2, -1,  0],
            [ 0,  0, -1,  2, -1],
            [ 0,  0,  0, -1,  2]])
-    '''
+
+    """
     a = np.asarray(a)
     if a.ndim != 1:
         raise ValueError('convmtx expects a 1d array as input')
