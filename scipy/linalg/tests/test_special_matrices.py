@@ -9,8 +9,9 @@ from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
-                          fiedler, fiedler_companion, eigvals)
+                          fiedler, fiedler_companion, eigvals, convolution_matrix)
 from numpy.linalg import cond
+import itertools
 
 
 def get_mat(n):
@@ -36,9 +37,9 @@ class TestTri(object):
                                          [1, 1, 1, 1],
                                          [1, 1, 1, 1]]))
         assert_equal(tri(4, k=-1), array([[0, 0, 0, 0],
-                                         [1, 0, 0, 0],
-                                         [1, 1, 0, 0],
-                                         [1, 1, 1, 0]]))
+                                          [1, 0, 0, 0],
+                                          [1, 1, 0, 0],
+                                          [1, 1, 1, 0]]))
 
     def test_2d(self):
         assert_equal(tri(4, 3), array([[1, 0, 0],
@@ -497,7 +498,7 @@ class TestInvHilbert(object):
              -1129631016152221783200, 1098252376814660067000,
              -753830033789944188000, 346146444087219270000,
              -95382575704033754400, 11922821963004219300]
-            ])
+        ])
         assert_array_equal(invhilbert(17, exact=True), invh17)
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
@@ -636,3 +637,45 @@ def test_fiedler_companion():
     fc = fiedler_companion([1., -16., 86., -176., 105.])
     assert_array_almost_equal(eigvals(fc),
                               np.array([7., 5., 3., 1.]))
+
+
+def test_convolution_matrix():
+    'test convolution_matrix vs. numpy.convolve for various parameters'
+
+    def test_vector(n, cpx):
+        'make a complex or real test vector of length n'
+        if cpx:
+            return np.random.normal(size=(n, 2))\
+                .astype(np.float64).view(np.complex128).ravel()
+        else:
+            return np.random.normal(size=(n,))
+
+    # first arg must be a 1d array, otherwise ValueError
+    with assert_raises(ValueError):
+        convolution_matrix(1, 4)
+
+    # mode must be in ('full','valid','same')
+    with assert_raises(ValueError):
+        convolution_matrix((1, 1), 4, mode='invalid argument')
+
+    array_sizes = (2, 9, 100)
+    for cpx, na, nv, mode in itertools.product(
+            (False, True),
+            array_sizes,
+            array_sizes,
+            (None, 'full', 'valid', 'same')):
+        a = test_vector(na, cpx)
+        v = test_vector(nv, cpx)
+        if mode is None:
+            y1 = np.convolve(v, a)
+            A = convolution_matrix(a, nv)
+        else:
+            y1 = np.convolve(v, a, mode)
+            A = convolution_matrix(a, nv, mode)
+        y2 = A @ v
+        assert_array_almost_equal(y1, y2)
+        if mode == 'full':
+            for i in range(A.shape[0]):
+                for j in range(A.shape[1]):
+                    assert_equal(A[i, j],
+                                 (a[i-j] if (0 <= (i-j) < len(a)) else 0))

@@ -5,7 +5,7 @@ from numpy.lib.stride_tricks import as_strided
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-           'fiedler', 'fiedler_companion']
+           'fiedler', 'fiedler_companion', 'convolution_matrix']
 
 
 # -----------------------------------------------------------------------------
@@ -1190,3 +1190,92 @@ def fiedler_companion(a):
     c[[0, 1], 0] = [-a[1], 1]
 
     return c
+
+
+def convolution_matrix(a, n, mode='full'):
+    """
+    Construct a convolution matrix.
+
+    Constructs the dense matrix representing convolution[1].
+
+    ``A = convolution_matrix(a, n[, mode])``
+    creates a matrix `A` such that
+    ``A @ v`` (or ``matmul(A, v)``) is equivalent to ``convolve(a, v[, mode])``.
+    In the default 'full' mode, an element
+    ``A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)``.
+
+    Parameters
+    ----------
+    a : (m,) array_like
+        The 1-D array to convolve.
+    n : int
+        The number of columns in the resulting matrix.
+        This is analogous to the length of `v` in ``numpy.convolve(a,v)``
+    mode : str
+        This is analogous to `mode` in numpy.convolve(v, a, mode).
+        It must be one of ('full','valid','same').
+        See below for how `mode` determines the shape of the result.
+
+    Returns
+    -------
+    A : (k,n) ndarray
+        The convolution matrix whose row count `k` depends on `mode`
+
+        =======  =========================
+         mode    k
+        =======  =========================
+        'full'   m + n -1
+        'same'   max(m,n)
+        'valid'  max(m,n) - min(m,n) + 1
+        =======  =========================
+
+    Notes
+    -----
+    .. versionadded:: 1.4.0
+
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+
+    References
+    ----------
+    .. [1] "Convolution", https://en.wikipedia.org/wiki/Convolution
+
+    Examples
+    --------
+    >>> from scipy.linalg import convolution_matrix
+    >>> convolution_matrix( (-1,2,-1), 5, mode='same')
+    array([[ 2, -1,  0,  0,  0],
+           [-1,  2, -1,  0,  0],
+           [ 0, -1,  2, -1,  0],
+           [ 0,  0, -1,  2, -1],
+           [ 0,  0,  0, -1,  2]])
+
+    """
+    a = np.asarray(a)
+    if a.ndim != 1:
+        raise ValueError('convolution_matrix expects a 1d array as input')
+
+    if mode not in ('full', 'valid', 'same'):
+        raise ValueError(
+            "'mode' argument must be one of ('full','valid','same')")
+
+    # create zero padded versions of the array
+    az = np.pad(a, (0, n-1), 'constant')
+    raz = np.pad(a[::-1], (0, n-1), 'constant')
+
+    if mode == 'same':
+        trim = min(n, len(a)) - 1
+        tb = trim//2
+        te = trim - tb
+        col0 = az[tb:-te]
+        row0 = raz[-n-tb:-tb] if tb else raz[-n-tb:]
+    elif mode == 'valid':
+        tb = min(n, len(a)) - 1
+        te = tb
+        col0 = az[tb:-te]
+        row0 = raz[-n-tb:-tb]
+    else:  # 'full'
+        col0 = az
+        row0 = raz[-n:]
+    return toeplitz(col0, row0)
