@@ -28,7 +28,8 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal.signaltools import _filtfilt_gust
+from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+                                      _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 
 
@@ -2521,6 +2522,29 @@ class TestPartialFractionExpansion(object):
         rows, cols = linear_sum_assignment(distance)
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
+
+    def test_compute_factors(self):
+        factors = _compute_factors([1, 2, 3], [3, 2, 1])
+        assert_equal(len(factors), 3)
+        assert_almost_equal(factors[0], np.poly([2, 2, 3]))
+        assert_almost_equal(factors[1], np.poly([1, 1, 1, 3]))
+        assert_almost_equal(factors[2], np.poly([1, 1, 1, 2, 2]))
+
+        factors = _compute_factors([1, 2, 3], [3, 2, 1],
+                                   include_powers=True)
+        assert_equal(len(factors), 6)
+        assert_almost_equal(factors[0], np.poly([1, 1, 2, 2, 3]))
+        assert_almost_equal(factors[1], np.poly([1, 2, 2, 3]))
+        assert_almost_equal(factors[2], np.poly([2, 2, 3]))
+        assert_almost_equal(factors[3], np.poly([1, 1, 1, 2, 3]))
+        assert_almost_equal(factors[4], np.poly([1, 1, 1, 3]))
+        assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
+
+    def test_group_poles(self):
+        unique, multiplicity = _group_poles(
+            [1.0, 1.001, 1.003, 2.0, 2.003, 3.0], 0.1, 'min')
+        assert_equal(unique, [1.0, 2.0, 3.0])
+        assert_equal(multiplicity, [3, 2, 1])
 
     def test_residue_general(self):
         # Test are taken from issue #4464, note that poles in scipy are
