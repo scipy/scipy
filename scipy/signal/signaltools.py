@@ -2238,97 +2238,10 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     return np.asarray(p_unique), np.asarray(p_multiplicity)
 
 
-def invres(r, p, k, tol=1e-3, rtype='avg'):
-    """
-    Compute b(s) and a(s) from partial fraction expansion.
-
-    If `M` is the degree of numerator `b` and `N` the degree of denominator
-    `a`::
-
-              b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
-      H(s) = ------ = ------------------------------------------
-              a(s)     a[0] s**(N) + a[1] s**(N-1) + ... + a[N]
-
-    then the partial-fraction expansion H(s) is defined as::
-
-               r[0]       r[1]             r[-1]
-           = -------- + -------- + ... + --------- + k(s)
-             (s-p[0])   (s-p[1])         (s-p[-1])
-
-    If there are any repeated roots (closer together than `tol`), then H(s)
-    has terms like::
-
-          r[i]      r[i+1]              r[i+n-1]
-        -------- + ----------- + ... + -----------
-        (s-p[i])  (s-p[i])**2          (s-p[i])**n
-
-    This function is used for polynomials in positive powers of s or z,
-    such as analog filters or digital filters in controls engineering.  For
-    negative powers of z (typical for digital filters in DSP), use `invresz`.
-
-    Parameters
-    ----------
-    r : array_like
-        Residues.
-    p : array_like
-        Poles.
-    k : array_like
-        Coefficients of the direct polynomial term.
-    tol : float, optional
-        The tolerance for two roots to be considered equal. Default is 1e-3.
-    rtype : {'max', 'min, 'avg'}, optional
-        How to determine the returned root if multiple roots are within
-        `tol` of each other.
-
-          - 'max': pick the maximum of those roots.
-          - 'min': pick the minimum of those roots.
-          - 'avg': take the average of those roots.
-
-    Returns
-    -------
-    b : ndarray
-        Numerator polynomial coefficients.
-    a : ndarray
-        Denominator polynomial coefficients.
-
-    See Also
-    --------
-    residue, invresz, unique_roots
-
-    """
-    extra = k
-    p, indx = cmplx_sort(p)
-    r = np.take(r, indx, 0)
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    p = []
-    for k in range(len(pout)):
-        p.extend([pout[k]] * mult[k])
-    a = np.atleast_1d(np.poly(p))
-    if len(extra) > 0:
-        b = np.polymul(extra, a)
-    else:
-        b = [0]
-    indx = 0
-    for k in range(len(pout)):
-        temp = []
-        for l in range(len(pout)):
-            if l != k:
-                temp.extend([pout[l]] * mult[l])
-        for m in range(mult[k]):
-            t2 = temp[:]
-            t2.extend([pout[k]] * (mult[k] - m - 1))
-            b = np.polyadd(b, r[indx] * np.atleast_1d(np.poly(t2)))
-            indx += 1
-    b = np.real_if_close(b)
-    while np.allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
-        b = b[1:]
-    return b, a
-
-
-def _compute_factors(roots, multiplicity):
+def _compute_factors(roots, multiplicity, include_powers=False):
     """Compute the total polynomial divided by factors for each root."""
-    suffixes = []
     current = np.array([1])
+    suffixes = [current]
     for pole, mult in zip(roots[-1:0:-1], multiplicity[-1:0:-1]):
         monomial = np.array([1, -pole])
         for _ in range(mult):
@@ -2338,12 +2251,14 @@ def _compute_factors(roots, multiplicity):
 
     result = []
     current = np.array([1])
-    for pole, mult, suffix in zip(roots[:-1], multiplicity[:-1], suffixes):
-        result.append(np.polymul(current, suffix))
+    for pole, mult, suffix in zip(roots, multiplicity, suffixes):
         monomial = np.array([1, -pole])
-        for _ in range(mult):
+        block = []
+        for i in range(mult):
+            if i == 0 or include_powers:
+                block.append(np.polymul(current, suffix))
             current = np.polymul(current, monomial)
-    result.append(current)
+        result.extend(reversed(block))
 
     return result
 
@@ -2586,6 +2501,93 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     residues *= (-poles) ** powers / a_rev[0]
 
     return residues, poles, np.trim_zeros(k_rev[::-1], 'b')
+
+
+def invres(r, p, k, tol=1e-3, rtype='avg'):
+    """
+    Compute b(s) and a(s) from partial fraction expansion.
+
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
+
+              b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
+      H(s) = ------ = ------------------------------------------
+              a(s)     a[0] s**(N) + a[1] s**(N-1) + ... + a[N]
+
+    then the partial-fraction expansion H(s) is defined as::
+
+               r[0]       r[1]             r[-1]
+           = -------- + -------- + ... + --------- + k(s)
+             (s-p[0])   (s-p[1])         (s-p[-1])
+
+    If there are any repeated roots (closer together than `tol`), then H(s)
+    has terms like::
+
+          r[i]      r[i+1]              r[i+n-1]
+        -------- + ----------- + ... + -----------
+        (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `invresz`.
+
+    Parameters
+    ----------
+    r : array_like
+        Residues.
+    p : array_like
+        Poles.
+    k : array_like
+        Coefficients of the direct polynomial term.
+    tol : float, optional
+        The tolerance for two roots to be considered equal. Default is 1e-3.
+    rtype : {'max', 'min, 'avg'}, optional
+        How to determine the returned root if multiple roots are within
+        `tol` of each other.
+
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
+
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
+
+    See Also
+    --------
+    residue, invresz, unique_roots
+
+    """
+    extra = k
+    p, indx = cmplx_sort(p)
+    r = np.take(r, indx, 0)
+    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
+    p = []
+    for k in range(len(pout)):
+        p.extend([pout[k]] * mult[k])
+    a = np.atleast_1d(np.poly(p))
+    if len(extra) > 0:
+        b = np.polymul(extra, a)
+    else:
+        b = [0]
+    indx = 0
+    for k in range(len(pout)):
+        temp = []
+        for l in range(len(pout)):
+            if l != k:
+                temp.extend([pout[l]] * mult[l])
+        for m in range(mult[k]):
+            t2 = temp[:]
+            t2.extend([pout[k]] * (mult[k] - m - 1))
+            b = np.polyadd(b, r[indx] * np.atleast_1d(np.poly(t2)))
+            indx += 1
+    b = np.real_if_close(b)
+    while np.allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
+        b = b[1:]
+    return b, a
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
