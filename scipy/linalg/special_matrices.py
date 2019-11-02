@@ -1214,6 +1214,8 @@ def convmtx(a, n, mode='full'):
             'same': max(n,len(a))
             'valid': max(n,len(a)) - min(n,len(a)) + 1
 
+    .. versionadded:: 1.4.0
+
     See Also
     --------
     toeplitz : Toeplitz matrix
