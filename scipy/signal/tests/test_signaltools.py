@@ -2781,7 +2781,7 @@ class TestPartialFractionExpansion(object):
         r = [3 / 10, -1 / 6, -2 / 15]
         p = [0, -2, -5]
         k = []
-        a_expected = [1, 3]
+        a_expected = [0, 1, 3]
         b_expected = [1, 7, 10, 0]
         a_observed, b_observed = invres(r, p, k)
         assert_allclose(a_observed, a_expected)
@@ -2805,12 +2805,12 @@ class TestPartialFractionExpansion(object):
         r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
         p = [0, -2, -2, -5]
         k = []
-        a_expected = [1, 3]
+        a_expected = [0, 0, 1, 3]
         b_expected = [1, 9, 24, 20, 0]
         rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
         for rtype in rtypes:
             a_observed, b_observed = invres(r, p, k, rtype=rtype)
-            assert_allclose(a_observed, a_expected)
+            assert_allclose(a_observed, a_expected, atol=1e-14)
             assert_allclose(b_observed, b_expected)
 
     def test_invres_bad_rtype(self):

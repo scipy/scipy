@@ -2592,33 +2592,20 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     residue, invresz, unique_roots
 
     """
-    extra = k
-    p, indx = cmplx_sort(p)
-    r = np.take(r, indx, 0)
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    p = []
-    for k in range(len(pout)):
-        p.extend([pout[k]] * mult[k])
-    a = np.atleast_1d(np.poly(p))
-    if len(extra) > 0:
-        b = np.polymul(extra, a)
+    unique_poles, multiplicity = _group_poles(p, tol, rtype)
+    factors, denominator = _compute_factors(unique_poles, multiplicity,
+                                            include_powers=True)
+
+    k = np.trim_zeros(k, 'f')
+    if len(k) == 0:
+        numerator = 0
     else:
-        b = [0]
-    indx = 0
-    for k in range(len(pout)):
-        temp = []
-        for l in range(len(pout)):
-            if l != k:
-                temp.extend([pout[l]] * mult[l])
-        for m in range(mult[k]):
-            t2 = temp[:]
-            t2.extend([pout[k]] * (mult[k] - m - 1))
-            b = np.polyadd(b, r[indx] * np.atleast_1d(np.poly(t2)))
-            indx += 1
-    b = np.real_if_close(b)
-    while np.allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
-        b = b[1:]
-    return b, a
+        numerator = np.polymul(k, denominator)
+
+    for residue, factor in zip(r, factors):
+        numerator = np.polyadd(numerator, residue * factor)
+
+    return numerator, denominator
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
