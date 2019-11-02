@@ -9,7 +9,7 @@ from numpy.lib.stride_tricks import as_strided
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-           'fiedler', 'fiedler_companion']
+           'fiedler', 'fiedler_companion','convmtx']
 
 
 # -----------------------------------------------------------------------------
@@ -1194,3 +1194,60 @@ def fiedler_companion(a):
     c[[0, 1], 0] = [-a[1], 1]
 
     return c
+
+def convmtx(a, n, mode='full'):
+    '''Construct a convolution matrix.
+
+    Constructs matrix
+        A = convmtx(a,n[,mode])
+    such that
+    np.dot(A,v) is equivalent to convolve(a,v[,mode]) but slower.
+
+    Parameters
+    ----------
+    a : The array to convolve.
+    n : The number of columns in the resulting matrix.
+        This is analogous to the length of v in numpy.convolve(v,a)
+    mode : This is analogous to `mode` in numpy.convolve(v,a,mode).
+        It determines the number of rows in A is
+            'full'[default]: len(a)+n-1
+            'same': max(n,len(a))
+            'valid': max(n,len(a)) - min(n,len(a)) + 1
+
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+
+    Returns
+    -------
+    A : The convolution matrix
+
+    Examples
+    --------
+    >>> from scipy.linalg import convmtx
+    >>> convmtx( (-1,2,-1) ,5,mode='same')
+    array([[ 2, -1,  0,  0,  0],
+           [-1,  2, -1,  0,  0],
+           [ 0, -1,  2, -1,  0],
+           [ 0,  0, -1,  2, -1],
+           [ 0,  0,  0, -1,  2]])
+    '''
+    a = np.asarray(a)
+    if a.ndim != 1:
+        raise ValueError('convmtx expects a 1d array as input')
+    row0 = np.concatenate(((a[0],), np.zeros(n-1, a.dtype)))
+    col0 = np.concatenate((a, np.zeros(n-1, a.dtype)))
+    A = toeplitz(col0, row0)
+
+    # The efficiency of this construction could be improved for
+    # 'valid','same' modes ,especially when n <<  len(a).
+    if mode == 'valid':
+        tb = min(n, len(a)) - 1
+        te = tb
+    elif mode == 'same':
+        trim = min(n, len(a)) - 1
+        tb = trim//2
+        te = trim-tb
+    else:
+        return A
+    return A[tb:-te]
