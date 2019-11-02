@@ -2524,14 +2524,15 @@ class TestPartialFractionExpansion(object):
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
     def test_compute_factors(self):
-        factors = _compute_factors([1, 2, 3], [3, 2, 1])
+        factors, poly = _compute_factors([1, 2, 3], [3, 2, 1])
         assert_equal(len(factors), 3)
         assert_almost_equal(factors[0], np.poly([2, 2, 3]))
         assert_almost_equal(factors[1], np.poly([1, 1, 1, 3]))
         assert_almost_equal(factors[2], np.poly([1, 1, 1, 2, 2]))
+        assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
 
-        factors = _compute_factors([1, 2, 3], [3, 2, 1],
-                                   include_powers=True)
+        factors, poly = _compute_factors([1, 2, 3], [3, 2, 1],
+                                         include_powers=True)
         assert_equal(len(factors), 6)
         assert_almost_equal(factors[0], np.poly([1, 1, 2, 2, 3]))
         assert_almost_equal(factors[1], np.poly([1, 2, 2, 3]))
@@ -2539,6 +2540,7 @@ class TestPartialFractionExpansion(object):
         assert_almost_equal(factors[3], np.poly([1, 1, 1, 2, 3]))
         assert_almost_equal(factors[4], np.poly([1, 1, 1, 3]))
         assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
+        assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
 
     def test_group_poles(self):
         unique, multiplicity = _group_poles(

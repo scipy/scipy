@@ -2249,7 +2249,7 @@ def _compute_factors(roots, multiplicity, include_powers=False):
         suffixes.append(current)
     suffixes = suffixes[::-1]
 
-    result = []
+    factors = []
     current = np.array([1])
     for pole, mult, suffix in zip(roots, multiplicity, suffixes):
         monomial = np.array([1, -pole])
@@ -2258,13 +2258,13 @@ def _compute_factors(roots, multiplicity, include_powers=False):
             if i == 0 or include_powers:
                 block.append(np.polymul(current, suffix))
             current = np.polymul(current, monomial)
-        result.extend(reversed(block))
+        factors.extend(reversed(block))
 
-    return result
+    return factors, current
 
 
 def _compute_residues(poles, multiplicity, numerator):
-    denominator_factors = _compute_factors(poles, multiplicity)
+    denominator_factors, _ = _compute_factors(poles, multiplicity)
     numerator = numerator.astype(poles.dtype)
 
     residues = []
