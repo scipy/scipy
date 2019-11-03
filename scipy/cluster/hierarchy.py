@@ -1422,10 +1422,12 @@ def cut_tree_balanced(Z, max_cluster_size):
         is higher for deeper tree levels.
 
     cluster_level : ndarray
-        one-dimensional numpy array of strings containing for each input sample
-        its corresponding cluster tree level, i.e. a string of '0's and '1's
-        separated by '.' Note that the cluster level is longer for deeper tree
-        levels, being 0 the root cluster, 0.0 and 0.1 its offspring, and so on.
+        one-dimensional numpy array of integer arrays containing for each input
+        sample its corresponding cluster tree level, i.e. a sequence of
+        0s and 1s. Note that the cluster level is longer for deeper tree
+        levels, being 0 the root cluster, [0, 0] and [0, 1] its offspring, and
+        so on. Also note that in each cluster splitting, the label 0 denotes
+        the bigger cluster, while the label 1 denotes the smallest.
 
     Examples
     --------
@@ -1472,8 +1474,8 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     # Initialize the resulting cluster level vector (containing for each data
     # sample its corresponding cluster tree level)
-    cluster_level = np.array(['0' for _ in range(full_cut.shape[1])], 
-                             dtype=object)
+    cluster_level = np.empty((full_cut.shape[1],), dtype=object)
+    for i in range(full_cut.shape[1]): cluster_level[i] = np.array([0],int)
 
     # Scan the full cut matrix from the last column (root tree level) to the
     # first column (leaves tree level)
@@ -1522,14 +1524,14 @@ def cut_tree_balanced(Z, max_cluster_size):
 
                     # If the size of the offspring is > 1
                     if (offspring_values.shape[0] > 1):
-                        # Select the position of the current value (i.e. 0 or 1)
+                        # Select the label of the current value (i.e. 0 or 1)
                         # and append it to the cluster level
-                        offspring_elem_pos = np.where(
+                        offspring_elem_label = np.where(
                             offspring_values == selected_curr_value)[0][0]
                         
-                        cluster_level[selected_curr_elems] = (
-                            cluster_level[selected_curr_elems] +
-                            '.' + str(offspring_elem_pos))
+                        for i in selected_curr_elems[0]:
+                                cluster_level[i] = np.hstack((cluster_level[i],
+                                    offspring_elem_label))
 
                 # Major step #2: Populate the resulting vector of cluster ids
                 # for each data sample, and mark them as clustered (-1)
@@ -1548,7 +1550,7 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     # Return the resulting clustering array (containing for each row in
     # input_data_x_sample its corresponding cluster id)
-    return np.vstack(cluster_id), np.vstack(cluster_level)
+    return cluster_id, cluster_level
 
 
 def to_tree(Z, rd=False):

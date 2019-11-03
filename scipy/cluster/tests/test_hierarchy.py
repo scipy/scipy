@@ -1035,10 +1035,11 @@ def test_cut_tree_balanced():
 
     [cluster_id, cluster_level] = cut_tree_balanced(
         Z, max_cluster_size=max_cluster_size)
+
     uniq_id, uniq_count = np.unique(cluster_id, return_counts=True)
 
-    assert_equal(cluster_id.shape, (nobs, 1))
-    assert_equal(cluster_level.shape, (nobs, 1))
+    assert_equal(cluster_id.shape, (nobs,))
+    assert_equal(cluster_level.shape, (nobs,))
     assert_(uniq_id.max() >= (nobs / max_cluster_size))
     assert_(all(elem <= max_cluster_size for elem in uniq_count))
 
