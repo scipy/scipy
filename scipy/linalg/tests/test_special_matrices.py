@@ -651,11 +651,9 @@ def test_convmtx():
         else:
             return np.random.normal(size=(n,))
 
-    try:
-        convmtx(1,4) # first arg must be a 1d array, otherwise ValueError
-        assert_equal(None,'There should have been an exception')
-    except ValueError as e:
-        pass
+    # first arg must be a 1d array, otherwise ValueError
+    with assert_raises(ValueError):
+        convmtx(1, 4)
 
     for cpx, na, nv, mode in \
             itertools.product((False, True), range(2, 7), range(2, 7), (None, 'full', 'valid', 'same')):
