@@ -5329,23 +5329,30 @@ add_newdoc("kerp",
 
 add_newdoc("kl_div",
     r"""
-    kl_div(x, y)
+    kl_div(x, y, out=None)
 
     Elementwise function for computing Kullback-Leibler divergence.
 
-    .. math:: \mathrm{kl\_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math::
+
+        \mathrm{kl\_div}(x, y) =
+          \begin{cases}
+            x \log(x / y) - x + y & x > 0, y > 0 \\
+            y & x = 0, y \ge 0 \\
+            \infty & \text{otherwise}
+          \end{cases}
 
     Parameters
     ----------
-    x : ndarray
-        First input array.
-    y : ndarray
-        Second input array.
+    x, y : array_like
+        Real arguments
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    res : ndarray
-        Output array.
+    scalar or ndarray
+        Values of the Kullback-Liebler divergence.
 
     See Also
     --------
@@ -5353,9 +5360,21 @@ add_newdoc("kl_div",
 
     Notes
     -----
+    .. versionadded:: 0.15.0
+
     This function is non-negative and is jointly convex in `x` and `y`.
 
-    .. versionadded:: 0.15.0
+    The origin of this function is in convex programming; see [1]_ for
+    details. This is why the the function contains the extra :math:`-x
+    + y` terms over what might be expected from the Kullback-Leibler
+    divergence. For a version of the function without the extra terms,
+    see `rel_entr`.
+
+    References
+    ----------
+    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
+        Programming", http://cvxr.com/cvx/
+
 
     """)
 
