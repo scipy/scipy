@@ -1203,28 +1203,33 @@ def convmtx(a, n, mode='full'):
 
     `A = convmtx(a, n[, mode])`
     creates a matrix `A` such that
-    `np.dot(A, v)` is equivalent to `convolve(a, v[, mode])` but slower.
+    `A @ v` (or `matmul(A, v)`) is equivalent to `convolve(a, v[, mode])`.
     In the default 'full' mode, an element
-    `A[i,j] == a[i-j]`, if `a[i-j]` exists, otherwise zero.
+    `A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)`.
 
     Parameters
     ----------
-    a : array
-        The array to convolve.
+    a : (m,) array_like
+        The 1-D array to convolve.
     n : int
         The number of columns in the resulting matrix.
         This is analogous to the length of `v` in `numpy.convolve(a,v)`
-    mode : string
+    mode : str
         This is analogous to `mode` in numpy.convolve(v, a, mode).
-        It determines the number of rows in A as
-
-            - 'full'[default]: `len(a) + n - 1`
-            - 'same': `max(n, len(a) )`
-            - 'valid': `max(n, len(a) ) - min(n, len(a) ) + 1`
+        This determines the shape of the result.
 
     Returns
     -------
-    A : The convolution matrix
+    A : (k,n) ndarray
+        The convolution matrix whose row count depends on `mode`
+
+        =====  =====
+         mode    k
+        -----  ------
+        'full'  m + n -1
+        'same'  max(m,n)
+        'valid' max(m,n) - min(m,n) + 1
+        =====  =====
 
     Notes
     -----

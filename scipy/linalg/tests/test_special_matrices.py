@@ -667,3 +667,7 @@ def test_convmtx():
             A = convmtx(a, nv, mode)
         y2 = np.dot(A, v)
         assert_array_almost_equal(y1, y2)
+        if mode == 'full':
+            for i in range(A.shape[0]):
+                for j in range(A.shape[1]):
+                    assert_equal(A[i,j], (a[i-j] if (0 <= (i-j) < len(a)) else 0))
