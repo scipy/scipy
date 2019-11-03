@@ -9,7 +9,7 @@ from numpy.lib.stride_tricks import as_strided
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-           'fiedler', 'fiedler_companion', 'convmtx']
+           'fiedler', 'fiedler_companion', 'convolution_matrix']
 
 
 # -----------------------------------------------------------------------------
@@ -1195,13 +1195,13 @@ def fiedler_companion(a):
 
     return c
 
-def convmtx(a, n, mode='full'):
+def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.
 
     Constructs the dense matrix representing convolution[1].
 
-    `A = convmtx(a, n[, mode])`
+    `A = convolution_matrix(a, n[, mode])`
     creates a matrix `A` such that
     `A @ v` (or `matmul(A, v)`) is equivalent to `convolve(a, v[, mode])`.
     In the default 'full' mode, an element
@@ -1221,15 +1221,15 @@ def convmtx(a, n, mode='full'):
     Returns
     -------
     A : (k,n) ndarray
-        The convolution matrix whose row count depends on `mode`
+        The convolution matrix whose row count `k` depends on `mode`
 
-        =====  =====
+        =======  =========================
          mode    k
-        -----  ------
-        'full'  m + n -1
-        'same'  max(m,n)
-        'valid' max(m,n) - min(m,n) + 1
-        =====  =====
+        =======  =========================
+        'full'   m + n -1
+        'same'   max(m,n)
+        'valid'  max(m,n) - min(m,n) + 1
+        =======  =========================
 
     Notes
     -----
@@ -1245,8 +1245,8 @@ def convmtx(a, n, mode='full'):
 
     Examples
     --------
-    >>> from scipy.linalg import convmtx
-    >>> convmtx( (-1,2,-1), 5, mode='same')
+    >>> from scipy.linalg import convolution_matrix
+    >>> convolution_matrix( (-1,2,-1), 5, mode='same')
     array([[ 2, -1,  0,  0,  0],
            [-1,  2, -1,  0,  0],
            [ 0, -1,  2, -1,  0],
@@ -1256,12 +1256,11 @@ def convmtx(a, n, mode='full'):
     """
     a = np.asarray(a)
     if a.ndim != 1:
-        raise ValueError('convmtx expects a 1d array as input')
+        raise ValueError('convolution_matrix expects a 1d array as input')
 
     # create zero padded versions of the array
-    z = np.zeros(n-1, a.dtype)
-    az = np.concatenate((a,z))
-    raz = np.concatenate((a[::-1],z))
+    az = np.pad(a,(0,n-1),'constant')
+    raz = np.pad(a[::-1],(0,n-1),'constant')
 
     if mode == 'same':
         trim = min(n, len(a)) - 1

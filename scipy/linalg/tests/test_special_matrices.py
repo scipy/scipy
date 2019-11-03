@@ -13,7 +13,7 @@ from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
-                          fiedler, fiedler_companion, eigvals, convmtx)
+                          fiedler, fiedler_companion, eigvals, convolution_matrix)
 from numpy.linalg import cond
 import itertools
 
@@ -641,8 +641,8 @@ def test_fiedler_companion():
     assert_array_almost_equal(eigvals(fc),
                               np.array([7., 5., 3., 1.]))
 
-def test_convmtx():
-    'test convmtx matrix multiply against numpy.convolve for various parameters'
+def test_convolution_matrix():
+    'test convolution_matrix matrix multiply against numpy.convolve for various parameters'
 
     def gaussian(n, cpx):
         'make a complex or real gaussian vector of length n'
@@ -653,7 +653,7 @@ def test_convmtx():
 
     # first arg must be a 1d array, otherwise ValueError
     with assert_raises(ValueError):
-        convmtx(1, 4)
+        convolution_matrix(1, 4)
 
     for cpx, na, nv, mode in \
             itertools.product((False, True), range(2, 7), range(2, 7), (None, 'full', 'valid', 'same')):
@@ -661,11 +661,11 @@ def test_convmtx():
         v = gaussian(nv, cpx)
         if mode is None:
             y1 = np.convolve(v, a)
-            A = convmtx(a, nv)
+            A = convolution_matrix(a, nv)
         else:
             y1 = np.convolve(v, a, mode)
-            A = convmtx(a, nv, mode)
-        y2 = np.dot(A, v)
+            A = convolution_matrix(a, nv, mode)
+        y2 = A @ v
         assert_array_almost_equal(y1, y2)
         if mode == 'full':
             for i in range(A.shape[0]):
