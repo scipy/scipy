@@ -651,8 +651,9 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     # Check if freq is strictly increasing after tweak
     d = np.diff(freq)
     if (d <= 0).any():
-        raise ValueError("Freq cannot contain number that is too "
-                         "close to some repeated value")
+        raise ValueError("freq cannot contain numbers that are too close "
+                         "(within eps * nyquist: "
+                         "{}) to a repeated value".format(eps))
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)

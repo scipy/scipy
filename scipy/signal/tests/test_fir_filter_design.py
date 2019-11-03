@@ -288,7 +288,18 @@ class TestFirwin2(object):
                                                [0.0, 0.5, 0.75, 1.0, 1.0])
         # `freq` does not start at 0.0.
         assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
-
+        # `freq` does not end at fs/2.
+        assert_raises(ValueError, firwin2, 50, [0.0, 0.5], [0.0, 1.0])
+        # Value 0 is repeated in `freq`
+        assert_raises(ValueError, firwin2, 50, [0.0, 0.0, 0.5, 1.0],
+                                               [1.0, 1.0, 0.0, 0.0])
+        # Value fs/2 is repeated in `freq`
+        assert_raises(ValueError, firwin2, 50, [0.0, 0.5, 1.0, 1.0],
+                                               [1.0, 1.0, 0.0, 0.0])
+        # Value in `freq` that is too close to a repeated number
+        assert_raises(ValueError, firwin2, 50,
+                      [0.0, 0.5 - np.finfo(float).eps * 0.5, 0.5, 0.5, 1.0],
+                      [1.0, 1.0, 1.0, 0.0, 0.0])
         # Type II filter, but the gain at nyquist frequency is not zero.
         assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
@@ -300,7 +311,7 @@ class TestFirwin2(object):
         assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0],
                       antisymmetric=True)
 
-        # Type VI filter, but the gain at zero rate is not zero.
+        # Type IV filter, but the gain at zero rate is not zero.
         assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
                       antisymmetric=True)
 
