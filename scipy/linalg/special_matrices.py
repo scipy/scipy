@@ -1216,7 +1216,8 @@ def convolution_matrix(a, n, mode='full'):
         This is analogous to the length of `v` in `numpy.convolve(a,v)`
     mode : str
         This is analogous to `mode` in numpy.convolve(v, a, mode).
-        This determines the shape of the result.
+        It must be one of ('full','valid','same').
+        See below for how `mode` determines the shape of the result.
 
     Returns
     -------
@@ -1257,6 +1258,9 @@ def convolution_matrix(a, n, mode='full'):
     a = np.asarray(a)
     if a.ndim != 1:
         raise ValueError('convolution_matrix expects a 1d array as input')
+
+    if mode not in ('full','valid','same'):
+        raise ValueError("'mode' argument must be one of ('full','valid','same')")
 
     # create zero padded versions of the array
     az = np.pad(a,(0,n-1),'constant')

@@ -641,11 +641,12 @@ def test_fiedler_companion():
     assert_array_almost_equal(eigvals(fc),
                               np.array([7., 5., 3., 1.]))
 
+
 def test_convolution_matrix():
     'test convolution_matrix matrix multiply against numpy.convolve for various parameters'
 
-    def gaussian(n, cpx):
-        'make a complex or real gaussian vector of length n'
+    def test_vector(n, cpx):
+        'make a complex or real test vector of length n (happens to be Gaussian)'
         if cpx:
             return np.random.normal(size=(n, 2)).astype(np.float64).view(np.complex128).ravel()
         else:
@@ -655,10 +656,14 @@ def test_convolution_matrix():
     with assert_raises(ValueError):
         convolution_matrix(1, 4)
 
+    # mode must be in ('full','valid','same')
+    with assert_raises(ValueError):
+        convolution_matrix((1, 1), 4, mode='invalid argument')
+
     for cpx, na, nv, mode in \
             itertools.product((False, True), range(2, 7), range(2, 7), (None, 'full', 'valid', 'same')):
-        a = gaussian(na, cpx)
-        v = gaussian(nv, cpx)
+        a = test_vector(na, cpx)
+        v = test_vector(nv, cpx)
         if mode is None:
             y1 = np.convolve(v, a)
             A = convolution_matrix(a, nv)
