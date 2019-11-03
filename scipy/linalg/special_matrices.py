@@ -1252,19 +1252,24 @@ def convmtx(a, n, mode='full'):
     a = np.asarray(a)
     if a.ndim != 1:
         raise ValueError('convmtx expects a 1d array as input')
-    row0 = np.concatenate(((a[0],), np.zeros(n-1, a.dtype)))
-    col0 = np.concatenate((a, np.zeros(n-1, a.dtype)))
-    A = toeplitz(col0, row0)
 
-    # The efficiency of this construction could be improved for
-    # 'valid','same' modes ,especially when n <<  len(a).
-    if mode == 'valid':
-        tb = min(n, len(a)) - 1
-        te = tb
-    elif mode == 'same':
+    # create zero padded versions of the array
+    z = np.zeros(n-1, a.dtype)
+    az = np.concatenate((a,z))
+    raz = np.concatenate((a[::-1],z))
+
+    if mode == 'same':
         trim = min(n, len(a)) - 1
         tb = trim//2
-        te = trim-tb
-    else:
-        return A
-    return A[tb:-te]
+        te = trim - tb
+        col0 = az[tb:-te]
+        row0 = raz[-n-tb:-tb] if tb else raz[-n-tb:]
+    elif mode == 'valid':
+        tb = min(n, len(a)) - 1
+        te = tb
+        col0 = az[tb:-te]
+        row0 = raz[-n-tb:-tb]
+    else:  # 'full'
+        col0 = az
+        row0 = raz[-n:]
+    return toeplitz(col0, row0)
