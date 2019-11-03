@@ -41,7 +41,11 @@ class SemiInfiniteFunc(object):
         self._tmin = sys.float_info.min**0.5
 
     def get_t(self, x):
-        return 1 / (self._sgn * (x - self._start) + 1)
+        z = self._sgn * (x - self._start) + 1
+        if z == 0:
+            # Can happen only if point not in range
+            return np.inf
+        return 1 / z
 
     def __call__(self, t):
         if t < self._tmin:
@@ -200,32 +204,42 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     # Use simple transformations to deal with integrals over infinite
     # intervals.
-    args = (epsabs, epsrel, norm, cache_size, limit, workers, points,
-            'gk15' if quadrature is None else quadrature,
-            full_output)
+    kwargs = dict(epsabs=epsabs,
+                  epsrel=epsrel,
+                  norm=norm,
+                  cache_size=cache_size,
+                  limit=limit,
+                  workers=workers,
+                  points=points,
+                  quadrature='gk15' if quadrature is None else quadrature,
+                  full_output=full_output)
     if np.isfinite(a) and np.isinf(b):
         f2 = SemiInfiniteFunc(f, start=a, infty=b)
         if points is not None:
-            points = tuple(f2.get_t(xp) for xp in points)
-        return quad_vec(f2, 0, 1, *args)
+            kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
+        return quad_vec(f2, 0, 1, **kwargs)
     elif np.isfinite(b) and np.isinf(a):
         f2 = SemiInfiniteFunc(f, start=b, infty=a)
         if points is not None:
-            points = tuple(f2.get_t(xp) for xp in points)
-        res = quad_vec(f2, 0, 1, *args)
+            kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
+        res = quad_vec(f2, 0, 1, **kwargs)
         return (-res[0],) + res[1:]
     elif np.isinf(a) and np.isinf(b):
         sgn = -1 if b < a else 1
 
-        # NB. first interval split occurs at t=0, which separates
-        # positive and negative sides of the integral
+        # NB. explicitly split integral at t=0, which separates
+        # the positive and negative sides
         f2 = DoubleInfiniteFunc(f)
         if points is not None:
-            points = tuple(f2.get_t(xp) for xp in points)
-        if a != b:
-            res = quad_vec(f2, -1, 1, *args)
+            kwargs['points'] = (0,) + tuple(f2.get_t(xp) for xp in points)
         else:
-            res = quad_vec(f2, 1, 1, *args)
+            kwargs['points'] = (0,)
+
+        if a != b:
+            res = quad_vec(f2, -1, 1, **kwargs)
+        else:
+            res = quad_vec(f2, 1, 1, **kwargs)
+
         return (res[0]*sgn,) + res[1:]
     elif not (np.isfinite(a) and np.isfinite(b)):
         raise ValueError("invalid integration bounds a={}, b={}".format(a, b))
@@ -261,7 +275,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         initial_intervals = []
         for p in sorted(points):
             p = float(p)
-            if p <= a or p >= b or p == prev:
+            if not (a < p < b) or p == prev:
                 continue
             initial_intervals.append((prev, p))
             prev = p
