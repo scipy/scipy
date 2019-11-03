@@ -10,10 +10,10 @@ Overview
 
 Compared to OSX and Linux, building NumPy and SciPy on Windows is more 
 difficult, largely due to the lack of compatible, open-source libraries like 
-LAPACK_ or ATLAS_ that are necessary to build both libraries and have them 
-perform relatively well. It is not possible to just call a one-liner on the 
-command prompt as you would on other platforms via ``sudo apt install`` 
-machinery. 
+BLAS/LAPACK_ and open-source compilers that are necessary to build both
+libraries and have them perform relatively well. It is not possible to just call
+a one-liner on the command prompt as you would on other platforms via ``sudo apt
+install`` machinery.
 
 This document describes one option to build OpenBLAS and SciPy from source 
 that was validated for scipy 1.4.0. However, in light of all the work 
@@ -141,7 +141,7 @@ content in this empty file:
 .. code:: shell
 
     # Adjust the following to your liking and your MSYS installation status
-    OPENBLAS_ROOT=c:\opt
+    OPENBLAS_ROOT=/c/opt
     BUILD_BITS=64
 
     # Print some gcc info that MSYS2 discovered in the path
