@@ -221,6 +221,7 @@ Angeline G. Burrell for implementing nan_policy in the circular statistics
 Michael Marien for contributing to scipy.stats.entropy
 Joseph Weston for a bug fix in scipy.optimize.zeros.
 Peyton Murray for a bug fix in scipy.optimize.curve_fit.
+Mark Borgerding for contributing linalg.convmtx.
 
 Institutions
 ------------

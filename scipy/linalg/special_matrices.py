@@ -1199,21 +1199,28 @@ def convmtx(a, n, mode='full'):
     """
     Construct a convolution matrix.
 
-    Constructs a matrix
+    Constructs the dense matrix representing convolution[1].
+
     `A = convmtx(a, n[, mode])`
-    such that
+    creates a matrix `A` such that
     `np.dot(A, v)` is equivalent to `convolve(a, v[, mode])` but slower.
+    In the default 'full' mode, an element
+    `A[i,j] == a[i-j]`, if `a[i-j]` exists, otherwise zero.
 
     Parameters
     ----------
-    a : The array to convolve.
-    n : The number of columns in the resulting matrix.
-        This is analogous to the length of v in numpy.convolve(v, a)
-    mode : This is analogous to `mode` in numpy.convolve(v, a, mode).
-        It determines the number of rows in A is
-            'full'[default]: `len(a) + n - 1`
-            'same': `max(n, len(a) )`
-            'valid': `max(n, len(a) ) - min(n, len(a) ) + 1`
+    a : array
+        The array to convolve.
+    n : int
+        The number of columns in the resulting matrix.
+        This is analogous to the length of `v` in `numpy.convolve(a,v)`
+    mode : string
+        This is analogous to `mode` in numpy.convolve(v, a, mode).
+        It determines the number of rows in A as
+
+            - 'full'[default]: `len(a) + n - 1`
+            - 'same': `max(n, len(a) )`
+            - 'valid': `max(n, len(a) ) - min(n, len(a) ) + 1`
 
     Returns
     -------
@@ -1226,6 +1233,10 @@ def convmtx(a, n, mode='full'):
     See Also
     --------
     toeplitz : Toeplitz matrix
+
+    References
+    ----------
+    .. [1] "Convolution", https://en.wikipedia.org/wiki/Convolution
 
     Examples
     --------

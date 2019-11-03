@@ -924,6 +924,8 @@ circulant             `scipy.linalg.circulant`   Construct a circulant matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 companion             `scipy.linalg.companion`   Create a companion matrix.
 --------------------  -------------------------  ---------------------------------------------------------
+convolution           `scipy.linalg.convmtx`     Create a convolution matrix.
+--------------------  -------------------------  ---------------------------------------------------------
 Hadamard              `scipy.linalg.hadamard`    Construct an Hadamard matrix.
 --------------------  -------------------------  ---------------------------------------------------------
 Hankel                `scipy.linalg.hankel`      Construct a Hankel matrix.
