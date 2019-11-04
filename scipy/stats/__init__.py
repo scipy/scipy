@@ -63,6 +63,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I

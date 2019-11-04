@@ -5030,32 +5030,6 @@ class TestRatioUniforms(object):
         assert_raises(ValueError,
                       stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
 
-    def test_gig(self):
-        # test generalized inverse gaussian distribution
-        p, b = 0.5, 0.75
-
-        def gig_mode(p, b):
-            return b / (np.sqrt((p - 1)**2 + b**2) + 1 - p)
-
-        def gig_pdf(x, p, b):
-            c = 1/(2 * kv(p, b))
-            return c * x**(p - 1) * np.exp(- b * (x + 1/x) / 2)
-
-        def gig_cdf(x, p, b):
-            x = np.atleast_1d(x)
-            cdf = [quad(gig_pdf, 0, xi, args=(p, b))[0] for xi in x]
-            return np.array(cdf)
-
-        s = kv(p+2, b) / kv(p, b)
-        vmax = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
-        umax = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
-
-        rvs = stats.rvs_ratio_uniforms(lambda x: gig_pdf(x, p, b), umax,
-                                       0, vmax, random_state=1234, size=1500)
-
-        assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
-                     True)
-
 
 class TestEppsSingleton(object):
     def test_statistic_1(self):
