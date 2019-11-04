@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Python TNC example
 # @(#) $Jeannot: example.py,v 1.4 2004/04/02 18:51:04 js Exp $
 
@@ -19,6 +18,7 @@ def function(x):
     if x[1] < 0:
         g[1] = -g[1]
     return f, g
+
 
 # Optimizer call
 rc, nf, x = tnc.minimize(function, [-7, 3], [-10, 1], [10, 10])

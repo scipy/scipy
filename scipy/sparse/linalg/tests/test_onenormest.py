@@ -4,8 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal, assert_,
-        decorators, TestCase, run_module_suite)
+from numpy.testing import assert_allclose, assert_equal, assert_
+import pytest
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
@@ -40,10 +40,9 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixProductOperator(self.B.T, self.A.T)
 
 
-class TestOnenormest(TestCase):
+class TestOnenormest(object):
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is annoyingly slow')
+    @pytest.mark.xslow
     def test_onenormest_table_3_t_2(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
@@ -83,8 +82,7 @@ class TestOnenormest(TestCase):
         # check the average number of matrix*vector multiplications
         assert_(3.5 < np.mean(nmult_list) < 4.5)
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is annoyingly slow')
+    @pytest.mark.xslow
     def test_onenormest_table_4_t_7(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
@@ -144,8 +142,7 @@ class TestOnenormest(TestCase):
         est_plain = scipy.sparse.linalg.onenormest(B, t=t, itmax=itmax)
         assert_allclose(est, est_plain)
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is annoyingly slow')
+    @pytest.mark.xslow
     def test_onenormest_table_6_t_1(self):
         #TODO this test seems to give estimates that match the table,
         #TODO even though no attempt has been made to deal with
@@ -204,7 +201,7 @@ class TestOnenormest(TestCase):
         est, v, w, nmults, nresamples = _onenormest_core(D, D.T, t, itmax)
         return est
 
-    @decorators.slow
+    @pytest.mark.slow
     def test_onenormest_linear_operator(self):
         # Define a matrix through its product A B.
         # Depending on the shapes of A and B,
@@ -235,7 +232,7 @@ class TestOnenormest(TestCase):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-class TestAlgorithm_2_2(TestCase):
+class TestAlgorithm_2_2(object):
 
     def test_randn_inv(self):
         np.random.seed(1234)
@@ -255,6 +252,3 @@ class TestAlgorithm_2_2(TestCase):
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)
 
-
-if __name__ == '__main__':
-    run_module_suite()

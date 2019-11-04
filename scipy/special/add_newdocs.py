@@ -3,7 +3,7 @@
 # The syntax is designed to look like the function add_newdoc is being
 # called from numpy.lib, but in this file add_newdoc puts the
 # docstrings in a dictionary. This dictionary is used in
-# generate_ufuncs.py to generate the docstrings for the ufuncs in
+# _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
 
@@ -16,63 +16,248 @@ def get(name):
     return docdict.get(name)
 
 
-def add_newdoc(place, name, doc):
-    docdict['.'.join((place, name))] = doc
+def add_newdoc(name, doc):
+    docdict[name] = doc
 
-add_newdoc("scipy.special", "sph_harm",
+
+add_newdoc("_sf_error_test_function",
+    """
+    Private function; do not use.
+    """)
+
+add_newdoc("sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
 
     Compute spherical harmonics.
 
-    .. math:: Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi}\frac{(n-m)!}{(n+m)!}} e^{i m \theta} P^m_n(\cos(\phi))
+    The spherical harmonics are defined as
+
+    .. math::
+
+        Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi} \frac{(n-m)!}{(n+m)!}}
+          e^{i m \theta} P^m_n(\cos(\phi))
+
+    where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
 
     Parameters
     ----------
-    m : int
-       ``|m| <= n``; the order of the harmonic.
-    n : int
-       where `n` >= 0; the degree of the harmonic.  This is often called
-       ``l`` (lower case L) in descriptions of spherical harmonics.
-    theta : float
-       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
-    phi : float
-       [0, pi]; the polar (colatitudinal) coordinate.
+    m : array_like
+        Order of the harmonic (int); must have ``|m| <= n``.
+    n : array_like
+       Degree of the harmonic (int); must have ``n >= 0``. This is
+       often denoted by ``l`` (lower case L) in descriptions of
+       spherical harmonics.
+    theta : array_like
+       Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
+    phi : array_like
+       Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
 
     Returns
     -------
     y_mn : complex float
-       The harmonic :math:`Y^m_n` sampled at `theta` and `phi`
+       The harmonic :math:`Y^m_n` sampled at ``theta`` and ``phi``.
 
     Notes
     -----
-    There are different conventions for the meaning of input arguments
-    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
-    `phi` to be the polar angle.  It is common to see the opposite
-    convention - that is `theta` as the polar angle and `phi` as the
-    azimuthal angle.
+    There are different conventions for the meanings of the input
+    arguments ``theta`` and ``phi``. In SciPy ``theta`` is the
+    azimuthal angle and ``phi`` is the polar angle. It is common to
+    see the opposite convention, that is, ``theta`` as the polar angle
+    and ``phi`` as the azimuthal angle.
+
+    Note that SciPy's spherical harmonics include the Condon-Shortley
+    phase [2]_ because it is part of `lpmv`.
+
+    With SciPy's conventions, the first several spherical harmonics
+    are
+
+    .. math::
+
+        Y_0^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{1}{\pi}} \\
+        Y_1^{-1}(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{2\pi}}
+                                    e^{-i\theta} \sin(\phi) \\
+        Y_1^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{\pi}}
+                                 \cos(\phi) \\
+        Y_1^1(\theta, \phi) &= -\frac{1}{2} \sqrt{\frac{3}{2\pi}}
+                                 e^{i\theta} \sin(\phi).
 
     References
     ----------
-    .. [1] Digital Library of Mathematical Functions, 14.30. http://dlmf.nist.gov/14.30
+    .. [1] Digital Library of Mathematical Functions, 14.30.
+           https://dlmf.nist.gov/14.30
+    .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     """)
 
-add_newdoc("scipy.special", "_ellip_harm",
+add_newdoc("_ellip_harm",
     """
     Internal function, use `ellip_harm` instead.
     """)
 
-add_newdoc("scipy.special", "_ellip_norm",
+add_newdoc("_ellip_norm",
     """
     Internal function, use `ellip_norm` instead.
     """)
 
-add_newdoc("scipy.special", "_lambertw",
+add_newdoc("_lambertw",
     """
     Internal function, use `lambertw` instead.
     """)
 
-add_newdoc("scipy.special", "airy",
+add_newdoc("voigt_profile",
+    r"""
+    voigt_profile(x, sigma, gamma, out=None)
+
+    Voigt profile.
+
+    The Voigt profile is a convolution of a 1D Normal distribution with
+    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    half-maximum ``gamma``.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument
+    sigma : array_like
+        The standard deviation of the Normal distribution part
+    gamma : array_like
+        The half-width at half-maximum of the Cauchy distribution part
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        The Voigt profile at the given arguments
+
+    Notes
+    -----
+    It can be expressed in terms of Faddeeva function
+
+    .. math:: V(x; \sigma, \gamma) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: z = \frac{x + i\gamma}{\sqrt{2}\sigma}
+
+    where :math:`w(z)` is the Faddeeva function.
+
+    See Also
+    --------
+    wofz : Faddeeva function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
+
+    """)
+
+add_newdoc("wrightomega",
+    r"""
+    wrightomega(z, out=None)
+
+    Wright Omega function.
+
+    Defined as the solution to
+
+    .. math::
+
+        \omega + \log(\omega) = z
+
+    where :math:`\log` is the principal branch of the complex logarithm.
+
+    Parameters
+    ----------
+    z : array_like
+        Points at which to evaluate the Wright Omega function
+
+    Returns
+    -------
+    omega : ndarray
+        Values of the Wright Omega function
+
+    Notes
+    -----
+    .. versionadded:: 0.19.0
+
+    The function can also be defined as
+
+    .. math::
+
+        \omega(z) = W_{K(z)}(e^z)
+
+    where :math:`K(z) = \lceil (\Im(z) - \pi)/(2\pi) \rceil` is the
+    unwinding number and :math:`W` is the Lambert W function.
+
+    The implementation here is taken from [1]_.
+
+    See Also
+    --------
+    lambertw : The Lambert W function
+
+    References
+    ----------
+    .. [1] Lawrence, Corless, and Jeffrey, "Algorithm 917: Complex
+           Double-Precision Evaluation of the Wright :math:`\omega`
+           Function." ACM Transactions on Mathematical Software,
+           2012. :doi:`10.1145/2168773.2168779`.
+
+    """)
+
+
+add_newdoc("agm",
+    """
+    agm(a, b)
+
+    Compute the arithmetic-geometric mean of `a` and `b`.
+
+    Start with a_0 = a and b_0 = b and iteratively compute::
+
+        a_{n+1} = (a_n + b_n)/2
+        b_{n+1} = sqrt(a_n*b_n)
+
+    a_n and b_n converge to the same limit as n increases; their common
+    limit is agm(a, b).
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real values only.  If the values are both negative, the result
+        is negative.  If one value is negative and the other is positive,
+        `nan` is returned.
+
+    Returns
+    -------
+    float
+        The arithmetic-geometric mean of `a` and `b`.
+
+    Examples
+    --------
+    >>> from scipy.special import agm
+    >>> a, b = 24.0, 6.0
+    >>> agm(a, b)
+    13.458171481725614
+
+    Compare that result to the iteration:
+
+    >>> while a != b:
+    ...     a, b = (a + b)/2, np.sqrt(a*b)
+    ...     print("a = %19.16f  b=%19.16f" % (a, b))
+    ...
+    a = 15.0000000000000000  b=12.0000000000000000
+    a = 13.5000000000000000  b=13.4164078649987388
+    a = 13.4582039324993694  b=13.4581390309909850
+    a = 13.4581714817451772  b=13.4581714817060547
+    a = 13.4581714817256159  b=13.4581714817256159
+
+    When array-like arguments are given, broadcasting applies:
+
+    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
+    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
+    >>> agm(a, b)
+    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
+           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
+           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
+    """)
+
+add_newdoc("airy",
     r"""
     airy(z)
 
@@ -120,13 +305,32 @@ add_newdoc("scipy.special", "airy",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/.org/amos/
+           http://netlib.org/amos/
+
+    Examples
+    --------
+    Compute the Airy functions on the interval [-15, 5].
+
+    >>> from scipy import special
+    >>> x = np.linspace(-15, 5, 201)
+    >>> ai, aip, bi, bip = special.airy(x)
+
+    Plot Ai(x) and Bi(x).
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x, ai, 'r', label='Ai(x)')
+    >>> plt.plot(x, bi, 'b--', label='Bi(x)')
+    >>> plt.ylim(-0.5, 1.0)
+    >>> plt.grid()
+    >>> plt.legend(loc='upper left')
+    >>> plt.show()
+
     """)
 
-add_newdoc("scipy.special", "airye",
+add_newdoc("airye",
     """
     airye(z)
 
@@ -136,8 +340,8 @@ add_newdoc("scipy.special", "airye",
 
         eAi  = Ai  * exp(2.0/3.0*z*sqrt(z))
         eAip = Aip * exp(2.0/3.0*z*sqrt(z))
-        eBi  = Bi  * exp(-abs((2.0/3.0*z*sqrt(z)).real))
-        eBip = Bip * exp(-abs((2.0/3.0*z*sqrt(z)).real))
+        eBi  = Bi  * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
+        eBip = Bip * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
 
     Parameters
     ----------
@@ -164,7 +368,7 @@ add_newdoc("scipy.special", "airye",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "bdtr",
+add_newdoc("bdtr",
     r"""
     bdtr(k, n, p)
 
@@ -203,11 +407,11 @@ add_newdoc("scipy.special", "bdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "bdtrc",
+add_newdoc("bdtrc",
     r"""
     bdtrc(k, n, p)
 
@@ -251,11 +455,11 @@ add_newdoc("scipy.special", "bdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "bdtri",
+add_newdoc("bdtri",
     """
     bdtri(k, n, y)
 
@@ -297,10 +501,10 @@ add_newdoc("scipy.special", "bdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "bdtrik",
+add_newdoc("bdtrik",
     """
     bdtrik(y, n, p)
 
@@ -334,8 +538,8 @@ add_newdoc("scipy.special", "bdtrik",
     Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
     cumulative incomplete beta distribution.
 
-    Computation of `k` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `k`.
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `k`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -350,7 +554,7 @@ add_newdoc("scipy.special", "bdtrik",
 
     """)
 
-add_newdoc("scipy.special", "bdtrin",
+add_newdoc("bdtrin",
     """
     bdtrin(k, y, p)
 
@@ -384,8 +588,8 @@ add_newdoc("scipy.special", "bdtrin",
     Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
     cumulative incomplete beta distribution.
 
-    Computation of `n` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `n`.
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -399,14 +603,19 @@ add_newdoc("scipy.special", "bdtrin",
            Functions, Inverses, and Other Parameters.
     """)
 
-add_newdoc("scipy.special", "binom",
+add_newdoc("binom",
     """
     binom(n, k)
 
     Binomial coefficient
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+
     """)
 
-add_newdoc("scipy.special", "btdtria",
+add_newdoc("btdtria",
     r"""
     btdtria(p, b, x)
 
@@ -435,7 +644,7 @@ add_newdoc("scipy.special", "btdtria",
 
     See Also
     --------
-    btdtr : Cumulative density function of the beta distribution.
+    btdtr : Cumulative distribution function of the beta distribution.
     btdtri : Inverse with respect to `x`.
     btdtrib : Inverse with respect to `b`.
 
@@ -444,9 +653,9 @@ add_newdoc("scipy.special", "btdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `a`.
+    monotonicity of `p` with `a`.
 
     References
     ----------
@@ -459,7 +668,7 @@ add_newdoc("scipy.special", "btdtria",
 
     """)
 
-add_newdoc("scipy.special", "btdtrib",
+add_newdoc("btdtrib",
     r"""
     btdtria(a, p, x)
 
@@ -488,7 +697,7 @@ add_newdoc("scipy.special", "btdtrib",
 
     See Also
     --------
-    btdtr : Cumulative density function of the beta distribution.
+    btdtr : Cumulative distribution function of the beta distribution.
     btdtri : Inverse with respect to `x`.
     btdtria : Inverse with respect to `a`.
 
@@ -497,9 +706,9 @@ add_newdoc("scipy.special", "btdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `b`.
+    monotonicity of `p` with `b`.
 
     References
     ----------
@@ -513,35 +722,35 @@ add_newdoc("scipy.special", "btdtrib",
 
     """)
 
-add_newdoc("scipy.special", "bei",
+add_newdoc("bei",
     """
     bei(x)
 
     Kelvin function bei
     """)
 
-add_newdoc("scipy.special", "beip",
+add_newdoc("beip",
     """
     beip(x)
 
     Derivative of the Kelvin function `bei`
     """)
 
-add_newdoc("scipy.special", "ber",
+add_newdoc("ber",
     """
     ber(x)
 
     Kelvin function ber.
     """)
 
-add_newdoc("scipy.special", "berp",
+add_newdoc("berp",
     """
     berp(x)
 
     Derivative of the Kelvin function `ber`
     """)
 
-add_newdoc("scipy.special", "besselpoly",
+add_newdoc("besselpoly",
     r"""
     besselpoly(a, lmb, nu)
 
@@ -556,47 +765,217 @@ add_newdoc("scipy.special", "besselpoly",
 
     """)
 
-add_newdoc("scipy.special", "beta",
-    """
-    beta(a, b)
+add_newdoc("beta",
+    r"""
+    beta(a, b, out=None)
 
     Beta function.
 
-    ::
+    This function is defined in [1]_ as
 
-        beta(a, b) =  gamma(a) * gamma(b) / gamma(a+b)
+    .. math::
+
+        B(a, b) = \int_0^1 t^{a-1}(1-t)^{b-1}dt
+                = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)},
+
+    where :math:`\Gamma` is the gamma function.
+
+    Parameters
+    ----------
+    a, b : array-like
+        Real-valued arguments
+    out : ndarray, optional
+        Optional output array for the function result
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the beta function
+
+    See Also
+    --------
+    gamma : the gamma function
+    betainc :  the incomplete beta function
+    betaln : the natural logarithm of the absolute
+             value of the beta function
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions,
+           Eq. 5.12.1. https://dlmf.nist.gov/5.12
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    The beta function relates to the gamma function by the
+    definition given above:
+
+    >>> sc.beta(2, 3)
+    0.08333333333333333
+    >>> sc.gamma(2)*sc.gamma(3)/sc.gamma(2 + 3)
+    0.08333333333333333
+
+    As this relationship demonstrates, the beta function
+    is symmetric:
+
+    >>> sc.beta(1.7, 2.4)
+    0.16567527689031739
+    >>> sc.beta(2.4, 1.7)
+    0.16567527689031739
+
+    This function satisfies :math:`B(1, b) = 1/b`:
+
+    >>> sc.beta(1, 4)
+    0.25
+
     """)
 
-add_newdoc("scipy.special", "betainc",
-    """
-    betainc(a, b, x)
+add_newdoc("betainc",
+    r"""
+    betainc(a, b, x, out=None)
 
-    Incomplete beta integral.
+    Incomplete beta function.
 
-    Compute the incomplete beta integral of the arguments, evaluated
-    from zero to `x`::
+    Computes the incomplete beta function, defined as [1]_:
 
-        gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).
+    .. math::
+
+        I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x
+        t^{a-1}(1-t)^{b-1}dt,
+
+    for :math:`0 \leq x \leq 1`.
+
+    Parameters
+    ----------
+    a, b : array-like
+           Positive, real-valued parameters
+    x : array-like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    array-like
+        Value of the incomplete beta function
+
+    See Also
+    --------
+    beta : beta function
+    betaincinv : inverse of the incomplete beta function
 
     Notes
     -----
-    The incomplete beta is also sometimes defined without the terms
-    in gamma, in which case the above definition is the so-called regularized
-    incomplete beta. Under this definition, you can get the incomplete beta by
-    multiplying the result of the scipy function by beta(a, b).
+    The incomplete beta function is also sometimes defined
+    without the `gamma` terms, in which case the above
+    definition is the so-called regularized incomplete beta
+    function. Under this definition, you can get the incomplete
+    beta function by multiplying the result of the SciPy
+    function by `beta`.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+
+    Examples
+    --------
+
+    Let :math:`B(a, b)` be the `beta` function.
+
+    >>> import scipy.special as sc
+
+    The coefficient in terms of `gamma` is equal to
+    :math:`1/B(a, b)`. Also, when :math:`x=1`
+    the integral is equal to :math:`B(a, b)`.
+    Therefore, :math:`I_{x=1}(a, b) = 1` for any :math:`a, b`.
+
+    >>> sc.betainc(0.2, 3.5, 1.0)
+    1.0
+
+    It satisfies
+    :math:`I_x(a, b) = x^a F(a, 1-b, a+1, x)/ (aB(a, b))`,
+    where :math:`F` is the hypergeometric function `hyp2f1`:
+
+    >>> a, b, x = 1.4, 3.1, 0.5
+    >>> x**a * sc.hyp2f1(a, 1 - b, a + 1, x)/(a * sc.beta(a, b))
+    0.8148904036225295
+    >>> sc.betainc(a, b, x)
+    0.8148904036225296
+
+    This functions satisfies the relationship
+    :math:`I_x(a, b) = 1 - I_{1-x}(b, a)`:
+
+    >>> sc.betainc(2.2, 3.1, 0.4)
+    0.49339638807619446
+    >>> 1 - sc.betainc(3.1, 2.2, 1 - 0.4)
+    0.49339638807619446
 
     """)
 
-add_newdoc("scipy.special", "betaincinv",
-    """
-    betaincinv(a, b, y)
+add_newdoc("betaincinv",
+    r"""
+    betaincinv(a, b, y, out=None)
 
-    Inverse function to beta integral.
+    Inverse of the incomplete beta function.
 
-    Compute `x` such that betainc(a, b, x) = y.
+    Computes :math:`x` such that:
+
+    .. math::
+
+        y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
+
+    where :math:`I_x` is the normalized incomplete beta
+    function `betainc` and
+    :math:`\Gamma` is the `gamma` function [1]_.
+
+    Parameters
+    ----------
+    a, b : array-like
+        Positive, real-valued parameters
+    y : array-like
+        Real-valued input
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    array-like
+        Value of the inverse of the incomplete beta function
+
+    See Also
+    --------
+    betainc : incomplete beta function
+    gamma : gamma function
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    This function is the inverse of `betainc` for fixed
+    values of :math:`a` and :math:`b`.
+
+    >>> a, b = 1.2, 3.1
+    >>> y = sc.betainc(a, b, 0.2)
+    >>> sc.betaincinv(a, b, y)
+    0.2
+    >>>
+    >>> a, b = 7.5, 0.4
+    >>> x = sc.betaincinv(a, b, 0.5)
+    >>> sc.betainc(a, b, x)
+    0.5
+
     """)
 
-add_newdoc("scipy.special", "betaln",
+add_newdoc("betaln",
     """
     betaln(a, b)
 
@@ -605,7 +984,7 @@ add_newdoc("scipy.special", "betaln",
     Computes ``ln(abs(beta(a, b)))``.
     """)
 
-add_newdoc("scipy.special", "boxcox",
+add_newdoc("boxcox",
     """
     boxcox(x, lmbda)
 
@@ -645,7 +1024,7 @@ add_newdoc("scipy.special", "boxcox",
     array([ 0.69314718,  1.        ,  1.5       ])
     """)
 
-add_newdoc("scipy.special", "boxcox1p",
+add_newdoc("boxcox1p",
     """
     boxcox1p(x, lmbda)
 
@@ -685,7 +1064,7 @@ add_newdoc("scipy.special", "boxcox1p",
     array([ 0.00996272,  0.09645476])
     """)
 
-add_newdoc("scipy.special", "inv_boxcox",
+add_newdoc("inv_boxcox",
     """
     inv_boxcox(y, lmbda)
 
@@ -721,7 +1100,7 @@ add_newdoc("scipy.special", "inv_boxcox",
     array([1., 4., 10.])
     """)
 
-add_newdoc("scipy.special", "inv_boxcox1p",
+add_newdoc("inv_boxcox1p",
     """
     inv_boxcox1p(y, lmbda)
 
@@ -757,11 +1136,11 @@ add_newdoc("scipy.special", "inv_boxcox1p",
     array([1., 4., 10.])
     """)
 
-add_newdoc("scipy.special", "btdtr",
+add_newdoc("btdtr",
     r"""
     btdtr(a, b, x)
 
-    Cumulative density function of the beta distribution.
+    Cumulative distribution function of the beta distribution.
 
     Returns the integral from zero to `x` of the beta probability density
     function,
@@ -783,8 +1162,8 @@ add_newdoc("scipy.special", "btdtr",
     Returns
     -------
     I : ndarray
-        Cumulative density function of the beta distribution with parameters
-        `a` and `b` at `x`.
+        Cumulative distribution function of the beta distribution with
+        parameters `a` and `b` at `x`.
 
     See Also
     --------
@@ -800,11 +1179,11 @@ add_newdoc("scipy.special", "btdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "btdtri",
+add_newdoc("btdtri",
     r"""
     btdtri(a, b, p)
 
@@ -845,18 +1224,38 @@ add_newdoc("scipy.special", "btdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "cbrt",
+add_newdoc("cbrt",
     """
     cbrt(x)
 
-    Cube root of `x`
+    Element-wise cube root of `x`.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        The cube root of each value in `x`.
+
+    Examples
+    --------
+    >>> from scipy.special import cbrt
+
+    >>> cbrt(8)
+    2.0
+    >>> cbrt([-8, -3, 0.125, 1.331])
+    array([-2.        , -1.44224957,  0.5       ,  1.1       ])
+
     """)
 
-add_newdoc("scipy.special", "chdtr",
+add_newdoc("chdtr",
     """
     chdtr(v, x)
 
@@ -868,7 +1267,7 @@ add_newdoc("scipy.special", "chdtr",
         1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
     """)
 
-add_newdoc("scipy.special", "chdtrc",
+add_newdoc("chdtrc",
     """
     chdtrc(v, x)
 
@@ -881,7 +1280,7 @@ add_newdoc("scipy.special", "chdtrc",
         1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)
     """)
 
-add_newdoc("scipy.special", "chdtri",
+add_newdoc("chdtri",
     """
     chdtri(v, p)
 
@@ -890,16 +1289,16 @@ add_newdoc("scipy.special", "chdtri",
     Returns the argument x such that ``chdtrc(v, x) == p``.
     """)
 
-add_newdoc("scipy.special", "chdtriv",
+add_newdoc("chdtriv",
     """
-    chdtri(p, x)
+    chdtriv(p, x)
 
     Inverse to `chdtr` vs `v`
 
     Returns the argument v such that ``chdtr(v, x) == p``.
     """)
 
-add_newdoc("scipy.special", "chndtr",
+add_newdoc("chndtr",
     """
     chndtr(x, df, nc)
 
@@ -907,49 +1306,49 @@ add_newdoc("scipy.special", "chndtr",
 
     """)
 
-add_newdoc("scipy.special", "chndtrix",
+add_newdoc("chndtrix",
     """
     chndtrix(p, df, nc)
 
     Inverse to `chndtr` vs `x`
     """)
 
-add_newdoc("scipy.special", "chndtridf",
+add_newdoc("chndtridf",
     """
     chndtridf(x, p, nc)
 
     Inverse to `chndtr` vs `df`
     """)
 
-add_newdoc("scipy.special", "chndtrinc",
+add_newdoc("chndtrinc",
     """
     chndtrinc(x, df, p)
 
     Inverse to `chndtr` vs `nc`
     """)
 
-add_newdoc("scipy.special", "cosdg",
+add_newdoc("cosdg",
     """
     cosdg(x)
 
     Cosine of the angle `x` given in degrees.
     """)
 
-add_newdoc("scipy.special", "cosm1",
+add_newdoc("cosm1",
     """
     cosm1(x)
 
     cos(x) - 1 for use when `x` is near zero.
     """)
 
-add_newdoc("scipy.special", "cotdg",
+add_newdoc("cotdg",
     """
     cotdg(x)
 
     Cotangent of the angle `x` given in degrees.
     """)
 
-add_newdoc("scipy.special", "dawsn",
+add_newdoc("dawsn",
     """
     dawsn(x)
 
@@ -980,15 +1379,15 @@ add_newdoc("scipy.special", "dawsn",
 
     """)
 
-add_newdoc("scipy.special", "ellipe",
-    """
+add_newdoc("ellipe",
+    r"""
     ellipe(m)
 
     Complete elliptic integral of the second kind
 
     This function is defined as
 
-    .. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt
+    .. math:: E(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{1/2} dt
 
     Parameters
     ----------
@@ -1006,14 +1405,20 @@ add_newdoc("scipy.special", "ellipe",
 
     For `m > 0` the computation uses the approximation,
 
-    .. math:: E(m) \\approx P(1-m) - (1-m) \\log(1-m) Q(1-m),
+    .. math:: E(m) \approx P(1-m) - (1-m) \log(1-m) Q(1-m),
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  For
     `m < 0`, the relation
 
-    .. math:: E(m) = E(m/(m - 1)) \\sqrt(1-m)
+    .. math:: E(m) = E(m/(m - 1)) \sqrt(1-m)
 
     is used.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
 
     See Also
     --------
@@ -1025,18 +1430,47 @@ add_newdoc("scipy.special", "ellipe",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    This function is used in finding the circumference of an
+    ellipse with semi-major axis `a` and semi-minor axis `b`.
+
+    >>> from scipy import special
+
+    >>> a = 3.5
+    >>> b = 2.1
+    >>> e_sq = 1.0 - b**2/a**2  # eccentricity squared
+
+    Then the circumference is found using the following:
+
+    >>> C = 4*a*special.ellipe(e_sq)  # circumference formula
+    >>> C
+    17.868899204378693
+
+    When `a` and `b` are the same (meaning eccentricity is 0),
+    this reduces to the circumference of a circle.
+
+    >>> 4*a*special.ellipe(0.0)  # formula for ellipse with a = b
+    21.991148575128552
+    >>> 2*np.pi*a  # formula for circle of radius a
+    21.991148575128552
+
     """)
 
-add_newdoc("scipy.special", "ellipeinc",
-    """
+add_newdoc("ellipeinc",
+    r"""
     ellipeinc(phi, m)
 
     Incomplete elliptic integral of the second kind
 
     This function is defined as
 
-    .. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt
+    .. math:: E(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{1/2} dt
 
     Parameters
     ----------
@@ -1057,6 +1491,12 @@ add_newdoc("scipy.special", "ellipeinc",
 
     Computation uses arithmetic-geometric means algorithm.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -1067,10 +1507,13 @@ add_newdoc("scipy.special", "ellipeinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
-add_newdoc("scipy.special", "ellipj",
+add_newdoc("ellipj",
     """
     ellipj(u, m)
 
@@ -1093,7 +1536,7 @@ add_newdoc("scipy.special", "ellipj",
 
             sn(u|m), cn(u|m), dn(u|m)
 
-        The value `ph` is such that if `u = ellipk(ph, m)`,
+        The value `ph` is such that if `u = ellipkinc(ph, m)`,
         then `sn(u|m) = sin(ph)` and `cn(u|m) = cos(ph)`.
 
     Notes
@@ -1103,7 +1546,7 @@ add_newdoc("scipy.special", "ellipj",
     These functions are periodic, with quarter-period on the real axis
     equal to the complete elliptic integral `ellipk(m)`.
 
-    Relation to incomplete elliptic integral: If `u = ellipk(phi,m)`, then
+    Relation to incomplete elliptic integral: If `u = ellipkinc(phi,m)`, then
     `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`.  The `phi` is called
     the amplitude of `u`.
 
@@ -1113,15 +1556,16 @@ add_newdoc("scipy.special", "ellipj",
 
     See also
     --------
-    ellipk : Complete elliptic integral of the first kind.
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "ellipkm1",
+add_newdoc("ellipkm1",
     """
     ellipkm1(p)
 
@@ -1170,18 +1614,64 @@ add_newdoc("scipy.special", "ellipkm1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "ellipkinc",
-    """
+add_newdoc("ellipk",
+    r"""
+    ellipk(m)
+
+    Complete elliptic integral of the first kind.
+
+    This function is defined as
+
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        The parameter of the elliptic integral.
+
+    Returns
+    -------
+    K : array_like
+        Value of the elliptic integral.
+
+    Notes
+    -----
+    For more precision around point m = 1, use `ellipkm1`, which this
+    function calls.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind around m = 1
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    """)
+
+add_newdoc("ellipkinc",
+    r"""
     ellipkinc(phi, m)
 
     Incomplete elliptic integral of the first kind
 
     This function is defined as
 
-    .. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{-1/2} dt
 
     This function is also called `F(phi, m)`.
 
@@ -1203,6 +1693,12 @@ add_newdoc("scipy.special", "ellipkinc",
     Wrapper for the Cephes [1]_ routine `ellik`.  The computation is
     carried out using the arithmetic-geometric mean algorithm.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -1213,10 +1709,13 @@ add_newdoc("scipy.special", "ellipkinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
-add_newdoc("scipy.special", "entr",
+add_newdoc("entr",
     r"""
     entr(x)
 
@@ -1246,7 +1745,7 @@ add_newdoc("scipy.special", "entr",
 
     """)
 
-add_newdoc("scipy.special", "erf",
+add_newdoc("erf",
     """
     erf(z)
 
@@ -1275,7 +1774,7 @@ add_newdoc("scipy.special", "erf",
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Error_function
+    .. [1] https://en.wikipedia.org/wiki/Error_function
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover,
@@ -1295,11 +1794,23 @@ add_newdoc("scipy.special", "erf",
 
     """)
 
-add_newdoc("scipy.special", "erfc",
+add_newdoc("erfc",
     """
-    erfc(x)
+    erfc(x, out=None)
 
     Complementary error function, ``1 - erf(x)``.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the complementary error function
 
     See Also
     --------
@@ -1322,11 +1833,23 @@ add_newdoc("scipy.special", "erfc",
 
     """)
 
-add_newdoc("scipy.special", "erfi",
+add_newdoc("erfi",
     """
-    erfi(z)
+    erfi(z, out=None)
 
     Imaginary error function, ``-i erf(i z)``.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the imaginary error function
 
     See Also
     --------
@@ -1354,11 +1877,24 @@ add_newdoc("scipy.special", "erfi",
 
     """)
 
-add_newdoc("scipy.special", "erfcx",
+add_newdoc("erfcx",
     """
-    erfcx(x)
+    erfcx(x, out=None)
 
     Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the scaled complementary error function
+
 
     See Also
     --------
@@ -1386,160 +1922,821 @@ add_newdoc("scipy.special", "erfcx",
 
     """)
 
-add_newdoc("scipy.special", "eval_jacobi",
-    """
+add_newdoc("eval_jacobi",
+    r"""
     eval_jacobi(n, alpha, beta, x, out=None)
 
     Evaluate Jacobi polynomial at a point.
+
+    The Jacobi polynomials can be defined via the Gauss hypergeometric
+    function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2)
+
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter
+    beta : array_like
+        Parameter
+    x : array_like
+        Points at which to evaluate the polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the Jacobi polynomial
+
+    See Also
+    --------
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
+    jacobi : Jacobi polynomial object
+    hyp2f1 : Gauss hypergeometric function
     """)
 
-add_newdoc("scipy.special", "eval_sh_jacobi",
-    """
+add_newdoc("eval_sh_jacobi",
+    r"""
     eval_sh_jacobi(n, p, q, x, out=None)
 
     Evaluate shifted Jacobi polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        G_n^{(p, q)}(x)
+          = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
+
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `binom` and `eval_jacobi`.
+    p : float
+        Parameter
+    q : float
+        Parameter
+
+    Returns
+    -------
+    G : ndarray
+        Values of the shifted Jacobi polynomial.
+
+    See Also
+    --------
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
+    sh_jacobi : shifted Jacobi polynomial object
+    eval_jacobi : evaluate Jacobi polynomials
     """)
 
-add_newdoc("scipy.special", "eval_gegenbauer",
-    """
+add_newdoc("eval_gegenbauer",
+    r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
     Evaluate Gegenbauer polynomial at a point.
+
+    The Gegenbauer polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        C_n^{(\alpha)} = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter
+    x : array_like
+        Points at which to evaluate the Gegenbauer polynomial
+
+    Returns
+    -------
+    C : ndarray
+        Values of the Gegenbauer polynomial
+
+    See Also
+    --------
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
+    gegenbauer : Gegenbauer polynomial object
+    hyp2f1 : Gauss hypergeometric function
     """)
 
-add_newdoc("scipy.special", "eval_chebyt",
-    """
+add_newdoc("eval_chebyt",
+    r"""
     eval_chebyt(n, x, out=None)
 
-    Evaluate Chebyshev T polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind at a point.
 
+    The Chebyshev polynomials of the first kind can be defined via the
+    Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    T : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyt : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind
+    chebyu : Chebychev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
+    hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+
+    Notes
+    -----
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
     up to order ``10000``.
     """)
 
-add_newdoc("scipy.special", "eval_chebyu",
-    """
+add_newdoc("eval_chebyu",
+    r"""
     eval_chebyu(n, x, out=None)
 
-    Evaluate Chebyshev U polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind at a point.
+
+    The Chebyshev polynomials of the second kind can be defined via
+    the Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    U : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyu : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind
+    chebyu : Chebyshev polynomial object
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
+    hyp2f1 : Gauss hypergeometric function
     """)
 
-add_newdoc("scipy.special", "eval_chebys",
-    """
+add_newdoc("eval_chebys",
+    r"""
     eval_chebys(n, x, out=None)
 
-    Evaluate Chebyshev S polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = U_n(x/2)
+
+    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    S : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebys : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind on [-2, 2]
+    chebys : Chebyshev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
-add_newdoc("scipy.special", "eval_chebyc",
-    """
+add_newdoc("eval_chebyc",
+    r"""
     eval_chebyc(n, x, out=None)
 
-    Evaluate Chebyshev C polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = T_n(x/2)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    C : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyc : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind on [-2, 2]
+    chebyc : Chebyshev polynomial object
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    eval_chebyt : evaluate Chebycshev polynomials of the first kind
     """)
 
-add_newdoc("scipy.special", "eval_sh_chebyt",
-    """
+add_newdoc("eval_sh_chebyt",
+    r"""
     eval_sh_chebyt(n, x, out=None)
 
-    Evaluate shifted Chebyshev T polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the first kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        T_n^*(x) = T_n(2x - 1)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+
+    Returns
+    -------
+    T : ndarray
+        Values of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyt : roots and quadrature weights of shifted
+                      Chebyshev polynomials of the first kind
+    sh_chebyt : shifted Chebyshev polynomial object
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     """)
 
-add_newdoc("scipy.special", "eval_sh_chebyu",
-    """
+add_newdoc("eval_sh_chebyu",
+    r"""
     eval_sh_chebyu(n, x, out=None)
 
-    Evaluate shifted Chebyshev U polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the second kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        U_n^*(x) = U_n(2x - 1)
+
+    where :math:`U_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+
+    Returns
+    -------
+    U : ndarray
+        Values of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
+    sh_chebyu : shifted Chebyshev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
-add_newdoc("scipy.special", "eval_legendre",
-    """
+add_newdoc("eval_legendre",
+    r"""
     eval_legendre(n, x, out=None)
 
     Evaluate Legendre polynomial at a point.
+
+    The Legendre polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Legendre polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the Legendre polynomial
+
+    See Also
+    --------
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
+    legendre : Legendre polynomial object
+    hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
-add_newdoc("scipy.special", "eval_sh_legendre",
-    """
+add_newdoc("eval_sh_legendre",
+    r"""
     eval_sh_legendre(n, x, out=None)
 
     Evaluate shifted Legendre polynomial at a point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        P_n^*(x) = P_n(2x - 1)
+
+    where :math:`P_n` is a Legendre polynomial.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the value is
+        determined via the relation to `eval_legendre`.
+    x : array_like
+        Points at which to evaluate the shifted Legendre polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the shifted Legendre polynomial
+
+    See Also
+    --------
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
+    sh_legendre : shifted Legendre polynomial object
+    eval_legendre : evaluate Legendre polynomials
+    numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
-add_newdoc("scipy.special", "eval_genlaguerre",
-    """
+add_newdoc("eval_genlaguerre",
+    r"""
     eval_genlaguerre(n, alpha, x, out=None)
 
     Evaluate generalized Laguerre polynomial at a point.
+
+    The generalized Laguerre polynomials can be defined via the
+    confluent hypergeometric function :math:`{}_1F_1` as
+
+    .. math::
+
+        L_n^{(\alpha)}(x) = \binom{n + \alpha}{n}
+          {}_1F_1(-n, \alpha + 1, x).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. The Laguerre polynomials are the special case where
+    :math:`\alpha = 0`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the confluent hypergeometric
+        function.
+    alpha : array_like
+        Parameter; must have ``alpha > -1``
+    x : array_like
+        Points at which to evaluate the generalized Laguerre
+        polynomial
+
+    Returns
+    -------
+    L : ndarray
+        Values of the generalized Laguerre polynomial
+
+    See Also
+    --------
+    roots_genlaguerre : roots and quadrature weights of generalized
+                        Laguerre polynomials
+    genlaguerre : generalized Laguerre polynomial object
+    hyp1f1 : confluent hypergeometric function
+    eval_laguerre : evaluate Laguerre polynomials
     """)
 
-add_newdoc("scipy.special", "eval_laguerre",
-     """
-    eval_laguerre(n, x, out=None)
+add_newdoc("eval_laguerre",
+     r"""
+     eval_laguerre(n, x, out=None)
 
-    Evaluate Laguerre polynomial at a point.
-    """)
+     Evaluate Laguerre polynomial at a point.
 
-add_newdoc("scipy.special", "eval_hermite",
-    """
+     The Laguerre polynomials can be defined via the confluent
+     hypergeometric function :math:`{}_1F_1` as
+
+     .. math::
+
+         L_n(x) = {}_1F_1(-n, 1, x).
+
+     When :math:`n` is an integer the result is a polynomial of degree
+     :math:`n`.
+
+     Parameters
+     ----------
+     n : array_like
+         Degree of the polynomial. If not an integer the result is
+         determined via the relation to the confluent hypergeometric
+         function.
+     x : array_like
+         Points at which to evaluate the Laguerre polynomial
+
+     Returns
+     -------
+     L : ndarray
+         Values of the Laguerre polynomial
+
+     See Also
+     --------
+     roots_laguerre : roots and quadrature weights of Laguerre
+                      polynomials
+     laguerre : Laguerre polynomial object
+     numpy.polynomial.laguerre.Laguerre : Laguerre series
+     eval_genlaguerre : evaluate generalized Laguerre polynomials
+     """)
+
+add_newdoc("eval_hermite",
+    r"""
     eval_hermite(n, x, out=None)
 
-    Evaluate Hermite polynomial at a point.
+    Evaluate physicist's Hermite polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
+
+    :math:`H_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+
+    Returns
+    -------
+    H : ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
+    hermite : physicist's Hermite polynomial object
+    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    eval_hermitenorm : evaluate Probabilist's Hermite polynomials
     """)
 
-add_newdoc("scipy.special", "eval_hermitenorm",
-    """
+add_newdoc("eval_hermitenorm",
+    r"""
     eval_hermitenorm(n, x, out=None)
 
-    Evaluate normalized Hermite polynomial at a point.
+    Evaluate probabilist's (normalized) Hermite polynomial at a
+    point.
+
+    Defined by
+
+    .. math::
+
+        He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
+
+    :math:`He_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+
+    Returns
+    -------
+    He : ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
+    hermitenorm : probabilist's Hermite polynomial object
+    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    eval_hermite : evaluate physicist's Hermite polynomials
     """)
 
-add_newdoc("scipy.special", "exp1",
-    """
-    exp1(z)
+add_newdoc("exp1",
+    r"""
+    exp1(z, out=None)
 
-    Exponential integral E_1 of complex argument z
+    Exponential integral E1.
 
-    ::
+    For complex :math:`z \ne 0` the exponential integral can be defined as
+    [1]_
 
-        integral(exp(-z*t)/t, t=1..inf).
+    .. math::
+
+       E_1(z) = \int_z^\infty \frac{e^{-t}}{t} dt,
+
+    where the path of the integral does not cross the negative real
+    axis or pass through the origin.
+
+    Parameters
+    ----------
+    z: array_like
+        Real or complex argument.
+    out: ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the exponential integral E1
+
+    See Also
+    --------
+    expi : exponential integral :math:`Ei`
+    expn : generalization of :math:`E_1`
+
+    Notes
+    -----
+    For :math:`x > 0` it is related to the exponential integral
+    :math:`Ei` (see `expi`) via the relation
+
+    .. math::
+
+       E_1(x) = -Ei(-x).
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 6.2.1
+           https://dlmf.nist.gov/6.2#E1
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has a pole at 0.
+
+    >>> sc.exp1(0)
+    inf
+
+    It has a branch cut on the negative real axis.
+
+    >>> sc.exp1(-1)
+    nan
+    >>> sc.exp1(complex(-1, 0))
+    (-1.8951178163559368-3.141592653589793j)
+    >>> sc.exp1(complex(-1, -0.0))
+    (-1.8951178163559368+3.141592653589793j)
+
+    It approaches 0 along the positive real axis.
+
+    >>> sc.exp1([1, 10, 100, 1000])
+    array([2.19383934e-01, 4.15696893e-06, 3.68359776e-46, 0.00000000e+00])
+
+    It is related to `expi`.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> sc.exp1(x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+    >>> -sc.expi(-x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+
     """)
 
-add_newdoc("scipy.special", "exp10",
+add_newdoc("exp10",
     """
     exp10(x)
 
-    10**x
+    Compute ``10**x`` element-wise.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        ``10**x``, computed element-wise.
+
+    Examples
+    --------
+    >>> from scipy.special import exp10
+
+    >>> exp10(3)
+    1000.0
+    >>> x = np.array([[-1, -0.5, 0], [0.5, 1, 1.5]])
+    >>> exp10(x)
+    array([[  0.1       ,   0.31622777,   1.        ],
+           [  3.16227766,  10.        ,  31.6227766 ]])
+
     """)
 
-add_newdoc("scipy.special", "exp2",
+add_newdoc("exp2",
     """
     exp2(x)
 
-    2**x
+    Compute ``2**x`` element-wise.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        ``2**x``, computed element-wise.
+
+    Examples
+    --------
+    >>> from scipy.special import exp2
+
+    >>> exp2(3)
+    8.0
+    >>> x = np.array([[-1, -0.5, 0], [0.5, 1, 1.5]])
+    >>> exp2(x)
+    array([[ 0.5       ,  0.70710678,  1.        ],
+           [ 1.41421356,  2.        ,  2.82842712]])
     """)
 
-add_newdoc("scipy.special", "expi",
-    """
-    expi(x)
+add_newdoc("expi",
+    r"""
+    expi(x, out=None)
 
-    Exponential integral Ei
+    Exponential integral Ei.
 
-    Defined as::
+    For real :math:`x`, the exponential integral is defined as [1]_
 
-        integral(exp(t)/t, t=-inf..x)
+    .. math::
 
-    See `expn` for a different exponential integral.
+        Ei(x) = \int_{-\infty}^x \frac{e^t}{t} dt.
+
+    For :math:`x > 0` the integral is understood as a Cauchy principle
+    value.
+
+    It is extended to the complex plane by analytic continuation of
+    the function on the interval :math:`(0, \infty)`. The complex
+    variant has a branch cut on the negative real axis.
+
+    Parameters
+    ----------
+    x: array_like
+        Real or complex valued argument
+    out: ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the exponential integral
+
+    Notes
+    -----
+    The exponential integrals :math:`E_1` and :math:`Ei` satisfy the
+    relation
+
+    .. math::
+
+        E_1(x) = -Ei(-x)
+
+    for :math:`x > 0`.
+
+    See Also
+    --------
+    exp1 : Exponential integral :math:`E_1`
+    expn : Generalized exponential integral :math:`E_n`
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 6.2.5
+           https://dlmf.nist.gov/6.2#E5
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is related to `exp1`.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> -sc.expi(-x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+    >>> sc.exp1(x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+
+    The complex variant has a branch cut on the negative real axis.
+
+    >>> import scipy.special as sc
+    >>> sc.expi(-1 + 1e-12j)
+    (-0.21938393439552062+3.1415926535894254j)
+    >>> sc.expi(-1 - 1e-12j)
+    (-0.21938393439552062-3.1415926535894254j)
+
+    As the complex variant approaches the branch cut, the real parts
+    approach the value of the real variant.
+
+    >>> sc.expi(-1)
+    -0.21938393439552062
+
+    The SciPy implementation returns the real variant for complex
+    values on the branch cut.
+
+    >>> sc.expi(complex(-1, 0.0))
+    (-0.21938393439552062-0j)
+    >>> sc.expi(complex(-1, -0.0))
+    (-0.21938393439552062-0j)
+
     """)
 
-add_newdoc('scipy.special', 'expit',
+add_newdoc('expit',
     """
     expit(x)
 
-    Expit ufunc for ndarrays.
+    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
 
-    The expit function, also known as the logistic function, is defined as
-    expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.
+    The expit function, also known as the logistic sigmoid function, is
+    defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
+    logit function.
 
     Parameters
     ----------
@@ -1550,7 +2747,11 @@ add_newdoc('scipy.special', 'expit',
     -------
     out : ndarray
         An ndarray of the same shape as x. Its entries
-        are expit of the corresponding entry of x.
+        are `expit` of the corresponding entry of x.
+
+    See Also
+    --------
+    logit
 
     Notes
     -----
@@ -1560,57 +2761,203 @@ add_newdoc('scipy.special', 'expit',
 
     .. versionadded:: 0.10.0
 
+    Examples
+    --------
+    >>> from scipy.special import expit, logit
+
+    >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
+    array([ 0.        ,  0.18242552,  0.5       ,  0.81757448,  1.        ])
+
+    `logit` is the inverse of `expit`:
+
+    >>> logit(expit([-2.5, 0, 3.1, 5.0]))
+    array([-2.5,  0. ,  3.1,  5. ])
+
+    Plot expit(x) for x in [-6, 6]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-6, 6, 121)
+    >>> y = expit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.xlim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('expit(x)')
+    >>> plt.show()
+
     """)
 
-add_newdoc("scipy.special", "expm1",
+add_newdoc("expm1",
     """
     expm1(x)
 
-    exp(x) - 1 for use when `x` is near zero.
+    Compute ``exp(x) - 1``.
+
+    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
+    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
+    ``expm1(x)`` is implemented to avoid the loss of precision that occurs when
+    `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        ``exp(x) - 1`` computed element-wise.
+
+    Examples
+    --------
+    >>> from scipy.special import expm1
+
+    >>> expm1(1.0)
+    1.7182818284590451
+    >>> expm1([-0.2, -0.1, 0, 0.1, 0.2])
+    array([-0.18126925, -0.09516258,  0.        ,  0.10517092,  0.22140276])
+
+    The exact value of ``exp(7.5e-13) - 1`` is::
+
+        7.5000000000028125000000007031250000001318...*10**-13.
+
+    Here is what ``expm1(7.5e-13)`` gives:
+
+    >>> expm1(7.5e-13)
+    7.5000000000028135e-13
+
+    Compare that to ``exp(7.5e-13) - 1``, where the subtraction results in
+    a "catastrophic" loss of precision:
+
+    >>> np.exp(7.5e-13) - 1
+    7.5006667543675576e-13
+
     """)
 
-add_newdoc("scipy.special", "expn",
-    """
-    expn(n, x)
+add_newdoc("expn",
+    r"""
+    expn(n, x, out=None)
 
-    Exponential integral E_n
+    Generalized exponential integral En.
 
-    Returns the exponential integral for integer `n` and non-negative `x` and
-    `n`::
+    For integer :math:`n \geq 0` and real :math:`x \geq 0` the
+    generalized exponential integral is defined as [dlmf]_
 
-        integral(exp(-x*t) / t**n, t=1..inf).
+    .. math::
+
+        E_n(x) = x^{n - 1} \int_x^\infty \frac{e^{-t}}{t^n} dt.
+
+    Parameters
+    ----------
+    n: array_like
+        Non-negative integers
+    x: array_like
+        Real argument
+    out: ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the generalized exponential integral
+
+    See Also
+    --------
+    exp1 : special case of :math:`E_n` for :math:`n = 1`
+    expi : related to :math:`E_n` when :math:`n = 1`
+
+    References
+    ----------
+    .. [dlmf] Digital Library of Mathematical Functions, 8.19.2
+              https://dlmf.nist.gov/8.19#E2
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    Its domain is nonnegative n and x.
+
+    >>> sc.expn(-1, 1.0), sc.expn(1, -1.0)
+    (nan, nan)
+
+    It has a pole at ``x = 0`` for ``n = 1, 2``; for larger ``n`` it
+    is equal to ``1 / (n - 1)``.
+
+    >>> sc.expn([0, 1, 2, 3, 4], 0)
+    array([       inf,        inf, 1.        , 0.5       , 0.33333333])
+
+    For n equal to 0 it reduces to ``exp(-x) / x``.
+
+    >>> x = np.array([1, 2, 3, 4])
+    >>> sc.expn(0, x)
+    array([0.36787944, 0.06766764, 0.01659569, 0.00457891])
+    >>> np.exp(-x) / x
+    array([0.36787944, 0.06766764, 0.01659569, 0.00457891])
+
+    For n equal to 1 it reduces to `exp1`.
+
+    >>> sc.expn(1, x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+    >>> sc.exp1(x)
+    array([0.21938393, 0.04890051, 0.01304838, 0.00377935])
+
     """)
 
-add_newdoc("scipy.special", "exprel",
+add_newdoc("exprel",
     r"""
     exprel(x)
 
-    Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
+    Relative error exponential, ``(exp(x) - 1)/x``.
+
+    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
+    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
+    ``exprel(x)`` is implemented to avoid the loss of precision that occurs when
+    `x` is near zero.
 
     Parameters
     ----------
     x : ndarray
-        Input array.
+        Input array.  `x` must contain real numbers.
 
     Returns
     -------
-    res : ndarray
-        Output array.
+    float
+        ``(exp(x) - 1)/x``, computed element-wise.
 
     See Also
     --------
     expm1
 
+    Notes
+    -----
     .. versionadded:: 0.17.0
+
+    Examples
+    --------
+    >>> from scipy.special import exprel
+
+    >>> exprel(0.01)
+    1.0050167084168056
+    >>> exprel([-0.25, -0.1, 0, 0.1, 0.25])
+    array([ 0.88479687,  0.95162582,  1.        ,  1.05170918,  1.13610167])
+
+    Compare ``exprel(5e-9)`` to the naive calculation.  The exact value
+    is ``1.00000000250000000416...``.
+
+    >>> exprel(5e-9)
+    1.0000000025
+
+    >>> (np.exp(5e-9) - 1)/5e-9
+    0.99999999392252903
     """)
 
-add_newdoc("scipy.special", "fdtr",
+add_newdoc("fdtr",
     r"""
     fdtr(dfn, dfd, x)
 
     F cumulative distribution function.
 
-    Returns the value of the cumulative density function of the
+    Returns the value of the cumulative distribution function of the
     F-distribution, also known as Snedecor's F-distribution or the
     Fisher-Snedecor distribution.
 
@@ -1651,11 +2998,11 @@ add_newdoc("scipy.special", "fdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "fdtrc",
+add_newdoc("fdtrc",
     r"""
     fdtrc(dfn, dfd, x)
 
@@ -1696,10 +3043,10 @@ add_newdoc("scipy.special", "fdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "fdtri",
+add_newdoc("fdtri",
     r"""
     fdtri(dfn, dfd, p)
 
@@ -1743,11 +3090,11 @@ add_newdoc("scipy.special", "fdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "fdtridfd",
+add_newdoc("fdtridfd",
     """
     fdtridfd(dfn, p, x)
 
@@ -1756,7 +3103,7 @@ add_newdoc("scipy.special", "fdtridfd",
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
-add_newdoc("scipy.special", "fdtridfn",
+add_newdoc("fdtridfn",
     """
     fdtridfn(p, dfd, x)
 
@@ -1765,106 +3112,544 @@ add_newdoc("scipy.special", "fdtridfn",
     finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
-add_newdoc("scipy.special", "fresnel",
-    """
-    fresnel(z)
+add_newdoc("fresnel",
+    r"""
+    fresnel(z, out=None)
 
-    Fresnel sin and cos integrals
+    Fresnel integrals.
 
-    Defined as::
+    The Fresnel integrals are defined as
 
-        ssa = integral(sin(pi/2 * t**2), t=0..z)
-        csa = integral(cos(pi/2 * t**2), t=0..z)
+    .. math::
+
+       S(z) &= \int_0^z \cos(\pi t^2 /2) dt \\
+       C(z) &= \int_0^z \sin(\pi t^2 /2) dt.
+
+    See [dlmf]_ for details.
 
     Parameters
     ----------
-    z : float or complex array_like
-        Argument
+    z : array_like
+        Real or complex valued argument
+    out : 2-tuple of ndarrays, optional
+        Optional output arrays for the function results
 
     Returns
     -------
-    ssa, csa
-        Fresnel sin and cos integral values
+    S, C : 2-tuple of scalar or ndarray
+        Values of the Fresnel integrals
+
+    See Also
+    --------
+    fresnel_zeros : zeros of the Fresnel integrals
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/7.2#iii
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    As z goes to infinity along the real axis, S and C converge to 0.5.
+
+    >>> S, C = sc.fresnel([0.1, 1, 10, 100, np.inf])
+    >>> S
+    array([0.00052359, 0.43825915, 0.46816998, 0.4968169 , 0.5       ])
+    >>> C
+    array([0.09999753, 0.7798934 , 0.49989869, 0.4999999 , 0.5       ])
+
+    They are related to the error function `erf`.
+
+    >>> z = np.array([1, 2, 3, 4])
+    >>> zeta = 0.5 * np.sqrt(np.pi) * (1 - 1j) * z
+    >>> S, C = sc.fresnel(z)
+    >>> C + 1j*S
+    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
+           0.60572079+0.496313j  , 0.49842603+0.42051575j])
+    >>> 0.5 * (1 + 1j) * sc.erf(zeta)
+    array([0.7798934 +0.43825915j, 0.48825341+0.34341568j,
+           0.60572079+0.496313j  , 0.49842603+0.42051575j])
 
     """)
 
-add_newdoc("scipy.special", "gamma",
-    """
+add_newdoc("gamma",
+    r"""
     gamma(z)
 
     Gamma function.
 
-    The gamma function is often referred to as the generalized
-    factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
-    n!`` for natural number *n*.
+    The Gamma function is defined as
+
+    .. math::
+
+       \Gamma(z) = \int_0^\infty t^{z-1} e^{-t} dt
+
+    for :math:`\Re(z) > 0` and is extended to the rest of the complex
+    plane by analytic continuation. See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Gamma function
+
+    Notes
+    -----
+    The Gamma function is often referred to as the generalized
+    factorial since :math:`\Gamma(n + 1) = n!` for natural numbers
+    :math:`n`. More generally it satisfies the recurrence relation
+    :math:`\Gamma(z + 1) = z \cdot \Gamma(z)` for complex :math:`z`,
+    which, combined with the fact that :math:`\Gamma(1) = 1`, implies
+    the above identity for :math:`z = n`.
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5.2#E1
+
+    Examples
+    --------
+    >>> from scipy.special import gamma, factorial
+
+    >>> gamma([0, 0.5, 1, 5])
+    array([         inf,   1.77245385,   1.        ,  24.        ])
+
+    >>> z = 2.5 + 1j
+    >>> gamma(z)
+    (0.77476210455108352+0.70763120437959293j)
+    >>> gamma(z+1), z*gamma(z)  # Recurrence property
+    ((1.2292740569981171+2.5438401155000685j),
+     (1.2292740569981158+2.5438401155000658j))
+
+    >>> gamma(0.5)**2  # gamma(0.5) = sqrt(pi)
+    3.1415926535897927
+
+    Plot gamma(x) for real x
+
+    >>> x = np.linspace(-3.5, 5.5, 2251)
+    >>> y = gamma(x)
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x, y, 'b', alpha=0.6, label='gamma(x)')
+    >>> k = np.arange(1, 7)
+    >>> plt.plot(k, factorial(k-1), 'k*', alpha=0.6,
+    ...          label='(x-1)!, x = 1, 2, ...')
+    >>> plt.xlim(-3.5, 5.5)
+    >>> plt.ylim(-10, 25)
+    >>> plt.grid()
+    >>> plt.xlabel('x')
+    >>> plt.legend(loc='lower right')
+    >>> plt.show()
+
     """)
 
-add_newdoc("scipy.special", "gammainc",
-    """
+add_newdoc("gammainc",
+    r"""
     gammainc(a, x)
 
-    Incomplete gamma function
+    Regularized lower incomplete gamma function.
 
-    Defined as::
+    It is defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        P(a, x) = \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. See [dlmf]_ for details.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    x : array_like
+        Nonnegative argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the lower incomplete gamma function
+
+    Notes
+    -----
+    The function satisfies the relation ``gammainc(a, x) +
+    gammaincc(a, x) = 1`` where `gammaincc` is the regularized upper
+    incomplete gamma function.
+
+    The implementation largely follows that of [boost]_.
+
+    See also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammaincinv : inverse of the regularized lower incomplete gamma
+        function with respect to `x`
+    gammainccinv : inverse of the regularized upper incomplete gamma
+        function with respect to `x`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical functions
+              https://dlmf.nist.gov/8.2#E4
+    .. [boost] Maddock et. al., "Incomplete Gamma Functions",
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the CDF of the gamma distribution, so it starts at 0 and
+    monotonically increases to 1.
+
+    >>> sc.gammainc(0.5, [0, 1, 10, 100])
+    array([0.        , 0.84270079, 0.99999226, 1.        ])
+
+    It is equal to one minus the upper incomplete gamma function.
+
+    >>> a, x = 0.5, 0.4
+    >>> sc.gammainc(a, x)
+    0.6289066304773024
+    >>> 1 - sc.gammaincc(a, x)
+    0.6289066304773024
+
     """)
 
-add_newdoc("scipy.special", "gammaincc",
-    """
+add_newdoc("gammaincc",
+    r"""
     gammaincc(a, x)
 
-    Complemented incomplete gamma integral
+    Regularized upper incomplete gamma function.
 
-    Defined as::
+    It is defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        Q(a, x) = \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. See [dlmf]_ for details.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    x : array_like
+        Nonnegative argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the upper incomplete gamma function
+
+    Notes
+    -----
+    The function satisfies the relation ``gammainc(a, x) +
+    gammaincc(a, x) = 1`` where `gammainc` is the regularized lower
+    incomplete gamma function.
+
+    The implementation largely follows that of [boost]_.
+
+    See also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse of the regularized lower incomplete gamma
+        function with respect to `x`
+    gammainccinv : inverse to of the regularized upper incomplete
+        gamma function with respect to `x`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical functions
+              https://dlmf.nist.gov/8.2#E4
+    .. [boost] Maddock et. al., "Incomplete Gamma Functions",
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the survival function of the gamma distribution, so it
+    starts at 1 and monotonically decreases to 0.
+
+    >>> sc.gammaincc(0.5, [0, 1, 10, 100, 1000])
+    array([1.00000000e+00, 1.57299207e-01, 7.74421643e-06, 2.08848758e-45,
+           0.00000000e+00])
+
+    It is equal to one minus the lower incomplete gamma function.
+
+    >>> a, x = 0.5, 0.4
+    >>> sc.gammaincc(a, x)
+    0.37109336952269756
+    >>> 1 - sc.gammainc(a, x)
+    0.37109336952269756
+
     """)
 
-add_newdoc("scipy.special", "gammainccinv",
+add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse to `gammaincc`
+    Inverse of the upper incomplete gamma function with respect to `x`
 
-    Returns `x` such that ``gammaincc(a, x) == y``.
+    Given an input :math:`y` between 0 and 1, returns :math:`x` such
+    that :math:`y = Q(a, x)`. Here :math:`Q` is the upper incomplete
+    gamma function; see `gammaincc`. This is well-defined because the
+    upper incomplete gamma function is monotonic as can be seen from
+    its definition in [dlmf]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    y : array_like
+        Argument between 0 and 1, inclusive
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inverse of the upper incomplete gamma function
+
+    See Also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse of the regularized lower incomplete gamma
+        function with respect to `x`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/8.2#E4
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It starts at infinity and monotonically decreases to 0.
+
+    >>> sc.gammainccinv(0.5, [0, 0.1, 0.5, 1])
+    array([       inf, 1.35277173, 0.22746821, 0.        ])
+
+    It inverts the upper incomplete gamma function.
+
+    >>> a, x = 0.5, [0, 0.1, 0.5, 1]
+    >>> sc.gammaincc(a, sc.gammainccinv(a, x))
+    array([0. , 0.1, 0.5, 1. ])
+
+    >>> a, x = 0.5, [0, 10, 50]
+    >>> sc.gammainccinv(a, sc.gammaincc(a, x))
+    array([ 0., 10., 50.])
+
     """)
 
-add_newdoc("scipy.special", "gammaincinv",
+add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to `gammainc`
+    Inverse to the lower incomplete gamma function with respect to `x`.
 
-    Returns `x` such that ``gammainc(a, x) = y``.
+    Given an input :math:`y` between 0 and 1, returns :math:`x` such
+    that :math:`y = P(a, x)`. Here :math:`P` is the regularized lower
+    incomplete gamma function; see `gammainc`. This is well-defined
+    because the lower incomplete gamma function is monotonic as can be
+    seen from its definition in [dlmf]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Positive parameter
+    y : array_like
+        Parameter between 0 and 1, inclusive
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the inverse of the lower incomplete gamma function
+
+    See Also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    gammainccinv : inverse of the regualizred upper incomplete gamma
+        function with respect to `x`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/8.2#E4
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It starts at 0 and monotonically increases to infinity.
+
+    >>> sc.gammaincinv(0.5, [0, 0.1 ,0.5, 1])
+    array([0.        , 0.00789539, 0.22746821,        inf])
+
+    It inverts the lower incomplete gamma function.
+
+    >>> a, x = 0.5, [0, 0.1, 0.5, 1]
+    >>> sc.gammainc(a, sc.gammaincinv(a, x))
+    array([0. , 0.1, 0.5, 1. ])
+
+    >>> a, x = 0.5, [0, 10, 25]
+    >>> sc.gammaincinv(a, sc.gammainc(a, x))
+    array([ 0.        , 10.        , 25.00001465])
+
     """)
 
-add_newdoc("scipy.special", "_gammaln",
-    """
-    Internal function, use ``gammaln`` instead.
+add_newdoc("gammaln",
+    r"""
+    gammaln(x, out=None)
+
+    Logarithm of the absolute value of the Gamma function.
+
+    Defined as
+
+    .. math::
+
+       \ln(\lvert\Gamma(x)\rvert)
+
+    where :math:`\Gamma` is the Gamma function. For more details on
+    the Gamma function, see [dlmf]_.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the log of the absolute value of Gamma
+
+    See Also
+    --------
+    gammasgn : sign of the gamma function
+    loggamma : principal branch of the logarithm of the gamma function
+
+    Notes
+    -----
+    It is the same function as the Python standard library function
+    :func:`math.lgamma`.
+
+    When used in conjunction with `gammasgn`, this function is useful
+    for working in logspace on the real axis without having to deal
+    with complex numbers via the relation ``exp(gammaln(x)) =
+    gammasgn(x) * gamma(x)``.
+
+    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has two positive zeros.
+
+    >>> sc.gammaln([1, 2])
+    array([0., 0.])
+
+    It has poles at nonpositive integers.
+
+    >>> sc.gammaln([0, -1, -2, -3, -4])
+    array([inf, inf, inf, inf, inf])
+
+    It asymptotically approaches ``x * log(x)`` (Stirling's formula).
+
+    >>> x = np.array([1e10, 1e20, 1e40, 1e80])
+    >>> sc.gammaln(x)
+    array([2.20258509e+11, 4.50517019e+21, 9.11034037e+41, 1.83206807e+82])
+    >>> x * np.log(x)
+    array([2.30258509e+11, 4.60517019e+21, 9.21034037e+41, 1.84206807e+82])
+
     """)
 
-add_newdoc("scipy.special", "gammasgn",
-    """
+add_newdoc("gammasgn",
+    r"""
     gammasgn(x)
 
     Sign of the gamma function.
 
+    It is defined as
+
+    .. math::
+
+       \text{gammasgn}(x) =
+       \begin{cases}
+         +1 & \Gamma(x) > 0 \\
+         -1 & \Gamma(x) < 0
+       \end{cases}
+
+    where :math:`\Gamma` is the Gamma function; see `gamma`. This
+    definition is complete since the Gamma function is never zero;
+    see the discussion after [dlmf]_.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Sign of the Gamma function
+
+    Notes
+    -----
+    The Gamma function can be computed as ``gammasgn(x) *
+    np.exp(gammaln(x))``.
+
     See Also
     --------
-    gammaln
-    loggamma
+    gamma : the Gamma function
+    gammaln : log of the absolute value of the Gamma function
+    loggamma : analytic continuation of the log of the Gamma function
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5.2#E1
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is 1 for `x > 0`.
+
+    >>> sc.gammasgn([1, 2, 3, 4])
+    array([1., 1., 1., 1.])
+
+    It alternates between -1 and 1 for negative integers.
+
+    >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
+    array([-1.,  1., -1.,  1.])
+
+    It can be used to compute the Gamma function.
+
+    >>> x = [1.5, 0.5, -0.5, -1.5]
+    >>> sc.gammasgn(x) * np.exp(sc.gammaln(x))
+    array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
+    >>> sc.gamma(x)
+    array([ 0.88622693,  1.77245385, -3.5449077 ,  2.3632718 ])
+
     """)
 
-add_newdoc("scipy.special", "gdtr",
+add_newdoc("gdtr",
     r"""
     gdtr(a, b, x)
 
-    Gamma distribution cumulative density function.
+    Gamma distribution cumulative distribution function.
 
     Returns the integral from zero to `x` of the gamma probability density
     function,
@@ -1907,11 +3692,11 @@ add_newdoc("scipy.special", "gdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "gdtrc",
+add_newdoc("gdtrc",
     r"""
     gdtrc(a, b, x)
 
@@ -1945,7 +3730,7 @@ add_newdoc("scipy.special", "gdtrc",
 
     See Also
     --------
-    gdtr, gdtri
+    gdtr, gdtrix
 
     Notes
     -----
@@ -1957,11 +3742,11 @@ add_newdoc("scipy.special", "gdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "gdtria",
+add_newdoc("gdtria",
     """
     gdtria(p, b, x, out=None)
 
@@ -2002,9 +3787,9 @@ add_newdoc("scipy.special", "gdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `a`.
+    monotonicity of `p` with `a`.
 
     References
     ----------
@@ -2030,7 +3815,7 @@ add_newdoc("scipy.special", "gdtria",
     1.2
     """)
 
-add_newdoc("scipy.special", "gdtrib",
+add_newdoc("gdtrib",
     """
     gdtrib(a, p, x, out=None)
 
@@ -2071,9 +3856,9 @@ add_newdoc("scipy.special", "gdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `b`.
+    monotonicity of `p` with `b`.
 
     References
     ----------
@@ -2099,7 +3884,7 @@ add_newdoc("scipy.special", "gdtrib",
     3.3999999999723882
     """)
 
-add_newdoc("scipy.special", "gdtrix",
+add_newdoc("gdtrix",
     """
     gdtrix(a, b, p, out=None)
 
@@ -2141,9 +3926,9 @@ add_newdoc("scipy.special", "gdtrix",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `x` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `x` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `x`.
+    monotonicity of `p` with `x`.
 
     References
     ----------
@@ -2169,7 +3954,7 @@ add_newdoc("scipy.special", "gdtrix",
     5.5999999999999996
     """)
 
-add_newdoc("scipy.special", "hankel1",
+add_newdoc("hankel1",
     r"""
     hankel1(v, z)
 
@@ -2211,7 +3996,7 @@ add_newdoc("scipy.special", "hankel1",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "hankel1e",
+add_newdoc("hankel1e",
     r"""
     hankel1e(v, z)
 
@@ -2253,7 +4038,7 @@ add_newdoc("scipy.special", "hankel1e",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "hankel2",
+add_newdoc("hankel2",
     r"""
     hankel2(v, z)
 
@@ -2295,7 +4080,7 @@ add_newdoc("scipy.special", "hankel2",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "hankel2e",
+add_newdoc("hankel2e",
     r"""
     hankel2e(v, z)
 
@@ -2338,7 +4123,7 @@ add_newdoc("scipy.special", "hankel2e",
 
     """)
 
-add_newdoc("scipy.special", "huber",
+add_newdoc("huber",
     r"""
     huber(delta, r)
 
@@ -2366,21 +4151,25 @@ add_newdoc("scipy.special", "huber",
 
     """)
 
-add_newdoc("scipy.special", "hyp0f1", 
+add_newdoc("hyp0f1",
     r"""
-    hyp0f1(v, x)
+    hyp0f1(v, z, out=None)
 
     Confluent hypergeometric limit function 0F1.
 
     Parameters
     ----------
-    v, z : array_like
-        Input values.
+    v : array_like
+        Real valued parameter
+    z : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    hyp0f1 : ndarray
-        The confluent hypergeometric limit function.
+    scalar or ndarray
+        The confluent hypergeometric limit function
 
     Notes
     -----
@@ -2389,76 +4178,276 @@ add_newdoc("scipy.special", "hyp0f1",
     .. math:: _0F_1(v, z) = \sum_{k=0}^{\infty}\frac{z^k}{(v)_k k!}.
 
     It's also the limit as :math:`q \to \infty` of :math:`_1F_1(q; v; z/q)`,
-    and satisfies the differential equation :math:`f''(z) + vf'(z) = f(z)`.
+    and satisfies the differential equation :math:`f''(z) + vf'(z) =
+    f(z)`. See [1]_ for more information.
+
+    References
+    ----------
+    .. [1] Wolfram MathWorld, "Confluent Hypergeometric Limit Function",
+           http://mathworld.wolfram.com/ConfluentHypergeometricLimitFunction.html
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is one when `z` is zero.
+
+    >>> sc.hyp0f1(1, 0)
+    1.0
+
+    It is the limit of the confluent hypergeometric function as `q`
+    goes to infinity.
+
+    >>> q = np.array([1, 10, 100, 1000])
+    >>> v = 1
+    >>> z = 1
+    >>> sc.hyp1f1(q, v, z / q)
+    array([2.71828183, 2.31481985, 2.28303778, 2.27992985])
+    >>> sc.hyp0f1(v, z)
+    2.2795853023360673
+
+    It is related to Bessel functions.
+
+    >>> n = 1
+    >>> x = np.linspace(0, 1, 5)
+    >>> sc.jv(n, x)
+    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+    >>> (0.5 * x)**n / sc.factorial(n) * sc.hyp0f1(n + 1, -0.25 * x**2)
+    array([0.        , 0.12402598, 0.24226846, 0.3492436 , 0.44005059])
+
     """)
 
-add_newdoc("scipy.special", "hyp1f1",
-    """
-    hyp1f1(a, b, x)
+add_newdoc("hyp1f1",
+    r"""
+    hyp1f1(a, b, x, out=None)
 
-    Confluent hypergeometric function 1F1(a, b; x)
-    """)
+    Confluent hypergeometric function 1F1.
 
-add_newdoc("scipy.special", "hyp1f2",
-    """
-    hyp1f2(a, b, c, x)
+    The confluent hypergeometric function is defined by the series
 
-    Hypergeometric function 1F2 and error estimate
+    .. math::
+
+       {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
+
+    See [dlmf]_ for more details. Here :math:`(\cdot)_k` is the
+    Pochhammer symbol; see `poch`.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real parameters
+    x : array_like
+        Real or complex argument
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    y
-        Value of the function
-    err
-        Error estimate
+    scalar or ndarray
+        Values of the confluent hypergeometric function
+
+    See also
+    --------
+    hyperu : another confluent hypergeometric function
+    hyp0f1 : confluent hypergeometric limit function
+    hyp2f1 : Gaussian hypergeometric function
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/13.2#E2
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is one when `x` is zero:
+
+    >>> sc.hyp1f1(0.5, 0.5, 0)
+    1.0
+
+    It is singular when `b` is a nonpositive integer.
+
+    >>> sc.hyp1f1(0.5, -1, 0)
+    inf
+
+    It is a polynomial when `a` is a nonpositive integer.
+
+    >>> a, b, x = -1, 0.5, np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.hyp1f1(a, b, x)
+    array([-1., -3., -5., -7.])
+    >>> 1 + (a / b) * x
+    array([-1., -3., -5., -7.])
+
+    It reduces to the exponential function when `a = b`.
+
+    >>> sc.hyp1f1(2, 2, [1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+    >>> np.exp([1, 2, 3, 4])
+    array([ 2.71828183,  7.3890561 , 20.08553692, 54.59815003])
+
     """)
 
-add_newdoc("scipy.special", "hyp2f0",
-    """
-    hyp2f0(a, b, x, type)
-
-    Hypergeometric function 2F0 in y and an error estimate
-
-    The parameter `type` determines a convergence factor and can be
-    either 1 or 2.
-
-    Returns
-    -------
-    y
-        Value of the function
-    err
-        Error estimate
-    """)
-
-add_newdoc("scipy.special", "hyp2f1",
-    """
+add_newdoc("hyp2f1",
+    r"""
     hyp2f1(a, b, c, z)
 
-    Gauss hypergeometric function 2F1(a, b; c; z).
-    """)
+    Gauss hypergeometric function 2F1(a, b; c; z)
 
-add_newdoc("scipy.special", "hyp3f0",
-    """
-    hyp3f0(a, b, c, x)
-
-    Hypergeometric function 3F0 in y and an error estimate
+    Parameters
+    ----------
+    a, b, c : array_like
+        Arguments, should be real-valued.
+    z : array_like
+        Argument, real or complex.
 
     Returns
     -------
-    y
-        Value of the function
-    err
-        Error estimate
+    hyp2f1 : scalar or ndarray
+        The values of the gaussian hypergeometric function.
+
+    See also
+    --------
+    hyp0f1 : confluent hypergeometric limit function.
+    hyp1f1 : Kummer's (confluent hypergeometric) function.
+
+    Notes
+    -----
+    This function is defined for :math:`|z| < 1` as
+
+    .. math::
+
+       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+
+    and defined on the rest of the complex z-plane by analytic
+    continuation [1]_.
+    Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+
+    The implementation for complex values of ``z`` is described in [2]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/15.2
+    .. [2] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [3] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has poles when `c` is a negative integer.
+
+    >>> sc.hyp2f1(1, 1, -2, 1)
+    inf
+
+    It is a polynomial when `a` or `b` is a negative integer.
+
+    >>> a, b, c = -1, 1, 1.5
+    >>> z = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, c, z)
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+    >>> 1 + a * b * z / c
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+
+    It is symmetric in `a` and `b`.
+
+    >>> a = np.linspace(0, 1, 5)
+    >>> b = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+    >>> sc.hyp2f1(b, a, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+
+    It contains many other functions as special cases.
+
+    >>> z = 0.5
+    >>> sc.hyp2f1(1, 1, 2, z)
+    1.3862943611198901
+    >>> -np.log(1 - z) / z
+    1.3862943611198906
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, z**2)
+    1.098612288668109
+    >>> np.log((1 + z) / (1 - z)) / (2 * z)
+    1.0986122886681098
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, -z**2)
+    0.9272952180016117
+    >>> np.arctan(z) / z
+    0.9272952180016123
+
     """)
 
-add_newdoc("scipy.special", "hyperu",
-    """
-    hyperu(a, b, x)
+add_newdoc("hyperu",
+    r"""
+    hyperu(a, b, x, out=None)
 
-    Confluent hypergeometric function U(a, b, x) of the second kind
+    Confluent hypergeometric function U
+
+    It is defined as the solution to the equation
+
+    .. math::
+
+       x \frac{d^2w}{dx^2} + (b - x) \frac{dw}{dx} - aw = 0
+
+    which satisfies the property
+
+    .. math::
+
+       U(a, b, x) \sim x^{-a}
+
+    as :math:`x \to \infty`. See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real valued parameters
+    x : array_like
+        Real valued argument
+    out : ndarray
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of `U`
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematics Functions
+              https://dlmf.nist.gov/13.2#E6
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It has a branch cut along the negative `x` axis.
+
+    >>> x = np.linspace(-0.1, -10, 5)
+    >>> sc.hyperu(1, 1, x)
+    array([nan, nan, nan, nan, nan])
+
+    It approaches zero as `x` goes to infinity.
+
+    >>> x = np.array([1, 10, 100])
+    >>> sc.hyperu(1, 1, x)
+    array([0.59634736, 0.09156333, 0.00990194])
+
+    It satisfies Kummer's transformation.
+
+    >>> a, b, x = 2, 1, 1
+    >>> sc.hyperu(a, b, x)
+    0.1926947246463881
+    >>> x**(1 - b) * sc.hyperu(a - b + 1, 2 - b, x)
+    0.1926947246463881
+
     """)
 
-add_newdoc("scipy.special", "i0",
+add_newdoc("i0",
     r"""
     i0(x)
 
@@ -2496,10 +4485,10 @@ add_newdoc("scipy.special", "i0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "i0e",
+add_newdoc("i0e",
     """
     i0e(x)
 
@@ -2537,10 +4526,10 @@ add_newdoc("scipy.special", "i0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "i1",
+add_newdoc("i1",
     r"""
     i1(x)
 
@@ -2579,10 +4568,10 @@ add_newdoc("scipy.special", "i1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "i1e",
+add_newdoc("i1e",
     """
     i1e(x)
 
@@ -2620,10 +4609,15 @@ add_newdoc("scipy.special", "i1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "it2i0k0",
+add_newdoc("_igam_fac",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("it2i0k0",
     """
     it2i0k0(x)
 
@@ -2634,10 +4628,10 @@ add_newdoc("scipy.special", "it2i0k0",
     ii0
         ``integral((i0(t)-1)/t, t=0..x)``
     ik0
-        ``int(k0(t)/t, t=x..inf)``
+        ``integral(k0(t)/t, t=x..inf)``
     """)
 
-add_newdoc("scipy.special", "it2j0y0",
+add_newdoc("it2j0y0",
     """
     it2j0y0(x)
 
@@ -2651,7 +4645,7 @@ add_newdoc("scipy.special", "it2j0y0",
         ``integral(y0(t)/t, t=x..inf)``
     """)
 
-add_newdoc("scipy.special", "it2struve0",
+add_newdoc("it2struve0",
     r"""
     it2struve0(x)
 
@@ -2687,10 +4681,10 @@ add_newdoc("scipy.special", "it2struve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
-add_newdoc("scipy.special", "itairy",
+add_newdoc("itairy",
     """
     itairy(x)
 
@@ -2726,10 +4720,10 @@ add_newdoc("scipy.special", "itairy",
 
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
-add_newdoc("scipy.special", "iti0k0",
+add_newdoc("iti0k0",
     """
     iti0k0(x)
 
@@ -2743,7 +4737,7 @@ add_newdoc("scipy.special", "iti0k0",
     ii0, ik0
     """)
 
-add_newdoc("scipy.special", "itj0y0",
+add_newdoc("itj0y0",
     """
     itj0y0(x)
 
@@ -2757,7 +4751,7 @@ add_newdoc("scipy.special", "itj0y0",
     ij0, iy0
     """)
 
-add_newdoc("scipy.special", "itmodstruve0",
+add_newdoc("itmodstruve0",
     r"""
     itmodstruve0(x)
 
@@ -2785,11 +4779,11 @@ add_newdoc("scipy.special", "itmodstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
-add_newdoc("scipy.special", "itstruve0",
+add_newdoc("itstruve0",
     r"""
     itstruve0(x)
 
@@ -2821,11 +4815,11 @@ add_newdoc("scipy.special", "itstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
-add_newdoc("scipy.special", "iv",
+add_newdoc("iv",
     r"""
     iv(v, z)
 
@@ -2851,10 +4845,10 @@ add_newdoc("scipy.special", "iv",
     expansions are applied.
 
     For complex `z` and positive `v`, the AMOS [2]_ `zbesi` routine is
-    called. It uses a power series for small `z`, the asymptitic expansion
+    called. It uses a power series for small `z`, the asymptotic expansion
     for large `abs(z)`, the Miller algorithm normalized by the Wronskian
     and a Neumann series for intermediate magnitudes, and the uniform
-    asymptitic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
+    asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
     orders.  Backward recurrence is used to generate sequences or reduce
     orders when necessary.
 
@@ -2883,7 +4877,7 @@ add_newdoc("scipy.special", "iv",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "ive",
+add_newdoc("ive",
     r"""
     ive(v, z)
 
@@ -2908,9 +4902,9 @@ add_newdoc("scipy.special", "ive",
     Notes
     -----
     For positive `v`, the AMOS [1]_ `zbesi` routine is called. It uses a
-    power series for small `z`, the asymptitic expansion for large
+    power series for small `z`, the asymptotic expansion for large
     `abs(z)`, the Miller algorithm normalized by the Wronskian and a
-    Neumann series for intermediate magnitudes, and the uniform asymptitic
+    Neumann series for intermediate magnitudes, and the uniform asymptotic
     expansions for :math:`I_v(z)` and :math:`J_v(z)` for large orders.
     Backward recurrence is used to generate sequences or reduce orders when
     necessary.
@@ -2935,7 +4929,7 @@ add_newdoc("scipy.special", "ive",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "j0",
+add_newdoc("j0",
     r"""
     j0(x)
 
@@ -2968,18 +4962,21 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
+    It should not be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     See also
     --------
     jv : Bessel function of real order and complex argument.
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "j1",
+add_newdoc("j1",
     """
     j1(x)
 
@@ -3003,19 +5000,22 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
+    It should not be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     See also
     --------
     jv
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "jn",
+add_newdoc("jn",
     """
     jn(n, x)
 
@@ -3024,14 +5024,16 @@ add_newdoc("scipy.special", "jn",
     Notes
     -----
     `jn` is an alias of `jv`.
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
 
     See also
     --------
     jv
+    spherical_jn : spherical Bessel functions.
 
     """)
 
-add_newdoc("scipy.special", "jv",
+add_newdoc("jv",
     r"""
     jv(v, z)
 
@@ -3056,9 +5058,9 @@ add_newdoc("scipy.special", "jv",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -3069,9 +5071,12 @@ add_newdoc("scipy.special", "jv",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
+
     See also
     --------
     jve : :math:`J_v` with leading exponential behavior stripped off.
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -3080,7 +5085,7 @@ add_newdoc("scipy.special", "jv",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "jve",
+add_newdoc("jve",
     r"""
     jve(v, z)
 
@@ -3109,9 +5114,9 @@ add_newdoc("scipy.special", "jve",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -3129,7 +5134,7 @@ add_newdoc("scipy.special", "jve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "k0",
+add_newdoc("k0",
     r"""
     k0(x)
 
@@ -3163,10 +5168,10 @@ add_newdoc("scipy.special", "k0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "k0e",
+add_newdoc("k0e",
     """
     k0e(x)
 
@@ -3202,10 +5207,10 @@ add_newdoc("scipy.special", "k0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "k1",
+add_newdoc("k1",
     """
     k1(x)
 
@@ -3236,10 +5241,10 @@ add_newdoc("scipy.special", "k1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "k1e",
+add_newdoc("k1e",
     """
     k1e(x)
 
@@ -3275,24 +5280,24 @@ add_newdoc("scipy.special", "k1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "kei",
+add_newdoc("kei",
     """
     kei(x)
 
     Kelvin function ker
     """)
 
-add_newdoc("scipy.special", "keip",
+add_newdoc("keip",
     """
     keip(x)
 
     Derivative of the Kelvin function kei
     """)
 
-add_newdoc("scipy.special", "kelvin",
+add_newdoc("kelvin",
     """
     kelvin(x)
 
@@ -3308,21 +5313,21 @@ add_newdoc("scipy.special", "kelvin",
         for ker and kei.
     """)
 
-add_newdoc("scipy.special", "ker",
+add_newdoc("ker",
     """
     ker(x)
 
     Kelvin function ker
     """)
 
-add_newdoc("scipy.special", "kerp",
+add_newdoc("kerp",
     """
     kerp(x)
 
     Derivative of the Kelvin function ker
     """)
 
-add_newdoc("scipy.special", "kl_div",
+add_newdoc("kl_div",
     r"""
     kl_div(x, y)
 
@@ -3354,7 +5359,7 @@ add_newdoc("scipy.special", "kl_div",
 
     """)
 
-add_newdoc("scipy.special", "kn",
+add_newdoc("kn",
     r"""
     kn(n, x)
 
@@ -3417,29 +5422,153 @@ add_newdoc("scipy.special", "kn",
     array([   44.23241585,   360.9605896 ,  3653.83831186])
     """)
 
-add_newdoc("scipy.special", "kolmogi",
+add_newdoc("kolmogi",
     """
     kolmogi(p)
 
-    Inverse function to kolmogorov
+    Inverse Survival Function of Kolmogorov distribution
 
+    It is the inverse function to `kolmogorov`.
     Returns y such that ``kolmogorov(y) == p``.
+
+    Parameters
+    ----------
+    p : float array_like
+        Probability
+
+    Returns
+    -------
+    float
+        The value(s) of kolmogi(p)
+
+    Notes
+    -----
+    `kolmogorov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.kstwobign` distribution.
+
+    See Also
+    --------
+    kolmogorov : The Survival Function for the distribution
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
+    smirnov, smirnovi : Functions for the one-sided distribution
+
+    Examples
+    --------
+    >>> from scipy.special import kolmogi
+    >>> kolmogi([0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
+    array([        inf,  1.22384787,  1.01918472,  0.82757356,  0.67644769,
+            0.57117327,  0.        ])
+
     """)
 
-add_newdoc("scipy.special", "kolmogorov",
-    """
+add_newdoc("kolmogorov",
+    r"""
     kolmogorov(y)
 
-    Complementary cumulative distribution function of Kolmogorov distribution
+    Complementary cumulative distribution (Survival Function) function of
+    Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (Kn* for large n) of a
-    two-sided test for equality between an empirical and a theoretical
+    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
+    of a two-sided test for equality between an empirical and a theoretical
     distribution. It is equal to the (limit as n->infinity of the)
-    probability that sqrt(n) * max absolute deviation > y.
+    probability that ``sqrt(n) * max absolute deviation > y``.
+
+    Parameters
+    ----------
+    y : float array_like
+      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+      multiplied by sqrt(n).
+
+    Returns
+    -------
+    float
+        The value(s) of kolmogorov(y)
+
+    Notes
+    -----
+    `kolmogorov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.kstwobign` distribution.
+
+    See Also
+    --------
+    kolmogi : The Inverse Survival Function for the distribution
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
+    smirnov, smirnovi : Functions for the one-sided distribution
+
+    Examples
+    --------
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0.
+
+    >>> from scipy.special import kolmogorov
+    >>> from scipy.stats import kstwobign
+    >>> kolmogorov([0, 0.5, 1.0])
+    array([ 1.        ,  0.96394524,  0.26999967])
+
+    Compare a sample of size 1000 drawn from a Laplace(0, 1) distribution against
+    the target distribution, a Normal(0, 1) distribution.
+
+    >>> from scipy.stats import norm, laplace
+    >>> n = 1000
+    >>> np.random.seed(seed=233423)
+    >>> lap01 = laplace(0, 1)
+    >>> x = np.sort(lap01.rvs(n))
+    >>> np.mean(x), np.std(x)
+    (-0.083073685397609842, 1.3676426568399822)
+
+    Construct the Empirical CDF and the K-S statistic Dn.
+
+    >>> target = norm(0,1)  # Normal mean 0, stddev 1
+    >>> cdfs = target.cdf(x)
+    >>> ecdfs = np.arange(n+1, dtype=float)/n
+    >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
+    >>> Dn = np.max(gaps)
+    >>> Kn = np.sqrt(n) * Dn
+    >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
+    Dn=0.058286, sqrt(n)*Dn=1.843153
+    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kstwobign.cdf(Kn))]))
+    For a sample of size n drawn from a N(0, 1) distribution:
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
+
+    Plot the Empirical CDF against the target N(0, 1) CDF.
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
+    >>> x3 = np.linspace(-3, 3, 100)
+    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
+    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
+    >>> # Add vertical lines marking Dn+ and Dn-
+    >>> iminus, iplus = np.argmax(gaps, axis=0)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='r', linestyle='dashed', lw=4)
+    >>> plt.show()
     """)
 
-add_newdoc("scipy.special", "kv",
+add_newdoc("_kolmogc",
+    r"""
+    Internal function, do not use.
+    """)
+
+add_newdoc("_kolmogci",
+    r"""
+    Internal function, do not use.
+    """)
+
+add_newdoc("_kolmogp",
+    r"""
+    Internal function, do not use.
+    """)
+
+add_newdoc("kv",
     r"""
     kv(v, z)
 
@@ -3489,7 +5618,7 @@ add_newdoc("scipy.special", "kv",
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     .. [3] NIST Digital Library of Mathematical Functions,
-           Eq. 10.25.E3. http://dlmf.nist.gov/10.25.E3
+           Eq. 10.25.E3. https://dlmf.nist.gov/10.25.E3
 
     Examples
     --------
@@ -3512,7 +5641,7 @@ add_newdoc("scipy.special", "kv",
 
     """)
 
-add_newdoc("scipy.special", "kve",
+add_newdoc("kve",
     r"""
     kve(v, z)
 
@@ -3551,14 +5680,29 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
-add_newdoc("scipy.special", "log1p",
+add_newdoc("_lanczos_sum_expg_scaled",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("_lgam1p",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("log1p",
     """
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
     """)
 
-add_newdoc('scipy.special', 'logit',
+add_newdoc("_log1pmx",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc('logit',
     """
     logit(x)
 
@@ -3579,6 +5723,10 @@ add_newdoc('scipy.special', 'logit',
         An ndarray of the same shape as x. Its entries
         are logit of the corresponding entry of x.
 
+    See Also
+    --------
+    expit
+
     Notes
     -----
     As a ufunc logit takes a number of optional
@@ -3587,41 +5735,88 @@ add_newdoc('scipy.special', 'logit',
 
     .. versionadded:: 0.10.0
 
+    Examples
+    --------
+    >>> from scipy.special import logit, expit
+
+    >>> logit([0, 0.25, 0.5, 0.75, 1])
+    array([       -inf, -1.09861229,  0.        ,  1.09861229,         inf])
+
+    `expit` is the inverse of `logit`:
+
+    >>> expit(logit([0.1, 0.75, 0.999]))
+    array([ 0.1  ,  0.75 ,  0.999])
+
+    Plot logit(x) for x in [0, 1]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 501)
+    >>> y = logit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.ylim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('logit(x)')
+    >>> plt.show()
+
     """)
 
-add_newdoc("scipy.special", "lpmv",
-    """
+add_newdoc("lpmv",
+    r"""
     lpmv(m, v, x)
 
-    Associated legendre function of integer order.
+    Associated Legendre function of integer order and real degree.
+
+    Defined as
+
+    .. math::
+
+        P_v^m = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} P_v(x)
+
+    where
+
+    .. math::
+
+        P_v = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
+                \left(\frac{1 - x}{2}\right)^k
+
+    is the Legendre function of the first kind. Here :math:`(\cdot)_k`
+    is the Pochhammer symbol; see `poch`.
 
     Parameters
     ----------
-    m : int
-        Order
-    v : float
-        Degree.
-    x : float
-        Argument. Must be ``|x| <= 1``.
+    m : array_like
+        Order (int or float). If passed a float not equal to an
+        integer the function returns NaN.
+    v : array_like
+        Degree (float).
+    x : array_like
+        Argument (float). Must have ``|x| <= 1``.
 
     Returns
     -------
-    res : float
-        The value of the function.
+    pmv : ndarray
+        Value of the associated Legendre function.
 
     See Also
     --------
-    lpmn : Similar, but computes values for all orders 0..m and degrees 0..n.
-    clpmn : Similar to `lpmn` but allows a complex argument.
+    lpmn : Compute the associated Legendre function for all orders
+           ``0, ..., m`` and degrees ``0, ..., n``.
+    clpmn : Compute the associated Legendre function at complex
+            arguments.
 
     Notes
     -----
-    It is possible to extend the domain of this function to all
-    complex m, v, x, but this is not yet implemented.
+    Note that this implementation includes the Condon-Shortley phase.
+
+    References
+    ----------
+    .. [1] Zhang, Jin, "Computation of Special Functions", John Wiley
+           and Sons, Inc, 1996.
 
     """)
 
-add_newdoc("scipy.special", "mathieu_a",
+add_newdoc("mathieu_a",
     """
     mathieu_a(m, q)
 
@@ -3631,7 +5826,7 @@ add_newdoc("scipy.special", "mathieu_a",
     ``ce_m(z, q)``, of Mathieu's equation.
     """)
 
-add_newdoc("scipy.special", "mathieu_b",
+add_newdoc("mathieu_b",
     """
     mathieu_b(m, q)
 
@@ -3641,7 +5836,7 @@ add_newdoc("scipy.special", "mathieu_b",
     ``se_m(z, q)``, of Mathieu's equation.
     """)
 
-add_newdoc("scipy.special", "mathieu_cem",
+add_newdoc("mathieu_cem",
     """
     mathieu_cem(m, q, x)
 
@@ -3668,7 +5863,7 @@ add_newdoc("scipy.special", "mathieu_cem",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modcem1",
+add_newdoc("mathieu_modcem1",
     """
     mathieu_modcem1(m, q, x)
 
@@ -3686,7 +5881,7 @@ add_newdoc("scipy.special", "mathieu_modcem1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modcem2",
+add_newdoc("mathieu_modcem2",
     """
     mathieu_modcem2(m, q, x)
 
@@ -3704,7 +5899,7 @@ add_newdoc("scipy.special", "mathieu_modcem2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modsem1",
+add_newdoc("mathieu_modsem1",
     """
     mathieu_modsem1(m, q, x)
 
@@ -3722,7 +5917,7 @@ add_newdoc("scipy.special", "mathieu_modsem1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_modsem2",
+add_newdoc("mathieu_modsem2",
     """
     mathieu_modsem2(m, q, x)
 
@@ -3740,7 +5935,7 @@ add_newdoc("scipy.special", "mathieu_modsem2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "mathieu_sem",
+add_newdoc("mathieu_sem",
     """
     mathieu_sem(m, q, x)
 
@@ -3767,7 +5962,7 @@ add_newdoc("scipy.special", "mathieu_sem",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "modfresnelm",
+add_newdoc("modfresnelm",
     """
     modfresnelm(x)
 
@@ -3781,7 +5976,7 @@ add_newdoc("scipy.special", "modfresnelm",
         Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
     """)
 
-add_newdoc("scipy.special", "modfresnelp",
+add_newdoc("modfresnelp",
     """
     modfresnelp(x)
 
@@ -3795,7 +5990,7 @@ add_newdoc("scipy.special", "modfresnelp",
         Integral ``K_+(x)``: ``1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp``
     """)
 
-add_newdoc("scipy.special", "modstruve",
+add_newdoc("modstruve",
     r"""
     modstruve(v, x)
 
@@ -3805,7 +6000,7 @@ add_newdoc("scipy.special", "modstruve",
     modified Struve function is defined as,
 
     .. math::
-        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(x),
+        L_v(x) = -\imath \exp(-\pi\imath v/2) H_v(\imath x),
 
     where :math:`H_v` is the Struve function.
 
@@ -3827,8 +6022,8 @@ add_newdoc("scipy.special", "modstruve",
     Three methods discussed in [1]_ are used to evaluate the function:
 
     - power series
-    - expansion in Bessel functions (if :math:`|z| < |v| + 20`)
-    - asymptotic large-z expansion (if :math:`z \geq 0.7v + 12`)
+    - expansion in Bessel functions (if :math:`|x| < |v| + 20`)
+    - asymptotic large-x expansion (if :math:`x \geq 0.7v + 12`)
 
     Rounding errors are estimated based on the largest terms in the sums, and
     the result associated with the smallest error is returned.
@@ -3840,10 +6035,10 @@ add_newdoc("scipy.special", "modstruve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
     """)
 
-add_newdoc("scipy.special", "nbdtr",
+add_newdoc("nbdtr",
     r"""
     nbdtr(k, n, p)
 
@@ -3895,11 +6090,11 @@ add_newdoc("scipy.special", "nbdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
-add_newdoc("scipy.special", "nbdtrc",
+add_newdoc("nbdtrc",
     r"""
     nbdtrc(k, n, p)
 
@@ -3947,10 +6142,10 @@ add_newdoc("scipy.special", "nbdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "nbdtri",
+add_newdoc("nbdtri",
     """
     nbdtri(k, n, y)
 
@@ -3988,11 +6183,11 @@ add_newdoc("scipy.special", "nbdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
-    
+           http://www.netlib.org/cephes/
+
     """)
 
-add_newdoc("scipy.special", "nbdtrik",
+add_newdoc("nbdtrik",
     r"""
     nbdtrik(y, n, p)
 
@@ -4010,12 +6205,12 @@ add_newdoc("scipy.special", "nbdtrik",
         The target number of successes (positive int).
     p : array_like
         Probability of success in a single event (float).
-    
+
     Returns
     -------
     k : ndarray
         The maximum number of allowed failures such that `nbdtr(k, n, p) = y`.
-    
+
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
@@ -4034,8 +6229,8 @@ add_newdoc("scipy.special", "nbdtrik",
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
 
-    Computation of `k` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `k`.
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `k`.
 
     References
     ----------
@@ -4048,7 +6243,7 @@ add_newdoc("scipy.special", "nbdtrik",
 
     """)
 
-add_newdoc("scipy.special", "nbdtrin",
+add_newdoc("nbdtrin",
     r"""
     nbdtrin(k, y, p)
 
@@ -4066,12 +6261,12 @@ add_newdoc("scipy.special", "nbdtrin",
         The probability of `k` or fewer failures before `n` successes (float).
     p : array_like
         Probability of success in a single event (float).
-    
+
     Returns
     -------
     n : ndarray
         The number of successes `n` such that `nbdtr(k, n, p) = y`.
-    
+
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
@@ -4090,8 +6285,8 @@ add_newdoc("scipy.special", "nbdtrin",
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
 
-    Computation of `n` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `n`.
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
 
     References
     ----------
@@ -4104,7 +6299,7 @@ add_newdoc("scipy.special", "nbdtrin",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtr",
+add_newdoc("ncfdtr",
     r"""
     ncfdtr(dfn, dfd, nc, f)
 
@@ -4139,10 +6334,10 @@ add_newdoc("scipy.special", "ncfdtr",
 
     See Also
     --------
-    ncdfdtri : Inverse CDF (iCDF) of the non-central F distribution.
-    ncdfdtridfd : Calculate dfd, given CDF and iCDF values.
-    ncdfdtridfn : Calculate dfn, given CDF and iCDF values.
-    ncdfdtrinc : Calculate noncentrality parameter, given CDF, iCDF, dfn, dfd.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
     Notes
     -----
@@ -4194,23 +6389,88 @@ add_newdoc("scipy.special", "ncfdtr",
 
     """)
 
-add_newdoc("scipy.special", "ncfdtri",
+add_newdoc("ncfdtri",
     """
-    ncfdtri(p, dfn, dfd, nc)
+    ncfdtri(dfn, dfd, nc, p)
 
-    Inverse cumulative distribution function of the non-central F distribution.
+    Inverse with respect to `f` of the CDF of the non-central F distribution.
 
     See `ncfdtr` for more details.
 
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+
+    Returns
+    -------
+    f : float
+        Quantiles, i.e. the upper limit of integration.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtri
+
+    Compute the CDF for several values of `f`:
+
+    >>> f = [0.5, 1, 1.5]
+    >>> p = ncfdtr(2, 3, 1.5, f)
+    >>> p
+    array([ 0.20782291,  0.36107392,  0.47345752])
+
+    Compute the inverse.  We recover the values of `f`, as expected:
+
+    >>> ncfdtri(2, 3, 1.5, p)
+    array([ 0.5,  1. ,  1.5])
+
     """)
 
-add_newdoc("scipy.special", "ncfdtridfd",
+add_newdoc("ncfdtridfd",
     """
-    ncfdtridfd(p, f, dfn, nc)
+    ncfdtridfd(dfn, p, nc, f)
 
     Calculate degrees of freedom (denominator) for the noncentral F-distribution.
 
+    This is the inverse with respect to `dfd` of `ncfdtr`.
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    f : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    dfd : float
+        Degrees of freedom of the denominator sum of squares.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
     Notes
     -----
@@ -4219,15 +6479,56 @@ add_newdoc("scipy.special", "ncfdtridfd",
     provide a given CDF value.  This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtridfd
+
+    Compute the CDF for several values of `dfd`:
+
+    >>> dfd = [1, 2, 3]
+    >>> p = ncfdtr(2, dfd, 0.25, 15)
+    >>> p
+    array([ 0.8097138 ,  0.93020416,  0.96787852])
+
+    Compute the inverse.  We recover the values of `dfd`, as expected:
+
+    >>> ncfdtridfd(2, p, 0.25, 15)
+    array([ 1.,  2.,  3.])
+
     """)
 
-add_newdoc("scipy.special", "ncfdtridfn",
+add_newdoc("ncfdtridfn",
     """
-    ncfdtridfn(p, f, dfd, nc)
+    ncfdtridfn(p, dfd, nc, f)
 
     Calculate degrees of freedom (numerator) for the noncentral F-distribution.
 
+    This is the inverse with respect to `dfn` of `ncfdtr`.
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    f : float
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    dfn : float
+        Degrees of freedom of the numerator sum of squares.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
     Notes
     -----
@@ -4236,19 +6537,76 @@ add_newdoc("scipy.special", "ncfdtridfn",
     provide a given CDF value.  This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtridfn
+
+    Compute the CDF for several values of `dfn`:
+
+    >>> dfn = [1, 2, 3]
+    >>> p = ncfdtr(dfn, 2, 0.25, 15)
+    >>> p
+    array([ 0.92562363,  0.93020416,  0.93188394])
+
+    Compute the inverse.  We recover the values of `dfn`, as expected:
+
+    >>> ncfdtridfn(p, 2, 0.25, 15)
+    array([ 1.,  2.,  3.])
+
     """)
 
-add_newdoc("scipy.special", "ncfdtrinc",
+add_newdoc("ncfdtrinc",
     """
-    ncfdtrinc(p, f, dfn, dfd)
+    ncfdtrinc(dfn, dfd, p, f)
 
     Calculate non-centrality parameter for non-central F distribution.
 
+    This is the inverse with respect to `nc` of `ncfdtr`.
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+    f : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    nc : float
+        Noncentrality parameter.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.0]
+    >>> p = ncfdtr(2, 3, nc, 15)
+    >>> p
+    array([ 0.96309246,  0.94327955,  0.93304098])
+
+    Compute the inverse.  We recover the values of `nc`, as expected:
+
+    >>> ncfdtrinc(2, 3, p, 15)
+    array([ 0.5,  1.5,  2. ])
 
     """)
 
-add_newdoc("scipy.special", "nctdtr",
+add_newdoc("nctdtr",
     """
     nctdtr(df, nc, t)
 
@@ -4297,7 +6655,7 @@ add_newdoc("scipy.special", "nctdtr",
 
     """)
 
-add_newdoc("scipy.special", "nctdtridf",
+add_newdoc("nctdtridf",
     """
     nctdtridf(p, nc, t)
 
@@ -4316,7 +6674,7 @@ add_newdoc("scipy.special", "nctdtridf",
 
     """)
 
-add_newdoc("scipy.special", "nctdtrinc",
+add_newdoc("nctdtrinc",
     """
     nctdtrinc(df, p, t)
 
@@ -4335,7 +6693,7 @@ add_newdoc("scipy.special", "nctdtrinc",
 
     """)
 
-add_newdoc("scipy.special", "nctdtrit",
+add_newdoc("nctdtrit",
     """
     nctdtrit(df, nc, p)
 
@@ -4354,7 +6712,7 @@ add_newdoc("scipy.special", "nctdtrit",
 
     """)
 
-add_newdoc("scipy.special", "ndtr",
+add_newdoc("ndtr",
     r"""
     ndtr(x)
 
@@ -4387,7 +6745,7 @@ add_newdoc("scipy.special", "ndtr",
     """)
 
 
-add_newdoc("scipy.special", "nrdtrimn",
+add_newdoc("nrdtrimn",
     """
     nrdtrimn(p, x, std)
 
@@ -4413,7 +6771,7 @@ add_newdoc("scipy.special", "nrdtrimn",
 
     """)
 
-add_newdoc("scipy.special", "nrdtrisd",
+add_newdoc("nrdtrisd",
     """
     nrdtrisd(p, x, mn)
 
@@ -4435,11 +6793,11 @@ add_newdoc("scipy.special", "nrdtrisd",
 
     See Also
     --------
-    nrdtristd, ndtr
+    ndtr
 
     """)
 
-add_newdoc("scipy.special", "log_ndtr",
+add_newdoc("log_ndtr",
     """
     log_ndtr(x)
 
@@ -4469,7 +6827,7 @@ add_newdoc("scipy.special", "log_ndtr",
 
     """)
 
-add_newdoc("scipy.special", "ndtri",
+add_newdoc("ndtri",
     """
     ndtri(y)
 
@@ -4480,7 +6838,7 @@ add_newdoc("scipy.special", "ndtri",
     is equal to y.
     """)
 
-add_newdoc("scipy.special", "obl_ang1",
+add_newdoc("obl_ang1",
     """
     obl_ang1(m, n, c, x)
 
@@ -4498,7 +6856,7 @@ add_newdoc("scipy.special", "obl_ang1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_ang1_cv",
+add_newdoc("obl_ang1_cv",
     """
     obl_ang1_cv(m, n, c, cv, x)
 
@@ -4517,7 +6875,7 @@ add_newdoc("scipy.special", "obl_ang1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_cv",
+add_newdoc("obl_cv",
     """
     obl_cv(m, n, c)
 
@@ -4527,7 +6885,7 @@ add_newdoc("scipy.special", "obl_cv",
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
     """)
 
-add_newdoc("scipy.special", "obl_rad1",
+add_newdoc("obl_rad1",
     """
     obl_rad1(m, n, c, x)
 
@@ -4545,7 +6903,7 @@ add_newdoc("scipy.special", "obl_rad1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_rad1_cv",
+add_newdoc("obl_rad1_cv",
     """
     obl_rad1_cv(m, n, c, cv, x)
 
@@ -4564,7 +6922,7 @@ add_newdoc("scipy.special", "obl_rad1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_rad2",
+add_newdoc("obl_rad2",
     """
     obl_rad2(m, n, c, x)
 
@@ -4582,7 +6940,7 @@ add_newdoc("scipy.special", "obl_rad2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "obl_rad2_cv",
+add_newdoc("obl_rad2_cv",
     """
     obl_rad2_cv(m, n, c, cv, x)
 
@@ -4601,7 +6959,7 @@ add_newdoc("scipy.special", "obl_rad2_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pbdv",
+add_newdoc("pbdv",
     """
     pbdv(v, x)
 
@@ -4618,7 +6976,7 @@ add_newdoc("scipy.special", "pbdv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pbvv",
+add_newdoc("pbvv",
     """
     pbvv(v, x)
 
@@ -4635,39 +6993,105 @@ add_newdoc("scipy.special", "pbvv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pbwa",
-    """
+add_newdoc("pbwa",
+    r"""
     pbwa(a, x)
 
-    Parabolic cylinder function W
+    Parabolic cylinder function W.
 
-    Returns the parabolic cylinder function W(a, x) in w and the
-    derivative, W'(a, x) in wp.
+    The function is a particular solution to the differential equation
 
-    .. warning::
+    .. math::
 
-       May not be accurate for large (>5) arguments in a and/or x.
+        y'' + \left(\frac{1}{4}x^2 - a\right)y = 0,
+
+    for a full definition see section 12.14 in [1]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Real parameter
+    x : array_like
+        Real argument
 
     Returns
     -------
-    w
+    w : scalar or ndarray
         Value of the function
-    wp
-        Value of the derivative vs x
+    wp : scalar or ndarray
+        Value of the derivative in x
+
+    Notes
+    -----
+    The function is a wrapper for a Fortran routine by Zhang and Jin
+    [2]_. The implementation is accurate only for ``|a|, |x| < 5`` and
+    returns NaN outside that range.
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 14.30.
+           https://dlmf.nist.gov/14.30
+    .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
-add_newdoc("scipy.special", "pdtr",
-    """
-    pdtr(k, m)
+add_newdoc("pdtr",
+    r"""
+    pdtr(k, m, out=None)
 
-    Poisson cumulative distribution function
+    Poisson cumulative distribution function.
 
-    Returns the sum of the first `k` terms of the Poisson distribution:
-    sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments
-    must both be positive and `k` an integer.
+    Defined as the probability that a Poisson-distributed random
+    variable with event rate :math:`m` is less than or equal to
+    :math:`k`. More concretely, this works out to be [1]_
+
+    .. math::
+
+       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{m!}.
+
+    Parameters
+    ----------
+    k : array_like
+        Nonnegative real argument
+    m : array_like
+        Nonnegative real shape parameter
+    out : ndarray
+        Optional output array for the function results
+
+    See Also
+    --------
+    pdtrc : Poisson survival function
+    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtri : inverse of `pdtr` with respect to `m`
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson cumulative distribution function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Poisson_distribution
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is a cumulative distribution function, so it converges to 1
+    monotonically as `k` goes to infinity.
+
+    >>> sc.pdtr([1, 10, 100, np.inf], 1)
+    array([0.73575888, 0.99999999, 1.        , 1.        ])
+
+    It is discontinuous at integers and constant between integers.
+
+    >>> sc.pdtr([1, 1.5, 1.9, 2], 1)
+    array([0.73575888, 0.73575888, 0.73575888, 0.9196986 ])
+
     """)
 
-add_newdoc("scipy.special", "pdtrc",
+add_newdoc("pdtrc",
     """
     pdtrc(k, m)
 
@@ -4675,10 +7099,10 @@ add_newdoc("scipy.special", "pdtrc",
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
-    k+1, m).  Arguments must both be positive and `k` an integer.
+    k+1, m).  Arguments must both be non-negative doubles.
     """)
 
-add_newdoc("scipy.special", "pdtri",
+add_newdoc("pdtri",
     """
     pdtri(k, y)
 
@@ -4690,7 +7114,7 @@ add_newdoc("scipy.special", "pdtri",
     integer and `y` between 0 and 1.
     """)
 
-add_newdoc("scipy.special", "pdtrik",
+add_newdoc("pdtrik",
     """
     pdtrik(p, m)
 
@@ -4699,22 +7123,68 @@ add_newdoc("scipy.special", "pdtrik",
     Returns the quantile k such that ``pdtr(k, m) = p``
     """)
 
-add_newdoc("scipy.special", "poch",
-    """
+add_newdoc("poch",
+    r"""
     poch(z, m)
 
-    Rising factorial (z)_m
+    Pochhammer symbol.
 
-    The Pochhammer symbol (rising factorial), is defined as::
+    The Pochhammer symbol (rising factorial) is defined as
 
-        (z)_m = gamma(z + m) / gamma(z)
+    .. math::
 
-    For positive integer `m` it reads::
+        (z)_m = \frac{\Gamma(z + m)}{\Gamma(z)}
 
-        (z)_m = z * (z + 1) * ... * (z + m - 1)
+    For positive integer `m` it reads
+
+    .. math::
+
+        (z)_m = z (z + 1) ... (z + m - 1)
+
+    See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    z, m : array_like
+        Real-valued arguments.
+
+    Returns
+    -------
+    scalar or ndarray
+        The value of the function.
+
+    References
+    ----------
+    .. [dlmf] Nist, Digital Library of Mathematical Functions
+        https://dlmf.nist.gov/5.2#iii
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is 1 when m is 0.
+
+    >>> sc.poch([1, 2, 3, 4], 0)
+    array([1., 1., 1., 1.])
+
+    For z equal to 1 it reduces to the factorial function.
+
+    >>> sc.poch(1, 5)
+    120.0
+    >>> 1 * 2 * 3 * 4 * 5
+    120
+
+    It can be expressed in terms of the Gamma function.
+
+    >>> z, m = 3.7, 2.1
+    >>> sc.poch(z, m)
+    20.529581933776953
+    >>> sc.gamma(z + m) / sc.gamma(z)
+    20.52958193377696
+
     """)
 
-add_newdoc("scipy.special", "pro_ang1",
+add_newdoc("pro_ang1",
     """
     pro_ang1(m, n, c, x)
 
@@ -4732,7 +7202,7 @@ add_newdoc("scipy.special", "pro_ang1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_ang1_cv",
+add_newdoc("pro_ang1_cv",
     """
     pro_ang1_cv(m, n, c, cv, x)
 
@@ -4751,7 +7221,7 @@ add_newdoc("scipy.special", "pro_ang1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_cv",
+add_newdoc("pro_cv",
     """
     pro_cv(m, n, c)
 
@@ -4761,7 +7231,7 @@ add_newdoc("scipy.special", "pro_cv",
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
     """)
 
-add_newdoc("scipy.special", "pro_rad1",
+add_newdoc("pro_rad1",
     """
     pro_rad1(m, n, c, x)
 
@@ -4779,7 +7249,7 @@ add_newdoc("scipy.special", "pro_rad1",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_rad1_cv",
+add_newdoc("pro_rad1_cv",
     """
     pro_rad1_cv(m, n, c, cv, x)
 
@@ -4798,11 +7268,11 @@ add_newdoc("scipy.special", "pro_rad1_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_rad2",
+add_newdoc("pro_rad2",
     """
     pro_rad2(m, n, c, x)
 
-    Prolate spheroidal radial function of the secon kind and its derivative
+    Prolate spheroidal radial function of the second kind and its derivative
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -4816,7 +7286,7 @@ add_newdoc("scipy.special", "pro_rad2",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pro_rad2_cv",
+add_newdoc("pro_rad2_cv",
     """
     pro_rad2_cv(m, n, c, cv, x)
 
@@ -4835,7 +7305,7 @@ add_newdoc("scipy.special", "pro_rad2_cv",
         Value of the derivative vs x
     """)
 
-add_newdoc("scipy.special", "pseudo_huber",
+add_newdoc("pseudo_huber",
     r"""
     pseudo_huber(delta, r)
 
@@ -4863,7 +7333,7 @@ add_newdoc("scipy.special", "pseudo_huber",
 
     """)
 
-add_newdoc("scipy.special", "psi",
+add_newdoc("psi",
     """
     psi(z, out=None)
 
@@ -4902,14 +7372,14 @@ add_newdoc("scipy.special", "psi",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/5
+           https://dlmf.nist.gov/5
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
 
     """)
 
-add_newdoc("scipy.special", "radian",
+add_newdoc("radian",
     """
     radian(d, m, s)
 
@@ -4919,7 +7389,7 @@ add_newdoc("scipy.special", "radian",
     radians.
     """)
 
-add_newdoc("scipy.special", "rel_entr",
+add_newdoc("rel_entr",
     r"""
     rel_entr(x, y)
 
@@ -4951,7 +7421,7 @@ add_newdoc("scipy.special", "rel_entr",
 
     """)
 
-add_newdoc("scipy.special", "rgamma",
+add_newdoc("rgamma",
     """
     rgamma(z)
 
@@ -4960,7 +7430,7 @@ add_newdoc("scipy.special", "rgamma",
     Returns ``1/gamma(x)``
     """)
 
-add_newdoc("scipy.special", "round",
+add_newdoc("round",
     """
     round(x)
 
@@ -4971,7 +7441,7 @@ add_newdoc("scipy.special", "round",
     is chosen.
     """)
 
-add_newdoc("scipy.special", "shichi",
+add_newdoc("shichi",
     r"""
     shichi(x, out=None)
 
@@ -5018,13 +7488,13 @@ add_newdoc("scipy.special", "shichi",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
     """)
 
-add_newdoc("scipy.special", "sici",
+add_newdoc("sici",
     r"""
     sici(x, out=None)
 
@@ -5033,7 +7503,7 @@ add_newdoc("scipy.special", "sici",
     The sine integral is
 
     .. math::
-    
+
       \int_0^x \frac{\sin{t}}{t}dt
 
     and the cosine integral is
@@ -5071,48 +7541,177 @@ add_newdoc("scipy.special", "sici",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
     """)
 
-add_newdoc("scipy.special", "sindg",
+add_newdoc("sindg",
     """
     sindg(x)
 
     Sine of angle given in degrees
     """)
 
-add_newdoc("scipy.special", "smirnov",
-    """
-    smirnov(n, e)
+add_newdoc("smirnov",
+    r"""
+    smirnov(n, d)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
 
     Returns the exact Kolmogorov-Smirnov complementary cumulative
-    distribution function (Dn+ or Dn-) for a one-sided test of
-    equality between an empirical and a theoretical distribution. It
-    is equal to the probability that the maximum difference between a
-    theoretical distribution and an empirical one based on `n` samples
-    is greater than e.
+    distribution function,(aka the Survival Function) of Dn+ (or Dn-)
+    for a one-sided test of equality between an empirical and a
+    theoretical distribution. It is equal to the probability that the
+    maximum difference between a theoretical distribution and an empirical
+    one based on `n` samples is greater than d.
+
+    Parameters
+    ----------
+    n : int
+      Number of samples
+    d : float array_like
+      Deviation between the Empirical CDF (ECDF) and the target CDF.
+
+    Returns
+    -------
+    float
+        The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
+
+    Notes
+    -----
+    `smirnov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.ksone` distribution.
+
+    See Also
+    --------
+    smirnovi : The Inverse Survival Function for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+
+    Examples
+    --------
+    >>> from scipy.special import smirnov
+
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
+
+    >>> smirnov(5, [0, 0.5, 1.0])
+    array([ 1.   ,  0.056,  0.   ])
+
+    Compare a sample of size 5 drawn from a source N(0.5, 1) distribution against
+    a target N(0, 1) CDF.
+
+    >>> from scipy.stats import norm
+    >>> n = 5
+    >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
+    >>> np.random.seed(seed=233423)  # Set the seed for reproducibility
+    >>> x = np.sort(gendist.rvs(size=n))
+    >>> x
+    array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])
+    >>> target = norm(0, 1)
+    >>> cdfs = target.cdf(x)
+    >>> cdfs
+    array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])
+    # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
+    >>> ecdfs = np.arange(n+1, dtype=float)/n
+    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
+    >>> np.set_printoptions(precision=3)
+    >>> cols
+    array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],
+           [  7.169e-01,   4.000e-01,   7.633e-01,   5.633e-01,  -3.633e-01],
+           [  9.516e-01,   6.000e-01,   8.294e-01,   4.294e-01,  -2.294e-01],
+           [  1.446e+00,   8.000e-01,   9.259e-01,   3.259e-01,  -1.259e-01],
+           [  3.089e+00,   1.000e+00,   9.990e-01,   1.990e-01,   1.005e-03]])
+    >>> gaps = cols[:, -2:]
+    >>> Dnpm = np.max(gaps, axis=0)
+    >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
+    Dn-=0.563278, Dn+=0.001005
+    >>> probs = smirnov(n, Dnpm)
+    >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
+    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
+    ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
+    For a sample of size 5 drawn from a N(0, 1) distribution:
+     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
+     Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
+
+    Plot the Empirical CDF against the target N(0, 1) CDF
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
+    >>> x3 = np.linspace(-3, 3, 100)
+    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
+    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
+    # Add vertical lines marking Dn+ and Dn-
+    >>> iminus, iplus = np.argmax(gaps, axis=0)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
+    >>> plt.show()
     """)
 
-add_newdoc("scipy.special", "smirnovi",
+add_newdoc("smirnovi",
     """
-    smirnovi(n, y)
+    smirnovi(n, p)
 
     Inverse to `smirnov`
 
-    Returns ``e`` such that ``smirnov(n, e) = y``.
+    Returns `d` such that ``smirnov(n, d) == p``, the critical value
+    corresponding to `p`.
+
+    Parameters
+    ----------
+    n : int
+      Number of samples
+    p : float array_like
+        Probability
+
+    Returns
+    -------
+    float
+        The value(s) of smirnovi(n, p), the critical values.
+
+    Notes
+    -----
+    `smirnov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.ksone` distribution.
+
+    See Also
+    --------
+    smirnov  : The Survival Function (SF) for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
     """)
 
-add_newdoc("scipy.special", "spence",
-    r"""
-    spence(z)
+add_newdoc("_smirnovc",
+    """
+    _smirnovc(n, d)
+     Internal function, do not use.
+    """)
 
-    Spence's function, also known as the dilogarithm. It is defined to
-    be
+add_newdoc("_smirnovci",
+    """
+     Internal function, do not use.
+    """)
+
+add_newdoc("_smirnovp",
+    """
+    _smirnovp(n, p)
+     Internal function, do not use.
+    """)
+
+add_newdoc("spence",
+    r"""
+    spence(z, out=None)
+
+    Spence's function, also known as the dilogarithm.
+
+    It is defined to be
 
     .. math::
       \int_0^z \frac{\log(t)}{1 - t}dt
@@ -5122,21 +7721,32 @@ add_newdoc("scipy.special", "spence",
     analytic everywhere except the negative real axis where it has a
     branch cut.
 
-    Note that there is a different convention which defines Spence's
-    function by the integral
+    Parameters
+    ----------
+    z : array_like
+        Points at which to evaluate Spence's function
+
+    Returns
+    -------
+    s : ndarray
+        Computed values of Spence's function
+
+    Notes
+    -----
+    There is a different convention which defines Spence's function by
+    the integral
 
     .. math::
       -\int_0^z \frac{\log(1 - t)}{t}dt;
 
     this is our ``spence(1 - z)``.
-
     """)
 
-add_newdoc("scipy.special", "stdtr",
+add_newdoc("stdtr",
     """
     stdtr(df, t)
 
-    Student t distribution cumulative density function
+    Student t distribution cumulative distribution function
 
     Returns the integral from minus infinity to t of the Student t
     distribution with df > 0 degrees of freedom::
@@ -5146,7 +7756,7 @@ add_newdoc("scipy.special", "stdtr",
 
     """)
 
-add_newdoc("scipy.special", "stdtridf",
+add_newdoc("stdtridf",
     """
     stdtridf(p, t)
 
@@ -5155,7 +7765,7 @@ add_newdoc("scipy.special", "stdtridf",
     Returns the argument df such that stdtr(df, t) is equal to `p`.
     """)
 
-add_newdoc("scipy.special", "stdtrit",
+add_newdoc("stdtrit",
     """
     stdtrit(df, p)
 
@@ -5164,7 +7774,7 @@ add_newdoc("scipy.special", "stdtrit",
     Returns the argument `t` such that stdtr(df, t) is equal to `p`.
     """)
 
-add_newdoc("scipy.special", "struve",
+add_newdoc("struve",
     r"""
     struve(v, x)
 
@@ -5209,18 +7819,18 @@ add_newdoc("scipy.special", "struve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
 
     """)
 
-add_newdoc("scipy.special", "tandg",
+add_newdoc("tandg",
     """
     tandg(x)
 
     Tangent of angle x given in degrees.
     """)
 
-add_newdoc("scipy.special", "tklmbda",
+add_newdoc("tklmbda",
     """
     tklmbda(x, lmbda)
 
@@ -5228,7 +7838,7 @@ add_newdoc("scipy.special", "tklmbda",
 
     """)
 
-add_newdoc("scipy.special", "wofz",
+add_newdoc("wofz",
     """
     wofz(z)
 
@@ -5251,15 +7861,20 @@ add_newdoc("scipy.special", "wofz",
     --------
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
+
     >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.wofz(x))
+    >>> z = special.wofz(x)
+
+    >>> plt.plot(x, z.real, label='wofz(x).real')
+    >>> plt.plot(x, z.imag, label='wofz(x).imag')
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$wofz(x)$')
+    >>> plt.legend(framealpha=1, shadow=True)
+    >>> plt.grid(alpha=0.25)
     >>> plt.show()
 
     """)
 
-add_newdoc("scipy.special", "xlogy",
+add_newdoc("xlogy",
     """
     xlogy(x, y)
 
@@ -5284,7 +7899,7 @@ add_newdoc("scipy.special", "xlogy",
 
     """)
 
-add_newdoc("scipy.special", "xlog1py",
+add_newdoc("xlog1py",
     """
     xlog1py(x, y)
 
@@ -5309,7 +7924,7 @@ add_newdoc("scipy.special", "xlog1py",
 
     """)
 
-add_newdoc("scipy.special", "y0",
+add_newdoc("y0",
     r"""
     y0(x)
 
@@ -5327,13 +7942,13 @@ add_newdoc("scipy.special", "y0",
 
     Notes
     -----
-    
+
     The domain is divided into the intervals [0, 5] and (5, infinity). In the
     first interval a rational approximation :math:`R(x)` is employed to
     compute,
-    
+
     .. math::
-        
+
         Y_0(x) = R(x) + \frac{2 \log(x) J_0(x)}{\pi},
 
     where :math:`J_0` is the Bessel function of the first kind of order 0.
@@ -5351,10 +7966,10 @@ add_newdoc("scipy.special", "y0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "y1",
+add_newdoc("y1",
     """
     y1(x)
 
@@ -5386,14 +8001,14 @@ add_newdoc("scipy.special", "y1",
     j1
     yn
     yv
-    
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "yn",
+add_newdoc("yn",
     r"""
     yn(n, x)
 
@@ -5426,10 +8041,10 @@ add_newdoc("scipy.special", "yn",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
-add_newdoc("scipy.special", "yv",
+add_newdoc("yv",
     r"""
     yv(v, z)
 
@@ -5476,7 +8091,7 @@ add_newdoc("scipy.special", "yv",
 
     """)
 
-add_newdoc("scipy.special", "yve",
+add_newdoc("yve",
     r"""
     yve(v, z)
 
@@ -5523,7 +8138,7 @@ add_newdoc("scipy.special", "yve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "_zeta",
+add_newdoc("_zeta",
     """
     _zeta(x, q)
 
@@ -5531,7 +8146,7 @@ add_newdoc("scipy.special", "_zeta",
 
     """)
 
-add_newdoc("scipy.special", "zetac",
+add_newdoc("zetac",
     """
     zetac(x)
 
@@ -5541,15 +8156,54 @@ add_newdoc("scipy.special", "zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.
+    where ``x > 1``.  For ``x < 1`` the analytic continuation is
+    computed. For more information on the Riemann zeta function, see
+    [dlmf]_.
+
+    Parameters
+    ----------
+    x : array_like of float
+        Values at which to compute zeta(x) - 1 (must be real).
+
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x) - 1.
 
     See Also
     --------
     zeta
 
+    Examples
+    --------
+    >>> from scipy.special import zetac, zeta
+
+    Some special values:
+
+    >>> zetac(2), np.pi**2/6 - 1
+    (0.64493406684822641, 0.6449340668482264)
+
+    >>> zetac(-1), -1.0/12 - 1
+    (-1.0833333333333333, -1.0833333333333333)
+
+    Compare ``zetac(x)`` to ``zeta(x) - 1`` for large `x`:
+
+    >>> zetac(60), zeta(60) - 1
+    (8.673617380119933e-19, 0.0)
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/25
+
     """)
 
-add_newdoc("scipy.special", "_struve_asymp_large_z",
+add_newdoc("_riemann_zeta",
+    """
+    Internal function, use `zeta` instead.
+    """)
+
+add_newdoc("_struve_asymp_large_z",
     """
     _struve_asymp_large_z(v, z, is_h)
 
@@ -5562,7 +8216,7 @@ add_newdoc("scipy.special", "_struve_asymp_large_z",
     v, err
     """)
 
-add_newdoc("scipy.special", "_struve_power_series",
+add_newdoc("_struve_power_series",
     """
     _struve_power_series(v, z, is_h)
 
@@ -5575,7 +8229,7 @@ add_newdoc("scipy.special", "_struve_power_series",
     v, err
     """)
 
-add_newdoc("scipy.special", "_struve_bessel_series",
+add_newdoc("_struve_bessel_series",
     """
     _struve_bessel_series(v, z, is_h)
 
@@ -5588,77 +8242,55 @@ add_newdoc("scipy.special", "_struve_bessel_series",
     v, err
     """)
 
-add_newdoc("scipy.special", "_spherical_jn",
+add_newdoc("_spherical_jn",
     """
     Internal function, use `spherical_jn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_jn_d",
+add_newdoc("_spherical_jn_d",
     """
     Internal function, use `spherical_jn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_yn",
+add_newdoc("_spherical_yn",
     """
     Internal function, use `spherical_yn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_yn_d",
+add_newdoc("_spherical_yn_d",
     """
     Internal function, use `spherical_yn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_in",
+add_newdoc("_spherical_in",
     """
     Internal function, use `spherical_in` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_in_d",
+add_newdoc("_spherical_in_d",
     """
     Internal function, use `spherical_in` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_kn",
+add_newdoc("_spherical_kn",
     """
     Internal function, use `spherical_kn` instead.
     """)
 
-add_newdoc("scipy.special", "_spherical_kn_d",
+add_newdoc("_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
     """)
 
-add_newdoc("scipy.special", "loggamma",
+add_newdoc("loggamma",
     r"""
     loggamma(z, out=None)
 
-    Principal branch of the logarithm of the Gamma function. It is
-    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    Principal branch of the logarithm of the Gamma function.
+
+    Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
     extended to the complex plane by analytic continuation. The
-    implementation here is based on [hare1997]_.
-
-    The function has a single branch cut on the negative real axis and
-    is taken to be continuous when approaching the axis from
-    above. Note that it is not generally true that
-    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
-    the functions do agree. The benefit of not defining ``loggamma``
-    as :math:`\log(\Gamma(z))` is that the latter function has a
-    complicated branch cut structure whereas ``loggamma`` is analytic
-    except for on the negative real axis.
-
-    The identities
-
-    .. math::
-      \exp(\log\Gamma(z)) &= \Gamma(z) \\
-      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
-
-    make ``loggama`` useful for working in complex logspace. However,
-    ``loggamma`` necessarily returns complex outputs for real inputs,
-    so if you want to work only with real numbers use `gammaln`. On
-    the real line the two functions are related by ``exp(loggamma(x))
-    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
-    errors will introduce small spurious imaginary components in
-    ``exp(loggamma(x))``.
+    function has a single branch cut on the negative real axis.
 
     .. versionadded:: 0.18.0
 
@@ -5674,6 +8306,29 @@ add_newdoc("scipy.special", "loggamma",
     loggamma : ndarray
         Values of ``loggamma`` at z.
 
+    Notes
+    -----
+    It is not generally true that :math:`\log\Gamma(z) =
+    \log(\Gamma(z))`, though the real parts of the functions do
+    agree. The benefit of not defining `loggamma` as
+    :math:`\log(\Gamma(z))` is that the latter function has a
+    complicated branch cut structure whereas `loggamma` is analytic
+    except for on the negative real axis.
+
+    The identities
+
+    .. math::
+      \exp(\log\Gamma(z)) &= \Gamma(z) \\
+      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
+
+    make `loggamma` useful for working in complex logspace.
+
+    On the real line `loggamma` is related to `gammaln` via
+    ``exp(loggamma(x + 0j)) = gammasgn(x)*exp(gammaln(x))``, up to
+    rounding error.
+
+    The implementation here is based on [hare1997]_.
+
     See also
     --------
     gammaln : logarithm of the absolute value of the Gamma function
@@ -5686,12 +8341,49 @@ add_newdoc("scipy.special", "loggamma",
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
     """)
 
-add_newdoc("scipy.special", "_sinpi",
+add_newdoc("_sinpi",
     """
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "_cospi",
+add_newdoc("_cospi",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("owens_t",
+    """
+    owens_t(h, a)
+
+    Owen's T Function.
+
+    The function T(h, a) gives the probability of the event
+    (X > h and 0 < Y < a * X) where X and Y are independent
+    standard normal random variables.
+
+    Parameters
+    ----------
+    h: array_like
+        Input value.
+    a: array_like
+        Input value.
+
+    Returns
+    -------
+    t: scalar or ndarray
+        Probability of the event (X > h and 0 < Y < a * X),
+        where X and Y are independent standard normal random variables.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> a = 3.5
+    >>> h = 0.78
+    >>> special.owens_t(h, a)
+    0.10877216734852274
+
+    References
+    ----------
+    .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
+           Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
     """)

@@ -37,18 +37,18 @@ def spherical_jn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        j_n' = j_{n-1} - \frac{n + 1}{2} j_n.
+        j_n'(z) = j_{n-1}(z) - \frac{n + 1}{z} j_n(z).
 
-        j_0' = -j_1
+        j_0'(z) = -j_1(z)
 
 
     .. versionadded:: 0.18.0
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E3
-    .. [2] http://dlmf.nist.gov/10.51.E1
-    .. [3] http://dlmf.nist.gov/10.51.E2
+    .. [1] https://dlmf.nist.gov/10.47.E3
+    .. [2] https://dlmf.nist.gov/10.51.E1
+    .. [3] https://dlmf.nist.gov/10.51.E2
     """
     if derivative:
         return _spherical_jn_d(n, z)
@@ -88,7 +88,7 @@ def spherical_yn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        y_n' = y_{n-1} - \frac{n + 1}{2} y_n.
+        y_n' = y_{n-1} - \frac{n + 1}{z} y_n.
 
         y_0' = -y_1
 
@@ -97,9 +97,9 @@ def spherical_yn(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E4
-    .. [2] http://dlmf.nist.gov/10.51.E1
-    .. [3] http://dlmf.nist.gov/10.51.E2
+    .. [1] https://dlmf.nist.gov/10.47.E4
+    .. [2] https://dlmf.nist.gov/10.51.E1
+    .. [3] https://dlmf.nist.gov/10.51.E2
     """
     if derivative:
         return _spherical_yn_d(n, z)
@@ -138,7 +138,7 @@ def spherical_in(n, z, derivative=False):
     The derivative is computed using the relations [2]_,
 
     .. math::
-        i_n' = i_{n-1} - \frac{n + 1}{2} i_n.
+        i_n' = i_{n-1} - \frac{n + 1}{z} i_n.
 
         i_1' = i_0
 
@@ -147,8 +147,8 @@ def spherical_in(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E7
-    .. [2] http://dlmf.nist.gov/10.51.E5
+    .. [1] https://dlmf.nist.gov/10.47.E7
+    .. [2] https://dlmf.nist.gov/10.51.E5
     """
     if derivative:
         return _spherical_in_d(n, z)
@@ -187,7 +187,7 @@ def spherical_kn(n, z, derivative=False):
     The derivative is computed using the relations [2]_,
 
     .. math::
-        k_n' = -k_{n-1} - \frac{n + 1}{2} k_n.
+        k_n' = -k_{n-1} - \frac{n + 1}{z} k_n.
 
         k_0' = -k_1
 
@@ -196,8 +196,8 @@ def spherical_kn(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E9
-    .. [2] http://dlmf.nist.gov/10.51.E5
+    .. [1] https://dlmf.nist.gov/10.47.E9
+    .. [2] https://dlmf.nist.gov/10.51.E5
     """
     if derivative:
         return _spherical_kn_d(n, z)

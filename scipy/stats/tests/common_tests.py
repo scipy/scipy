@@ -1,11 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import pickle
 
 import numpy as np
 import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
+from scipy._lib._numpy_compat import suppress_warnings
+from pytest import raises as assert_raises
+
 import numpy.ma.testutils as ma_npt
 
 from scipy._lib._util import getargspec_no_self as _getargspec
@@ -35,7 +37,8 @@ def check_normalization(distfn, args, distname):
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    normalization_cdf = distfn.cdf(distfn.b, *args)
+    _a, _b = distfn.support(*args)
+    normalization_cdf = distfn.cdf(_b, *args)
     npt.assert_allclose(normalization_cdf, 1.0)
 
 
@@ -85,7 +88,7 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
         npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
                 err_msg=msg + ' - kurtosis')
-    else:
+    elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
 
 
@@ -100,11 +103,27 @@ def check_private_entropy(distfn, args, superclass):
                         superclass._entropy(distfn, *args))
 
 
+def check_entropy_vect_scale(distfn, arg):
+    # check 2-d
+    sc = np.asarray([[1, 2], [3, 4]])
+    v_ent = distfn.entropy(*arg, scale=sc)
+    s_ent = [distfn.entropy(*arg, scale=s) for s in sc.ravel()]
+    s_ent = np.asarray(s_ent).reshape(v_ent.shape)
+    assert_allclose(v_ent, s_ent, atol=1e-14)
+
+    # check invalid value, check cast
+    sc = [1, 2, -3]
+    v_ent = distfn.entropy(*arg, scale=sc)
+    s_ent = [distfn.entropy(*arg, scale=s) for s in sc]
+    s_ent = np.asarray(s_ent).reshape(v_ent.shape)
+    assert_allclose(v_ent, s_ent, atol=1e-14)
+
+
 def check_edge_support(distfn, args):
     # Make sure that x=self.a and self.b are handled correctly.
-    x = [distfn.a, distfn.b]
+    x = distfn.support(*args)
     if isinstance(distfn, stats.rv_discrete):
-        x = [distfn.a - 1, distfn.b]
+        x = x[0]-1, x[1]
 
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
     npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
@@ -152,14 +171,12 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         npt.assert_array_equal(vals, v)
         if 'n' not in k.keys():
             # `n` is first parameter of moment(), so can't be used as named arg
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                npt.assert_equal(distfn.moment(1, *a, **k),
-                                 distfn.moment(1, *shape_args))
+            npt.assert_equal(distfn.moment(1, *a, **k),
+                             distfn.moment(1, *shape_args))
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
-    npt.assert_raises(TypeError, distfn.cdf, x, **k)
+    assert_raises(TypeError, distfn.cdf, x, **k)
 
 
 def check_random_state_property(distfn, args):
@@ -206,7 +223,8 @@ def check_meth_dtype(distfn, arg, meths):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        x = x[(distfn.a < x) & (x < distfn.b)]
+        _a, _b = distfn.support(*arg)
+        x = x[(_a < x) & (x < _b)]
         for meth in meths:
             val = meth(x, *arg)
             npt.assert_(val.dtype == np.float_)
@@ -235,7 +253,8 @@ def check_cmplx_deriv(distfn, arg):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        x = x[(distfn.a < x) & (x < distfn.b)]
+        _a, _b = distfn.support(*arg)
+        x = x[(_a < x) & (x < _b)]
 
         pdf, cdf, sf = distfn.pdf(x, *arg), distfn.cdf(x, *arg), distfn.sf(x, *arg)
         assert_allclose(deriv(distfn.cdf, x, *arg), pdf, rtol=1e-5)
@@ -277,10 +296,14 @@ def check_pickling(distfn, args):
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
-    sample = distfunc.rvs(*allargs)
-    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
-    if not shape_only:
-        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
-        np.random.seed(123)
-        expected = rvs(*allargs)
-        assert_allclose(sample, expected, rtol=1e-15)
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their
+        # methods generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        sample = distfunc.rvs(*allargs)
+        assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+        if not shape_only:
+            rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+            np.random.seed(123)
+            expected = rvs(*allargs)
+            assert_allclose(sample, expected, rtol=1e-15)

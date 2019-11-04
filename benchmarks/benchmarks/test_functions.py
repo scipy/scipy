@@ -1,6 +1,9 @@
 from __future__ import division
+import time
+
 import numpy as np
 from numpy import sin, cos, pi, exp, sqrt, abs
+from scipy.optimize import rosen
 
 
 class SimpleQuadratic(object):
@@ -29,13 +32,20 @@ class AsymmetricQuadratic(object):
         return 2. * np.eye(x.size)
 
 
+class SlowRosen(object):
+
+    def fun(self, x):
+        time.sleep(40e-6)
+        return rosen(x)
+
+
 class LJ(object):
     """
     The Lennard Jones potential
 
     a mathematically simple model that approximates the interaction between a
     pair of neutral atoms or molecules.
-    http://en.wikipedia.org/wiki/Lennard-Jones_potential
+    https://en.wikipedia.org/wiki/Lennard-Jones_potential
 
     E = sum_ij V(r_ij)
 
@@ -154,14 +164,15 @@ class Beale(object):
                 2. * (2.625 - x + x * y**3) * (3. * x * y**2))
         return np.array([dfdx, dfdy])
 
+
 """
 Global Test functions for minimizers.
 
 HolderTable, Ackey and Levi have many competing local minima and are suited
 for global minimizers such as basinhopping or differential_evolution.
-(http://en.wikipedia.org/wiki/Test_functions_for_optimization)
+(https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-See also http://mpra.ub.uni-muenchen.de/2718/1/MPRA_paper_2718.pdf
+See also https://mpra.ub.uni-muenchen.de/2718/1/MPRA_paper_2718.pdf
 
 """
 

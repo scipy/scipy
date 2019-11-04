@@ -18,7 +18,8 @@ Using any of these subpackages requires an explicit import.  For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
@@ -31,6 +32,7 @@ Using any of these subpackages requires an explicit import.  For example,
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
+ signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
  sparse.linalg                --- Sparse Linear Algebra
  sparse.linalg.dsolve         --- Linear Solvers
@@ -50,7 +52,7 @@ Utility tools
  test              --- Run scipy unittests
  show_config       --- Show scipy build configuration
  show_numpy_config --- Show numpy build configuration
- __version__       --- Scipy version string
+ __version__       --- SciPy version string
  __numpy_version__ --- Numpy version string
 
 """
@@ -60,17 +62,47 @@ __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
-    raise ImportError("Cannot import scipy when running from numpy source directory.")
+    raise ImportError(
+        "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
-# Import numpy symbols to scipy name space
+# Import numpy symbols to scipy name space (DEPRECATED)
+from ._lib.deprecation import _deprecated
 import numpy as _num
 linalg = None
-from numpy import *
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.{0} instead')
+for _key in _num.__all__:
+    _fun = getattr(_num, _key)
+    if callable(_fun):
+        _fun = _deprecated(_msg.format(_key))(_fun)
+    globals()[_key] = _fun
 from numpy.random import rand, randn
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.random.{0} instead')
+rand = _deprecated(_msg.format('rand'))(rand)
+randn = _deprecated(_msg.format('randn'))(randn)
 from numpy.fft import fft, ifft
-from numpy.lib.scimath import *
+# fft is especially problematic, so we deprecate it with a shorter window
+fft_msg = ('Using scipy.fft as a function is deprecated and will be '
+           'removed in SciPy 1.5.0, use scipy.fft.fft instead.')
+# for wrapping in scipy.fft.__call__, so the stacklevel is one off from the
+# usual (2)
+_dep_fft = _deprecated(fft_msg, stacklevel=3)(fft)
+fft = _deprecated(fft_msg)(fft)
+ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
+                   '2.0.0, use scipy.fft.ifft instead')(ifft)
+import numpy.lib.scimath as _sci
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.lib.scimath.{0} instead')
+for _key in _sci.__all__:
+    _fun = getattr(_sci, _key)
+    if callable(_fun):
+        _fun = _deprecated(_msg.format(_key))(_fun)
+    globals()[_key] = _fun
 
+# Allow distributors to run custom init code
+from . import _distributor_init
 
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
@@ -99,19 +131,25 @@ else:
     except ImportError:
         msg = """Error importing scipy: you cannot import scipy while
         being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python intepreter."""
+        tree first, and relaunch your python interpreter."""
         raise ImportError(msg)
 
     from scipy.version import version as __version__
     from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.7.1':
+    if _NumpyVersion(__numpy_version__) < '1.13.3':
         import warnings
-        warnings.warn("Numpy 1.7.1 or above is recommended for this version of "
+        warnings.warn("Numpy 1.13.3 or above is required for this version of "
                       "scipy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
     del _NumpyVersion
 
-    from numpy.testing import Tester
-    test = Tester().test
-    bench = Tester().bench
+    from scipy._lib._ccallback import LowLevelCallable
+
+    from scipy._lib._testutils import PytestTester
+    test = PytestTester(__name__)
+    del PytestTester
+
+    # This makes "from scipy import fft" return scipy.fft, not np.fft
+    del fft
+    from . import fft

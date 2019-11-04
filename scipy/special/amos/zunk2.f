@@ -291,7 +291,7 @@ C-----------------------------------------------------------------------
       FMR = DBLE(FLOAT(MR))
       SGN = -DSIGN(PI,FMR)
 C-----------------------------------------------------------------------
-C     CSPN AND CSGN ARE COEFF OF K AND I FUNCIONS RESP.
+C     CSPN AND CSGN ARE COEFF OF K AND I FUNCTIONS RESP.
 C-----------------------------------------------------------------------
       CSGNI = SGN
       IF (YY.LE.0.0D0) CSGNI = -CSGNI

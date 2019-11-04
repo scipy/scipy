@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 
 import scipy.special as sc
@@ -29,7 +31,8 @@ def test_shichi_consistency():
         return shi.real, chi.real
 
     # Overflow happens quickly, so limit range
-    x = np.r_[-np.logspace(np.log10(700), -30, 200), 0, np.logspace(-30, 2, np.log10(700))]
+    x = np.r_[-np.logspace(np.log10(700), -30, 200), 0,
+              np.logspace(-30, np.log10(700), 200)]
     shi, chi = sc.shichi(x)
     dataset = np.column_stack((x, shi, chi))
     FuncData(shichi, dataset, 0, (1, 2), rtol=1e-14).check()

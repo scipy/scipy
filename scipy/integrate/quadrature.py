@@ -1,13 +1,16 @@
 from __future__ import division, print_function, absolute_import
 
+import functools
 import numpy as np
 import math
+import sys
+import types
 import warnings
 
 # trapz is a public function for scipy.integrate,
 # even though it's actually a numpy function.
 from numpy import trapz
-from scipy.special.orthogonal import p_roots
+from scipy.special import roots_legendre
 from scipy.special import gammaln
 from scipy._lib.six import xrange
 
@@ -15,20 +18,38 @@ __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
            'cumtrapz', 'newton_cotes']
 
 
+# Make See Also linking for our local copy work properly
+def _copy_func(f):
+    """Based on http://stackoverflow.com/a/6528148/190597 (Glenn Maynard)"""
+    g = types.FunctionType(f.__code__, f.__globals__, name=f.__name__,
+                           argdefs=f.__defaults__, closure=f.__closure__)
+    g = functools.update_wrapper(g, f)
+    g.__kwdefaults__ = f.__kwdefaults__
+    return g
+
+
+trapz = _copy_func(trapz)
+if sys.flags.optimize <= 1:
+    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
+
+
 class AccuracyWarning(Warning):
     pass
 
 
-def _cached_p_roots(n):
+def _cached_roots_legendre(n):
     """
-    Cache p_roots results to speed up calls of the fixed_quad function.
+    Cache roots_legendre results to speed up calls of the fixed_quad
+    function.
     """
-    if n in _cached_p_roots.cache:
-        return _cached_p_roots.cache[n]
+    if n in _cached_roots_legendre.cache:
+        return _cached_roots_legendre.cache[n]
 
-    _cached_p_roots.cache[n] = p_roots(n)
-    return _cached_p_roots.cache[n]
-_cached_p_roots.cache = dict()
+    _cached_roots_legendre.cache[n] = roots_legendre(n)
+    return _cached_roots_legendre.cache[n]
+
+
+_cached_roots_legendre.cache = dict()
 
 
 def fixed_quad(func, a, b, args=(), n=5):
@@ -42,6 +63,8 @@ def fixed_quad(func, a, b, args=(), n=5):
     ----------
     func : callable
         A Python function or method to integrate (must accept vector inputs).
+        If integrating a vector-valued function, the returned array must have
+        shape ``(..., len(x))``.
     a : float
         Lower limit of integration.
     b : float
@@ -72,14 +95,32 @@ def fixed_quad(func, a, b, args=(), n=5):
     ode : ODE integrator
     odeint : ODE integrator
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
+    (0.1110884353741496, None)
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=5)
+    (0.11111111111111102, None)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=4)
+    (0.9999999771971152, None)
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=5)
+    (1.000000000039565, None)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
+
     """
-    x, w = _cached_p_roots(n)
+    x, w = _cached_roots_legendre(n)
     x = np.real(x)
     if np.isinf(a) or np.isinf(b):
         raise ValueError("Gaussian quadrature is only available for "
                          "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=0), None
+    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1), None
 
 
 def vectorize1(func, args=(), vec_func=False):
@@ -176,6 +217,20 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     ode: ODE integrator
     odeint: ODE integrator
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.quadrature(f, 0.0, 1.0)
+    (0.11111111111111106, 4.163336342344337e-17)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.quadrature(np.cos, 0.0, np.pi/2)
+    (0.9999999999999536, 3.9611425250996035e-11)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
+
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -214,12 +269,12 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     x : array_like, optional
         The coordinate to integrate along.  If None (default), use spacing `dx`
         between consecutive elements in `y`.
-    dx : int, optional
+    dx : float, optional
         Spacing between elements of `y`.  Only used if `x` is None.
     axis : int, optional
         Specifies the axis to cumulate.  Default is -1 (last axis).
     initial : scalar, optional
-        If given, uses this value as the first value in the returned result.
+        If given, insert this value at the beginning of the returned result.
         Typically this value should be 0.  Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration.
@@ -289,7 +344,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.ones(shape, dtype=res.dtype) * initial, res],
+        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
                              axis=axis)
 
     return res
@@ -346,7 +401,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : {'avg', 'first', 'str'}, optional
+    even : str {'avg', 'first', 'last'}, optional
         'avg' : Average two results:1) use the first N-2 intervals with
                   a trapezoidal rule on the last interval and 2) use the last
                   N-2 intervals with a trapezoidal rule on the first interval.
@@ -376,6 +431,24 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     exact if the function is a polynomial of order 3 or less.  If
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(0, 10)
+    >>> y = np.arange(0, 10)
+
+    >>> integrate.simps(y, x)
+    40.5
+
+    >>> y = np.power(x, 3)
+    >>> integrate.simps(y, x)
+    1642.5
+    >>> integrate.quad(lambda x: x**3, 0, 9)[0]
+    1640.25
+
+    >>> integrate.simps(y, x, even='first')
+    1644.5
 
     """
     y = np.asarray(y)
@@ -468,6 +541,29 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ode : ODE integrators
     odeint : ODE integrators
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(10, 14.25, 0.25)
+    >>> y = np.arange(3, 12)
+
+    >>> integrate.romb(y)
+    56.0
+
+    >>> y = np.sin(np.power(x, 2.5))
+    >>> integrate.romb(y)
+    -0.742561336672229
+
+    >>> integrate.romb(y, show=True)
+    Richardson Extrapolation Table for Romberg Integration
+    ====================================================================
+    -0.81576
+    4.63862  6.45674
+    -1.10581 -3.02062 -3.65245
+    -2.57379 -3.06311 -3.06595 -3.05664
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
+    ====================================================================
+    -0.742561336672229
     """
     y = np.asarray(y)
     nd = len(y.shape)
@@ -516,7 +612,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
             formstr = "%%%d.%df" % (width, precis)
 
             title = "Richardson Extrapolation Table for Romberg Integration"
-            print("", title.center(68), "=" * 68, sep="\n", end="")
+            print("", title.center(68), "=" * 68, sep="\n", end="\n")
             for i in xrange(k+1):
                 for j in xrange(i+1):
                     print(formstr % R[(i, j)], end=" ")
@@ -646,7 +742,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     References
     ----------
-    .. [1] 'Romberg's method' http://en.wikipedia.org/wiki/Romberg%27s_method
+    .. [1] 'Romberg's method' https://en.wikipedia.org/wiki/Romberg%27s_method
 
     Examples
     --------
@@ -710,7 +806,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     return result
 
 
-# Coefficients for Netwon-Cotes quadrature
+# Coefficients for Newton-Cotes quadrature
 #
 # These are the points being used
 #  to construct the local interpolating polynomial
@@ -772,21 +868,21 @@ _builtincoeffs = {
 
 
 def newton_cotes(rn, equal=0):
-    """
+    r"""
     Return weights and error coefficient for Newton-Cotes integration.
 
     Suppose we have (N+1) samples of f at the positions
     x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
     integral between x_0 and x_N is:
 
-    :math:`\\int_{x_0}^{x_N} f(x)dx = \\Delta x \\sum_{i=0}^{N} a_i f(x_i)
-    + B_N (\\Delta x)^{N+2} f^{N+1} (\\xi)`
+    :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
+    + B_N (\Delta x)^{N+2} f^{N+1} (\xi)`
 
-    where :math:`\\xi \\in [x_0,x_N]`
-    and :math:`\\Delta x = \\frac{x_N-x_0}{N}` is the average samples spacing.
+    where :math:`\xi \in [x_0,x_N]`
+    and :math:`\Delta x = \frac{x_N-x_0}{N}` is the average samples spacing.
 
     If the samples are equally-spaced and N is even, then the error
-    term is :math:`B_N (\\Delta x)^{N+3} f^{N+2}(\\xi)`.
+    term is :math:`B_N (\Delta x)^{N+3} f^{N+2}(\xi)`.
 
     Parameters
     ----------
@@ -805,6 +901,30 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Examples
+    --------
+    Compute the integral of sin(x) in [0, :math:`\pi`]:
+
+    >>> from scipy.integrate import newton_cotes
+    >>> def f(x):
+    ...     return np.sin(x)
+    >>> a = 0
+    >>> b = np.pi
+    >>> exact = 2
+    >>> for N in [2, 4, 6, 8, 10]:
+    ...     x = np.linspace(a, b, N + 1)
+    ...     an, B = newton_cotes(N, 1)
+    ...     dx = (b - a) / N
+    ...     quad = dx * np.sum(an * f(x))
+    ...     error = abs(quad - exact)
+    ...     print('{:2d}  {:10.9f}  {:.5e}'.format(N, quad, error))
+    ...
+     2   2.094395102   9.43951e-02
+     4   1.998570732   1.42927e-03
+     6   2.000017814   1.78136e-05
+     8   1.999999835   1.64725e-07
+    10   2.000000001   1.14677e-09
+
     Notes
     -----
     Normally, the Newton-Cotes rules are used on smaller integration
@@ -817,7 +937,7 @@ def newton_cotes(rn, equal=0):
             rn = np.arange(N+1)
         elif np.all(np.diff(rn) == 1):
             equal = 1
-    except:
+    except Exception:
         N = rn
         rn = np.arange(N+1)
         equal = 1

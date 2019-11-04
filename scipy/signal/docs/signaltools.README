@@ -41,7 +41,7 @@ So far this library has 4 C-code routines:
    (4) a remez exchange algorithm.
          remez is Python wrapping for code from Erik Kvaleberg (itself a 
          conversion to C of original code by Mcclellan) which
-	 implements the Parks-McClellan alogrithm for FIR optimal
+	 implements the Parks-McClellan algorithm for FIR optimal
          filter design.
 
 In Python several more routines are defined:

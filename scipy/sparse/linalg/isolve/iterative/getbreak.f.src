@@ -6,6 +6,7 @@
 *     Get breakdown parameter tolerance; for the test routine,
 *     set to machine precision.
 *
+      IMPLICIT NONE
       <rt> EPS, <sdsd=s,d,s,d>LAMCH
 *
       EPS = <sdsd>LAMCH('EPS')

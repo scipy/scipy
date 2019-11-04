@@ -27,6 +27,8 @@ def matvec(v):
     count[0] += 1
     sys.stderr.write('%d\r' % count[0])
     return Am*v
+
+
 A = la.LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 M = 100

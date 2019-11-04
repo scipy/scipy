@@ -7,7 +7,6 @@ Binomial Distribution
 A binomial random variable with parameters :math:`\left(n,p\right)` can be described as the sum of :math:`n` independent Bernoulli random variables of parameter :math:`p;`
 
 .. math::
-   :nowrap:
 
     Y=\sum_{i=1}^{n}X_{i}.
 
@@ -22,7 +21,6 @@ success is :math:`p.`
 where the incomplete beta integral is
 
 .. math::
-   :nowrap:
 
     I_{x}\left(a,b\right)=\frac{\Gamma\left(a+b\right)}{\Gamma\left(a\right)\Gamma\left(b\right)}\int_{0}^{x}t^{a-1}\left(1-t\right)^{b-1}dt.
 
@@ -34,7 +32,6 @@ Now
     \begin{eqnarray*} \mu & = & np\\ \mu_{2} & = & np\left(1-p\right)\\ \gamma_{1} & = & \frac{1-2p}{\sqrt{np\left(1-p\right)}}\\ \gamma_{2} & = & \frac{1-6p\left(1-p\right)}{np\left(1-p\right)}.\end{eqnarray*}
 
 .. math::
-   :nowrap:
 
     M\left(t\right)=\left[1-p\left(1-e^{t}\right)\right]^{n}
 

@@ -7,10 +7,7 @@ from __future__ import division
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = None
+    mpmath = None
 
 
 def _prod(seq):
@@ -81,9 +78,7 @@ def _butter_analog_poles(n):
     scipy.signal.butter(n, 1, analog=True, output='zpk'), but mpmath is used,
     and only the poles are returned.
     """
-    poles = []
-    for k in range(-n+1, n, 2):
-        poles.append(-mpmath.exp(1j*mpmath.pi*k/(2*n)))
+    poles = [-mpmath.exp(1j*mpmath.pi*k/(2*n)) for k in range(-n+1, n, 2)]
     return poles
 
 

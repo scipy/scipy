@@ -126,7 +126,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         else:
             dtype += 'f%d' % bytes_per_sample
     if not mmap:
-        data = numpy.fromstring(fid.read(size), dtype=dtype)
+        data = numpy.frombuffer(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
@@ -223,7 +223,38 @@ def read(filename, mmap=False):
     .. [1] IBM Corporation and Microsoft Corporation, "Multimedia Programming
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
-       http://www-mmsp.ece.mcgill.ca/documents/audioformats/wave/Docs/riffmci.pdf
+       http://www.tactilemedia.com/info/MCI_Control_Info.html
+
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+
+    Get the filename for an example .wav file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'tests', 'data')
+    >>> wav_fname = pjoin(data_dir, 'test-44100Hz-2ch-32bit-float-be.wav')
+
+    Load the .wav file contents.
+
+    >>> samplerate, data = sio.wavfile.read(wav_fname)
+    >>> print(f"number of channels = {data.shape[1]}")
+    number of channels = 2
+    >>> length = data.shape[0] / samplerate
+    >>> print(f"length = {length}s")
+    length = 0.01s
+
+    Plot the waveform.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> time = np.linspace(0., length, data.shape[0])
+    >>> plt.plot(time, data[:, 0], label="Left channel")
+    >>> plt.plot(time, data[:, 1], label="Right channel")
+    >>> plt.legend()
+    >>> plt.xlabel("Time [s]")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.show()
 
     """
     if hasattr(filename, 'read'):
@@ -241,6 +272,12 @@ def read(filename, mmap=False):
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
+
+            if not chunk_id:
+                raise ValueError("Unexpected end of file.")
+            elif len(chunk_id) < 4:
+                raise ValueError("Incomplete wav chunk.")
+
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
@@ -313,7 +350,19 @@ def write(filename, rate, data):
     .. [1] IBM Corporation and Microsoft Corporation, "Multimedia Programming
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
-       http://www-mmsp.ece.mcgill.ca/documents/audioformats/wave/Docs/riffmci.pdf
+       http://www.tactilemedia.com/info/MCI_Control_Info.html
+
+    Examples
+    --------
+    Create a 100Hz sine wave, sampled at 44100Hz.
+    Write to 16-bit PCM, Mono.
+
+    >>> from scipy.io.wavfile import write
+    >>> samplerate = 44100; fs = 100
+    >>> t = np.linspace(0., 1., samplerate)
+    >>> amplitude = np.iinfo(np.int16).max
+    >>> data = amplitude * np.sin(2. * np.pi * fs * t)
+    >>> write("example.wav", samplerate, data)
 
     """
     if hasattr(filename, 'write'):

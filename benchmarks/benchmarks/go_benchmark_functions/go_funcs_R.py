@@ -96,7 +96,7 @@ class Ratkowsky01(Benchmark):
     """
     Ratkowsky objective function.
 
-    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/ratkowsky3.shtml
+    .. [1] https://www.itl.nist.gov/div898/strd/nls/data/ratkowsky3.shtml
     """
 
     # TODO, this is a NIST regression standard dataset
@@ -148,7 +148,7 @@ class Ratkowsky02(Benchmark):
     *Global optimum*: :math:`f(x) = 8.0565229338` for
     :math:`x = [7.2462237576e1, 2.6180768402, 6.7359200066e-2]`
 
-    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/ratkowsky2.shtml
+    .. [1] https://www.itl.nist.gov/div898/strd/nls/data/ratkowsky2.shtml
     """
 
     def __init__(self, dimensions=3):

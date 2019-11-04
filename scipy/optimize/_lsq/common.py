@@ -230,11 +230,12 @@ def update_tr_radius(Delta, actual_reduction, predicted_reduction,
     Delta : float
         New radius.
     ratio : float
-        Ratio between actual and predicted reductions. Zero if predicted
-        reduction is zero.
+        Ratio between actual and predicted reductions.
     """
     if predicted_reduction > 0:
         ratio = actual_reduction / predicted_reduction
+    elif predicted_reduction == actual_reduction == 0:
+        ratio = 1
     else:
         ratio = 0
 
@@ -318,7 +319,7 @@ def minimize_quadratic_1d(a, b, lb, ub, c=0):
         if lb < extremum < ub:
             t.append(extremum)
     t = np.asarray(t)
-    y = a * t**2 + b * t + c
+    y = t * (a * t + b) + c
     min_index = np.argmin(y)
     return t[min_index], y[min_index]
 
@@ -622,7 +623,7 @@ def left_multiplied_operator(J, d):
         return d * J.matvec(x)
 
     def matmat(X):
-        return d * J.matmat(X)
+        return d[:, np.newaxis] * J.matmat(X)
 
     def rmatvec(x):
         return J.rmatvec(x.ravel() * d)

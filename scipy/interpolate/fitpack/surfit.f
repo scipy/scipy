@@ -79,7 +79,7 @@ c          used, the value of nx should be left unchanged between sub-
 c          sequent calls.
 c          in case iopt=-1, the value of nx should be specified on entry
 c  tx    : real array of dimension nmax.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the x-variable, i.e. the position of
 c          the interior knots tx(kx+2),...,tx(nx-kx-1) as well as the
 c          position of the additional knots tx(1)=...=tx(kx+1)=xb and
@@ -97,7 +97,7 @@ c          used, the value of ny should be left unchanged between sub-
 c          sequent calls.
 c          in case iopt=-1, the value of ny should be specified on entry
 c  ty    : real array of dimension nmax.
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          spline with respect to the y-variable, i.e. the position of
 c          the interior knots ty(ky+2),...,ty(ny-ky-1) as well as the
 c          position of the additional knots ty(1)=...=ty(ky+1)=yb and
@@ -108,7 +108,7 @@ c          if the computation mode iopt=-1 is used, the values ty(ky+2),
 c          ...ty(ny-ky-1) must be supplied by the user, before entry.
 c          see also the restrictions (ier=10).
 c  c     : real array of dimension at least (nxest-kx-1)*(nyest-ky-1).
-c          on succesful exit, c contains the coefficients of the spline
+c          on successful exit, c contains the coefficients of the spline
 c          approximation s(x,y)
 c  fp    : real. unless ier=10, fp contains the weighted sum of
 c          squared residuals of the spline approximation returned.
@@ -172,7 +172,7 @@ c            spline according to the current set of knots.
 c            the parameter fp gives the corresponding weighted sum of
 c            squared residuals (fp>s).
 c   ier=2  : error. a theoretically impossible result was found during
-c            the iteration proces for finding a smoothing spline with
+c            the iteration process for finding a smoothing spline with
 c            fp = s. probably causes : s too small or badly chosen eps.
 c            there is an approximation returned but the corresponding
 c            weighted sum of squared residuals does not satisfy the

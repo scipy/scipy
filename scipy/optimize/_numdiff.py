@@ -3,7 +3,9 @@
 from __future__ import division
 
 import numpy as np
+from numpy.linalg import norm
 
+from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
 
@@ -89,17 +91,14 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
+relative_step = {"2-point": EPS**0.5,
+                 "3-point": EPS**(1/3),
+                 "cs": EPS**0.5}
+
+
 def _compute_absolute_step(rel_step, x0, method):
     if rel_step is None:
-        if method == '2-point':
-            rel_step = EPS**0.5
-        elif method == '3-point':
-            rel_step = EPS**(1 / 3)
-        elif method == 'cs':
-            rel_step = EPS**(0.5)
-        else:
-            raise ValueError("`method` must be '2-point' or '3-point'.")
-
+        rel_step = relative_step[method]
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
     return rel_step * sign_x0 * np.maximum(1.0, np.abs(x0))
 
@@ -177,8 +176,8 @@ def group_columns(A, order=0):
 
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
-                      bounds=(-np.inf, np.inf), sparsity=None, args=(),
-                      kwargs={}):
+                      bounds=(-np.inf, np.inf), sparsity=None,
+                      as_linear_operator=False, args=(), kwargs={}):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -195,9 +194,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
         to a 1-d array.
-    method : {'3-point', '2-point'}, optional
+    method : {'3-point', '2-point', 'cs'}, optional
         Finite difference method to use:
-            - '2-point' - use the fist order accuracy forward or backward
+            - '2-point' - use the first order accuracy forward or backward
                           difference.
             - '3-point' - use central difference in interior points and the
                           second order accuracy forward or backward difference
@@ -219,7 +218,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
-        range of function evaluation.
+        range of function evaluation. Bounds checking is not implemented
+        when `as_linear_operator` is True.
     sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
         Defines a sparsity structure of the Jacobian matrix. If the Jacobian
         matrix is known to have only few non-zero elements in each row, then
@@ -240,17 +240,29 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
 
         Note, that sparse differencing makes sense only for large Jacobian
         matrices where each row contains few non-zero elements.
+    as_linear_operator : bool, optional
+        When True the function returns an `scipy.sparse.linalg.LinearOperator`.
+        Otherwise it returns a dense array or a sparse matrix depending on
+        `sparsity`. The linear operator provides an efficient way of computing
+        ``J.dot(p)`` for any vector ``p`` of shape (n,), but does not allow
+        direct access to individual elements of the matrix. By default
+        `as_linear_operator` is False.
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)``.
 
     Returns
     -------
-    J : ndarray or csr_matrix
-        Finite difference approximation of the Jacobian matrix. If `sparsity`
-        is None then ndarray with shape (m, n) is returned. Although if m=1 it
-        is returned as a gradient with shape (n,). If `sparsity` is not None,
-        csr_matrix with shape (m, n) is returned.
+    J : {ndarray, sparse matrix, LinearOperator}
+        Finite difference approximation of the Jacobian matrix.
+        If `as_linear_operator` is True returns a LinearOperator
+        with shape (m, n). Otherwise it returns a dense array or sparse
+        matrix depending on how `sparsity` is defined. If `sparsity`
+        is None then a ndarray with shape (m, n) is returned. If
+        `sparsity` is not None returns a csr_matrix with shape (m, n).
+        For sparse matrices and linear operators it is always returned as
+        a 2-dimensional structure, for ndarrays, if m=1 it is returned
+        as a 1-dimensional gradient array with shape (n,).
 
     See Also
     --------
@@ -327,11 +339,16 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if lb.shape != x0.shape or ub.shape != x0.shape:
         raise ValueError("Inconsistent shapes between bounds and `x0`.")
 
+    if as_linear_operator and not (np.all(np.isinf(lb))
+                                   and np.all(np.isinf(ub))):
+        raise ValueError("Bounds not supported when "
+                         "`as_linear_operator` is True.")
+
     def fun_wrapped(x):
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
-            raise RuntimeError(("`fun` return value has "
-                                "more than 1 dimension."))
+            raise RuntimeError("`fun` return value has "
+                               "more than 1 dimension.")
         return f
 
     if f0 is None:
@@ -344,34 +361,84 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
 
-    h = _compute_absolute_step(rel_step, x0, method)
+    if as_linear_operator:
+        if rel_step is None:
+            rel_step = relative_step[method]
+
+        return _linear_operator_difference(fun_wrapped, x0,
+                                           f0, rel_step, method)
+    else:
+        h = _compute_absolute_step(rel_step, x0, method)
+
+        if method == '2-point':
+            h, use_one_sided = _adjust_scheme_to_bounds(
+                x0, h, 1, '1-sided', lb, ub)
+        elif method == '3-point':
+            h, use_one_sided = _adjust_scheme_to_bounds(
+                x0, h, 1, '2-sided', lb, ub)
+        elif method == 'cs':
+            use_one_sided = False
+
+        if sparsity is None:
+            return _dense_difference(fun_wrapped, x0, f0, h,
+                                     use_one_sided, method)
+        else:
+            if not issparse(sparsity) and len(sparsity) == 2:
+                structure, groups = sparsity
+            else:
+                structure = sparsity
+                groups = group_columns(sparsity)
+
+            if issparse(structure):
+                structure = csc_matrix(structure)
+            else:
+                structure = np.atleast_2d(structure)
+
+            groups = np.atleast_1d(groups)
+            return _sparse_difference(fun_wrapped, x0, f0, h,
+                                      use_one_sided, structure,
+                                      groups, method)
+
+
+def _linear_operator_difference(fun, x0, f0, h, method):
+    m = f0.size
+    n = x0.size
 
     if method == '2-point':
-        h, use_one_sided = _adjust_scheme_to_bounds(
-            x0, h, 1, '1-sided', lb, ub)
+        def matvec(p):
+            if np.array_equal(p, np.zeros_like(p)):
+                return np.zeros(m)
+            dx = h / norm(p)
+            x = x0 + dx*p
+            df = fun(x) - f0
+            return df / dx
+
     elif method == '3-point':
-        h, use_one_sided = _adjust_scheme_to_bounds(
-            x0, h, 1, '2-sided', lb, ub)
+        def matvec(p):
+            if np.array_equal(p, np.zeros_like(p)):
+                return np.zeros(m)
+            dx = 2*h / norm(p)
+            x1 = x0 - (dx/2)*p
+            x2 = x0 + (dx/2)*p
+            f1 = fun(x1)
+            f2 = fun(x2)
+            df = f2 - f1
+            return df / dx
+
     elif method == 'cs':
-        use_one_sided = False
+        def matvec(p):
+            if np.array_equal(p, np.zeros_like(p)):
+                return np.zeros(m)
+            dx = h / norm(p)
+            x = x0 + dx*p*1.j
+            f1 = fun(x)
+            df = f1.imag
+            return df / dx
 
-    if sparsity is None:
-        return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided, method)
     else:
-        if not issparse(sparsity) and len(sparsity) == 2:
-            structure, groups = sparsity
-        else:
-            structure = sparsity
-            groups = group_columns(sparsity)
+        raise RuntimeError("Never be here.")
 
-        if issparse(structure):
-            structure = csc_matrix(structure)
-        else:
-            structure = np.atleast_2d(structure)
-
-        groups = np.atleast_1d(groups)
-        return _sparse_difference(fun_wrapped, x0, f0, h, use_one_sided,
-                                  structure, groups, method)
+    return LinearOperator((m, n), matvec)
 
 
 def _dense_difference(fun, x0, f0, h, use_one_sided, method):

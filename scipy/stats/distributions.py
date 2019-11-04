@@ -17,7 +17,7 @@ from ._continuous_distns import *
 from ._discrete_distns import *
 
 # For backwards compatibility e.g. pymc expects distributions.__all__.
-__all__ = ['entropy', 'rv_discrete', 'rv_continuous']
+__all__ = ['entropy', 'rv_discrete', 'rv_continuous', 'rv_histogram']
 
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names

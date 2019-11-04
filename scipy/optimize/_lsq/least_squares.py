@@ -106,16 +106,22 @@ def prepare_bounds(bounds, n):
 
 
 def check_tolerance(ftol, xtol, gtol):
-    message = "{} is too low, setting to machine epsilon {}."
-    if ftol < EPS:
-        warn(message.format("`ftol`", EPS))
-        ftol = EPS
-    if xtol < EPS:
-        warn(message.format("`xtol`", EPS))
-        xtol = EPS
-    if gtol < EPS:
-        warn(message.format("`gtol`", EPS))
-        gtol = EPS
+    def check(tol, name):
+        if tol is None:
+            tol = 0
+        elif tol < EPS:
+            warn("Setting `{}` below the machine epsilon ({:.2e}) effectively "
+                 "disables the corresponding termination condition."
+                 .format(name, EPS))
+        return tol
+
+    ftol = check(ftol, "ftol")
+    xtol = check(xtol, "xtol")
+    gtol = check(gtol, "gtol")
+
+    if ftol < EPS and xtol < EPS and gtol < EPS:
+        raise ValueError("At least one of the tolerances must be higher than "
+                         "machine epsilon ({:.2e}).".format(EPS))
 
     return ftol, xtol, gtol
 
@@ -238,9 +244,9 @@ def least_squares(
         jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
-    Given the residuals f(x) (an m-dimensional function of n variables) and
-    the loss function rho(s) (a scalar function), `least_squares` finds a
-    local minimum of the cost function F(x)::
+    Given the residuals f(x) (an m-dimensional real function of n real
+    variables) and the loss function rho(s) (a scalar function), `least_squares`
+    finds a local minimum of the cost function F(x)::
 
         minimize F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
         subject to lb <= x <= ub
@@ -255,7 +261,10 @@ def least_squares(
         ``fun(x, *args, **kwargs)``, i.e., the minimization proceeds with
         respect to its first argument. The argument ``x`` passed to this
         function is an ndarray of shape (n,) (never a scalar, even for n=1).
-        It must return a 1-d array_like of shape (m,) or a scalar.
+        It must return a 1-d array_like of shape (m,) or a scalar. If the
+        argument ``x`` is complex or the function ``fun`` returns complex
+        residuals, it must be wrapped in a real function of real arguments,
+        as shown at the end of the Examples section.
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
         as a 1-d array with one element.
@@ -264,15 +273,14 @@ def least_squares(
         element (i, j) is the partial derivative of f[i] with respect to
         x[j]). The keywords select a finite difference scheme for numerical
         estimation. The scheme '3-point' is more accurate, but requires
-        twice as much operations compared to '2-point' (default). The
-        scheme 'cs' uses complex steps, and while potentially the most
-        accurate, it is applicable only when `fun` correctly handles
-        complex inputs and can be analytically continued to the complex
-        plane. Method 'lm' always uses the '2-point' scheme. If callable,
-        it is used as ``jac(x, *args, **kwargs)`` and should return a
-        good approximation (or the exact value) for the Jacobian as an
-        array_like (np.atleast_2d is applied), a sparse matrix or a
-        `scipy.sparse.linalg.LinearOperator`.
+        twice as many operations as '2-point' (default). The scheme 'cs'
+        uses complex steps, and while potentially the most accurate, it is
+        applicable only when `fun` correctly handles complex inputs and
+        can be analytically continued to the complex plane. Method 'lm'
+        always uses the '2-point' scheme. If callable, it is used as
+        ``jac(x, *args, **kwargs)`` and should return a good approximation
+        (or the exact value) for the Jacobian as an array_like (np.atleast_2d
+        is applied), a sparse matrix or a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
@@ -291,12 +299,13 @@ def least_squares(
               efficient method for small unconstrained problems.
 
         Default is 'trf'. See Notes for more information.
-    ftol : float, optional
+    ftol : float or None, optional
         Tolerance for termination by the change of the cost function. Default
         is 1e-8. The optimization process is stopped when  ``dF < ftol * F``,
         and there was an adequate agreement between a local quadratic model and
-        the true model in the last step.
-    xtol : float, optional
+        the true model in the last step. If None, the termination by this
+        condition is disabled.
+    xtol : float or None, optional
         Tolerance for termination by the change of the independent variables.
         Default is 1e-8. The exact condition depends on the `method` used:
 
@@ -305,7 +314,8 @@ def least_squares(
               a trust-region radius and ``xs`` is the value of ``x``
               scaled according to `x_scale` parameter (see below).
 
-    gtol : float, optional
+        If None, the termination by this condition is disabled.
+    gtol : float or None, optional
         Tolerance for termination by the norm of the gradient. Default is 1e-8.
         The exact condition depends on a `method` used:
 
@@ -319,6 +329,7 @@ def least_squares(
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
 
+        If None, the termination by this condition is disabled.
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.
@@ -561,7 +572,7 @@ def least_squares(
     Examples
     --------
     In this example we find a minimum of the Rosenbrock function without bounds
-    on independed variables.
+    on independent variables.
 
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
@@ -709,6 +720,30 @@ def least_squares(
     >>> plt.ylabel("y")
     >>> plt.legend()
     >>> plt.show()
+
+    In the next example, we show how complex-valued residual functions of
+    complex variables can be optimized with ``least_squares()``. Consider the
+    following function:
+
+    >>> def f(z):
+    ...     return z - (0.5 + 0.5j)
+
+    We wrap it into a function of real variables that returns real residuals
+    by simply handling the real and imaginary parts as independent variables:
+
+    >>> def f_wrap(x):
+    ...     fx = f(x[0] + 1j*x[1])
+    ...     return np.array([fx.real, fx.imag])
+
+    Thus, instead of the original m-dimensional complex function of n complex
+    variables we optimize a 2m-dimensional real function of 2n real variables:
+
+    >>> from scipy.optimize import least_squares
+    >>> res_wrapped = least_squares(f_wrap, (0.1, 0.1), bounds=([0, 0], [1, 1]))
+    >>> z = res_wrapped.x[0] + res_wrapped.x[1]*1j
+    >>> z
+    (0.49999999999925893+0.49999999999925893j)
+
     """
     if method not in ['trf', 'dogbox', 'lm']:
         raise ValueError("`method` must be 'trf', 'dogbox' or 'lm'.")
@@ -735,6 +770,9 @@ def least_squares(
 
     if max_nfev is not None and max_nfev <= 0:
         raise ValueError("`max_nfev` must be None or positive integer.")
+
+    if np.iscomplexobj(x0):
+        raise ValueError("`x0` must be real.")
 
     x0 = np.atleast_1d(x0).astype(float)
 
@@ -769,7 +807,8 @@ def least_squares(
     f0 = fun_wrapped(x0)
 
     if f0.ndim != 1:
-        raise ValueError("`fun` must return at most 1-d array_like.")
+        raise ValueError("`fun` must return at most 1-d array_like. "
+                         "f0.shape: {0}".format(f0.shape))
 
     if not np.all(np.isfinite(f0)):
         raise ValueError("Residuals are not finite in the initial point.")

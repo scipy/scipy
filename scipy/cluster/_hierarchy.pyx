@@ -1,4 +1,6 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 from libc.math cimport sqrt
@@ -17,9 +19,10 @@ ctypedef unsigned char uchar
 include "_hierarchy_distance_update.pxi"
 cdef linkage_distance_update *linkage_methods = [
     _single, _complete, _average, _centroid, _median, _ward, _weighted]
+include "_structures.pxi"
 
-
-cdef inline int condensed_index(int n, int i, int j):
+cdef inline np.npy_int64 condensed_index(np.npy_int64 n, np.npy_int64 i,
+                                         np.npy_int64 j):
     """
     Calculate the condensed index of element (i, j) in an n x n condensed
     matrix.
@@ -368,45 +371,6 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
     PyMem_Free(visited)
 
 
-cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
-                                 int n):
-    """
-    Generate a linkage matrix from its pointer representation.
-
-    Parameters
-    ----------
-    Z : ndarray
-        An array to store the linkage matrix.
-    Lambda : ndarray
-        The :math:`\\Lambda` array of the pointer representation.
-    Pi : ndarray
-        The :math:`\\Pi` array of the pointer representation.
-    n : int
-        The number of observations.
-    """
-    cdef int i, current_leaf, pi
-    cdef np.intp_t[:] sorted_idx = np.argsort(Lambda)
-    cdef int[:] node_ids = np.ndarray(n, dtype=np.intc)
-
-    for i in range(n):
-        node_ids[i] = i
-
-    for i in range(n - 1):
-        current_leaf = sorted_idx[i]
-        pi = Pi[current_leaf]
-        if node_ids[current_leaf] < node_ids[pi]:
-            Z[i, 0] = node_ids[current_leaf]
-            Z[i, 1] = node_ids[pi]
-        else:
-            Z[i, 0] = node_ids[pi]
-            Z[i, 1] = node_ids[current_leaf]
-        Z[i, 2] = Lambda[current_leaf]
-        node_ids[pi] = n + i
-
-    Z[:, 3] = 0
-    calculate_cluster_sizes(Z, Z[:, 3], n)
-
-
 cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
                                            double[:] max_rfs, int n, int rf):
     """
@@ -711,7 +675,7 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
     return result  # -1 means success here
 
 
-def linkage(double[:] dists, int n, int method):
+def linkage(double[:] dists, np.npy_int64 n, int method):
     """
     Perform hierarchy clustering.
 
@@ -733,7 +697,8 @@ def linkage(double[:] dists, int n, int method):
     Z_arr = np.empty((n - 1, 4))
     cdef double[:, :] Z = Z_arr
 
-    cdef int i, j, k, x, y, i_start, nx, ny, ni, id_x, id_y, id_i
+    cdef int i, j, k, x, y, nx, ny, ni, id_x, id_y, id_i
+    cdef np.npy_int64 i_start
     cdef double current_min
     # inter-cluster dists
     cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.double)
@@ -791,6 +756,157 @@ def linkage(double[:] dists, int n, int method):
                 D[condensed_index(n, i, x)] = NPY_INFINITYF
     return Z_arr
 
+
+cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
+    cdef double current_min = NPY_INFINITYF
+    cdef int y = -1
+    cdef int i
+    cdef double dist
+
+    for i in range(x + 1, n):
+        if size[i] == 0:
+            continue
+
+        dist = D[condensed_index(n, x, i)]
+        if dist < current_min:
+            current_min = dist
+            y = i
+
+    return Pair(y, current_min)
+
+
+def fast_linkage(double[:] dists, int n, int method):
+    """Perform hierarchy clustering.
+
+    It implements "Generic Clustering Algorithm" from [1]. The worst case
+    time complexity is O(N^3), but the best case time complexity is O(N^2) and
+    it usually works quite close to the best case.
+
+    Parameters
+    ----------
+    dists : ndarray
+        A condensed matrix stores the pairwise distances of the observations.
+    n : int
+        The number of observations.
+    method : int
+        The linkage method. 0: single 1: complete 2: average 3: centroid
+        4: median 5: ward 6: weighted
+
+    Returns
+    -------
+    Z : ndarray, shape (n - 1, 4)
+        Computed linkage matrix.
+
+    References
+    ----------
+    .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
+       algorithms", :arXiv:`1109.2378v1`.
+    """
+    cdef double[:, :] Z = np.empty((n - 1, 4))
+
+    cdef double[:] D = dists.copy()  # Distances between clusters.
+    cdef int[:] size = np.ones(n, dtype=np.intc)  # Sizes of clusters.
+    # ID of a cluster to put into linkage matrix.
+    cdef int[:] cluster_id = np.arange(n, dtype=np.intc)
+
+    # Nearest neighbor candidate and lower bound of the distance to the
+    # true nearest neighbor for each cluster among clusters with higher
+    # indices (thus size is n - 1).
+    cdef int[:] neighbor = np.empty(n - 1, dtype=np.intc)
+    cdef double[:] min_dist = np.empty(n - 1)
+
+    cdef linkage_distance_update new_dist = linkage_methods[method]
+
+    cdef int i, k
+    cdef int x, y, z
+    cdef int nx, ny, nz
+    cdef int id_x, id_y
+    cdef double dist
+    cdef Pair pair
+
+    for x in range(n - 1):
+        pair = find_min_dist(n, D, size, x)
+        neighbor[x] = pair.key
+        min_dist[x] = pair.value
+    cdef Heap min_dist_heap = Heap(min_dist)
+
+    for k in range(n - 1):
+        # Theoretically speaking, this can be implemented as "while True", but
+        # having a fixed size loop when floating point computations involved
+        # looks more reliable. The idea that we should find the two closest
+        # clusters in no more that n - k (1 for the last iteration) distance
+        # updates.
+        for i in range(n - k):
+            pair = min_dist_heap.get_min()
+            x, dist = pair.key, pair.value
+            y = neighbor[x]
+
+            if dist == D[condensed_index(n, x, y)]:
+                break
+
+            pair = find_min_dist(n, D, size, x)
+            y, dist = pair.key, pair.value
+            neighbor[x] = y
+            min_dist[x] = dist
+            min_dist_heap.change_value(x, dist)
+        min_dist_heap.remove_min()
+
+        id_x = cluster_id[x]
+        id_y = cluster_id[y]
+        nx = size[x]
+        ny = size[y]
+
+        if id_x > id_y:
+            id_x, id_y = id_y, id_x
+
+        Z[k, 0] = id_x
+        Z[k, 1] = id_y
+        Z[k, 2] = dist
+        Z[k, 3] = nx + ny
+
+        size[x] = 0  # Cluster x will be dropped.
+        size[y] = nx + ny  # Cluster y will be replaced with the new cluster.
+        cluster_id[y] = n + k  # Update ID of y.
+
+        # Update the distance matrix.
+        for z in range(n):
+            nz = size[z]
+            if nz == 0 or z == y:
+                continue
+
+            D[condensed_index(n, z, y)] = new_dist(
+                D[condensed_index(n, z, x)], D[condensed_index(n, z, y)],
+                dist, nx, ny, nz)
+
+        # Reassign neighbor candidates from x to y.
+        # This reassignment is just a (logical) guess.
+        for z in range(x):
+            if size[z] > 0 and neighbor[z] == x:
+                neighbor[z] = y
+
+        # Update lower bounds of distance.
+        for z in range(y):
+            if size[z] == 0:
+                continue
+
+            dist = D[condensed_index(n, z, y)]
+            if dist < min_dist[z]:
+                neighbor[z] = y
+                min_dist[z] = dist
+                min_dist_heap.change_value(z, dist)
+
+        # Find nearest neighbor for y.
+        if y < n - 1:
+            pair = find_min_dist(n, D, size, y)
+            z, dist = pair.key, pair.value
+            if z != -1:
+                neighbor[y] = z
+                min_dist[y] = dist
+                min_dist_heap.change_value(y, dist)
+
+    return Z.base
+
+
 def nn_chain(double[:] dists, int n, int method):
     """Perform hierarchy clustering using nearest-neighbor chain algorithm.
 
@@ -813,7 +929,7 @@ def nn_chain(double[:] dists, int n, int method):
     cdef double[:, :] Z = Z_arr
 
     cdef double[:] D = dists.copy()  # Distances between clusters.
-    cdef int [:] size = np.ones(n, dtype=np.intc)  # Sizes of clusters.
+    cdef int[:] size = np.ones(n, dtype=np.intc)  # Sizes of clusters.
 
     cdef linkage_distance_update new_dist = linkage_methods[method]
 
@@ -835,7 +951,14 @@ def nn_chain(double[:] dists, int n, int method):
         # Go through chain of neighbors until two mutual neighbors are found.
         while True:
             x = cluster_chain[chain_length - 1]
-            current_min = NPY_INFINITYF
+
+            # We want to prefer the previous element in the chain as the
+            # minimum, to avoid potentially going in cycles.
+            if chain_length > 1:
+                y = cluster_chain[chain_length - 2]
+                current_min = D[condensed_index(n, x, y)]
+            else:
+                current_min = NPY_INFINITYF
 
             for i in range(n):
                 if size[i] == 0 or x == i:
@@ -854,6 +977,10 @@ def nn_chain(double[:] dists, int n, int method):
 
         # Merge clusters x and y and pop them from stack.
         chain_length -= 2
+
+        # This is a convention used in fastcluster.
+        if x > y:
+            x, y = y, x
 
         # get the original numbers of points in clusters x and y
         nx = size[x]
@@ -888,18 +1015,82 @@ def nn_chain(double[:] dists, int n, int method):
     return Z_arr
 
 
+def mst_single_linkage(double[:] dists, int n):
+    """Perform hierarchy clustering using MST algorithm for single linkage.
+
+    Parameters
+    ----------
+    dists : ndarray
+        A condensed matrix stores the pairwise distances of the observations.
+    n : int
+        The number of observations.
+
+    Returns
+    -------
+    Z : ndarray, shape (n - 1, 4)
+        Computed linkage matrix.
+    """
+    Z_arr = np.empty((n - 1, 4))
+    cdef double[:, :] Z = Z_arr
+
+    # Which nodes were already merged.
+    cdef int[:] merged = np.zeros(n, dtype=np.intc)
+
+    cdef double[:] D = np.empty(n)
+    D[:] = NPY_INFINITYF
+
+    cdef int i, k, x, y
+    cdef double dist, current_min
+
+    x = 0
+    for k in range(n - 1):
+        current_min = NPY_INFINITYF
+        merged[x] = 1
+        for i in range(n):
+            if merged[i] == 1:
+                continue
+
+            dist = dists[condensed_index(n, x, i)]
+            if D[i] > dist:
+                D[i] = dist
+
+            if D[i] < current_min:
+                y = i
+                current_min = D[i]
+
+        Z[k, 0] = x
+        Z[k, 1] = y
+        Z[k, 2] = current_min
+        x = y
+
+    # Sort Z by cluster distances.
+    order = np.argsort(Z_arr[:, 2], kind='mergesort')
+    Z_arr = Z_arr[order]
+
+    # Find correct cluster labels and compute cluster sizes inplace.
+    label(Z_arr, n)
+
+    return Z_arr
+
+
 cdef class LinkageUnionFind:
-    cdef int [:] parent
+    """Structure for fast cluster labeling in unsorted dendrogram."""
+    cdef int[:] parent
+    cdef int[:] size
     cdef int next_label
 
     def __init__(self, int n):
         self.parent = np.arange(2 * n - 1, dtype=np.intc)
         self.next_label = n
+        self.size = np.ones(2 * n - 1, dtype=np.intc)
 
-    cdef merge(self, int x, int y):
+    cdef int merge(self, int x, int y):
         self.parent[x] = self.next_label
         self.parent[y] = self.next_label
+        cdef int size = self.size[x] + self.size[y]
+        self.size[self.next_label] = size
         self.next_label += 1
+        return size
 
     cdef find(self, int x):
         cdef int p = x
@@ -914,16 +1105,17 @@ cdef class LinkageUnionFind:
 
 
 cdef label(double[:, :] Z, int n):
+    """Correctly label clusters in unsorted dendrogram."""
     cdef LinkageUnionFind uf = LinkageUnionFind(n)
     cdef int i, x, y, x_root, y_root
     for i in range(n - 1):
         x, y = int(Z[i, 0]), int(Z[i, 1])
         x_root, y_root = uf.find(x), uf.find(y)
-        uf.merge(x, y)
         if x_root < y_root:
             Z[i, 0], Z[i, 1] = x_root, y_root
         else:
             Z[i, 0], Z[i, 1] = y_root, x_root
+        Z[i, 3] = uf.merge(x_root, y_root)
 
 
 def prelist(double[:, :] Z, int[:] members, int n):
@@ -980,57 +1172,3 @@ def prelist(double[:, :] Z, int[:] members, int n):
         k -= 1
 
     PyMem_Free(visited)
-
-
-def slink(double[:] dists, int n):
-    """
-    The SLINK algorithm. Single linkage in O(n^2) time complexity.
-
-    Parameters
-    ----------
-    dists : ndarray
-        A condensed matrix stores the pairwise distances of the observations.
-    n : int
-        The number of observations.
-
-    Returns
-    -------
-    Z : ndarray, shape (n - 1, 4)
-        Compute linkage matrix.
-
-    References
-    ----------
-    R. Sibson, "SLINK: An optimally efficient algorithm for the single-link
-    cluster method", The Computer Journal 1973 16: 30-34.
-    """
-    Z_arr = np.empty((n - 1, 4))
-    cdef double[:, :] Z = Z_arr
-
-    cdef int i, j
-    cdef double[:] M = np.ndarray(n, dtype=np.double)
-    cdef double[:] Lambda = np.ndarray(n, dtype=np.double)
-    cdef int[:] Pi = np.ndarray(n, dtype=np.intc)
-
-    Pi[0] = 0
-    Lambda[0] = NPY_INFINITYF
-    for i in range(1, n):
-        Pi[i] = i
-        Lambda[i] = NPY_INFINITYF
-
-        for j in range(i):
-            M[j] = dists[condensed_index(n, i, j)]
-
-        for j in range(i):
-            if Lambda[j] >= M[j]:
-                M[Pi[j]] = min(M[Pi[j]], Lambda[j])
-                Lambda[j] = M[j]
-                Pi[j] = i
-            else:
-                M[Pi[j]] = min(M[Pi[j]], M[j])
-
-        for j in range(i):
-            if Lambda[j] >= Lambda[Pi[j]]:
-                Pi[j] = i
-
-    from_pointer_representation(Z, Lambda, Pi, n)
-    return Z_arr
