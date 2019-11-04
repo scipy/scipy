@@ -225,7 +225,7 @@ def _fit_edges_polyfit(x, window_length, polyorder, deriv, delta, axis, y):
 
 
 def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
-                  axis=-1, mode='interp', cval=0.0):
+                  axis=-1, mode='interp', cval=0.0, pos=None):
     """ Apply a Savitzky-Golay filter to an array.
 
     This is a 1-d filter.  If `x`  has dimension greater than 1, `axis`
@@ -267,6 +267,9 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     cval : scalar, optional
         Value to fill past the edges of the input if `mode` is 'constant'.
         Default is 0.0.
+    pos : int or None, optional
+        If pos is not None, it specifies evaluation position within the
+        window.  The default is the middle of the window.
 
     Returns
     -------
@@ -334,7 +337,8 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     if x.dtype != np.float64 and x.dtype != np.float32:
         x = x.astype(np.float64)
 
-    coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
+    coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta,
+                           pos=pos)
 
     if mode == "interp":
         if window_length > x.size:
