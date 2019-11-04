@@ -2,10 +2,25 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['geometric_slerp']
 
-import math
 import numpy as np
-from . import _slerp
 from scipy.spatial.distance import euclidean
+
+def _geometric_slerp(start, end, t):
+    # calculate the angle between `start` and `end`
+    s = np.prod(np.linalg.svd([start, end])[1])
+    c = np.dot(start, end)
+    omega = np.arctan2(s, c)
+
+    # create an orthogonal basis using QR decomposition
+    basis = np.vstack([start, end])
+    Q = np.linalg.qr(basis.T)[0].T
+    signs = np.sign(np.einsum('ij,ij->i', basis, Q))
+    start, end = Q * np.array([signs]).T
+
+    # interpolate
+    s = np.sin(t * omega)
+    c = np.cos(t * omega)
+    return start * c[:, np.newaxis] + end * s[:, np.newaxis]
 
 def geometric_slerp(start,
                     end,
@@ -163,7 +178,7 @@ def geometric_slerp(start,
     if not isinstance(tol, float):
         raise ValueError("tol must be a float")
     else:
-        tol = math.fabs(tol)
+        tol = np.fabs(tol)
 
     coord_dist = euclidean(start, end)
 
@@ -185,7 +200,9 @@ def geometric_slerp(start,
     # performing the check for 1-sphere (circle) and up
     if start.size > 1:
         for coord in [start, end]:
-            if not np.allclose(np.square(coord).sum(), 1.0, rtol=0, atol=tol):
+            if not np.allclose(np.linalg.norm(coord), 1.0,
+                               rtol=np.finfo(np.float32).eps,
+                               atol=0):
                 raise ValueError("start and end are not"
                                  " on a unit n-sphere")
 
@@ -198,12 +215,10 @@ def geometric_slerp(start,
         raise ValueError("interpolation parameter must be in [0, 1]")
 
     if np.ndim(t) == 0:
-        result = _slerp._geometric_slerp(start.astype(np.float64),
-                                         end.astype(np.float64),
-                                         np.atleast_1d(t))
-        return result.ravel()
+        return _geometric_slerp(start.astype(np.float64),
+                                end.astype(np.float64),
+                                np.atleast_1d(t)).ravel()
     else:
-        result = _slerp._geometric_slerp(start.astype(np.float64),
-                                         end.astype(np.float64),
-                                         t)
-        return result
+        return _geometric_slerp(start.astype(np.float64),
+                                end.astype(np.float64),
+                                t)

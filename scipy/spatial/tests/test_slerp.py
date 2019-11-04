@@ -52,8 +52,8 @@ class TestGeometricSlerp(object):
                                  end=end,
                                  t=np.linspace(0, 1, n_pts))
 
-        assert_equal(actual[0], start)
-        assert_equal(actual[-1], end)
+        assert_allclose(actual[0], start)
+        assert_allclose(actual[-1], end)
 
     @pytest.mark.parametrize("start, end", [
         # both arrays are not flat
@@ -170,7 +170,7 @@ class TestGeometricSlerp(object):
         actual = geometric_slerp(start=start,
                                  end=end,
                                  t=np.linspace(0, 1, 4))
-        assert_allclose(actual, expected)
+        assert_allclose(actual, expected, atol=1e-16)
 
     @pytest.mark.parametrize("t", [
         # both interval ends clearly violate limits
@@ -324,7 +324,11 @@ class TestGeometricSlerp(object):
                               np.sqrt(2) / 2],
                              [0.5, np.sqrt(3) / 2],
                              [0, 1]], dtype=np.float64)
-        assert_allclose(actual, expected)
+        # Tyler's original Cython implementation of geometric_slerp
+        # can pass at atol=0 here, but on balance we will accept
+        # 1e-16 for an implementation that avoids Cython and
+        # makes up accuracy ground elsewhere
+        assert_allclose(actual, expected, atol=1e-16)
 
     def test_scalar_t(self):
         # when t is a scalar, return value is a single
@@ -343,3 +347,26 @@ class TestGeometricSlerp(object):
             geometric_slerp(start=start,
                             end=start,
                             t=np.linspace(0, 1, 5))
+
+    @pytest.mark.parametrize('k',
+    np.logspace(-10, -1, 10),
+    )
+    def test_numerical_stability_pi(self, k):
+        # geometric_slerp should have excellent numerical
+        # stability for angles approaching pi between
+        # the start and end points
+        angle = np.pi - k
+        ts = np.linspace(0, 1, 100)
+        P = np.array([1, 0, 0, 0])
+        Q = np.array([np.cos(angle), np.sin(angle), 0, 0])
+        # the test should only be enforced for cases where
+        # geometric_slerp determines that the input is actually
+        # on the unit sphere
+        try:
+            result = geometric_slerp(P, Q, ts, 1e-18)
+        except ValueError:
+            pass
+        else:
+            norms = np.linalg.norm(result, axis=1)
+            error = np.max(np.abs(norms - 1))
+            assert error < 4e-15
