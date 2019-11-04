@@ -637,23 +637,20 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     if nfreqs is None:
         nfreqs = 1 + 2 ** int(ceil(log(numtaps, 2)))
 
-    d = np.diff(freq)
     if (d == 0).any():
+        # Tweak any repeated values in freq so that interp works.
         freq = np.array(freq, copy=True)
-
-    # Tweak any repeated values in freq so that interp works.
-    eps = np.finfo(float).eps * nyq
-    for k in range(len(freq)):
-        if k < len(freq) - 1 and freq[k] == freq[k + 1]:
-            freq[k] = freq[k] - eps
-            freq[k + 1] = freq[k + 1] + eps
-
-    # Check if freq is strictly increasing after tweak
-    d = np.diff(freq)
-    if (d <= 0).any():
-        raise ValueError("freq cannot contain numbers that are too close "
-                         "(within eps * nyquist: "
-                         "{}) to a repeated value".format(eps))
+        eps = np.finfo(float).eps * nyq
+        for k in range(len(freq)):
+            if k < len(freq) - 1 and freq[k] == freq[k + 1]:
+                freq[k] = freq[k] - eps
+                freq[k + 1] = freq[k + 1] + eps
+        # Check if freq is strictly increasing after tweak
+        d = np.diff(freq)
+        if (d <= 0).any():
+            raise ValueError("freq cannot contain numbers that are too close "
+                             "(within eps * (fs/2): "
+                             "{}) to a repeated value".format(eps))
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
