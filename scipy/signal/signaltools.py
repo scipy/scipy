@@ -3857,7 +3857,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x_zi_shape = tuple([n_sections] + x_zi_shape)
     inputs = [sos, x]
     if zi is not None:
-        inputs.append(zi)
+        inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
     if dtype.char not in 'fdgFDGO':
         raise NotImplementedError("input type '%s' not supported" % dtype)

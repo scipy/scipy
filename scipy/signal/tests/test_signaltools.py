@@ -3040,6 +3040,10 @@ class TestSOSFilt(object):
         ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
         assert_allclose_cast(y, ss, rtol=1e-13)
 
+        # zi as array-like
+        _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
+        assert_allclose_cast(zf, zi, rtol=1e-13)
+
 
 class TestDeconvolve(object):
 
