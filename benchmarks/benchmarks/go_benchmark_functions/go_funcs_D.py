@@ -8,8 +8,7 @@ from .go_benchmark import Benchmark
 
 
 class Damavandi(Benchmark):
-
-    """
+    r"""
     Damavandi objective function.
 
     This class defines the Damavandi [1]_ global optimization problem. This is a
@@ -36,7 +35,7 @@ class Damavandi(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, 2)
 
-        self._bounds = zip([0.0] * self.N, [14.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [14.0] * self.N))
 
         self.global_optimum = [[2 for _ in range(self.N)]]
         self.fglob = np.nan
@@ -68,8 +67,7 @@ class Damavandi(Benchmark):
 
 
 class Deb01(Benchmark):
-
-    """
+    r"""
     Deb 1 objective function.
 
     This class defines the Deb 1 [1]_ global optimization problem. This is a
@@ -97,7 +95,7 @@ class Deb01(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.3, -0.3]]
         self.fglob = -1.0
@@ -108,8 +106,7 @@ class Deb01(Benchmark):
 
 
 class Deb03(Benchmark):
-
-    """
+    r"""
     Deb 3 objective function.
 
     This class defines the Deb 3 [1]_ global optimization problem. This is a
@@ -138,7 +135,7 @@ class Deb03(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.93388314, 0.68141781]]
         self.fglob = -1.0
@@ -150,8 +147,7 @@ class Deb03(Benchmark):
 
 
 class Decanomial(Benchmark):
-
-    """
+    r"""
     Decanomial objective function.
 
     This class defines the Decanomial function global optimization problem. This
@@ -176,7 +172,7 @@ class Decanomial(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(0, 2.5), (-2, -4)]
 
         self.global_optimum = [[2.0, -3.0]]
@@ -194,8 +190,7 @@ class Decanomial(Benchmark):
 
 
 class Deceptive(Benchmark):
-
-    """
+    r"""
     Deceptive objective function.
 
     This class defines the Deceptive [1]_ global optimization problem. This is a
@@ -240,7 +235,7 @@ class Deceptive(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         alpha = arange(1.0, self.N + 1.0) / (self.N + 1.0)
 
@@ -274,8 +269,7 @@ class Deceptive(Benchmark):
 
 
 class DeckkersAarts(Benchmark):
-
-    """
+    r"""
     Deckkers-Aarts objective function.
 
     This class defines the Deckkers-Aarts [1]_ global optimization problem. This
@@ -302,7 +296,7 @@ class DeckkersAarts(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
+        self._bounds = list(zip([-20.0] * self.N, [20.0] * self.N))
         self.custom_bounds = ([-1, 1], [14, 16])
 
         self.global_optimum = [[0.0, 14.9451209]]
@@ -315,8 +309,7 @@ class DeckkersAarts(Benchmark):
 
 
 class DeflectedCorrugatedSpring(Benchmark):
-
-    """
+    r"""
     DeflectedCorrugatedSpring objective function.
 
     This class defines the Deflected Corrugated Spring [1]_ function global
@@ -349,7 +342,7 @@ class DeflectedCorrugatedSpring(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         alpha = 5.0
-        self._bounds = zip([0] * self.N, [2 * alpha] * self.N)
+        self._bounds = list(zip([0] * self.N, [2 * alpha] * self.N))
 
         self.global_optimum = [[alpha for _ in range(self.N)]]
         self.fglob = -1.0
@@ -364,8 +357,7 @@ class DeflectedCorrugatedSpring(Benchmark):
 
 
 class DeVilliersGlasser01(Benchmark):
-
-    """
+    r"""
     DeVilliers-Glasser 1 objective function.
 
     This class defines the DeVilliers-Glasser 1 [1]_ function global optimization
@@ -395,7 +387,7 @@ class DeVilliersGlasser01(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([1.0] * self.N, [100.0] * self.N)
+        self._bounds = list(zip([1.0] * self.N, [100.0] * self.N))
 
         self.global_optimum = [[60.137, 1.371, 3.112, 1.761]]
         self.fglob = 0.0
@@ -410,8 +402,7 @@ class DeVilliersGlasser01(Benchmark):
 
 
 class DeVilliersGlasser02(Benchmark):
-
-    """
+    r"""
     DeVilliers-Glasser 2 objective function.
 
     This class defines the DeVilliers-Glasser 2 [1]_ function global optimization problem. This
@@ -441,7 +432,7 @@ class DeVilliersGlasser02(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([1.0] * self.N, [60.0] * self.N)
+        self._bounds = list(zip([1.0] * self.N, [60.0] * self.N))
 
         self.global_optimum = [[53.81, 1.27, 3.012, 2.13, 0.507]]
         self.fglob = 0.0
@@ -458,8 +449,7 @@ class DeVilliersGlasser02(Benchmark):
 
 
 class DixonPrice(Benchmark):
-
-    """
+    r"""
     Dixon and Price objective function.
 
     This class defines the Dixon and Price global optimization problem. This
@@ -487,7 +477,7 @@ class DixonPrice(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-2, 3), (-2, 3)]
 
         self.global_optimum = [[2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
@@ -504,8 +494,7 @@ class DixonPrice(Benchmark):
 
 
 class Dolan(Benchmark):
-
-    """
+    r"""
     Dolan objective function.
 
     This class defines the Dolan [1]_ global optimization problem. This
@@ -519,7 +508,7 @@ class Dolan(Benchmark):
 
     with :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., 5`.
 
-    *Global optimum*: :math:`f(x_i) = 10^{-5}` for 
+    *Global optimum*: :math:`f(x_i) = 10^{-5}` for
     :math:`x = [8.39045925, 4.81424707, 7.34574133, 68.88246895, 3.85470806]`
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
@@ -531,8 +520,8 @@ class Dolan(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                                [100.0] * self.N))
 
         self.global_optimum = [[-74.10522498, 44.33511286, 6.21069214,
                                18.42772233, -16.5839403]]
@@ -547,8 +536,7 @@ class Dolan(Benchmark):
 
 
 class DropWave(Benchmark):
-
-    """
+    r"""
     DropWave objective function.
 
     This class defines the DropWave [1]_ global optimization problem. This is a
@@ -570,7 +558,7 @@ class DropWave(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = list(zip([-5.12] * self.N, [5.12] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -1.0

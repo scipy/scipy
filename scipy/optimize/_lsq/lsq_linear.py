@@ -2,7 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.linalg import norm, lstsq
+from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
@@ -275,7 +275,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                          "upper bound.")
 
     if lsq_solver == 'exact':
-        x_lsq = np.linalg.lstsq(A, b)[0]
+        x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
     elif lsq_solver == 'lsmr':
         x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
 

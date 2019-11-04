@@ -1,10 +1,14 @@
 cdef extern from "numpy/npy_math.h":
+    double npy_isnan(double x) nogil
+    double nan "NPY_NAN"
     double inf "NPY_INFINITY"
 
 from libc.math cimport log, sqrt, fabs
 
 cdef inline double entr(double x) nogil:
-    if x > 0:
+    if npy_isnan(x):
+        return x
+    elif x > 0:
         return -x * log(x)
     elif x == 0:
         return 0
@@ -12,7 +16,9 @@ cdef inline double entr(double x) nogil:
         return -inf
 
 cdef inline double kl_div(double x, double y) nogil:
-    if x > 0 and y > 0:
+    if npy_isnan(x) or npy_isnan(y):
+        return nan
+    elif x > 0 and y > 0:
         return x * log(x / y) - x + y
     elif x == 0 and y >= 0:
         return y
@@ -20,7 +26,9 @@ cdef inline double kl_div(double x, double y) nogil:
         return inf
 
 cdef inline double rel_entr(double x, double y) nogil:
-    if x > 0 and y > 0:
+    if npy_isnan(x) or npy_isnan(y):
+        return nan
+    elif x > 0 and y > 0:
         return x * log(x / y)
     elif x == 0 and y >= 0:
         return 0

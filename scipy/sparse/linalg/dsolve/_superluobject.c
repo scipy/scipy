@@ -1020,24 +1020,17 @@ static int droprule_cvt(PyObject * input, int *value)
 	*value = PyInt_AsLong(input);
 	return 1;
     }
-    else if (PyString_Check(input)) {
-	/* Comma-separated string */
-	seq = PyObject_CallMethod(input, "split", "s", ",");
+    else if (PyString_Check(input) || PyUnicode_Check(input)) {
+        /* Comma-separated string */
+        char *fmt = "s";
+#if PY_MAJOR_VERSION >= 3
+        if (PyBytes_Check(input)) {
+            fmt = "y";
+        }
+#endif
+	seq = PyObject_CallMethod(input, "split", fmt, ",");
 	if (seq == NULL || !PySequence_Check(seq))
 	    goto fail;
-    }
-    else if (PyUnicode_Check(input)) {
-	/* Comma-separated string */
-	PyObject *s;
-	int ret;
-
-	s = PyUnicode_AsASCIIString(input);
-	if (s == NULL) {
-	    goto fail;
-	}
-	ret = droprule_cvt(s, value);
-	Py_DECREF(s);
-	return ret;
     }
     else if (PySequence_Check(input)) {
 	/* Sequence of strings or integers */

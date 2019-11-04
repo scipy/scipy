@@ -57,7 +57,7 @@ class TestPolys(object):
                 x = x_range[0] + (x_range[1] - x_range[0])*np.random.rand(nx)
                 x[0] = x_range[0]  # always include domain start point
                 x[1] = x_range[1]  # always include domain end point
-                poly = np.poly1d(cls(*p))
+                poly = np.poly1d(cls(*p).coef)
                 z = np.c_[np.tile(p, (nx,1)), x, poly(x)]
                 dataset.append(z)
 

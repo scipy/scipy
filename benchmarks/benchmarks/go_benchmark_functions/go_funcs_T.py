@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, sign, sin, sqrt, sum,
-                   tan, tanh, atleast_2d)
+from numpy import abs, asarray, cos, exp, arange, pi, sin, sum, atleast_2d
 from .go_benchmark import Benchmark
 
 
@@ -38,7 +36,7 @@ class TestTubeHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[-pi / 2, 0.0]]
         self.fglob = -10.87229990155800
@@ -56,15 +54,15 @@ class Thurber(Benchmark):
     r"""
     Thurber [1]_ objective function.
 
-    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/thurber.shtml
+    .. [1] https://www.itl.nist.gov/div898/strd/nls/data/thurber.shtml
     """
 
     def __init__(self, dimensions=7):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip(
+        self._bounds = list(zip(
             [500., 500., 100., 10., 0.1, 0.1, 0.],
-            [2000., 2000., 1000., 150., 2., 1., 0.2])
+            [2000., 2000., 1000., 150., 2., 1., 0.2]))
         self.global_optimum = [[1.288139680e3, 1.4910792535e3, 5.8323836877e2,
                                 75.416644291, 0.96629502864, 0.39797285797,
                                 4.9727297349e-2]]
@@ -119,7 +117,7 @@ class Treccani(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [[-2.0, 0.0]]
@@ -162,7 +160,7 @@ class Trefethen(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[-0.02440307923, 0.2106124261]]
@@ -205,7 +203,7 @@ class ThreeHumpCamel(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
         self.custom_bounds = [(-2, 2), (-1.5, 1.5)]
 
         self.global_optimum = [[0.0, 0.0]]
@@ -247,7 +245,7 @@ class Trid(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
+        self._bounds = list(zip([-20.0] * self.N, [20.0] * self.N))
 
         self.global_optimum = [[6, 10, 12, 12, 10, 6]]
         self.fglob = -50.0
@@ -291,7 +289,7 @@ class Trigonometric01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [pi] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [pi] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -333,8 +331,8 @@ class Trigonometric02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.0] * self.N,
-                           [500.0] * self.N)
+        self._bounds = list(zip([-500.0] * self.N,
+                           [500.0] * self.N))
         self.custom_bounds = [(0, 2), (0, 2)]
 
         self.global_optimum = [[0.9 for _ in range(self.N)]]
@@ -377,8 +375,8 @@ class Tripod(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                           [100.0] * self.N))
 
         self.global_optimum = [[0.0, -50.0]]
         self.fglob = 0.0

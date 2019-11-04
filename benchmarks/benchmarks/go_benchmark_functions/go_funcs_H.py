@@ -2,8 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, sign, sin, sqrt, sum, tan, tanh)
+from numpy import abs, arctan2, asarray, cos, exp, arange, pi, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
 
@@ -36,7 +35,7 @@ class Hansen(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[-7.58989583, -7.70831466]]
         self.fglob = -176.54179
@@ -96,7 +95,7 @@ class Hartmann3(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.11461292, 0.55564907, 0.85254697]]
         self.fglob = -3.8627821478
@@ -180,7 +179,7 @@ class Hartmann6(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.20168952, 0.15001069, 0.47687398, 0.27533243,
                                 0.31165162, 0.65730054]]
@@ -244,7 +243,7 @@ class HelicalValley(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.] * self.N, [10.] * self.N)
+        self._bounds = list(zip([-10.] * self.N, [10.] * self.N))
 
         self.global_optimum = [[1.0, 0.0, 0.0]]
         self.fglob = 0.0
@@ -283,7 +282,7 @@ class HimmelBlau(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.] * self.N, [5.] * self.N)
+        self._bounds = list(zip([-5.] * self.N, [5.] * self.N))
 
         self.global_optimum = [[3.0, 2.0]]
         self.fglob = 0.0
@@ -323,7 +322,7 @@ class HolderTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [(8.055023472141116, 9.664590028909654),
                                (-8.055023472141116, 9.664590028909654),

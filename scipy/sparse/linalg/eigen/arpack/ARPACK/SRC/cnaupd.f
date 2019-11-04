@@ -104,8 +104,8 @@ c  TOL     Real   scalar.  (INPUT)
 c          Stopping criteria: the relative accuracy of the Ritz value 
 c          is considered acceptable if BOUNDS(I) .LE. TOL*ABS(RITZ(I))
 c          where ABS(RITZ(I)) is the magnitude when RITZ(I) is complex.
-c          DEFAULT = wslamch('EPS')  (machine precision as computed
-c                    by the LAPACK auxiliary subroutine wslamch).
+c          DEFAULT = slamch('EPS')  (machine precision as computed
+c                    by the LAPACK auxiliary subroutine slamch).
 c
 c  RESID   Complex  array of length N.  (INPUT/OUTPUT)
 c          On INPUT: 
@@ -357,7 +357,7 @@ c     cstatn  ARPACK routine that initializes the timing variables.
 c     ivout   ARPACK utility routine that prints integers.
 c     cvout   ARPACK utility routine that prints vectors.
 c     arscnd  ARPACK utility routine for timing.
-c     wslamch  LAPACK routine that determines machine constants.
+c     slamch  LAPACK routine that determines machine constants.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -436,8 +436,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real  
-     &           wslamch
-      external   wslamch
+     &           slamch
+      external   slamch
 c
 c     %-----------------------%
 c     | Executable Statements |
@@ -512,7 +512,7 @@ c        | Set default parameters |
 c        %------------------------%
 c
          if (nb .le. 0)				nb = 1
-         if (tol .le. 0.0E+0  )			tol = wslamch('EpsMach')
+         if (tol .le. 0.0E+0  )			tol = slamch('EpsMach')
          if (ishift .ne. 0  .and.  
      &       ishift .ne. 1  .and.
      &       ishift .ne. 2) 			ishift = 1

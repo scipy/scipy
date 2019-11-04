@@ -1,36 +1,5 @@
-		SuperLU (Version 5.1)
-		=====================
-
-Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required 
-approvals from U.S. Dept. of Energy) 
-
-All rights reserved. 
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
-
-(1) Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer. 
-(2) Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution. 
-(3) Neither the name of Lawrence Berkeley National Laboratory, U.S. Dept. of
-Energy nor the names of its contributors may be used to endorse or promote
-products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-  
+		SuperLU (Version 5.2.x)
+		=======================
 
 SuperLU contains a set of subroutines to solve a sparse linear system 
 A*X=B. It uses Gaussian elimination with partial pivoting (GEPP). 
@@ -151,23 +120,30 @@ are described below.
 
 
 2. Using CMake build system. 
+   You will need to create a build tree from which to invoke CMake.
 
    From the top level directory, do:
-
-   	cd build
+     	mkdir build ; cd build
    	cmake ..
+
+     or with more options, e.g.,
+        cmake .. \
+	      -DCMAKE_INSTALL_INCLUDEDIR=/my/custom/path 	 
 
    To actually build, type:
    	make
 
    To run the installation test, type:
-   	ctest
+   	make test (or: ctest)
 
-   The test results are in the files below:
-       build/TESTING/s_test.out   # single precision, real
-       build/TESTING/d_test.out   # double precision, real
-       build/TESTING/c_test.out   # single precision, complex
-       build/TESTING/z_test.out   # double precision, complex
+   	The test results are in the files below:
+       	    build/TESTING/s_test.out   # single precision, real
+       	    build/TESTING/d_test.out   # double precision, real
+       	    build/TESTING/c_test.out   # single precision, complex
+       	    build/TESTING/z_test.out   # double precision, complex
+
+   To install the library, type:
+        make install
 
 
 --------------------
@@ -184,4 +160,4 @@ are described below.
     October 27,  2011  Version 4.3
     July 26,     2015  Version 5.0
     December 3,  2015  Version 5.1
-
+    April 8,     2016  Version 5.2.0

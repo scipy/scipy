@@ -10,8 +10,7 @@ from .go_benchmark import Benchmark
 
 
 class CarromTable(Benchmark):
-
-    """
+    r"""
     CarromTable objective function.
 
     The CarromTable [1]_ global optimization problem is a multimodal
@@ -37,7 +36,7 @@ class CarromTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.global_optimum = [(9.646157266348881, 9.646134286497169),
                                (-9.646157266348881, 9.646134286497169),
                                (9.646157266348881, -9.646134286497169),
@@ -53,8 +52,7 @@ class CarromTable(Benchmark):
 
 
 class Chichinadze(Benchmark):
-
-    """
+    r"""
     Chichinadze objective function.
 
     This class defines the Chichinadze [1]_ global optimization problem. This is a
@@ -86,7 +84,7 @@ class Chichinadze(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
+        self._bounds = list(zip([-30.0] * self.N, [30.0] * self.N))
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [[6.189866586965680, 0.5]]
@@ -101,8 +99,7 @@ class Chichinadze(Benchmark):
 
 
 class Cigar(Benchmark):
-
-    """
+    r"""
     Cigar objective function.
 
     This class defines the Cigar [1]_ global optimization problem. This
@@ -125,8 +122,8 @@ class Cigar(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                                [100.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -140,8 +137,7 @@ class Cigar(Benchmark):
 
 
 class Cola(Benchmark):
-
-    """
+    r"""
     Cola objective function.
 
     This class defines the Cola global optimization problem. The 17-dimensional
@@ -189,7 +185,7 @@ class Cola(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = [[0.0, 4.0]] + list(zip([-4.0] * (self.N - 1),
-                 [4.0] * (self.N - 1)))
+                                               [4.0] * (self.N - 1)))
 
         self.global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791,
                                 -0.8796, 0.204651, -3.28414, 0.851188,
@@ -226,8 +222,7 @@ class Cola(Benchmark):
 
 
 class Colville(Benchmark):
-
-    """
+    r"""
     Colville objective function.
 
     This class defines the Colville global optimization problem. This
@@ -257,7 +252,7 @@ class Colville(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -273,8 +268,7 @@ class Colville(Benchmark):
 
 
 class Corana(Benchmark):
-
-    """
+    r"""
     Corana objective function.
 
     This class defines the Corana [1]_ global optimization problem. This
@@ -306,7 +300,7 @@ class Corana(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -326,8 +320,7 @@ class Corana(Benchmark):
 
 
 class CosineMixture(Benchmark):
-
-    """
+    r"""
     Cosine Mixture objective function.
 
     This class defines the Cosine Mixture global optimization problem. This
@@ -358,7 +351,7 @@ class CosineMixture(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[-1. for _ in range(self.N)]]
         self.fglob = -0.9 * self.N
@@ -370,8 +363,7 @@ class CosineMixture(Benchmark):
 
 
 class CrossInTray(Benchmark):
-
-    """
+    r"""
     Cross-in-Tray objective function.
 
     This class defines the Cross-in-Tray [1]_ global optimization problem. This is a
@@ -386,7 +378,7 @@ class CrossInTray(Benchmark):
 
     with :math:`x_i \in [-15, 15]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x) = -2.062611870822739` for :math:`x_i = 
+    *Global optimum*: :math:`f(x) = -2.062611870822739` for :math:`x_i =
     \pm 1.349406608602084` for :math:`i = 1, 2`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
@@ -397,7 +389,7 @@ class CrossInTray(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [(1.349406685353340, 1.349406608602084),
                                (-1.349406685353340, 1.349406608602084),
@@ -414,8 +406,7 @@ class CrossInTray(Benchmark):
 
 
 class CrossLegTable(Benchmark):
-
-    """
+    r"""
     Cross-Leg-Table objective function.
 
     This class defines the Cross-Leg-Table [1]_ global optimization problem. This
@@ -424,7 +415,7 @@ class CrossLegTable(Benchmark):
     .. math::
 
         f_{\text{CrossLegTable}}(x) = - \frac{1}{\left(\left|{e^{\left|{100
-        - \frac{\sqrt{x_{1}^{2} + x_{2}^{2}}}{\pi}}\right|} 
+        - \frac{\sqrt{x_{1}^{2} + x_{2}^{2}}}{\pi}}\right|}
         \sin\left(x_{1}\right) \sin\left(x_{2}\right)}\right| + 1\right)^{0.1}}
 
 
@@ -441,7 +432,7 @@ class CrossLegTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0., 0.]]
         self.fglob = -1.0
@@ -455,8 +446,7 @@ class CrossLegTable(Benchmark):
 
 
 class CrownedCross(Benchmark):
-
-    """
+    r"""
     Crowned Cross objective function.
 
     This class defines the Crowned Cross [1]_ global optimization problem. This
@@ -482,7 +472,7 @@ class CrownedCross(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0, 0]]
         self.fglob = 0.0001
@@ -496,8 +486,7 @@ class CrownedCross(Benchmark):
 
 
 class Csendes(Benchmark):
-
-    """
+    r"""
     Csendes objective function.
 
     This class defines the Csendes [1]_ global optimization problem. This is a
@@ -524,7 +513,7 @@ class Csendes(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = np.nan
@@ -554,8 +543,7 @@ class Csendes(Benchmark):
 
 
 class Cube(Benchmark):
-
-    """
+    r"""
     Cube objective function.
 
     This class defines the Cube global optimization problem. This
@@ -580,7 +568,7 @@ class Cube(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [[1.0, 1.0]]

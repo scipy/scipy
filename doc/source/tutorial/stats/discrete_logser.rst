@@ -15,7 +15,6 @@ series expansion of :math:`\log\left(1-p\right)`
 where
 
 .. math::
-   :nowrap:
 
     \Phi\left(z,s,a\right)=\sum_{k=0}^{\infty}\frac{z^{k}}{\left(a+k\right)^{s}}
 
@@ -34,7 +33,6 @@ is the Lerch Transcendent. Also define :math:`r=\log\left(1-p\right)`
 Thus,
 
 .. math::
-   :nowrap:
 
     \mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{1-n}\left(pe^{t}\right)}{\log\left(1-p\right)}\right|_{t=0}=-\frac{\textrm{Li}_{1-n}\left(p\right)}{\log\left(1-p\right)}.
 

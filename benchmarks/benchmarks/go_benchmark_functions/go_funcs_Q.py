@@ -7,8 +7,7 @@ from .go_benchmark import Benchmark
 
 
 class Qing(Benchmark):
-
-    """
+    r"""
     Qing objective function.
 
     This class defines the Qing [1]_ global optimization problem. This is a
@@ -33,8 +32,8 @@ class Qing(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.0] * self.N,
-                           [500.0] * self.N)
+        self._bounds = list(zip([-500.0] * self.N,
+                           [500.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
         self.global_optimum = [[sqrt(_) for _ in range(1, self.N + 1)]]
         self.fglob = 0
@@ -48,8 +47,7 @@ class Qing(Benchmark):
 
 
 class Quadratic(Benchmark):
-
-    """
+    r"""
     Quadratic objective function.
 
     This class defines the Quadratic [1]_ global optimization problem. This
@@ -75,7 +73,7 @@ class Quadratic(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(0, 1), (0, 1)]
         self.global_optimum = [[0.19388, 0.48513]]
         self.fglob = -3873.72418
@@ -89,8 +87,7 @@ class Quadratic(Benchmark):
 
 
 class Quintic(Benchmark):
-
-    """
+    r"""
     Quintic objective function.
 
     This class defines the Quintic [1]_ global optimization problem. This is a
@@ -116,7 +113,7 @@ class Quintic(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [[-1.0 for _ in range(self.N)]]

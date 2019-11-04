@@ -34,7 +34,7 @@ class Zacharov(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [10.0] * self.N))
         self.custom_bounds = ([-1, 1], [-1, 1])
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -76,7 +76,7 @@ class ZeroSum(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[]]
         self.fglob = 0.0
@@ -116,7 +116,7 @@ class Zettl(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[-0.02989597760285287, 0.0]]
         self.fglob = -0.003791237220468656
@@ -170,7 +170,7 @@ class Zimmerman(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [100.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [100.0] * self.N))
         self.custom_bounds = ([0.0, 8.0], [0.0, 8.0])
 
         self.global_optimum = [[7.0, 2.0]]
@@ -216,7 +216,7 @@ class Zirilli(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[-1.0465, 0.0]]

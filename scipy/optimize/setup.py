@@ -1,14 +1,16 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import os.path
 from os.path import join
 
 from scipy._build_utils import numpy_nodepr_api
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
+
+    include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
 
     minpack_src = [join('minpack','*f')]
     config.add_library('minpack',sources=minpack_src)
@@ -17,6 +19,18 @@ def configuration(parent_package='',top_path=None):
                          libraries=['minpack'],
                          depends=(["minpack.h","__minpack.h"]
                                   + minpack_src),
+                         include_dirs=include_dirs,
+                         **numpy_nodepr_api)
+
+    config.add_library('rectangular_lsap',
+                       sources='rectangular_lsap/rectangular_lsap.cpp',
+                       headers='rectangular_lsap/rectangular_lsap.h')
+    config.add_extension('_lsap_module',
+                         sources=['_lsap_module.c'],
+                         libraries=['rectangular_lsap'],
+                         depends=(['rectangular_lsap/rectangular_lsap.cpp',
+                                   'rectangular_lsap/rectangular_lsap.h']),
+                         include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
     rootfind_src = [join('Zeros','*.c')]
@@ -41,7 +55,7 @@ def configuration(parent_package='',top_path=None):
             lapack['define_macros'] = numpy_nodepr_api['define_macros']
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
-                         sources=[join('lbfgsb',x) for x in sources],
+                         sources=[join('lbfgsb_src',x) for x in sources],
                          **lapack)
 
     sources = ['moduleTNC.c','tnc.c']
@@ -71,9 +85,30 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
+    config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])
+
     config.add_subpackage('_lsq')
 
+    config.add_subpackage('_trlib')
+
+    config.add_subpackage('_trustregion_constr')
+
+    # cython optimize API for zeros functions
+    config.add_subpackage('cython_optimize')
+    config.add_data_files('cython_optimize.pxd')
+    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
+    config.add_extension(
+        'cython_optimize._zeros',
+        sources=[os.path.join('cython_optimize', '_zeros.c')])
+
+    config.add_subpackage('_shgo_lib')
+    config.add_data_dir('_shgo_lib')
+
     config.add_data_dir('tests')
+
+    # Add license files
+    config.add_data_files('lbfgsb_src/README')
+
     return config
 
 

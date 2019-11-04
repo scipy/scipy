@@ -2,8 +2,6 @@
 SciPy 0.18.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.18.0 is not released yet!
-
 .. contents::
 
 SciPy 0.18.0 is the culmination of 6 months of hard work. It contains
@@ -97,7 +95,7 @@ and functionality so as to improve compatibility with analogously defined
 functions in `numpy`.
 
 Sparse matrices now have a `count_nonzero` method, which counts the number of
-nonzero elements in the matrix. Unlike `getnnz()` and ``nnz`` propety,
+nonzero elements in the matrix. Unlike `getnnz()` and ``nnz`` property,
 which return the number of stored entries (the length of the data attribute),
 this method counts the actual number of non-zero entries in data.
 
@@ -113,12 +111,12 @@ optimization process.
 Initial step size selection in CG and BFGS minimizers has been improved. We
 expect that this change will improve numeric stability of optimization in some
 cases. See pull request gh-5536 for details.
- 
+
 Handling of infinite bounds in SLSQP optimization has been improved. We expect
 that this change will improve numeric stability of optimization in the some
 cases. See pull request gh-6024 for details.
 
-A large suite of global optimization benchmarks has been added to 
+A large suite of global optimization benchmarks has been added to
 ``scipy/benchmarks/go_benchmark_functions``. See pull request gh-4191 for details.
 
 Nelder-Mead and Powell minimization will now only set defaults for
@@ -166,7 +164,7 @@ links to.
 
 Boolean distances, `scipy.spatial.pdist`, have been sped up. Improvements vary
 by the function and the input size. In many cases, one can expect a speed-up
-of x2--x10. 
+of x2--x10.
 
 New class `scipy.spatial.SphericalVoronoi` constructs Voronoi diagrams on the
 surface of a sphere. See pull request gh-5232 for details.
@@ -188,7 +186,7 @@ logarithm of the Gamma function. For real input, ``loggamma`` is compatible
 with `scipy.special.gammaln`. For complex input, it has more consistent
 behavior in the complex plane and should be preferred over ``gammaln``.
 
-Vectorized forms of spherical Bessel functions have been implemented as 
+Vectorized forms of spherical Bessel functions have been implemented as
 `scipy.special.spherical_jn`, `scipy.special.spherical_kn`,
 `scipy.special.spherical_in` and `scipy.special.spherical_yn`.
 They are recommended for use over ``sph_*`` functions, which are now deprecated.
@@ -273,7 +271,7 @@ that call generates a ``ValueError``.
 `scipy.io`
 ----------
 
-`scipy.io.netcdf` masking now gives precedence to the ``_FillValue`` attribute
+``scipy.io.netcdf`` masking now gives precedence to the ``_FillValue`` attribute
 over the ``missing_value`` attribute, if both are given. Also, data are only
 treated as missing if they match one of these attributes exactly: values that
 differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer
@@ -394,6 +392,7 @@ Authors
 * Fabian Rost +
 * Bill Sacks +
 * Jona Sassenhagen +
+* Kari Schoonbee +
 * Marcello Seri +
 * Sourav Singh +
 * Martin Spacek +
@@ -424,7 +423,7 @@ This list of names is automatically generated, and may not be fully complete.
 Issues closed for 0.18.0
 ------------------------
 
-- `#1484 <https://github.com/scipy/scipy/issues/1484>`__: SVD using *GESVD lapack drivers (Trac #957)
+- `#1484 <https://github.com/scipy/scipy/issues/1484>`__: SVD using ``*GESVD`` lapack drivers (Trac #957)
 - `#1547 <https://github.com/scipy/scipy/issues/1547>`__: Inconsistent use of offset in ndimage.interpolation.affine_transform()...
 - `#1609 <https://github.com/scipy/scipy/issues/1609>`__: special.hyp0f1 returns nan (Trac #1082)
 - `#1656 <https://github.com/scipy/scipy/issues/1656>`__: fmin_slsqp enhancement (Trac #1129)
@@ -444,7 +443,7 @@ Issues closed for 0.18.0
 - `#5123 <https://github.com/scipy/scipy/issues/5123>`__: Call to `scipy.sparse.coo_matrix` fails when passed Cython typed...
 - `#5220 <https://github.com/scipy/scipy/issues/5220>`__: scipy.cluster.hierarchy.{ward,median,centroid} does not work...
 - `#5379 <https://github.com/scipy/scipy/issues/5379>`__: Add a build step at the end of .travis.yml that uploads working...
-- `#5440 <https://github.com/scipy/scipy/issues/5440>`__: scipy.optimize.basinhopping: accept_test returning numpy.bool_...
+- `#5440 <https://github.com/scipy/scipy/issues/5440>`__: scipy.optimize.basinhopping: accept_test returning ``numpy.bool_``...
 - `#5452 <https://github.com/scipy/scipy/issues/5452>`__: Error in scipy.integrate.nquad when using variable integration...
 - `#5520 <https://github.com/scipy/scipy/issues/5520>`__: Cannot inherit csr_matrix properly
 - `#5533 <https://github.com/scipy/scipy/issues/5533>`__: Kendall tau implementation uses Python mergesort
@@ -457,7 +456,6 @@ Issues closed for 0.18.0
 - `#5686 <https://github.com/scipy/scipy/issues/5686>`__: scipy.stats.ttest_ind_from_stats does not accept arrays
 - `#5702 <https://github.com/scipy/scipy/issues/5702>`__: scipy.ndimage.interpolation.affine_transform lacks documentation...
 - `#5718 <https://github.com/scipy/scipy/issues/5718>`__: Wrong computation of weighted minkowski distance in cdist
-- `#5743 <https://github.com/scipy/scipy/issues/5743>`__: slsqp fails to detect infeasible problem
 - `#5745 <https://github.com/scipy/scipy/issues/5745>`__: move to setuptools for next release
 - `#5752 <https://github.com/scipy/scipy/issues/5752>`__: DOC: solve_discrete_lyapunov equation puts transpose in wrong...
 - `#5760 <https://github.com/scipy/scipy/issues/5760>`__: signal.ss2tf doesn't handle zero-order state-space models
@@ -482,6 +480,8 @@ Issues closed for 0.18.0
 - `#6028 <https://github.com/scipy/scipy/issues/6028>`__: stats.distributions does not have trapezoidal distribution
 - `#6035 <https://github.com/scipy/scipy/issues/6035>`__: Wrong link in f_oneway
 - `#6056 <https://github.com/scipy/scipy/issues/6056>`__: BUG: signal.decimate should only accept discrete LTI objects
+- `#6093 <https://github.com/scipy/scipy/issues/6093>`__: Precision error on Linux 32 bit with openblas
+- `#6101 <https://github.com/scipy/scipy/issues/6101>`__: Barycentric transforms test error on Python3, 32-bit Linux
 - `#6105 <https://github.com/scipy/scipy/issues/6105>`__: scipy.misc.face docstring is incorrect
 - `#6113 <https://github.com/scipy/scipy/issues/6113>`__: scipy.linalg.logm fails for a trivial matrix
 - `#6128 <https://github.com/scipy/scipy/issues/6128>`__: Error in dot method of sparse COO array, when used with numpy...
@@ -501,6 +501,9 @@ Issues closed for 0.18.0
 - `#6235 <https://github.com/scipy/scipy/issues/6235>`__: BUG: alpha.pdf and alpha.logpdf returns nan for x=0
 - `#6245 <https://github.com/scipy/scipy/issues/6245>`__: ENH: improve accuracy for ppf-cdf and sf-isf roundtrips for invgamma
 - `#6263 <https://github.com/scipy/scipy/issues/6263>`__: BUG: stats: Inconsistency in the multivariate_normal docstring
+- `#6292 <https://github.com/scipy/scipy/issues/6292>`__: Python 3 unorderable type errors in test_sparsetools.TestInt32Overflow
+- `#6316 <https://github.com/scipy/scipy/issues/6316>`__: TestCloughTocher2DInterpolator.test_dense crashes python3.5.2rc1_64bit...
+- `#6318 <https://github.com/scipy/scipy/issues/6318>`__: Scipy interp1d 'nearest' not working for high values on x-axis
 
 
 Pull requests for 0.18.0
@@ -807,4 +810,16 @@ Pull requests for 0.18.0
 - `#6283 <https://github.com/scipy/scipy/pull/6283>`__: DOC: some more additions to 0.18.0 release notes.
 - `#6284 <https://github.com/scipy/scipy/pull/6284>`__: Add `.. versionadded::` directive to `loggamma`.
 - `#6285 <https://github.com/scipy/scipy/pull/6285>`__: BUG: stats: Inconsistency in the multivariate_normal docstring...
+- `#6290 <https://github.com/scipy/scipy/pull/6290>`__: Add author list, gh-lists to 0.18.0 release notes
+- `#6293 <https://github.com/scipy/scipy/pull/6293>`__: TST: special: relax a test's precision
+- `#6295 <https://github.com/scipy/scipy/pull/6295>`__: BUG: sparse: stop comparing None and int in bsr_matrix constructor
+- `#6313 <https://github.com/scipy/scipy/pull/6313>`__: MAINT: Fix for python 3.5 travis-ci build problem.
+- `#6327 <https://github.com/scipy/scipy/pull/6327>`__: TST: signal: use assert_allclose for testing near-equality in...
+- `#6330 <https://github.com/scipy/scipy/pull/6330>`__: BUG: spatial/qhull: allocate qhT via malloc to ensure CRT likes...
+- `#6332 <https://github.com/scipy/scipy/pull/6332>`__: TST: fix stats.iqr test to not emit warnings, and fix line lengths.
+- `#6334 <https://github.com/scipy/scipy/pull/6334>`__: MAINT: special: fix a test for hyp0f1
+- `#6347 <https://github.com/scipy/scipy/pull/6347>`__: TST: spatial.qhull: skip a test on 32-bit platforms
+- `#6350 <https://github.com/scipy/scipy/pull/6350>`__: BUG: optimize/slsqp: don't overwrite an array out of bounds
+- `#6351 <https://github.com/scipy/scipy/pull/6351>`__: BUG: #6318 Interp1d 'nearest' integer x-axis overflow issue fixed
+- `#6355 <https://github.com/scipy/scipy/pull/6355>`__: Backports for 0.18.0
 

@@ -32,13 +32,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from copy import copy
 import numpy as np
 from itertools import product
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
-                           assert_raises, assert_allclose)
+
+from numpy.testing import assert_equal, assert_allclose
+from pytest import raises as assert_raises
+import pytest
 
 from scipy.signal import upfirdn, firwin, lfilter
-from scipy.signal._upfirdn import _output_len
+from scipy.signal._upfirdn import _output_len, _upfirdn_modes
+from scipy.signal._upfirdn_apply import _pad_test
 
 
 def upfirdn_naive(x, h, up=1, down=1):
@@ -103,7 +107,7 @@ class UpFIRDnCase(object):
         assert_allclose(yr, y)
 
 
-class test_upfirdn(TestCase):
+class TestUpfirdn(object):
 
     def test_valid_input(self):
         assert_raises(ValueError, upfirdn, [1], [1], 1, 0)  # up or down < 1
@@ -134,10 +138,10 @@ class test_upfirdn(TestCase):
 
         # Simple combinations of factors
         for x_dtype, h in product(try_types, (1., 1j)):
-                tests.append(UpFIRDnCase(1, 1, h, x_dtype))
-                tests.append(UpFIRDnCase(2, 2, h, x_dtype))
-                tests.append(UpFIRDnCase(3, 2, h, x_dtype))
-                tests.append(UpFIRDnCase(2, 3, h, x_dtype))
+            tests.append(UpFIRDnCase(1, 1, h, x_dtype))
+            tests.append(UpFIRDnCase(2, 2, h, x_dtype))
+            tests.append(UpFIRDnCase(3, 2, h, x_dtype))
+            tests.append(UpFIRDnCase(2, 3, h, x_dtype))
 
         # mixture of big, small, and both directions (net up and net down)
         # use all combinations of data and filter dtypes
@@ -173,5 +177,55 @@ class test_upfirdn(TestCase):
 
         return tests
 
-if __name__ == "__main__":
-    run_module_suite()
+    @pytest.mark.parametrize('mode', _upfirdn_modes)
+    def test_extensions(self, mode):
+        """Test vs. manually computed results for modes not in numpy's pad."""
+        x = np.array([1, 2, 3, 1], dtype=float)
+        npre, npost = 6, 6
+        y = _pad_test(x, npre=npre, npost=npost, mode=mode)
+        if mode == 'antisymmetric':
+            y_expected = np.asarray(
+                [3, 1, -1, -3, -2, -1, 1, 2, 3, 1, -1, -3, -2, -1, 1, 2])
+        elif mode == 'antireflect':
+            y_expected = np.asarray(
+                [1, 2, 3, 1, -1, 0, 1, 2, 3, 1, -1, 0, 1, 2, 3, 1])
+        elif mode == 'smooth':
+            y_expected = np.asarray(
+                [-5, -4, -3, -2, -1, 0, 1, 2, 3, 1, -1, -3, -5, -7, -9, -11])
+        elif mode == "line":
+            lin_slope = (x[-1] - x[0]) / (len(x) - 1)
+            left = x[0] + np.arange(-npre, 0, 1) * lin_slope
+            right = x[-1] + np.arange(1, npost + 1) * lin_slope
+            y_expected = np.concatenate((left, x, right))
+        else:
+            y_expected = np.pad(x, (npre, npost), mode=mode)
+        assert_allclose(y, y_expected)
+
+    @pytest.mark.parametrize(
+        'size, h_len, mode, dtype',
+        product(
+            [8],
+            [4, 5, 26],  # include cases with h_len > 2*size
+            _upfirdn_modes,
+            [np.float32, np.float64, np.complex64, np.complex128],
+        )
+    )
+    def test_modes(self, size, h_len, mode, dtype):
+        random_state = np.random.RandomState(5)
+        x = random_state.randn(size).astype(dtype)
+        if dtype in (np.complex64, np.complex128):
+            x += 1j * random_state.randn(size)
+        h = np.arange(1, 1 + h_len, dtype=x.real.dtype)
+
+        y = upfirdn(h, x, up=1, down=1, mode=mode)
+        # expected result: pad the input, filter with zero padding, then crop
+        npad = h_len - 1
+        if mode in ['antisymmetric', 'antireflect', 'smooth', 'line']:
+            # use _pad_test test function for modes not supported by np.pad.
+            xpad = _pad_test(x, npre=npad, npost=npad, mode=mode)
+        else:
+            xpad = np.pad(x, npad, mode=mode)
+        ypad = upfirdn(h, xpad, up=1, down=1, mode='constant')
+        y_expected = ypad[npad:-npad]
+
+        assert_allclose(y, y_expected, atol=1e-6, rtol=1e-6)

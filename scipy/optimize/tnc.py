@@ -160,7 +160,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     fmin : float, optional
         Minimum function value estimate.  Defaults to 0.
     ftol : float, optional
-        Precision goal for the value of f in the stoping criterion.
+        Precision goal for the value of f in the stopping criterion.
         If ftol < 0.0, ftol is set to 0.0 defaults to -1.
     xtol : float, optional
         Precision goal for the value of x in the stopping
@@ -203,7 +203,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     1. It wraps a C implementation of the algorithm
     2. It allows each variable to be given an upper and lower bound.
 
-    The algorithm incoporates the bound constraints by determining
+    The algorithm incorporates the bound constraints by determining
     the descent direction as in an unconstrained truncated Newton,
     but never taking a step-size large enough to leave the space
     of feasible x's. The algorithm keeps track of a set of
@@ -321,7 +321,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     minfev : float
         Minimum function value estimate.  Defaults to 0.
     ftol : float
-        Precision goal for the value of f in the stoping criterion.
+        Precision goal for the value of f in the stopping criterion.
         If ftol < 0.0, ftol is set to 0.0 defaults to -1.
     xtol : float
         Precision goal for the value of x in the stopping
@@ -412,6 +412,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
                           message=RCSTRINGS[rc], success=(-1 < rc < 3))
+
 
 if __name__ == '__main__':
     # Examples for TNC

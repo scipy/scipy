@@ -154,15 +154,20 @@ double p;
 {
     double dk, dn;
 
-    if ((p < 0.0) || (p > 1.0))
+    if (npy_isnan(p)) {
+	return NPY_NAN;
+    }
+    if ((p < 0.0) || (p > 1.0)) {
 	goto domerr;
-    if (k < 0)
-	return (1.0);
+    }
+    if (k < 0) {
+	return 1.0;
+    }
 
     if (n < k) {
       domerr:
-	mtherr("bdtrc", DOMAIN);
-	return (NPY_NAN);
+	sf_error("bdtrc", SF_ERROR_DOMAIN, NULL);
+	return NPY_NAN;
     }
 
     if (k == n)
@@ -193,7 +198,7 @@ double p;
 	goto domerr;
     if ((k < 0) || (n < k)) {
       domerr:
-	mtherr("bdtr", DOMAIN);
+	sf_error("bdtr", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -222,7 +227,7 @@ double y;
 	goto domerr;
     if ((k < 0) || (n <= k)) {
       domerr:
-	mtherr("bdtri", DOMAIN);
+	sf_error("bdtri", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 

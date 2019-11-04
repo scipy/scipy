@@ -4,9 +4,7 @@ Module for reading and writing matlab (TM) .mat files
 # Authors: Travis Oliphant, Matthew Brett
 
 from __future__ import division, print_function, absolute_import
-
-import numpy as np
-
+from contextlib import contextmanager
 from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
@@ -16,25 +14,37 @@ from .mio5 import MatFile5Reader, MatFile5Writer
 __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 
 
-def _open_file(file_like, appendmat):
-    ''' Open `file_like` and return as file-like object '''
-    if isinstance(file_like, string_types):
-        try:
-            return open(file_like, 'rb')
-        except IOError as e:
+@contextmanager
+def _open_file_context(file_like, appendmat, mode='rb'):
+    f, opened = _open_file(file_like, appendmat, mode)
+    yield f
+    if opened:
+        f.close()
+
+
+def _open_file(file_like, appendmat, mode='rb'):
+    """
+    Open `file_like` and return as file-like object. First, check if object is
+    already file-like; if so, return it as-is. Otherwise, try to pass it
+    to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
+    append '.mat' and try again.
+    """
+    reqs = {'read'} if set(mode) & set('r+') else set()
+    if set(mode) & set('wax+'):
+        reqs.add('write')
+    if reqs.issubset(dir(file_like)):
+        return file_like, False
+
+    try:
+        return open(file_like, mode), True
+    except IOError:
+        # Probably "not found"
+        if isinstance(file_like, string_types):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
-                try:
-                    return open(file_like, 'rb')
-                except IOError:
-                    pass  # Rethrow the original exception.
-            raise
-    # not a string - maybe file-like object
-    try:
-        file_like.read(0)
-    except AttributeError:
-        raise IOError('Reader needs file name or open file-like object')
-    return file_like
+            return open(file_like, mode), True
+        else:
+            raise IOError('Reader needs file name or open file-like object')
 
 
 @docfiller
@@ -54,13 +64,16 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     matreader : MatFileReader object
        Initialized instance of MatFileReader class matching the mat file
        type detected in `filename`.
+    file_opened : bool
+       Whether the file was opened by this routine.
+
     """
-    byte_stream = _open_file(file_name, appendmat)
+    byte_stream, file_opened = _open_file(file_name, appendmat)
     mjv, mnv = get_matfile_version(byte_stream)
     if mjv == 0:
-        return MatFile4Reader(byte_stream, **kwargs)
+        return MatFile4Reader(byte_stream, **kwargs), file_opened
     elif mjv == 1:
-        return MatFile5Reader(byte_stream, **kwargs)
+        return MatFile5Reader(byte_stream, **kwargs), file_opened
     elif mjv == 2:
         raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
     else:
@@ -112,7 +125,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     variable_names : None or sequence
         If None (the default) - read all variables in file. Otherwise
         `variable_names` should be a sequence of strings, giving names of the
-        matlab variables to read from the file.  The reader will skip any
+        MATLAB variables to read from the file.  The reader will skip any
         variable with a name not in this sequence, possibly saving some read
         processing.
 
@@ -126,20 +139,89 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     -----
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
-    You will need an HDF5 python library to read matlab 7.3 format mat
+    You will need an HDF5 python library to read MATLAB 7.3 format mat
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+
+    Get the filename for an example .mat file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'matlab', 'tests', 'data')
+    >>> mat_fname = pjoin(data_dir, 'testdouble_7.4_GLNX86.mat')
+
+    Load the .mat file contents.
+
+    >>> mat_contents = sio.loadmat(mat_fname)
+
+    The result is a dictionary, one key/value pair for each variable:
+
+    >>> sorted(mat_contents.keys())
+    ['__globals__', '__header__', '__version__', 'testdouble']
+    >>> mat_contents['testdouble']
+    array([[0.        , 0.78539816, 1.57079633, 2.35619449, 3.14159265,
+            3.92699082, 4.71238898, 5.49778714, 6.28318531]])
+
+    By default SciPy reads MATLAB structs as structured NumPy arrays where the
+    dtype fields are of type `object` and the names correspond to the MATLAB
+    struct field names. This can be disabled by setting the optional argument
+    `struct_as_record=False`.
+
+    Get the filename for an example .mat file that contains a MATLAB struct
+    called `teststruct` and load the contents.
+
+    >>> matstruct_fname = pjoin(data_dir, 'teststruct_7.4_GLNX86.mat')
+    >>> matstruct_contents = sio.loadmat(matstruct_fname)
+    >>> teststruct = matstruct_contents['teststruct']
+    >>> teststruct.dtype
+    dtype([('stringfield', 'O'), ('doublefield', 'O'), ('complexfield', 'O')])
+
+    The size of the structured array is the size of the MATLAB struct, not the
+    number of elements in any particular field. The shape defaults to 2-D
+    unless the optional argument `squeeze_me=True`, in which case all length 1
+    dimensions are removed.
+
+    >>> teststruct.size
+    1
+    >>> teststruct.shape
+    (1, 1)
+
+    Get the 'stringfield' of the first element in the MATLAB struct.
+
+    >>> teststruct[0, 0]['stringfield']
+    array(['Rats live on no evil star.'],
+      dtype='<U26')
+
+    Get the first element of the 'doublefield'.
+
+    >>> teststruct['doublefield'][0, 0]
+    array([[ 1.41421356,  2.71828183,  3.14159265]])
+
+    Load the MATLAB struct, squeezing out length 1 dimensions, and get the item
+    from the 'complexfield'.
+
+    >>> matstruct_squeezed = sio.loadmat(matstruct_fname, squeeze_me=True)
+    >>> matstruct_squeezed['teststruct'].shape
+    ()
+    >>> matstruct_squeezed['teststruct']['complexfield'].shape
+    ()
+    >>> matstruct_squeezed['teststruct']['complexfield'].item()
+    array([ 1.41421356+1.41421356j,  2.71828183+2.71828183j,
+        3.14159265+3.14159265j])
     """
     variable_names = kwargs.pop('variable_names', None)
-    MR = mat_reader_factory(file_name, appendmat, **kwargs)
-    matfile_dict = MR.get_variables(variable_names)
+    with _open_file_context(file_name, appendmat) as f:
+        MR, _ = mat_reader_factory(f, **kwargs)
+        matfile_dict = MR.get_variables(variable_names)
+
     if mdict is not None:
         mdict.update(matfile_dict)
     else:
         mdict = matfile_dict
-    if isinstance(file_name, string_types):
-        MR.mat_stream.close()
+
     return mdict
 
 
@@ -180,37 +262,21 @@ def savemat(file_name, mdict,
     oned_as : {'row', 'column'}, optional
         If 'column', write 1-D numpy arrays as column vectors.
         If 'row', write 1-D numpy arrays as row vectors.
-
-    See also
-    --------
-    mio4.MatFile4Writer
-    mio5.MatFile5Writer
     """
-    file_is_string = isinstance(file_name, string_types)
-    if file_is_string:
-        if appendmat and file_name[-4:] != ".mat":
-            file_name = file_name + ".mat"
-        file_stream = open(file_name, 'wb')
-    else:
-        if not hasattr(file_name, 'write'):
-            raise IOError('Writer needs file name or writeable '
-                           'file-like object')
-        file_stream = file_name
-    if format == '4':
-        if long_field_names:
-            raise ValueError("Long field names are not available for version 4 files")
-        MW = MatFile4Writer(file_stream, oned_as)
-    elif format == '5':
-        MW = MatFile5Writer(file_stream,
-                            do_compression=do_compression,
-                            unicode_strings=True,
-                            long_field_names=long_field_names,
-                            oned_as=oned_as)
-    else:
-        raise ValueError("Format should be '4' or '5'")
-    MW.put_variables(mdict)
-    if file_is_string:
-        file_stream.close()
+    with _open_file_context(file_name, appendmat, 'wb') as file_stream:
+        if format == '4':
+            if long_field_names:
+                raise ValueError("Long field names are not available for version 4 files")
+            MW = MatFile4Writer(file_stream, oned_as)
+        elif format == '5':
+            MW = MatFile5Writer(file_stream,
+                                do_compression=do_compression,
+                                unicode_strings=True,
+                                long_field_names=long_field_names,
+                                oned_as=oned_as)
+        else:
+            raise ValueError("Format should be '4' or '5'")
+        MW.put_variables(mdict)
 
 
 @docfiller
@@ -245,8 +311,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     .. versionadded:: 0.12.0
 
     """
-    ML = mat_reader_factory(file_name, **kwargs)
-    variables = ML.list_variables()
-    if isinstance(file_name, string_types):
-        ML.mat_stream.close()
+    with _open_file_context(file_name, appendmat) as f:
+        ML, file_opened = mat_reader_factory(f, **kwargs)
+        variables = ML.list_variables()
     return variables

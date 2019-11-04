@@ -11,7 +11,7 @@ import numpy as np
 from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
 from .sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                      get_sum_dtype, validateaxis)
+                      get_sum_dtype, validateaxis, check_shape, matrix)
 from ._sparsetools import dia_matvec
 
 
@@ -42,7 +42,7 @@ class dia_matrix(_data_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         DIA format data array of the matrix
     offsets
@@ -83,7 +83,7 @@ class dia_matrix(_data_matrix):
                 arg1 = arg1.copy()
             self.data = arg1.data
             self.offsets = arg1.offsets
-            self.shape = arg1.shape
+            self._shape = check_shape(arg1.shape)
         elif isspmatrix(arg1):
             if isspmatrix_dia(arg1) and copy:
                 A = arg1.copy()
@@ -91,12 +91,12 @@ class dia_matrix(_data_matrix):
                 A = arg1.todia()
             self.data = A.data
             self.offsets = A.offsets
-            self.shape = A.shape
+            self._shape = check_shape(A.shape)
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape = arg1   # spmatrix checks for errors here
+                self._shape = check_shape(arg1)
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.offsets = np.zeros((0), dtype=idx_dtype)
@@ -104,7 +104,7 @@ class dia_matrix(_data_matrix):
                 try:
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
-                except:
+                except Exception:
                     raise ValueError('unrecognized form for dia_matrix constructor')
                 else:
                     if shape is None:
@@ -113,19 +113,19 @@ class dia_matrix(_data_matrix):
                     self.offsets = np.atleast_1d(np.array(arg1[1],
                                                           dtype=get_index_dtype(maxval=max(shape)),
                                                           copy=copy))
-                    self.shape = shape
+                    self._shape = check_shape(shape)
         else:
             #must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
             A = coo_matrix(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
-            self.shape = A.shape
+            self._shape = check_shape(A.shape)
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -201,7 +201,7 @@ class dia_matrix(_data_matrix):
             else:
                 res = np.zeros(num_cols, dtype=x.dtype)
                 res[:x.shape[0]] = x
-            ret = np.matrix(res, dtype=res_dtype)
+            ret = matrix(res, dtype=res_dtype)
 
         else:
             row_sums = np.zeros(num_rows, dtype=res_dtype)
@@ -209,7 +209,7 @@ class dia_matrix(_data_matrix):
             dia_matvec(num_rows, num_cols, len(self.offsets),
                        self.data.shape[1], self.offsets, self.data, one, row_sums)
 
-            row_sums = np.matrix(row_sums)
+            row_sums = matrix(row_sums)
 
             if axis is None:
                 return row_sums.sum(dtype=dtype, out=out)
@@ -217,7 +217,7 @@ class dia_matrix(_data_matrix):
             if axis is not None:
                 row_sums = row_sums.T
 
-            ret = np.matrix(row_sums.sum(axis=axis))
+            ret = matrix(row_sums.sum(axis=axis))
 
         if out is not None and out.shape != ret.shape:
             raise ValueError("dimensions do not match")
@@ -307,12 +307,15 @@ class dia_matrix(_data_matrix):
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
-    def diagonal(self):
-        idx, = np.where(self.offsets == 0)
-        n = min(self.shape)
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
+        idx, = np.nonzero(self.offsets == k)
+        first_col, last_col = max(0, k), min(rows + k, cols)
         if idx.size == 0:
-            return np.zeros(n, dtype=self.data.dtype)
-        return self.data[idx[0],:n]
+            return np.zeros(last_col - first_col, dtype=self.data.dtype)
+        return self.data[idx[0], first_col:last_col]
 
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 
@@ -373,6 +376,45 @@ class dia_matrix(_data_matrix):
         else:
             return dia_matrix((data,self.offsets), shape=self.shape)
 
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        M, N = shape
+        # we do not need to handle the case of expanding N
+        self.data = self.data[:, :N]
+
+        if (M > self.shape[0] and
+                np.any(self.offsets + self.shape[0] < self.data.shape[1])):
+            # explicitly clear values that were previously hidden
+            mask = (self.offsets[:, None] + self.shape[0] <=
+                    np.arange(self.data.shape[1]))
+            self.data[mask] = 0
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
+
 
 def isspmatrix_dia(x):
+    """Is x of dia_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a dia matrix
+
+    Returns
+    -------
+    bool
+        True if x is a dia matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dia_matrix, isspmatrix_dia
+    >>> isspmatrix_dia(dia_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import dia_matrix, csr_matrix, isspmatrix_dia
+    >>> isspmatrix_dia(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, dia_matrix)

@@ -31,7 +31,7 @@ class FreudensteinRoth(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-3, 3), (-5, 5)]
 
         self.global_optimum = [[5.0, 4.0]]

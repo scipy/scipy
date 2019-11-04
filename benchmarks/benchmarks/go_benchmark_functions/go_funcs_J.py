@@ -6,7 +6,6 @@ from .go_benchmark import Benchmark
 
 
 class JennrichSampson(Benchmark):
-
     r"""
     Jennrich-Sampson objective function.
 
@@ -32,7 +31,7 @@ class JennrichSampson(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.257825, 0.257825]]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
@@ -46,8 +45,7 @@ class JennrichSampson(Benchmark):
 
 
 class Judge(Benchmark):
-
-    """
+    r"""
     Judge objective function.
 
     This class defines the Judge [1]_ global optimization problem. This
@@ -55,7 +53,7 @@ class Judge(Benchmark):
 
     .. math::
 
-        f_{\text{Judge}}(x) = \sum_{i=1}^{20} 
+        f_{\text{Judge}}(x) = \sum_{i=1}^{20}
         \left [ \left (x_1 + A_i x_2 + B x_2^2 \right ) - C_i \right ]^2
 
 
@@ -87,7 +85,7 @@ class Judge(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0.86479, 1.2357]]
         self.custom_bounds = [(-2.0, 2.0), (-2.0, 2.0)]

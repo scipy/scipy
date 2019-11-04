@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from os.path import join, dirname
@@ -9,8 +8,7 @@ import glob
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
-    from scipy._build_utils import get_sgemv_fix
+    from scipy._build_utils.system_info import get_info
     from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('dsolve',parent_package,top_path)
@@ -25,7 +23,7 @@ def configuration(parent_package='',top_path=None):
 
     superlu_src = join(dirname(__file__), 'SuperLU', 'SRC')
 
-    sources = list(glob.glob(join(superlu_src, '*.c')))
+    sources = sorted(glob.glob(join(superlu_src, '*.c')))
     headers = list(glob.glob(join(superlu_src, '*.h')))
 
     config.add_library('superlu_src',
@@ -38,7 +36,6 @@ def configuration(parent_package='',top_path=None):
     ext_sources = ['_superlumodule.c',
                    '_superlu_utils.c',
                    '_superluobject.c']
-    ext_sources += get_sgemv_fix(lapack_opt)
 
     config.add_extension('_superlu',
                          sources=ext_sources,
@@ -48,7 +45,11 @@ def configuration(parent_package='',top_path=None):
                          **numpy_nodepr_api
                          )
 
+    # Add license files
+    config.add_data_files('SuperLU/License.txt')
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

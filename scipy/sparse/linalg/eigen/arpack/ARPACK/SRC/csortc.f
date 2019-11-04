@@ -39,7 +39,7 @@ c
 c\BeginLib
 c
 c\Routines called:
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -90,7 +90,7 @@ c     | External functions |
 c     %--------------------%
 c
       Real
-     &           wslapy2
+     &           slapy2
 c
 c     %--------------------%
 c     | Intrinsic Functions |
@@ -119,8 +119,8 @@ c
 c
             if (j.lt.0) go to 30
 c
-            temp1 = wslapy2(real(x(j)),aimag(x(j)))
-            temp2 = wslapy2(real(x(j+igap)),aimag(x(j+igap)))
+            temp1 = slapy2(real(x(j)),aimag(x(j)))
+            temp2 = slapy2(real(x(j+igap)),aimag(x(j+igap)))
 c
             if (temp1.gt.temp2) then
                 temp = x(j)
@@ -156,8 +156,8 @@ c
 c
             if (j .lt. 0) go to 60
 c
-            temp1 = wslapy2(real(x(j)),aimag(x(j)))
-            temp2 = wslapy2(real(x(j+igap)),aimag(x(j+igap)))
+            temp1 = slapy2(real(x(j)),aimag(x(j)))
+            temp2 = slapy2(real(x(j+igap)),aimag(x(j+igap)))
 c
             if (temp1.lt.temp2) then
                temp = x(j)

@@ -81,9 +81,18 @@ class BaseQuadraticSubproblem(object):
         b = 2 * np.dot(z, d)
         c = np.dot(z, z) - trust_radius**2
         sqrt_discriminant = math.sqrt(b*b - 4*a*c)
-        ta = (-b - sqrt_discriminant) / (2*a)
-        tb = (-b + sqrt_discriminant) / (2*a)
-        return ta, tb
+
+        # The following calculation is mathematically
+        # equivalent to:
+        # ta = (-b - sqrt_discriminant) / (2*a)
+        # tb = (-b + sqrt_discriminant) / (2*a)
+        # but produce smaller round off errors.
+        # Look at Matrix Computation p.97
+        # for a better justification.
+        aux = b + math.copysign(sqrt_discriminant, b)
+        ta = -aux / (2*a)
+        tb = -2*c / aux
+        return sorted([ta, tb])
 
     def solve(self, trust_radius):
         raise NotImplementedError('The solve method should be implemented by '
@@ -94,7 +103,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
                            subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
                            maxiter=None, disp=False, return_all=False,
-                           callback=None, **unknown_options):
+                           callback=None, inexact=True, **unknown_options):
     """
     Minimization of scalar function of one or more variables using a
     trust-region algorithm.
@@ -113,11 +122,16 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             Maximum number of iterations to perform.
         disp : bool
             If True, print convergence message.
+        inexact : bool
+            Accuracy to solve subproblems. If True requires less nonlinear
+            iterations, but more vector products. Only effective for method
+            trust-krylov.
 
     This function is called by the `minimize` function.
     It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
+
     if jac is None:
         raise ValueError('Jacobian is currently required for trust-region '
                          'methods')
@@ -164,7 +178,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     k = 0
 
     # search for the function min
-    while True:
+    # do not even start if the gradient is small enough
+    while m.jac_mag >= gtol:
 
         # Solve the sub-problem.
         # This gives us the proposed step relative to the current position
@@ -204,9 +219,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # append the best guess, call back, increment the iteration count
         if return_all:
-            allvecs.append(x)
+            allvecs.append(np.copy(x))
         if callback is not None:
-            callback(x)
+            callback(np.copy(x))
         k += 1
 
         # check if the gradient is small enough to stop
@@ -235,11 +250,11 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % nfun[0])
         print("         Gradient evaluations: %d" % njac[0])
-        print("         Hessian evaluations: %d" % nhess[0])
+        print("         Hessian evaluations: %d" % (nhess[0] + nhessp[0]))
 
     result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
                             fun=m.fun, jac=m.jac, nfev=nfun[0], njev=njac[0],
-                            nhev=nhess[0], nit=k,
+                            nhev=nhess[0] + nhessp[0], nit=k,
                             message=status_messages[warnflag])
 
     if hess is not None:

@@ -50,7 +50,7 @@ mxUINT64_CLASS = 15
 mxFUNCTION_CLASS = 16
 # Not doing anything with these at the moment.
 mxOPAQUE_CLASS = 17  # This appears to be a function workspace
-# Thread 'saveing/loading symbol table of annymous functions', octave-maintainers, April-May 2007
+# Thread 'saving/loading symbol table of annymous functions', octave-maintainers, April-May 2007
 # https://lists.gnu.org/archive/html/octave-maintainers/2007-04/msg00031.html
 # https://lists.gnu.org/archive/html/octave-maintainers/2007-05/msg00032.html
 # (Was/Deprecated: https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html)
@@ -212,9 +212,9 @@ for _bytecode in '<>':
 class mat_struct(object):
     ''' Placeholder for holding read data from structs
 
-    We deprecate this method of holding struct information, and will
-    soon remove it, in favor of the recarray method (see loadmat
-    docstring)
+    We use instances of this class when the user passes False as a value to the
+    ``struct_as_record`` parameter of the :func:`scipy.io.matlab.loadmat`
+    function.
     '''
     pass
 

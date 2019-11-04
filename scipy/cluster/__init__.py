@@ -26,5 +26,6 @@ __all__ = ['vq', 'hierarchy']
 
 from . import vq, hierarchy
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

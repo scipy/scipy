@@ -27,8 +27,6 @@ from scipy.sparse import csc_matrix
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
 
-from scipy._lib.six import string_types
-
 __all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
            "HBMatrixType"]
 
@@ -69,6 +67,8 @@ class HBInfo(object):
         -------
         hb_info : HBInfo instance
         """
+        m = m.tocsc(copy=False)
+
         pointer = m.indptr
         indices = m.indices
         values = m.data
@@ -125,7 +125,7 @@ class HBInfo(object):
 
     @classmethod
     def from_file(cls, fid):
-        """Create a HBInfo instance from a file object containg a matrix in the
+        """Create a HBInfo instance from a file object containing a matrix in the
         HB format.
 
         Parameters
@@ -333,6 +333,8 @@ def _read_hb_data(content, header):
 
 
 def _write_data(m, fid, header):
+    m = m.tocsc(copy=False)
+
     def write_array(f, ar, nlines, fmt):
         # ar_nlines is the number of full lines, n is the number of items per
         # line, ffmt the fortran format
@@ -467,14 +469,14 @@ class HBFile(object):
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(file):
+def hb_read(path_or_open_file):
     """Read HB-format file.
 
     Parameters
     ----------
-    file : str-like or file-like
-        If a string-like object, file is the name of the file to read. If a
-        file-like object, the data are read from it.
+    path_or_open_file : path-like or file-like
+        If a file-like object, it is used as-is. Otherwise it is opened
+        before reading.
 
     Returns
     -------
@@ -495,24 +497,21 @@ def hb_read(file):
         hb = HBFile(fid)
         return hb.read_matrix()
 
-    if isinstance(file, string_types):
-        fid = open(file)
-        try:
-            return _get_matrix(fid)
-        finally:
-            fid.close()
+    if hasattr(path_or_open_file, 'read'):
+        return _get_matrix(path_or_open_file)
     else:
-        return _get_matrix(file)
+        with open(path_or_open_file) as f:
+            return _get_matrix(f)
 
 
-def hb_write(file, m, hb_info=None):
+def hb_write(path_or_open_file, m, hb_info=None):
     """Write HB-format file.
 
     Parameters
     ----------
-    file : str-like or file-like
-        if a string-like object, file is the name of the file to read. If a
-        file-like object, the data are read from it.
+    path_or_open_file : path-like or file-like
+        If a file-like object, it is used as-is. Otherwise it is opened
+        before writing.
     m : sparse-matrix
         the sparse matrix to write
     hb_info : HBInfo
@@ -532,6 +531,8 @@ def hb_write(file, m, hb_info=None):
         - exponential format for float values, and int format
 
     """
+    m = m.tocsc(copy=False)
+
     if hb_info is None:
         hb_info = HBInfo.from_data(m)
 
@@ -539,11 +540,8 @@ def hb_write(file, m, hb_info=None):
         hb = HBFile(fid, hb_info)
         return hb.write_matrix(m)
 
-    if isinstance(file, string_types):
-        fid = open(file, "w")
-        try:
-            return _set_matrix(fid)
-        finally:
-            fid.close()
+    if hasattr(path_or_open_file, 'write'):
+        return _set_matrix(path_or_open_file)
     else:
-        return _set_matrix(file)
+        with open(path_or_open_file, 'w') as f:
+            return _set_matrix(f)

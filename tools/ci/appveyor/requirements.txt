@@ -1,0 +1,10 @@
+numpy
+cython
+pybind11
+pytest
+pytest-timeout
+pytest-xdist
+pytest-env
+Pillow
+mpmath
+matplotlib

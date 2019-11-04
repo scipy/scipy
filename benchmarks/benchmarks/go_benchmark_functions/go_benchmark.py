@@ -2,9 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, seterr, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
+from numpy import abs, asarray
 
 try:
     from scipy.special import factorial
@@ -86,7 +84,7 @@ class Benchmark(object):
             parameter.
         """
 
-        return asarray([np.random.uniform(l, u) for l, u in self._bounds])
+        return asarray([np.random.uniform(l, u) for l, u in self.bounds])
 
     def success(self, x, tol=1.e-5):
         """
@@ -156,7 +154,7 @@ class Benchmark(object):
         """
 
         if self.change_dimensionality:
-            self.dimensions = ndim
+            self._dimensions = ndim
         else:
             raise ValueError('dimensionality cannot be changed for this'
                              'problem')
