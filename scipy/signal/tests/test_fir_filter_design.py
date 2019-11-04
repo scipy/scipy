@@ -278,42 +278,50 @@ class TestFirwin2(object):
 
     def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 1], [0.0, 1.0])
+        with assert_raises(ValueError, match='must be of same length'):
+            firwin2(50, [0, 0.5, 1], [0.0, 1.0])
         # `nfreqs` is less than `ntaps`.
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 1], [0.0, 1.0, 1.0], nfreqs=33)
+        with assert_raises(ValueError, match='ntaps must be less than nfreqs'):
+            firwin2(50, [0, 0.5, 1], [0.0, 1.0, 1.0], nfreqs=33)
         # Decreasing value in `freq`
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
+        with assert_raises(ValueError, match='must be nondecreasing'):
+            firwin2(50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
         # Value in `freq` repeated more than once.
-        assert_raises(ValueError, firwin2, 50, [0, .1, .1, .1, 1.0],
-                                               [0.0, 0.5, 0.75, 1.0, 1.0])
+        with assert_raises(ValueError, match='must not occur more than twice'):
+            firwin2(50, [0, .1, .1, .1, 1.0], [0.0, 0.5, 0.75, 1.0, 1.0])
         # `freq` does not start at 0.0.
-        assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
+        with assert_raises(ValueError, match='start with 0'):
+            firwin2(50, [0.5, 1.0], [0.0, 1.0])
         # `freq` does not end at fs/2.
-        assert_raises(ValueError, firwin2, 50, [0.0, 0.5], [0.0, 1.0])
+        with assert_raises(ValueError, match='end with fs/2'):
+            firwin2(50, [0.0, 0.5], [0.0, 1.0])
         # Value 0 is repeated in `freq`
-        assert_raises(ValueError, firwin2, 50, [0.0, 0.0, 0.5, 1.0],
-                                               [1.0, 1.0, 0.0, 0.0])
+        with assert_raises(ValueError, match='0 must not be repeated'):
+            firwin2(50, [0.0, 0.0, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
         # Value fs/2 is repeated in `freq`
-        assert_raises(ValueError, firwin2, 50, [0.0, 0.5, 1.0, 1.0],
-                                               [1.0, 1.0, 0.0, 0.0])
+        with assert_raises(ValueError, match='fs/2 must not be repeated'):
+            firwin2(50, [0.0, 0.5, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0])
         # Value in `freq` that is too close to a repeated number
-        assert_raises(ValueError, firwin2, 50,
-                      [0.0, 0.5 - np.finfo(float).eps * 0.5, 0.5, 0.5, 1.0],
-                      [1.0, 1.0, 1.0, 0.0, 0.0])
+        with assert_raises(ValueError, match='cannot contain numbers '
+                                             'that are too close'):
+            firwin2(50, [0.0, 0.5 - np.finfo(float).eps * 0.5, 0.5, 0.5, 1.0],
+                        [1.0, 1.0, 1.0, 0.0, 0.0])
+
         # Type II filter, but the gain at nyquist frequency is not zero.
-        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
+        with assert_raises(ValueError, match='Type II filter'):
+            firwin2(16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
         # Type III filter, but the gains at nyquist and zero rate are not zero.
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0],
-                      antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
-                      antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0],
-                      antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0], antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0], antisymmetric=True)
 
         # Type IV filter, but the gain at zero rate is not zero.
-        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
-                      antisymmetric=True)
+        with assert_raises(ValueError, match='Type IV filter'):
+            firwin2(16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], antisymmetric=True)
 
     def test01(self):
         width = 0.04
