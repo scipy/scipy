@@ -2535,8 +2535,7 @@ def _group_poles(poles, tol, rtype):
 
 
 def invres(r, p, k, tol=1e-3, rtype='avg'):
-    """
-    Compute b(s) and a(s) from partial fraction expansion.
+    """Compute b(s) and a(s) from partial fraction expansion.
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
@@ -2565,20 +2564,19 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     Parameters
     ----------
     r : array_like
-        Residues.
+        Residues corresponding to the poles. For repeated poles, the residues
+        must be ordered to correspond to ascending by power fractions.
     p : array_like
-        Poles.
+        Poles. Equal poles must be adjacent.
     k : array_like
         Coefficients of the direct polynomial term.
     tol : float, optional
-        The tolerance for two roots to be considered equal. Default is 1e-3.
-    rtype : {'max', 'min, 'avg'}, optional
-        How to determine the returned root if multiple roots are within
-        `tol` of each other.
-
-          - 'max': pick the maximum of those roots.
-          - 'min': pick the minimum of those roots.
-          - 'avg': take the average of those roots.
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. See `unique_roots`
+        for further details.
+    rtype : {'avg', 'min', 'max'}, optional
+        Method for computing a root to represent a group of identical roots.
+        Default is 'avg'. See `unique_roots` for further details.
 
     Returns
     -------
@@ -2608,8 +2606,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
-    """
-    Compute b(z) and a(z) from partial fraction expansion.
+    """Compute b(z) and a(z) from partial fraction expansion.
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
@@ -2637,20 +2634,19 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     Parameters
     ----------
     r : array_like
-        Residues.
+        Residues corresponding to the poles. For repeated poles, the residues
+        must be ordered to correspond to ascending by power fractions.
     p : array_like
-        Poles.
+        Poles. Equal poles must be adjacent.
     k : array_like
         Coefficients of the direct polynomial term.
     tol : float, optional
-        The tolerance for two roots to be considered equal. Default is 1e-3.
-    rtype : {'max', 'min, 'avg'}, optional
-        How to determine the returned root if multiple roots are within
-        `tol` of each other.
-
-          - 'max': pick the maximum of those roots.
-          - 'min': pick the minimum of those roots.
-          - 'avg': take the average of those roots.
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. See `unique_roots`
+        for further details.
+    rtype : {'avg', 'min', 'max'}, optional
+        Method for computing a root to represent a group of identical roots.
+        Default is 'avg'. See `unique_roots` for further details.
 
     Returns
     -------
