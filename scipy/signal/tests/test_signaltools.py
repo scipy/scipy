@@ -2764,6 +2764,50 @@ class TestPartialFractionExpansion(object):
                                  "be non-zero."):
             residuez(1, [0, 1, 2, 3])
 
+    def test_inverse_unique_roots_different_rtypes(self):
+        # This test was inspired by github issue 2496.
+        r = [3 / 10, -1 / 6, -2 / 15]
+        p = [0, -2, -5]
+        k = []
+        b_expected = [0, 1, 3]
+        a_expected = [1, 7, 10, 0]
+
+        # With the default tolerance, the rtype does not matter
+        # for this example.
+        for rtype in ('avg', 'mean', 'min', 'minimum', 'max', 'maximum'):
+            b, a = invres(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected)
+            assert_allclose(a, a_expected)
+
+            b, a = invresz(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected)
+            assert_allclose(a, a_expected)
+
+    def test_inverse_repeated_roots_different_rtypes(self):
+        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
+        p = [0, -2, -2, -5]
+        k = []
+        b_expected = [0, 0, 1, 3]
+        b_expected_z = [-1/6, -2/3, 11/6, 3]
+        a_expected = [1, 9, 24, 20, 0]
+
+        for rtype in ('avg', 'mean', 'min', 'minimum', 'max', 'maximum'):
+            b, a = invres(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected, atol=1e-14)
+            assert_allclose(a, a_expected)
+
+            b, a = invresz(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected_z, atol=1e-14)
+            assert_allclose(a, a_expected)
+
+    def test_inverse_bad_rtype(self):
+        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
+        p = [0, -2, -2, -5]
+        k = []
+        with pytest.raises(ValueError, match="`rtype` must be one of"):
+            invres(r, p, k, rtype='median')
+            invresz(r, p, k, rtype='median')
+
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
@@ -2799,49 +2843,6 @@ class TestPartialFractionExpansion(object):
         b, a = invres([-1, 1j], [1, 1], [1, 2])
         assert_almost_equal(b, [1, 0, -4, 3 + 1j])
         assert_almost_equal(a, [1, -2, 1])
-
-    def test_invres_distinct_roots(self):
-        # This test was inspired by github issue 2496.
-        r = [3 / 10, -1 / 6, -2 / 15]
-        p = [0, -2, -5]
-        k = []
-        a_expected = [0, 1, 3]
-        b_expected = [1, 7, 10, 0]
-        a_observed, b_observed = invres(r, p, k)
-        assert_allclose(a_observed, a_expected)
-        assert_allclose(b_observed, b_expected)
-        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
-
-        # With the default tolerance, the rtype does not matter
-        # for this example.
-        for rtype in rtypes:
-            a_observed, b_observed = invres(r, p, k, rtype=rtype)
-            assert_allclose(a_observed, a_expected)
-            assert_allclose(b_observed, b_expected)
-
-        # With unrealistically large tolerances, repeated roots may be inferred
-        # and the rtype comes into play.
-        ridiculous_tolerance = 1e10
-        for rtype in rtypes:
-            a, b = invres(r, p, k, tol=ridiculous_tolerance, rtype=rtype)
-
-    def test_invres_repeated_roots(self):
-        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
-        p = [0, -2, -2, -5]
-        k = []
-        a_expected = [0, 0, 1, 3]
-        b_expected = [1, 9, 24, 20, 0]
-        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
-        for rtype in rtypes:
-            a_observed, b_observed = invres(r, p, k, rtype=rtype)
-            assert_allclose(a_observed, a_expected, atol=1e-14)
-            assert_allclose(b_observed, b_expected)
-
-    def test_invres_bad_rtype(self):
-        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
-        p = [0, -2, -2, -5]
-        k = []
-        assert_raises(ValueError, invres, r, p, k, rtype='median')
 
     def test_invresz(self):
         b, a = invresz([1], [1], [])
