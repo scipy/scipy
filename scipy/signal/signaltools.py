@@ -2238,16 +2238,12 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     return np.asarray(p_unique), np.asarray(p_multiplicity)
 
 
-def _compute_factors(roots, multiplicity, include_powers=False,
-                     inverse_argument=False):
+def _compute_factors(roots, multiplicity, include_powers=False):
     """Compute the total polynomial divided by factors for each root."""
     current = np.array([1])
     suffixes = [current]
     for pole, mult in zip(roots[-1:0:-1], multiplicity[-1:0:-1]):
-        if inverse_argument:
-            monomial = np.array([-pole, 1])
-        else:
-            monomial = np.array([1, -pole])
+        monomial = np.array([1, -pole])
         for _ in range(mult):
             current = np.polymul(current, monomial)
         suffixes.append(current)
@@ -2256,25 +2252,13 @@ def _compute_factors(roots, multiplicity, include_powers=False,
     factors = []
     current = np.array([1])
     for pole, mult, suffix in zip(roots, multiplicity, suffixes):
-        if inverse_argument:
-            monomial = np.array([-pole, 1])
-        else:
-            monomial = np.array([1, -pole])
+        monomial = np.array([1, -pole])
         block = []
         for i in range(mult):
             if i == 0 or include_powers:
                 block.append(np.polymul(current, suffix))
             current = np.polymul(current, monomial)
         factors.extend(reversed(block))
-
-    # When computing denominator in powers of 1/z, zero poles will reduce
-    # its order. It is correct mathematically, but to conform to MATLAB
-    # results we want to make the denominator to have the full power with zero
-    # coefficients.
-    if inverse_argument:
-        current = np.polyadd(current,
-                             np.zeros(np.sum(multiplicity) + 1,
-                                      dtype=current.dtype))
 
     return factors, current
 
@@ -2682,18 +2666,17 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
     factors, denominator = _compute_factors(unique_poles, multiplicity,
-                                            include_powers=True,
-                                            inverse_argument=True)
+                                            include_powers=True)
 
     if len(k) == 0:
         numerator = 0
     else:
-        numerator = np.polymul(k[::-1], denominator)
+        numerator = np.polymul(k[::-1], denominator[::-1])
 
     for residue, factor in zip(r, factors):
-        numerator = np.polyadd(numerator, residue * factor)
+        numerator = np.polyadd(numerator, residue * factor[::-1])
 
-    return numerator[::-1], denominator[::-1]
+    return numerator[::-1], denominator
 
 
 def resample(x, num, t=None, axis=0, window=None):
