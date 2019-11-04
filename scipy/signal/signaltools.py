@@ -2603,7 +2603,6 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     factors, denominator = _compute_factors(unique_poles, multiplicity,
                                             include_powers=True)
 
-    k = np.trim_zeros(k, 'f')
     if len(k) == 0:
         numerator = 0
     else:
@@ -2676,7 +2675,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     factors, denominator = _compute_factors(unique_poles, multiplicity,
                                             include_powers=True,
                                             inverse_argument=True)
-    k = np.trim_zeros(k, 'b')
+
     if len(k) == 0:
         numerator = 0
     else:
