@@ -2238,12 +2238,16 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     return np.asarray(p_unique), np.asarray(p_multiplicity)
 
 
-def _compute_factors(roots, multiplicity, include_powers=False):
+def _compute_factors(roots, multiplicity, include_powers=False,
+                     inverse_argument=False):
     """Compute the total polynomial divided by factors for each root."""
     current = np.array([1])
     suffixes = [current]
     for pole, mult in zip(roots[-1:0:-1], multiplicity[-1:0:-1]):
-        monomial = np.array([1, -pole])
+        if inverse_argument:
+            monomial = np.array([-pole, 1])
+        else:
+            monomial = np.array([1, -pole])
         for _ in range(mult):
             current = np.polymul(current, monomial)
         suffixes.append(current)
@@ -2252,7 +2256,10 @@ def _compute_factors(roots, multiplicity, include_powers=False):
     factors = []
     current = np.array([1])
     for pole, mult, suffix in zip(roots, multiplicity, suffixes):
-        monomial = np.array([1, -pole])
+        if inverse_argument:
+            monomial = np.array([-pole, 1])
+        else:
+            monomial = np.array([1, -pole])
         block = []
         for i in range(mult):
             if i == 0 or include_powers:
@@ -2665,34 +2672,20 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     residuez, unique_roots, invres
 
     """
-    extra = np.asarray(k)
-    p, indx = cmplx_sort(p)
-    r = np.take(r, indx, 0)
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    p = []
-    for k in range(len(pout)):
-        p.extend([pout[k]] * mult[k])
-    a = np.atleast_1d(np.poly(p))
-    if len(extra) > 0:
-        b = np.polymul(extra, a)
+    unique_poles, multiplicity = _group_poles(p, tol, rtype)
+    factors, denominator = _compute_factors(unique_poles, multiplicity,
+                                            include_powers=True,
+                                            inverse_argument=True)
+    k = np.trim_zeros(k, 'b')
+    if len(k) == 0:
+        numerator = 0
     else:
-        b = [0]
-    indx = 0
-    brev = np.asarray(b)[::-1]
-    for k in range(len(pout)):
-        temp = []
-        # Construct polynomial which does not include any of this root
-        for l in range(len(pout)):
-            if l != k:
-                temp.extend([pout[l]] * mult[l])
-        for m in range(mult[k]):
-            t2 = temp[:]
-            t2.extend([pout[k]] * (mult[k] - m - 1))
-            brev = np.polyadd(brev,
-                              (r[indx] * np.atleast_1d(np.poly(t2)))[::-1])
-            indx += 1
-    b = np.real_if_close(brev[::-1])
-    return b, a
+        numerator = np.polymul(k[::-1], denominator)
+
+    for residue, factor in zip(r, factors):
+        numerator = np.polyadd(numerator, residue * factor)
+
+    return numerator[::-1], denominator[::-1]
 
 
 def resample(x, num, t=None, axis=0, window=None):
