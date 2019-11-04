@@ -2267,6 +2267,15 @@ def _compute_factors(roots, multiplicity, include_powers=False,
             current = np.polymul(current, monomial)
         factors.extend(reversed(block))
 
+    # When computing denominator in powers of 1/z, zero poles will reduce
+    # its order. It is correct mathematically, but to conform to MATLAB
+    # results we want to make the denominator to have the full power with zero
+    # coefficients.
+    if inverse_argument:
+        current = np.polyadd(current,
+                             np.zeros(np.sum(multiplicity) + 1,
+                                      dtype=current.dtype))
+
     return factors, current
 
 
