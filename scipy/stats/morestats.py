@@ -736,7 +736,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     ----------
     x : array_like
         Input array.
-    a, b: scalar
+    a, b : scalar
         Lower and upper bounds of the shape parameter to use.
     dist : str or stats.distributions instance, optional
         Distribution or distribution function name.  Objects that look enough
