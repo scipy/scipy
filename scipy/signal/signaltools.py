@@ -2592,7 +2592,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
-    k = np.atleast_1d(k)
+    k = np.trim_zeros(np.atleast_1d(k), 'f')
 
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
     factors, denominator = _compute_factors(unique_poles, multiplicity,
@@ -2666,7 +2666,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
     r = np.atleast_1d(r)
     p = np.atleast_1d(p)
-    k = np.atleast_1d(k)
+    k = np.trim_zeros(np.atleast_1d(k), 'b')
 
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
     factors, denominator = _compute_factors(unique_poles, multiplicity,

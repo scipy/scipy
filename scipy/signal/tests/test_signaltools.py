@@ -2813,12 +2813,9 @@ class TestPartialFractionExpansion(object):
         r = [1]
         p = [2]
         k = [0]
-        a_expected = [1.0, 0.0]
-        b_expected = [1.0, -2.0]
-        a_observed, b_observed = invresz(r, p, k)
-
-        assert_allclose(a_observed, a_expected)
-        assert_allclose(b_observed, b_expected)
+        b, a = invresz(r, p, k)
+        assert_allclose(b, [1.0])
+        assert_allclose(a, [1.0, -2.0])
 
     def test_invres(self):
         b, a = invres([1], [1], [])
