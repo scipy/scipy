@@ -643,12 +643,13 @@ def test_fiedler_companion():
 
 
 def test_convolution_matrix():
-    'test convolution_matrix matrix multiply against numpy.convolve for various parameters'
+    'test convolution_matrix vs. numpy.convolve for various parameters'
 
     def test_vector(n, cpx):
-        'make a complex or real test vector of length n (happens to be Gaussian)'
+        'make a complex or real test vector of length n'
         if cpx:
-            return np.random.normal(size=(n, 2)).astype(np.float64).view(np.complex128).ravel()
+            return np.random.normal(size=(n, 2))\
+                .astype(np.float64).view(np.complex128).ravel()
         else:
             return np.random.normal(size=(n,))
 
@@ -660,8 +661,11 @@ def test_convolution_matrix():
     with assert_raises(ValueError):
         convolution_matrix((1, 1), 4, mode='invalid argument')
 
-    for cpx, na, nv, mode in \
-            itertools.product((False, True), range(2, 7), range(2, 7), (None, 'full', 'valid', 'same')):
+    for cpx, na, nv, mode in itertools.product(
+            (False, True),
+            range(2, 7),
+            range(2, 7),
+            (None, 'full', 'valid', 'same')):
         a = test_vector(na, cpx)
         v = test_vector(nv, cpx)
         if mode is None:
@@ -675,4 +679,5 @@ def test_convolution_matrix():
         if mode == 'full':
             for i in range(A.shape[0]):
                 for j in range(A.shape[1]):
-                    assert_equal(A[i,j], (a[i-j] if (0 <= (i-j) < len(a)) else 0))
+                    assert_equal(A[i, j],
+                                 (a[i-j] if (0 <= (i-j) < len(a)) else 0))
