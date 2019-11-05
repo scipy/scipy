@@ -629,7 +629,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """
-    Calculate the shape parameter that maximizes the PPCC
+    Calculate the shape parameter that maximizes the PPCC.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
     determine the optimal shape parameter for a one-parameter family of
@@ -1683,7 +1683,7 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
 
 def anderson(x, dist='norm'):
     """
-    Anderson-Darling test for data coming from a particular distribution
+    Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
@@ -2059,7 +2059,7 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 def ansari(x, y):
     """
-    Perform the Ansari-Bradley test for equal scale parameters
+    Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test is a non-parametric test for the equality
     of the scale parameter of the distributions from which two
@@ -2155,7 +2155,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 def bartlett(*args):
     """
-    Perform Bartlett's test for equal variances
+    Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
     are from populations with equal variances.  For samples
@@ -3242,7 +3242,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
-    Compute the circular variance for samples assumed to be in a range
+    Compute the circular variance for samples assumed to be in a range.
 
     Parameters
     ----------
