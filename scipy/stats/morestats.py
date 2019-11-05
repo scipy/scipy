@@ -1695,7 +1695,7 @@ def anderson(x, dist='norm'):
     Parameters
     ----------
     x : array_like
-        Array of sample data
+        Array of sample data.
     dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
         'extreme1'}, optional
         the type of distribution to test against.  The default is 'norm'
@@ -2068,7 +2068,7 @@ def ansari(x, y):
     Parameters
     ----------
     x, y : array_like
-        Arrays of sample data
+        Arrays of sample data.
 
     Returns
     -------
