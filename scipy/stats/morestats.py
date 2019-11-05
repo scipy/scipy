@@ -656,7 +656,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
         The shape parameter at which the probability plot correlation
         coefficient reaches its max value.
 
-    See also
+    See Also
     --------
     ppcc_plot, probplot, boxcox
 
@@ -759,7 +759,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     ppcc : ndarray
         The calculated probability plot correlation coefficient values.
 
-    See also
+    See Also
     --------
     ppcc_max, probplot, boxcox_normplot, tukeylambda
 
