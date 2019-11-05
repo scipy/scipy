@@ -1486,13 +1486,13 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     maxlog : float
         The optimal transform parameter found.
 
-    Notes
-    -----
-    .. versionadded:: 1.2.0
-
     See Also
     --------
     yeojohnson, yeojohnson_llf, yeojohnson_normplot
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
 
     Examples
     --------
