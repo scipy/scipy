@@ -3248,10 +3248,10 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
     high : float or int, optional
         High boundary for circular variance range.  Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for circular variance range.  Default is 0.
     axis : int, optional
         Axis along which variances are computed.  The default is to compute
         the variance of the flattened array.
@@ -3301,11 +3301,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
     high : float or int, optional
         High boundary for circular standard deviation range.
         Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for circular standard deviation range.  Default is 0.
     axis : int, optional
         Axis along which standard deviations are computed.  The default is
         to compute the standard deviation of the flattened array.
