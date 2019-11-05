@@ -2590,6 +2590,10 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     residue, invresz, unique_roots
 
     """
+    r = np.atleast_1d(r)
+    p = np.atleast_1d(p)
+    k = np.atleast_1d(k)
+
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
     factors, denominator = _compute_factors(unique_poles, multiplicity,
                                             include_powers=True)
@@ -2660,6 +2664,10 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     residuez, unique_roots, invres
 
     """
+    r = np.atleast_1d(r)
+    p = np.atleast_1d(p)
+    k = np.atleast_1d(k)
+
     unique_poles, multiplicity = _group_poles(p, tol, rtype)
     factors, denominator = _compute_factors(unique_poles, multiplicity,
                                             include_powers=True)

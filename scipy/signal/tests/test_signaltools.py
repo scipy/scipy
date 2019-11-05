@@ -2868,6 +2868,15 @@ class TestPartialFractionExpansion(object):
         assert_almost_equal(b, [1j, 1, -3, 2])
         assert_almost_equal(a, [1, -2, 1])
 
+    def test_inverse_scalar_arguments(self):
+        b, a = invres(1, 1, 1)
+        assert_almost_equal(b, [1, 0])
+        assert_almost_equal(a, [1, -1])
+
+        b, a = invresz(1, 1, 1)
+        assert_almost_equal(b, [2, -1])
+        assert_almost_equal(a, [1, -1])
+
 
 class TestVectorstrength(object):
 
