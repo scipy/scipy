@@ -149,11 +149,11 @@ def mvsdist(data):
     Returns
     -------
     mdist : "frozen" distribution object
-        Distribution object representing the mean of the data
+        Distribution object representing the mean of the data.
     vdist : "frozen" distribution object
-        Distribution object representing the variance of the data
+        Distribution object representing the variance of the data.
     sdist : "frozen" distribution object
-        Distribution object representing the standard deviation of the data
+        Distribution object representing the standard deviation of the data.
 
     See Also
     --------
@@ -1704,9 +1704,9 @@ def anderson(x, dist='norm'):
     Returns
     -------
     statistic : float
-        The Anderson-Darling test statistic
+        The Anderson-Darling test statistic.
     critical_values : list
-        The critical values for this distribution
+        The critical values for this distribution.
     significance_level : list
         The significance levels for the corresponding critical values
         in percents.  The function returns critical values for a
@@ -2073,9 +2073,9 @@ def ansari(x, y):
     Returns
     -------
     statistic : float
-        The Ansari-Bradley test statistic
+        The Ansari-Bradley test statistic.
     pvalue : float
-        The p-value of the hypothesis test
+        The p-value of the hypothesis test.
 
     See Also
     --------
@@ -2381,7 +2381,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     Returns
     -------
     p-value : float
-        The p-value of the hypothesis test
+        The p-value of the hypothesis test.
 
     References
     ----------
