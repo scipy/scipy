@@ -20,11 +20,16 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=['.'],
                          **numpy_nodepr_api)
 
-    config.add_extension('_spectral', sources=['_spectral.c'])
-    config.add_extension('_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
-    config.add_extension('_peak_finding_utils',
-                         sources=['_peak_finding_utils.c'])
-    config.add_extension('_upfirdn_apply', sources=['_upfirdn_apply.c'])
+    config.add_extension(
+        '_spectral', sources=['_spectral.c'])
+    config.add_extension(
+        '_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
+    config.add_extension(
+        '_peak_finding_utils', sources=['_peak_finding_utils.c'])
+    config.add_extension(
+        '_sosfilt', sources=['_sosfilt.c'])
+    config.add_extension(
+        '_upfirdn_apply', sources=['_upfirdn_apply.c'])
     spline_src = ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
                   'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c']
     config.add_extension('spline', sources=spline_src, **numpy_nodepr_api)

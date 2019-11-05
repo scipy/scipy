@@ -19,6 +19,7 @@ from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
+from ._sosfilt import _sosfilt
 
 if sys.version_info >= (3, 5):
     from math import gcd
@@ -1763,7 +1764,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         a = np.asarray(a)
         if b.ndim != 1 and a.ndim != 1:
             raise ValueError('object of too small depth for desired array')
-        x = np.asarray(x)
+        x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
             # _linear_filter does not broadcast zi, but does do expansion of
@@ -3846,13 +3847,19 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
     return edge, ext
 
 
+def _validate_x(x):
+    x = np.asarray(x)
+    if x.ndim == 0:
+        raise ValueError('x must be at least 1D')
+    return x
+
+
 def sosfilt(sos, x, axis=-1, zi=None):
     """
     Filter data along one dimension using cascaded second-order sections.
 
     Filter a data sequence, `x`, using a digital IIR filter defined by
-    `sos`. This is implemented by performing `lfilter` for each
-    second-order section.  See `lfilter` for details.
+    `sos`.
 
     Parameters
     ----------
@@ -3917,28 +3924,45 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    x = np.asarray(x)
+    x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
-    use_zi = zi is not None
-    if use_zi:
-        zi = np.asarray(zi)
-        x_zi_shape = list(x.shape)
-        x_zi_shape[axis] = 2
-        x_zi_shape = tuple([n_sections] + x_zi_shape)
+    x_zi_shape = list(x.shape)
+    x_zi_shape[axis] = 2
+    x_zi_shape = tuple([n_sections] + x_zi_shape)
+    inputs = [sos, x]
+    if zi is not None:
+        inputs.append(np.asarray(zi))
+    dtype = np.result_type(*inputs)
+    if dtype.char not in 'fdgFDGO':
+        raise NotImplementedError("input type '%s' not supported" % dtype)
+    if zi is not None:
+        zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:
             raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
                              'must have shape %r, got %r.' %
                              (axis, x.shape, n_sections, x_zi_shape, zi.shape))
-        zf = np.zeros_like(zi)
-
-    for section in range(n_sections):
-        if use_zi:
-            x, zf[section] = lfilter(sos[section, :3], sos[section, 3:],
-                                     x, axis, zi=zi[section])
-        else:
-            x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
-    out = (x, zf) if use_zi else x
+        return_zi = True
+    else:
+        zi = np.zeros(x_zi_shape, dtype=dtype)
+        return_zi = False
+    axis = axis % x.ndim  # make positive
+    x = np.moveaxis(x, axis, -1)
+    zi = np.moveaxis(zi, [0, axis + 1], [-2, -1])
+    x_shape, zi_shape = x.shape, zi.shape
+    x = np.reshape(x, (-1, x.shape[-1]))
+    x = np.array(x, dtype, order='C')  # make a copy, can modify in place
+    zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
+    sos = sos.astype(dtype, copy=False)
+    _sosfilt(sos, x, zi)
+    x.shape = x_shape
+    x = np.moveaxis(x, -1, axis)
+    if return_zi:
+        zi.shape = zi_shape
+        zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
+        out = (x, zi)
+    else:
+        out = x
     return out
 
 
@@ -4031,6 +4055,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     """
     sos, n_sections = _validate_sos(sos)
+    x = _validate_x(x)
 
     # `method` is "pad"...
     ntaps = 2 * n_sections + 1
