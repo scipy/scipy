@@ -2733,15 +2733,16 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if `x` is the first set of
         measurements), or not specified (if `x` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional
+        The following options are available (default is 'wilcox'):
         "pratt":
-            includes zero-differences in the ranking process,
-            but drops the ranks of the zeros, see [4]_, (more conservative)
+            Includes zero-differences in the ranking process,
+            but drops the ranks of the zeros, see [4]_, (more conservative).
         "wilcox":
-            discards all zero-differences, the default
+            Discards all zero-differences, the default.
         "zsplit":
-            includes zero-differences in the ranking process and split the
-            zero rank between positive and negative ones
+            Includes zero-differences in the ranking process and split the
+            zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
@@ -2958,7 +2959,7 @@ def median_test(*args, **kwds):
         If True, *and* there are just two samples, apply Yates' correction
         for continuity when computing the test statistic associated with
         the contingency table.  Default is True.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family to be used instead.  See
