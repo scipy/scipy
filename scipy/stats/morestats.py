@@ -308,7 +308,7 @@ def kstat(data, n=2):
 
 def kstatvar(data, n=2):
     r"""
-    Returns an unbiased estimator of the variance of the k-statistic.
+    Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
 
@@ -2926,7 +2926,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
 def median_test(*args, **kwds):
     """
-    Mood's median test.
+    Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
 
