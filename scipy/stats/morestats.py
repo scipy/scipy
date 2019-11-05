@@ -2365,10 +2365,10 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     Parameters
     ----------
-    x : integer or array_like
+    x : int or array_like
         The number of successes, or if x has length 2, it is the
         number of successes and the number of failures.
-    n : integer
+    n : int
         the number of trials.  This is ignored if x gives both the
         number of successes and failures
     p : float, optional
