@@ -2831,7 +2831,7 @@ class TestPartialFractionExpansion(object):
 
         b, a = invres([0.5, 1], [1 - 1j, 2 + 2j], [1, 2, 3])
         assert_almost_equal(b, [1, -1 - 1j, 1 - 2j, 0.5 - 3j, 10])
-        assert_almost_equal(a, [1,  -3 - 1j, 4])
+        assert_almost_equal(a, [1, -3 - 1j, 4])
 
         b, a = invres([-1, 2, 1j, 3 - 1j, 4, -2],
                       [-1, 2 - 1j, 2 - 1j, 3, 3, 3], [])
