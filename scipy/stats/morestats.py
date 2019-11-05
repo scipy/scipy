@@ -1695,7 +1695,7 @@ def anderson(x, dist='norm'):
     Parameters
     ----------
     x : array_like
-        array of sample data
+        Array of sample data
     dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
         'extreme1'}, optional
         the type of distribution to test against.  The default is 'norm'
@@ -2068,7 +2068,7 @@ def ansari(x, y):
     Parameters
     ----------
     x, y : array_like
-        arrays of sample data
+        Arrays of sample data
 
     Returns
     -------
@@ -2366,7 +2366,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     Parameters
     ----------
     x : integer or array_like
-        the number of successes, or if x has length 2, it is the
+        The number of successes, or if x has length 2, it is the
         number of successes and the number of failures.
     n : integer
         the number of trials.  This is ignored if x gives both the
