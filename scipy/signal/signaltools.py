@@ -2324,9 +2324,58 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     return b, a
 
 
+def _compute_factors(roots, multiplicity):
+    """Compute the total polynomial divided by factors for each root."""
+    suffixes = []
+    current = np.array([1])
+    for pole, mult in zip(roots[-1:0:-1], multiplicity[-1:0:-1]):
+        monomial = np.array([1, -pole])
+        for _ in range(mult):
+            current = np.polymul(current, monomial)
+        suffixes.append(current)
+    suffixes = suffixes[::-1]
+
+    result = []
+    current = np.array([1])
+    for pole, mult, suffix in zip(roots[:-1], multiplicity[:-1], suffixes):
+        result.append(np.polymul(current, suffix))
+        monomial = np.array([1, -pole])
+        for _ in range(mult):
+            current = np.polymul(current, monomial)
+    result.append(current)
+
+    return result
+
+
+def _compute_residues(poles, multiplicity, numerator):
+    denominator_factors = _compute_factors(poles, multiplicity)
+    numerator = numerator.astype(poles.dtype)
+
+    residues = []
+    for pole, mult, factor in zip(poles, multiplicity,
+                                  denominator_factors):
+        if mult == 1:
+            residues.append(np.polyval(numerator, pole) /
+                            np.polyval(factor, pole))
+        else:
+            numer = numerator.copy()
+            monomial = np.array([1, -pole])
+            factor, d = np.polydiv(factor, monomial)
+
+            block = []
+            for _ in range(mult):
+                numer, n = np.polydiv(numer, monomial)
+                r = n[0] / d[0]
+                numer = np.polysub(numer, r * factor)
+                block.append(r)
+
+            residues.extend(reversed(block))
+
+    return np.asarray(residues)
+
+
 def residue(b, a, tol=1e-3, rtype='avg'):
-    """
-    Compute partial-fraction expansion of b(s) / a(s).
+    """Compute partial-fraction expansion of b(s) / a(s).
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
@@ -2352,19 +2401,29 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     such as analog filters or digital filters in controls engineering.  For
     negative powers of z (typical for digital filters in DSP), use `residuez`.
 
+    See Notes for details about the algorithm.
+
     Parameters
     ----------
     b : array_like
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
+    tol : float, optional
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. See `unique_roots`
+        for further details.
+    rtype : {'avg', 'min', 'max'}, optional
+        Method for computing a root to represent a group of identical roots.
+        Default is 'avg'. See `unique_roots` for further details.
 
     Returns
     -------
     r : ndarray
-        Residues.
+        Residues corresponding to the poles. For repeated poles, the residues
+        are ordered to correspond to ascending by power fractions.
     p : ndarray
-        Poles order by magnitude in ascending order.
+        Poles ordered by magnitude in ascending order.
     k : ndarray
         Coefficients of the direct polynomial term.
 
@@ -2372,57 +2431,63 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     --------
     invres, residuez, numpy.poly, unique_roots
 
+    Notes
+    -----
+    The "deflation through subtraction" algorithm is used for
+    computations --- method 6 in [1]_.
+
+    The form of partial fraction expansion depends on poles multiplicity in
+    the exact mathematical sense. However there is no way to exactly
+    determine multiplicity of roots of a polynomial in numerical computing.
+    Thus you should think of the result of `residue` with given `tol` as
+    partial fraction expansion computed for the denominator composed of the
+    computed poles with empirically determined multiplicity. The choice of
+    `tol` can drastically change the result if there are close poles.
+
+    References
+    ----------
+    .. [1] J. F. Mahoney, B. D. Sivazlian, "Partial fractions expansion: a
+           review of computational methodology and efficiency", Journal of
+           Computational and Applied Mathematics, Vol. 9, 1983.
     """
+    b = np.asarray(b)
+    a = np.asarray(a)
+    if (np.issubdtype(b.dtype, np.complexfloating)
+            or np.issubdtype(a.dtype, np.complexfloating)):
+        b = b.astype(complex)
+        a = a.astype(complex)
+    else:
+        b = b.astype(float)
+        a = a.astype(float)
+
     b = np.trim_zeros(np.atleast_1d(b), 'f')
     a = np.trim_zeros(np.atleast_1d(a), 'f')
 
     if a.size == 0:
         raise ValueError("Denominator `a` is zero.")
 
-    p = np.roots(a)
+    poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(p.shape), p, np.array([])
+        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
 
-    rscale = a[0]
     k, b = np.polydiv(b, a)
-    r = p * 0.0
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    pout, order = cmplx_sort(pout)
-    mult = mult[order]
 
-    p = []
-    for n in range(len(pout)):
-        p.extend([pout[n]] * mult[n])
-    p = np.asarray(p)
-    # Compute the residue from the general formula
-    indx = 0
-    for n in range(len(pout)):
-        bn = b.copy()
-        pn = []
-        for l in range(len(pout)):
-            if l != n:
-                pn.extend([pout[l]] * mult[l])
-        an = np.atleast_1d(np.poly(pn))
-        # bn(s) / an(s) is (s-po[n])**Nn * b(s) / a(s) where Nn is
-        # multiplicity of pole at po[n]
-        sig = mult[n]
-        for m in range(sig, 0, -1):
-            if sig > m:
-                # compute next derivative of bn(s) / an(s)
-                term1 = np.polymul(np.polyder(bn, 1), an)
-                term2 = np.polymul(bn, np.polyder(an, 1))
-                bn = np.polysub(term1, term2)
-                an = np.polymul(an, an)
-            r[indx + m - 1] = (np.polyval(bn, pout[n]) /
-                               np.polyval(an, pout[n]) /
-                               factorial(sig - m))
-        indx += sig
-    return r / rscale, p, np.trim_zeros(k, 'f')
+    unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
+    unique_poles, order = cmplx_sort(unique_poles)
+    multiplicity = multiplicity[order]
+
+    residues = _compute_residues(unique_poles, multiplicity, b)
+
+    index = 0
+    for pole, mult in zip(unique_poles, multiplicity):
+        poles[index:index + mult] = pole
+        index += mult
+
+    return residues / a[0], poles, np.trim_zeros(k, 'f')
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
-    """
-    Compute partial-fraction expansion of b(z) / a(z).
+    """Compute partial-fraction expansion of b(z) / a(z).
 
     If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
@@ -2447,70 +2512,79 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     This function is used for polynomials in negative powers of z,
     such as digital filters in DSP.  For positive powers, use `residue`.
 
+    See Notes of `residue` for details about the algorithm.
+
     Parameters
     ----------
     b : array_like
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
+    tol : float, optional
+        The tolerance for two roots to be considered equal in terms of
+        the distance between them. Default is 1e-3. See `unique_roots`
+        for further details.
+    rtype : {'avg', 'min', 'max'}, optional
+        Method for computing a root to represent a group of identical roots.
+        Default is 'avg'. See `unique_roots` for further details.
 
     Returns
     -------
     r : ndarray
-        Residues.
+        Residues corresponding to the poles. For repeated poles, the residues
+        are ordered to correspond to ascending by power fractions.
     p : ndarray
-        Poles.
+        Poles ordered by magnitude in ascending order.
     k : ndarray
         Coefficients of the direct polynomial term.
 
     See Also
     --------
     invresz, residue, unique_roots
-
     """
-    b, a = map(np.asarray, (b, a))
-    gain = a[0]
-    brev, arev = b[::-1], a[::-1]
-    krev, brev = np.polydiv(brev, arev)
-    if krev == []:
-        k = []
+    b = np.asarray(b)
+    a = np.asarray(a)
+    if (np.issubdtype(b.dtype, np.complexfloating)
+            or np.issubdtype(a.dtype, np.complexfloating)):
+        b = b.astype(complex)
+        a = a.astype(complex)
     else:
-        k = krev[::-1]
-    b = brev[::-1]
-    p = np.roots(a)
-    r = p * 0.0
-    pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    p = []
-    for n in range(len(pout)):
-        p.extend([pout[n]] * mult[n])
-    p = np.asarray(p)
-    # Compute the residue from the general formula (for discrete-time)
-    #  the polynomial is in z**(-1) and the multiplication is by terms
-    #  like this (1-p[i] z**(-1))**mult[i].  After differentiation,
-    #  we must divide by (-p[i])**(m-k) as well as (m-k)!
-    indx = 0
-    for n in range(len(pout)):
-        bn = brev.copy()
-        pn = []
-        for l in range(len(pout)):
-            if l != n:
-                pn.extend([pout[l]] * mult[l])
-        an = np.atleast_1d(np.poly(pn))[::-1]
-        # bn(z) / an(z) is (1-po[n] z**(-1))**Nn * b(z) / a(z) where Nn is
-        # multiplicity of pole at po[n] and b(z) and a(z) are polynomials.
-        sig = mult[n]
-        for m in range(sig, 0, -1):
-            if sig > m:
-                # compute next derivative of bn(s) / an(s)
-                term1 = np.polymul(np.polyder(bn, 1), an)
-                term2 = np.polymul(bn, np.polyder(an, 1))
-                bn = np.polysub(term1, term2)
-                an = np.polymul(an, an)
-            r[indx + m - 1] = (np.polyval(bn, 1.0 / pout[n]) /
-                               np.polyval(an, 1.0 / pout[n]) /
-                               factorial(sig - m) / (-pout[n]) ** (sig - m))
-        indx += sig
-    return r / gain, p, k
+        b = b.astype(float)
+        a = a.astype(float)
+
+    b = np.trim_zeros(np.atleast_1d(b), 'b')
+    a = np.trim_zeros(np.atleast_1d(a), 'b')
+
+    if a.size == 0:
+        raise ValueError("Denominator `a` is zero.")
+    elif a[0] == 0:
+        raise ValueError("First coefficient of determinant `a` must be "
+                         "non-zero.")
+
+    poles = np.roots(a)
+    if b.size == 0:
+        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
+
+    b_rev = b[::-1]
+    a_rev = a[::-1]
+    k_rev, b_rev = np.polydiv(b_rev, a_rev)
+
+    unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
+    unique_poles, order = cmplx_sort(unique_poles)
+    multiplicity = multiplicity[order]
+
+    residues = _compute_residues(1 / unique_poles, multiplicity, b_rev)
+
+    index = 0
+    powers = np.empty(len(residues), dtype=int)
+    for pole, mult in zip(unique_poles, multiplicity):
+        poles[index:index + mult] = pole
+        powers[index:index + mult] = 1 + np.arange(mult)
+        index += mult
+
+    residues *= (-poles) ** powers / a_rev[0]
+
+    return residues, poles, np.trim_zeros(k_rev[::-1], 'b')
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
