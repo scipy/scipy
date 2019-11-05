@@ -1469,7 +1469,10 @@ def yeojohnson_llf(lmb, data):
 
 
 def yeojohnson_normmax(x, brack=(-2, 2)):
-    """Compute optimal Yeo-Johnson transform parameter for input data, using
+    """
+    Compute optimal Yeo-Johnson transform parameter.
+    
+    Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
     Parameters
