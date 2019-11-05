@@ -2386,7 +2386,10 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     if b.size == 0:
         return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
 
-    k, b = np.polydiv(b, a)
+    if len(b) < len(a):
+        k = np.empty(0)
+    else:
+        k, b = np.polydiv(b, a)
 
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
     unique_poles, order = cmplx_sort(unique_poles)
@@ -2399,7 +2402,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
         poles[index:index + mult] = pole
         index += mult
 
-    return residues / a[0], poles, np.trim_zeros(k, 'f')
+    return residues / a[0], poles, k
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
@@ -2483,7 +2486,11 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     b_rev = b[::-1]
     a_rev = a[::-1]
-    k_rev, b_rev = np.polydiv(b_rev, a_rev)
+
+    if len(b_rev) < len(a_rev):
+        k_rev = np.empty(0)
+    else:
+        k_rev, b_rev = np.polydiv(b_rev, a_rev)
 
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
     unique_poles, order = cmplx_sort(unique_poles)
@@ -2500,7 +2507,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     residues *= (-poles) ** powers / a_rev[0]
 
-    return residues, poles, np.trim_zeros(k_rev[::-1], 'b')
+    return residues, poles, k_rev[::-1]
 
 
 def _group_poles(poles, tol, rtype):
