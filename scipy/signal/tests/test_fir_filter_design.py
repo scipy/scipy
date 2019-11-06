@@ -278,31 +278,50 @@ class TestFirwin2(object):
 
     def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 1], [0.0, 1.0])
+        with assert_raises(ValueError, match='must be of same length'):
+            firwin2(50, [0, 0.5, 1], [0.0, 1.0])
         # `nfreqs` is less than `ntaps`.
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 1], [0.0, 1.0, 1.0], nfreqs=33)
+        with assert_raises(ValueError, match='ntaps must be less than nfreqs'):
+            firwin2(50, [0, 0.5, 1], [0.0, 1.0, 1.0], nfreqs=33)
         # Decreasing value in `freq`
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
+        with assert_raises(ValueError, match='must be nondecreasing'):
+            firwin2(50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
         # Value in `freq` repeated more than once.
-        assert_raises(ValueError, firwin2, 50, [0, .1, .1, .1, 1.0],
-                                               [0.0, 0.5, 0.75, 1.0, 1.0])
+        with assert_raises(ValueError, match='must not occur more than twice'):
+            firwin2(50, [0, .1, .1, .1, 1.0], [0.0, 0.5, 0.75, 1.0, 1.0])
         # `freq` does not start at 0.0.
-        assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
+        with assert_raises(ValueError, match='start with 0'):
+            firwin2(50, [0.5, 1.0], [0.0, 1.0])
+        # `freq` does not end at fs/2.
+        with assert_raises(ValueError, match='end with fs/2'):
+            firwin2(50, [0.0, 0.5], [0.0, 1.0])
+        # Value 0 is repeated in `freq`
+        with assert_raises(ValueError, match='0 must not be repeated'):
+            firwin2(50, [0.0, 0.0, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
+        # Value fs/2 is repeated in `freq`
+        with assert_raises(ValueError, match='fs/2 must not be repeated'):
+            firwin2(50, [0.0, 0.5, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0])
+        # Value in `freq` that is too close to a repeated number
+        with assert_raises(ValueError, match='cannot contain numbers '
+                                             'that are too close'):
+            firwin2(50, [0.0, 0.5 - np.finfo(float).eps * 0.5, 0.5, 0.5, 1.0],
+                        [1.0, 1.0, 1.0, 0.0, 0.0])
 
         # Type II filter, but the gain at nyquist frequency is not zero.
-        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
+        with assert_raises(ValueError, match='Type II filter'):
+            firwin2(16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
         # Type III filter, but the gains at nyquist and zero rate are not zero.
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0],
-                      antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
-                      antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0],
-                      antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0], antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0], antisymmetric=True)
 
-        # Type VI filter, but the gain at zero rate is not zero.
-        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
-                      antisymmetric=True)
+        # Type IV filter, but the gain at zero rate is not zero.
+        with assert_raises(ValueError, match='Type IV filter'):
+            firwin2(16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], antisymmetric=True)
 
     def test01(self):
         width = 0.04
@@ -391,6 +410,18 @@ class TestFirwin2(object):
         assert_array_almost_equal(taps1, taps2)
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
         assert_array_almost_equal(taps1, taps2)
+
+    def test_tuple(self):
+        taps1 = firwin2(150, (0.0, 0.5, 0.5, 1.0), (1.0, 1.0, 0.0, 0.0))
+        taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
+        assert_array_almost_equal(taps1, taps2)
+
+    def test_input_modyfication(self):
+        freq1 = np.array([0.0, 0.5, 0.5, 1.0])
+        freq2 = np.array(freq1)
+        firwin2(80, freq1, [1.0, 1.0, 0.0, 0.0])
+        assert_equal(freq1, freq2)
+
 
 class TestRemez(object):
 
