@@ -795,8 +795,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
+    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if np.any(x[1:] == x[:-1]):
+        raise ValueError("Expect x to not have duplicates")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
