@@ -55,12 +55,10 @@ class TestGammainc(object):
         a = np.arange(1, 10)
         assert_array_equal(sc.gammainc(a, 0), 0)
 
-    def test_nan_at_a_and_x_0(self):
-        assert np.isnan(sc.gammainc(0,0))
-
     def test_limit_check(self):
         result = sc.gammainc(1e-10, 1)
-        assert np.isclose(result, 1)
+        limit = sc.gammainc(0, 1)
+        assert np.isclose(result, limit)
 
     def gammainc_line(self, x):
         # The line a = x where a simpler asymptotic expansion (analog
@@ -123,13 +121,10 @@ class TestGammaincc(object):
             rtol=0
         )
 
-    def test_nan_a_and_x_0(self):
-        result = sc.gammaincc(0,0)
-        assert np.isnan(result)
-
     def test_limit_check(self):
-        limit = sc.gammaincc(1e-10,1)
-        assert np.isclose(limit, 0)
+        result = sc.gammaincc(1e-10,1)
+        limit = sc.gammaincc(0,1)
+        assert np.isclose(result, limit)
 
     def test_x_zero(self):
         a = np.arange(1, 10)

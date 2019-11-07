@@ -129,7 +129,7 @@ double igam(double a, double x)
 {
     double absxma_a;
 
-    if(x < 0 || a < 0) {
+    if (x < 0 || a < 0) {
         sf_error("gammainc", SF_ERROR_DOMAIN, NULL);
         return NPY_NAN;
     } else if (a == 0) {
