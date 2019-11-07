@@ -374,15 +374,15 @@ add_newdoc("bdtr",
 
     Binomial distribution cumulative distribution function.
 
-    Sum of the terms 0 through `k` of the Binomial probability density.
+    Sum of the terms 0 through `floor(k)` of the Binomial probability density.
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^k {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^\lfloor k \rfloor {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
     k : array_like
-        Number of successes (int).
+        Number of successes (double), rounded down to the nearest integer.
     n : array_like
         Number of events (int).
     p : array_like
@@ -391,7 +391,7 @@ add_newdoc("bdtr",
     Returns
     -------
     y : ndarray
-        Probability of `k` or fewer successes in `n` independent events with
+        Probability of `floor(k)` or fewer successes in `n` independent events with
         success probabilities of `p`.
 
     Notes
@@ -400,7 +400,7 @@ add_newdoc("bdtr",
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = I_{1 - p}(n - k, k + 1).
+        \mathrm{bdtr}(k, n, p) = I_{1 - p}(n - \lfloor k \rfloor, \lfloor k \rfloor + 1).
 
     Wrapper for the Cephes [1]_ routine `bdtr`.
 
@@ -417,7 +417,8 @@ add_newdoc("bdtrc",
 
     Binomial distribution survival function.
 
-    Sum of the terms `k + 1` through `n` of the binomial probability density,
+    Sum of the terms `floor(k) + 1` through `n` of the binomial probability
+    density,
 
     .. math::
         \mathrm{bdtrc}(k, n, p) = \sum_{j=k+1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
@@ -425,7 +426,7 @@ add_newdoc("bdtrc",
     Parameters
     ----------
     k : array_like
-        Number of successes (int).
+        Number of successes (double), rounded down to nearest integer.
     n : array_like
         Number of events (int)
     p : array_like
@@ -434,8 +435,8 @@ add_newdoc("bdtrc",
     Returns
     -------
     y : ndarray
-        Probability of `k + 1` or more successes in `n` independent events
-        with success probabilities of `p`.
+        Probability of `floor(k) + 1` or more successes in `n` independent
+        events with success probabilities of `p`.
 
     See also
     --------
@@ -448,7 +449,7 @@ add_newdoc("bdtrc",
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{bdtrc}(k, n, p) = I_{p}(k + 1, n - k).
+        \mathrm{bdtrc}(k, n, p) = I_{p}(\lfloor k \rfloor + 1, n - \lfloor k \rfloor).
 
     Wrapper for the Cephes [1]_ routine `bdtrc`.
 
@@ -460,7 +461,7 @@ add_newdoc("bdtrc",
     """)
 
 add_newdoc("bdtri",
-    """
+    r"""
     bdtri(k, n, y)
 
     Inverse function to `bdtr` with respect to `p`.
@@ -472,7 +473,7 @@ add_newdoc("bdtri",
     Parameters
     ----------
     k : array_like
-        Number of successes (float).
+        Number of successes (float), rounded down to the nearest integer.
     n : array_like
         Number of events (float)
     y : array_like
@@ -482,7 +483,7 @@ add_newdoc("bdtri",
     Returns
     -------
     p : ndarray
-        The event probability such that `bdtr(k, n, p) = y`.
+        The event probability such that `bdtr(\lfloor k \rfloor, n, p) = y`.
 
     See also
     --------

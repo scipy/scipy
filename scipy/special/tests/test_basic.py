@@ -3254,9 +3254,6 @@ def test_legacy():
     # Legacy behavior: truncating arguments to integers
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning, "floating point number truncated to an integer")
-        assert_equal(special.bdtrc(1, 2, 0.3), special.bdtrc(1.8, 2.8, 0.3))
-        assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
-        assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
