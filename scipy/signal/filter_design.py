@@ -1022,8 +1022,7 @@ def tf2zpk(b, a):
 
     Notes
     -----
-    If some values of `b` are too close to 0, they are removed. In that case,
-    a BadCoefficients warning is emitted.
+    If leading values of `b` are zeros, they are removed.
 
     The `b` and `a` arrays are interpreted as coefficients for positive,
     descending powers of the transfer function variable.  So the inputs
@@ -1062,8 +1061,7 @@ def tf2zpk(b, a):
 
     """
     b, a = normalize(b, a)
-    b = (b + 0.0) / a[0]
-    a = (a + 0.0) / a[0]
+    b = np.trim_zeros(b, 'f')
     k = b[0]
     b /= b[0]
     z = roots(b)
@@ -1564,9 +1562,6 @@ def _align_nums(nums):
 def normalize(b, a):
     """Normalize numerator/denominator of a continuous-time transfer function.
 
-    If values of `b` are too close to 0, they are removed. In that case, a
-    BadCoefficients warning is emitted.
-
     Parameters
     ----------
     b: array_like
@@ -1607,23 +1602,6 @@ def normalize(b, a):
 
     # Normalize transfer function
     num, den = num / den[0], den / den[0]
-
-    # Count numerator columns that are all zero
-    leading_zeros = 0
-    for col in num.T:
-        if np.allclose(col, 0, atol=1e-14):
-            leading_zeros += 1
-        else:
-            break
-
-    # Trim leading zeros of numerator
-    if leading_zeros > 0:
-        warnings.warn("Badly conditioned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
-        # Make sure at least one column remains
-        if leading_zeros == num.shape[1]:
-            leading_zeros -= 1
-        num = num[:, leading_zeros:]
 
     # Squeeze first dimension if singular
     if num.shape[0] == 1:

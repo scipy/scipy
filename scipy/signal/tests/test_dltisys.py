@@ -11,7 +11,7 @@ from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
-                          dfreqresp, dbode, BadCoefficients)
+                          dfreqresp, dbode)
 
 
 class TestDLTI(object):
@@ -470,10 +470,8 @@ class Test_dfreqresp(object):
 
         system_SS = dlti(A, B, C, D)
         w = 10.0**np.arange(-3,0,.5)
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            w1, H1 = dfreqresp(system_TF, w=w)
-            w2, H2 = dfreqresp(system_SS, w=w)
+        w1, H1 = dfreqresp(system_TF, w=w)
+        w2, H2 = dfreqresp(system_SS, w=w)
 
         assert_almost_equal(H1, H2)
 
