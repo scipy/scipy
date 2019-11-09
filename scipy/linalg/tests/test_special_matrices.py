@@ -661,10 +661,11 @@ def test_convolution_matrix():
     with assert_raises(ValueError):
         convolution_matrix((1, 1), 4, mode='invalid argument')
 
+    array_sizes = (2, 9, 100)
     for cpx, na, nv, mode in itertools.product(
             (False, True),
-            range(2, 7),
-            range(2, 7),
+            array_sizes,
+            array_sizes,
             (None, 'full', 'valid', 'same')):
         a = test_vector(na, cpx)
         v = test_vector(nv, cpx)
