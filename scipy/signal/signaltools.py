@@ -1091,7 +1091,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     and ``same`` there is at least a 95% chance of the ratio being less
     than 2.5, 3.2 and 4.5 respectively (at least in our testing). This is
     function is least accurate when the convolution takes less than
-    approximately 0.3ms for 1D signals where ``len(in1) < len(in2)``.
+    approximately 0.3ms for 1D signals where ``mode=='same'`` and
+    ``len(in1) < len(in2)``.
 
     The estimation values were tuned on an mid-2014 15-inch MacBook Pro with
     16GB RAM and a 2.5GHz Intel i7 processor. We found this function
