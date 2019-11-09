@@ -7466,12 +7466,63 @@ add_newdoc("rel_entr",
     """)
 
 add_newdoc("rgamma",
-    """
-    rgamma(z)
+    r"""
+    rgamma(z, out=None)
 
-    Gamma function inverted
+    Reciprocal of the Gamma function.
 
-    Returns ``1/gamma(x)``
+    Defined as :math:`1 / \Gamma(z)`, where :math:`\Gamma` is the
+    Gamma function. For more on the Gamma function see `gamma`.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued input
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Function results
+
+    Notes
+    -----
+    The Gamma function has no zeros and has simple poles at
+    nonpositive integers, so `rgamma` is an entire function with zeros
+    at the nonpositive integers. See the discussion in [dlmf]_ for
+    more details.
+
+    See Also
+    --------
+    gamma, gammaln, loggamma
+
+    References
+    ----------
+    .. [dlmf] Nist, Digital Library of Mathematical functions,
+        https://dlmf.nist.gov/5.2#i
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the reciprocal of the Gamma function.
+
+    >>> sc.rgamma([1, 2, 3, 4])
+    array([1.        , 1.        , 0.5       , 0.16666667])
+    >>> 1 / sc.gamma([1, 2, 3, 4])
+    array([1.        , 1.        , 0.5       , 0.16666667])
+
+    It is zero at nonpositive integers.
+
+    >>> sc.rgamma([0, -1, -2, -3])
+    array([0., 0., 0., 0.])
+
+    It rapidly underflows to zero along the positive real axis.
+
+    >>> sc.rgamma([10, 100, 179])
+    array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
+
     """)
 
 add_newdoc("round",
