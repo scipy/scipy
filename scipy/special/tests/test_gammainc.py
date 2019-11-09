@@ -13,7 +13,6 @@ INVALID_POINTS = [
     (1, -1),
     (0, 0),
     (-1, 1),
-    (0, 1),
     (np.nan, 1),
     (1, np.nan)
 ]
@@ -24,6 +23,9 @@ class TestGammainc(object):
     @pytest.mark.parametrize('a, x', INVALID_POINTS)
     def test_domain(self, a, x):
         assert np.isnan(sc.gammainc(a, x))
+
+    def test_a_eq_0_x_gt_0(self):
+        assert sc.gammainc(0, 1) == 1
 
     @pytest.mark.parametrize('a, x, desired', [
         (np.inf, 1, 0),
@@ -52,6 +54,11 @@ class TestGammainc(object):
     def test_x_zero(self):
         a = np.arange(1, 10)
         assert_array_equal(sc.gammainc(a, 0), 0)
+
+    def test_limit_check(self):
+        result = sc.gammainc(1e-10, 1)
+        limit = sc.gammainc(0, 1)
+        assert np.isclose(result, limit)
 
     def gammainc_line(self, x):
         # The line a = x where a simpler asymptotic expansion (analog
@@ -87,6 +94,9 @@ class TestGammaincc(object):
     def test_domain(self, a, x):
         assert np.isnan(sc.gammaincc(a, x))
 
+    def test_a_eq_0_x_gt_0(self):
+        assert sc.gammaincc(0, 1) == 0
+
     @pytest.mark.parametrize('a, x, desired', [
         (np.inf, 1, 1),
         (np.inf, 0, 1),
@@ -110,6 +120,11 @@ class TestGammaincc(object):
             atol=1e-200,  # Use `atol` since the function converges to 0.
             rtol=0
         )
+
+    def test_limit_check(self):
+        result = sc.gammaincc(1e-10,1)
+        limit = sc.gammaincc(0,1)
+        assert np.isclose(result, limit)
 
     def test_x_zero(self):
         a = np.arange(1, 10)
