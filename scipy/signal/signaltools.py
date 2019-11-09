@@ -894,31 +894,32 @@ def _prod(iterable):
 
 def _conv_ops(x_shape, h_shape, mode):
     x_size, h_size = _prod(x_shape), _prod(h_shape)
-    out_shapes = {
-        "full": [n + k - 1 for n, k in zip(x_shape, h_shape)],
-        "same": x_shape,
-        "valid": [max(n, k) - min(n, k) + 1 for n, k in zip(x_shape, h_shape)],
-    }
-    if mode not in out_shapes:
+    if mode == "full":
+        out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
+    elif mode == "valid":
+        out_shape = [max(n, k) - min(n, k) + 1 for n, k in zip(x_shape, h_shape)],
+    elif mode == "same":
+        out_shape = x_shape
+    else:
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full', not mode={}".format(mode))
-    out_shape = out_shapes[mode]
 
-    S1, S2 = x_shape, h_shape
+    s1, s2 = x_shape, h_shape
     if len(x_shape) == 1:
-        S1, S2 = S1[0], S2[0]
-        direct_muls = {
-            "full": S1 *S2,
-            "valid": (S2 - S1 + 1) * S1 if S2 >= S1 else (S1 - S2 + 1) * S2,
-            "same": S1 * S2 if S1 <= S2 else S1 * S2 - (S2 // 2) * ((S2 + 1) // 2),
-        }
+        s1, s2 = s1[0], s2[0]
+        if mode == "full":
+            direct_ops = s1 * s2
+        elif mode == "valid":
+            direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
+        elif mode == "same":
+            direct_mul = s1 * s2 if s1 <= s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
     else:
-        direct_muls = {
-            "full": min(_prod(S1), _prod(S2)) * _prod(out_shape),
-            "valid": min(_prod(S1), _prod(S2)) * _prod(out_shape),
-            "same": _prod(S1) * _prod(S2),
-        }
-    direct_ops = direct_muls[mode]
+        if mode == "full":
+            direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
+        elif mode == "valid":
+            direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
+        elif mode == "same":
+            direct_ops = _prod(s1) * _prod(s2)
     fft_ops = sum(n * np.log(n) for n in (x_shape + h_shape + tuple(out_shape)))
     return fft_ops, direct_ops
 
