@@ -1081,14 +1081,21 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Notes
     -----
     For large n, ``measure=False`` is accurate and can quickly determine the
-    fastest method to perform the convolution.  However, this is not as
-    accurate for small n (when any dimension in the input or output is small).
+    fastest method to perform the convolution. Generally, this method is about
+    90% accurate for randomly chosen input sizes. However, this is not as
+    accurate for small inputs.
 
-    In practice, we found that this function estimates the faster method up to
-    a multiplicative factor of 5 (i.e., the estimated method is *at most* 5
-    times slower than the fastest method). The estimation values were tuned on
-    an early 2015 MacBook Pro with 8GB RAM but we found that the prediction
-    held *fairly* accurately across different machines.
+    If this funciton is incorrect, the estimate is about up to 7 times slower
+    than the other faster method (i.e., the estimated method is *at most* 7
+    times slower than the fastest method). For the modes ``full``, ``valid``
+    and ``same`` there is at least a 95% chance of the ratio being less
+    than 2.5, 3.2 and 4.5 respectively (at least in our testing). This is
+    function is least accurate when the convolution takes less than
+    approximately 0.3ms for 1D signals where ``len(in1) < len(in2)``.
+
+    The estimation values were tuned on an mid-2014 15-inch MacBook Pro with
+    16GB RAM and a 2.5GHz Intel i7 processor. We found this function
+    generalizes decently across machines.
 
     If ``measure=True``, time the convolutions. Because this function uses
     `fftconvolve`, an error will be thrown if it does not support the inputs.
@@ -1103,8 +1110,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> a = np.random.randn(1000)
-    >>> b = np.random.randn(1000000)
+    >>> a = np.random.randn(1000000)
+    >>> b = np.random.randn(1000)
     >>> method = signal.choose_conv_method(a, b, mode='same')
     >>> method
     'fft'
