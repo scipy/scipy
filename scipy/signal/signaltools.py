@@ -1112,21 +1112,19 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> a = np.random.randn(1000000)
-    >>> b = np.random.randn(1000)
-    >>> method = signal.choose_conv_method(a, b, mode='same')
+    >>> img = np.random.rand(32, 32)
+    >>> filter = np.random.rand(8, 8)
+    >>> method = signal.choose_conv_method(img, filter, mode='same')
     >>> method
     'fft'
 
     This can then be applied to other arrays of the same dtype and shape:
 
-    >>> c = np.random.randn(1000)
-    >>> d = np.random.randn(1000000)
+    >>> img2 = np.random.rand(32, 32)
+    >>> filter2 = np.random.rand(8, 8)
     >>> # `method` works with correlate and convolve
-    >>> corr1 = signal.correlate(a, b, mode='same', method=method)
-    >>> corr2 = signal.correlate(c, d, mode='same', method=method)
-    >>> conv1 = signal.convolve(a, b, mode='same', method=method)
-    >>> conv2 = signal.convolve(c, d, mode='same', method=method)
+    >>> corr2 = signal.correlate(img2, filter2, mode='same', method=method)
+    >>> conv2 = signal.convolve(img2, filter2, mode='same', method=method)
 
     """
     volume = np.asarray(in1)
