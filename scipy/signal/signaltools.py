@@ -929,7 +929,7 @@ def _get_fft_constant(mode, ndim, x_size, h_size, test=False):
         constants = {
             "valid": 14.336458,
             "full": 11.548068,
-            "same": 15.747428 if h_size <= x_size else 0.73367078,
+            "same": 15.747428 if h_size < x_size else 0.73367078,
         }
     else:
         constants = {
