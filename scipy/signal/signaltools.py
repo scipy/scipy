@@ -897,7 +897,7 @@ def _conv_ops(x_shape, h_shape, mode):
     if mode == "full":
         out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
     elif mode == "valid":
-        out_shape = [max(n, k) - min(n, k) + 1 for n, k in zip(x_shape, h_shape)],
+        out_shape = [abs(n - k) + 1 for n, k in zip(x_shape, h_shape)],
     elif mode == "same":
         out_shape = x_shape
     else:
