@@ -968,7 +968,7 @@ def _fftconv_faster(x, h, mode, test=True):
 
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
-    big_O_constant = _get_fft_constant(mode, x.ndim, _prod(x.shape), _prod(h.shape))
+    big_O_constant = _get_fft_constant(mode, x.ndim, x.size, h.size)
     return big_O_constant * fft_ops < direct_ops
 
 
