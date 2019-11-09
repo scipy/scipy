@@ -892,41 +892,83 @@ def _prod(iterable):
     return product
 
 
-def _fftconv_faster(x, h, mode):
-    """
-    See if using `fftconvolve` or `_correlateND` is faster. The boolean value
-    returned depends on the sizes and shapes of the input values.
+def _conv_ops(x_shape, h_shape, mode):
+    x_size, h_size = _prod(x_shape), _prod(h_shape)
+    out_shapes = {
+        "full": [n + k - 1 for n, k in zip(x_shape, h_shape)],
+        "same": x_shape,
+        "valid": [max(n, k) - min(n, k) + 1 for n, k in zip(x_shape, h_shape)],
+    }
+    if mode not in out_shapes:
+        raise ValueError("Acceptable mode flags are 'valid',"
+                         " 'same', or 'full', not mode={}".format(mode))
+    out_shape = out_shapes[mode]
 
-    The big O ratios were found to hold across different machines, which makes
+    S1, S2 = x_shape, h_shape
+    if len(x_shape) == 1:
+        S1, S2 = S1[0], S2[0]
+        direct_muls = {
+            "full": S1 *S2,
+            "valid": (S2 - S1 + 1) * S1 if S2 >= S1 else (S1 - S2 + 1) * S2,
+            "same": S1 * S2 if S1 <= S2 else S1 * S2 - (S2 // 2) * ((S2 + 1) // 2),
+        }
+    else:
+        direct_muls = {
+            "full": min(_prod(S1), _prod(S2)) * _prod(out_shape),
+            "valid": min(_prod(S1), _prod(S2)) * _prod(out_shape),
+            "same": _prod(S1) * _prod(S2),
+        }
+    direct_ops = direct_muls[mode]
+    fft_ops = sum(n * np.log(n) for n in (x_shape + h_shape + tuple(out_shape)))
+    return fft_ops, direct_ops
+
+
+def _get_fft_constant(mode, ndim, x_size, h_size, test=False):
+    if ndim == 1:
+        constants = {
+            "valid": 14.336458,
+            "full": 11.548068,
+            "same": 15.747428 if h_size <= x_size else 0.73367078,
+        }
+    else:
+        constants = {
+            "same": 16.487500,
+            "valid": 11.680560,
+            "full": 10.423440,
+        }
+    return constants[mode]
+
+
+
+def _fftconv_faster(x, h, mode, test=True):
+    """
+    See if using fftconvolve or convolve is faster.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Signal
+    h : np.ndarray
+        Kernel
+    mode : str
+        Mode passed to convolve
+
+    Returns
+    -------
+    fft_faster : bool
+
+    Notes
+    -----
+    The big O ratios were found to hold to different machines, which makes
     sense as it's the ratio that matters (the effective speed of the computer
     is found in both big O constants). Regardless, this had been tuned on an
-    early 2015 MacBook Pro with 8GB RAM and an Intel i5 processor.
-    """
-    if mode == 'full':
-        out_shape = [n + k - 1 for n, k in zip(x.shape, h.shape)]
-        big_O_constant = 10963.92823819 if x.ndim == 1 else 8899.1104874
-    elif mode == 'same':
-        out_shape = x.shape
-        if x.ndim == 1:
-            if h.size <= x.size:
-                big_O_constant = 7183.41306773
-            else:
-                big_O_constant = 856.78174111
-        else:
-            big_O_constant = 34519.21021589
-    elif mode == 'valid':
-        out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
-        big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
-    else:
-        raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+    mid 2014 15-inch MacBook Pro with 16GB of RAM and an Intel 2.5GHz i7
+    processor.
 
-    # see whether the Fourier transform convolution method or the direct
-    # convolution method is faster (discussed in scikit-image PR #1792)
-    direct_time = (x.size * h.size * _prod(out_shape))
-    fft_time = sum(n * math.log(n) for n in (x.shape + h.shape +
-                                             tuple(out_shape)))
-    return big_O_constant * fft_time < direct_time
+    """
+    fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
+    big_O_constant = _get_fft_constant(mode, x.ndim, _prod(x.shape), _prod(h.shape))
+    return big_O_constant * fft_ops < direct_ops
 
 
 def _reverse_and_conj(x):
