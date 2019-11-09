@@ -63,25 +63,18 @@ We start by installing the MSYS2 platform which the OpenBLAS build will take
 place. First download the MSYS2 installer from `msysintaller`_ via choosing
 32 or 64 bit. Make sure to install the correct architecture for the SciPy
 that you want to build (eg. 32 or 64 bit). If you are not sure which to use,
-proceed with 64bit. After the install, in your start menu, you have
-three options for opening a terminal which are MSYS2, MSYS2 MinGW (32/64 bit).
-We are only interested in the latter two depending on which architecture you
-chose. Assuming 64-bit, from now on when we mention MSYS terminal we mean the
-one fired up via `MSYS MinGW 64-bit` option and not the other two.
+proceed with 64bit. Please follow the installation instructions carefully
+especially step 6 of running the same command a few times until you get update
+all components.
 
-Choose the one that applies to you and keep running the same command below
-until you get all components are up-to-date.
+Just to emphasize what is already mentioned in the instructions; occasionally
+during the updates the terminal might ask you to close the terminal but then
+might refuse to be closed and hang. If this happens you can kill it via Task
+Manager and continue with the instructions. 
 
-.. code:: shell
-
-    pacman -Syuu
-
-Occasionally during the updates the terminal might ask you to close the
-terminal but then might refuse to be closed and hang. If this happens you can
-kill it via Task Manager and continue with the instructions. Now, next step is
-to install some more package bundles that we will need. Open a MSYS2 terminal
-and type the following depending on the architecture of your choice; run the
-following for the common 64-bit build
+Now, next step is to install some more package bundles that we will need. Open
+a MSYS2 MinGW (64 or 32 bit) terminal and type the following depending on the
+architecture of your choice; run the following for the common 64-bit build
 
 .. code:: shell
 
@@ -103,14 +96,12 @@ reopen the same terminal.
 
 If you already have a GitHub repository folder where you keep your own repos,
 it is better to use that location to keep things nice and tidy since we are
-going to clone yet another repository to obtain the source code, hence
-
-.. code:: shell
-
-    cd /c/<wherever you want to clone OpenBLAS into>/
-
-It should be somewhere convenient and with write permissions. To make sure that
-we're ready to build, type the following in the terminal one-by-one:
+going to clone yet another repository to obtain the source code. It should be
+somewhere convenient and with write permissions. If this is your first time then
+you can pick "My Documents\GitHub" as a viable option. We will assume that you
+picked this folder in the rest of this document. You can create a folder in "My
+Documents" using Windows Explorer. To make sure that we're ready to build, type
+the following in the terminal one-by-one:
 
 .. code:: shell
 
@@ -128,8 +119,7 @@ and make sure that MSYS2 is installed correctly and has the required packages
 enabled.
 
 Now time to clone the OpenBLAS repository somewhere convenient; run the
-following line-by-line (the first line is added in case you didn't change
-directory yet otherwise you can ignore it).
+following line-by-line separately.
 
 .. code:: shell
 
@@ -137,7 +127,21 @@ directory yet otherwise you can ignore it).
    git clone https://github.com/xianyi/OpenBLAS.git
    cd OpenBLAS
    git submodule update --init --recursive
+   git fetch --all --tags --prune
 
+Now we are going to switch to a release of our choice. At the time of writing
+newest OpenBLAS release version is 0.3.7 hence we will use that.
+
+.. code:: shell
+
+   git checkout tags/v0.3.7 -b v0.3.7
+
+You can see all available options via 
+
+.. code:: shell
+
+   git tag
+   
 Now change the directory one level up via :code:`cd ..` to get out of the
 directory and create a file named `build_openblas.sh`. The easiest way is to
 type
@@ -146,7 +150,8 @@ type
 
     touch build_openblas.sh
 
-So resulting structure would be
+Of course, you can still also use Windows Explorer to create a new txt file at
+that location and then renaming it. So resulting structure would be
 
 .. code:: shell
 
@@ -171,13 +176,10 @@ content in this empty file:
     # Get into the repository that we cloned
     cd OpenBLAS
 
-    # Change the following to a specific branch/tag/release you wish
-    # Consult the git manual to learn more about your options
-    git checkout tags/v0.3.7 -b v0.3.7
-
     # The following two lines clean up in case we make a mistake and need
     # to run the script again
     git clean -fxd
+    git reset --hard
     rm -rf $OPENBLAS_ROOT/$BUILD_BITS
 
     # Set architecture flags
@@ -253,7 +255,7 @@ Installing OpenBLAS
 
 Look for the `lib` folder in the folder you used as a parameter to
 :code:`OPENBLAS_ROOT` (It's `/c/opt/64/lib` if you didn't change anything in
-the script. You will find three `.a` files such as:
+the script. You will find three `.a` files such as (the names can differ):
 
 .. code:: shell
 
