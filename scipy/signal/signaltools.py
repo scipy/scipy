@@ -897,7 +897,7 @@ def _conv_ops(x_shape, h_shape, mode):
     if mode == "full":
         out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
     elif mode == "valid":
-        out_shape = [max(n, k) - min(n, k) + 1 for n, k in zip(x_shape, h_shape)]
+        out_shape = [abs(n - k) + 1 for n, k in zip(x_shape, h_shape)]
     elif mode == "same":
         out_shape = x_shape
     else:
@@ -968,7 +968,7 @@ def _fftconv_faster(x, h, mode, test=True):
 
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
-    big_O_constant = _get_fft_constant(mode, x.ndim, _prod(x.shape), _prod(h.shape))
+    big_O_constant = _get_fft_constant(mode, x.ndim, x.size, h.size)
     return big_O_constant * fft_ops < direct_ops
 
 
