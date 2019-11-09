@@ -912,7 +912,7 @@ def _conv_ops(x_shape, h_shape, mode):
         elif mode == "valid":
             direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
         elif mode == "same":
-            direct_ops = s1 * s2 if s1 <= s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
+            direct_ops = s1 * s2 if s1 < s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
     else:
         if mode == "full":
             direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
