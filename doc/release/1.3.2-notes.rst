@@ -11,6 +11,7 @@ Authors
 =======
 
 * CJ Carey
+* Dany Vohl
 * Martin Gauch +
 * Ralf Gommers
 * Matt Haberland
@@ -24,7 +25,7 @@ Authors
 * Warren Weckesser
 * Joseph Weston +
 
-A total of 13 people contributed to this release.
+A total of 14 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -65,3 +66,4 @@ Pull requests for 1.3.2
 * `#10961 <https://github.com/scipy/scipy/pull/10961>`__: BUG: Fix signal.unique_roots
 * `#10971 <https://github.com/scipy/scipy/pull/10971>`__: MAINT: use 3.8 stable in CI
 * `#10977 <https://github.com/scipy/scipy/pull/10977>`__: DOC: Fix typo in sp.stats.wilcoxon docsting
+* `#11025 <https://github.com/scipy/scipy/pull/11025>`__: Update _peak_finding.py
