@@ -150,6 +150,7 @@ Discrete distributions
    :toctree: generated/
 
    bernoulli         -- Bernoulli
+   betabinom         -- Beta-Binomial
    binom             -- Binomial
    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
    dlaplace          -- Discrete Laplacian

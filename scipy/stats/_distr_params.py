@@ -113,6 +113,7 @@ distcont = [
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
+    ['betabinom', (5, 2.3, 0.63)],
     ['binom', (5, 0.4)],
     ['boltzmann',(1.4, 19)],
     ['dlaplace', (0.8,)],  # 0.5
