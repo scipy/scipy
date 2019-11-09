@@ -992,21 +992,32 @@ digamma = psi
 
 
 def polygamma(n, x):
-    """Polygamma function n.
+    r"""Polygamma functions.
 
-    This is the nth derivative of the digamma (psi) function.
+    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
+    `digamma` function. See [dlmf]_ for details.
 
     Parameters
     ----------
-    n : array_like of int
-        The order of the derivative of `psi`.
+    n : array_like
+        The order of the derivative of the digamma function; must be
+        integral
     x : array_like
-        Where to evaluate the polygamma function.
+        Real valued input
 
     Returns
     -------
-    polygamma : ndarray
-        The result.
+    ndarray
+        Function results
+
+    See Also
+    --------
+    digamma
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/5.15
 
     Examples
     --------
