@@ -129,9 +129,8 @@ def maximum_flow(csgraph, source, sink):
     :math:`\lvert U \rvert \times \lvert V \rvert` matrix in CSR format whose
     :math:`(i, j)`'th entry is 1 if there is an edge from :math:`i \in U` to
     :math:`j \in V` and 0 otherwise; that is, the input is of the form required
-    by :func:`scipy.sparse.csgraph.maximum_bipartite_matching`. Then the CSR
-    representation of the graph constructed above contains this matrix as a
-    block. Here's an example:
+    by :func:`maximum_bipartite_matching`. Then the CSR representation of the
+    graph constructed above contains this matrix as a block. Here's an example:
 
     >>> graph = csr_matrix([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 1, 0]])
     >>> print(graph.toarray())
@@ -177,8 +176,8 @@ def maximum_flow(csgraph, source, sink):
 
     While this solves the maximum bipartite matching problem in general, note
     that algorithms specialized to that problem will perform better. In
-    particular, :func:`scipy.sparse.csgraph.maximum_bipartite_matching` will be
-    faster when its preconditions are met.
+    particular, :func:`maximum_bipartite_matching` will be faster when its
+    preconditions are met.
 
     This approach can also be used to solve various common generalizations of
     the maximum bipartite matching problem. If, for instance, some vertices can
