@@ -995,6 +995,18 @@ class TestAllFreqConvolves(object):
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
+    @pytest.mark.parametrize('dtype', [np.longfloat, np.longcomplex])
+    def test_longdtype_input(self, dtype):
+        x = np.random.random((27, 27)).astype(dtype)
+        y = np.random.random((4, 4)).astype(dtype)
+        if np.iscomplexobj(dtype()):
+            x += .1j
+            y -= .1j
+
+        res = fftconvolve(x, y)
+        assert_allclose(res, convolve(x, y, method='direct'))
+        assert res.dtype == dtype
+
 
 class TestMedFilt(object):
 
