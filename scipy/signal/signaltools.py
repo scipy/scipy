@@ -924,21 +924,6 @@ def _conv_ops(x_shape, h_shape, mode):
     return fft_ops, direct_ops
 
 
-def _get_fft_constant(mode, ndim, x_size, h_size, test=False):
-    if ndim == 1:
-        constants = {
-            "valid": 14.336458,
-            "full": 11.548068,
-            "same": 15.747428 if h_size < x_size else 0.73367078,
-        }
-    else:
-        constants = {
-            "same": 16.487500,
-            "valid": 11.680560,
-            "full": 10.423440,
-        }
-    return constants[mode]
-
 
 
 def _fftconv_faster(x, h, mode, test=True):
@@ -968,8 +953,19 @@ def _fftconv_faster(x, h, mode, test=True):
 
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
-    big_O_constant = _get_fft_constant(mode, x.ndim, x.size, h.size)
-    return big_O_constant * fft_ops < direct_ops
+    offset = 2e-6 if x.ndim == 1 else -2e-4
+    constants = {
+        "valid": (7.28800943e-6, 3.344823e-7, offset),
+        "full": (7.2673e-6, 2.01e-7, offset),
+        "same": (2.3223e-5, 1.51e-6, offset) if h.size <= x.size else\
+                (2.3427e-5, 17e-6, offset),
+    } if x.ndim == 1 else {
+            "valid": (4.24046e-9, 3.344823e-8, offset),
+            "full": (3.4457e-9, 2.06903e-8, offset),
+            "same": (4.14859e-9, 1.65125e-8, offset),
+    }
+    O_fft, O_direct, O_offset = constants[mode]
+    return O_fft * fft_ops < O_direct * direct_ops + O_offset
 
 
 def _reverse_and_conj(x):

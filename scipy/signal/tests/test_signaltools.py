@@ -2242,11 +2242,9 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
 
 
 def test_choose_conv_method():
-    for ndim in [1, 2]:
-        for mode in ['valid', 'same', 'full']:
+    for mode in ['valid', 'same', 'full']:
+        for ndim in [1, 2]:
             n, k, true_method = 8, 6, 'direct'
-            if ndim == 2 and mode in {"same", "full"}:
-                n, k, true_method = 10, 2, 'direct'
             x = np.random.randn(*((n,) * ndim))
             h = np.random.randn(*((k,) * ndim))
 
