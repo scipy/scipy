@@ -264,7 +264,6 @@ def _add_reverse_edges(a):
     acoo.row = np.concatenate([acoo.row, cols[indices_to_add]])
     acoo.col = np.concatenate([acoo.col, rows[indices_to_add]])
     acoo.data = np.concatenate([acoo.data, data_to_add])
-    # Repeat process to get reverse pointers
     return acoo.tocsr()
 
 
