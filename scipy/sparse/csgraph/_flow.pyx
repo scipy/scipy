@@ -329,6 +329,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     """
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
     cdef ITYPE_t n_edges = capacities.shape[0]
+    cdef ITYPE_t ITYPE_MAX = np.iinfo(ITYPE).max
 
     # Our result array will keep track of the flow along each edge
     cdef ITYPE_t[:] flow = np.zeros(n_edges, dtype=ITYPE)
@@ -376,7 +377,7 @@ cdef ITYPE_t[:] _edmonds_karp(
                         end = 0
         # Did we find an augmenting path?
         if path_found:
-            df = 2147483647  # Max 32-bit signed int
+            df = ITYPE_MAX
             # Follow the path back from sink to source to find how
             # much flow can be pushed along the path.
             t = sink
