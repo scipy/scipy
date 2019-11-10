@@ -70,3 +70,18 @@ class ParallelSosfilt(Benchmark):
             futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
 
         wait(futures)
+
+
+class Sosfilt(Benchmark):
+    param_names = ['n_samples', 'order']
+    params = [
+        [1000, 1000000],
+        [6, 20]
+    ]
+
+    def setup(self, n_samples, order):
+        self.sos = butter(order, [0.1575, 0.1625], 'band', output='sos')
+        self.y = np.random.RandomState(0).randn(n_samples)
+
+    def time_sosfilt_basic(self, n_samples, order):
+        sosfilt(self.sos, self.y)

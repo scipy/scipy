@@ -18,16 +18,14 @@ import scipy.special as sc
 import scipy.special._ufuncs as scu
 from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
-
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray,
-                                    _get_fixed_fit_value)
+                                    _get_fixed_fit_value, _check_shape)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
-
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
 # powers, and `np.float_power` is a new replacement.
@@ -3488,6 +3486,306 @@ class invgauss_gen(rv_continuous):
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
+
+
+class geninvgauss_gen(rv_continuous):
+    r"""A Generalized Inverse Gaussian continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `geninvgauss` is:
+
+    .. math::
+
+        f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
+
+    where `x > 0`, and the parameters `p, b` satisfy `b > 0` ([1]_).
+    :math:`K_p` is the modified Bessel function of second kind of order `p`
+    (`scipy.special.kv`).
+
+    %(after_notes)s
+
+    The inverse Gaussian distribution `stats.invgauss(mu)` is a special case of
+    `geninvgauss` with `p = -1/2`, `b = 1 / mu` and `scale = mu`.
+
+    Generating random variates is challenging for this distribution. The
+    implementation is based on [2]_.
+
+    References
+    ----------
+    .. [1] O. Barndorff-Nielsen, P. Blaesild, C. Halgreen, "First hitting time
+       models for the generalized inverse gaussian distribution",
+       Stochastic Processes and their Applications 7, pp. 49--54, 1978.
+
+    .. [2] W. Hoermann and J. Leydold, "Generating generalized inverse Gaussian
+       random variates", Statistics and Computing, 24(4), p. 547--557, 2014.
+
+    %(example)s
+
+    """
+    def _argcheck(self, p, b):
+        return (p == p) & (b > 0)
+
+    def _logpdf(self, x, p, b):
+        # kve instead of kv works better for large values of b
+        # warn if kve produces infinite values and replace by nan
+        # otherwise c = -inf and the results are often incorrect
+        z = sc.kve(p, b)
+        z_inf = np.isinf(z)
+        if z_inf.any():
+            msg = ("Infinite values encountered in scipy.special.kve(p, b). "
+                   "Values replaced by NaN to avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+            z[z_inf] = np.nan
+        c = -np.log(2) - np.log(z) + b
+        return _lazywhere(x > 0, (x, p, b, c),
+                          lambda x, p, b, c:
+                              c + (p - 1)*np.log(x) - b*(x + 1/x)/2,
+                          -np.inf)
+
+    def _pdf(self, x, p, b):
+        # relying on logpdf avoids overflow of x**(p-1) for large x and p
+        return np.exp(self._logpdf(x, p, b))
+
+    def _logquasipdf(self, x, p, b):
+        # log of the quasi-density (w/o normalizing constant) used in _rvs
+        return _lazywhere(x > 0, (x, p, b),
+                          lambda x, p, b: (p - 1)*np.log(x) - b*(x + 1/x)/2,
+                          -np.inf)
+
+    def _rvs(self, p, b):
+        # if p and b are scalar, use _rvs_scalar, otherwise need to create
+        # output by iterating over parameters
+        if np.isscalar(p) and np.isscalar(b):
+            out = self._rvs_scalar(p, b, self._size)
+        elif p.size == 1 and b.size == 1:
+            out = self._rvs_scalar(p.item(), b.item(), self._size)
+        else:
+            # When this method is called, self._size will be a (possibly empty)
+            # tuple of integers.  It will not be None; if `size=None` is passed
+            # to `rvs()`, self._size will be the empty tuple ().
+
+            p, b = np.broadcast_arrays(p, b)
+            # p and b now have the same shape.
+
+            # `shp` is the shape of the blocks of random variates that are
+            # generated for each combination of parameters associated with
+            # broadcasting p and b.
+            # bc is a tuple the same lenth as self._size.  The values
+            # in bc are bools.  If bc[j] is True, it means that
+            # entire axis is filled in for a given combination of the
+            # broadcast arguments.
+            shp, bc = _check_shape(p.shape, self._size)
+
+            # `numsamples` is the total number of variates to be generated
+            # for each combination of the input arguments.
+            numsamples = int(np.prod(shp))
+
+            # `out` is the array to be returned.  It is filled in in the
+            # loop below.
+            out = np.empty(self._size)
+
+            it = np.nditer([p, b],
+                           flags=['multi_index'],
+                           op_flags=[['readonly'], ['readonly']])
+            while not it.finished:
+                # Convert the iterator's multi_index into an index into the
+                # `out` array where the call to _rvs_scalar() will be stored.
+                # Where bc is True, we use a full slice; otherwise we use the
+                # index value from it.multi_index.  len(it.multi_index) might
+                # be less than len(bc), and in that case we want to align these
+                # two sequences to the right, so the loop variable j runs from
+                # -len(self._size) to 0.  This doesn't cause an IndexError, as
+                # bc[j] will be True in those cases where it.multi_index[j]
+                # would cause an IndexError.
+                idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
+                            for j in range(-len(self._size), 0))
+                out[idx] = self._rvs_scalar(it[0], it[1],
+                                            numsamples).reshape(shp)
+                it.iternext()
+
+        if self._size == ():
+            out = out[()]
+        return out
+
+    def _rvs_scalar(self, p, b, numsamples=None):
+        # following [2], the quasi-pdf is used instead of the pdf for the
+        # generation of rvs
+        invert_res = False
+        if not(numsamples):
+            numsamples = 1
+        if p < 0:
+            # note: if X is geninvgauss(p, b), then 1/X is geninvgauss(-p, b)
+            p = -p
+            invert_res = True
+        m = self._mode(p, b)
+
+        # determine method to be used following [2]
+        ratio_unif = True
+        if p >= 1 or b > 1:
+            # ratio of uniforms with mode shift below
+            mode_shift = True
+        elif b >= min(0.5, 2 * np.sqrt(1 - p) / 3):
+            # ratio of uniforms without mode shift below
+            mode_shift = False
+        else:
+            # new algorithm in [2]
+            ratio_unif = False
+
+        # prepare sampling of rvs
+        size1d = tuple(np.atleast_1d(numsamples))
+        N = np.prod(size1d)  # number of rvs needed, reshape upon return
+        x = np.zeros(N)
+        simulated = 0
+
+        if ratio_unif:
+            # use ratio of uniforms method
+            if mode_shift:
+                a2 = -2 * (p + 1) / b - m
+                a1 = 2 * m * (p - 1) / b - 1
+                # find roots of x**3 + a2*x**2 + a1*x + m (Cardano's formula)
+                p1 = a1 - a2**2 / 3
+                q1 = 2 * a2**3 / 27 - a2 * a1 / 3 + m
+                phi = np.arccos(-q1 * np.sqrt(-27 / p1**3) / 2)
+                s1 = -np.sqrt(-4 * p1 / 3)
+                root1 = s1 * np.cos(phi / 3 + np.pi / 3) - a2 / 3
+                root2 = -s1 * np.cos(phi / 3) - a2 / 3
+                # root3 = s1 * np.cos(phi / 3 - np.pi / 3) - a2 / 3
+
+                # if g is the quasipdf, rescale: g(x) / g(m) which we can write
+                # as exp(log(g(x)) - log(g(m))). This is important
+                # since for large values of p and b, g cannot be evaluated.
+                # denote the rescaled quasipdf by h
+                lm = self._logquasipdf(m, p, b)
+                d1 = self._logquasipdf(root1, p, b) - lm
+                d2 = self._logquasipdf(root2, p, b) - lm
+                # compute the bounding rectangle w.r.t. h. Note that
+                # np.exp(0.5*d1) = np.sqrt(g(root1)/g(m)) = np.sqrt(h(root1))
+                vmin = (root1 - m) * np.exp(0.5 * d1)
+                vmax = (root2 - m) * np.exp(0.5 * d2)
+                umax = 1  # umax = sqrt(h(m)) = 1
+
+                logqpdf = lambda x: self._logquasipdf(x, p, b) - lm
+                c = m
+            else:
+                # ratio of uniforms without mode shift
+                # compute np.sqrt(quasipdf(m))
+                umax = np.exp(0.5*self._logquasipdf(m, p, b))
+                xplus = ((1 + p) + np.sqrt((1 + p)**2 + b**2))/b
+                vmin = 0
+                # compute xplus * np.sqrt(quasipdf(xplus))
+                vmax = xplus * np.exp(0.5 * self._logquasipdf(xplus, p, b))
+                c = 0
+                logqpdf = lambda x: self._logquasipdf(x, p, b)
+
+            if vmin >= vmax:
+                raise ValueError("vmin must be smaller than vmax.")
+            if umax <= 0:
+                raise ValueError("umax must be positive.")
+
+            i = 1
+            while simulated < N:
+                k = N - simulated
+                # simulate uniform rvs on [0, umax] and [vmin, vmax]
+                u = umax * self._random_state.random_sample(size=k)
+                v = self._random_state.random_sample(size=k)
+                v = vmin + (vmax - vmin) * v
+                rvs = v / u + c
+                # rewrite acceptance condition u**2 <= pdf(rvs) by taking logs
+                accept = (2*np.log(u) <= logqpdf(rvs))
+                num_accept = np.sum(accept)
+                if num_accept > 0:
+                    x[simulated:(simulated + num_accept)] = rvs[accept]
+                    simulated += num_accept
+
+                if (simulated == 0) and (i*N >= 50000):
+                    msg = ("Not a single random variate could be generated "
+                           "in {} attempts. Sampling does not appear to "
+                           "work for the provided parameters.".format(i*N))
+                    raise RuntimeError(msg)
+                i += 1
+        else:
+            # use new algorithm in [2]
+            x0 = b / (1 - p)
+            xs = np.max((x0, 2 / b))
+            k1 = np.exp(self._logquasipdf(m, p, b))
+            A1 = k1 * x0
+            if x0 < 2 / b:
+                k2 = np.exp(-b)
+                if p > 0:
+                    A2 = k2 * ((2 / b)**p - x0**p) / p
+                else:
+                    A2 = k2 * np.log(2 / b**2)
+            else:
+                k2, A2 = 0, 0
+            k3 = xs**(p - 1)
+            A3 = 2 * k3 * np.exp(-xs * b / 2) / b
+            A = A1 + A2 + A3
+
+            # [2]: rejection constant is < 2.73; so expected runtime is finite
+            while simulated < N:
+                k = N - simulated
+                h, rvs = np.zeros(k), np.zeros(k)
+                # simulate uniform rvs on [x1, x2] and [0, y2]
+                u = self._random_state.random_sample(size=k)
+                v = A * self._random_state.random_sample(size=k)
+                cond1 = v <= A1
+                cond2 = np.logical_not(cond1) & (v <= A1 + A2)
+                cond3 = np.logical_not(cond1 | cond2)
+                # subdomain (0, x0)
+                rvs[cond1] = x0 * v[cond1] / A1
+                h[cond1] = k1
+                # subdomain (x0, 2 / b)
+                if p > 0:
+                    rvs[cond2] = (x0**p + (v[cond2] - A1) * p / k2)**(1 / p)
+                else:
+                    rvs[cond2] = b * np.exp((v[cond2] - A1) * np.exp(b))
+                h[cond2] = k2 * rvs[cond2]**(p - 1)
+                # subdomain (xs, infinity)
+                z = np.exp(-xs * b / 2) - b * (v[cond3] - A1 - A2) / (2 * k3)
+                rvs[cond3] = -2 / b * np.log(z)
+                h[cond3] = k3 * np.exp(-rvs[cond3] * b / 2)
+                # apply rejection method
+                accept = (np.log(u * h) <= self._logquasipdf(rvs, p, b))
+                num_accept = sum(accept)
+                if num_accept > 0:
+                    x[simulated:(simulated + num_accept)] = rvs[accept]
+                    simulated += num_accept
+
+        rvs = np.reshape(x, size1d)
+        if invert_res:
+            rvs = 1 / rvs
+        if self._size == ():
+            # return scalar in that case; however, return array if size == 1
+            return rvs[0]
+        return rvs
+
+    def _mode(self, p, b):
+        # distinguish cases to avoid catastrophic cancellation (see [2])
+        if p < 1:
+            return b / (np.sqrt((p - 1)**2 + b**2) + 1 - p)
+        else:
+            return (np.sqrt((1 - p)**2 + b**2) - (1 - p)) / b
+
+    def _munp(self, n, p, b):
+        num = sc.kve(p + n, b)
+        denom = sc.kve(p, b)
+        inf_vals = np.isinf(num) | np.isinf(denom)
+        if inf_vals.any():
+            msg = ("Infinite values encountered in the moment calculation "
+                   "involving scipy.special.kve. Values replaced by NaN to "
+                   "avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+            m = np.full_like(num, np.nan, dtype=np.double)
+            m[~inf_vals] = num[~inf_vals] / denom[~inf_vals]
+        else:
+            m = num / denom
+        return m
+
+
+geninvgauss = geninvgauss_gen(a=0.0, name="geninvgauss")
 
 
 class norminvgauss_gen(rv_continuous):

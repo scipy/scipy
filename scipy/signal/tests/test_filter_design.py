@@ -174,7 +174,9 @@ class TestTf2zpk(object):
 
         z, p, k = tf2zpk(b, a)
         z.sort()
-        p.sort()
+        # The real part of `p` is ~0.0, so sort by imaginary part
+        p = p[np.argsort(p.imag)]
+
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
         assert_array_almost_equal(k, 1.)

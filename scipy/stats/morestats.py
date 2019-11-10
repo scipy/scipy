@@ -149,11 +149,11 @@ def mvsdist(data):
     Returns
     -------
     mdist : "frozen" distribution object
-        Distribution object representing the mean of the data
+        Distribution object representing the mean of the data.
     vdist : "frozen" distribution object
-        Distribution object representing the variance of the data
+        Distribution object representing the variance of the data.
     sdist : "frozen" distribution object
-        Distribution object representing the standard deviation of the data
+        Distribution object representing the standard deviation of the data.
 
     See Also
     --------
@@ -308,7 +308,7 @@ def kstat(data, n=2):
 
 def kstatvar(data, n=2):
     r"""
-    Returns an unbiased estimator of the variance of the k-statistic.
+    Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
 
@@ -629,7 +629,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """
-    Calculate the shape parameter that maximizes the PPCC
+    Calculate the shape parameter that maximizes the PPCC.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
     determine the optimal shape parameter for a one-parameter family of
@@ -656,7 +656,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
         The shape parameter at which the probability plot correlation
         coefficient reaches its max value.
 
-    See also
+    See Also
     --------
     ppcc_plot, probplot, boxcox
 
@@ -736,7 +736,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     ----------
     x : array_like
         Input array.
-    a, b: scalar
+    a, b : scalar
         Lower and upper bounds of the shape parameter to use.
     dist : str or stats.distributions instance, optional
         Distribution or distribution function name.  Objects that look enough
@@ -759,7 +759,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     ppcc : ndarray
         The calculated probability plot correlation coefficient values.
 
-    See also
+    See Also
     --------
     ppcc_max, probplot, boxcox_normplot, tukeylambda
 
@@ -1469,7 +1469,10 @@ def yeojohnson_llf(lmb, data):
 
 
 def yeojohnson_normmax(x, brack=(-2, 2)):
-    """Compute optimal Yeo-Johnson transform parameter for input data, using
+    """
+    Compute optimal Yeo-Johnson transform parameter.
+    
+    Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
     Parameters
@@ -1486,13 +1489,13 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     maxlog : float
         The optimal transform parameter found.
 
-    Notes
-    -----
-    .. versionadded:: 1.2.0
-
     See Also
     --------
     yeojohnson, yeojohnson_llf, yeojohnson_normplot
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
 
     Examples
     --------
@@ -1683,7 +1686,7 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
 
 def anderson(x, dist='norm'):
     """
-    Anderson-Darling test for data coming from a particular distribution
+    Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
@@ -1695,7 +1698,7 @@ def anderson(x, dist='norm'):
     Parameters
     ----------
     x : array_like
-        array of sample data
+        Array of sample data.
     dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
         'extreme1'}, optional
         the type of distribution to test against.  The default is 'norm'
@@ -1704,9 +1707,9 @@ def anderson(x, dist='norm'):
     Returns
     -------
     statistic : float
-        The Anderson-Darling test statistic
+        The Anderson-Darling test statistic.
     critical_values : list
-        The critical values for this distribution
+        The critical values for this distribution.
     significance_level : list
         The significance levels for the corresponding critical values
         in percents.  The function returns critical values for a
@@ -2059,7 +2062,7 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 def ansari(x, y):
     """
-    Perform the Ansari-Bradley test for equal scale parameters
+    Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test is a non-parametric test for the equality
     of the scale parameter of the distributions from which two
@@ -2068,14 +2071,14 @@ def ansari(x, y):
     Parameters
     ----------
     x, y : array_like
-        arrays of sample data
+        Arrays of sample data.
 
     Returns
     -------
     statistic : float
-        The Ansari-Bradley test statistic
+        The Ansari-Bradley test statistic.
     pvalue : float
-        The p-value of the hypothesis test
+        The p-value of the hypothesis test.
 
     See Also
     --------
@@ -2155,7 +2158,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 def bartlett(*args):
     """
-    Perform Bartlett's test for equal variances
+    Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
     are from populations with equal variances.  For samples
@@ -2365,15 +2368,15 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     Parameters
     ----------
-    x : integer or array_like
-        the number of successes, or if x has length 2, it is the
+    x : int or array_like
+        The number of successes, or if x has length 2, it is the
         number of successes and the number of failures.
-    n : integer
-        the number of trials.  This is ignored if x gives both the
-        number of successes and failures
+    n : int
+        The number of trials.  This is ignored if x gives both the
+        number of successes and failures.
     p : float, optional
-        The hypothesized probability of success.  0 <= p <= 1. The
-        default value is p = 0.5
+        The hypothesized probability of success.  ``0 <= p <= 1``. The
+        default value is ``p = 0.5``.
     alternative : {'two-sided', 'greater', 'less'}, optional
         Indicates the alternative hypothesis. The default value is
         'two-sided'.
@@ -2381,7 +2384,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     Returns
     -------
     p-value : float
-        The p-value of the hypothesis test
+        The p-value of the hypothesis test.
 
     References
     ----------
@@ -2733,15 +2736,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if `x` is the first set of
         measurements), or not specified (if `x` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {"pratt", "wilcox", "zsplit"}, optional. Default is "wilcox".
-        "pratt":
-            includes zero-differences in the ranking process,
-            but drops the ranks of the zeros, see [4]_, (more conservative)
-        "wilcox":
-            discards all zero-differences, the default
-        "zsplit":
-            includes zero-differences in the ranking process and split the
-            zero rank between positive and negative ones
+    zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
+        The following options are available (default is 'wilcox'):
+     
+          * 'pratt': Includes zero-differences in the ranking process,
+            but drops the ranks of the zeros, see [4]_, (more conservative).
+          * 'wilcox': Discards all zero-differences, the default.
+          * 'zsplit': Includes zero-differences in the ranking process and 
+            split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
@@ -2925,7 +2927,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
 def median_test(*args, **kwds):
     """
-    Mood's median test.
+    Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
 
@@ -2958,7 +2960,7 @@ def median_test(*args, **kwds):
         If True, *and* there are just two samples, apply Yates' correction
         for continuity when computing the test statistic associated with
         the contingency table.  Default is True.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family to be used instead.  See
@@ -3242,16 +3244,16 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """
-    Compute the circular variance for samples assumed to be in a range
+    Compute the circular variance for samples assumed to be in a range.
 
     Parameters
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
     high : float or int, optional
         High boundary for circular variance range.  Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for circular variance range.  Default is 0.
     axis : int, optional
         Axis along which variances are computed.  The default is to compute
         the variance of the flattened array.
@@ -3301,11 +3303,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
     high : float or int, optional
         High boundary for circular standard deviation range.
         Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for circular standard deviation range.  Default is 0.
     axis : int, optional
         Axis along which standard deviations are computed.  The default is
         to compute the standard deviation of the flattened array.

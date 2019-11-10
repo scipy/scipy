@@ -63,6 +63,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
@@ -149,6 +150,7 @@ Discrete distributions
    :toctree: generated/
 
    bernoulli         -- Bernoulli
+   betabinom         -- Beta-Binomial
    binom             -- Binomial
    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
    dlaplace          -- Discrete Laplacian

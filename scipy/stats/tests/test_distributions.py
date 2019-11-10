@@ -236,6 +236,78 @@ class TestNBinom(object):
         assert_equal(val, 0)
 
 
+class TestGenInvGauss(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    @pytest.mark.slow
+    def test_rvs_with_mode_shift(self):
+        # ratio_unif w/ mode shift
+        gig = stats.geninvgauss(2.3, 1.5)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        assert_equal(p > 0.05, True)
+
+    @pytest.mark.slow
+    def test_rvs_without_mode_shift(self):
+        # ratio_unif w/o mode shift
+        gig = stats.geninvgauss(0.9, 0.75)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        assert_equal(p > 0.05, True)
+
+    @pytest.mark.slow
+    def test_rvs_new_method(self):
+        # new algorithm of Hoermann / Leydold
+        gig = stats.geninvgauss(0.1, 0.2)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        assert_equal(p > 0.05, True)
+
+    @pytest.mark.slow
+    def test_rvs_p_zero(self):
+        def my_ks_check(p, b):
+            gig = stats.geninvgauss(p, b)
+            rvs = gig.rvs(size=1500, random_state=1234)
+            return stats.kstest(rvs, gig.cdf)[1] > 0.05
+        # boundary cases when p = 0
+        assert_equal(my_ks_check(0, 0.2), True)  # new algo
+        assert_equal(my_ks_check(0, 0.9), True)  # ratio_unif w/o shift
+        assert_equal(my_ks_check(0, 1.5), True)  # ratio_unif with shift
+
+    def test_rvs_negative_p(self):
+        # if p negative, return inverse
+        assert_equal(
+                stats.geninvgauss(-1.5, 2).rvs(size=10, random_state=1234),
+                1 / stats.geninvgauss(1.5, 2).rvs(size=10, random_state=1234))
+
+    def test_invgauss(self):
+        # test that invgauss is special case
+        ig = stats.geninvgauss.rvs(size=1500, p=-0.5, b=1, random_state=1234)
+        assert_equal(stats.kstest(ig, 'invgauss', args=[1])[1] > 0.15, True)
+        # test pdf and cdf
+        mu, x = 100, np.linspace(0.01, 1, 10)
+        pdf_ig = stats.geninvgauss.pdf(x, p=-0.5, b=1 / mu, scale=mu)
+        assert_allclose(pdf_ig, stats.invgauss(mu).pdf(x))
+        cdf_ig = stats.geninvgauss.cdf(x, p=-0.5, b=1 / mu, scale=mu)
+        assert_allclose(cdf_ig, stats.invgauss(mu).cdf(x))
+
+    def test_pdf_R(self):
+        # test against R package GIGrvg
+        # x <- seq(0.01, 5, length.out = 10)
+        # GIGrvg::dgig(x, 0.5, 1, 1)
+        vals_R = np.array([2.081176820e-21, 4.488660034e-01, 3.747774338e-01,
+                           2.693297528e-01, 1.905637275e-01, 1.351476913e-01,
+                           9.636538981e-02, 6.909040154e-02, 4.978006801e-02,
+                           3.602084467e-02])
+        x = np.linspace(0.01, 5, 10)
+        assert_allclose(vals_R, stats.geninvgauss.pdf(x, 0.5, 1))
+
+    def test_pdf_zero(self):
+        # pdf at 0 is 0, needs special treatment to avoid 1/x in pdf
+        assert_equal(stats.geninvgauss.pdf(0, 0.5, 0.5), 0)
+        # if x is large and p is moderate, make sure that pdf does not
+        # overflow because of x**(p-1); exp(-b*x) forces pdf to zero
+        assert_equal(stats.geninvgauss.pdf(2e6, 50, 2), 0)
+
+
 class TestNormInvGauss(object):
     def setup_method(self):
         np.random.seed(1234)
