@@ -44,9 +44,9 @@ def maximum_flow(csgraph, source, sink):
     Returns
     -------
     res : MaximumFlowResult
-        A maximum flow represented by a `MaximumFlowResult`
-        which includes the value of the flow in `flow_value`,
-        and the residual graph in `residual`.
+        A maximum flow represented by a ``MaximumFlowResult``
+        which includes the value of the flow in ``flow_value``,
+        and the residual graph in ``residual``.
 
     Raises
     ------
