@@ -1517,10 +1517,15 @@ def cut_tree_balanced(Z, max_cluster_size):
                         full_cut[:, curr_column+1] ==
                         selected_ancestor_value)
 
-                    # Compute the values and counts of the offspring
+                    # Compute the values and counts of the offspring and sort
+                    # them by their count (so that the biggest cluster gets the
+                    # offspring_elem_label = 0, see below)
                     offspring_values, offspring_counts = np.unique(
                         full_cut[selected_ancestor_elems, curr_column],
                         return_counts=True)
+                    count_sort_ind = np.argsort(-offspring_counts)
+                    offspring_values = offspring_values[count_sort_ind]
+                    offspring_counts = offspring_counts[count_sort_ind]
 
                     # If the size of the offspring is > 1
                     if (offspring_values.shape[0] > 1):
@@ -1528,10 +1533,9 @@ def cut_tree_balanced(Z, max_cluster_size):
                         # and append it to the cluster level
                         offspring_elem_label = np.where(
                             offspring_values == selected_curr_value)[0][0]
-                        
                         for i in selected_curr_elems[0]:
-                                cluster_level[i] = np.hstack((cluster_level[i],
-                                    offspring_elem_label))
+                            cluster_level[i] = np.hstack((cluster_level[i],
+                                offspring_elem_label))
 
                 # Major step #2: Populate the resulting vector of cluster ids
                 # for each data sample, and mark them as clustered (-1)
