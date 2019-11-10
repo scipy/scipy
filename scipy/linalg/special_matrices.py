@@ -1202,11 +1202,11 @@ def convolution_matrix(a, n, mode='full'):
 
     Constructs the dense matrix representing convolution[1].
 
-    `A = convolution_matrix(a, n[, mode])`
+    ``A = convolution_matrix(a, n[, mode])``
     creates a matrix `A` such that
-    `A @ v` (or `matmul(A, v)`) is equivalent to `convolve(a, v[, mode])`.
+    ``A @ v`` (or ``matmul(A, v)``) is equivalent to ``convolve(a, v[, mode])``.
     In the default 'full' mode, an element
-    `A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)`.
+    ``A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)``.
 
     Parameters
     ----------
@@ -1214,7 +1214,7 @@ def convolution_matrix(a, n, mode='full'):
         The 1-D array to convolve.
     n : int
         The number of columns in the resulting matrix.
-        This is analogous to the length of `v` in `numpy.convolve(a,v)`
+        This is analogous to the length of `v` in ``numpy.convolve(a,v)``
     mode : str
         This is analogous to `mode` in numpy.convolve(v, a, mode).
         It must be one of ('full','valid','same').
