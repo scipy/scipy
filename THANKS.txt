@@ -225,6 +225,7 @@ Leo P. Singer for bug fixes in scipy.optimize and scipy.interpolate and
    contribution of the beta-binomial distribution to scipy.stats.
 Domen Gorjup and Janko Slavič for continuous wavelet transform with complex
     wavelets fix.
+Søren Fuglede Jørgensen for improvements to scipy.sparse.csgraph
 
 Institutions
 ------------
