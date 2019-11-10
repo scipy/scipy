@@ -74,6 +74,14 @@ def maximum_flow(csgraph, source, sink):
     particular implementation strives to exploit sparsity. Its time complexity
     is :math:`O(VE^2)` and its space complexity is :math:`O(E)`.
 
+    References
+    ----------
+    .. [1] Edmonds, J. and Karp, R. M.
+           Theoretical improvements in algorithmic efficiency for network flow
+           problems. 1972. Journal of the ACM. 19 (2): pp. 248-264
+    .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
+           Introduction to Algorithms. Second Edition. 2001. MIT Press.
+
     Examples
     --------
     Perhaps the simplest flow problem is that of a graph of only two vertices
@@ -176,14 +184,6 @@ def maximum_flow(csgraph, source, sink):
     the maximum bipartite matching problem. If, for instance, some vertices can
     be matched with more than one other vertex, this may be handled by
     modifying the capacities of the new graph appropriately.
-
-    References
-    ----------
-    .. [1] Edmonds, J. and Karp, R. M.
-           Theoretical improvements in algorithmic efficiency for network flow
-           problems. 1972. Journal of the ACM. 19 (2): pp. 248-264
-    .. [2] Cormen, T. H. and Leiserson, C. E. and Rivest, R. L. and Stein C.
-           Introduction to Algorithms. Second Edition. 2001. MIT Press.
 
     """
     if not isspmatrix_csr(csgraph):
