@@ -1,0 +1,17 @@
+==========================
+SciPy 1.3.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.3.3 is a bug-fix release with no new features
+compared to 1.3.2.
+
+Authors
+=======
+
+Issues closed for 1.3.3
+-----------------------
+
+Pull requests for 1.3.3
+-----------------------
