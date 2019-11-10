@@ -1405,7 +1405,7 @@ def cut_tree_balanced(Z, max_cluster_size):
     Parameters
     ----------
     Z : ndarray
-        The linkage matrix resulting (for instance) from calling the method
+        The linkage matrix resulting from calling the method
         scipy.cluster.hierarchy.ward(). I.e. it contains the hierarchical
         clustering encoded as a linkage matrix.
 
@@ -1425,7 +1425,7 @@ def cut_tree_balanced(Z, max_cluster_size):
         one-dimensional numpy array of integer arrays containing for each input
         sample its corresponding cluster tree level, i.e. a sequence of
         0s and 1s. Note that the cluster level is longer for deeper tree
-        levels, being 0 the root cluster, [0, 0] and [0, 1] its offspring, and
+        levels, being [0] the root cluster, [0, 0] and [0, 1] its offspring, and
         so on. Also note that in each cluster splitting, the label 0 denotes
         the bigger cluster, while the label 1 denotes the smallest.
 
@@ -1438,10 +1438,10 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     >>> np.random.seed(14)
 
-    Create a input matrix containing 100 data samples with 4 dimensions. Note:
-    using gamma() in order to generate an unbalanced distribution. If a regular
-    cut_tree() would be performed, one big and many small clusters would be
-    obtained.
+    Create a input matrix containing 100 data samples with 4 dimensions. 
+    Note: using gamma() in order to generate an unbalanced distribution. 
+    If a regular cut_tree() would be performed, one big and many small clusters
+    would be obtained.
 
     >>> X = stats.gamma.rvs(0.1, size=400).reshape((100,4))
 
