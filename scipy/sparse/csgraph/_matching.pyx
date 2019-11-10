@@ -2,8 +2,11 @@ cimport cython
 import numpy as np
 cimport numpy as np
 
+
 from scipy.sparse import (csr_matrix,
                           isspmatrix_coo, isspmatrix_csc, isspmatrix_csr)
+
+include "parameters.pxi"
 
 
 def maximum_bipartite_matching(graph, perm_type='row'):
@@ -136,8 +139,8 @@ cdef tuple _hopcroft_karp(int[:] indices, int[:] indptr, int i, int j):
     cdef int INF = 2147483647  # Max 32-bit signed int
     # x will end up containing the matchings of rows to columns, while
     # y will contain the matchings of columns to rows.
-    cdef int[:] x = np.empty(i, dtype=np.int32)
-    cdef int[:] y = np.empty(j, dtype=np.int32)
+    cdef int[:] x = np.empty(i, dtype=ITYPE)
+    cdef int[:] y = np.empty(j, dtype=ITYPE)
 
     # During the BFS step, dist will keep track of the level of the search. We
     # only keep track of this for the vertices in the left partition. Note that
@@ -145,7 +148,7 @@ cdef tuple _hopcroft_karp(int[:] indices, int[:] indptr, int i, int j):
     # throughout the algorithm, we make use of the standard trick of adding an
     # auxiliary vertex whose index will be i, and whose semantics are that
     # every unmatched column will be matched with this vertex.
-    cdef int[:] dist = np.empty(i + 1, dtype=np.int32)
+    cdef int[:] dist = np.empty(i + 1, dtype=ITYPE)
 
     cdef int k, v, w, up, u, u_old
 
@@ -166,7 +169,7 @@ cdef tuple _hopcroft_karp(int[:] indices, int[:] indptr, int i, int j):
     # will be i + 1. As in a circular buffer, we use two pointers, head and
     # tail to keep track of the ends of the queue: Elements are dequeued from
     # head and queued at tail.
-    cdef int[:] q = np.empty(i + 1, dtype=np.int32)
+    cdef int[:] q = np.empty(i + 1, dtype=ITYPE)
     cdef int head, tail
 
     # Similarly, we use a stack for our depth-first search. As above, we only
@@ -174,14 +177,14 @@ cdef tuple _hopcroft_karp(int[:] indices, int[:] indptr, int i, int j):
     # will visit more than i of thse before encountering an unmatched vertex
     # (as represented by i), the stack capacity can be limited to i + 1.
     # Elements will be pushed to stack_head and popped from stack_head - 1.
-    cdef int[:] stack = np.empty(i + 1, dtype=np.int32)
+    cdef int[:] stack = np.empty(i + 1, dtype=ITYPE)
     cdef int stack_head
 
     # Finally, during our depth-first search, we keep track of the vertices we
     # have visited. This will simplify the updates to the matching that occurs
     # when an augmenting path is found. Elements will be pushed to path_head
     # and popped from path_head - 1.
-    cdef int[:] path = np.empty(i, dtype=np.int32)
+    cdef int[:] path = np.empty(i, dtype=ITYPE)
     cdef int path_head
 
     # The breadth-first search part of the algorithm. This will terminate when
