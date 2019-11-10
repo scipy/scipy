@@ -1195,6 +1195,7 @@ def fiedler_companion(a):
 
     return c
 
+
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.
@@ -1259,12 +1260,13 @@ def convolution_matrix(a, n, mode='full'):
     if a.ndim != 1:
         raise ValueError('convolution_matrix expects a 1d array as input')
 
-    if mode not in ('full','valid','same'):
-        raise ValueError("'mode' argument must be one of ('full','valid','same')")
+    if mode not in ('full', 'valid', 'same'):
+        raise ValueError(
+            "'mode' argument must be one of ('full','valid','same')")
 
     # create zero padded versions of the array
-    az = np.pad(a,(0,n-1),'constant')
-    raz = np.pad(a[::-1],(0,n-1),'constant')
+    az = np.pad(a, (0, n-1), 'constant')
+    raz = np.pad(a[::-1], (0, n-1), 'constant')
 
     if mode == 'same':
         trim = min(n, len(a)) - 1

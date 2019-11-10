@@ -17,6 +17,7 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
 from numpy.linalg import cond
 import itertools
 
+
 def get_mat(n):
     data = arange(n)
     data = add.outer(data, data)
@@ -40,9 +41,9 @@ class TestTri(object):
                                          [1, 1, 1, 1],
                                          [1, 1, 1, 1]]))
         assert_equal(tri(4, k=-1), array([[0, 0, 0, 0],
-                                         [1, 0, 0, 0],
-                                         [1, 1, 0, 0],
-                                         [1, 1, 1, 0]]))
+                                          [1, 0, 0, 0],
+                                          [1, 1, 0, 0],
+                                          [1, 1, 1, 0]]))
 
     def test_2d(self):
         assert_equal(tri(4, 3), array([[1, 0, 0],
@@ -501,7 +502,7 @@ class TestInvHilbert(object):
              -1129631016152221783200, 1098252376814660067000,
              -753830033789944188000, 346146444087219270000,
              -95382575704033754400, 11922821963004219300]
-            ])
+        ])
         assert_array_equal(invhilbert(17, exact=True), invh17)
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
