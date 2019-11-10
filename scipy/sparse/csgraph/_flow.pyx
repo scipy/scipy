@@ -79,6 +79,13 @@ def maximum_flow(csgraph, source, sink):
     particular implementation strives to exploit sparsity. Its time complexity
     is :math:`O(VE^2)` and its space complexity is :math:`O(E)`.
 
+    The maximum flow problem is usually defined with real valued capacities,
+    but we require that all capacities are integral to ensure convergence. When
+    dealing with rational capacities, or capacities belonging to
+    :math:`x\mathbb{Q}` for some fixed :math:`x \in \mathbb{R}`, it is possible
+    to reduce the problem to the integral case by scaling all capacities
+    accordingly.
+
     References
     ----------
     .. [1] Edmonds, J. and Karp, R. M.
