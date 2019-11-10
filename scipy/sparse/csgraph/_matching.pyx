@@ -49,6 +49,13 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     .. versionadded:: 0.15.0
 
+    References
+    ----------
+    .. [1] John E. Hopcroft and Richard M. Karp. "An n^{5 / 2} Algorithm for
+           Maximum Matchings in Bipartite Graphs" In: SIAM Journal of Computing
+           2.4 (1973), pp. 225--231. <https://dx.doi.org/10.1137/0202019>.
+
+
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
@@ -112,12 +119,6 @@ def maximum_bipartite_matching(graph, perm_type='row'):
      [0 1 2 0]
      [0 1 3 0]
      [2 0 0 3]]
-
-    References
-    ----------
-    .. [1] John E. Hopcroft and Richard M. Karp. "An n^{5 / 2} Algorithm for
-           Maximum Matchings in Bipartite Graphs" In: SIAM Journal of Computing
-           2.4 (1973), pp. 225--231. <https://dx.doi.org/10.1137/0202019>.
 
     """
     if isspmatrix_csc(graph) or isspmatrix_coo(graph):
