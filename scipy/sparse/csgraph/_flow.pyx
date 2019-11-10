@@ -289,14 +289,14 @@ def _make_edge_pointers(a):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int[:] _edmonds_karp(
-        int[:] edge_ptr,
-        int[:] tails,
-        int[:] heads,
-        int[:] capacities,
-        int[:] rev_edge_ptr,
-        int source,
-        int sink):
+cdef ITYPE_t[:] _edmonds_karp(
+        ITYPE_t[:] edge_ptr,
+        ITYPE_t[:] tails,
+        ITYPE_t[:] heads,
+        ITYPE_t[:] capacities,
+        ITYPE_t[:] rev_edge_ptr,
+        ITYPE_t source,
+        ITYPE_t sink):
     """Solves the maximum flow problem using the Edmonds--Karp algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite
@@ -327,22 +327,22 @@ cdef int[:] _edmonds_karp(
         The residual graph with respect to a maximum flow.
 
     """
-    cdef int n_verts = edge_ptr.shape[0] - 1
-    cdef int n_edges = capacities.shape[0]
+    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
+    cdef ITYPE_t n_edges = capacities.shape[0]
 
     # Our result array will keep track of the flow along each edge
-    cdef int[:] flow = np.zeros(n_edges, dtype=ITYPE)
+    cdef ITYPE_t[:] flow = np.zeros(n_edges, dtype=ITYPE)
 
     # Create a circular queue for breadth-first search. Elements are
     # popped dequeued at index start and queued at index end.
-    cdef int[:] q = np.empty(n_verts, dtype=ITYPE)
-    cdef int start, end
+    cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t start, end
 
     # Create an array indexing predecessor edges
-    cdef int[:] pred_edge = np.empty(n_verts, dtype=ITYPE)
+    cdef ITYPE_t[:] pred_edge = np.empty(n_verts, dtype=ITYPE)
 
     cdef bint path_found
-    cdef int cur, df, t, e, edge, k
+    cdef ITYPE_t cur, df, t, e, edge, k
 
     # While augmenting paths from source to sink exist
     while True:
