@@ -10,7 +10,7 @@ from numpy.testing import (assert_array_almost_equal, assert_array_equal,
 from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.signal import windows, get_window, resample, hann as dep_hann
 
 
@@ -562,8 +562,8 @@ class TestGetWindow(object):
         sig = np.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2)
-        assert_raises(ValueError, resample,
-                      (sig, len(sig) * osfactor), {'window': win})
+        with assert_raises(ValueError, match='must have the same length'):
+            resample(sig, len(sig) * osfactor, window=win)
 
 
 def test_windowfunc_basics():
@@ -613,9 +613,9 @@ def test_windowfunc_basics():
             assert_array_less(window(9, *params, sym=False), 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
-            assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
+            assert_allclose(fft(window(10, *params, sym=False)).imag,
                             0, atol=1e-14)
-            assert_allclose(fftpack.fft(window(11, *params, sym=False)).imag,
+            assert_allclose(fft(window(11, *params, sym=False)).imag,
                             0, atol=1e-14)
 
 

@@ -920,6 +920,11 @@ class BroydenFirst(GenericBroyden):
     %(broyden_params)s
     %(params_extra)s
 
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='broyden1'`` in particular.
+
     Notes
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
@@ -1013,6 +1018,11 @@ class BroydenSecond(BroydenFirst):
     %(broyden_params)s
     %(params_extra)s
 
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='broyden2'`` in particular.
+
     Notes
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
@@ -1064,6 +1074,11 @@ class Anderson(GenericBroyden):
         Regularization parameter for numerical stability.
         Compared to unity, good values of the order of 0.01.
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='anderson'`` in particular.
 
     References
     ----------
@@ -1199,6 +1214,11 @@ class DiagBroyden(GenericBroyden):
     alpha : float, optional
         Initial guess for the Jacobian is (-1/alpha).
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='diagbroyden'`` in particular.
     """
 
     def __init__(self, alpha=None):
@@ -1207,7 +1227,7 @@ class DiagBroyden(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.d = np.ones((self.shape[0],), dtype=self.dtype) / self.alpha
+        self.d = np.full((self.shape[0],), 1 / self.alpha, dtype=self.dtype) 
 
     def solve(self, f, tol=0):
         return -f / self.d
@@ -1243,6 +1263,12 @@ class LinearMixing(GenericBroyden):
     alpha : float, optional
         The Jacobian approximation is (-1/alpha).
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='linearmixing'`` in particular.
+
     """
 
     def __init__(self, alpha=None):
@@ -1278,6 +1304,11 @@ class ExcitingMixing(GenericBroyden):
 
        This algorithm may be useful for specific problems, but whether
        it will work may depend strongly on the problem.
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1366,6 +1397,8 @@ class KrylovJacobian(Jacobian):
 
     See Also
     --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 

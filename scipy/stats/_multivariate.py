@@ -2985,8 +2985,8 @@ class multinomial_gen(multi_rv_generic):
     See also
     --------
     scipy.stats.binom : The binomial distribution.
-    numpy.random.multinomial : Sampling from the multinomial distribution.
-    """
+    numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
+    """  # noqa: E501
 
     def __init__(self, seed=None):
         super(multinomial_gen, self).__init__(seed)

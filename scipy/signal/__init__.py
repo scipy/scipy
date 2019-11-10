@@ -12,6 +12,7 @@ Convolution
    convolve           -- N-dimensional convolution.
    correlate          -- N-dimensional correlation.
    fftconvolve        -- N-dimensional convolution using the FFT.
+   oaconvolve         -- N-dimensional convolution using the overlap-add method.
    convolve2d         -- 2-dimensional convolution (more options).
    correlate2d        -- 2-dimensional correlation (more options).
    sepfir2d           -- Convolve with a 2-D separable FIR filter.
@@ -171,7 +172,7 @@ Continuous-Time Linear Systems
    lsim2            -- like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- impulse response of linear, time-invariant (LTI) system.
    impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
-   step             -- step response of continous-time LTI system.
+   step             -- step response of continuous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
    freqresp         -- frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
@@ -244,12 +245,13 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-   cascade  -- compute scaling function and wavelet from coefficients
-   daub     -- return low-pass
-   morlet   -- Complex Morlet wavelet.
-   qmf      -- return quadrature mirror filter from low-pass
-   ricker   -- return ricker wavelet
-   cwt      -- perform continuous wavelet transform
+   cascade      -- compute scaling function and wavelet from coefficients
+   daub         -- return low-pass
+   morlet       -- Complex Morlet wavelet.
+   qmf          -- return quadrature mirror filter from low-pass
+   ricker       -- return ricker wavelet
+   morlet2      -- return Morlet wavelet, compatible with cwt
+   cwt          -- perform continuous wavelet transform
 
 Peak finding
 ============

@@ -1,60 +1,11 @@
 
-def try_compile(compiler, code=None, flags=[], ext='.cpp'):
-    """Returns True if the compiler is able to compile the given code"""
-    import tempfile
-    from distutils.errors import CompileError
-    import os
-
-    code = code or 'int main (int argc, char **argv) { return 0; }'
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        fname = os.path.join(temp_dir, 'main'+ext)
-        with open(fname, 'w') as f:
-            f.write(code)
-
-        try:
-            compiler.compile([fname], extra_postargs=flags)
-        except CompileError:
-            return False
-    return True
-
-
-def has_flag(compiler, flag):
-    return try_compile(compiler, flags=[flag])
-
-
-def get_std_flag(compiler):
-    # Test the compiler for the highest available c++ standard flag
-    gnu_flags = ['--std=c++14', '--std=c++11']
-    flags_by_cc = {
-        'msvc': ['/std:c++14', None],
-        'intelw': ['/Qstd=c++14', '/Qstd=c++11']
-    }
-    flags = flags_by_cc.get(compiler.compiler_type, gnu_flags)
-
-    for flag in flags:
-        if flag is None:
-            return None
-
-        if has_flag(compiler, flag):
-            return flag
-
-    from numpy.distutils import log
-    log.warn('Could not detect c++ standard flag')
-    return None
-
-
-def try_add_flag(args, compiler, flag):
-    """Appends flag to the list of arguments if supported by the compiler"""
-    if try_compile(compiler, flags=args+[flag]):
-        args.append(flag)
-
-
 def pre_build_hook(build_ext, ext):
+    from scipy._build_utils.compiler_helper import (
+        get_cxx_std_flag, try_add_flag, try_compile, has_flag)
     cc = build_ext._cxx_compiler
     args = ext.extra_compile_args
 
-    std_flag = get_std_flag(build_ext._cxx_compiler)
+    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
     if std_flag is not None:
         args.append(std_flag)
 
@@ -63,10 +14,16 @@ def pre_build_hook(build_ext, ext):
     else:
         try_add_flag(args, cc, '-fvisibility=hidden')
 
+        has_pthreads = try_compile(cc, code='#include <pthread.h>\n'
+                                   'int main(int argc, char **argv) {}')
+        if has_pthreads:
+            ext.define_macros.append(('POCKETFFT_PTHREADS', None))
+
+        min_macos_flag = '-mmacosx-version-min=10.9'
         import sys
-        if sys.platform == 'darwin':
-            args.append('-mmacosx-version-min=10.7')
-            try_add_flag(args, cc, '-stdlib=libc++')
+        if sys.platform == 'darwin' and has_flag(cc, min_macos_flag):
+            args.append(min_macos_flag)
+            ext.extra_link_args.append(min_macos_flag)
 
 
 def configuration(parent_package='', top_path=None):
@@ -77,7 +34,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('_pocketfft', parent_package, top_path)
     ext = config.add_extension('pypocketfft',
                                sources=['pypocketfft.cxx'],
-                               depends=['pocketfft.h', 'scipy_features.h'],
+                               depends=['pocketfft_hdronly.h'],
                                include_dirs=include_dirs,
                                language='c++')
     ext._pre_build_hook = pre_build_hook

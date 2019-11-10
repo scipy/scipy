@@ -84,17 +84,17 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
     Examples
     --------
-    >>> from scipy import random, linalg, dot, diag, all, allclose
-    >>> a = random.randn(9, 6)
+    >>> from scipy import linalg
+    >>> a = np.random.randn(9, 6)
 
     >>> q, r = linalg.qr(a)
-    >>> allclose(a, np.dot(q, r))
+    >>> np.allclose(a, np.dot(q, r))
     True
     >>> q.shape, r.shape
     ((9, 9), (9, 6))
 
     >>> r2 = linalg.qr(a, mode='r')
-    >>> allclose(r, r2)
+    >>> np.allclose(r, r2)
     True
 
     >>> q3, r3 = linalg.qr(a, mode='economic')
@@ -102,10 +102,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     ((9, 6), (6, 6))
 
     >>> q4, r4, p4 = linalg.qr(a, pivoting=True)
-    >>> d = abs(diag(r4))
-    >>> all(d[1:] <= d[:-1])
+    >>> d = np.abs(np.diag(r4))
+    >>> np.all(d[1:] <= d[:-1])
     True
-    >>> allclose(a[:, p4], dot(q4, r4))
+    >>> np.allclose(a[:, p4], np.dot(q4, r4))
     True
     >>> q4.shape, r4.shape, p4.shape
     ((9, 9), (9, 6), (6,))

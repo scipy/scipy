@@ -4,6 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
+import platform
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -449,7 +450,9 @@ def test_zero_rhs(solver):
 
 
 @pytest.mark.parametrize("solver", [
-    gmres, qmr, lgmres,
+    gmres, qmr,
+    pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+                                                 reason="fails on ppc64le")),
     pytest.param(cgs, marks=pytest.mark.xfail),
     pytest.param(bicg, marks=pytest.mark.xfail),
     pytest.param(bicgstab, marks=pytest.mark.xfail),
@@ -633,3 +636,69 @@ class TestGMRES(object):
 
         # The solution should be OK outside null space of A
         assert_allclose(A.dot(A.dot(x)), A.dot(b))
+
+    def test_callback_type(self):
+        # The legacy callback type changes meaning of 'maxiter'
+        np.random.seed(1)
+        A = np.random.rand(20, 20)
+        b = np.random.rand(20)
+
+        cb_count = [0]
+
+        def pr_norm_cb(r):
+            cb_count[0] += 1
+            assert_(isinstance(r, float))
+
+        def x_cb(x):
+            cb_count[0] += 1
+            assert_(isinstance(x, np.ndarray))
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            # 2 iterations is not enough to solve the problem
+            cb_count = [0]
+            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
+            assert info == 2
+            assert cb_count[0] == 2
+
+        # With `callback_type` specified, no warning should be raised
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='legacy')
+        assert info == 2
+        assert cb_count[0] == 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='pr_norm')
+        assert info == 0
+        assert cb_count[0] > 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
+                        callback_type='x')
+        assert info == 0
+        assert cb_count[0] == 2
+
+    def test_callback_x_monotonic(self):
+        # Check that callback_type='x' gives monotonic norm decrease
+        np.random.seed(1)
+        A = np.random.rand(20, 20) + np.eye(20)
+        b = np.random.rand(20)
+
+        prev_r = [np.inf]
+        count = [0]
+
+        def x_cb(x):
+            r = np.linalg.norm(A.dot(x) - b)
+            assert r <= prev_r[0]
+            prev_r[0] = r
+            count[0] += 1
+
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
+                        callback_type='x')
+        assert info == 20
+        assert count[0] == 21
+        x_cb(x)

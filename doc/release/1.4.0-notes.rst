@@ -47,6 +47,9 @@ lambda expressions for them.
 
 `scipy.linalg` improvements
 ---------------------------
+The function ``scipy.linalg.subspace_angles(A, B)`` now gives correct
+results for complex-valued matrices. Before this, the function only returned
+correct values for real-valued matrices.
 
 
 `scipy.ndimage` improvements
@@ -60,6 +63,11 @@ lambda expressions for them.
 `scipy.signal` improvements
 ---------------------------
 
+Added a new function to calculate convolution using the overlap-add method,
+named `scipy.signal.oaconvolve`. Like `scipy.signal.fftconvolve`, this
+function supports specifying dimensions along which to do the convolution.
+
+`scipy.signal.cwt` now supports complex wavelets.
 
 `scipy.sparse` improvements
 ---------------------------
@@ -73,6 +81,18 @@ lambda expressions for them.
 Deprecated features
 ===================
 
+`scipy` deprecations
+--------------------
+Support for NumPy functions exposed via the root SciPy namespace is deprecated
+and will be removed in 2.0.0. For example, if you use ``scipy.rand`` or
+``scipy.diag``, you should change your code to directly use
+:func:`numpy.random.default_rng` or :func:`numpy.diag`, respectively.
+They remain available in the currently continuing Scipy 1.x release series.
+
+The exception to this rule is using ``scipy.fft`` as a function --
+:mod:`scipy.fft` is now meant to be used only as a module, so the ability to
+call ``scipy.fft(...)`` will be removed in SciPy 1.5.0.
+
 Backwards incompatible changes
 ==============================
 
@@ -82,9 +102,22 @@ Backwards incompatible changes
 `scipy.linalg` changes
 ----------------------
 
+`scipy.signal` changes
+----------------------
+:func:`scipy.signal.resample` behavior for length-1 signal inputs has been
+fixed to output a constant (DC) value rather than an impulse, consistent with
+the assumption of signal periodicity in the FFT method.
+
+`scipy.signal.cwt` now performs complex conjugation and time-reversal of
+wavelet data, which is a backwards-incompatible bugfix for
+time-asymmetric wavelets.
 
 `scipy.stats` changes
 ---------------------
+:func:`scipy.stats.loguniform` added with better documentation as (an alias for
+``scipy.stats.reciprocal``). ``loguniform`` generates random variables
+that are equally likely in the log space; e.g., ``1``, ``10`` and ``100``
+are all equally likely if ``loguniform(10 ** 0, 10 ** 2).rvs()`` is used.
 
 
 Other changes

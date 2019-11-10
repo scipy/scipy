@@ -4,6 +4,7 @@ Tests for the stats.mstats module (support for masked arrays)
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import platform
 
 import numpy as np
 from numpy import nan
@@ -246,6 +247,8 @@ class TestCorr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
         # simple case without ties
         x = ma.array(np.arange(10))
@@ -409,6 +412,14 @@ class TestTrimming(object):
         x.shape = (10,10)
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
+
+    def test_trimr(self):
+        x = ma.arange(10)
+        result = mstats.trimr(x, limits=(0.15, 0.14), inclusive=(False, False))
+        expected = ma.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                            mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 1])
+        assert_equal(result, expected)
+        assert_equal(result.mask, expected.mask)
 
     def test_trimmedmean(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
@@ -1079,8 +1090,8 @@ class TestCompareWithStats(object):
         np.random.seed(1234567)
         x = np.random.randn(n)
         y = x + np.random.randn(n)
-        xm = np.ones(len(x) + 5) * 1e16
-        ym = np.ones(len(y) + 5) * 1e16
+        xm = np.full(len(x) + 5, 1e16)
+        ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x
         ym[0:len(y)] = y
         mask = xm > 9e15
@@ -1089,10 +1100,10 @@ class TestCompareWithStats(object):
         return x, y, xm, ym
 
     def generate_xy_sample2D(self, n, nx):
-        x = np.ones((n, nx)) * np.nan
-        y = np.ones((n, nx)) * np.nan
-        xm = np.ones((n+5, nx)) * np.nan
-        ym = np.ones((n+5, nx)) * np.nan
+        x = np.full((n, nx), np.nan)
+        y = np.full((n, nx), np.nan)
+        xm = np.full((n+5, nx), np.nan)
+        ym = np.full((n+5, nx), np.nan)
 
         for i in range(nx):
             x[:, i], y[:, i], dx, dy = self.generate_xy_sample(n)

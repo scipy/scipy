@@ -356,6 +356,11 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         found.  Otherwise, the solution was not found. In either case, the
         optional output variable 'mesg' gives more information.
 
+    See Also
+    --------
+    least_squares : Newer interface to solve nonlinear least-squares problems
+        with bounds on the variables. See ``method=='lm'`` in particular.
+
     Notes
     -----
     "leastsq" is a wrapper around MINPACK's lmdif and lmder algorithms.
@@ -420,7 +425,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
               5: ["Number of calls to function has reached "
                   "maxfev = %d." % maxfev, ValueError],
               6: ["ftol=%f is too small, no further reduction "
-                  "in the sum of squares\n  is possible.""" % ftol,
+                  "in the sum of squares\n  is possible." % ftol,
                   ValueError],
               7: ["xtol=%f is too small, no further improvement in "
                   "the approximate\n  solution is possible." % xtol,
@@ -745,6 +750,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         jac = _wrap_jac(jac, xdata, transform)
     elif jac is None and method != 'lm':
         jac = '2-point'
+
+    if 'args' in kwargs:
+        # The specification for the model function `f` does not support
+        # additional arguments. Refer to the `curve_fit` docstring for
+        # acceptable call signatures of `f`.
+        raise ValueError("'args' is not a supported keyword argument.")
 
     if method == 'lm':
         # Remove full_output from kwargs, otherwise we're passing it in twice.

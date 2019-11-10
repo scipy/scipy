@@ -37,14 +37,14 @@ class Bench(Benchmark):
             # skip: slow, and not useful to benchmark numpy
             raise NotImplementedError()
 
-        a = random([size,size])
+        a = random([size, size])
         # larger diagonal ensures non-singularity:
         for i in range(size):
-            a[i,i] = 10*(.1+a[i,i])
+            a[i, i] = 10*(.1+a[i, i])
         b = random([size])
 
         if contig != 'contig':
-            a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
+            a = a[-1::-1, -1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
 
         self.a = a
@@ -55,6 +55,14 @@ class Bench(Benchmark):
             nl.solve(self.a, self.b)
         else:
             sl.solve(self.a, self.b)
+
+    def time_solve_triangular(self, size, contig, module):
+        # treats self.a as a lower-triangular matrix by ignoring the strictly
+        # upper-triangular part
+        if module == 'numpy':
+            pass
+        else:
+            sl.solve_triangular(self.a, self.b, lower=True)
 
     def time_inv(self, size, contig, module):
         if module == 'numpy':
@@ -231,3 +239,17 @@ class SpecialMatrices(Benchmark):
 
     def time_tri(self, size):
         sl.tri(size)
+
+
+class GetFuncs(Benchmark):
+    def setup(self):
+        self.x = np.eye(1)
+
+    def time_get_blas_funcs(self):
+        sl.blas.get_blas_funcs('gemm', dtype=float)
+
+    def time_get_blas_funcs_2(self):
+        sl.blas.get_blas_funcs(('gemm', 'axpy'), (self.x, self.x))
+
+    def time_small_cholesky(self):
+        sl.cholesky(self.x)

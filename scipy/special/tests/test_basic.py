@@ -20,6 +20,7 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
+import platform
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -321,21 +322,6 @@ class TestCephes(object):
     def test_erfc(self):
         assert_equal(cephes.erfc(0), 1.0)
 
-    def test_exp1(self):
-        cephes.exp1(1)
-
-    def test_expi(self):
-        cephes.expi(1)
-
-    def test_expn(self):
-        cephes.expn(1,1)
-
-    def test_exp1_reg(self):
-        # Regression for #834
-        a = cephes.exp1(-complex(19.9999990))
-        b = cephes.exp1(-complex(19.9999991))
-        assert_array_almost_equal(a.imag, b.imag)
-
     def test_exp10(self):
         assert_approx_equal(cephes.exp10(2),100.0)
 
@@ -424,12 +410,6 @@ class TestCephes(object):
     def test_gamma(self):
         assert_equal(cephes.gamma(5),24.0)
 
-    def test_gammainc(self):
-        assert_equal(cephes.gammainc(5,0),0.0)
-
-    def test_gammaincc(self):
-        assert_equal(cephes.gammaincc(5,0),1.0)
-
     def test_gammainccinv(self):
         assert_equal(cephes.gammainccinv(5,1),0.0)
 
@@ -478,9 +458,6 @@ class TestCephes(object):
 
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
-
-    def test_hyperu(self):
-        assert_equal(cephes.hyperu(0,1,1),1.0)
 
     def test_i0(self):
         assert_equal(cephes.i0(0),1.0)
@@ -792,13 +769,6 @@ class TestCephes(object):
     def test_nctdtrit(self):
         cephes.nctdtrit(.1,0.2,.5)
 
-    def test_ndtr(self):
-        assert_equal(cephes.ndtr(0), 0.5)
-        assert_almost_equal(cephes.ndtr(1), 0.84134474606)
-
-    def test_ndtri(self):
-        assert_equal(cephes.ndtri(0.5),0.0)
-
     def test_nrdtrimn(self):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
 
@@ -842,7 +812,7 @@ class TestCephes(object):
         val = cephes.pdtr(0, 1)
         assert_almost_equal(val, np.exp(-1))
         # Edge case: m = 0.
-        val = cephes.pdtr([0, 1, 2], 0.0)
+        val = cephes.pdtr([0, 1, 2], 0)
         assert_array_equal(val, [1, 1, 1])
 
     def test_pdtrc(self):
@@ -1545,10 +1515,10 @@ class TestEllip(object):
             mvals.append(m)
             m = np.nextafter(m, 1)
         f = special.ellipkinc(phi, mvals)
-        assert_array_almost_equal_nulp(f, 1.0259330100195334 * np.ones_like(f), 1)
+        assert_array_almost_equal_nulp(f, np.full_like(f, 1.0259330100195334), 1)
         # this bug also appears at phi + n * pi for at least small n
         f1 = special.ellipkinc(phi + pi, mvals)
-        assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
+        assert_array_almost_equal_nulp(f1, np.full_like(f1, 5.1296650500976675), 2)
 
     def test_ellipkinc_singular(self):
         # ellipkinc(phi, 1) has closed form and is finite only for phi in (-pi/2, pi/2)
@@ -1613,10 +1583,10 @@ class TestEllip(object):
             mvals.append(m)
             m = np.nextafter(m, 1)
         f = special.ellipeinc(phi, mvals)
-        assert_array_almost_equal_nulp(f, 0.84442884574781019 * np.ones_like(f), 2)
+        assert_array_almost_equal_nulp(f, np.full_like(f, 0.84442884574781019), 2)
         # this bug also appears at phi + n * pi for at least small n
         f1 = special.ellipeinc(phi + pi, mvals)
-        assert_array_almost_equal_nulp(f1, 3.3471442287390509 * np.ones_like(f1), 4)
+        assert_array_almost_equal_nulp(f1, np.full_like(f1, 3.3471442287390509), 4)
 
 
 class TestErf(object):
@@ -1849,6 +1819,15 @@ class TestFactorialFunctions(object):
             assert_array_equal(special.factorial([n], True),
                                special.factorial([n], False))
 
+    @pytest.mark.parametrize('x, exact', [
+        (1, True),
+        (1, False),
+        (np.array(1), True),
+        (np.array(1), False),
+    ])
+    def test_factorial_0d_return_type(self, x, exact):
+        assert np.isscalar(special.factorial(x, exact=exact))
+
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
                                   special.factorial2([7, 8, 9], exact=False))
@@ -1913,36 +1892,6 @@ class TestGamma(object):
         gamln = special.gammaln(3)
         lngam = log(special.gamma(3))
         assert_almost_equal(gamln,lngam,8)
-
-    def test_gammainc(self):
-        gama = special.gammainc(.5,.5)
-        assert_almost_equal(gama,.7,1)
-
-    def test_gammaincnan(self):
-        gama = special.gammainc(-1,1)
-        assert_(isnan(gama))
-
-    def test_gammainczero(self):
-        # bad arg but zero integration limit
-        gama = special.gammainc(-1,0)
-        assert_equal(gama,0.0)
-
-    def test_gammaincinf(self):
-        gama = special.gammainc(0.5, np.inf)
-        assert_equal(gama,1.0)
-
-    def test_gammaincc(self):
-        gicc = special.gammaincc(.5,.5)
-        greal = 1 - special.gammainc(.5,.5)
-        assert_almost_equal(gicc,greal,8)
-
-    def test_gammainccnan(self):
-        gama = special.gammaincc(-1,1)
-        assert_(isnan(gama))
-
-    def test_gammainccinf(self):
-        gama = special.gammaincc(0.5,np.inf)
-        assert_equal(gama,0.0)
 
     def test_gammainccinv(self):
         gccinv = special.gammainccinv(.5,.5)
@@ -2579,9 +2528,13 @@ class TestBessel(object):
                     assert_allclose(c3, c2, err_msg=(v, z),
                                      rtol=rtol, atol=atol)
 
+    @pytest.mark.xfail(platform.machine() == 'ppc64le',
+                       reason="fails on ppc64le")
     def test_jv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.jv, special.jn, rtol=1e-10, atol=1e-305)
 
+    @pytest.mark.xfail(platform.machine() == 'ppc64le',
+                       reason="fails on ppc64le")
     def test_yv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305)
 
@@ -3325,8 +3278,6 @@ def test_legacy():
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))
-        assert_equal(special.pdtrc(1, 0.3), special.pdtrc(1.8, 0.3))
-        assert_equal(special.pdtr(1, 0.3), special.pdtr(1.8, 0.3))
         assert_equal(special.pdtri(1, 0.3), special.pdtri(1.8, 0.3))
         assert_equal(special.kn(1, 0.3), special.kn(1.8, 0.3))
         assert_equal(special.yn(1, 0.3), special.yn(1.8, 0.3))

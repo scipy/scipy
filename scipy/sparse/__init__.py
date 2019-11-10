@@ -22,7 +22,7 @@ Sparse matrix classes
    csr_matrix - Compressed Sparse Row matrix
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
-   lil_matrix - Row-based linked list sparse matrix
+   lil_matrix - Row-based list of lists sparse matrix
    spmatrix - Sparse matrix base class
 
 Functions

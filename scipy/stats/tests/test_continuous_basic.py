@@ -47,11 +47,26 @@ distcont_extra = [
 ]
 
 
-distslow = ['kappa4', 'rdist', 'gausshyper', 'recipinvgauss', 'genexpon',
+distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
             'vonmises', 'vonmises_line', 'cosine', 'invweibull',
             'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
+# skip check_fit_args (test is slow)
+skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                 'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
+                 'kappa4', 'ksone', 'kstwobign', 'mielke', 'ncf', 'nct',
+                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
+                 'vonmises', 'vonmises_line',
+                 'levy_stable', 'rv_histogram_instance']
+
+# skip check_fit_args_fix (test is slow)
+skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
+                     'gausshyper', 'genexpon', 'halfgennorm',
+                     'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
+                     'ksone', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
+                     'ncx2', 'powerlognorm', 'powernorm', 'rdist',
+                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -59,10 +74,13 @@ distslow = ['kappa4', 'rdist', 'gausshyper', 'recipinvgauss', 'genexpon',
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
-                   'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
+                   'geninvgauss', 'gennorm', 'genpareto',
+                   'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
-                   'pearson3', 'reciprocal', 'rice', 't', 'skewnorm', 'tukeylambda',
+                   'loguniform', 'maxwell', 'nakagami',
+                   'ncf', 'nct', 'ncx2', 'norminvgauss',
+                   'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
+                   'pearson3', 'rdist', 'rice', 'skewnorm', 't', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
@@ -108,6 +126,7 @@ def test_cont_basic(distname, arg):
         check_sf_isf(distfn, arg, distname)
         check_pdf(distfn, arg, distname)
         check_pdf_logpdf(distfn, arg, distname)
+        check_pdf_logpdf_at_endpoints(distfn, arg, distname)
         check_cdf_logcdf(distfn, arg, distname)
         check_sf_logsf(distfn, arg, distname)
         check_ppf_broadcast(distfn, arg, distname)
@@ -115,7 +134,9 @@ def test_cont_basic(distname, arg):
         alpha = 0.01
         if distname == 'rv_histogram_instance':
             check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-        else:
+        elif distname != 'geninvgauss':
+            # skip kstest for geninvgauss since cdf is too slow; see test for
+            # rv generation in TestGenInvGauss in test_distributions.py
             check_distribution_rvs(distname, arg, alpha, rvs)
 
         locscale_defaults = (0, 1)
@@ -151,6 +172,7 @@ def test_cont_basic(distname, arg):
             sup.filter(RuntimeWarning, "invalid value")
             check_entropy_vect_scale(distfn, arg)
 
+        check_retrieving_support(distfn, arg)
         check_edge_support(distfn, arg)
 
         check_meth_dtype(distfn, arg, meths)
@@ -161,6 +183,12 @@ def test_cont_basic(distname, arg):
 
         if distname != 'truncnorm':
             check_ppf_private(distfn, arg, distname)
+
+        if distname not in skip_fit_test:
+            check_fit_args(distfn, arg, rvs[0:200])
+
+        if distname not in skip_fit_fix_test:
+            check_fit_args_fix(distfn, arg, rvs[0:200])
 
 
 def test_levy_stable_random_state_property():
@@ -237,9 +265,9 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm', 'norminvgauss',
-                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm',
-                          'semicircular']
+    shape_only = dist in ['betaprime', 'dgamma', 'dweibull', 'exponnorm',
+                          'geninvgauss', 'levy_stable', 'nct', 'norminvgauss',
+                          'rice', 'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
@@ -437,18 +465,47 @@ def check_pdf_logpdf(distfn, args, msg):
     # compares pdf at several points with the log of the pdf
     points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     pdf = distfn.pdf(vals, *args)
     logpdf = distfn.logpdf(vals, *args)
-    pdf = pdf[pdf != 0]
+    pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
     logpdf = logpdf[np.isfinite(logpdf)]
     msg += " - logpdf-log(pdf) relationship"
     npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
 
 
+def check_pdf_logpdf_at_endpoints(distfn, args, msg):
+    # compares pdf with the log of the pdf at the (finite) end points
+    points = np.array([0, 1])
+    vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
+    with suppress_warnings() as sup:
+        # Several distributions incur divide by zero or encounter invalid values when computing
+        # the pdf or logpdf at the endpoints.
+        suppress_messsages = [
+            "divide by zero encountered in true_divide",  # multiple distributions
+            "divide by zero encountered in log",  # multiple distributions
+            "divide by zero encountered in power",  # gengamma
+            "invalid value encountered in add",  # genextreme
+            "invalid value encountered in subtract",  # gengamma
+            "invalid value encountered in multiply"  # recipinvgauss
+            ]
+        for msg in suppress_messsages:
+            sup.filter(category=RuntimeWarning, message=msg)
+
+        pdf = distfn.pdf(vals, *args)
+        logpdf = distfn.logpdf(vals, *args)
+        pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
+        logpdf = logpdf[np.isfinite(logpdf)]
+        msg += " - logpdf-log(pdf) relationship"
+        npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+
+
 def check_sf_logsf(distfn, args, msg):
     # compares sf at several points with the log of the sf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     sf = distfn.sf(vals, *args)
     logsf = distfn.logsf(vals, *args)
     sf = sf[sf != 0]
@@ -459,8 +516,9 @@ def check_sf_logsf(distfn, args, msg):
 
 def check_cdf_logcdf(distfn, args, msg):
     # compares cdf at several points with the log of the cdf
-    points = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    points = np.array([0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0])
     vals = distfn.ppf(points, *args)
+    vals = vals[np.isfinite(vals)]
     cdf = distfn.cdf(vals, *args)
     logcdf = distfn.logcdf(vals, *args)
     cdf = cdf[cdf != 0]
@@ -508,3 +566,52 @@ def check_ppf_private(distfn, arg, msg):
     ppfs = distfn._ppf(np.array([0.1, 0.5, 0.9]), *arg)
     npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
 
+
+def check_retrieving_support(distfn, args):
+    loc, scale = 1, 2
+    supp = distfn.support(*args)
+    supp_loc_scale = distfn.support(*args, loc=loc, scale=scale)
+    npt.assert_almost_equal(np.array(supp)*scale + loc,
+                            np.array(supp_loc_scale))
+
+
+def check_fit_args(distfn, arg, rvs):
+    with np.errstate(all='ignore'), suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        sup.filter(category=RuntimeWarning,
+                   message="The shape parameter of the erlang")
+        sup.filter(category=RuntimeWarning,
+                   message="floating point number truncated")
+        vals = distfn.fit(rvs)
+        vals2 = distfn.fit(rvs, optimizer='powell')
+    # Only check the length of the return
+    # FIXME: should check the actual results to see if we are 'close'
+    #   to what was created --- but what is 'close' enough
+    npt.assert_(len(vals) == 2+len(arg))
+    npt.assert_(len(vals2) == 2+len(arg))
+
+
+def check_fit_args_fix(distfn, arg, rvs):
+    with np.errstate(all='ignore'), suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        sup.filter(category=RuntimeWarning,
+                   message="The shape parameter of the erlang")
+
+        vals = distfn.fit(rvs, floc=0)
+        vals2 = distfn.fit(rvs, fscale=1)
+        npt.assert_(len(vals) == 2+len(arg))
+        npt.assert_(vals[-2] == 0)
+        npt.assert_(vals2[-1] == 1)
+        npt.assert_(len(vals2) == 2+len(arg))
+        if len(arg) > 0:
+            vals3 = distfn.fit(rvs, f0=arg[0])
+            npt.assert_(len(vals3) == 2+len(arg))
+            npt.assert_(vals3[0] == arg[0])
+        if len(arg) > 1:
+            vals4 = distfn.fit(rvs, f1=arg[1])
+            npt.assert_(len(vals4) == 2+len(arg))
+            npt.assert_(vals4[1] == arg[1])
+        if len(arg) > 2:
+            vals5 = distfn.fit(rvs, f2=arg[2])
+            npt.assert_(len(vals5) == 2+len(arg))
+            npt.assert_(vals5[2] == arg[2])

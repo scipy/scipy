@@ -203,7 +203,6 @@ def _remove_redundancy_dense(A, rhs):
         # not efficient, but this is not the time sink...
         js = np.array(list(k-set(b)))
         batch = 50
-        dependent = True
 
         # This is a tiny bit faster than looping over columns indivually,
         # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
@@ -215,9 +214,8 @@ def _remove_redundancy_dense(A, rhs):
                 j = js[j_index + np.argmax(c)]  # very independent column
                 B[:, i] = A[:, j]
                 b[i] = j
-                dependent = False
                 break
-        if dependent:
+        else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))
             bnorm = np.linalg.norm(rhs)
             if abs(bibar)/(1+bnorm) > tolprimal:  # inconsistent
@@ -432,7 +430,7 @@ def _remove_redundancy(A, b):
                        "off redundancy removal, or try turning off presolve "
                        "altogether.")
             break
-        if np.any(np.abs(v.dot(b)) > tol * 10):  # factor of 10 to fix 10038
+        if np.any(np.abs(v.dot(b)) > tol * 100):  # factor of 100 to fix 10038 and 10349
             status = 2
             message = ("There is a linear combination of rows of A_eq that "
                        "results in zero, suggesting a redundant constraint. "

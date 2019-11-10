@@ -261,14 +261,13 @@ _kolmogi(double psf, double pcdf)
     double fmax = pcdf - 1;
     int iterations;
     double a = xmin, b = xmax;
-    double fa = fmin, fb = fmax;
 
     if (!(psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
-        mtherr("kolmogi", DOMAIN);
+        sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
-        mtherr("kolmogi", DOMAIN);
+        sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     if (pcdf == 0.0) {
@@ -337,10 +336,8 @@ _kolmogi(double psf, double pcdf)
         /* Update the bracketing interval */
         if (df > 0 && x > a) {
             a = x;
-            fa = df;
         } else if (df < 0 && x < b) {
             b = x;
-            fb = df;
         }
 
         dfdx = -probs.pdf;
@@ -377,7 +374,7 @@ _kolmogi(double psf, double pcdf)
         }
 
         if (++iterations > MAXITER) {
-            mtherr("kolmogi", TOOMANY);
+            sf_error("kolmogi", SF_ERROR_SLOW, NULL);
             break;
         }
     } while(1);
@@ -910,16 +907,15 @@ _smirnovi(int n, double psf, double pcdf)
     int iterations = 0;
     int function_calls = 0;
     double a=0, b=1;
-    double fa=pcdf, fb=-psf;
     double maxlogpcdf, psfrootn;
     double dx, dxold;
 
     if (!(n > 0 && psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
-        mtherr("smirnovi", DOMAIN);
+        sf_error("smirnovi", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
-        mtherr("smirnovi", DOMAIN);
+        sf_error("smirnovi", SF_ERROR_DOMAIN, NULL);
         return (NPY_NAN);
     }
     /* STEP 1: Handle psf==0, or pcdf == 0 */
@@ -1000,13 +996,9 @@ _smirnovi(int n, double psf, double pcdf)
     assert (x < 1);
 
     /*
-     * Skip computing fb, fb as that takes cycles and the exact values
-     * are not needed. Instead set
-     *  fa <- f(0.0)=pcdf,   fb <- f(1.0)=psf
-     * so that fa, fb have the correct sign.
+     * Skip computing fa, fb as that takes cycles and the exact values
+     * are not needed.
      */
-    fa = pcdf;
-    fb = -psf;
 
     /* STEP 5 Run N-R.
      * smirnov should be well-enough behaved for NR starting at this location.
@@ -1030,10 +1022,8 @@ _smirnovi(int n, double psf, double pcdf)
         /* Update the bracketing interval */
         if (df > 0 &&  x > a) {
             a = x;
-            fa = df;
         } else if (df < 0 && x < b) {
             b = x;
-            fb = df;
         }
 
         if (dfdx == 0) {
@@ -1074,7 +1064,7 @@ _smirnovi(int n, double psf, double pcdf)
             break;
         }
         if (++iterations > MAXITER) {
-            mtherr("smirnovi", TOOMANY);
+            sf_error("smirnovi", SF_ERROR_SLOW, NULL);
             return (x);
         }
     } while (1);

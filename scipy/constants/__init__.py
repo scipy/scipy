@@ -59,7 +59,7 @@ Constants database
 ------------------
 
 In addition to the above variables, :mod:`scipy.constants` also contains the
-2014 CODATA recommended values [CODATA2014]_ database containing more physical
+2018 CODATA recommended values [CODATA2018]_ database containing more physical
 constants.
 
 .. autosummary::
@@ -309,8 +309,8 @@ Optics
 References
 ==========
 
-.. [CODATA2014] CODATA Recommended Values of the Fundamental
-   Physical Constants 2014.
+.. [CODATA2018] CODATA Recommended Values of the Fundamental
+   Physical Constants 2018.
 
    https://physics.nist.gov/cuu/Constants/
 

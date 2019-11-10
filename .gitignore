@@ -129,6 +129,7 @@ scipy/cluster/_hierarchy.c
 scipy/cluster/_optimal_leaf_ordering.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
+scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
 scipy/integrate/_dopmodule.c
@@ -191,6 +192,7 @@ scipy/optimize/_trlib/_trlib.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c

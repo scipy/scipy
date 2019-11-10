@@ -510,3 +510,42 @@ class TestSLSQP(object):
 
         problem = NestedProblem()
         problem.solve()
+
+    def test_gh1758(self):
+        # the test suggested in gh1758
+        # https://nlopt.readthedocs.io/en/latest/NLopt_Tutorial/
+        # implement two equality constraints, in R^2.
+        def fun(x):
+            return np.sqrt(x[1])
+
+        def f_eqcon(x):
+            """ Equality constraint """
+            return x[1] - (2 * x[0]) ** 3
+
+        def f_eqcon2(x):
+            """ Equality constraint """
+            return x[1] - (-x[0] + 1) ** 3
+
+        c1 = {'type': 'eq', 'fun': f_eqcon}
+        c2 = {'type': 'eq', 'fun': f_eqcon2}
+
+        res = minimize(fun, [8, 0.25], method='SLSQP',
+                       constraints=[c1, c2], bounds=[(-0.5, 1), (0, 8)])
+
+        np.testing.assert_allclose(res.fun, 0.5443310539518)
+        np.testing.assert_allclose(res.x, [0.33333333, 0.2962963])
+        assert res.success
+
+    def test_gh9640(self):
+        np.random.seed(10)
+        cons = ({'type': 'ineq', 'fun': lambda x: -x[0] - x[1] - 3},
+                {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
+        bnds = ((-2, 2), (-2, 2), (-2, 2))
+
+        target = lambda x: 1
+        x0 = [-1.8869783504471584, -0.640096352696244, -0.8174212253407696]
+        res = minimize(target, x0, method='SLSQP', bounds=bnds, constraints=cons,
+                       options={'disp':False, 'maxiter':10000})
+
+        # The problem is infeasible, so it cannot succeed
+        assert not res.success

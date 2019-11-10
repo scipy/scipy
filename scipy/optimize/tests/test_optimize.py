@@ -23,6 +23,7 @@ from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
+from scipy.optimize._minimize import MINIMIZE_METHODS
 
 
 def test_check_grad():
@@ -535,6 +536,17 @@ class TestOptimizeSimple(CheckOptimize):
         xs = optimize.fmin_bfgs(f, [10.], disp=False)
         assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
 
+    def test_bfgs_double_evaluations(self):
+        # check bfgs does not evaluate twice in a row at same point
+        def f(x):
+            xp = float(x)
+            assert xp not in seen
+            seen.add(xp)
+            return 10*x**2, 20*x
+
+        seen = set()
+        optimize.minimize(f, -100, method='bfgs', jac=True, tol=1e-7)
+
     def test_l_bfgs_b(self):
         # limited-memory bound-constrained BFGS algorithm
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
@@ -651,7 +663,7 @@ class TestOptimizeSimple(CheckOptimize):
         f = optimize.rosen
         g = optimize.rosen_der
         values = []
-        x0 = np.ones(7) * 1000
+        x0 = np.full(7, 1000)
 
         def objfun(x):
             value = f(x)
@@ -710,6 +722,21 @@ class TestOptimizeSimple(CheckOptimize):
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
 
+    def test_gh10771(self):
+        # check that minimize passes bounds and constraints to a custom
+        # minimizer without altering them.
+        bounds = [(-2, 2), (0, 3)]
+        constraints = 'constraints'
+
+        def custmin(fun, x0, **options):
+            assert options['bounds'] is bounds
+            assert options['constraints'] is constraints
+            return optimize.OptimizeResult()
+
+        x0 = [1, 1]
+        res = optimize.minimize(optimize.rosen, x0, method=custmin,
+                                bounds=bounds, constraints=constraints)
+
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something
         def func(z):
@@ -735,15 +762,17 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
-    @pytest.mark.parametrize('method', ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
-                                        'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
-                                        'fmin_slsqp',
-                                        'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B',
-                                        'TNC', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg',
-                                        'trust-exact', 'trust-krylov'])
+    @pytest.mark.parametrize('method',
+                             ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
+                              'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
+                              'fmin_slsqp'] + MINIMIZE_METHODS)
     def test_minimize_callback_copies_array(self, method):
         # Check that arrays passed to callbacks are not modified
         # inplace by the optimizer afterward
+
+        # cobyla doesn't have callback
+        if method == 'cobyla':
+            return
 
         if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
             func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
@@ -769,14 +798,14 @@ class TestOptimizeSimple(CheckOptimize):
                 kw['method'] = method
                 return optimize.minimize(*a, **kw)
 
-            if method == 'TNC':
+            if method == 'tnc':
                 kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
         if method in ('fmin_ncg',):
             kwargs['fprime'] = jac
-        elif method in ('Newton-CG',):
+        elif method in ('newton-cg',):
             kwargs['jac'] = jac
         elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
                         'trust-constr'):
@@ -921,6 +950,50 @@ class TestOptimizeSimple(CheckOptimize):
                 # step size has upper bound of ||grad||, so line
                 # search makes many small steps
                 pass
+
+    @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                                        'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
+                                        'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'])
+    def test_nan_values(self, method):
+        # Check nan values result to failed exit status
+        np.random.seed(1234)
+
+        count = [0]
+
+        def func(x):
+            return np.nan
+
+        def func2(x):
+            count[0] += 1
+            if count[0] > 2:
+                return np.nan
+            else:
+                return np.random.rand()
+
+        def grad(x):
+            return np.array([1.0])
+
+        def hess(x):
+            return np.array([[1.0]])
+
+        x0 = np.array([1.0])
+
+        needs_grad = method in ('newton-cg', 'trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg')
+        needs_hess = method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg')
+
+        funcs = [func, func2]
+        grads = [grad] if needs_grad else [grad, None]
+        hesss = [hess] if needs_hess else [hess, None]
+
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
+            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+
+            for f, g, h in itertools.product(funcs, grads, hesss):
+                count = [0]
+                sol = optimize.minimize(f, x0, jac=g, hess=h, method=method, options=dict(maxiter=20))
+                assert_equal(sol.success, False)
 
 
 class TestLBFGSBBounds(object):
@@ -1119,6 +1192,33 @@ class TestOptimizeScalar(object):
         # Regression test for gh-3503
         optimize.minimize_scalar(self.fun, args=1.5)
 
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    def test_nan_values(self, method):
+        # Check nan values result to failed exit status
+        np.random.seed(1234)
+
+        count = [0]
+
+        def func(x):
+            count[0] += 1
+            if count[0] > 4:
+                return np.nan
+            else:
+                return x**2 + 0.1 * np.sin(x)
+
+        bracket = (-1, 0, 1)
+        bounds = (-1, 1)
+
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.*")
+            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
+            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+
+            count = [0]
+            sol = optimize.minimize_scalar(func, bracket=bracket, bounds=bounds, method=method,
+                                           options=dict(maxiter=20))
+            assert_equal(sol.success, False)
+
 
 def test_brent_negative_tolerance():
     assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
@@ -1220,13 +1320,10 @@ class TestOptimizeResultAttributes(object):
         self.bounds = [(0., 10.), (0., 10.)]
 
     def test_attributes_present(self):
-        methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
-                   'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
-                   'trust-ncg']
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
                       'message']
-        skip = {'COBYLA': ['nit']}
-        for method in methods:
+        skip = {'cobyla': ['nit']}
+        for method in MINIMIZE_METHODS:
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning,
                            "Method .+ does not use (gradient|Hessian.*) information")

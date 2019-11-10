@@ -13,6 +13,8 @@ extern double bdtrc(int k, int n, double p);
 extern double bdtr(int k, int n, double p);
 extern double bdtri(int k, int n, double y);
 
+extern double besselpoly(double a, double lambda, double nu);
+
 extern double beta(double a, double b);
 extern double lbeta(double a, double b);
 
@@ -45,6 +47,7 @@ extern int fresnl(double xxa, double *ssa, double *cca);
 extern double Gamma(double x);
 extern double lgam(double x);
 extern double lgam_sgn(double x, int *sign);
+extern double gammasgn(double x);
 
 extern double gdtr(double a, double b, double x);
 extern double gdtrc(double a, double b, double x);
@@ -91,9 +94,11 @@ extern double erfc(double a);
 extern double erf(double x);
 extern double ndtri(double y0);
 
-extern double pdtrc(int k, double m);
-extern double pdtr(int k, double m);
+extern double pdtrc(double k, double m);
+extern double pdtr(double k, double m);
 extern double pdtri(int k, double y);
+
+extern double poch(double x, double m);
 
 extern double psi(double x);
 
@@ -111,6 +116,12 @@ extern double spence(double x);
 
 extern double stdtr(int k, double t);
 extern double stdtri(int k, double p);
+
+extern double struve_h(double v, double x);
+extern double struve_l(double v, double x);
+extern double struve_power_series(double v, double x, int is_h, double *err);
+extern double struve_asymp_large_z(double v, double z, int is_h, double *err);
+extern double struve_bessel_series(double v, double z, int is_h, double *err);
 
 extern double yv(double v, double x);
 

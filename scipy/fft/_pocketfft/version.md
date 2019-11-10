@@ -2,14 +2,19 @@
 pypocketfft version
 -------------------
 
-SciPy currently vendors [pypocketfft][repo] at:
+SciPy currently vendors [pypocketfft] at:
 
-    commit d77cdeb516459c0b5b62f618a96a6ca13b9db0de
-    Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Tue Jun 4 21:21:01 2019 +0200
+    commit c0f74f610adfc60b8b5e3c3bce6477e646329f63
+	Merge: c573384 dce19de
+	Author: Martin Reinecke <martin@mpa-garching.mpg.de>
+	Date:   Wed Aug 14 15:25:48 2019 +0200
 
-        drop GIL when possible
+        Merge branch 'macos-issues' into 'master'
 
-With the modifications given in `scipychanges.patch`
+        macOS issues
 
-repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
+        See merge request mtr/pypocketfft!27
+
+
+
+pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

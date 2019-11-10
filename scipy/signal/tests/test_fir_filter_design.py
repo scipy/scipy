@@ -7,10 +7,10 @@ from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 
-from scipy.linalg import LinAlgWarning
+from scipy.fft import fft
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez, firls, minimum_phase
+    firwin, firwin2, freqz, remez, firls, minimum_phase
 
 
 def test_kaiser_beta():
@@ -278,31 +278,50 @@ class TestFirwin2(object):
 
     def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 1], [0.0, 1.0])
+        with assert_raises(ValueError, match='must be of same length'):
+            firwin2(50, [0, 0.5, 1], [0.0, 1.0])
         # `nfreqs` is less than `ntaps`.
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 1], [0.0, 1.0, 1.0], nfreqs=33)
+        with assert_raises(ValueError, match='ntaps must be less than nfreqs'):
+            firwin2(50, [0, 0.5, 1], [0.0, 1.0, 1.0], nfreqs=33)
         # Decreasing value in `freq`
-        assert_raises(ValueError, firwin2, 50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
+        with assert_raises(ValueError, match='must be nondecreasing'):
+            firwin2(50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
         # Value in `freq` repeated more than once.
-        assert_raises(ValueError, firwin2, 50, [0, .1, .1, .1, 1.0],
-                                               [0.0, 0.5, 0.75, 1.0, 1.0])
+        with assert_raises(ValueError, match='must not occur more than twice'):
+            firwin2(50, [0, .1, .1, .1, 1.0], [0.0, 0.5, 0.75, 1.0, 1.0])
         # `freq` does not start at 0.0.
-        assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
+        with assert_raises(ValueError, match='start with 0'):
+            firwin2(50, [0.5, 1.0], [0.0, 1.0])
+        # `freq` does not end at fs/2.
+        with assert_raises(ValueError, match='end with fs/2'):
+            firwin2(50, [0.0, 0.5], [0.0, 1.0])
+        # Value 0 is repeated in `freq`
+        with assert_raises(ValueError, match='0 must not be repeated'):
+            firwin2(50, [0.0, 0.0, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
+        # Value fs/2 is repeated in `freq`
+        with assert_raises(ValueError, match='fs/2 must not be repeated'):
+            firwin2(50, [0.0, 0.5, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0])
+        # Value in `freq` that is too close to a repeated number
+        with assert_raises(ValueError, match='cannot contain numbers '
+                                             'that are too close'):
+            firwin2(50, [0.0, 0.5 - np.finfo(float).eps * 0.5, 0.5, 0.5, 1.0],
+                        [1.0, 1.0, 1.0, 0.0, 0.0])
 
         # Type II filter, but the gain at nyquist frequency is not zero.
-        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
+        with assert_raises(ValueError, match='Type II filter'):
+            firwin2(16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
         # Type III filter, but the gains at nyquist and zero rate are not zero.
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0],
-                      antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
-                      antisymmetric=True)
-        assert_raises(ValueError, firwin2, 17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0],
-                      antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0], antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], antisymmetric=True)
+        with assert_raises(ValueError, match='Type III filter'):
+            firwin2(17, [0.0, 0.5, 1.0], [1.0, 1.0, 1.0], antisymmetric=True)
 
-        # Type VI filter, but the gain at zero rate is not zero.
-        assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0],
-                      antisymmetric=True)
+        # Type IV filter, but the gain at zero rate is not zero.
+        with assert_raises(ValueError, match='Type IV filter'):
+            firwin2(16, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0], antisymmetric=True)
 
     def test01(self):
         width = 0.04
@@ -391,6 +410,18 @@ class TestFirwin2(object):
         assert_array_almost_equal(taps1, taps2)
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
         assert_array_almost_equal(taps1, taps2)
+
+    def test_tuple(self):
+        taps1 = firwin2(150, (0.0, 0.5, 0.5, 1.0), (1.0, 1.0, 0.0, 0.0))
+        taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
+        assert_array_almost_equal(taps1, taps2)
+
+    def test_input_modyfication(self):
+        freq1 = np.array([0.0, 0.5, 0.5, 1.0])
+        freq2 = np.array(freq1)
+        firwin2(80, freq1, [1.0, 1.0, 0.0, 0.0])
+        assert_equal(freq1, freq2)
+
 
 class TestRemez(object):
 
@@ -565,7 +596,7 @@ class TestMinimumPhase(object):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])
         assert_raises(ValueError, minimum_phase, [1., 1.])
-        assert_raises(ValueError, minimum_phase, np.ones(10) * 1j)
+        assert_raises(ValueError, minimum_phase, np.full(10, 1j))
         assert_raises(ValueError, minimum_phase, 'foo')
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
@@ -585,8 +616,8 @@ class TestMinimumPhase(object):
         for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
             h = rng.randn(n)
             h_new = minimum_phase(np.convolve(h, h[::-1]))
-            assert_allclose(np.abs(np.fft.fft(h_new)),
-                            np.abs(np.fft.fft(h)), rtol=1e-4)
+            assert_allclose(np.abs(fft(h_new)),
+                            np.abs(fft(h)), rtol=1e-4)
 
     def test_hilbert(self):
         # compare to MATLAB output of reference implementation
@@ -598,7 +629,7 @@ class TestMinimumPhase(object):
         k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
              0.077152207480935, -0.129943946349364, -0.059355880509749]
         m = minimum_phase(h, 'hilbert')
-        assert_allclose(m, k, rtol=2e-3)
+        assert_allclose(m, k, rtol=5e-3)
 
         # f=[0 0.8 0.9 1];
         # a=[0 0 1 1];

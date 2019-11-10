@@ -32,6 +32,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import sys
+import platform
 
 import numpy
 from numpy import fft
@@ -2152,10 +2153,7 @@ class TestNdimage:
     def test_zoom_output_shape_roundoff(self):
         arr = numpy.zeros((3, 11, 25))
         zoom = (4.0 / 3, 15.0 / 11, 29.0 / 25)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "From scipy 0.13.0, the output shape of zoom.. is calculated with round.. instead of int")
-            out = ndimage.zoom(arr, zoom)
+        out = ndimage.zoom(arr, zoom)
         assert_array_equal(out.shape, (4, 15, 29))
 
     def test_rotate01(self):

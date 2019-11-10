@@ -74,6 +74,16 @@ All functions
    cgecon
    zgecon
 
+   sgeequ
+   dgeequ
+   cgeequ
+   zgeequ
+
+   sgeequb
+   dgeequb
+   cgeequb
+   zgeequb
+
    sgees
    dgees
    cgees
@@ -243,6 +253,9 @@ All functions
    checon
    zhecon
 
+   cheequb
+   zheequb
+
    cheev
    zheev
 
@@ -382,6 +395,16 @@ All functions
    cpocon
    zpocon
 
+   spstrf
+   dpstrf
+   cpstrf
+   zpstrf
+
+   spstf2
+   dpstf2
+   cpstf2
+   zpstf2
+
    sposv
    dposv
    cposv
@@ -454,6 +477,11 @@ All functions
    dsyconv
    csyconv
    zsyconv
+
+   ssyequb
+   dsyequb
+   csyequb
+   zsyequb
 
    ssyev
    dsyev
@@ -597,6 +625,26 @@ All functions
    cunmqr
    zunmqr
 
+   sgeqrt
+   dgeqrt
+   cgeqrt
+   zgeqrt
+
+   sgemqrt
+   dgemqrt
+   cgemqrt
+   zgemqrt
+
+   stpqrt
+   dtpqrt
+   ctpqrt
+   ztpqrt
+
+   stpmqrt
+   dtpmqrt
+   ctpmqrt
+   ztpmqrt
+
    cunmrz
    zunmrz
 
@@ -612,7 +660,7 @@ All functions
 
 from __future__ import division, print_function, absolute_import
 import numpy as _np
-from .blas import _get_funcs
+from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 try:
     from scipy.linalg import _clapack
@@ -659,6 +707,7 @@ _lapack_alias = {
 }
 
 
+@_memoize_get_funcs
 def get_lapack_funcs(names, arrays=(), dtype=None):
     """Return available LAPACK function objects from names.
 
@@ -729,6 +778,9 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
                       "flapack", "clapack", _lapack_alias)
 
 
+_int32_max = _np.iinfo(_np.int32).max
+
+
 def _compute_lwork(routine, *args, **kwargs):
     """
     Round floating-point lwork returned by lapack to integer.
@@ -750,27 +802,31 @@ def _compute_lwork(routine, *args, **kwargs):
     32000
 
     """
-    wi = routine(*args, **kwargs)
-    if len(wi) < 2:
-        raise ValueError('')
-    info = wi[-1]
-    if info != 0:
-        raise ValueError("Internal work array size computation failed: "
-                         "%d" % (info,))
-
-    lwork = [w.real for w in wi[:-1]]
-
     dtype = getattr(routine, 'dtype', None)
+    ret = routine(*args, **kwargs)
+    if ret[-1] != 0:
+        raise ValueError("Internal work array size computation failed: "
+                         "%d" % (ret[-1],))
+
+    if len(ret) == 2:
+        return _check_work_float(ret[0].real, dtype)
+    else:
+        return tuple(_check_work_float(x.real, dtype) for x in ret[:-1])
+
+
+def _check_work_float(value, dtype):
+    """
+    Convert LAPACK-returned work array size float to integer,
+    carefully for single-precision types.
+    """
+
     if dtype == _np.float32 or dtype == _np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        lwork = _np.nextafter(lwork, _np.inf, dtype=_np.float32)
+        value = _np.nextafter(value, _np.inf, dtype=_np.float32)
 
-    lwork = _np.array(lwork, _np.int64)
-    if _np.any(_np.logical_or(lwork < 0, lwork > _np.iinfo(_np.int32).max)):
+    value = int(value)
+    if value < 0 or value > _int32_max:
         raise ValueError("Too large work array required -- computation cannot "
                          "be performed with standard 32-bit LAPACK.")
-    lwork = lwork.astype(_np.int32)
-    if lwork.size == 1:
-        return lwork[0]
-    return lwork
+    return value

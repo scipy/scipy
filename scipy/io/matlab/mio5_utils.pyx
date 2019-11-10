@@ -733,11 +733,12 @@ cdef class VarReader5:
             arr = mio5p.MatlabOpaque(arr)
             # to make them more re-writeable - don't squeeze
             process = 0
-        if header.check_stream_limit:
-            if not self.cstream.all_data_read():
-                raise ValueError('Did not fully consume compressed contents' +
-                                 ' of an miCOMPRESSED element. This can' +
-                                 ' indicate that the .mat file is corrupted.')
+        # ensure we have read checksum.
+        read_ok = self.cstream.all_data_read()
+        if header.check_stream_limit and not read_ok:
+            raise ValueError('Did not fully consume compressed contents' +
+                             ' of an miCOMPRESSED element. This can' +
+                             ' indicate that the .mat file is corrupted.')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
