@@ -300,18 +300,18 @@ cdef int[:] _edmonds_karp(
 
     Parameters
     ----------
-    edge_ptr : memoryview of length |V| + 1
-        For a given vertex v, the edges whose tail is v are those between
-        edge_ptr[v] and edge_ptr[v + 1] - 1.
-    tails : memoryview of length |E|
-        For a given edge e, tails[e] is the tail vertex of e.
-    heads : memoryview of length |E|
-        For a given edge e, tails[e] is the head vertex of e.
-    capacities : memoryview of length |E|
-        For a given edge e, capacities[e] is the capacity of e.
-    rev_edge_ptr : memoryview of length |E|
-        For a given edge e, rev_edge_ptr[e] is the edge obtained by
-        reversing e. In particular, rev_edge_ptr[rev_edge_ptr[e]] == e.
+    edge_ptr : memoryview of length :math:`|V| + 1`
+        For a given vertex v, the edges whose tail is ``v`` are those between
+        ``edge_ptr[v]`` and ``edge_ptr[v + 1] - 1``.
+    tails : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``tails[e]`` is the tail vertex of ``e``.
+    heads : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``tails[e]`` is the head vertex of ``e``.
+    capacities : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``capacities[e]`` is the capacity of ``e``.
+    rev_edge_ptr : memoryview of length :math:`|E|`
+        For a given edge ``e``, ``rev_edge_ptr[e]`` is the edge obtained by
+        reversing ``e``. In particular, ``rev_edge_ptr[rev_edge_ptr[e]] == e``.
     source : int
         The source vertex.
     sink : int
@@ -319,7 +319,7 @@ cdef int[:] _edmonds_karp(
 
     Returns
     -------
-    flow : memoryview of length |E|
+    flow : memoryview of length :math:`|E|`
         The residual graph with respect to a maximum flow.
 
     """
