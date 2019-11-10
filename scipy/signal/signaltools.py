@@ -1077,26 +1077,22 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     Notes
     -----
-    For large n, ``measure=False`` is accurate and can quickly determine the
-    fastest method to perform the convolution. Generally, this method is about
-    90% accurate for randomly chosen input sizes. However, this is not as
-    accurate for small inputs.
+    Generally, this method is about 90% accurate for randomly chosen input
+    sizes. For precision, use ``measure=True`` to find the fastest method by
+    running and measuring the convolutions. This function is most inaccurate
+    for small sized 1D inputs.
 
-    If this funciton is incorrect, the estimate is about up to 7 times slower
-    than the other faster method (i.e., the estimated method is *at most* 7
-    times slower than the fastest method). For the modes ``full``, ``valid``
-    and ``same`` there is at least a 95% chance of the ratio being less
-    than 2.5, 3.2 and 4.5 respectively (at least in our testing). This is
-    function is least accurate when the convolution takes less than
-    approximately 0.3ms for 1D signals where ``mode=='same'`` and
-    ``len(in1) < len(in2)``.
+    If this funciton is incorrect, the estimated method is less than 10 times
+    slower than the other faster method (at least in our experiments).
+    There is a 95% chance of this ratio being less than 3 for all signals
+    except 1D signals with ``mode=='same'`` (in which case there's a
+    95% probability the ratio is less than 5).
 
     The estimation values were tuned on an mid-2014 15-inch MacBook Pro with
     16GB RAM and a 2.5GHz Intel i7 processor. We found this function
     generalizes decently across machines.
 
-    If ``measure=True``, time the convolutions. Because this function uses
-    `fftconvolve`, an error will be thrown if it does not support the inputs.
+    The convolution is timed the convolutions if ``measure=True``.
     There are cases when `fftconvolve` supports the inputs but this function
     returns `direct` (e.g., to protect against floating point integer
     precision).
@@ -1118,9 +1114,11 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     >>> img2 = np.random.rand(32, 32)
     >>> filter2 = np.random.rand(8, 8)
-    >>> # `method` works with correlate and convolve
     >>> corr2 = signal.correlate(img2, filter2, mode='same', method=method)
     >>> conv2 = signal.convolve(img2, filter2, mode='same', method=method)
+
+    The output of this function (``method``) works with `correlate` and
+    `convolve`.
 
     """
     volume = np.asarray(in1)
