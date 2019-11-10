@@ -936,7 +936,7 @@ def _conv_ops(x_shape, h_shape, mode):
     return fft_ops, direct_ops
 
 
-def _fftconv_faster(x, h, mode, test=True):
+def _fftconv_faster(x, h, mode):
     """
     See if using fftconvolve or convolve is faster.
 
@@ -955,7 +955,10 @@ def _fftconv_faster(x, h, mode, test=True):
 
     Notes
     -----
-    See docstring of `choose_conv_method` for details on how tuned.
+    See docstring of `choose_conv_method` for details on tuning hardware.
+
+    See pull request 11031 for more detail:
+    https://github.com/scipy/scipy/pull/11031.
 
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
@@ -1084,15 +1087,15 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Notes
     -----
     Generally, this method is about 90% accurate for randomly chosen input
-    sizes. For precision, use ``measure=True`` to find the fastest method by
-    running and measuring the convolutions. This function is most inaccurate
-    for small sized 1D inputs.
+    sizes for 1D signals and >95% accurate otherwise. For precision, use
+    ``measure=True`` to find the fastest method by running and measuring
+    the convolutions.
 
     If this funciton is incorrect, the estimated method is less than 10 times
     slower than the other faster method (at least in our experiments).
     There is a 95% chance of this ratio being less than 3 for all signals
-    except 1D signals with ``mode=='same'`` (in which case there's a
-    95% probability the ratio is less than 5).
+    (except 1D signals with ``mode=='same'`` and ``len(in1) < len(in2)``,
+    which has a 95% probability of the ratio being less than 5.5).
 
     The estimation values were tuned on an mid-2014 15-inch MacBook Pro with
     16GB RAM and a 2.5GHz Intel i7 processor. We found this function
