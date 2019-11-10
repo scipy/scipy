@@ -1320,8 +1320,12 @@ class TestBoxcox(object):
 
     def test_boxcox_bad_arg(self):
         # Raise ValueError if any data value is negative.
-        x = np.array([-1])
+        x = np.array([-1, 2])
         assert_raises(ValueError, stats.boxcox, x)
+        # Raise ValueError if data is constant.
+        assert_raises(ValueError, stats.boxcox, np.array([1]))
+        # Raise ValueError if data is not 1-dimensional.
+        assert_raises(ValueError, stats.boxcox, np.array([[1], [2]]))
 
     def test_empty(self):
         assert_(stats.boxcox([]).shape == (0,))

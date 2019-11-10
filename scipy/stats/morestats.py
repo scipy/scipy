@@ -947,12 +947,12 @@ def _boxcox_conf_interval(x, lmax, alpha):
 
 def boxcox(x, lmbda=None, alpha=None):
     r"""
-    Return a positive dataset transformed by a Box-Cox power transformation.
+    Return a dataset transformed by a Box-Cox power transformation.
 
     Parameters
     ----------
     x : ndarray
-        Input array.  Should be 1-dimensional.
+        Input array.  Must be positive 1-dimensional.  Must not be constant.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
 
@@ -1032,8 +1032,14 @@ def boxcox(x, lmbda=None, alpha=None):
 
     """
     x = np.asarray(x)
+    if x.ndim != 1:
+        raise ValueError("Data must be 1-dimensional.")
+
     if x.size == 0:
         return x
+
+    if np.all(x == x[0]):
+        raise ValueError("Data must not be constant.")
 
     if any(x <= 0):
         raise ValueError("Data must be positive.")
