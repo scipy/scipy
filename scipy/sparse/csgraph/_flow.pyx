@@ -199,11 +199,11 @@ def maximum_flow(csgraph, source, sink):
     if source == sink:
         raise ValueError("source and sink vertices must differ")
     if source < 0 or source >= csgraph.shape[0]:
-        raise ValueError(f'source value ({source}) must be between 0 ' +
-                         f'and {csgraph.shape[0]-1}')
+        raise ValueError('source value ({}) must be between '.format(source) +
+                         '0 and {}'.format(csgraph.shape[0] - 1))
     if sink < 0 or sink >= csgraph.shape[0]:
-        raise ValueError(f'sink value ({sink}) must be between 0 ' +
-                         f'and {csgraph.shape[0]-1}')
+        raise ValueError('sink value ({}) must be between '.format(sink) +
+                         '0 and {}'.format(csgraph.shape[0] - 1))
 
     # Our implementation of Edmonds--Karp assumes that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
