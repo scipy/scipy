@@ -151,7 +151,7 @@ def maximum_flow(csgraph, source, sink):
     >>> indices = np.concatenate([np.arange(1, i + 1),
     ...                           graph.indices + i + 1,
     ...                           np.repeat(i + j + 1, j)])
-    >>> data = np.ones(n + i + j, dtype=np.int)
+    >>> data = np.ones(n + i + j, dtype=int)
     >>>
     >>> graph_flow = csr_matrix((data, indices, indptr))
     >>> print(graph_flow.toarray())
