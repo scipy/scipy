@@ -893,6 +893,15 @@ def _prod(iterable):
 
 
 def _conv_ops(x_shape, h_shape, mode):
+    """
+    Find the number of operations required for direct/fft methods of
+    convolution
+
+    The direct operations were recorded by making a dummy class to record the
+    number of multplications. The number of additions is always less than or
+    equal to the number of multiplications. More detail visible at [1].
+
+    """
     x_size, h_size = _prod(x_shape), _prod(h_shape)
     if mode == "full":
         out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
@@ -920,10 +929,11 @@ def _conv_ops(x_shape, h_shape, mode):
             direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
         elif mode == "same":
             direct_ops = _prod(s1) * _prod(s2)
-    fft_ops = sum(n * np.log(n) for n in (x_shape + h_shape + tuple(out_shape)))
+
+    full_out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
+    N = [_prod(shape) for shape in [x_shape, h_shape, full_out_shape]]
+    fft_ops = sum(n * np.log(n) for n in N)
     return fft_ops, direct_ops
-
-
 
 
 def _fftconv_faster(x, h, mode, test=True):
@@ -945,15 +955,11 @@ def _fftconv_faster(x, h, mode, test=True):
 
     Notes
     -----
-    The big O ratios were found to hold to different machines, which makes
-    sense as it's the ratio that matters (the effective speed of the computer
-    is found in both big O constants). Regardless, this had been tuned on an
-    mid 2014 15-inch MacBook Pro with 16GB of RAM and an Intel 2.5GHz i7
-    processor.
+    See docstring of `choose_conv_method` for details on how tuned.
 
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
-    offset = 2e-6 if x.ndim == 1 else -2e-4
+    offset = 0 if x.ndim == 1 else -2e-4
     constants = {
         "valid": (7.28800943e-6, 3.344823e-7, offset),
         "full": (7.2673e-6, 2.01e-7, offset),
