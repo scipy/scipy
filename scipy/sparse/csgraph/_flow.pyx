@@ -5,6 +5,8 @@ from scipy.sparse import csr_matrix, isspmatrix_csr
 cimport cython
 cimport numpy as np
 
+include 'parameters.pxi'
+
 
 class MaximumFlowResult:
     """Represents the result of a maximum flow calculation.
@@ -192,8 +194,8 @@ def maximum_flow(csgraph, source, sink):
         raise TypeError("graph must be in CSR format")
     if not issubclass(csgraph.dtype.type, np.integer):
         raise ValueError("graph capacities must be integers")
-    elif csgraph.dtype != np.int32:
-        csgraph = csgraph.astype(np.int32)
+    elif csgraph.dtype != ITYPE:
+        csgraph = csgraph.astype(ITYPE)
     if source == sink:
         raise ValueError("source and sink vertices must differ")
     if source < 0 or source >= csgraph.shape[0]:
@@ -262,7 +264,7 @@ def _add_reverse_edges(a):
     # to be added. We make use of the COO initializer for CSR
     # matrices which ensures that 0s are added explicitly.
     indices_to_add = np.where(diff)[0]
-    data_to_add = np.zeros((indices_to_add.shape[0],), dtype=np.int32)
+    data_to_add = np.zeros((indices_to_add.shape[0],), dtype=ITYPE)
     acoo.row = np.concatenate([acoo.row, cols[indices_to_add]])
     acoo.col = np.concatenate([acoo.col, rows[indices_to_add]])
     acoo.data = np.concatenate([acoo.data, data_to_add])
@@ -281,7 +283,7 @@ def _make_edge_pointers(a):
     cols = acoo.col
     haystack = rows*n + cols
     needles = cols*n + rows
-    rev_edge_ptr = np.searchsorted(haystack, needles).astype(np.int32)
+    rev_edge_ptr = np.searchsorted(haystack, needles).astype(ITYPE)
     return rev_edge_ptr, rows
 
 
@@ -329,15 +331,15 @@ cdef int[:] _edmonds_karp(
     cdef int n_edges = capacities.shape[0]
 
     # Our result array will keep track of the flow along each edge
-    cdef int[:] flow = np.zeros(n_edges, dtype=np.int32)
+    cdef int[:] flow = np.zeros(n_edges, dtype=ITYPE)
 
     # Create a circular queue for breadth-first search. Elements are
     # popped dequeued at index start and queued at index end.
-    cdef int[:] q = np.empty(n_verts, dtype=np.int32)
+    cdef int[:] q = np.empty(n_verts, dtype=ITYPE)
     cdef int start, end
 
     # Create an array indexing predecessor edges
-    cdef int[:] pred_edge = np.empty(n_verts, dtype=np.int32)
+    cdef int[:] pred_edge = np.empty(n_verts, dtype=ITYPE)
 
     cdef bint path_found
     cdef int cur, df, t, e, edge, k
