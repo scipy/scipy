@@ -114,9 +114,9 @@ class TestSphericalVoronoi(object):
         assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
 
     def test_sort_vertices_of_regions_flattened(self):
-        expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1], [4, 8,
-            7, 5, 6], [9, 11, 10], [2, 7, 5], [1, 4, 8, 11, 9], [0, 3, 10, 9,
-                1]])
+        expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1],
+                           [4, 8, 7, 5, 6], [9, 11, 10], [2, 7, 5],
+                           [1, 4, 8, 11, 9], [0, 3, 10, 9, 1]])
         expected = list(itertools.chain(*sorted(expected)))
         sv = SphericalVoronoi(self.points)
         sv.sort_vertices_of_regions()
@@ -137,7 +137,7 @@ class TestSphericalVoronoi(object):
     def test_voronoi_circles(self):
         sv = spherical_voronoi.SphericalVoronoi(self.points)
         for vertex in sv.vertices:
-            distances = distance.cdist(sv.points,np.array([vertex]))
+            distances = distance.cdist(sv.points, np.array([vertex]))
             closest = np.array(sorted(distances)[0:3])
             assert_almost_equal(closest[0], closest[1], 7, str(vertex))
             assert_almost_equal(closest[0], closest[2], 7, str(vertex))
@@ -161,7 +161,7 @@ class TestSphericalVoronoi(object):
         # cannot possibly match the input generators
         with assert_raises(ValueError):
             sv = spherical_voronoi.SphericalVoronoi(self.points,
-                                                    center=[0.1,0,0])
+                                                    center=[0.1, 0, 0])
 
     def test_single_hemisphere_handling(self):
         # Test solution of Issues #9386, #8859
