@@ -1938,7 +1938,7 @@ add_newdoc("eval_jacobi",
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.42 in [AS]_ for details.
 
     Parameters
     ----------
@@ -1963,6 +1963,13 @@ add_newdoc("eval_jacobi",
     roots_jacobi : roots and quadrature weights of Jacobi polynomials
     jacobi : Jacobi polynomial object
     hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_sh_jacobi",
@@ -1978,7 +1985,8 @@ add_newdoc("eval_sh_jacobi",
         G_n^{(p, q)}(x)
           = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
+    polynomial. See 22.5.2 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2001,6 +2009,13 @@ add_newdoc("eval_sh_jacobi",
                       polynomials
     sh_jacobi : shifted Jacobi polynomial object
     eval_jacobi : evaluate Jacobi polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_gegenbauer",
@@ -2018,7 +2033,7 @@ add_newdoc("eval_gegenbauer",
           {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.46 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2042,6 +2057,13 @@ add_newdoc("eval_gegenbauer",
                        polynomials
     gegenbauer : Gegenbauer polynomial object
     hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_chebyt",
@@ -2058,7 +2080,7 @@ add_newdoc("eval_chebyt",
         T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.47 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2087,6 +2109,13 @@ add_newdoc("eval_chebyt",
     -----
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
     up to order ``10000``.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_chebyu",
@@ -2103,7 +2132,7 @@ add_newdoc("eval_chebyu",
         U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.48 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2126,6 +2155,13 @@ add_newdoc("eval_chebyu",
     chebyu : Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_chebys",
@@ -2141,7 +2177,8 @@ add_newdoc("eval_chebys",
 
         S_n(x) = U_n(x/2)
 
-    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+    where :math:`U_n` is a Chebyshev polynomial of the second
+    kind. See 22.5.13 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2162,6 +2199,26 @@ add_newdoc("eval_chebys",
                    polynomials of the second kind on [-2, 2]
     chebys : Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    They are a scaled version of the Chebyshev polynomials of the
+    second kind.
+
+    >>> x = np.linspace(-2, 2, 6)
+    >>> sc.eval_chebys(3, x)
+    array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
+    >>> sc.eval_chebyu(3, x / 2)
+    array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
+
     """)
 
 add_newdoc("eval_chebyc",
@@ -2175,9 +2232,10 @@ add_newdoc("eval_chebyc",
 
     .. math::
 
-        S_n(x) = T_n(x/2)
+        C_n(x) = 2 T_n(x/2)
 
-    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+    where :math:`T_n` is a Chebyshev polynomial of the first kind. See
+    22.5.11 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2199,6 +2257,26 @@ add_newdoc("eval_chebyc",
     chebyc : Chebyshev polynomial object
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    They are a scaled version of the Chebyshev polynomials of the
+    first kind.
+
+    >>> x = np.linspace(-2, 2, 6)
+    >>> sc.eval_chebyc(3, x)
+    array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
+    >>> 2 * sc.eval_chebyt(3, x / 2)
+    array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
+
     """)
 
 add_newdoc("eval_sh_chebyt",
@@ -2214,7 +2292,8 @@ add_newdoc("eval_sh_chebyt",
 
         T_n^*(x) = T_n(2x - 1)
 
-    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+    where :math:`T_n` is a Chebyshev polynomial of the first kind. See
+    22.5.14 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2236,6 +2315,13 @@ add_newdoc("eval_sh_chebyt",
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_sh_chebyu",
@@ -2251,7 +2337,8 @@ add_newdoc("eval_sh_chebyu",
 
         U_n^*(x) = U_n(2x - 1)
 
-    where :math:`U_n` is a Chebyshev polynomial of the first kind.
+    where :math:`U_n` is a Chebyshev polynomial of the first kind. See
+    22.5.15 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2272,6 +2359,13 @@ add_newdoc("eval_sh_chebyu",
                       Chebychev polynomials of the second kind
     sh_chebyu : shifted Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_legendre",
@@ -2288,7 +2382,7 @@ add_newdoc("eval_legendre",
         P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.49 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2311,6 +2405,13 @@ add_newdoc("eval_legendre",
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
     numpy.polynomial.legendre.Legendre : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_sh_legendre",
@@ -2325,7 +2426,8 @@ add_newdoc("eval_sh_legendre",
 
         P_n^*(x) = P_n(2x - 1)
 
-    where :math:`P_n` is a Legendre polynomial.
+    where :math:`P_n` is a Legendre polynomial. See 2.2.11 in [AS]_
+    for details.
 
     Parameters
     ----------
@@ -2347,6 +2449,13 @@ add_newdoc("eval_sh_legendre",
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
     numpy.polynomial.legendre.Legendre : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_genlaguerre",
@@ -2364,8 +2473,8 @@ add_newdoc("eval_genlaguerre",
           {}_1F_1(-n, \alpha + 1, x).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. The Laguerre polynomials are the special case where
-    :math:`\alpha = 0`.
+    :math:`n`. See 22.5.54 in [AS]_ for details. The Laguerre
+    polynomials are the special case where :math:`\alpha = 0`.
 
     Parameters
     ----------
@@ -2391,45 +2500,59 @@ add_newdoc("eval_genlaguerre",
     genlaguerre : generalized Laguerre polynomial object
     hyp1f1 : confluent hypergeometric function
     eval_laguerre : evaluate Laguerre polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_laguerre",
-     r"""
-     eval_laguerre(n, x, out=None)
+    r"""
+    eval_laguerre(n, x, out=None)
 
-     Evaluate Laguerre polynomial at a point.
+    Evaluate Laguerre polynomial at a point.
 
-     The Laguerre polynomials can be defined via the confluent
-     hypergeometric function :math:`{}_1F_1` as
+    The Laguerre polynomials can be defined via the confluent
+    hypergeometric function :math:`{}_1F_1` as
 
-     .. math::
+    .. math::
 
-         L_n(x) = {}_1F_1(-n, 1, x).
+        L_n(x) = {}_1F_1(-n, 1, x).
 
-     When :math:`n` is an integer the result is a polynomial of degree
-     :math:`n`.
+    See 22.5.16 and 22.5.54 in [AS]_ for details. When :math:`n` is an
+    integer the result is a polynomial of degree :math:`n`.
 
-     Parameters
-     ----------
-     n : array_like
-         Degree of the polynomial. If not an integer the result is
-         determined via the relation to the confluent hypergeometric
-         function.
-     x : array_like
-         Points at which to evaluate the Laguerre polynomial
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the confluent hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Laguerre polynomial
 
-     Returns
-     -------
-     L : ndarray
-         Values of the Laguerre polynomial
+    Returns
+    -------
+    L : ndarray
+        Values of the Laguerre polynomial
 
-     See Also
-     --------
-     roots_laguerre : roots and quadrature weights of Laguerre
-                      polynomials
-     laguerre : Laguerre polynomial object
-     numpy.polynomial.laguerre.Laguerre : Laguerre series
-     eval_genlaguerre : evaluate generalized Laguerre polynomials
+    See Also
+    --------
+    roots_laguerre : roots and quadrature weights of Laguerre
+                     polynomials
+    laguerre : Laguerre polynomial object
+    numpy.polynomial.laguerre.Laguerre : Laguerre series
+    eval_genlaguerre : evaluate generalized Laguerre polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
      """)
 
 add_newdoc("eval_hermite",
@@ -2444,7 +2567,8 @@ add_newdoc("eval_hermite",
 
         H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
 
-    :math:`H_n` is a polynomial of degree :math:`n`.
+    :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
+    [AS]_ for details.
 
     Parameters
     ----------
@@ -2465,6 +2589,13 @@ add_newdoc("eval_hermite",
     hermite : physicist's Hermite polynomial object
     numpy.polynomial.hermite.Hermite : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_hermitenorm",
@@ -2480,7 +2611,8 @@ add_newdoc("eval_hermitenorm",
 
         He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
 
-    :math:`He_n` is a polynomial of degree :math:`n`.
+    :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
+    [AS]_ for details.
 
     Parameters
     ----------
@@ -2501,6 +2633,13 @@ add_newdoc("eval_hermitenorm",
     hermitenorm : probabilist's Hermite polynomial object
     numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("exp1",
