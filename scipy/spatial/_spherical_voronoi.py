@@ -195,10 +195,10 @@ class SphericalVoronoi:
         invb = np.argsort(np.roll(indices, 1))
 
         n = len(self.points)
-        regions = np.vstack([invf,                           # forward neigh.
-                             [len(self.points)] * n,         # north pole
-                             invb,                           # backward neigh.
-                             [len(self.points) + 1] * n]).T  # south pole
+        regions = np.vstack([invf,            # forward neighbor
+                             [n] * n,         # north pole
+                             invb,            # backward neighbor
+                             [n + 1] * n]).T  # south pole
 
         self.regions = [list(region) for region in regions]
         self.vertices = vertices + self.center
