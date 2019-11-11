@@ -1087,16 +1087,16 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     Notes
     -----
-    Generally, this method is about 90% accurate for randomly chosen input
+    Generally, this method is about 85% accurate for randomly chosen input
     sizes for 1D signals and >95% accurate otherwise. For precision, use
     ``measure=True`` to find the fastest method by running and measuring
     the convolutions.
 
-    If this funciton is incorrect, the estimated method is less than 10 times
-    slower than the other faster method (at least in our experiments).
-    There is a 95% chance of this ratio being less than 3 for all signals
-    (except 1D signals with ``mode=='same'`` and ``len(in1) < len(in2)``,
-    which has a 95% probability of the ratio being less than 5.5).
+    If this funciton is incorrect, the estimated method will very like by less
+    than 10 times slower than the other faster method (at least in our
+    experiments). There is a 95% chance of this ratio being less than 2 for 2D signals and less than 3.5 for 1D signals (except 1D signals with
+    ``mode=='same'`` and ``len(in1) < len(in2)``, which has a 95% probability
+    of the ratio being less than 20).
 
     The estimation values were tuned on an mid-2014 15-inch MacBook Pro with
     16GB RAM and a 2.5GHz Intel i7 processor. We found this function
