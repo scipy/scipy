@@ -5,7 +5,6 @@ from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
-import warnings
 import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
@@ -13,6 +12,10 @@ from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.spatial.transform import Rotation
+from scipy.optimize import linear_sum_assignment
+
+
+TOL = 1E-10
 
 
 class TestSphericalVoronoi(object):
@@ -95,18 +98,6 @@ class TestSphericalVoronoi(object):
         with assert_warns(DeprecationWarning):
             sv = SphericalVoronoi(self.points, None)
 
-    def test_old_center_api(self):
-        sv_unit = SphericalVoronoi(self.points, radius=1, center=(0, 0, 0))
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`radius` is `None`")
-            sup.filter(DeprecationWarning, "`center` is `None`")
-            sv = SphericalVoronoi(self.points, None, None)
-            assert_array_almost_equal(sv_unit.vertices, sv.vertices)
-
-    def test_old_center_api_warning(self):
-        with assert_warns(DeprecationWarning):
-            sv = SphericalVoronoi(self.points, None, None)
-
     def test_sort_vertices_of_regions(self):
         sv = SphericalVoronoi(self.points)
         unsorted_regions = sv.regions
@@ -122,6 +113,16 @@ class TestSphericalVoronoi(object):
         sv.sort_vertices_of_regions()
         actual = list(itertools.chain(*sorted(sv.regions)))
         assert_array_equal(actual, expected)
+
+    def test_sort_vertices_of_regions_dimensionality(self):
+        points = np.array([[1, 0, 0, 0],
+                           [0, 1, 0, 0],
+                           [0, 0, 1, 0],
+                           [0, 0, 0, 1],
+                           [0.5, 0.5, 0.5, 0.5]])
+        with pytest.raises(TypeError, match="three-dimensional"):
+            sv = spherical_voronoi.SphericalVoronoi(points)
+            sv.sort_vertices_of_regions()
 
     def test_num_vertices(self):
         # for any n >= 3, a spherical Voronoi diagram has 2n - 4
@@ -217,3 +218,63 @@ class TestSphericalVoronoi(object):
         regions = sv.regions.copy()
         sv.sort_vertices_of_regions()
         assert regions == sv.regions
+
+    @pytest.mark.parametrize("dim", range(2, 7))
+    def test_higher_dimensions(self, dim):
+        n = 100
+        rng = np.random.RandomState(seed=0)
+        points = rng.randn(n, dim)
+        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
+        sv = SphericalVoronoi(points)
+        assert sv.vertices.shape[1] == dim
+        assert len(sv.regions) == n
+
+        # verify Euler characteristic
+        cell_counts = []
+        simplices = np.sort(sv._tri.simplices)
+        for i in range(1, dim + 1):
+            cells = []
+            for indices in itertools.combinations(range(dim), i):
+                cells.append(simplices[:, list(indices)])
+            cells = np.unique(np.concatenate(cells), axis=0)
+            cell_counts.append(len(cells))
+        expected_euler = 1 + (-1)**(dim-1)
+        actual_euler = sum([(-1)**i * e for i, e in enumerate(cell_counts)])
+        assert expected_euler == actual_euler
+
+    @pytest.mark.parametrize("dim", range(2, 7))
+    def test_cross_polytope_regions(self, dim):
+        # The hypercube is the dual of the cross-polytope, so the voronoi
+        # vertices of the cross-polytope lie on the points of the hypercube.
+
+        # generate points of the cross-polytope
+        points = np.concatenate((-np.eye(dim), np.eye(dim)))
+        sv = SphericalVoronoi(points)
+        assert all([len(e) == 2**(dim - 1) for e in sv.regions])
+
+        # generate points of the hypercube
+        expected = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
+        expected = expected.astype(np.float) / np.sqrt(dim)
+
+        # test that Voronoi vertices are correctly placed
+        dist = distance.cdist(sv.vertices, expected)
+        res = linear_sum_assignment(dist)
+        assert dist[res].sum() < TOL
+
+    @pytest.mark.parametrize("dim", range(2, 4))
+    def test_hypercube_regions(self, dim):
+        # The cross-polytope is the dual of the hypercube, so the voronoi
+        # vertices of the hypercube lie on the points of the cross-polytope.
+
+        # generate points of the hypercube
+        points = np.vstack(list(itertools.product([-1, 1], repeat=dim)))
+        points = points.astype(np.float) / np.sqrt(dim)
+        sv = SphericalVoronoi(points)
+
+        # generate points of the cross-polytope
+        expected = np.concatenate((-np.eye(dim), np.eye(dim)))
+
+        # test that Voronoi vertices are correctly placed
+        dist = distance.cdist(sv.vertices, expected)
+        res = linear_sum_assignment(dist)
+        assert dist[res].sum() < TOL
