@@ -962,16 +962,17 @@ def _fftconv_faster(x, h, mode):
 
     """
     fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
-    offset = 0 if x.ndim == 1 else -2e-4
+    offset = -1e-3 if x.ndim == 1 else -1e-4
     constants = {
-        "valid": (7.28800943e-6, 3.344823e-7, offset),
-        "full": (7.2673e-6, 2.01e-7, offset),
-        "same": (2.3223e-5, 1.51e-6, offset) if h.size <= x.size else\
-                (2.3427e-5, 17e-6, offset),
+            "valid": (1.89095737e-9, 2.1364985e-10, offset),
+            "full": (1.7649070e-9, 2.1414831e-10, offset),
+            "same": (3.2646654e-9, 2.8478277e-10, offset)
+            if h.size <= x.size
+            else (3.21635404e-9, 1.1773253e-8, -1e-5),
     } if x.ndim == 1 else {
-            "valid": (4.24046e-9, 3.344823e-8, offset),
-            "full": (3.4457e-9, 2.06903e-8, offset),
-            "same": (4.14859e-9, 1.65125e-8, offset),
+            "valid": (1.85927e-9, 2.11242e-8, offset),
+            "full": (1.99817e-9, 1.66174e-8, offset),
+            "same": (2.04735e-9, 1.55367e-8, offset),
     }
     O_fft, O_direct, O_offset = constants[mode]
     return O_fft * fft_ops < O_direct * direct_ops + O_offset
