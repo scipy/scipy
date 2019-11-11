@@ -1094,7 +1094,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     If this funciton is incorrect, the estimated method will very like by less
     than 10 times slower than the other faster method (at least in our
-    experiments). There is a 95% chance of this ratio being less than 2 for 2D signals and less than 3.5 for 1D signals (except 1D signals with
+    experiments). There is a 95% chance of this ratio being less than 2 for 2D
+    signals and less than 3.5 for 1D signals (except 1D signals with
     ``mode=='same'`` and ``len(in1) < len(in2)``, which has a 95% probability
     of the ratio being less than 20).
 
