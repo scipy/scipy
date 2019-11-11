@@ -184,8 +184,7 @@ class TestSphericalVoronoi(object):
     @pytest.mark.parametrize("radius", [0.5, 1, 2])
     @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
     def test_geodesic_input(self, n, radius, center):
-        np.random.seed(0)
-        U = Rotation.random().as_matrix()
+        U = Rotation.random(random_state=0).as_matrix()
         thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
         points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
         points = radius * points @ U
