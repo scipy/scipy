@@ -6,6 +6,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import functools
 
 import numpy as np
 
@@ -6898,6 +6899,200 @@ class truncexpon_gen(rv_continuous):
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
 
 
+TRUNCNORM_TAIL_X = 30
+TRUNCNORM_MAX_BRENT_ITERS = 40
+
+# Want np.vectorize(f, otypes=['float']) which doesn't decorate well.
+def _vectorize(**kwargs):
+    def vectorize_decorator(f):
+        vf = np.vectorize(f, **kwargs)
+
+        @functools.wraps(f)
+        def vf_wrapper(*args):
+            return vf(*args)
+        return vf_wrapper
+    return vectorize_decorator
+
+
+def _truncnorm_get_delta(a, b):
+    if (a > TRUNCNORM_TAIL_X) or (b < -TRUNCNORM_TAIL_X):
+        return 0
+    if a > 0:
+        delta = _norm_cdf(b) - _norm_cdf(a)
+    else:
+        delta = _norm_sf(a) - _norm_sf(b)
+    delta = max(delta, 0)
+    return delta
+
+
+def _truncnorm_get_logdelta(a, b):
+    if (a <= TRUNCNORM_TAIL_X) and (b >= -TRUNCNORM_TAIL_X):
+        if a > 0:
+            delta = _norm_cdf(b) - _norm_cdf(a)
+        else:
+            delta = _norm_sf(a) - _norm_sf(b)
+        delta = max(delta, 0)
+        if delta > 0:
+            return np.log(delta)
+
+    if b < 0 or (np.abs(a) >= np.abs(b)):
+        nla = _norm_logcdf(a)
+        nlb = _norm_logcdf(b)
+        logdelta = nlb + np.log1p(-np.exp(nla - nlb))
+    else:
+        sla = _norm_logsf(a)
+        slb = _norm_logsf(b)
+        logdelta = sla + np.log1p(-np.exp(slb - sla))
+    return logdelta
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_logpdf(x, a, b):
+    _logdelta = _truncnorm_get_logdelta(a, b)
+    return _norm_logpdf(x) - _logdelta
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_pdf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return _norm_pdf(x) / delta
+    return np.exp(_truncnorm_logpdf(x, a, b))
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_logcdf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return np.log((_norm_cdf(x) - _norm_cdf(a)) / delta)
+    if x <= a:
+        return -np.inf
+    if x >= b:
+        return 0.0
+    if a < 0:
+        with np.errstate(divide='ignore'):
+            nla = _norm_logcdf(a)
+            nlb = _norm_logcdf(b)
+            tab = np.log1p(-np.exp(nla - nlb))
+            nlx = _norm_logcdf(x)
+            tax = np.log1p(-np.exp(nla - nlx))
+            return nlx + tax - (nlb + tab)
+    with np.errstate(divide='ignore'):
+        sla = _norm_logsf(a)
+        slb = _norm_logsf(b)
+        return (np.log1p(-np.exp(_norm_logsf(x) - sla))
+                - np.log1p(-np.exp(slb - sla)))
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_cdf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return (_norm_cdf(x) - _norm_cdf(a)) / delta
+    return np.exp(_truncnorm_logcdf(x, a, b))
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_logsf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return np.log((_norm_sf(x) - _norm_sf(b)) / delta)
+    if x <= a:
+        return 0
+    if x >= b:
+        return -np.inf
+    if b < 0:
+        with np.errstate(divide='ignore'):
+            nla = _norm_logcdf(a)
+            nlb = _norm_logcdf(b)
+            return (np.log1p(-np.exp(_norm_logcdf(x) - nlb))
+                   - np.log1p(-np.exp(nla - nlb)))
+    with np.errstate(divide='ignore'):
+        sla = _norm_logsf(a)
+        slb = _norm_logsf(b)
+        tab = np.log1p(-np.exp(slb - sla))
+        slx = _norm_logsf(x)
+        tax = np.log1p(-np.exp(slb - slx))
+        return slx + tax - (sla + tab)
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_sf(x, a, b):
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        return (_norm_sf(x) - _norm_sf(b)) / delta
+    return np.exp(_truncnorm_logsf(x, a, b))
+
+
+def _norm_logcdfprime(z):
+    # derivative of special.log_ndtr
+    assert np.abs(z) > TRUNCNORM_TAIL_X/2
+    lhs = -z - 1/z
+    denom_cons = 1/z**2
+    numerator = 1
+    pwr = 1/z
+    i = 1
+    total = 0
+    while i < 10:
+        pwr *= denom_cons
+        numerator *= 2 * i - 1
+        term = numerator*pwr*(2*i)
+        total += term
+        i += 1
+    return lhs + total
+
+
+def _norm_ilogcdf(y):
+    """Inverse function to _norm_logcdf==sc.log_ndtr."""
+    # Apply approximate Newton-Raphson 3 times
+    z = -np.sqrt(-2*(y + np.log(2*np.pi)/2))
+    for _ in range(3):
+        z = z - (_norm_logcdf(z) - y) / _norm_logcdfprime(z)
+    return z
+
+
+@_vectorize(otypes=['float'])
+def _truncnorm_ppf(q, a, b):
+    if q <= 0:
+        return a
+    if q >= 1:
+        return b
+    delta = _truncnorm_get_delta(a, b)
+    if delta > 0:
+        if a > 0:
+            sa = _norm_sf(a)
+            sb = _norm_sf(b)
+            return _norm_isf(q * sb + sa * (1.0 - q))
+        na = _norm_cdf(a)
+        nb = _norm_cdf(b)
+        return _norm_ppf(q * nb + na * (1.0 - q))
+
+    if np.isinf(b):
+        x = -_norm_ilogcdf((np.log1p(-q) + _norm_logsf(a)))
+        return x
+    elif np.isinf(a):
+        x = _norm_ilogcdf(np.log(q) + _norm_logcdf(b))
+        return x
+    if q <= 0.5:
+        def _f_cdf(x, _a, _b, alpha):
+            y = _truncnorm_logcdf(x, _a, _b)
+            return y - alpha
+
+        args = (a, b, np.log(q))
+        ret = optimize.zeros.brentq(_f_cdf, a, b, args=args,
+                                    maxiter=TRUNCNORM_MAX_BRENT_ITERS)
+        return ret
+    else:
+        def _f_sf(x, _a, _b, alpha):
+            y = _truncnorm_logsf(x, _a, _b)
+            return y - alpha
+
+        args = (a, b, np.log(1.0 - q))
+        ret = optimize.zeros.brentq(_f_sf, a, b, args=args,
+                                    maxiter=TRUNCNORM_MAX_BRENT_ITERS)
+        return ret
+
+
 class truncnorm_gen(rv_continuous):
     r"""A truncated normal continuous random variable.
 
@@ -6925,50 +7120,79 @@ class truncnorm_gen(rv_continuous):
     def _get_support(self, a, b):
         return a, b
 
-    def _get_norms(self, a, b):
-        _nb = _norm_cdf(b)
-        _na = _norm_cdf(a)
-        _sb = _norm_sf(b)
-        _sa = _norm_sf(a)
-        _delta = np.where(a > 0, _sa - _sb, _nb - _na)
-        with np.errstate(divide='ignore'):
-            return _na, _nb, _sa, _sb, _delta, np.log(_delta)
-
     def _pdf(self, x, a, b):
-        ans = self._get_norms(a, b)
-        _delta = ans[4]
-        return _norm_pdf(x) / _delta
+        return _truncnorm_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
-        ans = self._get_norms(a, b)
-        _logdelta = ans[5]
-        return _norm_logpdf(x) - _logdelta
+        return _truncnorm_logpdf(x, a, b)
 
     def _cdf(self, x, a, b):
-        ans = self._get_norms(a, b)
-        _na, _delta = ans[0], ans[4]
-        return (_norm_cdf(x) - _na) / _delta
+        return _truncnorm_cdf(x, a, b)
+
+    def _logcdf(self, x, a, b):
+        return _truncnorm_logcdf(x, a, b)
+
+    def _sf(self, x, a, b):
+        return _truncnorm_sf(x, a, b)
+
+    def _logsf(self, x, a, b):
+        return _truncnorm_logsf(x, a, b)
 
     def _ppf(self, q, a, b):
-        # XXX Use _lazywhere...
-        ans = self._get_norms(a, b)
-        _na, _nb, _sa, _sb = ans[:4]
-        ppf = np.where(a > 0,
-                       _norm_isf(q*_sb + _sa*(1.0-q)),
-                       _norm_ppf(q*_nb + _na*(1.0-q)))
-        return ppf
+        return _truncnorm_ppf(q, a, b)
 
-    def _stats(self, a, b):
-        ans = self._get_norms(a, b)
-        nA, nB = ans[:2]
-        d = nB - nA
-        pA, pB = _norm_pdf(a), _norm_pdf(b)
-        mu = (pA - pB) / d   # correction sign
-        mu2 = 1 + (a*pA - b*pB) / d - mu*mu
-        return mu, mu2, None, None
+    def _munp(self, n, a, b):
+        def n_th_moment(n, a, b):
+            """
+            Returns n-th moment. Defined only if n >= 0.
+            Function cannot broadcast due to the loop over n
+            """
+            pA, pB = self._pdf([a, b], a, b)
+            probs = [pA, -pB]
+            moments = [0, 1]
+            for k in range(1, n+1):
+                # a or b might be infinite, and the corresponding pdf value
+                # is 0 in that case, but nan is returned for the
+                # multiplication.  However, as b->infinity,  pdf(b)*b**k -> 0.
+                # So it is safe to use _lazywhere to avoid the nan.
+                vals = _lazywhere(probs, [probs, [a, b]],
+                                  lambda x, y: x * y**(k-1), fillvalue=0)
+                mk = np.sum(vals) + (k-1) * moments[-2]
+                moments.append(mk)
+            return moments[-1]
+
+        return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
+                          np.vectorize(n_th_moment, otypes=[np.float]), np.nan)
+
+    def _stats(self, a, b, moments='mv'):
+        pA, pB = self._pdf([a, b], a, b)
+        m1 = pA - pB
+        mu = m1
+        # use _lazywhere to avoid nan (See detailed comment in _munp)
+        probs = [pA, -pB]
+        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
+                          fillvalue=0)
+        m2 = 1 + np.sum(vals)
+        vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
+                          fillvalue=0)
+        # mu2 = m2 - mu**2, but not as numerically stable as:
+        # mu2 = (a-mu)*pA - (b-mu)*pB + 1
+        mu2 = 1 + np.sum(vals)
+        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
+                          fillvalue=0)
+        m3 = 2*m1 + np.sum(vals)
+        vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
+                          fillvalue=0)
+        m4 = 3*m2 + np.sum(vals)
+
+        mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
+        g1 = mu3 / np.power(mu2, 1.5)
+        mu4 = m4 + m1*(-4*m3 + 3*m1*(2*m2 - m1**2))
+        g2 = mu4 / mu2**2 - 3
+        return mu, mu2, g1, g2
 
 
-truncnorm = truncnorm_gen(name='truncnorm')
+truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
 
 
 # FIXME: RVS does not work.

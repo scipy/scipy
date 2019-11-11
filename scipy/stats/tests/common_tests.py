@@ -223,8 +223,7 @@ def check_meth_dtype(distfn, arg, meths):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        _a, _b = distfn.support(*arg)
-        x = x[(_a < x) & (x < _b)]
+        x = x[(distfn.a < x) & (x < distfn.b)]
         for meth in meths:
             val = meth(x, *arg)
             npt.assert_(val.dtype == np.float_)
@@ -253,8 +252,7 @@ def check_cmplx_deriv(distfn, arg):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        _a, _b = distfn.support(*arg)
-        x = x[(_a < x) & (x < _b)]
+        x = x[(distfn.a < x) & (x < distfn.b)]
 
         pdf, cdf, sf = distfn.pdf(x, *arg), distfn.cdf(x, *arg), distfn.sf(x, *arg)
         assert_allclose(deriv(distfn.cdf, x, *arg), pdf, rtol=1e-5)
