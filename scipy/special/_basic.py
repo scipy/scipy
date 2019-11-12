@@ -2290,15 +2290,23 @@ def zeta(x, q=None, out=None):
 
     Notes
     -----
-    The two-argument version is the Hurwitz zeta function:
+    The two-argument version is the Hurwitz zeta function
 
-    .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
+    .. math::
 
-    Riemann zeta function corresponds to ``q = 1``.
+        \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x};
+
+    see [dlmf]_ for details. The Riemann zeta function corresponds to
+    the case when ``q = 1``.
 
     See Also
     --------
     zetac
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/25.11#i
 
     Examples
     --------
