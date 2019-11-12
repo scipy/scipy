@@ -403,7 +403,7 @@ def hmean(a, axis=0, dtype=None):
             return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
-                         "than equal to zero")
+                         "than or equal to zero")
 
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
