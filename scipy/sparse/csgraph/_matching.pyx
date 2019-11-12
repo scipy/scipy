@@ -159,11 +159,8 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
     # mentioned above, unmatched vertices in the right partition will be
     # matched to the auxiliary vertex i, and we will set their value to -1
     # only when we have found a maximum matching.
-    for k in range(i):
-        x[k] = -1
-
-    for k in range(j):
-        y[k] = i
+    x.fill(-1)
+    y.fill(i)
 
     # Set up three structures for use in our searches: q will represent a queue
     # of vertices for use during the BFS step. As above, we will only keep
