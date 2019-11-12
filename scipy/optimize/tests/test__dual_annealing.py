@@ -208,7 +208,7 @@ class TestDualAnnealing:
         ('CG', 1e-8),
         ('BFGS', 1e-8),
         ('TNC', 1e-8),
-        ('SLSQP', 1e-7),
+        ('SLSQP', 2e-7),
     ])
     def test_multi_ls_minimizer(self, method, atol):
         ret = dual_annealing(self.func, self.ld_bounds,
