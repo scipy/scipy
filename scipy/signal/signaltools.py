@@ -1087,8 +1087,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     Notes
     -----
-    Generally, this method is about 90% accurate (99% for 2D signals and 85%
-    accurate for 2D signals for randomly chosen input sizes). For precision
+    Generally, this method is 99% accurate for 2D signals and 85% accurate
+    for 1D signals for randomly chosen input sizes. For precision
     (e.g., for different hardware), use ``measure=True`` to find the fastest
     method by timing the convolution.
 
@@ -1096,16 +1096,16 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     than 5 times slower than the faster method (at least in our
     experiments). There is a 99.9% chance of this ratio being less than 2 for 2D
     signals and less than 5 for 1D signals. This function is most inaccurate for
-    fast 1D convolutions taking less that 0.01 seconds. The speed tests were
-    performed on an Amazon EC2 r5a.2xlarge machine.
+    1D convolutions that take less than 0.01 seconds with ``method='direct'``.
+    These speed tests were performed on an Amazon EC2 r5a.2xlarge machine.
 
     This function generalizes fairly decently across hardware. The specific
     values for this function were tuned on an mid-2014 15-inch MacBook Pro with
     16GB RAM and a 2.5GHz Intel i7 processor. The speed tests on the EC2
     machine performed slightly better than the tests on Macbook Pro.
 
-    The convolution is timed the convolutions if ``measure=True``.
-    There are cases when `fftconvolve` supports the inputs but this function
+    The convolution is timed if ``measure=True``.  There are cases when
+    `fftconvolve` supports the inputs but this function
     returns `direct` (e.g., to protect against floating point integer
     precision).
 
