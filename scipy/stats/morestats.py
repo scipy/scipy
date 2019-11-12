@@ -1340,9 +1340,12 @@ def yeojohnson(x, lmbda=None):
     if x.size == 0:
         return x
 
+    if np.issubdtype(x.dtype, np.complexfloating):
+        raise ValueError('Yeo-Johnson transformation is not defined for '
+                         'complex numbers.')
+
     if np.issubdtype(x.dtype, np.integer):
-        raise ValueError('Yeo-Johnson transformation cannot be performed on '
-                         'integers. Convert your data type to float.')
+        x = x.astype(np.float64, copy=False)
 
     if lmbda is not None:
         return _yeojohnson_transform(x, lmbda)
