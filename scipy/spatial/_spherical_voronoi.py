@@ -20,6 +20,22 @@ from scipy.spatial import cKDTree
 __all__ = ['SphericalVoronoi']
 
 
+def calculate_solid_angles(R):
+    """Calculates the solid angles of plane triangles. Implements the method of
+    Van Oosterom and Strackee [VanOosterom]_ with some modifications. Assumes
+    that input points have unit norm."""
+    # Original method uses a triple product `R1 . (R2 x R3)` for the numerator.
+    # This is equal to the determinant of the matrix [R1 R2 R3], which can be
+    # computed with better stability using LU factorization with partial
+    # pivoting.
+    numerator = np.linalg.det(R)
+    numerator = np.einsum('ij,ij->i', R[:, 0], np.cross(R[:, 1], R[:, 2]))
+    denominator = 1 + (np.einsum('ij,ij->i', R[:, 0], R[:, 1]) +
+                       np.einsum('ij,ij->i', R[:, 1], R[:, 2]) +
+                       np.einsum('ij,ij->i', R[:, 2], R[:, 0]))
+    return np.abs(2 * np.arctan2(numerator, denominator))
+
+
 class SphericalVoronoi:
     """ Voronoi diagrams on the surface of a sphere.
 
@@ -53,6 +69,13 @@ class SphericalVoronoi:
         the n-th entry is a list consisting of the indices
         of the vertices belonging to the n-th point in points
 
+    Methods
+    ----------
+    calculate_areas
+        Calculates the areas of the Voronoi regions. The regions are
+        spherical polygons (not planar). The sum of the areas is
+        `4 * pi * radius**2`.
+
     Raises
     ------
     ValueError
@@ -77,6 +100,10 @@ class SphericalVoronoi:
     ----------
     .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of
                 points on or close to a sphere. Research Report RR-7004, 2009.
+
+    .. [VanOosterom] Van Oosterom and Strackee. The solid angle of a plane
+                     triangle. IEEE Transactions on Biomedical Engineering,
+                     2, 1983, pp 125--126.
 
     See Also
     --------
@@ -292,3 +319,54 @@ class SphericalVoronoi:
         if self._rank == 2:
             return  # regions are sorted by construction
         _voronoi.sort_vertices_of_regions(self._tri.simplices, self.regions)
+
+    def calculate_areas(self):
+        """Calculates the areas of the Voronoi regions. The regions are
+        spherical polygons (not planar). The sum of the areas is
+        `4 * pi * radius**2`.
+
+        .. versionadded:: 1.4.0
+
+        Returns
+        -------
+        areas : double array of shape (npoints,)
+            The areas of the Voronoi regions.
+        """
+        self.sort_vertices_of_regions()
+        sizes = [len(region) for region in self.regions]
+        csizes = np.cumsum(sizes)
+        num_regions = csizes[-1]
+
+        # We create a set of triangles consisting of one point and two Voronoi
+        # vertices. The vertices of each triangle are adjacent in the sorted
+        # regions list.
+        point_indices = [i for i, size in enumerate(sizes)
+                         for j in range(size)]
+
+        nbrs1 = np.array([r for region in self.regions for r in region])
+
+        # The calculation of nbrs2 is a vectorized version of:
+        # np.array([r for region in self.regions for r in np.roll(region, 1)])
+        nbrs2 = np.roll(nbrs1, 1)
+        indices = np.roll(csizes, 1)
+        indices[0] = 0
+        nbrs2[indices] = nbrs1[csizes - 1]
+
+        # Normalize points and vertices. Use the copy stored in self._tri in
+        # case self.points has changed between initialization and this call.
+        pnormalized = (self._tri._points - self.center) / self.radius
+        vnormalized = (self.vertices - self.center) / self.radius
+
+        # Create the complete set of triangles and calculate their solid angles
+        triangles = np.hstack([pnormalized[point_indices],
+                               vnormalized[nbrs1],
+                               vnormalized[nbrs2]
+                               ]).reshape((num_regions, 3, 3))
+        triangle_solid_angles = calculate_solid_angles(triangles)
+
+        # Sum the solid angles of the triangles in each region
+        solid_angles = np.cumsum(triangle_solid_angles)[csizes - 1]
+        solid_angles[1:] -= solid_angles[:-1]
+
+        # Get polygon areas using A = omega * r**2
+        return solid_angles * self.radius**2

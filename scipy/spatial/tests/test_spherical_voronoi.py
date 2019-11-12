@@ -12,9 +12,67 @@ from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
+from scipy.constants import golden as phi
 
 
 TOL = 1E-10
+
+
+def _generate_tetrahedron():
+    return np.array([[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]])
+
+
+def _generate_cube():
+    return np.array(list(itertools.product([-1, 1.], repeat=3)))
+
+
+def _generate_octahedron():
+    return np.array([[-1, 0, 0], [+1, 0, 0], [0, -1, 0],
+                     [0, +1, 0], [0, 0, -1], [0, 0, +1]])
+
+
+def _generate_dodecahedron():
+
+    x1 = _generate_cube()
+    x2 = np.array([[0, -phi, -1 / phi],
+                   [0, -phi, +1 / phi],
+                   [0, +phi, -1 / phi],
+                   [0, +phi, +1 / phi]])
+    x3 = np.array([[-1 / phi, 0, -phi],
+                   [+1 / phi, 0, -phi],
+                   [-1 / phi, 0, +phi],
+                   [+1 / phi, 0, +phi]])
+    x4 = np.array([[-phi, -1 / phi, 0],
+                   [-phi, +1 / phi, 0],
+                   [+phi, -1 / phi, 0],
+                   [+phi, +1 / phi, 0]])
+    return np.concatenate((x1, x2, x3, x4))
+
+
+def _generate_icosahedron():
+    x = np.array([[0, -1, -phi],
+                  [0, -1, +phi],
+                  [0, +1, -phi],
+                  [0, +1, +phi]])
+    return np.concatenate([np.roll(x, i, axis=1) for i in range(3)])
+
+
+def _generate_polyhedron(name):
+
+    if name == "tetrahedron":
+        p = _generate_tetrahedron()
+    elif name == "cube":
+        p = _generate_cube()
+    elif name == "octahedron":
+        p = _generate_octahedron()
+    elif name == "dodecahedron":
+        p = _generate_dodecahedron()
+    elif name == "icosahedron":
+        p = _generate_icosahedron()
+    else:
+        raise ValueError("unrecognized polyhedron")
+
+    return p / np.linalg.norm(p, axis=1)[:, np.newaxis]
 
 
 class TestSphericalVoronoi(object):
@@ -294,3 +352,33 @@ class TestSphericalVoronoi(object):
         dist = distance.cdist(sv.vertices, expected)
         res = linear_sum_assignment(dist)
         assert dist[res].sum() < TOL
+
+    @pytest.mark.parametrize("radius", [0.5, 1, 2])
+    @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
+    def test_area_reconstitution(self, radius, center):
+        for points in [self.points, self.hemisphere_points,
+                       self.hemisphere_points2]:
+            sv = SphericalVoronoi(radius * points + center,
+                                  radius=radius,
+                                  center=center)
+            areas = sv.calculate_areas()
+            assert_almost_equal(areas.sum(), 4 * np.pi * radius**2)
+
+    @pytest.mark.parametrize("radius", [0.5, 1, 2])
+    def test_area_reconstitution_large_input(self, radius):
+        np.random.seed(0)
+        n = 1000
+        points = np.random.uniform(-1, 1, (n, 3))
+        points /= np.linalg.norm(points, axis=1).reshape((n, 1))
+
+        sv = SphericalVoronoi(radius * points, radius=radius)
+        areas = sv.calculate_areas()
+        assert_almost_equal(areas.sum(), 4 * np.pi * radius**2)
+
+    @pytest.mark.parametrize("poly", ["tetrahedron", "cube", "octahedron",
+                                      "dodecahedron", "icosahedron"])
+    def test_equal_area_regions(self, poly):
+        points = _generate_polyhedron(poly)
+        sv = SphericalVoronoi(points)
+        areas = sv.calculate_areas()
+        assert_almost_equal(areas, 4 * np.pi / len(points))
