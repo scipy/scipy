@@ -407,7 +407,7 @@ class Rotation(object):
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, normalized=False):
+    def from_quat(cls, quat, normalized=None):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -416,11 +416,8 @@ class Rotation(object):
         ----------
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion in scalar-last
-            (x, y, z, w) format.
-        normalized : bool, optional
-            If False, input quaternions are normalized to unit norm before
-            being stored. If True, quaternions are assumed to already have
-            unit norm and are stored as given. Default is False.
+            (x, y, z, w) format. Each quaternion will be normalized to unit
+            norm.
 
         Returns
         -------
@@ -463,20 +460,18 @@ class Rotation(object):
         >>> r.as_quat().shape
         (1, 4)
 
-        By default, quaternions are normalized before initialization.
+        Quaternions are normalized before initialization.
 
         >>> r = R.from_quat([0, 0, 1, 1])
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
-
-        If unit norms are ensured, skip the normalization step.
-
-        >>> r = R.from_quat([0, 0, 1, 0], normalized=True)
-        >>> r.as_quat()
-        array([0., 0., 1., 0.])
-
         """
-        return cls(quat, not normalized)
+        if normalized is not None:
+            warnings.warn("`normalized` is deprecated in scipy 1.4.0 and "
+                          "will be removed in scipy 1.6.0. The input `quat` "
+                          "is always normalized.", DeprecationWarning)
+
+        return cls(quat, normalize=True)
 
     @classmethod
     def from_matrix(cls, matrix):

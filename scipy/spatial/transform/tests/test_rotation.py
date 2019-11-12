@@ -880,7 +880,7 @@ def test_quat_ownership():
         [0, 1, 0, 0],
         [0, 0, 1, 0]
     ])
-    r = Rotation.from_quat(quat, normalized=True)
+    r = Rotation.from_quat(quat)
     s = r[0:2]
 
     r._quat[0] = np.array([0, -1, 0, 0])
