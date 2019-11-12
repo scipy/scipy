@@ -2806,6 +2806,7 @@ class TestPartialFractionExpansion(object):
         k = []
         with pytest.raises(ValueError, match="`rtype` must be one of"):
             invres(r, p, k, rtype='median')
+        with pytest.raises(ValueError, match="`rtype` must be one of"):
             invresz(r, p, k, rtype='median')
 
     def test_invresz_one_coefficient_bug(self):
