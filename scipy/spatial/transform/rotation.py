@@ -365,7 +365,7 @@ class Rotation(object):
     output formats supported, consult the individual method's examples.
 
     """
-    def __init__(self, quat, normalize=False, copy=True):
+    def __init__(self, quat, normalize=True, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
