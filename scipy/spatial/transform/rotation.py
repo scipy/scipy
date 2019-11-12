@@ -1785,7 +1785,24 @@ class Rotation(object):
 
         where :math:`w_i`'s are the `weights` corresponding to each vector.
 
-        The rotation is estimated using Markley's SVD method [1]_.
+        The rotation is estimated with Kabsch algorithm [1]_.
+
+        This method also computes the sensitivity of the estimated rotation to
+        small perturbations of the vector measurements. Specifically we
+        consider the rotation estimate error as a small rotation vector of
+        frame A. The sensitivity matrix is proportional to the covariance of
+        this rotation vector assuming that the vectors in `a` was measured with
+        errors significantly less than their lengths. To get the true
+        covariance matrix, the returned sensitivity matrix must be multiplied
+        by harmonic mean [3]_ of variance in each observation. Note that
+        `weights` are supposed to be inversely proportional to the observation
+        variances to get consistent results. For example, if all vectors are
+        measured with the same accuracy of 0.01 (`weights` must be all equal),
+        then you should multiple the sensitivity matrix by 0.01**2 to get the
+        covariance.
+
+        Refer to [2]_ for more rigorous discussion of the covariance
+        estimation.
 
         Parameters
         ----------
@@ -1796,32 +1813,26 @@ class Rotation(object):
             Vector components observed in another frame B. Each row of `b`
             denotes a vector.
         weights : array_like shape (N,), optional
-            Weights describing the relative importance of the vectors in
-            `a`. If None (default), then all values in `weights` are assumed to
-            be equal.
+            Weights describing the relative importance of the vector
+            observations. If None (default), then all values in `weights` are
+            assumed to be equal.
 
         Returns
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
         sensitivity_matrix : ndarray, shape (3, 3)
-            Scaled covariance of the attitude errors expressed as the small
-            rotation vector of frame A. Multiply with harmonic mean [3]_ of
-            variance in each observation to get true covariance matrix. The
-            error model is detailed in [2]_.
+            Sensitivity matrix of the estimated rotation estimate as explained
+            above.
 
         References
         ----------
-        .. [1] F. Landis Markley,
+        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
+        .. [2] F. Landis Markley,
                 "Attitude determination using vector observations: a fast
                 optimal matrix algorithm", Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
-        .. [2] F. Landis Markley,
-                "Attitude determination using vector observations and the
-                Singular Value Decomposition", Journal of Astronautical
-                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
         .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-
         """
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
