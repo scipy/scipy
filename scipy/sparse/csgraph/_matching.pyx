@@ -50,7 +50,10 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     Note that if the sparse representation contains explicit zeros, these are
     still counted as edges.
 
-    .. versionadded:: 0.15.0
+    The implementation was changed in SciPy 1.4.0 to allow matching of general
+    bipartite graphs, where previous versions would assume that a perfect
+    matching existed. As such, code written against 1.4.0 will not necessarily
+    work on older versions.
 
     References
     ----------
