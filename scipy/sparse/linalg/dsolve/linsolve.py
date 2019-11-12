@@ -6,7 +6,8 @@ import numpy as np
 from numpy import asarray
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
-from scipy.linalg import LinAlgError
+from scipy.linalg import solve_banded, LinAlgError
+
 
 from . import _superlu
 
@@ -57,6 +58,7 @@ def use_solver(**kwargs):
     if useUmfpack and 'assumeSortedIndices' in kwargs:
         umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
+
 def _get_umf_family(A):
     """Get umfpack family string given the sparse matrix dtype."""
     _families = {
@@ -79,6 +81,7 @@ def _get_umf_family(A):
         raise ValueError(msg)
 
     return family
+
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -127,16 +130,19 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     >>> np.allclose(A.dot(x).todense(), B.todense())
     True
     """
+    if isspmatrix_dia(A):
+        return _spsolve_dia(A, b)
+
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format',
-                SparseEfficiencyWarning)
+             SparseEfficiencyWarning)
 
     # b is a vector only if b have shape (n,) or (n, 1)
     b_is_sparse = isspmatrix(b)
     if not b_is_sparse:
-        b = asarray(b)
-    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
+        b = np.asarray(b)
+    b_is_vector = (b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -149,8 +155,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     # validate input shapes
     M, N = A.shape
-    if (M != N):
-        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
+    if M != N:
+        raise ValueError("matrix must be square (has shape %s)" % (A.shape,))
 
     if M != b.shape[0]:
         raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
@@ -163,14 +169,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             b_vec = b.toarray()
         else:
             b_vec = b
-        b_vec = asarray(b_vec, dtype=A.dtype).ravel()
+        b_vec = np.asarray(b_vec, dtype=A.dtype).ravel()
 
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
         if A.dtype.char not in 'dD':
-            raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+            raise ValueError("matrix dtype must be float64 for umfpack solver")
 
         umf = umfpack.UmfpackContext(_get_umf_family(A))
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
@@ -220,8 +225,45 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             sparse_row = np.concatenate(row_segs)
             sparse_col = np.concatenate(col_segs)
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+                            shape=b.shape, dtype=A.dtype)
 
+    return x
+
+
+def _spsolve_dia(A, b):
+    if isspmatrix(b):
+        b_ = b.toarray()
+        overwrite_b = True
+        warn('solve_banded requires dense b', SparseEfficiencyWarning)
+    else:
+        b_ = np.asarray(b)
+        overwrite_b = b_ is not b
+
+    if len(A.offsets) == 0:
+        l, u = 0, 0
+    else:
+        l = max(0, -A.offsets.min())
+        u = max(0, A.offsets.max())
+
+    if np.array_equal(A.offsets, np.arange(u, l-1, -1)):
+        ab = A.data
+        overwrite_ab = False
+    else:
+        ab = np.zeros((l+u+1, b.shape[0]), dtype=A.data.dtype)
+        ab[u - A.offsets, :A.data.shape[1]] = A.data
+        overwrite_ab = True
+
+    try:
+        x = solve_banded((l, u), ab, b_, overwrite_ab=overwrite_ab,
+                         overwrite_b=overwrite_b)
+    except LinAlgError:
+        warn("Matrix is exactly singular", MatrixRankWarning)
+        x = np.empty_like(b_, dtype=float)
+        x.fill(np.nan)
+    if x.ndim == 2 and x.shape[1] == 1:
+        x = x.ravel()
+    elif isspmatrix(b):
+        x = b.__class__(x)
     return x
 
 
@@ -300,7 +342,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
-    if (M != N):
+    if M != N:
         raise ValueError("can only factor square matrices")  # is this true?
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
@@ -376,7 +418,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
-    if (M != N):
+    if M != N:
         raise ValueError("can only factor square matrices")  # is this true?
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
