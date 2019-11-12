@@ -38,7 +38,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     Notes
     -----
-    This function uses of the Hopcroft--Karp algorithm [1]_. Its time
+    This function implements the Hopcroft--Karp algorithm [1]_. Its time
     complexity is :math:`O(\lvert E \rvert \sqrt{\lvert V \rvert})`, and its
     space complexity is linear in the number of rows. In practice, this
     asymmetry between rows and columns means that it can be more efficient to
@@ -57,7 +57,6 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     .. [1] John E. Hopcroft and Richard M. Karp. "An n^{5 / 2} Algorithm for
            Maximum Matchings in Bipartite Graphs" In: SIAM Journal of Computing
            2.4 (1973), pp. 225--231. <https://dx.doi.org/10.1137/0202019>.
-
 
     Examples
     --------
