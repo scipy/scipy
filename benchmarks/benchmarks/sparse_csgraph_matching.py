@@ -9,7 +9,7 @@ from .common import Benchmark
 
 
 class MaximumBipartiteMatching(Benchmark):
-    params = [[1000, 5000, 10000], [0.01, 0.1, 0.2]]
+    params = [[1000, 2500], [0.01, 0.1]]
     param_names = ['n', 'density']
 
     def setup(self, n, density):
