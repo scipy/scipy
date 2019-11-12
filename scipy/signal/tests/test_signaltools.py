@@ -28,7 +28,8 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal.signaltools import _filtfilt_gust
+from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+                                      _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 
 
@@ -2534,6 +2535,31 @@ class TestPartialFractionExpansion(object):
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
+    def test_compute_factors(self):
+        factors, poly = _compute_factors([1, 2, 3], [3, 2, 1])
+        assert_equal(len(factors), 3)
+        assert_almost_equal(factors[0], np.poly([2, 2, 3]))
+        assert_almost_equal(factors[1], np.poly([1, 1, 1, 3]))
+        assert_almost_equal(factors[2], np.poly([1, 1, 1, 2, 2]))
+        assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
+
+        factors, poly = _compute_factors([1, 2, 3], [3, 2, 1],
+                                         include_powers=True)
+        assert_equal(len(factors), 6)
+        assert_almost_equal(factors[0], np.poly([1, 1, 2, 2, 3]))
+        assert_almost_equal(factors[1], np.poly([1, 2, 2, 3]))
+        assert_almost_equal(factors[2], np.poly([2, 2, 3]))
+        assert_almost_equal(factors[3], np.poly([1, 1, 1, 2, 3]))
+        assert_almost_equal(factors[4], np.poly([1, 1, 1, 3]))
+        assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
+        assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
+
+    def test_group_poles(self):
+        unique, multiplicity = _group_poles(
+            [1.0, 1.001, 1.003, 2.0, 2.003, 3.0], 0.1, 'min')
+        assert_equal(unique, [1.0, 2.0, 3.0])
+        assert_equal(multiplicity, [3, 2, 1])
+
     def test_residue_general(self):
         # Test are taken from issue #4464, note that poles in scipy are
         # in increasing by absolute value order, opposite to MATLAB.
@@ -2750,60 +2776,116 @@ class TestPartialFractionExpansion(object):
                                  "be non-zero."):
             residuez(1, [0, 1, 2, 3])
 
+    def test_inverse_unique_roots_different_rtypes(self):
+        # This test was inspired by github issue 2496.
+        r = [3 / 10, -1 / 6, -2 / 15]
+        p = [0, -2, -5]
+        k = []
+        b_expected = [0, 1, 3]
+        a_expected = [1, 7, 10, 0]
+
+        # With the default tolerance, the rtype does not matter
+        # for this example.
+        for rtype in ('avg', 'mean', 'min', 'minimum', 'max', 'maximum'):
+            b, a = invres(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected)
+            assert_allclose(a, a_expected)
+
+            b, a = invresz(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected)
+            assert_allclose(a, a_expected)
+
+    def test_inverse_repeated_roots_different_rtypes(self):
+        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
+        p = [0, -2, -2, -5]
+        k = []
+        b_expected = [0, 0, 1, 3]
+        b_expected_z = [-1/6, -2/3, 11/6, 3]
+        a_expected = [1, 9, 24, 20, 0]
+
+        for rtype in ('avg', 'mean', 'min', 'minimum', 'max', 'maximum'):
+            b, a = invres(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected, atol=1e-14)
+            assert_allclose(a, a_expected)
+
+            b, a = invresz(r, p, k, rtype=rtype)
+            assert_allclose(b, b_expected_z, atol=1e-14)
+            assert_allclose(a, a_expected)
+
+    def test_inverse_bad_rtype(self):
+        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
+        p = [0, -2, -2, -5]
+        k = []
+        with pytest.raises(ValueError, match="`rtype` must be one of"):
+            invres(r, p, k, rtype='median')
+        with pytest.raises(ValueError, match="`rtype` must be one of"):
+            invresz(r, p, k, rtype='median')
+
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
         p = [2]
         k = [0]
-        a_expected = [1.0, 0.0]
-        b_expected = [1.0, -2.0]
-        a_observed, b_observed = invresz(r, p, k)
+        b, a = invresz(r, p, k)
+        assert_allclose(b, [1.0])
+        assert_allclose(a, [1.0, -2.0])
 
-        assert_allclose(a_observed, a_expected)
-        assert_allclose(b_observed, b_expected)
+    def test_invres(self):
+        b, a = invres([1], [1], [])
+        assert_almost_equal(b, [1])
+        assert_almost_equal(a, [1, -1])
 
-    def test_invres_distinct_roots(self):
-        # This test was inspired by github issue 2496.
-        r = [3 / 10, -1 / 6, -2 / 15]
-        p = [0, -2, -5]
-        k = []
-        a_expected = [1, 3]
-        b_expected = [1, 7, 10, 0]
-        a_observed, b_observed = invres(r, p, k)
-        assert_allclose(a_observed, a_expected)
-        assert_allclose(b_observed, b_expected)
-        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
+        b, a = invres([1 - 1j, 2, 0.5 - 3j], [1, 0.5j, 1 + 1j], [])
+        assert_almost_equal(b, [3.5 - 4j, -8.5 + 0.25j, 3.5 + 3.25j])
+        assert_almost_equal(a, [1, -2 - 1.5j, 0.5 + 2j, 0.5 - 0.5j])
 
-        # With the default tolerance, the rtype does not matter
-        # for this example.
-        for rtype in rtypes:
-            a_observed, b_observed = invres(r, p, k, rtype=rtype)
-            assert_allclose(a_observed, a_expected)
-            assert_allclose(b_observed, b_expected)
+        b, a = invres([0.5, 1], [1 - 1j, 2 + 2j], [1, 2, 3])
+        assert_almost_equal(b, [1, -1 - 1j, 1 - 2j, 0.5 - 3j, 10])
+        assert_almost_equal(a, [1, -3 - 1j, 4])
 
-        # With unrealistically large tolerances, repeated roots may be inferred
-        # and the rtype comes into play.
-        ridiculous_tolerance = 1e10
-        for rtype in rtypes:
-            a, b = invres(r, p, k, tol=ridiculous_tolerance, rtype=rtype)
+        b, a = invres([-1, 2, 1j, 3 - 1j, 4, -2],
+                      [-1, 2 - 1j, 2 - 1j, 3, 3, 3], [])
+        assert_almost_equal(b, [4 - 1j, -28 + 16j, 40 - 62j, 100 + 24j,
+                                -292 + 219j, 192 - 268j])
+        assert_almost_equal(a, [1, -12 + 2j, 53 - 20j, -96 + 68j, 27 - 72j,
+                                108 - 54j, -81 + 108j])
 
-    def test_invres_repeated_roots(self):
-        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
-        p = [0, -2, -2, -5]
-        k = []
-        a_expected = [1, 3]
-        b_expected = [1, 9, 24, 20, 0]
-        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
-        for rtype in rtypes:
-            a_observed, b_observed = invres(r, p, k, rtype=rtype)
-            assert_allclose(a_observed, a_expected)
-            assert_allclose(b_observed, b_expected)
+        b, a = invres([-1, 1j], [1, 1], [1, 2])
+        assert_almost_equal(b, [1, 0, -4, 3 + 1j])
+        assert_almost_equal(a, [1, -2, 1])
 
-    def test_invres_bad_rtype(self):
-        r = [3 / 20, -7 / 36, -1 / 6, 2 / 45]
-        p = [0, -2, -2, -5]
-        k = []
-        assert_raises(ValueError, invres, r, p, k, rtype='median')
+    def test_invresz(self):
+        b, a = invresz([1], [1], [])
+        assert_almost_equal(b, [1])
+        assert_almost_equal(a, [1, -1])
+
+        b, a = invresz([1 - 1j, 2, 0.5 - 3j], [1, 0.5j, 1 + 1j], [])
+        assert_almost_equal(b, [3.5 - 4j, -8.5 + 0.25j, 3.5 + 3.25j])
+        assert_almost_equal(a, [1, -2 - 1.5j, 0.5 + 2j, 0.5 - 0.5j])
+
+        b, a = invresz([0.5, 1], [1 - 1j, 2 + 2j], [1, 2, 3])
+        assert_almost_equal(b, [2.5, -3 - 1j, 1 - 2j, -1 - 3j, 12])
+        assert_almost_equal(a, [1, -3 - 1j, 4])
+
+        b, a = invresz([-1, 2, 1j, 3 - 1j, 4, -2],
+                       [-1, 2 - 1j, 2 - 1j, 3, 3, 3], [])
+        assert_almost_equal(b, [6, -50 + 11j, 100 - 72j, 80 + 58j,
+                                -354 + 228j, 234 - 297j])
+        assert_almost_equal(a, [1, -12 + 2j, 53 - 20j, -96 + 68j, 27 - 72j,
+                                108 - 54j, -81 + 108j])
+
+        b, a = invresz([-1, 1j], [1, 1], [1, 2])
+        assert_almost_equal(b, [1j, 1, -3, 2])
+        assert_almost_equal(a, [1, -2, 1])
+
+    def test_inverse_scalar_arguments(self):
+        b, a = invres(1, 1, 1)
+        assert_almost_equal(b, [1, 0])
+        assert_almost_equal(a, [1, -1])
+
+        b, a = invresz(1, 1, 1)
+        assert_almost_equal(b, [2, -1])
+        assert_almost_equal(a, [1, -1])
 
 
 class TestVectorstrength(object):
