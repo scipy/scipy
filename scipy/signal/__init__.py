@@ -334,7 +334,7 @@ def deco(name):
     if hasattr(f, '__qualname__'):
         wrapped.__qualname__ = f.__qualname__
 
-    if f.__doc__ is not None:
+    if f.__doc__:
         lines = f.__doc__.splitlines()
         for li, line in enumerate(lines):
             if line.strip() == 'Parameters':

@@ -2842,7 +2842,7 @@ class erlang_gen(gamma_gen):
     def fit(self, data, *args, **kwds):
         return super(erlang_gen, self).fit(data, *args, **kwds)
 
-    if fit.__doc__ is not None:
+    if fit.__doc__:
         fit.__doc__ = (rv_continuous.fit.__doc__ +
             """
             Notes
