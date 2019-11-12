@@ -352,12 +352,6 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
-    allow_zero : bool, optional
-        If `allow_zero` is False then hmean will raise a ValueError if any of
-        the elements in `a` are 0. If `allow_zero` is True then hmean will
-        return 0 if any of the elements in `a` are 0.
-
-        .. versionadded:: 1.4.0
 
     Returns
     -------
