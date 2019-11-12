@@ -365,7 +365,7 @@ class Rotation(object):
     output formats supported, consult the individual method's examples.
 
     """
-    def __init__(self, quat, normalized=False, copy=True):
+    def __init__(self, quat, normalize=False, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
@@ -380,9 +380,7 @@ class Rotation(object):
             quat = quat[None, :]
             self._single = True
 
-        if normalized:
-            self._quat = quat.copy() if copy else quat
-        else:
+        if normalize:
             self._quat = quat.copy()
             norms = scipy.linalg.norm(quat, axis=1)
 
@@ -392,6 +390,8 @@ class Rotation(object):
 
             # Ensure norm is broadcasted along each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
+        else:
+            self._quat = quat.copy() if copy else quat
 
     def __len__(self):
         """Number of rotations contained in this object.
@@ -476,7 +476,7 @@ class Rotation(object):
         array([0., 0., 1., 0.])
 
         """
-        return cls(quat, normalized)
+        return cls(quat, not normalized)
 
     @classmethod
     def from_matrix(cls, matrix):
@@ -607,9 +607,9 @@ class Rotation(object):
         quat /= np.linalg.norm(quat, axis=1)[:, None]
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalize=False, copy=False)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalize=False, copy=False)
 
     @classmethod
     @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
@@ -702,9 +702,9 @@ class Rotation(object):
         quat[:, 3] = np.cos(norms / 2)
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalize=False, copy=False)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalize=False, copy=False)
 
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
@@ -857,7 +857,7 @@ class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = _elementary_quat_compose(seq, angles, intrinsic)
-        return cls(quat[0] if is_single else quat, normalized=True, copy=False)
+        return cls(quat[0] if is_single else quat, normalize=False, copy=False)
 
     def as_quat(self):
         """Represent as quaternions.
@@ -1403,7 +1403,7 @@ class Rotation(object):
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalized=True, copy=False)
+        return self.__class__(result, normalize=False, copy=False)
 
     def inv(self):
         """Invert this rotation.
@@ -1440,7 +1440,7 @@ class Rotation(object):
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, normalized=True, copy=False)
+        return self.__class__(quat, normalize=False, copy=False)
 
     def magnitude(self):
         """Get the magnitude(s) of the rotation(s).
@@ -1524,7 +1524,7 @@ class Rotation(object):
 
         K = np.dot(weights * self._quat.T, self._quat)
         l, v = np.linalg.eigh(K)
-        return self.__class__(v[:, -1], normalized=True)
+        return self.__class__(v[:, -1], normalize=False)
 
     def reduce(self, left=None, right=None, return_indices=False):
         """Reduce this rotation with the provided rotation groups.
@@ -1558,7 +1558,7 @@ class Rotation(object):
             Indices of elements from `left` and `right` used for reduction.
         """
         if left is None and right is None:
-            reduced = self.__class__(self._quat, normalized=True, copy=True)
+            reduced = self.__class__(self._quat, normalize=False, copy=True)
             if return_indices:
                 return reduced, None, None
             else:
@@ -1700,7 +1700,7 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         """
-        return self.__class__(self._quat[indexer], normalized=True)
+        return self.__class__(self._quat[indexer], normalize=False)
 
     @classmethod
     def identity(cls, num=None):
@@ -1724,7 +1724,7 @@ class Rotation(object):
         else:
             q = np.zeros((num, 4))
             q[:, 3] = 1
-        return cls(q, normalized=True)
+        return cls(q, normalize=False)
 
     @classmethod
     def random(cls, num=None, random_state=None):
