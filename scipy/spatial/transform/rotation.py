@@ -1773,7 +1773,7 @@ class Rotation(object):
     def match_vectors(cls, a, b, weights=None, normalized=None):
         """Estimate a rotation to match two sets of vectors.
 
-        Find a rotation between frames A and B which best matches a set of unit
+        Find a rotation between frames A and B which best matches a set of
         vectors `a` and `b` observed in these frames. The following loss
         function is minimized to solve for the rotation matrix
         :math:`C`:
@@ -1791,10 +1791,10 @@ class Rotation(object):
         ----------
         a : array_like, shape (N, 3)
             Vector components observed in initial frame A. Each row of `a`
-            denotes a vector. Vectors will be normalized to unit norm.
+            denotes a vector.
         b : array_like, shape (N, 3)
             Vector components observed in another frame B. Each row of `b`
-            denotes a vector. Vectors will be normalized to unit norm.
+            denotes a vector.
         weights : array_like shape (N,), optional
             Weights describing the relative importance of the vectors in
             `a`. If None (default), then all values in `weights` are assumed to
@@ -1857,11 +1857,12 @@ class Rotation(object):
 
         if normalized is not None:
             warnings.warn("`normalized` is deprecated in scipy 1.4.0 and "
-                          "will be removed in scipy 1.6.0. The input vectors "
-                          "are always normalized.", DeprecationWarning)
+                          "will be removed in scipy 1.6.0.",
+                          DeprecationWarning)
 
-        a = a / scipy.linalg.norm(a, axis=1)[:, None]
-        b = b / scipy.linalg.norm(b, axis=1)[:, None]
+            if normalized:
+                a = a / scipy.linalg.norm(a, axis=1)[:, None]
+                b = b / scipy.linalg.norm(b, axis=1)[:, None]
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
