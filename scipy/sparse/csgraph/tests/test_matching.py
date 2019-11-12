@@ -85,6 +85,7 @@ def test_explicit_zeros_count_as_edges():
 
 
 def test_large_random_graph_with_one_edge_incident_to_each_vertex():
+    np.random.seed(42)
     A = diags(np.ones(25), offsets=0, format='csr')
     rand_perm = np.random.permutation(25)
     rand_perm2 = np.random.permutation(25)
