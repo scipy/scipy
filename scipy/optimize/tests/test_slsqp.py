@@ -544,3 +544,17 @@ class TestSLSQP(object):
         np.testing.assert_allclose(res.fun, 0.5443310539518)
         np.testing.assert_allclose(res.x, [0.33333333, 0.2962963])
         assert res.success
+
+    def test_gh9640(self):
+        np.random.seed(10)
+        cons = ({'type': 'ineq', 'fun': lambda x: -x[0] - x[1] - 3},
+                {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
+        bnds = ((-2, 2), (-2, 2), (-2, 2))
+
+        target = lambda x: 1
+        x0 = [-1.8869783504471584, -0.640096352696244, -0.8174212253407696]
+        res = minimize(target, x0, method='SLSQP', bounds=bnds, constraints=cons,
+                       options={'disp':False, 'maxiter':10000})
+
+        # The problem is infeasible, so it cannot succeed
+        assert not res.success

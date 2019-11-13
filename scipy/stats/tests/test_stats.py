@@ -1771,6 +1771,29 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    def test_zscore_nan_propagate(self):
+        x = np.array([1, 2, np.nan, 4, 5])
+        z = stats.zscore(x, nan_policy='propagate')
+        assert all(np.isnan(z))
+
+    def test_zscore_nan_omit(self):
+        x = np.array([1, 2, np.nan, 4, 5])
+
+        z = stats.zscore(x, nan_policy='omit')
+
+        expected = np.array([-1.2649110640673518,
+                             -0.6324555320336759,
+                             np.nan,
+                             0.6324555320336759,
+                             1.2649110640673518
+                             ])
+        assert_array_almost_equal(z, expected)
+
+    def test_zscore_nan_raise(self):
+        x = np.array([1, 2, np.nan, 4, 5])
+
+        assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
+
     def test_mad(self):
         dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
                 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
@@ -3919,6 +3942,15 @@ class TestHarMean(object):
         desired = 34.1417152147
         check_equal_hmean(a, desired)
 
+    def test_1d_array_with_zero(self):
+        a = np.array([1, 0])
+        desired = 0.0
+        assert_equal(stats.hmean(a), desired)
+
+    def test_1d_array_with_negative_value(self):
+        a = np.array([1, 0, -1])
+        assert_raises(ValueError, stats.hmean, a)
+
     # Note the next tests use axis=None as default, not axis=0
     def test_2d_list(self):
         #  Test a 2d list
@@ -3938,11 +3970,21 @@ class TestHarMean(object):
         desired = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
         check_equal_hmean(a, desired, axis=0)
 
+    def test_2d_axis0_with_zero(self):
+        a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = np.array([22.88135593, 0.0, 52.90076336, 65.45454545])
+        assert_allclose(stats.hmean(a, axis=0), desired)
+
     def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([19.2, 63.03939962, 103.80078637])
         check_equal_hmean(a, desired, axis=1)
+
+    def test_2d_axis1_with_zero(self):
+        a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = np.array([0.0, 63.03939962, 103.80078637])
+        assert_allclose(stats.hmean(a, axis=1), desired)
 
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
@@ -4528,6 +4570,15 @@ class TestKruskal(object):
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
 
+    def test_large_no_samples(self):
+        # Test to see if large samples are handled correctly.
+        n = 50000
+        x = np.random.randn(n)
+        y = np.random.randn(n) + 50
+        h, p = stats.kruskal(x, y)
+        expected = 0
+        assert_approx_equal(p, expected)
+
 
 class TestCombinePvalues(object):
 
@@ -4997,32 +5048,6 @@ class TestRatioUniforms(object):
                       stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
         assert_raises(ValueError,
                       stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
-
-    def test_gig(self):
-        # test generalized inverse gaussian distribution
-        p, b = 0.5, 0.75
-
-        def gig_mode(p, b):
-            return b / (np.sqrt((p - 1)**2 + b**2) + 1 - p)
-
-        def gig_pdf(x, p, b):
-            c = 1/(2 * kv(p, b))
-            return c * x**(p - 1) * np.exp(- b * (x + 1/x) / 2)
-
-        def gig_cdf(x, p, b):
-            x = np.atleast_1d(x)
-            cdf = [quad(gig_pdf, 0, xi, args=(p, b))[0] for xi in x]
-            return np.array(cdf)
-
-        s = kv(p+2, b) / kv(p, b)
-        vmax = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
-        umax = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
-
-        rvs = stats.rvs_ratio_uniforms(lambda x: gig_pdf(x, p, b), umax,
-                                       0, vmax, random_state=1234, size=1500)
-
-        assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
-                     True)
 
 
 class TestEppsSingleton(object):

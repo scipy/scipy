@@ -18,7 +18,7 @@ cdef extern from "numpy/npy_math.h" nogil:
     double nan "NPY_NAN"
 
 from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
-                       nbdtr, nbdtri, pdtrc, pdtr, pdtri, kn, yn,
+                       nbdtr, nbdtri, pdtri, kn, yn,
                        smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
 cdef extern from "amos_wrappers.h":
@@ -91,18 +91,6 @@ cdef inline double nbdtri_unsafe(double k, double n, double p) nogil:
         return nan
     _legacy_cast_check("nbdtri", k, n)
     return nbdtri(<int>k, <int>n, p)
-
-cdef inline double pdtrc_unsafe(double k, double m) nogil:
-    if npy_isnan(k):
-        return k
-    _legacy_cast_check("pdtrc", k, 0)
-    return pdtrc(<int>k, m)
-
-cdef inline double pdtr_unsafe(double k, double m) nogil:
-    if npy_isnan(k):
-        return k
-    _legacy_cast_check("pdtr", k, 0)
-    return pdtr(<int>k, m)
 
 cdef inline double pdtri_unsafe(double k, double y) nogil:
     if npy_isnan(k):

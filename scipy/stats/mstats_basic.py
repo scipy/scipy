@@ -1468,7 +1468,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trima(a, limits=limits, inclusive=inclusive)
 
 
-if trim.__doc__ is not None:
+if trim.__doc__:
     trim.__doc__ = trim.__doc__ % trimdoc
 
 
@@ -1561,7 +1561,7 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         return trima(a,limits=limits,inclusive=inclusive).mean(axis=axis)
 
 
-if trimmed_mean.__doc__ is not None:
+if trimmed_mean.__doc__:
     trimmed_mean.__doc__ = trimmed_mean.__doc__ % trimdoc
 
 
@@ -1586,7 +1586,7 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     return out.var(axis=axis, ddof=ddof)
 
 
-if trimmed_var.__doc__ is not None:
+if trimmed_var.__doc__:
     trimmed_var.__doc__ = trimmed_var.__doc__ % trimdoc
 
 
@@ -1610,7 +1610,7 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     return out.std(axis=axis,ddof=ddof)
 
 
-if trimmed_std.__doc__ is not None:
+if trimmed_std.__doc__:
     trimmed_std.__doc__ = trimmed_std.__doc__ % trimdoc
 
 
@@ -2152,10 +2152,25 @@ def variation(a, axis=0):
     -------
     variation : ndarray
         The calculated variation along the requested axis.
-
+    
     Notes
     -----
     For more details about `variation`, see `stats.variation`.
+    
+    Examples
+    --------
+    >>> from scipy.stats.mstats import variation
+    >>> a = np.array([2,8,4])
+    >>> variation(a)
+    0.5345224838248487
+    >>> b = np.array([2,8,3,4])
+    >>> c = np.ma.masked_array(b, mask=[0,0,1,0])
+    >>> variation(c)
+    0.5345224838248487
+
+    In the example above, it can be seen that this works the same as
+    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    array elements.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2574,7 +2589,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
 
     References
     ----------
-    .. [1] *R* statistical software: http://www.r-project.org/
+    .. [1] *R* statistical software: https://www.r-project.org/
     .. [2] *R* ``quantile`` function:
             http://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html
 

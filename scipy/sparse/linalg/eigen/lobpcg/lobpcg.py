@@ -127,7 +127,7 @@ def _get_indx(_lambda, num, largest):
 
 def lobpcg(A, X,
            B=None, M=None, Y=None,
-           tol=None, maxiter=20,
+           tol=None, maxiter=None,
            largest=True, verbosityLevel=0,
            retLambdaHistory=False, retResidualNormsHistory=False):
     """Locally Optimal Block Preconditioned Conjugate Gradient Method (LOBPCG)
@@ -157,7 +157,7 @@ def lobpcg(A, X,
         Solver tolerance (stopping criterion).
         The default is ``tol=n*sqrt(eps)``.
     maxiter : int, optional
-        Maximum number of iterations.  The default is ``maxiter=min(n, 20)``.
+        Maximum number of iterations.  The default is ``maxiter = 20``.
     largest : bool, optional
         When True, solve for the largest eigenvalues, otherwise the smallest.
     verbosityLevel : int, optional
@@ -287,7 +287,8 @@ def lobpcg(A, X,
     blockVectorX = X
     blockVectorY = Y
     residualTolerance = tol
-    maxIterations = maxiter
+    if maxiter is None:
+        maxiter = 20
 
     if blockVectorY is not None:
         sizeY = blockVectorY.shape[1]
@@ -414,7 +415,7 @@ def lobpcg(A, X,
     iterationNumber = -1
     restart = True
     explicitGramFlag = False
-    while iterationNumber < maxIterations:
+    while iterationNumber < maxiter:
         iterationNumber += 1
         if verbosityLevel > 0:
             print('iteration %d' % iterationNumber)

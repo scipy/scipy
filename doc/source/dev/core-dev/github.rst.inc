@@ -92,7 +92,7 @@ changes, deprecations, and "other changes" (anything else noteworthy enough,
 see older release notes for the kinds of things worth mentioning).
 
 Release note entries are maintained on the wiki, (e.g.
-https://github.com/scipy/scipy/wiki/Release-note-entries-for-SciPy-1.1.0).  The
+https://github.com/scipy/scipy/wiki/Release-note-entries-for-SciPy-1.2.0).  The
 release manager will gather content from there and integrate it into the html
 docs.  We use this mechanism to avoid merge conflicts that would happen if
 every PR touched the same file under ``doc/release/`` directly.
@@ -117,5 +117,5 @@ which is about Trac (what we used pre-GitHub) tickets.
 *PR naming convention:* Pull requests, issues and commit messages usually start
 with a three-letter abbreviation like ``ENH:`` or ``BUG:``.  This is useful to
 quickly see what the nature of the commit/PR/issue is.  For the full list of
-abbreviations, see `writing the commit message
-<https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message>`_.
+abbreviations, see :ref:`writing the commit message
+<numpy:writing-the-commit-message>`.

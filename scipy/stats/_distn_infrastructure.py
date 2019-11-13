@@ -12,6 +12,7 @@ import keyword
 import re
 import types
 import warnings
+from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
@@ -426,10 +427,9 @@ class rv_frozen(object):
         # create a new instance
         self.dist = dist.__class__(**dist._updated_ctor_param())
 
-        # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
-        self.a, self.b = self.dist.a, self.dist.b
+        self.a, self.b = self.dist._get_support(*args, **kwds)
 
     @property
     def random_state(self):
@@ -873,7 +873,7 @@ class rv_generic(object):
             cond = logical_and(cond, (asarray(arg) > 0))
         return cond
 
-    def _get_support(self, *args):
+    def _get_support(self, *args, **kwargs):
         """Return the support of the (unscaled, unshifted) distribution.
 
         *Must* be overridden by distributions which have support dependent
@@ -914,13 +914,15 @@ class rv_generic(object):
         return Y
 
     def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._cdf(x, *args))
 
     def _sf(self, x, *args):
         return 1.0-self._cdf(x, *args)
 
     def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._sf(x, *args))
 
     def _ppf(self, q, *args):
         return self._ppfvec(q, *args)
@@ -1093,7 +1095,6 @@ class rv_generic(object):
                         mu3p = self._munp(3, *goodargs)
                         with np.errstate(invalid='ignore'):
                             mu3 = (-mu * mu - 3 * mu2) * mu + mu3p
-                            mu3 = mu3p - 3 * mu * mu2 - mu**3
                     with np.errstate(invalid='ignore'):
                         mu4 = ((-mu**2 - 6*mu2) * mu - 4*mu3)*mu + mu4p
                         g2 = mu4 / mu2**2.0 - 3.0
@@ -1823,7 +1824,7 @@ class rv_continuous(rv_generic):
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
-        cond2 = (x >= _b) & cond0
+        cond2 = (x >= np.asarray(_b)) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
@@ -3556,6 +3557,44 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+
+def _check_shape(argshape, size):
+    """
+    This is a utility function used by `_rvs()` in the class geninvgauss_gen.
+    It compares the tuple argshape to the tuple size.
+
+    Parameters
+    ----------
+    argshape : tuple of integers
+        Shape of the arguments.
+    size : tuple of integers or integer
+        Size argument of rvs().
+
+    Returns
+    -------
+    The function returns two tuples, scalar_shape and bc.
+
+    scalar_shape : tuple
+        Shape to which the 1-d array of random variates returned by
+        _rvs_scalar() is converted when it is copied into the
+        output array of _rvs().
+
+    bc : tuple of booleans
+        bc is an tuple the same length as size. bc[j] is True if the data
+        associated with that index is generated in one call of _rvs_scalar().
+
+    """
+    scalar_shape = []
+    bc = []
+    for argdim, sizedim in zip_longest(argshape[::-1], size[::-1],
+                                       fillvalue=1):
+        if sizedim > argdim or (argdim == sizedim == 1):
+            scalar_shape.append(sizedim)
+            bc.append(True)
+        else:
+            bc.append(False)
+    return tuple(scalar_shape[::-1]), tuple(bc[::-1])
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):

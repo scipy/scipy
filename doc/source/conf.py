@@ -132,6 +132,9 @@ for key in (
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
+warnings.filterwarnings(  # matplotlib<->pyparsing issue
+    'ignore', message="Exception creating Regex for oneOf.*",
+    category=SyntaxWarning)
 # warnings in examples (mostly) that we allow
 # TODO: eventually these should be eliminated!
 for key in (

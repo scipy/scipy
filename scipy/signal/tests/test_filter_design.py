@@ -161,21 +161,26 @@ class TestCplxReal(object):
 
 class TestTf2zpk(object):
 
-    def test_simple(self):
+    @pytest.mark.parametrize('dt', (np.float64, np.complex128))
+    def test_simple(self, dt):
         z_r = np.array([0.5, -0.5])
         p_r = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
         # Sort the zeros/poles so that we don't fail the test if the order
         # changes
         z_r.sort()
         p_r.sort()
-        b = np.poly(z_r)
-        a = np.poly(p_r)
+        b = np.poly(z_r).astype(dt)
+        a = np.poly(p_r).astype(dt)
 
         z, p, k = tf2zpk(b, a)
         z.sort()
-        p.sort()
+        # The real part of `p` is ~0.0, so sort by imaginary part
+        p = p[np.argsort(p.imag)]
+
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
+        assert_array_almost_equal(k, 1.)
+        assert k.dtype == dt
 
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
@@ -241,6 +246,20 @@ class TestSos2Zpk(object):
         assert_allclose(_cplxpair(p2), p)
         assert_allclose(k2, k)
 
+    def test_fewer_zeros(self):
+        """Test not the expected number of p/z (effectively at origin)."""
+        sos = butter(3, 0.1, output='sos')
+        z, p, k = sos2zpk(sos)
+        assert len(z) == 4
+        assert len(p) == 4
+
+        sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
+                    output='sos')
+        with pytest.warns(BadCoefficients, match='Badly conditioned'):
+            z, p, k = sos2zpk(sos)
+        assert len(z) == 24
+        assert len(p) == 24
+
 
 class TestSos2Tf(object):
 
@@ -271,6 +290,17 @@ class TestTf2Sos(object):
 
 
 class TestZpk2Sos(object):
+
+    @pytest.mark.parametrize('dt', 'fdgFDG')
+    @pytest.mark.parametrize('pairing', ('nearest', 'keep_odd'))
+    def test_dtypes(self, dt, pairing):
+        z = np.array([-1, -1]).astype(dt)
+        ct = dt.upper()  # the poles have to be complex
+        p = np.array([0.57149 + 0.29360j, 0.57149 - 0.29360j]).astype(ct)
+        k = np.array(1).astype(dt)
+        sos = zpk2sos(z, p, k, pairing=pairing)
+        sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
+        assert_array_almost_equal(sos, sos2, decimal=4)
 
     def test_basic(self):
         for pairing in ('nearest', 'keep_odd'):

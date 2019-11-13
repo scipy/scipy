@@ -55,6 +55,8 @@ Helper functions
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
+   set_workers - Context manager to set default number of workers
+   get_workers - Get the current default number of workers
 
 Backend control
 ===============
@@ -80,6 +82,7 @@ from ._helper import next_fast_len
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
+from ._pocketfft.helper import set_workers, get_workers
 
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
@@ -88,7 +91,8 @@ __all__ = [
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
     'next_fast_len',
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
-    'set_backend', 'skip_backend', 'set_global_backend', 'register_backend']
+    'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
+    'get_workers', 'set_workers']
 
 from numpy.dual import register_func
 for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
@@ -105,8 +109,8 @@ import sys
 class _FFTModule(sys.modules[__name__].__class__):
     @staticmethod
     def __call__(*args, **kwargs):
-        import numpy as np
-        return np.fft.fft(*args, **kwargs)
+        from scipy import _dep_fft
+        return _dep_fft(*args, **kwargs)
 
 
 import os

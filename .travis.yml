@@ -1,7 +1,6 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
 language: python
-sudo: false
 addons:
   apt:
     packages: &common_packages
@@ -38,8 +37,6 @@ matrix:
         - |
           grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
     - python: 3.7
-      dist: xenial # travis-ci/travis-ci/issues/9815
-      sudo: true
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -49,8 +46,6 @@ matrix:
         # specify in pyproject.toml (will be older than --pre --upgrade) works
         - USE_SDIST=1
     - python: 3.7
-      dist: xenial # travis-ci/travis-ci/issues/9815
-      sudo: true
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
@@ -59,7 +54,6 @@ matrix:
     # However travis only specifies regular or development builds of Python
     # so we must install python3.5-dbg using apt.
     - language: generic
-      dist: xenial  # Requires Xenial(ubunu 18.04) as python-dbg uses py3.5
       env:
         - USE_DEBUG=python3.5-dbg
         - TESTMODE=fast
@@ -70,12 +64,10 @@ matrix:
             - *common_packages
             - python3.5-dbg
             - python3.5-dev
-    - python: 3.8-dev
-      dist: xenial
-      sudo: true
+    - python: 3.8
       env:
-        - TESTMODE=fast
-        - NUMPYSPEC="numpy"
+        - TESTMODE=full
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
     - python: 3.6
       env:
         - TESTMODE=fast
@@ -107,6 +99,12 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
+    - os: linux-ppc64le
+      python: 3.6
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--upgrade numpy"
 cache:
   directories:
     - $HOME/.ccache
@@ -134,7 +132,8 @@ before_install:
       export PATH=$TRAVIS_BUILD_DIR/gcc_aliases:$PATH
       popd
       touch config.sh
-      git clone --depth=1 https://github.com/matthew-brett/multibuild.git
+      git clone https://github.com/matthew-brett/multibuild.git
+      git -C multibuild checkout 65fd07a180046b4473b21e9084e01f1bf1a8dfac
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
@@ -193,7 +192,7 @@ before_install:
   - travis_retry pip install pybind11
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
+        travis_retry pip install pytest-cov coverage matplotlib==3.2.0rc1 scikit-umfpack scikit-sparse
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then

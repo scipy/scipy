@@ -25,6 +25,7 @@ class ReturnShape(object):
     __init__ takes the argument 'shape', which should be a tuple of ints.  When an instance
     it called with a single argument 'x', it returns numpy.ones(shape).
     """
+
     def __init__(self, shape):
         self.shape = shape
 
@@ -431,6 +432,7 @@ class TestCurveFit(object):
             """This class tests if curve_fit passes the correct number of
                arguments when the model function is a class instance method.
             """
+
             def func(self, x, a, b):
                 return b * x**a
 
@@ -792,6 +794,19 @@ class TestCurveFit(object):
                                      ydata=0,
                                      method=method)
             assert_allclose(pcov0, pcov1)
+
+    def test_args_in_kwargs(self):
+        # Ensure that `args` cannot be passed as keyword argument to `curve_fit`
+
+        def func(x, a, b):
+            return a * x + b
+
+        with assert_raises(ValueError):
+            curve_fit(func,
+                      xdata=[1, 2, 3, 4],
+                      ydata=[5, 9, 13, 17],
+                      p0=[1],
+                      args=(1,))
 
 
 class TestFixedPoint(object):
