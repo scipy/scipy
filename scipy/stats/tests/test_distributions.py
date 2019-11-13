@@ -2074,8 +2074,6 @@ class TestFitMethod(object):
         """gh-10300"""
         if dist in self.fitSkipNonFinite:
             pytest.skip("%s fit known to fail or depracated" % dist)
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
         y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         distfunc = getattr(stats, dist)
