@@ -250,7 +250,7 @@ def read(filename, mmap=False):
                         "Reached EOF prematurely; finished at {:d} bytes, "
                         "expected {:d} bytes from header."
                         .format(fid.tell(), file_size),
-                        WavFileWarning)
+                        WavFileWarning, stacklevel=2)
                     break
                 else:
                     raise ValueError("Unexpected end of file.")
@@ -281,7 +281,7 @@ def read(filename, mmap=False):
                 _skip_unknown_chunk(fid, is_big_endian)
             else:
                 warnings.warn("Chunk (non-data) not understood, skipping it.",
-                              WavFileWarning)
+                              WavFileWarning, stacklevel=2)
                 _skip_unknown_chunk(fid, is_big_endian)
     finally:
         if not hasattr(filename, 'read'):
