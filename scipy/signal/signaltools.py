@@ -1092,7 +1092,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     (e.g., for different hardware), use ``measure=True`` to find the fastest
     method by timing the convolution.
 
-    If this funciton is incorrect, the estimated method will vary by less
+    If this function is incorrect, the estimated method will vary by less
     than 5 times slower than the faster method (at least in our
     experiments). There is a 99.9% chance of this ratio being less than 2 for 2D
     signals and less than 5 for 1D signals. This function is most inaccurate for
