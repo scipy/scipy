@@ -931,8 +931,8 @@ def _conv_ops(x_shape, h_shape, mode):
             direct_ops = _prod(s1) * _prod(s2)
 
     full_out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
-    N = [_prod(shape) for shape in [x_shape, h_shape, full_out_shape]]
-    fft_ops = sum(n * np.log(n) for n in N)
+    N = _prod(shape)
+    fft_ops = 3 * N * np.log(n)  # 3 separate FFTs of size full_out_shape
     return fft_ops, direct_ops
 
 
