@@ -1,6 +1,5 @@
 from __future__ import division, absolute_import, print_function
 
-import math
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
@@ -139,16 +138,16 @@ class TestGeometricSlerp(object):
         (np.array([1, 0]),
          np.array([0, 1]),
          np.array([[1, 0],
-                   [math.sqrt(3) / 2, 0.5],  # 30 deg on unit circle
-                   [0.5, math.sqrt(3) / 2],  # 60 deg on unit circle
+                   [np.sqrt(3) / 2, 0.5],  # 30 deg on unit circle
+                   [0.5, np.sqrt(3) / 2],  # 60 deg on unit circle
                    [0, 1]])),
         # likewise for 3-D (add z = 0 plane)
         # this is an ordinary sphere
         (np.array([1, 0, 0]),
          np.array([0, 1, 0]),
          np.array([[1, 0, 0],
-                   [math.sqrt(3) / 2, 0.5, 0],
-                   [0.5, math.sqrt(3) / 2, 0],
+                   [np.sqrt(3) / 2, 0.5, 0],
+                   [0.5, np.sqrt(3) / 2, 0],
                    [0, 1, 0]])),
         # for 5-D, pad more columns with constants
         # zeros are easiest--non-zero values on unit
@@ -157,8 +156,8 @@ class TestGeometricSlerp(object):
         (np.array([1, 0, 0, 0, 0]),
          np.array([0, 1, 0, 0, 0]),
          np.array([[1, 0, 0, 0, 0],
-                   [math.sqrt(3) / 2, 0.5, 0, 0, 0],
-                   [0.5, math.sqrt(3) / 2, 0, 0, 0],
+                   [np.sqrt(3) / 2, 0.5, 0, 0, 0],
+                   [0.5, np.sqrt(3) / 2, 0, 0, 0],
                    [0, 1, 0, 0, 0]])),
 
     ])
@@ -255,12 +254,12 @@ class TestGeometricSlerp(object):
     @pytest.mark.parametrize("start, end", [
         # 1-sphere 45 degree case
         (np.array([1, 0]),
-         np.array([math.sqrt(2) / 2.,
-                   math.sqrt(2) / 2.])),
+         np.array([np.sqrt(2) / 2.,
+                   np.sqrt(2) / 2.])),
         # 2-sphere 135 degree case
         (np.array([1, 0]),
-         np.array([-math.sqrt(2) / 2.,
-                   math.sqrt(2) / 2.])),
+         np.array([-np.sqrt(2) / 2.,
+                   np.sqrt(2) / 2.])),
         ])
     @pytest.mark.parametrize("t_func", [
         np.linspace, np.logspace])

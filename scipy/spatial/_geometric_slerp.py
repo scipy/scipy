@@ -155,8 +155,8 @@ def geometric_slerp(start,
     >>> plt.show()
     """
 
-    start = np.asanyarray(start)
-    end = np.asanyarray(end)
+    start = np.asarray(start, dtype=np.float64)
+    end = np.asarray(end, dtype=np.float64)
 
     if start.ndim != 1 or end.ndim != 1:
         raise ValueError("Start and end coordinates "
@@ -206,7 +206,7 @@ def geometric_slerp(start,
                 raise ValueError("start and end are not"
                                  " on a unit n-sphere")
 
-    t = np.asanyarray(t).astype(np.float64)
+    t = np.asarray(t, dtype=np.float64)
 
     if t.size == 0:
         return np.empty((0, start.size))

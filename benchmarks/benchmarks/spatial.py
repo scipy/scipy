@@ -20,6 +20,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from scipy.spatial import geometric_slerp
+except ImportError:
+    pass
+
 from .common import Benchmark, LimitedParamBenchmark
 
 
@@ -330,3 +335,21 @@ class Hausdorff(Benchmark):
     def time_directed_hausdorff(self, num_points):
         # time directed_hausdorff code in 3 D
         distance.directed_hausdorff(self.points1, self.points2)
+
+class GeometricSlerpBench(Benchmark):
+    params = [10, 1000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        points = generate_spherical_points(50)
+        # any two points from the random spherical points
+        # will suffice for the interpolation bounds:
+        self.start = points[0]
+        self.end = points[-1]
+        self.t = np.linspace(0, 1, num_points)
+
+    def time_geometric_slerp_3d(self, num_points):
+        # time geometric_slerp() for 3D interpolation
+        geometric_slerp(start=self.start,
+                        end=self.end,
+                        t=self.t)
