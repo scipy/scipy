@@ -892,41 +892,89 @@ def _prod(iterable):
     return product
 
 
-def _fftconv_faster(x, h, mode):
+def _conv_ops(x_shape, h_shape, mode):
     """
-    See if using `fftconvolve` or `_correlateND` is faster. The boolean value
-    returned depends on the sizes and shapes of the input values.
+    Find the number of operations required for direct/fft methods of
+    convolution. The direct operations were recorded by making a dummy class to
+    record the number of operations by overriding ``__mul__`` and ``__add__``.
+    The FFT operations rely on the (well-known) computational complexity of the
+    FFT (and the implementation of ``_freq_domain_conv``).
 
-    The big O ratios were found to hold across different machines, which makes
-    sense as it's the ratio that matters (the effective speed of the computer
-    is found in both big O constants). Regardless, this had been tuned on an
-    early 2015 MacBook Pro with 8GB RAM and an Intel i5 processor.
     """
-    if mode == 'full':
-        out_shape = [n + k - 1 for n, k in zip(x.shape, h.shape)]
-        big_O_constant = 10963.92823819 if x.ndim == 1 else 8899.1104874
-    elif mode == 'same':
-        out_shape = x.shape
-        if x.ndim == 1:
-            if h.size <= x.size:
-                big_O_constant = 7183.41306773
-            else:
-                big_O_constant = 856.78174111
-        else:
-            big_O_constant = 34519.21021589
-    elif mode == 'valid':
-        out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
-        big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
+    x_size, h_size = _prod(x_shape), _prod(h_shape)
+    if mode == "full":
+        out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
+    elif mode == "valid":
+        out_shape = [abs(n - k) + 1 for n, k in zip(x_shape, h_shape)]
+    elif mode == "same":
+        out_shape = x_shape
     else:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full'.")
+                         " 'same', or 'full', not mode={}".format(mode))
 
-    # see whether the Fourier transform convolution method or the direct
-    # convolution method is faster (discussed in scikit-image PR #1792)
-    direct_time = (x.size * h.size * _prod(out_shape))
-    fft_time = sum(n * math.log(n) for n in (x.shape + h.shape +
-                                             tuple(out_shape)))
-    return big_O_constant * fft_time < direct_time
+    s1, s2 = x_shape, h_shape
+    if len(x_shape) == 1:
+        s1, s2 = s1[0], s2[0]
+        if mode == "full":
+            direct_ops = s1 * s2
+        elif mode == "valid":
+            direct_ops = (s2 - s1 + 1) * s1 if s2 >= s1 else (s1 - s2 + 1) * s2
+        elif mode == "same":
+            direct_ops = s1 * s2 if s1 < s2 else s1 * s2 - (s2 // 2) * ((s2 + 1) // 2)
+    else:
+        if mode == "full":
+            direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
+        elif mode == "valid":
+            direct_ops = min(_prod(s1), _prod(s2)) * _prod(out_shape)
+        elif mode == "same":
+            direct_ops = _prod(s1) * _prod(s2)
+
+    full_out_shape = [n + k - 1 for n, k in zip(x_shape, h_shape)]
+    N = _prod(full_out_shape)
+    fft_ops = 3 * N * np.log(N)  # 3 separate FFTs of size full_out_shape
+    return fft_ops, direct_ops
+
+
+def _fftconv_faster(x, h, mode):
+    """
+    See if using fftconvolve or convolve is faster.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Signal
+    h : np.ndarray
+        Kernel
+    mode : str
+        Mode passed to convolve
+
+    Returns
+    -------
+    fft_faster : bool
+
+    Notes
+    -----
+    See docstring of `choose_conv_method` for details on tuning hardware.
+
+    See pull request 11031 for more detail:
+    https://github.com/scipy/scipy/pull/11031.
+
+    """
+    fft_ops, direct_ops = _conv_ops(x.shape, h.shape, mode)
+    offset = -1e-3 if x.ndim == 1 else -1e-4
+    constants = {
+            "valid": (1.89095737e-9, 2.1364985e-10, offset),
+            "full": (1.7649070e-9, 2.1414831e-10, offset),
+            "same": (3.2646654e-9, 2.8478277e-10, offset)
+            if h.size <= x.size
+            else (3.21635404e-9, 1.1773253e-8, -1e-5),
+    } if x.ndim == 1 else {
+            "valid": (1.85927e-9, 2.11242e-8, offset),
+            "full": (1.99817e-9, 1.66174e-8, offset),
+            "same": (2.04735e-9, 1.55367e-8, offset),
+    }
+    O_fft, O_direct, O_offset = constants[mode]
+    return O_fft * fft_ops < O_direct * direct_ops + O_offset
 
 
 def _reverse_and_conj(x):
@@ -994,10 +1042,10 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Find the fastest convolution/correlation method.
 
     This primarily exists to be called during the ``method='auto'`` option in
-    `convolve` and `correlate`, but can also be used when performing many
-    convolutions of the same input shapes and dtypes, determining
-    which method to use for all of them, either to avoid the overhead of the
-    'auto' option or to use accurate real-world measurements.
+    `convolve` and `correlate`. It can also be used to determine the value of
+    ``method`` for many different convolutions of the same dtype/shape.
+    In addition, it supports timing the convolution to adapt the value of
+    ``method`` to a particular set of inputs and/or hardware.
 
     Parameters
     ----------
@@ -1038,18 +1086,35 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     Notes
     -----
-    For large n, ``measure=False`` is accurate and can quickly determine the
-    fastest method to perform the convolution.  However, this is not as
-    accurate for small n (when any dimension in the input or output is small).
+    Generally, this method is 99% accurate for 2D signals and 85% accurate
+    for 1D signals for randomly chosen input sizes. For precision, use
+    ``measure=True`` to find the fastest method by timing the convolution.
+    This can be used to avoid the minimal overhead of finding the fastest
+    ``method`` later, or to adapt the value of ``method`` to a particular set
+    of inputs.
 
-    In practice, we found that this function estimates the faster method up to
-    a multiplicative factor of 5 (i.e., the estimated method is *at most* 5
-    times slower than the fastest method). The estimation values were tuned on
-    an early 2015 MacBook Pro with 8GB RAM but we found that the prediction
-    held *fairly* accurately across different machines.
+    Experiments were run on an Amazon EC2 r5a.2xlarge machine to test this
+    function. These experiments measured the ratio between the time required
+    when using ``method='auto'`` and the time required for the fastest method
+    (i.e., ``ratio = time_auto / min(time_fft, time_direct)``). In these
+    experiments, we found:
 
-    If ``measure=True``, time the convolutions. Because this function uses
-    `fftconvolve`, an error will be thrown if it does not support the inputs.
+    * There is a 95% chance of this ratio being less than 1.5 for 1D signals
+      and a 99% chance of being less than 2.5 for 2D signals.
+    * The ratio was always less than 2.5/5 for 1D/2D signals respectively.
+    * This function is most inaccurate for 1D convolutions that take between 1
+      and 10 milliseconds with ``method='direct'``. A good proxy for this
+      (at least in our experiments) is ``1e6 <= in1.size * in2.size <= 1e7``.
+
+    The 2D results almost certainly generalize to 3D/4D/etc because the
+    implementation is the same (the 1D implementation is different).
+
+    All the numbers above are specific to the EC2 machine. However, we did find
+    that this function generalizes fairly decently across hardware. The speed
+    tests were of similar quality (and even slightly better) than the same
+    tests performed on the machine to tune this function's numbers (a mid-2014
+    15-inch MacBook Pro with 16GB RAM and a 2.5GHz Intel i7 processor).
+
     There are cases when `fftconvolve` supports the inputs but this function
     returns `direct` (e.g., to protect against floating point integer
     precision).
@@ -1061,21 +1126,21 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> a = np.random.randn(1000)
-    >>> b = np.random.randn(1000000)
-    >>> method = signal.choose_conv_method(a, b, mode='same')
+    >>> img = np.random.rand(32, 32)
+    >>> filter = np.random.rand(8, 8)
+    >>> method = signal.choose_conv_method(img, filter, mode='same')
     >>> method
     'fft'
 
     This can then be applied to other arrays of the same dtype and shape:
 
-    >>> c = np.random.randn(1000)
-    >>> d = np.random.randn(1000000)
-    >>> # `method` works with correlate and convolve
-    >>> corr1 = signal.correlate(a, b, mode='same', method=method)
-    >>> corr2 = signal.correlate(c, d, mode='same', method=method)
-    >>> conv1 = signal.convolve(a, b, mode='same', method=method)
-    >>> conv2 = signal.convolve(c, d, mode='same', method=method)
+    >>> img2 = np.random.rand(32, 32)
+    >>> filter2 = np.random.rand(8, 8)
+    >>> corr2 = signal.correlate(img2, filter2, mode='same', method=method)
+    >>> conv2 = signal.convolve(img2, filter2, mode='same', method=method)
+
+    The output of this function (``method``) works with `correlate` and
+    `convolve`.
 
     """
     volume = np.asarray(in1)
