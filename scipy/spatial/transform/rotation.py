@@ -418,6 +418,11 @@ class Rotation(object):
             Each row is a (possibly non-unit norm) quaternion in scalar-last
             (x, y, z, w) format. Each quaternion will be normalized to unit
             norm.
+        normalized
+            Deprecated argument. Has no effect, input `quat` is always
+            normalized.
+
+            .. deprecated:: 1.4.0
 
         Returns
         -------
