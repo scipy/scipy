@@ -896,8 +896,9 @@ def _conv_ops(x_shape, h_shape, mode):
     """
     Find the number of operations required for direct/fft methods of
     convolution. The direct operations were recorded by making a dummy class to
-    record the number of multplications, and the FFT operations rely on the
-    (well-known) computational complexity of the FFT.
+    record the number of operations by overriding ``__mul__`` and ``__add__``.
+    The FFT operations rely on the (well-known) computational complexity of the
+    FFT (and the implementation of ``_freq_domain_conv``).
 
     """
     x_size, h_size = _prod(x_shape), _prod(h_shape)
