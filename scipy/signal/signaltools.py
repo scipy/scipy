@@ -895,11 +895,9 @@ def _prod(iterable):
 def _conv_ops(x_shape, h_shape, mode):
     """
     Find the number of operations required for direct/fft methods of
-    convolution
-
-    The direct operations were recorded by making a dummy class to record the
-    number of multplications. The number of additions is always less than or
-    equal to the number of multiplications. More detail visible at [1].
+    convolution. The direct operations were recorded by making a dummy class to
+    record the number of multplications, and the FFT operations rely on the
+    (well-known) computational complexity of the FFT.
 
     """
     x_size, h_size = _prod(x_shape), _prod(h_shape)
