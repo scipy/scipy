@@ -6,18 +6,20 @@ import numpy as np
 from scipy.spatial.distance import euclidean
 
 def _geometric_slerp(start, end, t):
-    # calculate the angle between `start` and `end`
-    s = np.prod(np.linalg.svd([start, end])[1])
-    c = np.dot(start, end)
-    omega = np.arctan2(s, c)
-
     # create an orthogonal basis using QR decomposition
     basis = np.vstack([start, end])
-    Q = np.linalg.qr(basis.T)[0].T
-    signs = np.sign(np.einsum('ij,ij->i', basis, Q))
-    start, end = Q * np.array([signs]).T
+    Q, R = np.linalg.qr(basis.T)
+    signs = np.sign(np.diag(R))
+    Q = Q.T * signs.T[:, np.newaxis]
+    R = R.T * signs.T[:, np.newaxis]
+
+    # calculate the angle between `start` and `end`
+    c = np.dot(start, end)
+    s = np.linalg.det(R)
+    omega = np.arctan2(s, c)
 
     # interpolate
+    start, end = Q
     s = np.sin(t * omega)
     c = np.cos(t * omega)
     return start * c[:, np.newaxis] + end * s[:, np.newaxis]
