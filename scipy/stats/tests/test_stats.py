@@ -5139,6 +5139,12 @@ class TestMGCErrorWarnings(object):
         reps = 100
         assert_warns(RuntimeWarning, stats.multiscale_graphcorr, x, x, reps=reps)
 
+    def test_error_infty(self):
+        # raises error if input contains infinities
+        x = np.arange(20)
+        y = np.ones(20) * np.inf
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+
 
 class TestMGCStat(object):
     """ Test validity of MGC test statistic
@@ -5227,4 +5233,3 @@ class TestMGCStat(object):
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True)
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
-
