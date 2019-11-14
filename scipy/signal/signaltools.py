@@ -1096,14 +1096,19 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Experiments were run on an Amazon EC2 r5a.2xlarge machine to test this
     function. These experiments measured the ratio between the time required
     when using ``method='auto'`` and the time required for the fastest method
-    (i.e., ``time_auto / min(time_fft, time_direct)``).  In these experiments,
-    we found:
+    (i.e., ``ratio = time_auto / min(time_fft, time_direct)``). In these
+    experiments, we found:
 
-    * There is a 95% chance of this ratio being less than 2.5 for 1D signals
-      and a 99% chance of being less than 1.5 for 2D signals.
+    * There is a 95% chance of this ratio being less than 1.5 for 1D signals
+      and a 99% chance of being less than 2.5 for 2D signals.
+    * The ratio was always less than 2.5/5 for 1D/2D signals respectively in
+      our experiments.
     * This function is most inaccurate for 1D convolutions that take between 1
       and 10 milliseconds with ``method='direct'``. A good proxy for this
-      (at least in our experiments) is ``1e6 <= in1.size * in2.size <= 1e7``.
+      (at least in our experiments) is ``1e6 <= in1.size * in2.size <= 1e7``
+
+    The 2D results almost certainly generalize to 3D/4D/etc because it relies on
+    the same implementation (the 1D implementation is different).
 
     All the numbers above are specific to the EC2 machine. However, we did find
     that this function generalizes fairly decently across hardware. The speed
