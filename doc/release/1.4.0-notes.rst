@@ -69,7 +69,7 @@ lambda expressions for them.
 
 `scipy.stats` improvements
 --------------------------
-:func:`scipy.stats.multiscale_graphcorr` added as an independence test that
+`scipy.stats.multiscale_graphcorr` added as an independence test that
 operates on high dimensional and nonlinear data sets. It has higher statistical
 power than other `scipy.stats` tests while being the only one that operates on
 multivariate data.
