@@ -4319,11 +4319,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1):
     null_dist : list
         The approximated null distribution.
     """
-    # generate null distribution and p-value
-    pvalue = 0
-    null_dist = np.zeros(reps)
-
-    # use all cores to create function that parallelizes over number of reps
+    # parallelizes with specified workers over number of reps
     mapwrapper = MapWrapper(workers)
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
@@ -4347,7 +4343,7 @@ MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
-                         workers=-1, is_twosamp=False):
+                         workers=1, is_twosamp=False):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4371,31 +4367,32 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     Parameters
     ----------
     x, y : ndarray
-        If `x` and `y` have shapes `(n, p)` and `(n, q)` where `n` is the
-        number of samples and `p` and `q` are the number of dimensions, then
-        the MGC independence test will be run.  Alternatively, `x` and `y` can
-        be `(n, n)` distance or similarity matrices, and `compute_distance`
-        must be sent to `None`. If `x` and `y` have shapes `(n, p)` and
-        `(m, p)`, an unpaired two-sample MGC test will be run.
+        If ``x`` and ``y`` have shapes ``(n, p)`` and ``(n, q)`` where `n` is
+        the number of samples and `p` and `q` are the number of dimensions,
+        then the MGC independence test will be run.  Alternatively, ``x`` and
+        ``y`` can have shapes ``(n, n)`` if they are distance or similarity
+        matrices, and ``compute_distance`` must be sent to ``None``. If ``x``
+        and ``y`` have shapes ``(n, p)`` and ``(m, p)``, an unpaired
+        two-sample MGC test will be run.
     compute_distance : callable, optional
         A function that computes the distance or similarity among the samples
-        within each data matrix. Set to `None` if `x` and `y` are already
-        distance matrices. The default uses the euclidean norm metric. If you
-        are calling a custom function, either create the distance matrix
-        before-hand or create a function of the form `compute_distance(x)`
-        where `x` is the data matrix for which pairwise distances are
-        calculated.
+        within each data matrix. Set to ``None`` if ``x`` and ``y`` are
+        already distance matrices. The default uses the euclidean norm metric.
+        If you are calling a custom function, either create the distance
+        matrix before-hand or create a function of the form
+        ``compute_distance(x)`` where `x` is the data matrix for which
+        pairwise distances are calculated.
     reps : int, optional
         The number of replications used to estimate the null when using the
-        permutation test. The default is `1000`.
+        permutation test. The default is ``1000``.
     workers : int or map-like callable, optional
-        If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel (uses
-        `multiprocessing.Pool <multiprocessing>`). Supply `-1` to use all cores
-        available to the Process. Alternatively supply a map-like callable,
-        such as `multiprocessing.Pool.map` for evaluating the population in
-        parallel. This evaluation is carried out as `workers(func, iterable)`.
-        Requires that `func` be pickleable. The default is `-1`.
+        If ``workers`` is an int the population is subdivided into ``workers``
+        sections and evaluated in parallel (uses ``multiprocessing.Pool
+        <multiprocessing>``). Supply ``-1`` to use all cores available to the
+        Process. Alternatively supply a map-like callable, such as
+        ``multiprocessing.Pool.map`` for evaluating the p-value in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        Requires that `func` be pickleable. The default is ``1``.
     is_twosamp : bool, optional
         If `True`, a two sample test will be run. If `x` and `y` have shapes
         `(n, p)` and `(m, p)`, this optional will be overriden and set to
@@ -4429,7 +4426,6 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     Notes
     -----
-
     A description of the process of MGC and applications on neuroscience data
     can be found in [1]_. It is performed using the following steps:
 
@@ -4512,51 +4508,50 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     Examples
     --------
     >>> from scipy.stats import multiscale_graphcorr
-    >>> np.random.seed(12345678)
-    >>> x = np.linspace(-1, 1, num=100)
-    >>> y = x + 0.3 * np.random.random(x.size)
-    >>> stat, pvalue, _ = multiscale_graphcorr(x, y)
-    >>> round(stat, 1), round(pvalue, 1)
-    (1.0, 0.0)
+    >>> x = np.arange(100)
+    >>> y = x
+    >>> stat, pvalue, _ = multiscale_graphcorr(x, y, workers=-1)
+    >>> stat, pvalue
+    (1.0, 0.001)
 
     Alternatively,
 
-    >>> from scipy.stats import multiscale_graphcorr
-    >>> np.random.seed(12345678)
-    >>> x = np.linspace(-1, 1, num=100)
-    >>> y = x + 0.3 * np.random.random(x.size)
+    >>> x = np.arange(100)
+    >>> y = x
     >>> mgc = multiscale_graphcorr(x, y)
-    >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
-    (1.0, 0.0)
+    >>> mgc.stat, mgc.pvalue
+    (1.0, 0.001)
 
     To run an unpaired two-sample test,
 
-    >>> from scipy.stats import multiscale_graphcorr
-    >>> np.random.seed(12345678)
-    >>> x = np.random.binomial(100, 0.5, size=(100, 5))
-    >>> y = np.random.normal(0, 1, size=(80, 5))
+    >>> x = np.arange(100)
+    >>> y = np.arange(79)
     >>> mgc = multiscale_graphcorr(x, y)
-    >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
-    (1.0, 0.0)
+    >>> mgc.stat, mgc.pvalue
+    (0.033258146255703246, 0.001)
 
     or, if shape of the inputs are the same,
 
-    >>> from scipy.stats import multiscale_graphcorr
-    >>> np.random.seed(12345678)
-    >>> x = np.random.binomial(100, 0.5, size=(100, 5))
-    >>> y = np.random.normal(0, 1, size=(100, 5))
+    >>> x = np.arange(100)
+    >>> y = x
     >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
-    >>> round(mgc.stat, 1), round(mgc.pvalue, 1)
-    (1.0, 0.0)
+    >>> mgc.stat, mgc.pvalue
+    (-0.008021809890200488, 1.0)
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise ValueError("x and y must be ndarrays")
 
     # convert arrays of type (n,) to (n, 1)
     if x.ndim == 1:
-        x.shape = (-1, 1)
+        x = x[:, np.newaxis]
+    elif x.ndim != 2:
+        raise ValueError("Expected a 2-D array `x`, found shape "
+                         "{}".format(x.shape))
     if y.ndim == 1:
-        y.shape = (-1, 1)
+        y = y[:, np.newaxis]
+    elif y.ndim != 2:
+        raise ValueError("Expected a 2-D array `y`, found shape "
+                         "{}".format(y.shape))
 
     nx, px = x.shape
     ny, py = y.shape
@@ -4564,6 +4559,10 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     # check for NaNs
     _contains_nan(x, nan_policy='raise')
     _contains_nan(y, nan_policy='raise')
+
+    # check for positive or negative infinity and raise error
+    if np.sum(np.isinf(x)) > 0 or np.sum(np.isinf(y)) > 0:
+        raise ValueError("Inputs contain infinities")
 
     if nx != ny:
         if px == py:
@@ -4578,8 +4577,8 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                          "results.")
 
     # convert x and y to float
-    x = np.asarray(x).astype(np.float64)
-    y = np.asarray(y).astype(np.float64)
+    x = x.astype(np.float64)
+    y = y.astype(np.float64)
 
     # check if compute_distance_matrix if a callable()
     if not callable(compute_distance) and compute_distance is not None:
@@ -4651,10 +4650,13 @@ def _mgc_stat(x, y, compute_distance):
         disty = compute_distance(y)
 
     # calculate MGC map and optimal scale
-    stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')[0]
+    stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
 
-    n, m = stat_mgc_map.shape
+    m, n = stat_mgc_map.shape
     if m == 1 or n == 1:
+        # the global scale at is the statistic calculated at maximial nearest
+        # neighbors. There is not enough local scale to search over, so
+        # default to global scale
         stat = stat_mgc_map[m - 1][n - 1]
         opt_scale = m * n
     else:
@@ -4690,13 +4692,15 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     """
     m, n = stat_mgc_map.shape
 
-    # parametric threshold, based on a threshold is estimated based on the
-    # normal distribution approximation
+    # 0.02 is simply an empirical threshold, this can be set to 0.01 or 0.05
+    # with varying levels of performance. Threshold is based on a beta
+    # approximation.
     per_sig = 1 - (0.02 / samp_size)  # Percentile to consider as significant
     threshold = samp_size * (samp_size - 3)/4 - 1/2  # Beta approximation
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
-    # take the max of threshold and local correlation at the maximal scale
+    # the global scale at is the statistic calculated at maximial nearest
+    # neighbors. Threshold is the maximium on the global and local scales
     threshold = max(threshold, stat_mgc_map[m - 1][n - 1])
 
     # find the largest connected component of significant correlations
@@ -4726,7 +4730,7 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
     sig_connect: ndarray
         A binary matrix with 1's indicating the significant region.
     stat_mgc_map: ndarray
-        All local correlations within `[-1,1]`.
+        All local correlations within `[-1, 1]`.
 
     Returns
     -------
@@ -4738,14 +4742,17 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
 
     m, n = stat_mgc_map.shape
 
-    # default sample mgc and optimal scale to local corr at max scale
+    # the global scale at is the statistic calculated at maximial nearest
+    # neighbors. By default, statistic and optimal scale are global.
     stat = stat_mgc_map[m - 1][n - 1]
     opt_scale = [m, n]
 
     if np.linalg.norm(sig_connect) != 0:
         # proceed only when the connected region's area is sufficiently large
+        # 0.02 is simply an empirical threshold, this can be set to 0.01 or 0.05
+        # with varying levels of performance
         if np.sum(sig_connect) >= np.ceil(0.02 * max(m, n)) * min(m, n):
-            max_corr = np.max(stat_mgc_map[sig_connect])
+            max_corr = max(stat_mgc_map[sig_connect])
 
             # find all scales within significant_connected_region that maximize
             # the local correlation
@@ -4782,9 +4789,10 @@ def _two_sample_transform(u, v):
         Label matrix for `x` where 0 refers to samples that comes from `u` and
         1 refers to samples that come from `v`. `y` thus has shape `(2n, 1)`.
     """
+    nx = u.shape[0]
+    ny = v.shape[0]
     x = np.concatenate([u, v], axis=0)
-    y = np.concatenate([np.repeat(0, u.shape[0]), np.repeat(1, v.shape[0])],
-                       axis=0).reshape(-1, 1)
+    y = np.concatenate([np.zeros(nx), np.ones(ny)], axis=0).reshape(-1, 1)
     return x, y
 
 
