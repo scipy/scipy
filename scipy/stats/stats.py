@@ -4528,7 +4528,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> y = np.arange(79)
     >>> mgc = multiscale_graphcorr(x, y)
     >>> '%.3f, %.3f' % (mgc.stat, mgc.pvalue)
-    '0.033, 0.001'
+    '0.033, 0.017'
 
     or, if shape of the inputs are the same,
 
