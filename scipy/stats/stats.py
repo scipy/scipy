@@ -4511,32 +4511,32 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> x = np.arange(100)
     >>> y = x
     >>> stat, pvalue, _ = multiscale_graphcorr(x, y, workers=-1)
-    >>> stat, pvalue
-    (1.0, 0.001)
+    >>> '%.1f, %.3f' % (stat, pvalue)
+    '1.0, 0.001'
 
     Alternatively,
 
     >>> x = np.arange(100)
     >>> y = x
     >>> mgc = multiscale_graphcorr(x, y)
-    >>> mgc.stat, mgc.pvalue
-    (1.0, 0.001)
+    >>> '%.1f, %.3f' % (mgc.stat, mgc.pvalue)
+    '1.0, 0.001'
 
     To run an unpaired two-sample test,
 
     >>> x = np.arange(100)
     >>> y = np.arange(79)
     >>> mgc = multiscale_graphcorr(x, y)
-    >>> mgc.stat, mgc.pvalue
-    (0.033258146255703246, 0.001)
+    >>> '%.3f, %.3f' % (mgc.stat, mgc.pvalue)
+    '0.033, 0.001'
 
     or, if shape of the inputs are the same,
 
     >>> x = np.arange(100)
     >>> y = x
     >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
-    >>> mgc.stat, mgc.pvalue
-    (-0.008021809890200488, 1.0)
+    >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)
+    '-0.008, 1.0'
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise ValueError("x and y must be ndarrays")
