@@ -177,10 +177,12 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         ``c(x) <= 0`` the algorithm introduces slack variables, solving the problem
         ``min_(x,s) f(x) + barrier_parameter*sum(ln(s))`` subject to the equality
         constraints  ``c(x) + s = 0`` instead of the original problem. This subproblem
-        is solved for increasing values of ``barrier_parameter`` and with decreasing
+        is solved for decreasing values of ``barrier_parameter`` and with decreasing
         tolerances for the termination, starting with ``initial_barrier_parameter``
         for the barrier parameter and ``initial_barrier_tolerance`` for the
-        barrier subproblem  barrier. Default is 0.1 for both values (recommended in [1]_ p. 19).
+        barrier tolerance. Default is 0.1 for both values (recommended in [1]_ p. 19).
+        Also note that ``barrier_parameter`` and ``barrier_tolerance`` are updated
+        with the same prefactor.
     factorization_method : string or None, optional
         Method to factorize the Jacobian of the constraints. Use None (default)
         for the auto selection or one of:
