@@ -59,9 +59,13 @@ test name:
 
 Other useful options include:
 
--  ``-c`` or ``--coverage`` to generate a test coverage report in
+-  ``--coverage`` to generate a test coverage report in
    ``scipy/build/coverage/index.html``. *Note:* |pytest-cov|_ *must be
    installed.*
+-  ``--doc`` to build the docs in ``scipy/doc/build``. By default,
+   docs are built only in the ``html-scipyorg`` format, but you can
+   change this by appending the name of the desired format
+   (e.g. ``--doc latex``).
 -  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
    before testing
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;

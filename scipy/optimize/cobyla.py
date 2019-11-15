@@ -265,7 +265,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                                       'in COBYLA subroutine.',
                                    4: 'Did not converge to a solution '
                                       'satisfying the constraints. See '
-                                      '`maxcv` for magnitude of violation.'
+                                      '`maxcv` for magnitude of violation.',
+                                   5: 'NaN result encountered.'
                                    }.get(info[0], 'Unknown exit status.'),
                           nfev=int(info[1]),
                           fun=info[2],

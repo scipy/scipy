@@ -59,7 +59,7 @@ Constants database
 ------------------
 
 In addition to the above variables, :mod:`scipy.constants` also contains the
-2014 CODATA recommended values [CODATA2014]_ database containing more physical
+2018 CODATA recommended values [CODATA2018]_ database containing more physical
 constants.
 
 .. autosummary::
@@ -309,8 +309,8 @@ Optics
 References
 ==========
 
-.. [CODATA2014] CODATA Recommended Values of the Fundamental
-   Physical Constants 2014.
+.. [CODATA2018] CODATA Recommended Values of the Fundamental
+   Physical Constants 2018.
 
    https://physics.nist.gov/cuu/Constants/
 
@@ -328,7 +328,7 @@ _constant_names = [(_k.lower(), _k, _v)
 _constant_names = "\n".join(["``%s``%s  %s %s" % (_x[1], " "*(66-len(_x[1])),
                                                   _x[2][0], _x[2][1])
                              for _x in sorted(_constant_names)])
-if __doc__ is not None:
+if __doc__:
     __doc__ = __doc__ % dict(constant_names=_constant_names)
 
 del _constant_names

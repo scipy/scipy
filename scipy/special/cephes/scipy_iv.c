@@ -98,7 +98,7 @@ double iv(double v, double x)
     sign = 1;
     if (x < 0.0) {
 	if (t != v) {
-	    mtherr("iv", DOMAIN);
+	    sf_error("iv", SF_ERROR_DOMAIN, NULL);
 	    return (NPY_NAN);
 	}
 	if (v != 2.0 * floor(v / 2.0)) {
@@ -112,7 +112,7 @@ double iv(double v, double x)
 	    return 1.0;
 	}
 	if (v < 0.0) {
-	    mtherr("iv", OVERFLOW);
+	    sf_error("iv", SF_ERROR_OVERFLOW, NULL);
 	    return NPY_INFINITY;
 	}
 	else
@@ -163,7 +163,7 @@ static double iv_asymptotic(double v, double x)
 	factor = (mu - (2 * k - 1) * (2 * k - 1)) / (8 * x) / k;
 	if (k > 100) {
 	    /* didn't converge */
-	    mtherr("iv(iv_asymptotic)", TLOSS);
+	    sf_error("iv(iv_asymptotic)", SF_ERROR_NO_RESULT, NULL);
 	    break;
 	}
 	term *= -factor;
@@ -306,11 +306,11 @@ static void ikv_asymptotic_uniform(double v, double x,
 
     if (fabs(term) > 1e-3 * fabs(i_sum)) {
 	/* Didn't converge */
-	mtherr("ikv_asymptotic_uniform", TLOSS);
+	sf_error("ikv_asymptotic_uniform", SF_ERROR_NO_RESULT, NULL);
     }
     if (fabs(term) > MACHEP * fabs(i_sum)) {
 	/* Some precision lost */
-	mtherr("ikv_asymptotic_uniform", PLOSS);
+	sf_error("ikv_asymptotic_uniform", SF_ERROR_LOSS, NULL);
     }
 
     if (k_value != NULL) {
@@ -400,7 +400,7 @@ static int temme_ik_series(double v, double x, double *K, double *K1)
 	}
     }
     if (k == MAXITER) {
-	mtherr("ikv_temme(temme_ik_series)", TLOSS);
+	sf_error("ikv_temme(temme_ik_series)", SF_ERROR_NO_RESULT, NULL);
     }
 
     *K = sum;
@@ -449,7 +449,7 @@ static int CF1_ik(double v, double x, double *fv)
 	}
     }
     if (k == MAXITER) {
-	mtherr("ikv_temme(CF1_ik)", TLOSS);
+	sf_error("ikv_temme(CF1_ik)", SF_ERROR_NO_RESULT, NULL);
     }
 
     *fv = f;
@@ -510,7 +510,7 @@ static int CF2_ik(double v, double x, double *Kv, double *Kv1)
 	}
     }
     if (k == MAXITER) {
-	mtherr("ikv_temme(CF2_ik)", TLOSS);
+	sf_error("ikv_temme(CF2_ik)", SF_ERROR_NO_RESULT, NULL);
     }
 
     *Kv = sqrt(NPY_PI / (2 * x)) * exp(-x) / S;
@@ -560,13 +560,13 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	    *Iv_p = NPY_NAN;
 	if (Kv_p != NULL)
 	    *Kv_p = NPY_NAN;
-	mtherr("ikv_temme", DOMAIN);
+	sf_error("ikv_temme", SF_ERROR_DOMAIN, NULL);
 	return;
     }
     if (x == 0) {
 	Iv = (v == 0) ? 1 : 0;
 	if (kind & need_k) {
-	    mtherr("ikv_temme", OVERFLOW);
+	    sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
 	    Kv = NPY_INFINITY;
 	}
 	else {
@@ -578,7 +578,7 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 
 	    Iv = sin(NPY_PI * z) == 0 ? Iv : NPY_INFINITY;
 	    if (Iv == NPY_INFINITY || Iv == -NPY_INFINITY) {
-		mtherr("ikv_temme", OVERFLOW);
+		sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
 	    }
 	}
 

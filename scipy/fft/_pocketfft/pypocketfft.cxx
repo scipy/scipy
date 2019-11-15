@@ -377,10 +377,28 @@ py::array genuine_hartley(const py::array &in, const py::object &axes_,
   DISPATCH(in, f64, f32, flong, complex2hartley, (in, tmp, axes_, out_))
   }
 
-size_t good_size(size_t n, bool real)
+ PyObject * good_size(PyObject * self, PyObject * args)
   {
+  Py_ssize_t n_ = -1;
+  int real = false;
+  if (!PyArg_ParseTuple(args, "n|p:good_size", &n_, &real))
+    return nullptr;
+
+  if (n_<0)
+    {
+    PyErr_SetString(PyExc_ValueError, "Target length must be positive");
+    return nullptr;
+    }
+  if ((n_-1) > static_cast<Py_ssize_t>(std::numeric_limits<size_t>::max() / 11))
+    {
+    PyErr_Format(PyExc_ValueError,
+                 "Target length is too large to perform an FFT: %zi", n_);
+    return nullptr;
+    }
+  const auto n = static_cast<size_t>(n_);
   using namespace pocketfft::detail;
-  return real ? util::good_size_real(n) : util::good_size_cmplx(n);
+  return PyLong_FromSize_t(
+    real ? util::good_size_real(n) : util::good_size_cmplx(n));
   }
 
 const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
@@ -707,5 +725,8 @@ PYBIND11_MODULE(pypocketfft, m)
     "out"_a=None, "nthreads"_a=1);
   m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
     "out"_a=None, "nthreads"_a=1);
-  m.def("good_size", good_size, good_size_DS, "n"_a, "real"_a=false);
+
+  static PyMethodDef good_size_meth[] =
+    {{"good_size", good_size, METH_VARARGS, good_size_DS}, {0}};
+  PyModule_AddFunctions(m.ptr(), good_size_meth);
   }

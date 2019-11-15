@@ -4,6 +4,7 @@ Tests for the stats.mstats module (support for masked arrays)
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import platform
 
 import numpy as np
 from numpy import nan
@@ -246,6 +247,8 @@ class TestCorr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
         # simple case without ties
         x = ma.array(np.arange(10))

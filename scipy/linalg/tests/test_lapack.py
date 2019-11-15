@@ -21,7 +21,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 
 from numpy.random import rand, randint, seed
 
-from scipy.linalg import _flapack as flapack
+from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 
@@ -35,6 +35,23 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+def test_lapack_documented():
+    """Test that all entries are in the doc."""
+    if lapack.__doc__ is None:  # just in case there is a python -OO
+        pytest.skip('lapack.__doc__ is None')
+    names = set(lapack.__doc__.split())
+    ignore_list = set([
+        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
+        'flapack', 'print_function',
+    ])
+    missing = list()
+    for name in dir(lapack):
+        if (not name.startswith('_') and name not in ignore_list and
+                name not in names):
+            missing.append(name)
+    assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
 
 
 class TestFlapackSimple(object):
@@ -1271,10 +1288,12 @@ def test_syconv():
             A = A + A.T + n*eye(n)
 
         tol = 100*np.spacing(dtype(1.0).real)
-        syconv, trf = get_lapack_funcs(('syconv', 'sytrf'), dtype=dtype)
-
+        syconv, trf, trf_lwork = get_lapack_funcs(('syconv', 'sytrf',
+                                                   'sytrf_lwork'), dtype=dtype)
+        lw = _compute_lwork(trf_lwork, n, lower=1)
         L, D, perm = ldl(A, lower=1, hermitian=False)
-        ldu, ipiv, info = trf(A, lower=1)
+        lw = _compute_lwork(trf_lwork, n, lower=1)
+        ldu, ipiv, info = trf(A, lower=1, lwork=lw)
         a, e, info = syconv(ldu, ipiv, lower=1)
         assert_allclose(tril(a, -1,), tril(L[perm, :], -1), atol=tol, rtol=0.)
 
@@ -1515,3 +1534,83 @@ def test_pstf2():
         double_atol = 1000 * np.finfo(np.float64).eps
         atol = single_atol if ind in [0, 2] else double_atol
         assert_allclose(A[piv-1][:, piv-1], L @ L.conj().T, rtol=0., atol=atol)
+
+
+def test_geequ():
+    desired_real = np.array([[0.6250, 1.0000, 0.0393, -0.4269],
+                             [1.0000, -0.5619, -1.0000, -1.0000],
+                             [0.5874, -1.0000, -0.0596, -0.5341],
+                             [-1.0000, -0.5946, -0.0294, 0.9957]])
+
+    desired_cplx = np.array([[-0.2816+0.5359*1j,
+                              0.0812+0.9188*1j,
+                              -0.7439-0.2561*1j],
+                             [-0.3562-0.2954*1j,
+                              0.9566-0.0434*1j,
+                              -0.0174+0.1555*1j],
+                             [0.8607+0.1393*1j,
+                              -0.2759+0.7241*1j,
+                              -0.1642-0.1365*1j]])
+
+    for ind, dtype in enumerate(DTYPES):
+        if ind < 2:
+            # Use examples from the NAG documentation
+            A = np.array([[1.80e+10, 2.88e+10, 2.05e+00, -8.90e+09],
+                          [5.25e+00, -2.95e+00, -9.50e-09, -3.80e+00],
+                          [1.58e+00, -2.69e+00, -2.90e-10, -1.04e+00],
+                          [-1.11e+00, -6.60e-01, -5.90e-11, 8.00e-01]])
+            A = A.astype(dtype)
+        else:
+            A = np.array([[-1.34e+00, 0.28e+10, -6.39e+00],
+                          [-1.70e+00, 3.31e+10, -0.15e+00],
+                          [2.41e-10, -0.56e+00, -0.83e-10]], dtype=dtype)
+            A += np.array([[2.55e+00, 3.17e+10, -2.20e+00],
+                           [-1.41e+00, -0.15e+10, 1.34e+00],
+                           [0.39e-10, 1.47e+00, -0.69e-10]])*1j
+
+            A = A.astype(dtype)
+
+        geequ = get_lapack_funcs('geequ', dtype=dtype)
+        r, c, rowcnd, colcnd, amax, info = geequ(A)
+
+        if ind < 2:
+            assert_allclose(desired_real.astype(dtype), r[:, None]*A*c,
+                            rtol=0, atol=1e-4)
+        else:
+            assert_allclose(desired_cplx.astype(dtype), r[:, None]*A*c,
+                            rtol=0, atol=1e-4)
+
+
+def test_syequb():
+    desired_log2s = np.array([0, 0, 0, 0, 0, 0, -1, -1, -2, -3])
+
+    for ind, dtype in enumerate(DTYPES):
+        A = np.eye(10, dtype=dtype)
+        alpha = dtype(1. if ind < 2 else 1.j)
+        d = np.array([alpha * 2.**x for x in range(-5, 5)], dtype=dtype)
+        A += np.rot90(np.diag(d))
+
+        syequb = get_lapack_funcs('syequb', dtype=dtype)
+        s, scond, amax, info = syequb(A)
+
+        assert_equal(np.log2(s).astype(int), desired_log2s)
+
+
+def test_heequb():
+    desired_log2s = np.array([[-2, -7, -2, -4, -2, -3, -2, -2, -1, -2],
+                              [1, -10, 0, -6, -1, -4, -1, -2, -1, -2]])
+    for ind, dtype in enumerate(COMPLEX_DTYPES):
+        heequb = get_lapack_funcs('heequb', dtype=dtype)
+
+        d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
+        A = np.diag(d)
+        subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
+                            dtype=dtype)
+        A[range(1, 10), range(0, 9)] = subdiags
+        s, scond, amax, info = heequb(A, lower=1)
+
+        # See gh-10741
+        pre3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[0, :]
+        post3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[1, :]
+
+        assert pre3_7_lapack_result.all() or post3_7_lapack_result.all()

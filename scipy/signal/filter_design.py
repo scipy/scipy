@@ -1222,17 +1222,20 @@ def sos2zpk(sos):
 
     Notes
     -----
+    The number of zeros and poles returned will be ``n_sections * 2``
+    even if some of these are (effectively) zero.
+
     .. versionadded:: 0.16.0
     """
     sos = np.asarray(sos)
     n_sections = sos.shape[0]
-    z = np.empty(n_sections*2, np.complex128)
-    p = np.empty(n_sections*2, np.complex128)
+    z = np.zeros(n_sections*2, np.complex128)
+    p = np.zeros(n_sections*2, np.complex128)
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
-        z[2*section:2*(section+1)] = zpk[0]
-        p[2*section:2*(section+1)] = zpk[1]
+        z[2*section:2*section+len(zpk[0])] = zpk[0]
+        p[2*section:2*section+len(zpk[1])] = zpk[1]
         k *= zpk[2]
     return z, p, k
 
@@ -1504,7 +1507,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
     # Construct the system, reversing order so the "worst" are last
     p_sos = np.reshape(p_sos[::-1], (n_sections, 2))
     z_sos = np.reshape(z_sos[::-1], (n_sections, 2))
-    gains = np.ones(n_sections)
+    gains = np.ones(n_sections, np.array(k).dtype)
     gains[0] = k
     for si in range(n_sections):
         x = zpk2tf(z_sos[si], p_sos[si], gains[si])

@@ -505,7 +505,8 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         Nyquist.  The Nyquist frequency is half `fs`.
         The values in `freq` must be nondecreasing.  A value can be repeated
         once to implement a discontinuity.  The first value in `freq` must
-        be 0, and the last value must be ``fs/2``.
+        be 0, and the last value must be ``fs/2``. Values 0 and ``fs/2`` must
+        not be repeated.
     gain : array_like
         The filter gains at the frequency sampling points. Certain
         constraints to gain values, depending on the filter type, are applied,
@@ -607,6 +608,10 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     d2 = d[:-1] + d[1:]
     if (d2 == 0).any():
         raise ValueError('A value in freq must not occur more than twice.')
+    if freq[1] == 0:
+        raise ValueError('Value 0 must not be repeated in freq')
+    if freq[-2] == nyq:
+        raise ValueError('Value fs/2 must not be repeated in freq')
 
     if antisymmetric:
         if numtaps % 2 == 0:
@@ -632,12 +637,20 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     if nfreqs is None:
         nfreqs = 1 + 2 ** int(ceil(log(numtaps, 2)))
 
-    # Tweak any repeated values in freq so that interp works.
-    eps = np.finfo(float).eps
-    for k in range(len(freq)):
-        if k < len(freq) - 1 and freq[k] == freq[k + 1]:
-            freq[k] = freq[k] - eps
-            freq[k + 1] = freq[k + 1] + eps
+    if (d == 0).any():
+        # Tweak any repeated values in freq so that interp works.
+        freq = np.array(freq, copy=True)
+        eps = np.finfo(float).eps * nyq
+        for k in range(len(freq) - 1):
+            if freq[k] == freq[k + 1]:
+                freq[k] = freq[k] - eps
+                freq[k + 1] = freq[k + 1] + eps
+        # Check if freq is strictly increasing after tweak
+        d = np.diff(freq)
+        if (d <= 0).any():
+            raise ValueError("freq cannot contain numbers that are too close "
+                             "(within eps * (fs/2): "
+                             "{}) to a repeated value".format(eps))
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)

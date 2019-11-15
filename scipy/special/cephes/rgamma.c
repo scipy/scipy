@@ -97,11 +97,11 @@ double x;
 
 	y = log(w * z) - log(NPY_PI) + lgam(w);
 	if (y < -MAXLOG) {
-	    mtherr(name, UNDERFLOW);
+	    sf_error(name, SF_ERROR_UNDERFLOW, NULL);
 	    return (sign * 0.0);
 	}
 	if (y > MAXLOG) {
-	    mtherr(name, OVERFLOW);
+	    sf_error(name, SF_ERROR_OVERFLOW, NULL);
 	    return (sign * NPY_INFINITY);
 	}
 	return (sign * exp(y));

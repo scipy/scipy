@@ -21,7 +21,7 @@ def _dispatch(func):
 
 
 @_dispatch
-def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     """
     Compute the one-dimensional discrete Fourier Transform.
 
@@ -48,6 +48,10 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See the notes below for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``. See below for more
+        details.
 
     Returns
     -------
@@ -109,6 +113,12 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     rely on the contents of ``x`` after the transform as this may change in
     future without warning.
 
+    The ``workers`` argument specifies the maximum number of parallel jobs to
+    split the FFT computation into. This will execute independent 1-dimensional
+    FFTs within ``x``. So, ``x`` must be at least 2-dimensional and the
+    non-transformed axes must be large enough to split into chunks. If ``x`` is
+    too small, fewer jobs may be used than requested.
+
     References
     ----------
     .. [1] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
@@ -145,7 +155,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     """
     Compute the one-dimensional inverse discrete Fourier Transform.
 
@@ -183,6 +193,10 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -239,7 +253,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     """
     Compute the one-dimensional discrete Fourier Transform for real input.
 
@@ -264,6 +278,10 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -322,7 +340,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     """
     Compute the inverse of the n-point DFT for real input.
 
@@ -356,6 +374,10 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -413,7 +435,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     """
     Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
     spectrum.
@@ -437,6 +459,10 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -485,7 +511,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
+def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     """
     Compute the inverse FFT of a signal that has Hermitian symmetry.
 
@@ -504,6 +530,13 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
         axis is used.
     norm : {None, "ortho"}, optional
         Normalization mode (see `fft`). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See `fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -538,7 +571,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     """
     Compute the N-dimensional discrete Fourier Transform.
 
@@ -566,6 +599,10 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -632,7 +669,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     """
     Compute the N-dimensional inverse discrete Fourier Transform.
 
@@ -668,6 +705,10 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -724,7 +765,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
     """
     Compute the 2-dimensional discrete Fourier Transform
 
@@ -753,6 +794,10 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -813,7 +858,7 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
 
 @_dispatch
-def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
     """
     Compute the 2-dimensional inverse discrete Fourier Transform.
 
@@ -849,6 +894,10 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -899,7 +948,7 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
 
 @_dispatch
-def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     """
     Compute the N-dimensional discrete Fourier Transform for real input.
 
@@ -930,6 +979,10 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -988,7 +1041,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
     """
     Compute the 2-dimensional FFT of a real array.
 
@@ -1005,6 +1058,10 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1027,7 +1084,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
 
 @_dispatch
-def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     """
     Compute the inverse of the N-dimensional FFT of real input.
 
@@ -1064,6 +1121,10 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1123,7 +1184,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
+           workers=None):
     """
     Compute the 2-dimensional inverse FFT of a real array.
 
@@ -1141,6 +1203,10 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1161,7 +1227,7 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
 
 @_dispatch
-def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     """
     Compute the N-dimensional FFT of Hermitian symmetric complex input, i.e. a
     signal with a real spectrum.
@@ -1195,6 +1261,10 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1264,7 +1334,7 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None):
     """
     Compute the 2-dimensional FFT of a Hermitian complex array.
 
@@ -1281,6 +1351,10 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See `fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1302,7 +1376,7 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
 
 
 @_dispatch
-def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
+def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None):
     """
     Compute the N-dimensional inverse discrete Fourier Transform for a real
     spectrum.
@@ -1332,6 +1406,10 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -1386,7 +1464,8 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
+def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False,
+           workers=None):
     """
     Compute the 2-dimensional inverse FFT of a real spectrum.
 
@@ -1404,6 +1483,10 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
         See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
