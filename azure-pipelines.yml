@@ -77,6 +77,12 @@ jobs:
           TEST_MODE: full
           OPENBLAS: $(OPENBLAS_64)
           BITS: 64
+        Python38-64bit-full:
+          PYTHON_VERSION: '3.8'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
+          OPENBLAS: $(OPENBLAS_64)
+          BITS: 64
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -106,8 +112,33 @@ jobs:
       choco install -y mingw --force --version=6.4.0
     displayName: 'Install 64-bit mingw for 64-bit builds'
     condition: eq(variables['BITS'], 64)
-  - script: python -m pip install numpy cython==0.29.13 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib
+  - script: python -m pip install numpy cython==0.29.13 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
+  - powershell: |
+      If ($(PYTHON_VERSION) -ne '3.5') {
+          python -m pip install matplotlib==3.2.0rc1
+      }
+      else {
+          python -m pip install matplotlib
+      }
+    displayName: 'Install matplotlib'
+  # DLL resolution mechanics were changed in
+  # Python 3.8: https://bugs.python.org/issue36085
+  # While we normally leave adjustment of _distributor_init.py
+  # up to the specific distributors of SciPy builds, we
+  # are the primary providers of the SciPy wheels available
+  # on PyPI, so we now regularly test that the version of
+  # _distributor_init.py in our wheels repo is capable of
+  # loading the DLLs from a master branch wheel build
+  - powershell: |
+      git clone -n --depth 1 https://github.com/MacPython/scipy-wheels.git
+      cd scipy-wheels
+      git checkout HEAD _distributor_init.py
+      cd ..
+      rm scipy/_distributor_init.py
+      mv scipy-wheels/_distributor_init.py scipy/
+    displayName: 'Copy in _distributor_init.py'
+    condition: eq(variables['PYTHON_VERSION'], '3.8')
   - powershell: |
       If ($(BITS) -eq 32) {
           # 32-bit build requires careful adjustments
