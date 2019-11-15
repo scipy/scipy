@@ -50,6 +50,7 @@ from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
+from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
 
@@ -1065,13 +1066,13 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             return SpLuInv(A).matvec
         else:
             return IterOpInv(_aslinearoperator_with_dtype(A),
-                              M, sigma, tol=tol).matvec
+                             M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not isspmatrix(A)) or
                 (not isdense(M) and not isspmatrix(M))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
-                              _aslinearoperator_with_dtype(M),
-                              sigma, tol=tol).matvec
+                             _aslinearoperator_with_dtype(M),
+                             sigma, tol=tol).matvec
         elif isdense(A) or isdense(M):
             return LuInv(A - sigma * M).matvec
         else:
@@ -1453,21 +1454,26 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
-        Return eigenvectors (True) in addition to eigenvalues. This value determines
-        the order in which eigenvalues are sorted. The sort order is also dependent on the `which` variable.
+        Return eigenvectors (True) in addition to eigenvalues.
+        This value determines the order in which eigenvalues are sorted.
+        The sort order is also dependent on the `which` variable.
 
             For which = 'LM' or 'SA':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+                If `return_eigenvectors` is True, eigenvalues are sorted by
+                algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value.
+                If `return_eigenvectors` is False, eigenvalues are sorted by
+                absolute value.
 
             For which = 'BE' or 'LA':
                 eigenvalues are always sorted by algebraic value.
 
             For which = 'SM':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+                If `return_eigenvectors` is True, eigenvalues are sorted by
+                algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
+                If `return_eigenvectors` is False, eigenvalues are sorted by
+                decreasing absolute value.
 
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
@@ -1708,8 +1714,9 @@ def _herm(x):
 
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
-         maxiter=None, return_singular_vectors=True):
-    """Compute the largest or smallest k singular values/vectors for a sparse matrix.
+         maxiter=None, return_singular_vectors=True,
+         solver='arpack'):
+    """Compute the largest or smallest k singular values/vectors for a sparse matrix. The order of the singular values is not guaranteed.
 
     Parameters
     ----------
@@ -1752,6 +1759,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         - "vh": only return the vh matrix, without computing u (if N <= M).
 
         .. versionadded:: 0.16.0
+    solver : str, optional
+            Eigenvalue solver to use. Should be 'arpack' or 'lobpcg'.
+            Default: 'arpack'
 
     Returns
     -------
@@ -1769,7 +1779,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Notes
     -----
-    This is a naive implementation using ARPACK as an eigensolver
+    This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
 
     Examples
@@ -1783,6 +1793,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> np.sqrt(eigs(A.dot(A.T), k=2)[0]).real
     array([ 5.6059665 ,  2.75193379])
     """
+    if which == 'LM':
+        largest = True
+    elif which == 'SM':
+        largest = False
+    else:
+        raise ValueError("which must be either 'LM' or 'SM'.")
+
     if not (isinstance(A, LinearOperator) or isspmatrix(A)):
         A = np.asarray(A)
 
@@ -1796,92 +1813,90 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             X_dot = A.matvec
             X_matmat = A.matmat
             XH_dot = A.rmatvec
+            XH_mat = A.rmatmat
         else:
             X_dot = A.rmatvec
+            X_matmat = A.rmatmat
             XH_dot = A.matvec
+            XH_mat = A.matmat
 
             dtype = getattr(A, 'dtype', None)
             if dtype is None:
-                dtype = A.dot(np.zeros([m,1])).dtype
-
-            # A^H * V; works around lack of LinearOperator.adjoint.
-            # XXX This can be slow!
-            def X_matmat(V):
-                out = np.empty((V.shape[1], m), dtype=dtype)
-                for i, col in enumerate(V.T):
-                    out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
-                return out.T
+                dtype = A.dot(np.zeros([m, 1])).dtype
 
     else:
         if n > m:
             X_dot = X_matmat = A.dot
-            XH_dot = _herm(A).dot
+            XH_dot = XH_mat = _herm(A).dot
         else:
-            XH_dot = A.dot
+            XH_dot = XH_mat = A.dot
             X_dot = X_matmat = _herm(A).dot
 
     def matvec_XH_X(x):
         return XH_dot(X_dot(x))
 
+    def matmat_XH_X(x):
+        return XH_mat(X_matmat(x))
+
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
+                          matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
-    eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                  ncv=ncv, which=which, v0=v0)
+    if solver == 'lobpcg':
 
-    # In 'LM' mode try to be clever about small eigenvalues.
-    # Otherwise in 'SM' mode do not try to be clever.
-    if which == 'LM':
-
-        # Gramian matrices have real non-negative eigenvalues.
-        eigvals = np.maximum(eigvals.real, 0)
-
-        # Use the sophisticated detection of small eigenvalues from pinvh.
-        t = eigvec.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
-        cutoff = cond * np.max(eigvals)
-
-        # Get a mask indicating which eigenpairs are not degenerately tiny,
-        # and create the re-ordered array of thresholded singular values.
-        above_cutoff = (eigvals > cutoff)
-        nlarge = above_cutoff.sum()
-        nsmall = k - nlarge
-        slarge = np.sqrt(eigvals[above_cutoff])
-        s = np.zeros_like(eigvals)
-        s[:nlarge] = slarge
-        if not return_singular_vectors:
-            return s
-
-        if n > m:
-            vlarge = eigvec[:, above_cutoff]
-            ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
-            vhlarge = _herm(vlarge)
+        if k == 1 and v0 is not None:
+            X = np.reshape(v0, (-1, 1))
         else:
-            ularge = eigvec[:, above_cutoff]
-            vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
+            X = np.random.RandomState(52).randn(min(A.shape), k)
 
-        u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
-        vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
+        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+                                 largest=largest)
 
-    elif which == 'SM':
-
-        s = np.sqrt(eigvals)
-        if not return_singular_vectors:
-            return s
-
-        if n > m:
-            v = eigvec
-            u = X_matmat(v) / s if return_singular_vectors != 'vh' else None
-            vh = _herm(v)
-        else:
-            u = eigvec
-            vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
+    elif solver == 'arpack' or solver is None:
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                                ncv=ncv, which=which, v0=v0)
 
     else:
+        raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
 
-        raise ValueError("which must be either 'LM' or 'SM'.")
+    # Gramian matrices have real non-negative eigenvalues.
+    eigvals = np.maximum(eigvals.real, 0)
+
+    # Use the sophisticated detection of small eigenvalues from pinvh.
+    t = eigvec.dtype.char.lower()
+    factor = {'f': 1E3, 'd': 1E6}
+    cond = factor[t] * np.finfo(t).eps
+    cutoff = cond * np.max(eigvals)
+
+    # Get a mask indicating which eigenpairs are not degenerately tiny,
+    # and create the re-ordered array of thresholded singular values.
+    above_cutoff = (eigvals > cutoff)
+    nlarge = above_cutoff.sum()
+    nsmall = k - nlarge
+    slarge = np.sqrt(eigvals[above_cutoff])
+    s = np.zeros_like(eigvals)
+    s[:nlarge] = slarge
+    if not return_singular_vectors:
+        return np.sort(s)
+
+    if n > m:
+        vlarge = eigvec[:, above_cutoff]
+        ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
+        vhlarge = _herm(vlarge)
+    else:
+        ularge = eigvec[:, above_cutoff]
+        vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
+
+    u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
+    vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
+
+    indexes_sorted = np.argsort(s)
+    s = s[indexes_sorted]
+    if u is not None:
+        u = u[:, indexes_sorted]
+    if vh is not None:
+        vh = vh[indexes_sorted]
 
     return u, s, vh

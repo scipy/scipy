@@ -77,8 +77,9 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
-                   'pearson3', 'rdist', 'rice', 'skewnorm', 't', 'tukeylambda',
+                   'loguniform', 'maxwell', 'nakagami',
+                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
+                   'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,

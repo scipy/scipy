@@ -221,12 +221,13 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
 def roots_jacobi(n, alpha, beta, mu=False):
     r"""Gauss-Jacobi quadrature.
 
-    Computes the sample points and weights for Gauss-Jacobi quadrature. The
-    sample points are the roots of the n-th degree Jacobi polynomial,
-    :math:`P^{\alpha, \beta}_n(x)`.  These sample points and weights
-    correctly integrate polynomials of degree :math:`2n - 1` or less over the
-    interval :math:`[-1, 1]` with weight function
-    :math:`f(x) = (1 - x)^{\alpha} (1 + x)^{\beta}`.
+    Compute the sample points and weights for Gauss-Jacobi
+    quadrature. The sample points are the roots of the n-th degree
+    Jacobi polynomial, :math:`P^{\alpha, \beta}_n(x)`. These sample
+    points and weights correctly integrate polynomials of degree
+    :math:`2n - 1` or less over the interval :math:`[-1, 1]` with
+    weight function :math:`w(x) = (1 - x)^{\alpha} (1 +
+    x)^{\beta}`. See 22.2.1 in [AS]_ for details.
 
     Parameters
     ----------
@@ -252,6 +253,13 @@ def roots_jacobi(n, alpha, beta, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -343,12 +351,13 @@ def jacobi(n, alpha, beta, monic=False):
 def roots_sh_jacobi(n, p1, q1, mu=False):
     """Gauss-Jacobi (shifted) quadrature.
 
-    Computes the sample points and weights for Gauss-Jacobi (shifted)
-    quadrature. The sample points are the roots of the n-th degree shifted
-    Jacobi polynomial, :math:`G^{p,q}_n(x)`.  These sample points and weights
-    correctly integrate polynomials of degree :math:`2n - 1` or less over the
-    interval :math:`[0, 1]` with weight function
-    :math:`f(x) = (1 - x)^{p-q} x^{q-1}`
+    Compute the sample points and weights for Gauss-Jacobi (shifted)
+    quadrature. The sample points are the roots of the n-th degree
+    shifted Jacobi polynomial, :math:`G^{p,q}_n(x)`. These sample
+    points and weights correctly integrate polynomials of degree
+    :math:`2n - 1` or less over the interval :math:`[0, 1]` with
+    weight function :math:`w(x) = (1 - x)^{p-q} x^{q-1}`. See 22.2.2
+    in [AS]_ for details.
 
     Parameters
     ----------
@@ -374,6 +383,13 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     if (p1-q1) <= -1 or q1 <= 0:
         raise ValueError("(p - q) must be greater than -1, and q must be greater than 0.")
@@ -446,12 +462,13 @@ def sh_jacobi(n, p, q, monic=False):
 def roots_genlaguerre(n, alpha, mu=False):
     r"""Gauss-generalized Laguerre quadrature.
 
-    Computes the sample points and weights for Gauss-generalized Laguerre
-    quadrature. The sample points are the roots of the n-th degree generalized
-    Laguerre polynomial, :math:`L^{\alpha}_n(x)`.  These sample points and
-    weights correctly integrate polynomials of degree :math:`2n - 1` or less
-    over the interval :math:`[0, \infty]` with weight function
-    :math:`f(x) = x^{\alpha} e^{-x}`.
+    Compute the sample points and weights for Gauss-generalized
+    Laguerre quadrature. The sample points are the roots of the n-th
+    degree generalized Laguerre polynomial, :math:`L^{\alpha}_n(x)`.
+    These sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[0,
+    \infty]` with weight function :math:`w(x) = x^{\alpha}
+    e^{-x}`. See 22.3.9 in [AS]_ for details.
 
     Parameters
     ----------
@@ -475,6 +492,13 @@ def roots_genlaguerre(n, alpha, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -567,11 +591,12 @@ def genlaguerre(n, alpha, monic=False):
 def roots_laguerre(n, mu=False):
     r"""Gauss-Laguerre quadrature.
 
-    Computes the sample points and weights for Gauss-Laguerre quadrature.
-    The sample points are the roots of the n-th degree Laguerre polynomial,
-    :math:`L_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[0, \infty]` with weight function :math:`f(x) = e^{-x}`.
+    Compute the sample points and weights for Gauss-Laguerre
+    quadrature. The sample points are the roots of the n-th degree
+    Laguerre polynomial, :math:`L_n(x)`. These sample points and
+    weights correctly integrate polynomials of degree :math:`2n - 1`
+    or less over the interval :math:`[0, \infty]` with weight function
+    :math:`w(x) = e^{-x}`. See 22.2.13 in [AS]_ for details.
 
     Parameters
     ----------
@@ -594,6 +619,13 @@ def roots_laguerre(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.laguerre.laggauss
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     return roots_genlaguerre(n, 0.0, mu=mu)
 
@@ -649,11 +681,13 @@ def laguerre(n, monic=False):
 def roots_hermite(n, mu=False):
     r"""Gauss-Hermite (physicst's) quadrature.
 
-    Computes the sample points and weights for Gauss-Hermite quadrature.
-    The sample points are the roots of the n-th degree Hermite polynomial,
-    :math:`H_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2}`.
+    Compute the sample points and weights for Gauss-Hermite
+    quadrature. The sample points are the roots of the n-th degree
+    Hermite polynomial, :math:`H_n(x)`. These sample points and
+    weights correctly integrate polynomials of degree :math:`2n - 1`
+    or less over the interval :math:`[-\infty, \infty]` with weight
+    function :math:`w(x) = e^{-x^2}`. See 22.2.14 in [AS]_ for
+    details.
 
     Parameters
     ----------
@@ -693,16 +727,19 @@ def roots_hermite(n, mu=False):
     References
     ----------
     .. [townsend.trogdon.olver-2014]
-       Townsend, A. and Trogdon, T. and Olver, S. (2014)
-       *Fast computation of Gauss quadrature nodes and
-       weights on the whole real line*. :arXiv:`1410.5286`.
-
+        Townsend, A. and Trogdon, T. and Olver, S. (2014)
+        *Fast computation of Gauss quadrature nodes and
+        weights on the whole real line*. :arXiv:`1410.5286`.
     .. [townsend.trogdon.olver-2015]
-       Townsend, A. and Trogdon, T. and Olver, S. (2015)
-       *Fast computation of Gauss quadrature nodes and
-       weights on the whole real line*.
-       IMA Journal of Numerical Analysis
-       :doi:`10.1093/imanum/drv002`.
+        Townsend, A. and Trogdon, T. and Olver, S. (2015)
+        *Fast computation of Gauss quadrature nodes and
+        weights on the whole real line*.
+        IMA Journal of Numerical Analysis
+        :doi:`10.1093/imanum/drv002`.
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1140,11 +1177,13 @@ def hermite(n, monic=False):
 def roots_hermitenorm(n, mu=False):
     r"""Gauss-Hermite (statistician's) quadrature.
 
-    Computes the sample points and weights for Gauss-Hermite quadrature.
-    The sample points are the roots of the n-th degree Hermite polynomial,
-    :math:`He_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2/2}`.
+    Compute the sample points and weights for Gauss-Hermite
+    quadrature. The sample points are the roots of the n-th degree
+    Hermite polynomial, :math:`He_n(x)`. These sample points and
+    weights correctly integrate polynomials of degree :math:`2n - 1`
+    or less over the interval :math:`[-\infty, \infty]` with weight
+    function :math:`w(x) = e^{-x^2/2}`. See 22.2.15 in [AS]_ for more
+    details.
 
     Parameters
     ----------
@@ -1179,6 +1218,13 @@ def roots_hermitenorm(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.hermite_e.hermegauss
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1258,12 +1304,13 @@ def hermitenorm(n, monic=False):
 def roots_gegenbauer(n, alpha, mu=False):
     r"""Gauss-Gegenbauer quadrature.
 
-    Computes the sample points and weights for Gauss-Gegenbauer quadrature.
-    The sample points are the roots of the n-th degree Gegenbauer polynomial,
-    :math:`C^{\alpha}_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-1, 1]` with weight function
-    :math:`f(x) = (1 - x^2)^{\alpha - 1/2}`.
+    Compute the sample points and weights for Gauss-Gegenbauer
+    quadrature. The sample points are the roots of the n-th degree
+    Gegenbauer polynomial, :math:`C^{\alpha}_n(x)`. These sample
+    points and weights correctly integrate polynomials of degree
+    :math:`2n - 1` or less over the interval :math:`[-1, 1]` with
+    weight function :math:`w(x) = (1 - x^2)^{\alpha - 1/2}`. See
+    22.2.3 in [AS]_ for more details.
 
     Parameters
     ----------
@@ -1287,6 +1334,13 @@ def roots_gegenbauer(n, alpha, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1361,11 +1415,13 @@ def gegenbauer(n, alpha, monic=False):
 def roots_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
-    Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the n-th degree Chebyshev polynomial of
-    the first kind, :math:`T_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-1, 1]` with weight function :math:`f(x) = 1/\sqrt{1 - x^2}`.
+    Computes the sample points and weights for Gauss-Chebyshev
+    quadrature. The sample points are the roots of the n-th degree
+    Chebyshev polynomial of the first kind, :math:`T_n(x)`.  These
+    sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[-1, 1]`
+    with weight function :math:`w(x) = 1/\sqrt{1 - x^2}`. See 22.2.4
+    in [AS]_ for more details.
 
     Parameters
     ----------
@@ -1388,6 +1444,13 @@ def roots_chebyt(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.chebyshev.chebgauss
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1455,11 +1518,13 @@ def chebyt(n, monic=False):
 def roots_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
-    Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the n-th degree Chebyshev polynomial of
-    the second kind, :math:`U_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-1, 1]` with weight function :math:`f(x) = \sqrt{1 - x^2}`.
+    Computes the sample points and weights for Gauss-Chebyshev
+    quadrature. The sample points are the roots of the n-th degree
+    Chebyshev polynomial of the second kind, :math:`U_n(x)`. These
+    sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[-1, 1]`
+    with weight function :math:`w(x) = \sqrt{1 - x^2}`. See 22.2.5 in
+    [AS]_ for details.
 
     Parameters
     ----------
@@ -1481,6 +1546,13 @@ def roots_chebyu(n, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1541,11 +1613,13 @@ def chebyu(n, monic=False):
 def roots_chebyc(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
-    Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the n-th degree Chebyshev polynomial of
-    the first kind, :math:`C_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-2, 2]` with weight function :math:`f(x) = 1/\sqrt{1 - (x/2)^2}`.
+    Compute the sample points and weights for Gauss-Chebyshev
+    quadrature. The sample points are the roots of the n-th degree
+    Chebyshev polynomial of the first kind, :math:`C_n(x)`. These
+    sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[-2, 2]`
+    with weight function :math:`w(x) = 1 / \sqrt{1 - (x/2)^2}`. See
+    22.2.6 in [AS]_ for more details.
 
     Parameters
     ----------
@@ -1567,6 +1641,13 @@ def roots_chebyc(n, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     x, w, m = roots_chebyt(n, True)
     x *= 2
@@ -1638,11 +1719,13 @@ def chebyc(n, monic=False):
 def roots_chebys(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
-    Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the n-th degree Chebyshev polynomial of
-    the second kind, :math:`S_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-2, 2]` with weight function :math:`f(x) = \sqrt{1 - (x/2)^2}`.
+    Compute the sample points and weights for Gauss-Chebyshev
+    quadrature. The sample points are the roots of the n-th degree
+    Chebyshev polynomial of the second kind, :math:`S_n(x)`. These
+    sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[-2, 2]`
+    with weight function :math:`w(x) = \sqrt{1 - (x/2)^2}`. See 22.2.7
+    in [AS]_ for more details.
 
     Parameters
     ----------
@@ -1664,6 +1747,13 @@ def roots_chebys(n, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     x, w, m = roots_chebyu(n, True)
     x *= 2
@@ -1736,12 +1826,13 @@ def chebys(n, monic=False):
 def roots_sh_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind, shifted) quadrature.
 
-    Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the n-th degree shifted Chebyshev
-    polynomial of the first kind, :math:`T_n(x)`.  These sample points and
-    weights correctly integrate polynomials of degree :math:`2n - 1` or less
-    over the interval :math:`[0, 1]` with weight function
-    :math:`f(x) = 1/\sqrt{x - x^2}`.
+    Compute the sample points and weights for Gauss-Chebyshev
+    quadrature. The sample points are the roots of the n-th degree
+    shifted Chebyshev polynomial of the first kind, :math:`T_n(x)`.
+    These sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[0, 1]`
+    with weight function :math:`w(x) = 1/\sqrt{x - x^2}`. See 22.2.8
+    in [AS]_ for more details.
 
     Parameters
     ----------
@@ -1763,6 +1854,13 @@ def roots_sh_chebyt(n, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     xw = roots_chebyt(n, mu)
     return ((xw[0] + 1) / 2,) + xw[1:]
@@ -1808,12 +1906,13 @@ def sh_chebyt(n, monic=False):
 def roots_sh_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind, shifted) quadrature.
 
-    Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the n-th degree shifted Chebyshev
-    polynomial of the second kind, :math:`U_n(x)`.  These sample points and
-    weights correctly integrate polynomials of degree :math:`2n - 1` or less
-    over the interval :math:`[0, 1]` with weight function
-    :math:`f(x) = \sqrt{x - x^2}`.
+    Computes the sample points and weights for Gauss-Chebyshev
+    quadrature. The sample points are the roots of the n-th degree
+    shifted Chebyshev polynomial of the second kind, :math:`U_n(x)`.
+    These sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[0, 1]`
+    with weight function :math:`w(x) = \sqrt{x - x^2}`. See 22.2.9 in
+    [AS]_ for more details.
 
     Parameters
     ----------
@@ -1835,6 +1934,13 @@ def roots_sh_chebyu(n, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     x, w, m = roots_chebyu(n, True)
     x = (x + 1) / 2
@@ -1884,11 +1990,12 @@ def sh_chebyu(n, monic=False):
 def roots_legendre(n, mu=False):
     r"""Gauss-Legendre quadrature.
 
-    Computes the sample points and weights for Gauss-Legendre quadrature.
-    The sample points are the roots of the n-th degree Legendre polynomial
-    :math:`P_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-1, 1]` with weight function :math:`f(x) = 1.0`.
+    Compute the sample points and weights for Gauss-Legendre
+    quadrature. The sample points are the roots of the n-th degree
+    Legendre polynomial :math:`P_n(x)`. These sample points and
+    weights correctly integrate polynomials of degree :math:`2n - 1`
+    or less over the interval :math:`[-1, 1]` with weight function
+    :math:`w(x) = 1.0`. See 2.2.10 in [AS]_ for more details.
 
     Parameters
     ----------
@@ -1911,6 +2018,13 @@ def roots_legendre(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.legendre.leggauss
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1985,11 +2099,12 @@ def legendre(n, monic=False):
 def roots_sh_legendre(n, mu=False):
     r"""Gauss-Legendre (shifted) quadrature.
 
-    Computes the sample points and weights for Gauss-Legendre quadrature.
-    The sample points are the roots of the n-th degree shifted Legendre
-    polynomial :math:`P^*_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[0, 1]` with weight function :math:`f(x) = 1.0`.
+    Compute the sample points and weights for Gauss-Legendre
+    quadrature. The sample points are the roots of the n-th degree
+    shifted Legendre polynomial :math:`P^*_n(x)`. These sample points
+    and weights correctly integrate polynomials of degree :math:`2n -
+    1` or less over the interval :math:`[0, 1]` with weight function
+    :math:`w(x) = 1.0`. See 2.2.11 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2011,6 +2126,13 @@ def roots_sh_legendre(n, mu=False):
     --------
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """
     x, w = roots_legendre(n)
     x = (x + 1) / 2

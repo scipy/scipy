@@ -245,12 +245,13 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-   cascade  -- compute scaling function and wavelet from coefficients
-   daub     -- return low-pass
-   morlet   -- Complex Morlet wavelet.
-   qmf      -- return quadrature mirror filter from low-pass
-   ricker   -- return ricker wavelet
-   cwt      -- perform continuous wavelet transform
+   cascade      -- compute scaling function and wavelet from coefficients
+   daub         -- return low-pass
+   morlet       -- Complex Morlet wavelet.
+   qmf          -- return quadrature mirror filter from low-pass
+   ricker       -- return ricker wavelet
+   morlet2      -- return Morlet wavelet, compatible with cwt
+   cwt          -- perform continuous wavelet transform
 
 Peak finding
 ============
@@ -333,7 +334,7 @@ def deco(name):
     if hasattr(f, '__qualname__'):
         wrapped.__qualname__ = f.__qualname__
 
-    if f.__doc__ is not None:
+    if f.__doc__:
         lines = f.__doc__.splitlines()
         for li, line in enumerate(lines):
             if line.strip() == 'Parameters':

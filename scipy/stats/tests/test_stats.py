@@ -3942,6 +3942,15 @@ class TestHarMean(object):
         desired = 34.1417152147
         check_equal_hmean(a, desired)
 
+    def test_1d_array_with_zero(self):
+        a = np.array([1, 0])
+        desired = 0.0
+        assert_equal(stats.hmean(a), desired)
+
+    def test_1d_array_with_negative_value(self):
+        a = np.array([1, 0, -1])
+        assert_raises(ValueError, stats.hmean, a)
+
     # Note the next tests use axis=None as default, not axis=0
     def test_2d_list(self):
         #  Test a 2d list
@@ -3961,11 +3970,21 @@ class TestHarMean(object):
         desired = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
         check_equal_hmean(a, desired, axis=0)
 
+    def test_2d_axis0_with_zero(self):
+        a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = np.array([22.88135593, 0.0, 52.90076336, 65.45454545])
+        assert_allclose(stats.hmean(a, axis=0), desired)
+
     def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([19.2, 63.03939962, 103.80078637])
         check_equal_hmean(a, desired, axis=1)
+
+    def test_2d_axis1_with_zero(self):
+        a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = np.array([0.0, 63.03939962, 103.80078637])
+        assert_allclose(stats.hmean(a, axis=1), desired)
 
     def test_2d_matrix_axis0(self):
         #  Test a 2d list with axis=0
@@ -4550,7 +4569,7 @@ class TestKruskal(object):
         assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
-    
+
     def test_large_no_samples(self):
         # Test to see if large samples are handled correctly.
         n = 50000

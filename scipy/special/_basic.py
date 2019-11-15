@@ -992,21 +992,32 @@ digamma = psi
 
 
 def polygamma(n, x):
-    """Polygamma function n.
+    r"""Polygamma functions.
 
-    This is the nth derivative of the digamma (psi) function.
+    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
+    `digamma` function. See [dlmf]_ for details.
 
     Parameters
     ----------
-    n : array_like of int
-        The order of the derivative of `psi`.
+    n : array_like
+        The order of the derivative of the digamma function; must be
+        integral
     x : array_like
-        Where to evaluate the polygamma function.
+        Real valued input
 
     Returns
     -------
-    polygamma : ndarray
-        The result.
+    ndarray
+        Function results
+
+    See Also
+    --------
+    digamma
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/5.15
 
     Examples
     --------
@@ -2279,15 +2290,23 @@ def zeta(x, q=None, out=None):
 
     Notes
     -----
-    The two-argument version is the Hurwitz zeta function:
+    The two-argument version is the Hurwitz zeta function
 
-    .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
+    .. math::
 
-    Riemann zeta function corresponds to ``q = 1``.
+        \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x};
+
+    see [dlmf]_ for details. The Riemann zeta function corresponds to
+    the case when ``q = 1``.
 
     See Also
     --------
     zetac
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/25.11#i
 
     Examples
     --------
