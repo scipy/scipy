@@ -1775,7 +1775,7 @@ class Rotation(object):
         return cls(sample)
 
     @classmethod
-    def match_vectors(cls, a, b, weights=None, normalized=None):
+    def match_vectors(cls, a, b, weights=None):
         """Estimate a rotation to match two sets of vectors.
 
         Find a rotation between frames A and B which best matches a set of
@@ -1870,15 +1870,6 @@ class Rotation(object):
                                  "{} values and {} vectors.".format(
                                     weights.shape[0], b.shape[0]))
         weights = weights / np.sum(weights)
-
-        if normalized is not None:
-            warnings.warn("`normalized` is deprecated in scipy 1.4.0 and "
-                          "will be removed in scipy 1.6.0.",
-                          DeprecationWarning)
-
-            if normalized:
-                a = a / scipy.linalg.norm(a, axis=1)[:, None]
-                b = b / scipy.linalg.norm(b, axis=1)[:, None]
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
