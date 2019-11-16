@@ -758,7 +758,19 @@ class TestFFTConvolve(object):
 
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
+    
+    def test_xcorr(self):
+        x = np.random.random(1000)
 
+        x_behind = np.pad(x, (100,0), 'constant')
+        (correlation, lags) = signal.fftconvolve(x, x_behind[::-1], mode='full', xcorr=True)
+        lag_behind_index = np.argmax(correlation)
+        assert lags[lag_behind_index] == -100
+
+        x_ahead = x[100:]
+        (correlation, lags) = signal.fftconvolve(x, x_ahead[::-1], mode='full', xcorr=True)
+        lag_ahead_index = np.argmax(correlation)
+        assert lags[lag_ahead_index] == 100
 
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')

@@ -424,7 +424,7 @@ def _apply_conv_mode(ret, s1, s2, mode, axes):
                          " 'same', or 'full'")
 
 
-def fftconvolve(in1, in2, mode="full", axes=None):
+def fftconvolve(in1, in2, mode="full", axes=None, xcorr=False):
     """Convolve two N-dimensional arrays using FFT.
 
     Convolve `in1` and `in2` using the fast Fourier transform method, with
@@ -459,6 +459,10 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     axes : int or array_like of ints or None, optional
         Axes over which to compute the convolution.
         The default is over all axes.
+
+    xcorr : bool, optional
+        Returns a tuple (correlation, lags) for cross-correlation. Lags can
+        be indexed with the np.argmax of the correlation to return the lag.
 
     Returns
     -------
@@ -514,6 +518,13 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> ax_blurred.set_axis_off()
     >>> fig.show()
 
+    Cross-correlation of a signal with its time-delayed self.
+
+    >>> x = np.random.random(1000)
+    >>> x_behind = np.pad(x, (100,0), 'constant')
+    >>> (correlation, lags) = signal.fftconvolve(x, x_behind[::-1], mode='full', xcorr=True)
+    >>> lag_behind_index = np.argmax(correlation)
+    >>> lag = lags[lag_behind_index]
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -535,6 +546,10 @@ def fftconvolve(in1, in2, mode="full", axes=None):
              for i in range(in1.ndim)]
 
     ret = _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=True)
+
+    if xcorr:
+        lags = np.arange(-in2.size+1, in1.size)
+        return (_apply_conv_mode(ret, s1, s2, mode, axes), lags)
 
     return _apply_conv_mode(ret, s1, s2, mode, axes)
 
