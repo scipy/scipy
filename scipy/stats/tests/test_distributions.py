@@ -2066,14 +2066,14 @@ class TestFitMethod(object):
     def setup_method(self):
         np.random.seed(1234)
 
-    # skip these b/c depracated, or only loc and scale arguments
+    # skip these b/c deprecated, or only loc and scale arguments
     fitSkipNonFinite = ['frechet_l', 'frechet_r', 'expon', 'norm', 'uniform', ]
 
     @pytest.mark.parametrize('dist,args', distcont)
     def test_fit_w_non_finite_data_values(self, dist, args):
         """gh-10300"""
         if dist in self.fitSkipNonFinite:
-            pytest.skip("%s fit known to fail or depracated" % dist)
+            pytest.skip("%s fit known to fail or deprecated" % dist)
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
         y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         distfunc = getattr(stats, dist)
