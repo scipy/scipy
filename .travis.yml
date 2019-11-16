@@ -191,7 +191,7 @@ before_install:
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - travis_retry pip install pybind11
   - |
-    if [ -z "${USE_DEBUG}" -a "${TRAVIS_PYTHON_VERSION}" != "3.8-dev" ]; then
+    if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
         travis_retry pip install --only-binary=:all: sparse
     fi
   - |
