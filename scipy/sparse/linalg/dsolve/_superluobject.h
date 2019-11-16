@@ -37,6 +37,7 @@ typedef struct {
     int *perm_c;
     PyObject *cached_U;
     PyObject *cached_L;
+    PyObject *py_csc_construct_func;
     int type;
 } SuperLUObject;
 
@@ -56,9 +57,10 @@ int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
-                     PyObject **L_csc, PyObject **U_csc);
+                     PyObject **L_csc, PyObject **U_csc,
+                     PyObject *py_csc_construct_func);
 colperm_t superlu_module_getpermc(int);
-PyObject *newSuperLUObject(SuperMatrix *, PyObject *, int, int);
+PyObject *newSuperLUObject(SuperMatrix *, PyObject *, int, int, PyObject *);
 int set_superlu_options_from_dict(superlu_options_t * options,
 				  int ilu, PyObject * option_dict,
 				  int *panel_size, int *relax);
