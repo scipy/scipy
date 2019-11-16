@@ -5208,6 +5208,7 @@ class TestMGCStat(object):
 
         return x, y
 
+    @dec.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.163, 1/1000),       # test spiral simulation
@@ -5224,6 +5225,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
+    @dec.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.184, 1/1000),           # test linear simulation
         ("nonlinear", 0.0190, 0.117),        # test spiral simulation
@@ -5239,6 +5241,7 @@ class TestMGCStat(object):
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
+    @dec.slow
     def test_twosamp(self):
         np.random.seed(12345678)
 
@@ -5256,5 +5259,15 @@ class TestMGCStat(object):
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True)
+        assert_approx_equal(stat, 1.0, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
+    @dec.skipif('fork')
+    def test_workers(self):
+        x = np.random.binomial(100, 0.5, size=(100, 5))
+        y = np.random.normal(0, 1, size=(100, 5))
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, workers=2)
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
