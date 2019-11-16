@@ -284,6 +284,9 @@ class norm_gen(rv_continuous):
 
         data = np.asarray(data)
 
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
+
         if floc is None:
             loc = data.mean()
         else:
@@ -584,10 +587,14 @@ class beta_gen(rv_continuous):
         # "Two unknown parameters" in the section "Maximum likelihood" of
         # the Wikipedia article on the Beta distribution for the formulas.)
 
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
+
         # Normalize the data to the interval [0, 1].
         data = (np.ravel(data) - floc) / fscale
         if np.any(data <= 0) or np.any(data >= 1):
             raise FitDataError("beta", lower=floc, upper=floc + fscale)
+
         xbar = data.mean()
 
         if f0 is not None or f1 is not None:
@@ -1440,7 +1447,12 @@ class expon_gen(rv_continuous):
                              "optimize.")
 
         data = np.asarray(data)
+
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
+
         data_min = data.min()
+
         if floc is None:
             # ML estimate of the location is the minimum of the data.
             loc = data_min
@@ -2752,8 +2764,13 @@ class gamma_gen(rv_continuous):
 
         # Fixed location is handled by shifting the data.
         data = np.asarray(data)
+
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
+
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
+
         if floc != 0:
             # Don't do the subtraction in-place, because `data` might be a
             # view of the input array.
@@ -4892,6 +4909,10 @@ class lognorm_gen(rv_continuous):
                              "optimize.")
 
         data = np.asarray(data)
+
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
+
         floc = float(floc)
         if floc != 0:
             # Shifting the data by floc. Don't do the subtraction in-place,
@@ -7373,6 +7394,9 @@ class uniform_gen(rv_continuous):
                              "optimize.")
 
         data = np.asarray(data)
+
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
 
         # MLE for the uniform distribution
         # --------------------------------

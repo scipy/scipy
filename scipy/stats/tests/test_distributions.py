@@ -1491,6 +1491,42 @@ class TestExpon(object):
         assert_equal(stats.expon.cdf(1e-18), 1e-18)
         assert_equal(stats.expon.isf(stats.expon.sf(40)), 40)
 
+    def test_nan_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
+        assert_raises(RuntimeError, stats.expon.fit, x)
+
+    def test_inf_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
+        assert_raises(RuntimeError, stats.expon.fit, x)
+
+
+class TestNorm(object):
+    """gh-10300"""
+    def test_nan_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
+        assert_raises(RuntimeError, stats.norm.fit, x)
+
+    def test_inf_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
+        assert_raises(RuntimeError, stats.norm.fit, x)
+
+
+class TestUniform(object):
+    """gh-10300"""
+    def test_nan_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
+        assert_raises(RuntimeError, stats.uniform.fit, x)
+
+    def test_inf_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
+        assert_raises(RuntimeError, stats.uniform.fit, x)
+
 
 class TestExponNorm(object):
     def test_moments(self):
@@ -1519,6 +1555,16 @@ class TestExponNorm(object):
         K = 1.0 / (lam * sig)
         sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
         assert_almost_equal(sts, get_moms(lam, sig, mu))
+
+    def test_nan_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
+        assert_raises(RuntimeError, stats.exponnorm.fit, x, floc=0, fscale=1)
+
+    def test_inf_raises_error(self):
+        # see gh-issue 10300
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
+        assert_raises(RuntimeError, stats.exponnorm.fit, x, floc=0, fscale=1)
 
     def test_extremes_x(self):
         # Test for extreme values against overflows
@@ -2019,6 +2065,20 @@ class TestFitMethod(object):
 
     def setup_method(self):
         np.random.seed(1234)
+
+    # skip these b/c deprecated, or only loc and scale arguments
+    fitSkipNonFinite = ['frechet_l', 'frechet_r', 'expon', 'norm', 'uniform', ]
+
+    @pytest.mark.parametrize('dist,args', distcont)
+    def test_fit_w_non_finite_data_values(self, dist, args):
+        """gh-10300"""
+        if dist in self.fitSkipNonFinite:
+            pytest.skip("%s fit known to fail or deprecated" % dist)
+        x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
+        y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
+        distfunc = getattr(stats, dist)
+        assert_raises(RuntimeError, distfunc.fit, x, floc=0, fscale=1)
+        assert_raises(RuntimeError, distfunc.fit, y, floc=0, fscale=1)
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
