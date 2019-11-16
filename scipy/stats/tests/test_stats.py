@@ -5267,10 +5267,12 @@ class TestMGCStat(object):
                         reason=('multiprocessing with spawn method is not'
                                 ' compatible with pytest.'))
     def test_workers(self):
-        x = np.random.binomial(100, 0.5, size=(100, 5))
-        y = np.random.normal(0, 1, size=(100, 5))
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, workers=2)
-        assert_approx_equal(stat, 1.0, significant=1)
+        assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
