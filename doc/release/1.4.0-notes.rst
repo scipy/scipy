@@ -77,6 +77,10 @@ function supports specifying dimensions along which to do the convolution.
 
 `scipy.stats` improvements
 --------------------------
+`scipy.stats.multiscale_graphcorr` added as an independence test that
+operates on high dimensional and nonlinear data sets. It has higher statistical
+power than other `scipy.stats` tests while being the only one that operates on
+multivariate data.
 
 Deprecated features
 ===================

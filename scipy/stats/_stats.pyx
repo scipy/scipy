@@ -7,6 +7,7 @@ cimport numpy as np
 from numpy.math cimport PI
 from numpy cimport ndarray, int64_t, float64_t, intp_t
 
+import warnings
 import numpy as np
 import scipy.stats, scipy.special
 
@@ -300,3 +301,177 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
     tau = ((tot - (v + u - t)) - 2. * exchanges_weight[0]
            ) / np.sqrt(tot - u) / np.sqrt(tot - v)
     return min(1., max(-1., tau))
+
+
+# FROM MGCPY: https://github.com/neurodata/mgcpy
+
+# Distance transforms used for MGC and Dcorr
+
+# Columnwise ranking of data
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef _dense_rank_data(ndarray x):
+    _, v = np.unique(x, return_inverse=True)
+    return v + 1
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _rank_distance_matrix(distx):
+    # faster than np.apply_along_axis
+    return np.hstack([_dense_rank_data(distx[:, i]).reshape(-1, 1) for i in range(distx.shape[0])])
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _center_distance_matrix(distx, global_corr='mgc', is_ranked=True):
+    cdef int n = distx.shape[0]
+    cdef int m = distx.shape[1]
+    cdef ndarray rank_distx = np.zeros(n * m)
+
+    if is_ranked:
+        rank_distx = _rank_distance_matrix(distx)
+
+    if global_corr == "rank":
+        distx = rank_distx.astype(np.float, copy=False)
+
+    # 'mgc' distance transform (col-wise mean) - default
+    cdef ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T
+
+    # center the distance matrix
+    cdef ndarray cent_distx = distx - exp_distx
+
+    if global_corr != "mantel" and global_corr != "biased":
+        np.fill_diagonal(cent_distx, 0)
+
+    return cent_distx, rank_distx
+
+
+
+# Centers each distance matrix and rank matrix
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _transform_distance_matrix(distx, disty, global_corr='mgc', is_ranked=True):
+    if global_corr == "rank":
+        is_ranked = True
+
+    cent_distx, rank_distx = _center_distance_matrix(distx, global_corr, is_ranked)
+    cent_disty, rank_disty = _center_distance_matrix(disty, global_corr, is_ranked)
+
+    transform_dist = {"cent_distx": cent_distx, "cent_disty": cent_disty,
+                      "rank_distx": rank_distx, "rank_disty": rank_disty}
+
+    return transform_dist
+
+
+# MGC specific functions
+
+cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
+                     int64_t[:, :] rank_distx, int64_t[:, :] rank_disty,
+                     float64_t[:, :] cov_xy, float64_t[:] expectx,
+                     float64_t[:] expecty):
+    # summing up the the element-wise product of A and B based on the ranks,
+    # yields the local family of covariances
+    cdef int n = distx.shape[0]
+    cdef float64_t a, b
+    cdef intp_t i, j, k, l
+    for i in range(n):
+        for j in range(n):
+            a = distx[i, j]
+            b = disty[i, j]
+            k = rank_distx[i, j]
+            l = rank_disty[i, j]
+
+            cov_xy[k, l] += a * b
+
+            expectx[k] += a
+            expecty[l] += b
+
+    return np.asarray(expectx), np.asarray(expecty)
+
+
+cdef _covar_map(float64_t[:, :] cov_xy, nx, ny):
+    # get covariances for each k and l
+    for k in range(nx - 1):
+        for l in range(ny - 1):
+            cov_xy[k+1, l+1] += (cov_xy[k+1, l] + cov_xy[k, l+1] - cov_xy[k, l])
+
+    return np.asarray(cov_xy)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _local_covariance(distx, disty, rank_distx, rank_disty):
+    # convert float32 numpy array to int, as it will be used as array indices
+    # [0 to n-1]
+    rank_distx = np.asarray(rank_distx, np.int64) - 1
+    rank_disty = np.asarray(rank_disty, np.int64) - 1
+
+    cdef int n = distx.shape[0]
+    cdef int nx = np.max(rank_distx) + 1
+    cdef int ny = np.max(rank_disty) + 1
+    cdef ndarray cov_xy = np.zeros((nx, ny))
+    cdef ndarray expectx = np.zeros(nx)
+    cdef ndarray expecty = np.zeros(ny)
+
+    # summing up the the element-wise product of A and B based on the ranks,
+    # yields the local family of covariances
+    expectx, expecty = _expected_covar(distx, disty, rank_distx, rank_disty,
+                                       cov_xy, expectx, expecty)
+
+    cov_xy[:, 0] = np.cumsum(cov_xy[:, 0])
+    expectx = np.cumsum(expectx)
+
+    cov_xy[0, :] = np.cumsum(cov_xy[0, :])
+    expecty = np.cumsum(expecty)
+
+    cov_xy = _covar_map(cov_xy, nx, ny)
+    # centering the covariances
+    cov_xy = cov_xy - ((expectx.reshape(-1, 1) @ expecty.reshape(-1, 1).T) / n**2)
+
+    return cov_xy
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _local_correlations(distx, disty, global_corr='mgc'):
+    transformed = _transform_distance_matrix(distx, disty, global_corr)
+
+    # compute all local covariances
+    cdef ndarray cov_mat = _local_covariance(
+        transformed["cent_distx"],
+        transformed["cent_disty"].T,
+        transformed["rank_distx"],
+        transformed["rank_disty"].T)
+
+    # compute local variances for data A
+    cdef ndarray local_varx = _local_covariance(
+        transformed["cent_distx"],
+        transformed["cent_distx"].T,
+        transformed["rank_distx"],
+        transformed["rank_distx"].T)
+    local_varx = local_varx.diagonal()
+
+    # compute local variances for data B
+    cdef ndarray local_vary = _local_covariance(
+        transformed["cent_disty"],
+        transformed["cent_disty"].T,
+        transformed["rank_disty"],
+        transformed["rank_disty"].T)
+    local_vary = local_vary.diagonal()
+
+    # normalizing the covariances yields the local family of correlations
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        corr_mat = cov_mat / np.sqrt(local_varx.reshape(-1, 1) @ local_vary.reshape(-1, 1).T).real
+        # avoid computational issues that may cause a few local correlations
+        # to be negligibly larger than 1
+        corr_mat[corr_mat > 1] = 1
+
+    # set any local correlation to 0 if any corresponding local variance is
+    # less than or equal to 0
+    corr_mat[local_varx <= 0, :] = 0
+    corr_mat[:, local_vary <= 0] = 0
+
+    return corr_mat
