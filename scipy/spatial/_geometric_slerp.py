@@ -191,22 +191,13 @@ def geometric_slerp(start,
                          " using the specified tolerance or they"
                          " are not on a unit n-sphere")
 
-    # a diameter > 2 within tol violates requirement for input to be on
-    # unit n-sphere
-    if coord_dist > (2.0 + tol):
-        raise ValueError("start and end are not"
-                         " on a unit n-sphere")
-
-    # similarly for points that violate equation for n-sphere
-    # NOTE: this is tricky to think about for the 0-sphere;
-    # performing the check for 1-sphere (circle) and up
-    if start.size > 1:
-        for coord in [start, end]:
-            if not np.allclose(np.linalg.norm(coord), 1.0,
-                               rtol=np.finfo(np.float32).eps,
-                               atol=0):
-                raise ValueError("start and end are not"
-                                 " on a unit n-sphere")
+    # for points that violate equation for n-sphere
+    for coord in [start, end]:
+        if not np.allclose(np.linalg.norm(coord), 1.0,
+                           rtol=np.finfo(np.float32).eps,
+                           atol=0):
+            raise ValueError("start and end are not"
+                             " on a unit n-sphere")
 
     t = np.asarray(t, dtype=np.float64)
 
