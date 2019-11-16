@@ -1198,11 +1198,10 @@ def convolution_matrix(a, n, mode='full'):
 
     Constructs the dense matrix representing convolution[1].
 
-    ``A = convolution_matrix(a, n[, mode])``
-    creates a matrix `A` such that
-    ``A @ v`` (or ``matmul(A, v)``) is equivalent to ``convolve(a, v[, mode])``.
-    In the default 'full' mode, an element
-    ``A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)``.
+    ``A = convolution_matrix(a, n[, mode])`` creates a matrix ``A`` such that
+    ``A @ v`` (or ``matmul(A, v)``) is equivalent to using
+    ``convolve(a, v[, mode])``. In the default 'full' mode, the entries of
+    ``A`` is given by ``A[i,j] == (a[i-j] if (0 <= (i-j) < m) else 0)``.
 
     Parameters
     ----------
@@ -1218,7 +1217,7 @@ def convolution_matrix(a, n, mode='full'):
 
     Returns
     -------
-    A : (k,n) ndarray
+    A : (k, n) ndarray
         The convolution matrix whose row count `k` depends on `mode`
 
         =======  =========================
@@ -1244,7 +1243,7 @@ def convolution_matrix(a, n, mode='full'):
     Examples
     --------
     >>> from scipy.linalg import convolution_matrix
-    >>> convolution_matrix( (-1,2,-1), 5, mode='same')
+    >>> convolution_matrix((-1, 2, -1), 5, mode='same')
     array([[ 2, -1,  0,  0,  0],
            [-1,  2, -1,  0,  0],
            [ 0, -1,  2, -1,  0],

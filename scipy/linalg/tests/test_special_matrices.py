@@ -9,7 +9,8 @@ from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
-                          fiedler, fiedler_companion, eigvals, convolution_matrix)
+                          fiedler, fiedler_companion, eigvals,
+                          convolution_matrix)
 from numpy.linalg import cond
 import itertools
 
