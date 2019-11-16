@@ -72,9 +72,10 @@ import numpy as _num
 linalg = None
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.{0} instead')
+# deprecate callable objects, skipping classes
 for _key in _num.__all__:
     _fun = getattr(_num, _key)
-    if callable(_fun):
+    if callable(_fun) and not isinstance(_fun, type):
         _fun = _deprecated(_msg.format(_key))(_fun)
     globals()[_key] = _fun
 from numpy.random import rand, randn

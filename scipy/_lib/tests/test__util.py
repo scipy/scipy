@@ -123,7 +123,7 @@ def test_mapwrapper_parallel():
 # get our custom ones and a few from the "import *" cases
 @pytest.mark.parametrize(
     'key', ('fft', 'ifft', 'diag', 'arccos',
-            'randn', 'rand', 'array', 'finfo'))
+            'randn', 'rand', 'array'))
 def test_numpy_deprecation(key):
     """Test that 'from numpy import *' functions are deprecated."""
     if key in ('fft', 'ifft', 'diag', 'arccos'):
@@ -152,3 +152,21 @@ def test_numpy_deprecation(key):
     func_np = getattr(root, key)
     func_np(arg)  # not deprecated
     assert func_np is not func
+    # classes should remain classes
+    if isinstance(func_np, type):
+        assert isinstance(func, type)
+
+
+def test_numpy_deprecation_functionality():
+    # Check that the deprecation wrappers don't break basic Numpy
+    # functionality
+    with deprecated_call():
+        x = scipy.array([1, 2, 3], dtype=scipy.float64)
+        assert x.dtype == scipy.float64
+        assert x.dtype == np.float64
+
+        x = scipy.finfo(scipy.float32)
+        assert x.eps == np.finfo(np.float32).eps
+
+        assert scipy.float64 == np.float64
+        assert issubclass(np.float64, scipy.float64)
