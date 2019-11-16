@@ -12,6 +12,7 @@ import os
 import sys
 import warnings
 from collections import namedtuple
+import multiprocessing
 
 from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
