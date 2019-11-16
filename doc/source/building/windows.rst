@@ -1,5 +1,5 @@
 ===============================
-Building From Source on Windows
+Building from source on Windows
 ===============================
 
 .. contents::
@@ -56,21 +56,21 @@ then explain what to do next while the OpenBLAS build is running.
 one of the** `pre-built zip files`_ **and skip to the Installing OpenBLAS
 section below.**. However it is also likely that your version of Windows and
 the compiler you wish to use won't be compatible with what these prebuilt
-binaries produced with. This is still one of the main pain points of building
+binaries produced. This is still one of the main pain points of building
 for Windows. That's why we will attempt to build our own OpenBLAS.
 
-We start by installing the MSYS2 platform which the OpenBLAS build will take
-place. First download the MSYS2 installer from `msysintaller`_ via choosing
+We start by installing the MSYS2 platform, on which the OpenBLAS build will take
+place. First, download the MSYS2 installer from `msysintaller`_ via choosing
 32 or 64 bit. Make sure to install the correct architecture for the SciPy
-that you want to build (eg. 32 or 64 bit). If you are not sure which to use,
-proceed with 64bit. Please follow the installation instructions carefully
+that you want to build (e.g., 32 or 64 bit). If you are not sure which one to use,
+proceed with 64bit. Please follow the installation instructions carefully,
 especially step 6 of running the same command a few times until you get update
 all components.
 
-Just to emphasize what is already mentioned in the instructions; occasionally
-during the updates the terminal might ask you to close the terminal but then
-might refuse to be closed and hang. If this happens you can kill it via Task
-Manager and continue with the instructions. 
+Just to emphasize what is already mentioned in the instructions: occasionally,
+during the updates, the terminal might ask you to close the terminal but then
+might refuse to be closed and hang. If this happens, you can kill it via Task
+Manager and continue with the instructions.
 
 Now, next step is to install some more package bundles that we will need. Open
 a MSYS2 MinGW (64 or 32 bit) terminal and type the following depending on the
@@ -136,12 +136,12 @@ newest OpenBLAS release version is 0.3.7 hence we will use that.
 
    git checkout tags/v0.3.7 -b v0.3.7
 
-You can see all available options via 
+You can see all available options via
 
 .. code:: shell
 
    git tag
-   
+
 Now change the directory one level up via :code:`cd ..` to get out of the
 directory and create a file named `build_openblas.sh`. The easiest way is to
 type
@@ -334,7 +334,7 @@ correct location. If your Python is installed somewhere like the following:
 
    C:\Users\<user name>\AppData\Local\Programs\Python\Python38\python.exe
 
-Then you'll need to put the :code:`openblas.a` file that we previously copied
+then you'll need to put the :code:`openblas.a` file that we previously copied
 and renamed somewhere like the following:
 
 .. code:: shell
