@@ -203,6 +203,16 @@ scikit-umfpack  Recent    https://pypi.org/project/scikit-umfpack/
 =============== ======== ==========================================
 
 
+Moreover, Scipy supports interaction with other libraries. The test suite
+has additional compatibility tests that are run when these are installed:
+
+=========================  ========  ====================================
+ Tool                      Version    URL
+=========================  ========  ====================================
+pydata/sparse              Recent     https://github.com/pydata/sparse/
+=========================  ========  ====================================
+
+
 Testing and Benchmarking
 --------------------------
 
