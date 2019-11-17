@@ -139,8 +139,8 @@ class Netlib(Benchmark):
 
     def setup(self, meth, prob):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        data = np.load(dir_path + "/linprog_benchmark_files/" + prob + ".npz",
-                       allow_pickle=True)
+        datafile = os.join(dir_path, "linprog_benchmark_files", prob + ".npz")
+        data = np.load(datafile, allow_pickle=True)
         self.c = data["c"]
         self.A_eq = data["A_eq"]
         self.A_ub = data["A_ub"]
@@ -209,11 +209,11 @@ class Netlib_RR(Benchmark):
         self.rr_A, b, status, message = meth(self.A_eq, self.b_eq)
 
     def track_netlib_rr(self, meth, prob):
-#        if (meth.__name__, prob) in self.known_fails:
-#            return
-
         if not self.rr_A:
             self.time_netlib_rr(meth, prob)
+
+#        if (meth.__name__, prob) in self.known_fails:
+#            return
 
         if meth == _remove_redundancy_sparse:
             self.rr_A = self.rr_A.todense()
