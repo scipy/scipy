@@ -67,6 +67,7 @@ class MagicSquare(Benchmark):
     def setup(self, meth, prob):
         dims, obj = prob
         self.A_eq, self.b_eq, self.c, numbers = magic_square(dims)
+        self.fun = None
 
     def time_magic_square(self, meth, prob):
         method, options = meth
@@ -76,9 +77,12 @@ class MagicSquare(Benchmark):
                           bounds=(0, 1), method=method, options=options)
             self.fun = res.fun
 
-    def teardown(self, meth, prob):
+    def track_magic_square(self, meth, prob):
         dims, obj = prob
-        np.testing.assert_allclose(obj, self.fun, rtol=1e-6, atol=1e-3)
+        if not self.fun:
+            self.time_magic_square(meth, prob)
+        self.error = np.abs(self.fun - obj)
+        return self.error
 
 
 class KleeMinty(Benchmark):
@@ -91,6 +95,7 @@ class KleeMinty(Benchmark):
 
     def setup(self, meth, dims):
         self.c, self.A_ub, self.b_ub, self.xf, self.obj = klee_minty(dims)
+        self.fun = None
 
     def time_klee_minty(self, meth, dims):
         method, options = meth
@@ -99,9 +104,11 @@ class KleeMinty(Benchmark):
         self.fun = res.fun
         self.x = res.x
 
-    def teardown(self, meth, prob):
-        np.testing.assert_allclose(self.obj, self.fun, rtol=1e-6, atol=1e-3)
-        np.testing.assert_allclose(self.xf, self.x, rtol=1e-6, atol=1e-3)
+    def track_klee_minty(self, meth, prob):
+        if not self.fun:
+            self.time_klee_minty(meth, prob)
+        self.error = np.abs(self.fun - self.obj)
+        return self.error
 
 
 class LpGen(Benchmark):
@@ -141,6 +148,7 @@ class Netlib(Benchmark):
         self.b_eq = data["b_eq"]
         self.bounds = np.squeeze(data["bounds"])
         self.obj = float(data["obj"].flatten()[0])
+        self.fun = None
 
     def time_netlib(self, meth, prob):
         method, options = meth
@@ -154,8 +162,11 @@ class Netlib(Benchmark):
                       options=options)
         self.fun = res.fun
 
-    def teardown(self, meth, prob):
-        np.testing.assert_allclose(self.obj, self.fun, rtol=1e-4, atol=1e-4)
+    def track_netlib(self, meth, prob):
+        if not self.fun:
+            self.time_netlib(meth, prob)
+        self.error = np.abs(self.fun - self.obj)
+        return self.error
 
 
 class Netlib_RR(Benchmark):
@@ -192,24 +203,31 @@ class Netlib_RR(Benchmark):
         self.true_rank = np.linalg.matrix_rank(self.A_eq)
         if meth == _remove_redundancy_sparse:
             self.A_eq = csc_matrix(self.A_eq)
+        self.rr_A = None
 
-    def time_netlib(self, meth, prob):
+    def time_netlib_rr(self, meth, prob):
         self.rr_A, b, status, message = meth(self.A_eq, self.b_eq)
 
-    def teardown(self, meth, prob):
-        if (meth.__name__, prob) in self.known_fails:
-            return
+    def track_netlib_rr(self, meth, prob):
+#        if (meth.__name__, prob) in self.known_fails:
+#            return
+
+        if not self.rr_A:
+            self.time_netlib_rr(meth, prob)
 
         if meth == _remove_redundancy_sparse:
             self.rr_A = self.rr_A.todense()
 
-        rr_rank = np.linalg.matrix_rank(self.rr_A)
+#        rr_rank = np.linalg.matrix_rank(self.rr_A)
         rr_rows = self.rr_A.shape[0]
 
-        np.testing.assert_equal(rr_rank, self.true_rank)
-        if prob == 'WOOD1P':
-            # both dense methods return matrix with 243 rows,
-            # but matrix_rank thinks rank=242
-            np.testing.assert_equal(rr_rows, 243)
-        else:
-            np.testing.assert_equal(rr_rows, self.true_rank)
+        self.error = rr_rows - self.true_rank
+        return self.error
+
+#        np.testing.assert_equal(rr_rank, self.true_rank)
+#        if prob == 'WOOD1P':
+#            # both dense methods return matrix with 243 rows,
+#            # but matrix_rank thinks rank=242
+#            np.testing.assert_equal(rr_rows, 243)
+#        else:
+#            np.testing.assert_equal(rr_rows, self.true_rank)
