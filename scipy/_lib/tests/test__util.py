@@ -31,7 +31,7 @@ def test__aligned_zeros():
             assert_(x.flags.c_contiguous, err_msg)
         elif order == "F":
             if x.size > 0:
-                # Size-0 arrays get invalid flags on Numpy 1.5
+                # Size-0 arrays get invalid flags on NumPy 1.5
                 assert_(x.flags.f_contiguous, err_msg)
         elif order is None:
             assert_(x.flags.c_contiguous, err_msg)
@@ -61,7 +61,7 @@ def test_check_random_state():
     assert_equal(type(rsi), np.random.RandomState)
     assert_raises(ValueError, check_random_state, 'a')
     if hasattr(np.random, 'Generator'):
-        # np.random.Generator is only available in numpy >= 1.17
+        # np.random.Generator is only available in NumPy >= 1.17
         rg = np.random.Generator(np.random.PCG64())
         rsi = check_random_state(rg)
         assert_equal(type(rsi), np.random.Generator)
@@ -158,7 +158,7 @@ def test_numpy_deprecation(key):
 
 
 def test_numpy_deprecation_functionality():
-    # Check that the deprecation wrappers don't break basic Numpy
+    # Check that the deprecation wrappers don't break basic NumPy
     # functionality
     with deprecated_call():
         x = scipy.array([1, 2, 3], dtype=scipy.float64)

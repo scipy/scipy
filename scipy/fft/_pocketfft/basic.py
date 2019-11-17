@@ -77,7 +77,7 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     if np.isrealobj(tmp):
         tmp = tmp + 0.j
 
-    # Last axis utilises hermitian symmetry
+    # Last axis utilizes hermitian symmetry
     if n is None:
         n = (tmp.shape[axis] - 1) * 2
         if n < 1:
@@ -86,7 +86,7 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     else:
         tmp, _ = _fix_shape_1d(tmp, (n//2) + 1, axis)
 
-    # Note: overwrite_x is not utilised
+    # Note: overwrite_x is not utilized
     return pfft.c2r(tmp, (axis,), n, forward, norm, None, workers)
 
 
@@ -168,7 +168,7 @@ ifftn.__name__ = 'ifftn'
 
 def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None):
-    """Return multi-dimensional discrete Fourier transform of real input"""
+    """Return multidimensional discrete Fourier transform of real input"""
     tmp = _asfarray(x)
 
     if not np.isrealobj(tmp):
@@ -182,7 +182,7 @@ def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     if len(axes) == 0:
         raise ValueError("at least 1 axis must be transformed")
 
-    # Note: overwrite_x is not utilised
+    # Note: overwrite_x is not utilized
     return pfft.r2c(tmp, axes, forward, norm, None, workers)
 
 
@@ -194,7 +194,7 @@ ihfftn.__name__ = 'ihfftn'
 
 def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None):
-    """Multi-dimensional inverse discrete fourier transform with real output"""
+    """Multidimensional inverse discrete fourier transform with real output"""
     tmp = _asfarray(x)
 
     # TODO: Optimize for hermitian and real?
@@ -213,13 +213,13 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     norm = _normalization(norm, forward)
     workers = _workers(workers)
 
-    # Last axis utilises hermitian symmetry
+    # Last axis utilizes hermitian symmetry
     lastsize = shape[-1]
     shape[-1] = (shape[-1] // 2) + 1
 
     tmp, _ = _fix_shape(tmp, shape, axes)
 
-    # Note: overwrite_x is not utilised
+    # Note: overwrite_x is not utilized
     return pfft.c2r(tmp, axes, lastsize, forward, norm, None, workers)
 
 

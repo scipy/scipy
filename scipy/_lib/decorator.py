@@ -49,7 +49,7 @@ if sys.version >= '3':
         return cls.__init__
 else:
     class getfullargspec(object):
-        "A quick and dirty replacement for getfullargspec for Python 2.X"
+        "A quick and dirty replacement for getfullargspec for Python 2.x"
         def __init__(self, f):
             self.args, self.varargs, self.varkw, self.defaults = \
                 inspect.getargspec(f)
@@ -85,7 +85,7 @@ DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 class FunctionMaker(object):
     """
     An object with the ability to create functions with a given signature.
-    It has attributes name, doc, module, signature, defaults, dict and
+    It has attributes name, doc, module, signature, defaults, dict, and
     methods update and make.
     """
 
@@ -147,7 +147,7 @@ class FunctionMaker(object):
         # check existence required attributes
         assert hasattr(self, 'name')
         if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non function: %s' % func)
+            raise TypeError('You are decorating a non-function: %s' % func)
 
     def update(self, func, **kw):
         "Update the signature of func with the data in self"
@@ -203,8 +203,8 @@ class FunctionMaker(object):
     def create(cls, obj, body, evaldict, defaults=None,
                doc=None, module=None, addsource=True, **attrs):
         """
-        Create a function from the strings name, signature and body.
-        evaldict is the evaluation dictionary. If addsource is true an
+        Create a function from the strings name, signature, and body.
+        evaldict is the evaluation dictionary. If addsource is true, an
         attribute __source__ is added to the result. The attributes attrs
         are added, if any.
         """

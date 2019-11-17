@@ -7,7 +7,7 @@ import functools
 
 def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
          overwrite_x=False, workers=None):
-    """Forward or backward 1d DCT/DST
+    """Forward or backward 1-D DCT/DST
 
     Parameters
     ----------
