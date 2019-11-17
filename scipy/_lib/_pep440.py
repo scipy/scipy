@@ -224,14 +224,14 @@ def _parse_version_parts(s):
 
 
 def _legacy_cmpkey(version):
-    # We hardcode an epoch of -1 here. A PEP 440 version can only have a epoch
+    # We hardcode an epoch of -1 here. A PEP 440 version can only have an epoch
     # greater than or equal to 0. This will effectively put the LegacyVersion,
     # which uses the defacto standard originally implemented by setuptools,
     # as before all PEP 440 versions.
     epoch = -1
 
     # This scheme is taken from pkg_resources.parse_version setuptools prior to
-    # it's adoption of the packaging library.
+    # its adoption of the packaging library.
     parts = []
     for part in _parse_version_parts(version.lower()):
         if part.startswith("*"):
@@ -393,12 +393,12 @@ class Version(_BaseVersion):
 
 def _parse_letter_version(letter, number):
     if letter:
-        # We consider there to be an implicit 0 in a pre-release if there is
-        # not a numeral associated with it.
+        # We assume there is an implicit 0 in a pre-release if there is
+        # no numeral associated with it.
         if number is None:
             number = 0
 
-        # We normalize any letters to their lower case form
+        # We normalize any letters to their lower-case form
         letter = letter.lower()
 
         # We consider some words to be alternate spellings of other words and
@@ -415,8 +415,8 @@ def _parse_letter_version(letter, number):
 
         return letter, int(number)
     if not letter and number:
-        # We assume if we are given a number, but we are not given a letter
-        # then this is using the implicit post release syntax (e.g. 1.0-1)
+        # We assume that if we are given a number but not given a letter,
+        # then this is using the implicit post release syntax (e.g., 1.0-1)
         letter = "post"
 
         return letter, int(number)
@@ -439,8 +439,8 @@ def _parse_local_version(local):
 def _cmpkey(epoch, release, pre, post, dev, local):
     # When we compare a release version, we want to compare it with all of the
     # trailing zeros removed. So we'll use a reverse the list, drop all the now
-    # leading zeros until we come to something non zero, then take the rest
-    # re-reverse it back into the correct order and make it a tuple and use
+    # leading zeros until we come to something non-zero, then take the rest,
+    # re-reverse it back into the correct order, and make it a tuple and use
     # that for our sorting key.
     release = tuple(
         reversed(list(
@@ -452,8 +452,8 @@ def _cmpkey(epoch, release, pre, post, dev, local):
     )
 
     # We need to "trick" the sorting algorithm to put 1.0.dev0 before 1.0a0.
-    # We'll do this by abusing the pre segment, but we _only_ want to do this
-    # if there is not a pre or a post segment. If we have one of those then
+    # We'll do this by abusing the pre-segment, but we _only_ want to do this
+    # if there is no pre- or a post-segment. If we have one of those, then
     # the normal sorting rules will handle this case correctly.
     if pre is None and post is None and dev is not None:
         pre = -Infinity
@@ -462,7 +462,7 @@ def _cmpkey(epoch, release, pre, post, dev, local):
     elif pre is None:
         pre = Infinity
 
-    # Versions without a post segment should sort before those with one.
+    # Versions without a post-segment should sort before those with one.
     if post is None:
         post = -Infinity
 
@@ -476,8 +476,8 @@ def _cmpkey(epoch, release, pre, post, dev, local):
     else:
         # Versions with a local segment need that segment parsed to implement
         # the sorting rules in PEP440.
-        # - Alpha numeric segments sort before numeric segments
-        # - Alpha numeric segments sort lexicographically
+        # - Alphanumeric segments sort before numeric segments
+        # - Alphanumeric segments sort lexicographically
         # - Numeric segments sort numerically
         # - Shorter versions sort before longer versions when the prefixes
         #   match exactly
