@@ -79,7 +79,7 @@ class MagicSquare(Benchmark):
 
     def track_magic_square(self, meth, prob):
         dims, obj = prob
-        if not self.fun:
+        if self.fun is None:
             self.time_magic_square(meth, prob)
         self.error = np.abs(self.fun - obj)
         return self.error
@@ -105,7 +105,7 @@ class KleeMinty(Benchmark):
         self.x = res.x
 
     def track_klee_minty(self, meth, prob):
-        if not self.fun:
+        if self.fun is None:
             self.time_klee_minty(meth, prob)
         self.error = np.abs(self.fun - self.obj)
         return self.error
@@ -139,7 +139,7 @@ class Netlib(Benchmark):
 
     def setup(self, meth, prob):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafile = os.join(dir_path, "linprog_benchmark_files", prob + ".npz")
+        datafile = os.path.join(dir_path, "linprog_benchmark_files", prob + ".npz")
         data = np.load(datafile, allow_pickle=True)
         self.c = data["c"]
         self.A_eq = data["A_eq"]
@@ -163,7 +163,7 @@ class Netlib(Benchmark):
         self.fun = res.fun
 
     def track_netlib(self, meth, prob):
-        if not self.fun:
+        if self.fun is None:
             self.time_netlib(meth, prob)
         self.error = np.abs(self.fun - self.obj)
         return self.error
@@ -209,11 +209,8 @@ class Netlib_RR(Benchmark):
         self.rr_A, b, status, message = meth(self.A_eq, self.b_eq)
 
     def track_netlib_rr(self, meth, prob):
-        if not self.rr_A:
+        if self.rr_A is None:
             self.time_netlib_rr(meth, prob)
-
-#        if (meth.__name__, prob) in self.known_fails:
-#            return
 
         if meth == _remove_redundancy_sparse:
             self.rr_A = self.rr_A.todense()
@@ -223,11 +220,3 @@ class Netlib_RR(Benchmark):
 
         self.error = rr_rows - self.true_rank
         return self.error
-
-#        np.testing.assert_equal(rr_rank, self.true_rank)
-#        if prob == 'WOOD1P':
-#            # both dense methods return matrix with 243 rows,
-#            # but matrix_rank thinks rank=242
-#            np.testing.assert_equal(rr_rows, 243)
-#        else:
-#            np.testing.assert_equal(rr_rows, self.true_rank)
