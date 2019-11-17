@@ -2,29 +2,29 @@ Toolchain Roadmap
 =================
 
 The use of the SciPy library requires (or optionally depends upon) several
-other libraries in order to operate, the main dependency being Python
-and NumPy.  It requires a larger collection of libraries and tools in order
-to build the library, or to build the documentation.
+other libraries in order to operate, the main dependencies being Python
+and NumPy. It requires a larger collection of libraries and tools in order
+to build the library or to build the documentation.
 
 Of course, the tooling and libraries are themselves not static.
 This document aims to provide a guide as to how SciPy's use of
 these dynamic dependencies will proceed over time.
 
 SciPy aims to be compatible with a number of releases of its dependent
-libraries and tools.  Forcing the user base to other components for upgrade
-for every release would greatly diminish the value of SciPy.  However,
+libraries and tools. Forcing the user base to other components for upgrade
+for every release would greatly diminish the value of SciPy. However,
 maintaining backwards compatibility with very old tooling/libraries
 imposes limitations on which newer functionalities and capabilities
 can be incorporated.
 SciPy takes a somewhat conservative approach, maintaining compatibility with
 several major releases of Python and NumPy on the major platforms.
-(That may in of itself impose further restrictions.  See the C Compilers
+(That may in and of itself impose further restrictions. See the C Compilers
 section for an example.)
 
 
-- First and foremost, SciPy is a Python project hence it requires a Python environment.
+- First and foremost, SciPy is a Python project, hence it requires a Python environment.
 - BLAS and LAPACK numerical libraries need to be installed.
-- Compilers for C, C++, Cython and Fortran code are needed.
+- Compilers for C, C++, Cython, and Fortran code are needed.
 - The Python environment needs the ``NumPy`` package to be installed.
 - Testing requires the ``pytest`` Python package.
 - Building the documentation requires the ``matplotlib``, Sphinx packages, as well as a LaTeX installation.
@@ -32,7 +32,7 @@ section for an example.)
 The tooling used to build CPython has some implications for the tooling used
 in building SciPy.
 It also has implications for the examples used in the
-documentation (e.g. docstrings for functions),
+documentation (e.g., docstrings for functions),
 as these examples can only use functionality present in all supported configurations.
 
 
@@ -62,11 +62,11 @@ NumPy
 
 SciPy depends on NumPy but releases of SciPy are not tied to releases of NumPy.
 SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
-In particular, SciPy can not rely on features of just the latest NumPy, but
+In particular, SciPy cannot rely on features of just the latest NumPy, but
 needs to be written using what is common in all of those 4 releases. [1]_, [3]_.
 
 The table shows the NumPy versions suitable for each major Python version
-(for SciPy 1.3.x unless otherwise stated.)
+(for SciPy 1.3.x unless otherwise stated).
 
 =================  ========================    ===========================
  Python             Minimum NumPy version       Maximum NumPy version
@@ -82,9 +82,9 @@ C Compilers
 ^^^^^^^^^^^
 
 SciPy is compatible with most modern C compilers (in particular ``clang``).
-However CPython on Windows is
+However, CPython on Windows is
 built with specific versions of the Microsoft Visual C++ compiler [7]_, [8]_, [9]_,
-as is the corresponding build of SciPy.  This has implications for the
+as is the corresponding build of SciPy. This has implications for the
 C language standards that can be supported [6]_.
 
 ===================   ==============   ===================
@@ -116,18 +116,18 @@ attempting to predict adoption timelines for newer standards.
 ================  ===========================================
 
 The use of MSVisual Studio 9.0 (which doesn't have support C99)
-to build Python2.7, has meant that C code in SciPy has had to conform
+to build Python2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
 With the dropping of Python2.7 for SciPy 1.3.x, the C90 restriction is no
 longer imposed by compilers.
 Even though C99 has been a standard for 20 years, experience has shown that
 not all features are supported equally well across all platforms.
-The expectation is that C99 code will be become acceptable in 2020.
+The expectation is that C99 code will become acceptable in 2020.
 
 C18 is a bug fix for C11, so C11 may be skipped entirely.
 
 
-In practice the C++ feature set that can be used is limited by the
+In practice, the C++ feature set that can be used is limited by the
 availability in the MS VisualStudio versions that SciPy needs to support.
 C++11 can be used, C++14/17 is going to be impossible
 for a very long time because of ecosystem support restrictions. See [4]_.
@@ -137,7 +137,7 @@ for a very long time because of ecosystem support restrictions. See [4]_.
     Developer Note: Some C99 features would be useful for scientific
     programming, in particular better support of IEEE 754 [5]_.
     SciPy has a small include file ``scipy/_lib/_c99compat.h`` which
-    provides access to a few functions.  Use in conjunction
+    provides access to a few functions. Use in conjunction
     with ``<numpy/npy_math.h>``.
 
     ========================================= ========================================================
@@ -182,7 +182,7 @@ Other Libraries
 ^^^^^^^^^^^^^^^
 
 Any library conforming to the BLAS/LAPACK interface may be used.
-OpenBLAS, ATLAS, MKL, BLIS and reference Netlib libraries are known to work.
+OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 
 =============== =====================================================
  Library           Minimum version
@@ -234,8 +234,8 @@ Building the Documentation
 ==========   =================================================
 Sphinx       Whatever recent versions work. >= 2.0.
 numpydoc     Whatever recent versions work. >= 0.8.0.
-matplotlib   Generally suggest >= 2.0
-LaTeX        A recent distribution, such as ``TeX Live 2016``
+matplotlib   Generally suggest >= 2.0.
+LaTeX        A recent distribution, such as ``TeX Live 2016``.
 ==========   =================================================
 
 [The ``numpydoc`` package is also used, but that is currently
@@ -244,7 +244,7 @@ packaged in ``doc/sphinxext``.]
 
 .. note::
 
-    Developer Note: The versions of ``numpy`` and ``matplotlib`` required has
+    Developer Note: The versions of ``numpy`` and ``matplotlib`` required have
     implications for the examples in Python docstrings.
     Examples must be able to be executed both in the environment used to
     build the documentation,
@@ -260,7 +260,7 @@ A Recent version of:
 =============  ========  =============================================
  Tool          Version    URL
 =============  ========  =============================================
-setuptools     Recent
+setuptools     Recent     https://https://pypi.org/project/setuptools/
 wheel          Recent     https://pythonwheels.com
 multibuild     Recent     https://github.com/matthew-brett/multibuild
 =============  ========  =============================================

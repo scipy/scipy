@@ -710,9 +710,9 @@ class Rotation(object):
     def from_euler(cls, seq, angles, degrees=False):
         """Initialize from Euler angles.
 
-        Rotations in 3 dimensions can be represented by a sequece of 3
+        Rotations in 3-D can be represented by a sequence of 3
         rotations around a sequence of axes. In theory, any three axes spanning
-        the 3D Euclidean space are enough. In practice the axes of rotation are
+        the 3-D Euclidean space are enough. In practice, the axes of rotation are
         chosen to be the basis vectors.
 
         The three rotations can either be in a global frame of reference

@@ -16,16 +16,16 @@ unless told otherwise. Some of the benchmarking features in
 ``runtests.py``. To run the benchmarks, you do not need to install a
 development version of SciPy to your current Python environment.
 
-Run a benchmark against currently checked out SciPy version (don't record the
+Run a benchmark against currently checked-out SciPy version (don't record the
 result)::
 
     python runtests.py --bench sparse.Arithmetic
 
-Compare change in benchmark results to another branch::
+Compare change in benchmark results with another branch::
 
     python runtests.py --bench-compare master sparse.Arithmetic
 
-Run benchmarks against the system-installed SciPy rather than rebuilding::
+Run benchmarks against the system-installed SciPy rather than rebuild::
 
     python runtests.py -n --bench sparse.Arithmetic
 
@@ -50,7 +50,7 @@ Command-line help is available as usual via ``asv --help`` and
 Writing benchmarks
 ------------------
 
-See `ASV documentation`_ for basics on how to write benchmarks.
+See `ASV documentation`_ for the basics on how to write benchmarks.
 
 Some things to consider:
 
@@ -71,7 +71,7 @@ Some things to consider:
   time measurements via ``time.clock``, even if it requires some juggling when
   writing the benchmark.
 
-- Preparing arrays etc. should generally be put in the ``setup`` method rather
+- Preparing arrays etc., should generally be put in the ``setup`` method rather
   than the ``time_`` methods, to avoid counting preparation time together with
   the time of the benchmarked operation.
 
