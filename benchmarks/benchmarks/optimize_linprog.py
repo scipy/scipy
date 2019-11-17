@@ -184,8 +184,9 @@ class Netlib(Benchmark):
     def track_netlib(self, meth, prob):
         if self.fun is None:
             self.time_netlib(meth, prob)
-        self.error = np.abs(self.fun - self.obj)
-        return self.error
+        self.abs_error = np.abs(self.fun - self.obj)
+        self.rel_error = np.abs((self.fun - self.obj)/self.obj)
+        return min(self.abs_error, self.rel_error)
 
 
 class Netlib_RR(Benchmark):
@@ -234,8 +235,13 @@ class Netlib_RR(Benchmark):
         if meth == _remove_redundancy_sparse:
             self.rr_A = self.rr_A.todense()
 
-#        rr_rank = np.linalg.matrix_rank(self.rr_A)
+        rr_rank = np.linalg.matrix_rank(self.rr_A)
         rr_rows = self.rr_A.shape[0]
 
-        self.error = rr_rows - self.true_rank
-        return self.error
+        self.error1 = rr_rank - self.true_rank
+        self.error2 = rr_rows - self.true_rank
+
+        if abs(self.error1) > abs(self.error2):
+            return float(self.error1)
+        else:
+            return float(self.error2)
