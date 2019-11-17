@@ -23,11 +23,11 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
+        The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
         If any element of `shape` is -1, the size of the corresponding
         dimension of `x` is used.
@@ -79,8 +79,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
         If any element of `shape` is -1, the size of the corresponding
         dimension of `x` is used.
@@ -133,8 +133,8 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
         If any element of `shape` is -1, the size of the corresponding
         dimension of `x` is used.
@@ -186,8 +186,8 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
         If any element of `shape` is -1, the size of the corresponding
         dimension of `x` is used.
@@ -262,7 +262,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
     MATLAB ``dct(x)``.
 
-    There are theoretically 8 types of the DCT, only the first 4 types are
+    There are, theoretically, 8 types of the DCT, only the first 4 types are
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
 
@@ -308,7 +308,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
        \sqrt{\frac{1}{4N}} & \text{if }k=0, \\
        \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
 
-    Which makes the corresponding matrix of coefficients orthonormal
+    which makes the corresponding matrix of coefficients orthonormal
     (``O @ O.T = np.eye(N)``).
 
     **Type III**
@@ -360,7 +360,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Examples
     --------
     The Type 1 DCT is equivalent to the FFT (though faster) for real,
-    even-symmetrical inputs.  The output is also real and even-symmetrical.
+    even-symmetrical inputs. The output is also real and even-symmetrical.
     Half of the FFT input is used to generate half of the FFT output:
 
     >>> from scipy.fftpack import fft, dct
@@ -418,7 +418,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Examples
     --------
     The Type 1 DCT is equivalent to the DFT for real, even-symmetrical
-    inputs.  The output is also real and even-symmetrical.  Half of the IFFT
+    inputs. The output is also real and even-symmetrical. Half of the IFFT
     input is used to generate half of the IFFT output:
 
     >>> from scipy.fftpack import ifft, idct
@@ -467,7 +467,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     -----
     For a single dimension array ``x``.
 
-    There are theoretically 8 types of the DST for different combinations of
+    There are, theoretically, 8 types of the DST for different combinations of
     even/odd boundary conditions and boundary off sets [1]_, only the first
     4 types are implemented in scipy.
 
@@ -556,7 +556,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
         Length of the transform.  If ``n < x.shape[axis]``, `x` is
-        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        truncated. If ``n > x.shape[axis]``, `x` is zero-padded. The
         default results in ``n = x.shape[axis]``.
     axis : int, optional
         Axis along which the idst is computed; the default is over the
