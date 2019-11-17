@@ -19,9 +19,19 @@ except ImportError:
 
 from .common import Benchmark
 
+try:
+    # the value of SCIPY_XSLOW is used to control whether slow benchmarks run
+    slow = int(os.environ.get('SCIPY_XSLOW', 0))
+except ValueError:
+    pass
+
+
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
            ("revised simplex", {})]
+rr_methods = [_remove_redundancy, _remove_redundancy_dense,
+              _remove_redundancy_sparse]
+
 problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'BANDM', 'BEACONFD', 'BLEND', 'BNL1', 'BNL2', 'BORE3D', 'BRANDY',
             'CAPRI', 'CYCLE', 'CZPROB', 'D6CUBE', 'DEGEN2', 'DEGEN3', 'E226',
@@ -35,11 +45,14 @@ problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'SHIP08S', 'SHIP12L', 'SHIP12S', 'SIERRA', 'STAIR', 'STANDATA',
             'STANDMPS', 'STOCFOR1', 'STOCFOR2', 'TRUSS', 'TUFF', 'VTP-BASE',
             'WOOD1P', 'WOODW']
-rr_methods = [_remove_redundancy, _remove_redundancy_dense,
-              _remove_redundancy_sparse]
 rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
                'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
                'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
+if not slow:
+    problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
+                'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
+    rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
+                   'DEGEN2', 'ETAMACRO', 'RECIPE']
 
 
 def klee_minty(D):
@@ -62,6 +75,11 @@ class MagicSquare(Benchmark):
         [(3, 1.7305505947214375), (4, 1.5485271031586025),
          (5, 1.807494583582637), (6, 1.747266446858304)]
     ]
+    if not slow:
+        params = [
+            methods,
+            [(3, 1.7305505947214375), (4, 1.5485271031586025)]
+        ]
     param_names = ['method', '(dimensions, objective)']
 
     def setup(self, meth, prob):
@@ -139,7 +157,8 @@ class Netlib(Benchmark):
 
     def setup(self, meth, prob):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafile = os.path.join(dir_path, "linprog_benchmark_files", prob + ".npz")
+        datafile = os.path.join(dir_path, "linprog_benchmark_files",
+                                prob + ".npz")
         data = np.load(datafile, allow_pickle=True)
         self.c = data["c"]
         self.A_eq = data["A_eq"]
