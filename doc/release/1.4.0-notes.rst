@@ -26,19 +26,19 @@ Highlights of this release
 --------------------------
 
 - a new submodule, `scipy.fft`, now supersedes `scipy.fftpack`; this
-means support for ``long double`` transforms, faster multi-dimensional
-transforms, improved algorithm time complexity, release of the global
-intepreter lock, and control over threading behavior
+  means support for ``long double`` transforms, faster multi-dimensional
+  transforms, improved algorithm time complexity, release of the global
+  intepreter lock, and control over threading behavior
 - support for ``pydata/sparse`` arrays in `scipy.sparse.linalg`
 - substantial improvement to the documentation and functionality of
-several `scipy.special` functions, and some new additions
+  several `scipy.special` functions, and some new additions
 - the generalized inverse Gaussian distribution has been added to
-`scipy.stats`
+  `scipy.stats`
 - an implementation of the Edmonds-Karp algorithm in
-`scipy.sparse.csgraph.maximum_flow`
+  `scipy.sparse.csgraph.maximum_flow`
 - `scipy.spatial.SphericalVoronoi` now supports n-dimensional input, 
-has linear memory complexity, improved performance, and
-supports single-hemisphere generators
+   has linear memory complexity, improved performance, and
+   supports single-hemisphere generators
 
 
 New features
@@ -250,7 +250,7 @@ with rotational symmetries.
 for tracking whether they are furthest site diagrams
 
 `scipy.special` improvements
---------------------------
+----------------------------
 The Voigt profile has been added as `scipy.special.voigt_profile`.
 
 A real dispatch has been added for the Wright Omega function
@@ -377,7 +377,7 @@ Other changes
 The ``LSODA`` method of `scipy.integrate.solve_ivp` now correctly detects stiff
 problems.
 
-`scipy.spatial.ckdtree` now accepts and correctly handles empty input data
+`scipy.spatial.cKDTree` now accepts and correctly handles empty input data
 
 `scipy.stats.binned_statistic_dd` now calculates the standard deviation 
 statistic in a numerically stable way.
@@ -664,7 +664,7 @@ Pull requests for 1.4.0
 * `#10115 <https://github.com/scipy/scipy/pull/10115>`__: TST: Add a test with an almost singular design matrix for lsq_linear
 * `#10118 <https://github.com/scipy/scipy/pull/10118>`__: MAINT: fix rdist methods in scipy.stats
 * `#10119 <https://github.com/scipy/scipy/pull/10119>`__: MAINT: improve rvs of randint in scipy.stats
-* `#10127 <https://github.com/scipy/scipy/pull/10127>`__: Fix typo in record array field name (spatial-ckdtree-sparse_distance_…
+* `#10127 <https://github.com/scipy/scipy/pull/10127>`__: Fix typo in record array field name (spatial-ckdtree-sparse_distance…
 * `#10130 <https://github.com/scipy/scipy/pull/10130>`__: MAINT: ndimage: Fix some compiler warnings.
 * `#10131 <https://github.com/scipy/scipy/pull/10131>`__: DOC: Note the solve_ivp args enhancement in the 1.4.0 release...
 * `#10133 <https://github.com/scipy/scipy/pull/10133>`__: MAINT: add rvs for semicircular in scipy.stats
@@ -800,7 +800,7 @@ Pull requests for 1.4.0
 * `#10552 <https://github.com/scipy/scipy/pull/10552>`__: add scipy.signal.upfirdn signal extension modes
 * `#10555 <https://github.com/scipy/scipy/pull/10555>`__: MAINT: special: move \`c_misc\` into Cephes
 * `#10556 <https://github.com/scipy/scipy/pull/10556>`__: [DOC] Add example for trima
-* `#10562 <https://github.com/scipy/scipy/pull/10562>`__: [DOC] Fix triple string fo trimmed_\* so that __doc__ can show...
+* `#10562 <https://github.com/scipy/scipy/pull/10562>`__: [DOC] Fix triple string fo trimmed so that __doc__ can show...
 * `#10563 <https://github.com/scipy/scipy/pull/10563>`__: improve least_squares error msg for mismatched shape
 * `#10564 <https://github.com/scipy/scipy/pull/10564>`__: ENH: linalg: memoize get_lapack/blas_funcs to speed it up
 * `#10566 <https://github.com/scipy/scipy/pull/10566>`__: ENH: add implementation of solver for the maximum flow problem
