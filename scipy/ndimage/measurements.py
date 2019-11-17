@@ -1209,7 +1209,6 @@ def maximum_position(input, labels=None, index=None):
     Examples
     --------
     >>> from scipy import ndimage
-    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1219,7 +1218,10 @@ def maximum_position(input, labels=None, index=None):
 
     Features to process can be specified using `labels` and `index`:
 
-    >>> lbl = np.matlib.repmat([0,1,2,3],4,1)
+    >>> lbl = np.array([[0, 1, 2, 3],
+    ...                 [0, 1, 2, 3],
+    ...                 [0, 1, 2, 3],
+    ...                 [0, 1, 2, 3]])
     >>> ndimage.maximum_position(a, lbl, 1)
     (3, 1)
     
