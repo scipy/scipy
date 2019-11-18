@@ -555,7 +555,7 @@ def test_bounded_powell_outsidebounds():
                                 options=dict(direc=direc))
     assert_allclose(res.x, np.array([-4., 0, 0]), atol=1e-6)
     assert_equal(res.success, False)
-    assert_equal(res.status, 3)
+    assert_equal(res.status, 4)
 
 def test_bounded_powell_vs_powell():
     # here we test an example where the bounded Powell method
