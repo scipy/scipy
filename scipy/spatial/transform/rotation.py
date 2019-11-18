@@ -1894,7 +1894,7 @@ class Rotation(object):
 
     @classmethod
     def align_vectors(cls, a, b, weights=None):
-        """Estimate a rotation to align two sets of vectors.
+        """Estimate a rotation to optimally align two sets of vectors.
 
         Find a rotation between frames A and B which best aligns a set of
         vectors `a` and `b` observed in these frames. The following loss
@@ -1938,12 +1938,14 @@ class Rotation(object):
         weights : array_like shape (N,), optional
             Weights describing the relative importance of the vector
             observations. If None (default), then all values in `weights` are
-            assumed to be equal.
+            assumed to be 1.
 
         Returns
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
+        minimum_loss : float
+            Achieved minimum value of the loss function.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             above.
@@ -1976,7 +1978,7 @@ class Rotation(object):
                              "vector.")
 
         if weights is None:
-            weights = np.ones(b.shape[0])
+            weights = np.ones(len(b))
         else:
             weights = np.asarray(weights)
             if weights.ndim != 1:
@@ -1987,7 +1989,6 @@ class Rotation(object):
                                  "equal to number of input vectors, got "
                                  "{} values and {} vectors.".format(
                                     weights.shape[0], b.shape[0]))
-        weights = weights / np.sum(weights)
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
@@ -2006,9 +2007,11 @@ class Rotation(object):
                              "rotation uniquely.")
 
         kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
-        sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
-                       (zeta * a.shape[0]))
-        return cls.from_matrix(C), sensitivity
+        sensitivity = np.mean(weights) / zeta * (
+                kappa * np.eye(3) + np.dot(B, B.T))
+        lambda0 = 0.5 * np.sum(weights * np.sum(b**2 + a**2, axis=1))
+
+        return cls.from_matrix(C), lambda0 - np.sum(s), sensitivity
 
 
 class Slerp(object):
