@@ -919,6 +919,20 @@ def test_align_vectors_improper_rotation():
     assert_allclose(loss, 0, atol=1e-14)
 
 
+def test_align_vectors_scaled_weights():
+    rng = np.random.RandomState(0)
+    c = Rotation.random(random_state=rng)
+    b = rng.normal(size=(5, 3))
+    a = c.apply(b)
+
+    est1, loss1, cov1 = Rotation.align_vectors(a, b, np.ones(5))
+    est2, loss2, cov2 = Rotation.align_vectors(a, b, 2 * np.ones(5))
+
+    assert_allclose(est1.as_matrix(), est2.as_matrix())
+    assert_allclose(2 * loss1, loss2)
+    assert_allclose(cov1, cov2)
+
+
 def test_align_vectors_noise():
     np.random.seed(0)
     n_vectors = 100
