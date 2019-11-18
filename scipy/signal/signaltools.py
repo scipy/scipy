@@ -181,7 +181,7 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
     >>> clock = np.arange(64, len(sig), 128)
     >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, sharex=True)
     >>> ax_orig.plot(sig)
-    >>> ax_orig.cmplx_sort(clock, sig[clock], 'ro')
+    >>> ax_orig.plot(clock, sig[clock], 'ro')
     >>> ax_orig.set_title('Original signal')
     >>> ax_noise.plot(sig_noise)
     >>> ax_noise.set_title('Signal with noise')
