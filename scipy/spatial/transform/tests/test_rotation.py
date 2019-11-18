@@ -887,36 +887,36 @@ def test_quat_ownership():
     assert_allclose(s._quat[0], np.array([1, 0, 0, 0]))
 
 
-def test_match_vectors_no_rotation():
+def test_align_vectors_no_rotation():
     x = np.array([[1, 2, 3], [4, 5, 6]])
     y = x.copy()
 
-    r, p = Rotation.match_vectors(x, y)
+    r, p = Rotation.align_vectors(x, y)
     assert_array_almost_equal(r.as_matrix(), np.eye(3))
 
 
-def test_match_vectors_no_noise():
+def test_align_vectors_no_noise():
     np.random.seed(0)
     c = Rotation.from_quat(np.random.normal(size=4))
     b = np.random.normal(size=(5, 3))
     a = c.apply(b)
 
-    est, cov = Rotation.match_vectors(a, b)
+    est, cov = Rotation.align_vectors(a, b)
     assert_allclose(c.as_quat(), est.as_quat())
 
 
-def test_match_vectors_improper_rotation():
+def test_align_vectors_improper_rotation():
     # Tests correct logic for issue #10444
     x = np.array([[0.89299824, -0.44372674, 0.0752378],
                   [0.60221789, -0.47564102, -0.6411702]])
     y = np.array([[0.02386536, -0.82176463, 0.5693271],
                   [-0.27654929, -0.95191427, -0.1318321]])
 
-    est, cov = Rotation.match_vectors(x, y)
+    est, cov = Rotation.align_vectors(x, y)
     assert_allclose(x, est.apply(y), atol=1e-6)
 
 
-def test_match_vectors_noise():
+def test_align_vectors_noise():
     np.random.seed(0)
     n_vectors = 100
     rot = Rotation.from_euler('xyz', np.random.normal(size=3))
@@ -937,7 +937,7 @@ def test_match_vectors_noise():
     # rotations to each vector.
     noisy_result = noise.apply(result)
 
-    est, cov = Rotation.match_vectors(noisy_result, vectors)
+    est, cov = Rotation.align_vectors(noisy_result, vectors)
 
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
