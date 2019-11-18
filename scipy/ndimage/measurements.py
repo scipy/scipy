@@ -1223,7 +1223,7 @@ def maximum_position(input, labels=None, index=None):
     ...                 [0, 1, 2, 3],
     ...                 [0, 1, 2, 3]])
     >>> ndimage.maximum_position(a, lbl, 1)
-    (3, 1)
+    (1, 1)
     
     If no index is given, non-zero `labels` are processed:
 
