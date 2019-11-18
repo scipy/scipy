@@ -2000,15 +2000,16 @@ class Rotation(object):
 
         C = np.dot(u, vh)
 
-        zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
-        if np.abs(zeta) <= 1e-16:
-            raise ValueError("Three component error vector has infinite "
-                             "covariance. It is impossible to determine the "
-                             "rotation uniquely.")
+        if s[1] + s[2] < 1e-16 * s[0]:
+            warnings.warn("Optimal rotation is poorly defined for the given "
+                          "arrangement of vectors.")
 
-        kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
-        sensitivity = np.mean(weights) / zeta * (
-                kappa * np.eye(3) + np.dot(B, B.T))
+        zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
+        kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+        with np.errstate(divide='ignore', invalid='ignore'):
+            sensitivity = np.mean(weights) / zeta * (
+                    kappa * np.eye(3) + np.dot(B, B.T))
+
         lambda0 = 0.5 * np.sum(weights * np.sum(b**2 + a**2, axis=1))
 
         return cls.from_matrix(C), lambda0 - np.sum(s), sensitivity
