@@ -57,7 +57,7 @@ else:
 
     def _maybe_view_as_subclass(original_array, new_array):
         if type(original_array) is not type(new_array):
-            # if input was an ndarray subclass and subclasses were OK,
+            # If input was an ndarray subclass and subclasses were OK,
             # then view the result as that subclass.
             new_array = new_array.view(type=type(original_array))
             # Since we have done something akin to a view from original_array, we
@@ -150,8 +150,8 @@ else:
 
         Notes
         -----
-        Taken over from numpy 1.12.0-dev (c8408bf9c).  Omitted examples,
-        see numpy documentation for those.
+        Taken over from NumPy 1.12.0-dev (c8408bf9c). Omitted examples,
+        see the NumPy documentation for those.
 
         """
         ar = np.asanyarray(ar).flatten()
@@ -204,7 +204,7 @@ else:
         r"""
         Evaluate a polynomial specified by its roots at points x.
 
-        This function is copypasted from numpy 1.12.0.dev.
+        This function is copypasted from NumPy 1.12.0.dev.
 
         If `r` is of length `N`, this function returns the value
 
@@ -215,9 +215,9 @@ else:
         or its elements must support multiplication and addition both with
         themselves and with the elements of `r`.
 
-        If `r` is a 1-D array, then `p(x)` will have the same shape as `x`.  If
+        If `r` is a 1-D array, then `p(x)` will have the same shape as `x`. If
         `r` is multidimensional, then the shape of the result depends on the
-        value of `tensor`. If `tensor is ``True`` the shape will be r.shape[1:]
+        value of `tensor`. If `tensor` is ``True``, the shape will be r.shape[1:]
         + x.shape; that is, each polynomial is evaluated at every value of `x`.
         If `tensor` is ``False``, the shape will be r.shape[1:]; that is, each
         polynomial is evaluated only for the corresponding broadcast value of
@@ -228,19 +228,19 @@ else:
         x : array_like, compatible object
             If `x` is a list or tuple, it is converted to an ndarray, otherwise
             it is left unchanged and treated as a scalar. In either case, `x`
-            or its elements must support addition and multiplication with with
+            or its elements must support addition and multiplication with
             themselves and with the elements of `r`.
         r : array_like
-            Array of roots. If `r` is multidimensional the first index is the
+            Array of roots. If `r` is multidimensional, the first index is the
             root index, while the remaining indices enumerate multiple
-            polynomials. For instance, in the two dimensional case the roots of
+            polynomials. For instance, in the 2-D case the roots of
             each polynomial may be thought of as stored in the columns of `r`.
         tensor : boolean, optional
             If True, the shape of the roots array is extended with ones on the
             right, one for each dimension of `x`. Scalars have dimension 0 for
             this action. The result is that every column of coefficients in `r`
             is evaluated for every element of `x`. If False, `x` is broadcast
-            over the columns of `r` for the evaluation.  This keyword is useful
+            over the columns of `r` for the evaluation. This keyword is useful
             when `r` is multidimensional. The default value is True.
 
         Returns
@@ -300,10 +300,10 @@ except ImportError:
         However, it also provides a filter mechanism to work around
         https://bugs.python.org/issue4180.
 
-        This bug causes Python before 3.4 to not reliably show warnings again
+        This bug causes Python before 3.4 to unreliably show warnings again
         after they have been ignored once (even within catch_warnings). It
         means that no "ignore" filter can be used easily, since following
-        tests might need to see the warning. Additionally it allows easier
+        tests might need to see the warning. Additionally, it allows easier
         specificity for testing warnings and can be nested.
 
         Parameters
@@ -313,13 +313,13 @@ except ImportError:
             the usual warnings module filter mode, it is useful to reduce
             noise mostly on the outmost level. Unsuppressed and unrecorded
             warnings will be forwarded based on this rule. Defaults to "always".
-            "location" is equivalent to the warnings "default", match by exact
-            location the warning warning originated from.
+            "location" is equivalent to the warnings "default", matched by exact
+            location the warning originated from.
 
         Notes
         -----
         Filters added inside the context manager will be discarded again
-        when leaving it. Upon entering all filters defined outside a
+        when leaving it. Upon entering, all filters defined outside a
         context will be applied automatically.
 
         When a recording filter is added, matching warnings are stored in the
@@ -329,17 +329,17 @@ except ImportError:
         warning registry of this module will additionally be cleared when
         applying it, entering the context, or exiting it. This could cause
         warnings to appear a second time after leaving the context if they
-        were configured to be printed once (default) and were already
+        were configured to be printed once (default) and had already been
         printed before the context was entered.
 
         Nesting this context manager will work as expected when the
         forwarding rule is "always" (default). Unfiltered and unrecorded
-        warnings will be passed out and be matched by the outer level.
-        On the outmost level they will be printed (or caught by another
+        warnings will be passed out and matched by the outer level.
+        On the outmost level, they will be printed (or caught by another
         warnings context). The forwarding rule argument can modify this
-        behaviour.
+        behavior.
 
-        Like ``catch_warnings`` this context manager is not threadsafe.
+        Like ``catch_warnings``, this context manager is not threadsafe.
 
         Examples
         --------
@@ -375,12 +375,12 @@ except ImportError:
 
         def _clear_registries(self):
             if hasattr(warnings, "_filters_mutated"):
-                # clearing the registry should not be necessary on new pythons,
+                # clearing the registry should not be necessary on new Pythons,
                 # instead the filters should be mutated.
                 warnings._filters_mutated()
                 return
             # Simply clear the registry, this should normally be harmless,
-            # note that on new pythons it would be invalidated anyway.
+            # note that on new Pythons, it would be invalidated anyway.
             for module in self._tmp_modules:
                 if hasattr(module, "__warningregistry__"):
                     module.__warningregistry__.clear()
@@ -428,7 +428,7 @@ except ImportError:
             Notes
             -----
             When added within a context, filters are only added inside
-            the context and will be forgotten when the context is exited.
+            the context and will be forgotten once the context is exited.
             """
             self._filter(category=category, message=message, module=module,
                          record=False)
@@ -458,7 +458,7 @@ except ImportError:
             Notes
             -----
             When added within a context, filters are only added inside
-            the context and will be forgotten when the context is exited.
+            the context and will be forgotten once the context is exited.
             """
             return self._filter(category=category, message=message, module=module,
                                 record=True)
@@ -578,7 +578,7 @@ else:
         Estimate a covariance matrix, given data and weights.
 
         Covariance indicates the level to which two variables vary together.
-        If we examine N-dimensional samples, :math:`X = [x_1, x_2, ... x_N]^T`,
+        If we examine N-D samples, :math:`X = [x_1, x_2, ... x_N]^T`,
         then the covariance matrix element :math:`C_{ij}` is the covariance of
         :math:`x_i` and :math:`x_j`. The element :math:`C_{ii}` is the variance
         of :math:`x_i`.
@@ -603,9 +603,9 @@ else:
             Default normalization (False) is by ``(N - 1)``, where ``N`` is the
             number of observations given (unbiased estimate). If `bias` is True,
             then normalization is by ``N``. These values can be overridden by using
-            the keyword ``ddof`` in numpy versions >= 1.5.
+            the keyword ``ddof`` in NumPy versions >= 1.5.
         ddof : int, optional
-            If not ``None`` the default value implied by `bias` is overridden.
+            If not ``None``, the default value implied by `bias` is overridden.
             Note that ``ddof=1`` will return the unbiased estimate, even if both
             `fweights` and `aweights` are specified, and ``ddof=0`` will return
             the simple average. See the notes for the details. The default value
@@ -620,7 +620,7 @@ else:
         aweights : array_like, optional
             1-D array of observation vector weights. These relative weights are
             typically large for observations considered "important" and smaller for
-            observations considered less "important". If ``ddof=0`` the array of
+            observations considered less "important". If ``ddof=0``, the array of
             weights can be used to assign probabilities to observation vectors.
 
             .. versionadded:: 1.10
@@ -647,7 +647,7 @@ else:
             >>> cov = np.dot(m * w, m.T) * v1 / (v1**2 - ddof * v2)
 
         Note that when ``a == 1``, the normalization factor
-        ``v1 / (v1**2 - ddof * v2)`` goes over to ``1 / (np.sum(f) - ddof)``
+        ``v1 / (v1**2 - ddof * v2)`` goes over to ``1 / (np.sum(f) - ddof)``,
         as it should.
 
         Examples
@@ -688,7 +688,7 @@ else:
         # Check inputs
         if ddof is not None and ddof != int(ddof):
             raise ValueError(
-                "ddof must be integer")
+                "ddof must be an integer")
 
         # Handles complex arrays too
         m = np.asarray(m)
@@ -726,7 +726,7 @@ else:
             fweights = np.asarray(fweights, dtype=float)
             if not np.all(fweights == np.around(fweights)):
                 raise TypeError(
-                    "fweights must be integer")
+                    "fweights must be an integer")
             if fweights.ndim > 1:
                 raise RuntimeError(
                     "cannot handle multidimensional fweights")

@@ -1,7 +1,7 @@
 """
 Tests which scan for certain occurrences in the code, they may not find
 all of these occurrences but should catch almost all. This file was adapted
-from numpy.
+from NumPy.
 """
 
 
@@ -73,7 +73,7 @@ def warning_calls():
 
     for path in base.rglob("*.py"):
         # use tokenize to auto-detect encoding on systems where no
-        # default encoding is defined (e.g. LANG='C')
+        # default encoding is defined (e.g., LANG='C')
         with tokenize.open(str(path)) as file:
             tree = ast.parse(file.read(), filename=str(path))
             finder = FindFuncs(path.relative_to(base))

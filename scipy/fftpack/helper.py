@@ -61,7 +61,7 @@ def next_fast_len(target):
     Parameters
     ----------
     target : int
-        Length to start searching from.  Must be a positive integer.
+        Length to start searching from. Must be a positive integer.
 
     Returns
     -------

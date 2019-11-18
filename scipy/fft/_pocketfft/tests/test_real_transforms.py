@@ -115,7 +115,7 @@ def fftw_dst_ref(type, size, dt):
 
 
 def ref_2d(func, x, **kwargs):
-    """Calculate 2d reference data from a 1d transform"""
+    """Calculate 2-D reference data from a 1d transform"""
     x = np.array(x, copy=True)
     for row in range(x.shape[0]):
         x[row, :] = func(x[row, :], **kwargs)
@@ -146,7 +146,7 @@ def naive_dct1(x, norm=None):
 
 
 def naive_dst1(x, norm=None):
-    """Calculate textbook definition version  of DST-I."""
+    """Calculate textbook definition version of DST-I."""
     x = np.array(x, copy=True)
     N = len(x)
     M = N+1
@@ -160,7 +160,7 @@ def naive_dst1(x, norm=None):
 
 
 def naive_dct4(x, norm=None):
-    """Calculate textbook definition version  of DCT-IV."""
+    """Calculate textbook definition version of DCT-IV."""
     x = np.array(x, copy=True)
     N = len(x)
     y = np.zeros(N)
@@ -175,7 +175,7 @@ def naive_dct4(x, norm=None):
 
 
 def naive_dst4(x, norm=None):
-    """Calculate textbook definition version  of DST-IV."""
+    """Calculate textbook definition version of DST-IV."""
     x = np.array(x, copy=True)
     N = len(x)
     y = np.zeros(N)
