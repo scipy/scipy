@@ -256,7 +256,7 @@ class TestKMean(object):
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
-            sup.filter(message="One of the clusters is empty. Re-run")
+            sup.filter(message="One of the clusters is empty. Re-run.")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 

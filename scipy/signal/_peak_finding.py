@@ -905,7 +905,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Especially for noisy signals peaks can be easily grouped by their
     prominence (see `peak_prominences`). E.g. we can select all peaks except
-    for the mentioned QRS complexes by limiting the allowed prominenence to 0.6.
+    for the mentioned QRS complexes by limiting the allowed prominence to 0.6.
 
     >>> peaks, properties = find_peaks(x, prominence=(None, 0.6))
     >>> properties["prominences"].max()

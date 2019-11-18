@@ -313,6 +313,10 @@ class _TestRFFTBase(object):
         assert_equal(x, expected)
         assert_equal(xs.data, expected)
 
+    def test_complex_input(self):
+        assert_raises(TypeError, rfft, np.arange(4, dtype=np.complex64))
+
+
 class TestRFFTDouble(_TestRFFTBase):
     def setup_method(self):
         self.cdt = np.cdouble
@@ -375,6 +379,9 @@ class _TestIRFFTBase(object):
     def test_invalid_sizes(self):
         assert_raises(ValueError, irfft, [])
         assert_raises(ValueError, irfft, [[1,1],[2,2]], -5)
+
+    def test_complex_input(self):
+        assert_raises(TypeError, irfft, np.arange(4, dtype=np.complex64))
 
 
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of

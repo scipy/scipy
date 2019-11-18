@@ -156,6 +156,12 @@ case _TYPE:                                      \
     *(_type *)_po = (_type)_tmp;                 \
     break
 
+/* Avoid undefined behaviour of float -> unsigned conversions. */
+#define CASE_FILTER_OUT_SAFE(_TYPE, _type, _po, _tmp)                  \
+case _TYPE:                                                            \
+    *(_type *)_po = (_tmp) > -1. ? (_type)(_tmp) : -(_type)(-_tmp);    \
+    break
+
 int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                  PyArrayObject* output, NI_ExtendMode mode,
                  double cvalue, npy_intp *origins)
@@ -271,12 +277,12 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);
@@ -637,12 +643,12 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);
@@ -823,12 +829,12 @@ int NI_RankFilter(PyArrayObject* input, int rank,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);
@@ -1031,12 +1037,12 @@ int NI_GenericFilter(PyArrayObject* input,
                 goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FILTER_OUT(NPY_BOOL, npy_bool, po, tmp);
-            CASE_FILTER_OUT(NPY_UBYTE, npy_ubyte, po, tmp);
-            CASE_FILTER_OUT(NPY_USHORT, npy_ushort, po, tmp);
-            CASE_FILTER_OUT(NPY_UINT, npy_uint, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONG, npy_ulong, po, tmp);
-            CASE_FILTER_OUT(NPY_ULONGLONG, npy_ulonglong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_BOOL, npy_bool, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UBYTE, npy_ubyte, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_USHORT, npy_ushort, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_UINT, npy_uint, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONG, npy_ulong, po, tmp);
+            CASE_FILTER_OUT_SAFE(NPY_ULONGLONG, npy_ulonglong, po, tmp);
             CASE_FILTER_OUT(NPY_BYTE, npy_byte, po, tmp);
             CASE_FILTER_OUT(NPY_SHORT, npy_short, po, tmp);
             CASE_FILTER_OUT(NPY_INT, npy_int, po, tmp);

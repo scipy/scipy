@@ -2856,8 +2856,6 @@ c     ************
             if (info .eq. -8) write (0,9018)
             if (info .eq. -9) write (0,9019)
          endif
-         if (iprint .ge. 1) write (6,3007) cachyt,sbtime,lnscht
-         write (6,3008) time
       endif
 
  1004 format (/,a4, 1p, 6(1x,d11.4),/,(4x,1p,6(1x,d11.4)))
@@ -2943,6 +2941,11 @@ c     ************
       sbgnrm = zero
       do 15 i = 1, n
         gi = g(i)
+        if (gi.ne.gi) then
+c          NaN value in gradient: propagate it
+           sbgnrm = gi
+           return
+        endif
         if (nbd(i) .ne. 0) then
            if (gi .lt. zero) then
               if (nbd(i) .ge. 2) gi = max((x(i)-u(i)),gi)

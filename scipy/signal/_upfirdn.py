@@ -33,9 +33,14 @@
 
 import numpy as np
 
-from ._upfirdn_apply import _output_len, _apply
+from ._upfirdn_apply import _output_len, _apply, mode_enum
 
 __all__ = ['upfirdn', '_output_len']
+
+_upfirdn_modes = [
+    'constant', 'wrap', 'edge', 'smooth', 'symmetric', 'reflect',
+    'antisymmetric', 'antireflect', 'line',
+]
 
 
 def _pad_h(h, up):
@@ -58,6 +63,12 @@ def _pad_h(h, up):
     return h_full
 
 
+def _check_mode(mode):
+    mode = mode.lower()
+    enum = mode_enum(mode)
+    return enum
+
+
 class _UpFIRDn(object):
     def __init__(self, h, x_dtype, up, down):
         """Helper for resampling"""
@@ -74,7 +85,7 @@ class _UpFIRDn(object):
         self._h_trans_flip = _pad_h(h, self._up)
         self._h_trans_flip = np.ascontiguousarray(self._h_trans_flip)
 
-    def apply_filter(self, x, axis=-1):
+    def apply_filter(self, x, axis=-1, mode='constant', cval=0):
         """Apply the prepared filter to the specified axis of a nD signal x"""
         output_len = _output_len(len(self._h_trans_flip), x.shape[axis],
                                  self._up, self._down)
@@ -82,13 +93,14 @@ class _UpFIRDn(object):
         output_shape[axis] = output_len
         out = np.zeros(output_shape, dtype=self._output_type, order='C')
         axis = axis % x.ndim
+        mode = _check_mode(mode)
         _apply(np.asarray(x, self._output_type),
                self._h_trans_flip, out,
-               self._up, self._down, axis)
+               self._up, self._down, axis, mode, cval)
         return out
 
 
-def upfirdn(h, x, up=1, down=1, axis=-1):
+def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     """Upsample, FIR filter, and downsample
 
     Parameters
@@ -105,6 +117,21 @@ def upfirdn(h, x, up=1, down=1, axis=-1):
         The axis of the input data array along which to apply the
         linear filter. The filter is applied to each subarray along
         this axis. Default is -1.
+    mode : str, optional
+        The signal extension mode to use. The set
+        ``{"constant", "symmetric", "reflect", "edge", "wrap"}`` correspond to
+        modes provided by `numpy.pad`. ``"smooth"`` implements a smooth
+        extension by extending based on the slope of the last 2 points at each
+        end of the array. ``"antireflect"`` and ``"antisymmetric"`` are
+        anti-symmetric versions of ``"reflect"`` and ``"symmetric"``. The mode
+        `"line"` extends the signal based on a linear trend defined by the
+        first and last points along the ``axis``.
+
+        .. versionadded:: 1.4.0
+    cval : float, optional
+        The constant value to use when ``mode == "constant"``.
+
+        .. versionadded:: 1.4.0
 
     Returns
     -------
@@ -180,4 +207,4 @@ def upfirdn(h, x, up=1, down=1, axis=-1):
     x = np.asarray(x)
     ufd = _UpFIRDn(h, x.dtype, up, down)
     # This is equivalent to (but faster than) using np.apply_along_axis
-    return ufd.apply_filter(x, axis)
+    return ufd.apply_filter(x, axis, mode, cval)

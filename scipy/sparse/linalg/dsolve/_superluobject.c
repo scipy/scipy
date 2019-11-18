@@ -131,8 +131,10 @@ static void SuperLU_dealloc(SuperLUObject * self)
 {
     Py_XDECREF(self->cached_U);
     Py_XDECREF(self->cached_L);
+    Py_XDECREF(self->py_csc_construct_func);
     self->cached_U = NULL;
     self->cached_L = NULL;
+    self->py_csc_construct_func = NULL;
     SUPERLU_FREE(self->perm_r);
     SUPERLU_FREE(self->perm_c);
     self->perm_r = NULL;
@@ -187,7 +189,8 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         int ok;
         if (self->cached_U == NULL) {
             ok = LU_to_csc_matrix(&self->L, &self->U,
-                                  &self->cached_L, &self->cached_U);
+                                  &self->cached_L, &self->cached_U,
+                                  self->py_csc_construct_func);
             if (ok != 0) {
                 return NULL;
             }
@@ -440,13 +443,14 @@ static int LU_to_csc(SuperMatrix *L, SuperMatrix *U,
                      Dtype_t dtype);
 
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
-                     PyObject **L_csc, PyObject **U_csc)
+                     PyObject **L_csc, PyObject **U_csc,
+                     PyObject *py_csc_construct_func)
 {
     SCformat *Lstore;
     NCformat *Ustore;
     PyObject *U_indices = NULL, *U_indptr = NULL, *U_data = NULL;
     PyObject *L_indices = NULL, *L_indptr = NULL, *L_data = NULL;
-    PyObject *scipy_sparse = NULL, *datatuple = NULL, *shape = NULL;
+    PyObject *datatuple = NULL, *shape = NULL;
     int result = -1, ok;
     int type;
     npy_intp dims[1];
@@ -504,11 +508,6 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     /* Create sparse matrices */
-    scipy_sparse = PyImport_ImportModule("scipy.sparse");
-    if (scipy_sparse == NULL) {
-        goto fail;
-    }
-
     shape = Py_BuildValue("ii", L->nrow, L->ncol);
     if (shape == NULL) {
         goto fail;
@@ -518,8 +517,8 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     if (datatuple == NULL) {
         goto fail;
     }
-    *L_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
-                                 "OO", datatuple, shape);
+    *L_csc = PyObject_CallFunction(py_csc_construct_func,
+                                   "OO", datatuple, shape);
     if (*L_csc == NULL) {
         goto fail;
     }
@@ -531,8 +530,8 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
         *L_csc = NULL;
         goto fail;
     }
-    *U_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
-                                 "OO", datatuple, shape);
+    *U_csc = PyObject_CallFunction(py_csc_construct_func,
+                                   "OO", datatuple, shape);
     if (*U_csc == NULL) {
         Py_DECREF(*L_csc);
         *L_csc = NULL;
@@ -549,7 +548,6 @@ fail:
     Py_XDECREF(L_indptr);
     Py_XDECREF(L_data);
     Py_XDECREF(shape);
-    Py_XDECREF(scipy_sparse);
     Py_XDECREF(datatuple);
 
     return result;
@@ -689,7 +687,7 @@ size_error:
 
 
 PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
-                           int intype, int ilu)
+                           int intype, int ilu, PyObject * py_csc_construct_func)
 {
 
     /* A must be in SLU_NC format used by the factorization routine. */
@@ -727,6 +725,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->U.Store = NULL;
     self->cached_U = NULL;
     self->cached_L = NULL;
+    self->py_csc_construct_func = NULL;
     self->type = intype;
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
@@ -797,6 +796,9 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 	}
 	goto fail;
     }
+
+    Py_INCREF(py_csc_construct_func);
+    self->py_csc_construct_func = py_csc_construct_func;
 
     /* free memory */
     SUPERLU_FREE((void*)etree);

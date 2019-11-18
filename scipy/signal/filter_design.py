@@ -1222,17 +1222,20 @@ def sos2zpk(sos):
 
     Notes
     -----
+    The number of zeros and poles returned will be ``n_sections * 2``
+    even if some of these are (effectively) zero.
+
     .. versionadded:: 0.16.0
     """
     sos = np.asarray(sos)
     n_sections = sos.shape[0]
-    z = np.empty(n_sections*2, np.complex128)
-    p = np.empty(n_sections*2, np.complex128)
+    z = np.zeros(n_sections*2, np.complex128)
+    p = np.zeros(n_sections*2, np.complex128)
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
-        z[2*section:2*(section+1)] = zpk[0]
-        p[2*section:2*(section+1)] = zpk[1]
+        z[2*section:2*section+len(zpk[0])] = zpk[0]
+        p[2*section:2*section+len(zpk[1])] = zpk[1]
         k *= zpk[2]
     return z, p, k
 
@@ -1504,7 +1507,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
     # Construct the system, reversing order so the "worst" are last
     p_sos = np.reshape(p_sos[::-1], (n_sections, 2))
     z_sos = np.reshape(z_sos[::-1], (n_sections, 2))
-    gains = np.ones(n_sections)
+    gains = np.ones(n_sections, np.array(k).dtype)
     gains[0] = k
     for si in range(n_sections):
         x = zpk2tf(z_sos[si], p_sos[si], gains[si])
@@ -2350,7 +2353,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype in ('lowpass', 'highpass'):
         if numpy.size(Wn) != 1:
-            raise ValueError('Must specify a single critical frequency Wn')
+            raise ValueError('Must specify a single critical frequency Wn for lowpass or highpass filter')
 
         if btype == 'lowpass':
             z, p, k = lp2lp_zpk(z, p, k, wo=warped)
@@ -2361,7 +2364,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             bw = warped[1] - warped[0]
             wo = sqrt(warped[0] * warped[1])
         except IndexError:
-            raise ValueError('Wn must specify start and stop frequencies')
+            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop filter')
 
         if btype == 'bandpass':
             z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
@@ -2768,7 +2771,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     N : int
         The order of the filter.
     Wn : array_like
-        A scalar or length-2 sequence giving the critical frequencies.
+        The critical frequency or frequencies. For lowpass and highpass
+        filters, Wn is a scalar; for bandpass and bandstop filters,
+        Wn is a length-2 sequence.
+
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 

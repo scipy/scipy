@@ -96,7 +96,7 @@ def shortest_path(csgraph, method='auto',
         method == 'FW' and csgraph is a dense, c-ordered array with
         dtype=float64.
     indices : array_like or int, optional
-        If specified, only compute the paths for the points at the given
+        If specified, only compute the paths from the points at the given
         indices. Incompatible with method == 'FW'.
 
     Returns
@@ -131,7 +131,7 @@ def shortest_path(csgraph, method='auto',
     >>> from scipy.sparse.csgraph import shortest_path
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -293,7 +293,10 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-
+    if not isspmatrix(csgraph):
+        # for dense array input, zero entries represent non-edge
+        dist_matrix[dist_matrix == 0] = INFINITY
+        
     if unweighted:
         dist_matrix[~np.isinf(dist_matrix)] = 1
 
@@ -337,10 +340,8 @@ cdef void _floyd_warshall(
 
     # ----------------------------------------------------------------------
     #  Initialize distance matrix
-    #   - set non-edges to infinity
     #   - set diagonal to zero
     #   - symmetrize matrix if non-directed graph is desired
-    dist_matrix[dist_matrix == 0] = INFINITY
     dist_matrix.flat[::N + 1] = 0
     if not directed:
         for i in range(N):
@@ -396,7 +397,7 @@ def dijkstra(csgraph, directed=True, indices=None,
              bint min_only=False):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
-             unweighted=False, limit=np.inf)
+             unweighted=False, limit=np.inf, min_only=False)
 
     Dijkstra algorithm using Fibonacci Heaps
 
@@ -414,7 +415,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         algorithm can progress from point i to j or j to i along either
         csgraph[i, j] or csgraph[j, i].
     indices : array_like or int, optional
-        if specified, only compute the paths for the points at the given
+        if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
         If True, return the size (N, N) predecesor matrix
@@ -431,9 +432,9 @@ def dijkstra(csgraph, directed=True, indices=None,
         .. versionadded:: 0.14.0
     min_only : bool, optional
         If False (default), for every node in the graph, find the shortest path
-        to every node in indices.
-        If True, for every node in the graph, find the shortest path to any of
-        the nodes in indices (which can be substantially faster).
+        from every node in indices.
+        If True, for every node in the graph, find the shortest path from any
+        of the nodes in indices (which can be substantially faster).
 
         .. versionadded:: 1.3.0
 
@@ -443,8 +444,9 @@ def dijkstra(csgraph, directed=True, indices=None,
         The matrix of distances between graph nodes. If min_only=False,
         dist_matrix has shape (n_indices, n_nodes) and dist_matrix[i, j]
         gives the shortest distance from point i to point j along the graph.
-        If min_only=True, dist_matrix has shape (n_nodes,) and contains the
-        shortest path from each node to any of the nodes in indices.
+        If min_only=True, dist_matrix has shape (n_nodes,) and contains for
+        a given node the shortest path to that node from any of the nodes
+        in indices.
     predecessors : ndarray, shape ([n_indices, ]n_nodes,)
         If min_only=False, this has shape (n_indices, n_nodes),
         otherwise it has shape (n_nodes,).
@@ -483,7 +485,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     >>> from scipy.sparse.csgraph import dijkstra
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -906,9 +908,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     Compute the shortest path lengths using the Bellman-Ford algorithm.
 
-    The Bellman-ford algorithm can robustly deal with graphs with negative
+    The Bellman-Ford algorithm can robustly deal with graphs with negative
     weights.  If a negative cycle is detected, an error is raised.  For
-    graphs without negative edge weights, dijkstra's algorithm may be faster.
+    graphs without negative edge weights, Dijkstra's algorithm may be faster.
 
     .. versionadded:: 0.11.0
 
@@ -923,7 +925,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     indices : array_like or int, optional
-        if specified, only compute the paths for the points at the given
+        if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
         If True, return the size (N, N) predecesor matrix
@@ -964,7 +966,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
     >>> from scipy.sparse.csgraph import bellman_ford
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1 ,2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
@@ -1142,7 +1144,7 @@ def johnson(csgraph, directed=True, indices=None,
     algorithm to quickly find shortest paths in a way that is robust to
     the presence of negative cycles.  If a negative cycle is detected,
     an error is raised.  For graphs without negative edge weights,
-    dijkstra() may be faster.
+    dijkstra may be faster.
 
     .. versionadded:: 0.11.0
 
@@ -1157,7 +1159,7 @@ def johnson(csgraph, directed=True, indices=None,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     indices : array_like or int, optional
-        if specified, only compute the paths for the points at the given
+        if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
         If True, return the size (N, N) predecesor matrix
@@ -1198,7 +1200,7 @@ def johnson(csgraph, directed=True, indices=None,
     >>> from scipy.sparse.csgraph import johnson
 
     >>> graph = [
-    ... [0, 1 , 2, 0],
+    ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]

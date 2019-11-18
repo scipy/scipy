@@ -160,7 +160,6 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
     int ret;
     int ndim;
     int flags = CCALLBACK_OBTAIN;
-    int legacy = 0;
     ccallback_signature_t *signatures = quadpack_call_signatures;
 
     if (cfuncptr_type == NULL) {
@@ -182,7 +181,6 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
         /* Legacy support --- ctypes objects can be passed in as-is */
         flags |= CCALLBACK_PARSE;
         signatures = quadpack_call_legacy_signatures;
-        legacy = 1;
     }
 
     ret = ccallback_prepare(callback, signatures, func, flags);

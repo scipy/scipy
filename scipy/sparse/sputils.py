@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 import operator
 import warnings
 import numpy as np
@@ -328,6 +329,14 @@ def check_reshape_kwargs(kwargs):
         raise TypeError('reshape() got unexpected keywords arguments: {}'
                         .format(', '.join(kwargs.keys())))
     return order, copy
+
+
+def is_pydata_spmatrix(m):
+    """
+    Check whether object is pydata/sparse matrix, avoiding importing the module.
+    """
+    base_cls = getattr(sys.modules.get('sparse'), 'SparseArray', None)
+    return base_cls is not None and isinstance(m, base_cls)
 
 
 ###############################################################################

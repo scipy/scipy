@@ -112,7 +112,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         A sequence of break points in the bounded integration interval
         where local difficulties of the integrand may occur (e.g.,
         singularities, discontinuities). The sequence does not have
-        to be sorted.
+        to be sorted. Note that this option cannot be used in conjunction
+        with ``weight``.
     weight : float or int, optional
         String indicating weighting function. Full explanation for this
         and the remaining arguments can be found below.
@@ -203,8 +204,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     The input variables, *weight* and *wvar*, are used to weight the
     integrand by a select list of functions.  Different integration
     methods are used to compute the integral with these weighting
-    functions.  The possible values of weight and the corresponding
-    weighting functions are.
+    functions, and these do not support specifying break points. The
+    possible values of weight and the corresponding weighting functions are.
 
     ==========  ===================================   =====================
     ``weight``  Weight function used                  ``wvar``
@@ -340,6 +341,10 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
                        points)
     else:
+        if points is not None:
+            msg = ("Break points cannot be specified when using weighted integrand.\n"
+                   "Continuing, ignoring specified points.")
+            warnings.warn(msg, IntegrationWarning, stacklevel=2)
         retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                               limlst, limit, maxp1, weight, wvar, wopts)
 
