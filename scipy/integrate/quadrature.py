@@ -29,7 +29,7 @@ def _copy_func(f):
 
 
 trapz = _copy_func(trapz)
-if sys.flags.optimize <= 1:
+if trapz.__doc__:
     trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
 
 

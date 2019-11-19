@@ -1,4 +1,6 @@
 """
+.. _statsrefmanual:
+
 ==========================================
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
@@ -61,6 +63,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
@@ -87,6 +90,7 @@ Continuous distributions
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
+   loguniform        -- Log-Uniform
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
@@ -103,14 +107,13 @@ Continuous distributions
    powerlognorm      -- Power log normal
    powernorm         -- Power normal
    rdist             -- R-distribution
-   reciprocal        -- Reciprocal
    rayleigh          -- Rayleigh
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trapz              -- Trapezoidal
+   trapz             -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -147,6 +150,7 @@ Discrete distributions
    :toctree: generated/
 
    bernoulli         -- Bernoulli
+   betabinom         -- Beta-Binomial
    binom             -- Binomial
    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
    dlaplace          -- Discrete Laplacian
@@ -231,6 +235,7 @@ Correlation functions
    linregress
    siegelslopes
    theilslopes
+   multiscale_graphcorr
 
 Statistical tests
 =================

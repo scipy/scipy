@@ -16,20 +16,20 @@ optimization algorithms. A detailed listing is available:
 The module contains:
 
 1. Unconstrained and constrained minimization of multivariate scalar
-   functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
-   Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
+   functions (:func:`minimize`) using a variety of algorithms (e.g., BFGS,
+   Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP).
 
-2. Global optimization routines  (e.g. :func:`basinhopping`,
+2. Global optimization routines  (e.g., :func:`basinhopping`,
    :func:`differential_evolution`, :func:`shgo`, :func:`dual_annealing`).
 
 3. Least-squares minimization (:func:`least_squares`) and curve fitting
-   (:func:`curve_fit`) algorithms
+   (:func:`curve_fit`) algorithms.
 
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
-   root finders (:func:`root_scalar`)
+   root finders (:func:`root_scalar`).
 
 5. Multivariate equation system solvers (:func:`root`) using a variety of
-   algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
+   algorithms (e.g., hybrid Powell, Levenberg-Marquardt or large-scale
    methods such as Newton-Krylov [KK]_).
 
 Below, several examples demonstrate their basic usage.
@@ -40,7 +40,7 @@ Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
 
 The :func:`minimize` function provides a common interface to unconstrained
 and constrained minimization algorithms for multivariate scalar functions
-in `scipy.optimize`. To demonstrate the minimization function consider the
+in `scipy.optimize`. To demonstrate the minimization function, consider the
 problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
@@ -401,7 +401,7 @@ Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
 
 All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
-gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
+gradient algorithm approximately solve the trust-region subproblem (or invert the Hessian)
 by iterations without the explicit Hessian factorization. Since only the product of the Hessian
 with an arbitrary vector is needed, the algorithm is specially suited for dealing
 with sparse Hessians, allowing low storage requirements and significant time savings for
@@ -482,7 +482,7 @@ When :math:`c^l_j = c^u_j` the method reads the :math:`j`-th constraint as an
 equality constraint and deals with it accordingly. Besides that, one-sided constraint
 can be specified by setting the upper or lower bound to ``np.inf`` with the appropriate sign.
 
-The implementation is based on [EQSQP]_ for equality constraint problems and on [TRIP]_
+The implementation is based on [EQSQP]_ for equality-constraint problems and on [TRIP]_
 for problems with inequality constraints. Both are trust-region type algorithms suitable
 for large-scale problems.
 
@@ -707,10 +707,10 @@ Global optimization
 -------------------
 
 Global optimization aims to find the global minimum of a function within given
-bounds, in the presence of potentially many local minima. Typically global
+bounds, in the presence of potentially many local minima. Typically, global
 minimizers efficiently search the parameter space, while using a local
-minimizer (e.g. :func:`minimize`) under the hood.  SciPy contains a
-number of good global optimizers.  Here we'll use those on the same objective
+minimizer (e.g., :func:`minimize`) under the hood.  SciPy contains a
+number of good global optimizers.  Here, we'll use those on the same objective
 function, namely the (aptly named) ``eggholder`` function::
 
    >>> def eggholder(x):
@@ -774,7 +774,7 @@ different optimization results later.
 
 All optimizers return an ``OptimizeResult``, which in addition to the solution
 contains information on the number of function evaluations, whether the
-optimization was successful, and more.  For brevity we won't show the full
+optimization was successful, and more.  For brevity, we won't show the full
 output of the other optimizers::
 
    >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
@@ -821,7 +821,7 @@ We'll now plot all found minima on a heatmap of the function::
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
 
-SciPy is capable of solving robustified bound constrained nonlinear
+SciPy is capable of solving robustified bound-constrained nonlinear
 least-squares problems:
 
 .. math::
@@ -834,7 +834,7 @@ least-squares problems:
 
 Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
-The purpose of a scalar valued function :math:`\rho(\cdot)` is to reduce the
+The purpose of a scalar-valued function :math:`\rho(\cdot)` is to reduce the
 influence of outlier residuals and contribute to robustness of the solution,
 we refer to it as a loss function. A linear loss function gives a standard
 least-squares problem. Additionally, constraints in a form of lower and upper
@@ -844,12 +844,12 @@ All methods specific to least-squares minimization utilize a :math:`m \times n`
 matrix of partial derivatives called Jacobian and defined as
 :math:`J_{ij} = \partial f_i / \partial x_j`. It is highly recommended to
 compute this matrix analytically and pass it to :func:`least_squares`,
-otherwise it will be estimated by finite differences which takes a lot of
+otherwise, it will be estimated by finite differences, which takes a lot of
 additional time and can be very inaccurate in hard cases.
 
 Function :func:`least_squares` can be used for fitting a function
 :math:`\varphi(t; \mathbf{x})` to empirical data :math:`\{(t_i, y_i), i = 0, \ldots, m-1\}`.
-To do this one should simply precompute residuals as
+To do this, one should simply precompute residuals as
 :math:`f_i(\mathbf{x}) = w_i (\varphi(t_i; \mathbf{x}) - y_i)`, where :math:`w_i`
 are weights assigned to each observation.
 
@@ -952,27 +952,27 @@ to documentation of :func:`least_squares`.
 Univariate function minimizers (:func:`minimize_scalar`)
 --------------------------------------------------------
 
-Often only the minimum of an univariate function (i.e. a function that
+Often only the minimum of an univariate function (i.e., a function that
 takes a scalar as input) is needed. In these circumstances, other
 optimization techniques have been developed that can work faster. These are
-accessible from the :func:`minimize_scalar` function which proposes several
+accessible from the :func:`minimize_scalar` function, which proposes several
 algorithms.
 
 
 Unconstrained minimization (``method='brent'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are actually two methods that can be used to minimize an univariate
+There are, actually, two methods that can be used to minimize an univariate
 function: `brent` and `golden`, but `golden` is included only for academic
 purposes and should rarely be used. These can be respectively selected
 through the `method` parameter in :func:`minimize_scalar`. The `brent`
-method uses Brent's algorithm for locating a minimum. Optimally a bracket
+method uses Brent's algorithm for locating a minimum. Optimally, a bracket
 (the `bracket` parameter) should be given which contains the minimum desired. A
 bracket is a triple :math:`\left( a, b, c \right)` such that :math:`f
 \left( a \right) > f \left( b \right) < f \left( c \right)` and :math:`a <
 b < c` . If this is not given, then alternatively two starting points can
 be chosen and a bracket will be found from these points using a simple
-marching algorithm. If these two starting points are not provided `0` and
+marching algorithm. If these two starting points are not provided, `0` and
 `1` will be used (this may not be the right choice for your function and
 result in an unexpected minimum being returned).
 
@@ -1010,10 +1010,10 @@ Custom minimizers
 -----------------
 
 Sometimes, it may be useful to use a custom method as a (multivariate
-or univariate) minimizer, for example when using some library wrappers
-of :func:`minimize` (e.g. :func:`basinhopping`).
+or univariate) minimizer, for example, when using some library wrappers
+of :func:`minimize` (e.g., :func:`basinhopping`).
 
-We can achieve that by, instead of passing a method name, we pass
+We can achieve that by, instead of passing a method name, passing
 a callable (either a function or an object implementing a `__call__`
 method) as the `method` parameter.
 
@@ -1103,7 +1103,7 @@ Scalar functions
 If one has a single-variable equation, there are multiple different root
 finding algorithms that can be tried. Most of these algorithms require the
 endpoints of an interval in which a root is expected (because the function
-changes signs). In general :obj:`brentq` is the best choice, but the other
+changes signs). In general, :obj:`brentq` is the best choice, but the other
 methods may be useful in certain circumstances or for academic purposes.
 When a bracket is not available, but one or more derivatives are available,
 then :obj:`newton` (or ``halley``, ``secant``) may be applicable.
@@ -1115,11 +1115,11 @@ Fixed-point solving
 ^^^^^^^^^^^^^^^^^^^
 
 A problem closely related to finding the zeros of a function is the
-problem of finding a fixed-point of a function. A fixed point of a
+problem of finding a fixed point of a function. A fixed point of a
 function is the point at which evaluation of the function returns the
-point: :math:`g\left(x\right)=x.` Clearly the fixed point of :math:`g`
+point: :math:`g\left(x\right)=x.` Clearly, the fixed point of :math:`g`
 is the root of :math:`f\left(x\right)=g\left(x\right)-x.`
-Equivalently, the root of :math:`f` is the fixed_point of
+Equivalently, the root of :math:`f` is the fixed point of
 :math:`g\left(x\right)=f\left(x\right)+x.` The routine
 :obj:`fixed_point` provides a simple iterative method using Aitkens
 sequence acceleration to estimate the fixed point of :math:`g` given a
@@ -1128,9 +1128,9 @@ starting point.
 Sets of equations
 ^^^^^^^^^^^^^^^^^
 
-Finding a root of a set of non-linear equations can be achieve using the
+Finding a root of a set of non-linear equations can be achieved using the
 :func:`root` function. Several methods are available, amongst which ``hybr``
-(the default) and ``lm`` which respectively use the hybrid method of Powell
+(the default) and ``lm``, which, respectively, use the hybrid method of Powell
 and the Levenberg-Marquardt method from MINPACK.
 
 The following example considers the single-variable transcendental
@@ -1187,7 +1187,7 @@ number of variables (*N*), as they need to calculate and invert a dense *N
 x N* Jacobian matrix on every Newton step. This becomes rather inefficient
 when *N* grows.
 
-Consider for instance the following problem: we need to solve the
+Consider, for instance, the following problem: we need to solve the
 following integrodifferential equation on the square
 :math:`[0,1]\times[0,1]`:
 
@@ -1206,8 +1206,8 @@ some function ``residual(P)``, where ``P`` is a vector of length
 :math:`N_x N_y`.
 
 Now, because :math:`N_x N_y` can be large, methods ``hybr`` or ``lm`` in
-:func:`root` will take a long time to solve this problem. The solution can
-however be found using one of the large-scale solvers, for example
+:func:`root` will take a long time to solve this problem. The solution can,
+however, be found using one of the large-scale solvers, for example
 ``krylov``, ``broyden2``, or ``anderson``. These use what is known as the
 inexact Newton method, which instead of computing the Jacobian matrix
 exactly, forms an approximation for it.
@@ -1260,14 +1260,14 @@ Still too slow? Preconditioning.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When looking for the zero of the functions :math:`f_i({\bf x}) = 0`,
-*i = 1, 2, ..., N*, the ``krylov`` solver spends most of its
+*i = 1, 2, ..., N*, the ``krylov`` solver spends most of the
 time inverting the Jacobian matrix,
 
 .. math:: J_{ij} = \frac{\partial f_i}{\partial x_j} .
 
 If you have an approximation for the inverse matrix
 :math:`M\approx{}J^{-1}`, you can use it for *preconditioning* the
-linear inversion problem. The idea is that instead of solving
+linear-inversion problem. The idea is that instead of solving
 :math:`J{\bf s}={\bf y}` one solves :math:`MJ{\bf s}=M{\bf y}`: since
 matrix :math:`MJ` is "closer" to the identity matrix than :math:`J`
 is, the equation should be easier for the Krylov method to deal with.
@@ -1277,10 +1277,10 @@ option ``options['jac_options']['inner_M']``. It can be a (sparse) matrix
 or a :obj:`scipy.sparse.linalg.LinearOperator` instance.
 
 For the problem in the previous section, we note that the function to
-solve consists of two parts: the first one is application of the
+solve consists of two parts: the first one is the application of the
 Laplace operator, :math:`[\partial_x^2 + \partial_y^2] P`, and the second
 is the integral. We can actually easily compute the Jacobian corresponding
-to the Laplace operator part: we know that in one dimension
+to the Laplace operator part: we know that in 1-D
 
 .. math::
 

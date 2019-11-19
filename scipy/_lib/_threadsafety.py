@@ -19,7 +19,7 @@ class ReentrancyLock(object):
     Calls from different threads are serialized, and nested calls from the
     same thread result to an error.
 
-    The object can be used as a context manager, or to decorate functions
+    The object can be used as a context manager or to decorate functions
     via the decorate() method.
 
     """

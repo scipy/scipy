@@ -510,7 +510,7 @@ def test_solve_discrete_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 15, 13,
+    min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 14, 13,
                    14, 13, 13, 14, 12, 2, 5, 6, 10)
 
     def _test_factory(case, dec):

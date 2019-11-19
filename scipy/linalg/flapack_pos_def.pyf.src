@@ -11,7 +11,7 @@ subroutine <prefix>pstrf(n,a,lda,piv,rank_c,tol,work,info,lower)
     ! P is stored as vector PIV.
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
-    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctype>*,<ctype>*,int*
+    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,<ctypereal>*,int*
     
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer depend(a),intent(hide):: n = shape(a,0)
@@ -35,7 +35,7 @@ subroutine <prefix>pstf2(n,a,lda,piv,rank_c,tol,work,info,lower)
     ! P is stored as vector PIV.
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,piv,&rank_c,&tol,work,&info)
-    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctype>*,<ctype>*,int*
+    callprotoargument char*,int*,<ctype>*,int*,int*,int*,<ctypereal>*,<ctypereal>*,int*
 
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer depend(a),intent(hide):: n = shape(a,0)

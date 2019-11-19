@@ -282,7 +282,7 @@ def clear_backends(domain, registered=True, globals=False):
     .. warning::
         We caution library authors against using this function in
         their code. We do *not* support this use-case. This function
-        is meant to be used only by users themselves.
+        is meant to be used only by the users themselves.
 
     .. warning::
         Do NOT use this method inside a multimethod call, or the

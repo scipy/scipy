@@ -72,7 +72,7 @@ class TestGCROTMK(object):
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
-        assert_(np.linalg.norm(A.dot(x0) - b) > 1e-3)
+        assert np.linalg.norm(A.dot(x0) - b) > 1e-3
 
         assert_allclose(x0, x1)
 

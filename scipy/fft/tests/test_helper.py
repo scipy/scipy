@@ -52,11 +52,10 @@ class TestNextFastLen(object):
         for n in nums():
             m = next_fast_len(n)
             _assert_n_smooth(m, 11)
-            assert m == next_fast_len(n, 'C2C')
+            assert m == next_fast_len(n, False)
 
-            m = next_fast_len(n, 'R2C')
+            m = next_fast_len(n, True)
             _assert_n_smooth(m, 5)
-            assert m == next_fast_len(n, 'C2R')
 
     def test_np_integers(self):
         ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
@@ -71,7 +70,7 @@ class TestNextFastLen(object):
             16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000
         }
         for x, y in hams.items():
-            assert_equal(next_fast_len(x, 'R2C'), y)
+            assert_equal(next_fast_len(x, True), y)
 
     @pytest.mark.xfail(sys.maxsize < 2**32,
                        reason="Hamming Numbers too large for 32-bit",
@@ -108,7 +107,7 @@ class TestNextFastLen(object):
             288325195312500000 + 1: 288555831593533440,
         }
         for x, y in hams.items():
-            assert_equal(next_fast_len(x, 'R2C'), y)
+            assert_equal(next_fast_len(x, True), y)
 
 
 class Test_init_nd_shape_and_axes(object):

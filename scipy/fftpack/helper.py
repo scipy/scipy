@@ -61,7 +61,7 @@ def next_fast_len(target):
     Parameters
     ----------
     target : int
-        Length to start searching from.  Must be a positive integer.
+        Length to start searching from. Must be a positive integer.
 
     Returns
     -------
@@ -95,7 +95,7 @@ def next_fast_len(target):
 
     """
     # Real transforms use regular sizes so this is backwards compatible
-    return _helper.next_fast_len(target, 'R2C')
+    return _helper.good_size(target, True)
 
 
 def _good_shape(x, shape, axes):

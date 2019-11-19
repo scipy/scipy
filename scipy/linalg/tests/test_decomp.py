@@ -11,6 +11,7 @@ Run tests if scipy is installed:
 """
 
 import itertools
+import platform
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -283,7 +284,7 @@ class TestEig(object):
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @pytest.mark.xfail(reason="See gh-2254.")
+    @pytest.mark.xfail(reason="See gh-2254")
     def test_singular(self):
         # Example taken from
         # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
@@ -2468,6 +2469,8 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
+@pytest.mark.xfail(platform.machine() == 'ppc64le',
+                   reason="fails on ppc64le")
 def test_aligned_mem():
     """Check linalg works with non-aligned memory"""
     # Allocate 804 bytes of memory (allocated on boundary)
@@ -2735,6 +2738,14 @@ def test_subspace_angles():
                   [0, 0, 1]])
     expected = np.array([np.pi/2, 0, 0])
     assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
+
+    # Complex
+    # second column in "b" does not affect result, just there so that
+    # b can have more cols than a, and vice-versa (both conditional code paths)
+    a = [[1 + 1j], [0]]
+    b = [[1 - 1j, 0], [0, 1]]
+    assert_allclose(subspace_angles(a, b), 0., atol=1e-14)
+    assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
 
 
 class TestCDF2RDF(object):

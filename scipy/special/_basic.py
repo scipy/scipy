@@ -20,22 +20,80 @@ from . import orthogonal
 from ._comb import _comb_int
 
 
-__all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
-           'ber_zeros', 'bernoulli', 'berp_zeros',
-           'bessel_diff_formula', 'bi_zeros', 'clpmn', 'comb',
-           'digamma', 'diric', 'erf_zeros', 'erfcinv',
-           'erfinv', 'euler', 'factorial', 'factorialk', 'factorial2',
-           'fresnel_zeros', 'fresnelc_zeros', 'fresnels_zeros',
-           'gamma', 'h1vp', 'h2vp', 'hankel1', 'hankel2', 'hyp0f1',
-           'iv', 'ivp', 'jn_zeros', 'jnjnp_zeros', 'jnp_zeros',
-           'jnyn_zeros', 'jv', 'jvp', 'kei_zeros', 'keip_zeros',
-           'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv', 'kvp',
-           'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
-           'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef',
-           'ndtri', 'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
-           'perm', 'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn',
-           'riccati_yn', 'sinc', 'voigt', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+__all__ = [
+    'ai_zeros',
+    'assoc_laguerre',
+    'bei_zeros',
+    'beip_zeros',
+    'ber_zeros',
+    'bernoulli',
+    'berp_zeros',
+    'bi_zeros',
+    'clpmn',
+    'comb',
+    'digamma',
+    'diric',
+    'erf_zeros',
+    'erfcinv',
+    'erfinv',
+    'euler',
+    'factorial',
+    'factorial2',
+    'factorialk',
+    'fresnel_zeros',
+    'fresnelc_zeros',
+    'fresnels_zeros',
+    'gamma',
+    'h1vp',
+    'h2vp',
+    'hankel1',
+    'hankel2',
+    'hyp0f1',
+    'iv',
+    'ivp',
+    'jn_zeros',
+    'jnjnp_zeros',
+    'jnp_zeros',
+    'jnyn_zeros',
+    'jv',
+    'jvp',
+    'kei_zeros',
+    'keip_zeros',
+    'kelvin_zeros',
+    'ker_zeros',
+    'kerp_zeros',
+    'kv',
+    'kvp',
+    'lmbda',
+    'lpmn',
+    'lpn',
+    'lqmn',
+    'lqn',
+    'mathieu_a',
+    'mathieu_b',
+    'mathieu_even_coef',
+    'mathieu_odd_coef',
+    'ndtri',
+    'obl_cv_seq',
+    'pbdn_seq',
+    'pbdv_seq',
+    'pbvv_seq',
+    'perm',
+    'polygamma',
+    'pro_cv_seq',
+    'psi',
+    'riccati_jn',
+    'riccati_yn',
+    'sinc',
+    'y0_zeros',
+    'y1_zeros',
+    'y1p_zeros',
+    'yn_zeros',
+    'ynp_zeros',
+    'yv',
+    'yvp',
+    'zeta'
+]
 
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
@@ -427,10 +485,6 @@ def _bessel_diff_formula(v, z, n, L, phase):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
-
-
-bessel_diff_formula = np.deprecate(_bessel_diff_formula,
-    message="bessel_diff_formula is a private function, do not use it!")
 
 
 def jvp(v, z, n=1):
@@ -938,21 +992,32 @@ digamma = psi
 
 
 def polygamma(n, x):
-    """Polygamma function n.
+    r"""Polygamma functions.
 
-    This is the nth derivative of the digamma (psi) function.
+    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
+    `digamma` function. See [dlmf]_ for details.
 
     Parameters
     ----------
-    n : array_like of int
-        The order of the derivative of `psi`.
+    n : array_like
+        The order of the derivative of the digamma function; must be
+        integral
     x : array_like
-        Where to evaluate the polygamma function.
+        Real valued input
 
     Returns
     -------
-    polygamma : ndarray
-        The result.
+    ndarray
+        Function results
+
+    See Also
+    --------
+    digamma
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/5.15
 
     Examples
     --------
@@ -2085,6 +2150,9 @@ def factorial(n, exact=False):
                     out[n == current] = val
             return out
     else:
+        if np.ndim(n) == 0:
+            return 0 if n < 0 else gamma(n + 1)
+
         n = asarray(n)
         vals = gamma(n + 1)
         return where(n >= 0, vals, 0)
@@ -2202,53 +2270,6 @@ def factorialk(n, k, exact=True):
         raise NotImplementedError
 
 
-def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
-    r"""
-    Voigt profile.
-
-    The Voigt profile is a convolution of a 1D Normal distribution with
-    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
-    half-maximum ``gamma``.
-
-    Parameters
-    ----------
-    x : array_like
-        Input argument.
-    sigma : array_like, optional
-        The standard deviation of the Normal distribution part. The default is
-        1.0.
-    gamma : array_like, optional
-        The half-width at half-maximum of the Cauchy distribution part. The
-        default is 1.0.
-    mu : array_like, optional
-        The location of the peak profile. The default is 0.0.
-
-    Returns
-    -------
-    y : array_like
-        The Voigt profile at the given position. It will have the same shape as
-        `x`.
-
-    Notes
-    -----
-    It can be expressed in terms of Faddeeva function
-
-    .. math:: V(x;\sigma,\gamma,\mu) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
-    .. math:: z = \frac{x-\mu+i\gamma}{\sqrt{2}\sigma}
-
-    where :math:`w(z)` is the Faddeeva function.
-
-    See Also
-    --------
-    wofz : Faddeeva function
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
-    """
-    return ufuncs._voigt(x, sigma, gamma, mu)
-
-
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -2269,15 +2290,23 @@ def zeta(x, q=None, out=None):
 
     Notes
     -----
-    The two-argument version is the Hurwitz zeta function:
+    The two-argument version is the Hurwitz zeta function
 
-    .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
+    .. math::
 
-    Riemann zeta function corresponds to ``q = 1``.
+        \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x};
+
+    see [dlmf]_ for details. The Riemann zeta function corresponds to
+    the case when ``q = 1``.
 
     See Also
     --------
     zetac
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/25.11#i
 
     Examples
     --------

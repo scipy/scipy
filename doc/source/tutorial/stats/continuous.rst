@@ -238,6 +238,7 @@ Continuous Distributions in `scipy.stats`
    continuous_genextreme
    continuous_gengamma
    continuous_genhalflogistic
+   continuous_geninvgauss
    continuous_gennorm
    continuous_gilbrat
    continuous_gompertz
@@ -262,6 +263,7 @@ Continuous Distributions in `scipy.stats`
    continuous_loglaplace
    continuous_loggamma
    continuous_lognorm
+   continuous_loguniform
    continuous_maxwell
    continuous_mielke
    continuous_nakagami
@@ -278,7 +280,6 @@ Continuous Distributions in `scipy.stats`
    continuous_rdist
    continuous_rayleigh
    continuous_rice
-   continuous_reciprocal
    continuous_recipinvgauss
    continuous_semicircular
    continuous_t

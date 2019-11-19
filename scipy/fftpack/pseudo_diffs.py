@@ -21,7 +21,7 @@ _cache = {}
 
 def diff(x,order=1,period=None, _cache=_cache):
     """
-    Return k-th derivative (or integral) of a periodic sequence x.
+    Return kth derivative (or integral) of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then::
@@ -99,7 +99,7 @@ def tilbert(x, h, period=None, _cache=_cache):
     h : float
         Defines the parameter of the Tilbert transform.
     period : float, optional
-        The assumed period of the sequence.  Default period is ``2*pi``.
+        The assumed period of the sequence. Default period is ``2*pi``.
 
     Returns
     -------
@@ -108,7 +108,7 @@ def tilbert(x, h, period=None, _cache=_cache):
 
     Notes
     -----
-    If ``sum(x, axis=0) == 0`` and ``n = len(x)`` is odd then
+    If ``sum(x, axis=0) == 0`` and ``n = len(x)`` is odd, then
     ``tilbert(itilbert(x)) == x``.
 
     If ``2 * pi * h / period`` is approximately 10 or larger, then
@@ -228,7 +228,7 @@ def hilbert(x, _cache=_cache):
     For even len(x), the Nyquist mode of x is taken zero.
 
     The sign of the returned transform does not have a factor -1 that is more
-    often than not found in the definition of the Hilbert transform.  Note also
+    often than not found in the definition of the Hilbert transform. Note also
     that `scipy.signal.hilbert` does have an extra -1 factor compared to this
     function.
 

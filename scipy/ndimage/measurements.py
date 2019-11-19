@@ -1205,6 +1205,35 @@ def maximum_position(input, labels=None, index=None):
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
+    
+    Examples
+    --------
+    >>> from scipy import ndimage
+    >>> a = np.array([[1, 2, 0, 0],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+    >>> ndimage.maximum_position(a)
+    (3, 0)
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> lbl = np.array([[0, 1, 2, 3],
+    ...                 [0, 1, 2, 3],
+    ...                 [0, 1, 2, 3],
+    ...                 [0, 1, 2, 3]])
+    >>> ndimage.maximum_position(a, lbl, 1)
+    (1, 1)
+    
+    If no index is given, non-zero `labels` are processed:
+
+    >>> ndimage.maximum_position(a, lbl)
+    (2, 3)
+    
+    If there are no maxima, the position of the first element is returned:
+    
+    >>> ndimage.maximum_position(a, lbl, 2)
+    (0, 2)
 
     """
     dims = numpy.array(numpy.asarray(input).shape)

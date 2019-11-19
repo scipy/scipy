@@ -225,6 +225,37 @@ def read(filename, mmap=False):
        Samples", August 1991
        http://www.tactilemedia.com/info/MCI_Control_Info.html
 
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+
+    Get the filename for an example .wav file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'tests', 'data')
+    >>> wav_fname = pjoin(data_dir, 'test-44100Hz-2ch-32bit-float-be.wav')
+
+    Load the .wav file contents.
+
+    >>> samplerate, data = sio.wavfile.read(wav_fname)
+    >>> print(f"number of channels = {data.shape[1]}")
+    number of channels = 2
+    >>> length = data.shape[0] / samplerate
+    >>> print(f"length = {length}s")
+    length = 0.01s
+
+    Plot the waveform.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> time = np.linspace(0., length, data.shape[0])
+    >>> plt.plot(time, data[:, 0], label="Left channel")
+    >>> plt.plot(time, data[:, 1], label="Right channel")
+    >>> plt.legend()
+    >>> plt.xlabel("Time [s]")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.show()
+
     """
     if hasattr(filename, 'read'):
         fid = filename
@@ -235,6 +266,7 @@ def read(filename, mmap=False):
     try:
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
+        data_chunk_received = False
         channels = 1
         bit_depth = 8
         format_tag = WAVE_FORMAT_PCM
@@ -243,7 +275,16 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
 
             if not chunk_id:
-                raise ValueError("Unexpected end of file.")
+                if data_chunk_received:
+                    # End of file but data successfully read
+                    warnings.warn(
+                        "Reached EOF prematurely; finished at {:d} bytes, "
+                        "expected {:d} bytes from header."
+                        .format(fid.tell(), file_size),
+                        WavFileWarning, stacklevel=2)
+                    break
+                else:
+                    raise ValueError("Unexpected end of file.")
             elif len(chunk_id) < 4:
                 raise ValueError("Incomplete wav chunk.")
 
@@ -258,6 +299,7 @@ def read(filename, mmap=False):
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
+                data_chunk_received = True
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
@@ -270,7 +312,7 @@ def read(filename, mmap=False):
                 _skip_unknown_chunk(fid, is_big_endian)
             else:
                 warnings.warn("Chunk (non-data) not understood, skipping it.",
-                              WavFileWarning)
+                              WavFileWarning, stacklevel=2)
                 _skip_unknown_chunk(fid, is_big_endian)
     finally:
         if not hasattr(filename, 'read'):
@@ -320,6 +362,18 @@ def write(filename, rate, data):
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
        http://www.tactilemedia.com/info/MCI_Control_Info.html
+
+    Examples
+    --------
+    Create a 100Hz sine wave, sampled at 44100Hz.
+    Write to 16-bit PCM, Mono.
+
+    >>> from scipy.io.wavfile import write
+    >>> samplerate = 44100; fs = 100
+    >>> t = np.linspace(0., 1., samplerate)
+    >>> amplitude = np.iinfo(np.int16).max
+    >>> data = amplitude * np.sin(2. * np.pi * fs * t)
+    >>> write("example.wav", samplerate, data)
 
     """
     if hasattr(filename, 'write'):

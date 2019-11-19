@@ -44,7 +44,7 @@
 .. _tangled working copy problem: https://tomayko.com/writings/the-thing-about-git
 .. _git management: http://kerneltrap.org/Linux/Git_Management
 .. _linux git workflow: https://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
-.. _ipython git workflow: http://mail.python.org/pipermail/ipython-dev/2010-October/006746.html
+.. _ipython git workflow: https://mail.python.org/pipermail/ipython-dev/2010-October/005632.html
 .. _git parable: http://tom.preston-werner.com/2009/05/19/the-git-parable.html
 .. _git foundation: http://matthew-brett.github.com/pydagogue/foundation.html
 .. _numpy/master: https://github.com/numpy/numpy

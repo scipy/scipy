@@ -80,7 +80,7 @@ double expn(int n, double x)
     }
     else if (n < 0 || x < 0) {
 	sf_error("expn", SF_ERROR_DOMAIN, NULL);
-	return NPY_INFINITY;
+	return NPY_NAN;
     }
 
     if (x > MAXLOG) {
