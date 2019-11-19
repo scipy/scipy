@@ -429,7 +429,7 @@ class rv_frozen(object):
 
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
-        self.a, self.b = self.dist._get_support(*args, **kwds)
+        self.a, self.b = self.dist._get_support(*shapes)
 
     @property
     def random_state(self):
