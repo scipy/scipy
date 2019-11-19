@@ -6,7 +6,7 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 from pytest import raises as assert_raises
 
 import scipy.signal.waveforms as waveforms
-
+from scipy.signal.spectral import hurst_dfa
 
 # These chirp_* functions are the instantaneous frequencies of the signals
 # returned by chirp().
@@ -351,3 +351,42 @@ class TestUnitImpulse(object):
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
         assert_(np.issubdtype(imp.dtype, np.complexfloating))
+
+
+class TestColouredNoise(object):
+    def test_std(self):
+        noise = waveforms.coloured_noise(0.5, 60, scale_std=True,
+                                         scale_mean=False)
+
+        std_calc = np.std(noise)
+        assert_almost_equal(1, std_calc, 1)
+
+    def test_mean(self):
+        noise = waveforms.coloured_noise(0.5, 60, scale_mean=True,
+                                         scale_std=False)
+
+        mean_calc = np.mean(noise)
+        assert_almost_equal(0, mean_calc, 1)
+
+    def test_length(self):
+        length = 60
+        noise = waveforms.coloured_noise(alpha=0, size=length)
+        assert_(len(noise) == length)
+
+    def test_alpha_generation(self):
+        noise = waveforms.coloured_noise(alpha=1, size=500)
+        h, _ = hurst_dfa(noise, s_min=5, s_max=20)
+
+        assert_(np.abs(1-h) <= 0.3)  # Approximation won't be ideal at this size
+
+    def test_colour_input(self):
+        noise = waveforms.coloured_noise(alpha=2, size=500)
+        h, _ = hurst_dfa(noise, s_min=5, s_max=20)
+
+        assert_(np.abs(1.5 - h) <= 0.3)  # Should be 1.5
+
+    def test_random_number_setting(self):
+        noise1 = waveforms.coloured_noise(alpha=2, size=50, random_seed=1234)
+        noise2 = waveforms.coloured_noise(alpha=2, size=50, random_seed=1234)
+
+        assert_equal(noise1, noise2)

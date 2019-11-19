@@ -11,7 +11,8 @@ from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal
 from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram, stft, istft, check_COLA, check_NOLA)
+                          spectrogram, stft, istft, check_COLA, check_NOLA,
+                          coloured_noise, hurst_dfa)
 from scipy.signal.spectral import _spectral_helper
 
 
@@ -1462,3 +1463,48 @@ class TestSTFT(object):
 
         assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
         assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
+
+
+class TestHurstDFA(object):
+    def test_negative_s(self):
+        x = np.random.rand(60)
+
+        with assert_raises(ValueError):
+            _, _ = hurst_dfa(x, s_min=-1, s_max=4)
+
+    def test_zero_s(self):
+        x = np.random.rand(60)
+
+        with assert_raises(ValueError):
+            _, _ = hurst_dfa(x, s_min=0, s_max=4)
+
+    def test_s_max_smaller_than_s_min(self):
+        x = np.random.rand(60)
+
+        with assert_raises(ValueError):
+            _, _ = hurst_dfa(x, s_min=5, s_max=4)
+
+    def test_oversized_s(self):
+        x = np.random.rand(60)
+
+        with assert_raises(ValueError):
+            _, _ = hurst_dfa(x, s_min=2, s_max=61)
+
+    def test_white_noise(self):
+        x = np.random.rand(300)
+        h, _ = hurst_dfa(x, s_min=5, s_max=20)
+
+        assert_(np.abs(0.5 - h) <= 0.3)  # Should be 0.5
+
+    def test_coloured_noise(self):
+        x = coloured_noise(alpha=2, size=500)
+        h, _ = hurst_dfa(x, s_min=5, s_max=20)
+
+        assert_(np.abs(1.5 - h) <= 0.3)  # Should be 1.5
+
+    def test_flat(self):
+        x = np.ones(60)
+        x[-1] = 1+0.0001
+        h, _ = hurst_dfa(x, s_min=5, s_max=25)
+
+        assert_(np.abs(0 - h) <= 0.3)  # Should be 0
