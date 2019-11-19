@@ -197,8 +197,7 @@ def correlate(in1, in2, mode='full', method='auto', return_lags=False):
 
     >>> x = np.random.random(1000)
     >>> x_behind = np.pad(x, (100,0), 'constant')
-    >>> (correlation, lags) = signal.correlate(x, x_behind,
-    >>>                                        return_lags=True)
+    >>> (correlation, lags) = signal.correlate(x, x_behind, return_lags=True)
     >>> lag_behind_index = np.argmax(correlation)
     >>> lag = lags[lag_behind_index]
     """
