@@ -2010,9 +2010,10 @@ class Rotation(object):
             sensitivity = np.mean(weights) / zeta * (
                     kappa * np.eye(3) + np.dot(B, B.T))
 
-        lambda0 = 0.5 * np.sum(weights * np.sum(b**2 + a**2, axis=1))
+        loss = max(0.5 * np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1))
+                   - np.sum(s), 0)
 
-        return cls.from_matrix(C), lambda0 - np.sum(s), sensitivity
+        return cls.from_matrix(C), loss, sensitivity
 
 
 class Slerp(object):
