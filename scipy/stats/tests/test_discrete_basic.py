@@ -11,7 +11,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast)
+                           check_pickling, check_rvs_broadcast, check_freezing)
 from scipy.stats._distr_params import distdiscrete
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
@@ -58,6 +58,7 @@ def test_discrete_basic(distname, arg, first_case):
             check_scale_docstring(distfn)
         check_random_state_property(distfn, arg)
         check_pickling(distfn, arg)
+        check_freezing(distfn, arg)
 
         # Entropy
         check_entropy(distfn, arg, distname)
