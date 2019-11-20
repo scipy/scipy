@@ -200,193 +200,107 @@ def test_chi2_contingency_bad_args():
 
 
 def test_bad_association_args():
-    # Asymmetric Array
-    obs = np.array([[21], [11, 21]])
-    assert_raises(IndexError, association, obs, "T", None, True)
-
-    # Invalid Chi-Squared Warning
-    obs = np.array([[1, 23], [11, 12]])
-    assert_raises(UserWarning, association, obs, "T", None, True)
 
     # Invalid Chi Squared Stat Value Type
-    obs = np.array([[10, 22], [23, 24]])
-    assert_raises(TypeError, association, obs, "T", str(1), True)
-
-    # Invalid Array Values
-    freqs = np.array([[0.1, 0.2], [0.4, 0.3]])
-    assert_raises(TypeError, association, freqs, "T", None, True)
+    assert_raises(TypeError, association, 50, 2, 2, str(1), "T", True)
 
     # Invalid Correct Bias Value
-    obs = np.array([[15, 25], [35, 45]])
-    assert_raises(TypeError, association, obs, "T", None, "True")
+
+    assert_raises(TypeError, association, 50, 2, 2, 2.55, "T", "True")
 
     # Invalid Test Statistic
-    obs = np.array([[15, 25], [35, 45]])
-    assert_raises(ValueError, association, obs, "X", None, True)
+
+    assert_raises(ValueError, association, 50, 2, 2, 2.55, "X", True)
+
+    # Invalid n_rows data type
+    assert_raises(TypeError, association, 50, "2", 2, 2.55, "T", True)
+
+    # Invalid n_cols data type
+    assert_raises(TypeError, association, 50, 2, "2", 2.55, "T", True)
+
+    # Invalid n_obs data type
+    assert_raises(TypeError, association, "50", 2, 2, 2.55, "T", True)
 
 
 def test_cramersv():
 
     # 2d Array
-    obs = [[12, 13, 14, 15, 16],
-           [17, 16, 18, 19, 11],
-           [9, 15, 14, 12, 11]]
-    a = association(observed=obs)
-    ax = association(observed=obs, correct_bias=False)
-    correcta = np.array([0.])
-    correctax = np.array([0.07798989])
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    num_obs = sum(obs.flatten())
+    num_cols = obs.shape[1]
+    num_rows = obs.shape[0]
+    chi2 = tuple(chi2_contingency(obs))[0]
+    a = association(n_obs=num_obs, n_rows=num_rows,
+                    n_cols=num_cols, chi2_stat=chi2)
+    ax = association(n_obs=num_obs, n_rows=num_rows,
+                     n_cols=num_cols, chi2_stat=chi2,
+                     correct_bias=True)
+    correcta = 0.0
+    correctax = 0.07798989
     assert_array_almost_equal(a, correcta)
     assert_array_almost_equal(ax, correctax)
-
-    # 3d Array
-    obs = [[[13, 23, 10],
-            [33, 43, 21]],
-           [[35, 36, 15],
-            [37, 38, 18]],
-           [[22, 21, 13],
-            [12, 18, 13]]]
-    b = association(observed=obs)
-    bx = association(observed=obs, correct_bias=False)
-    correctb = np.array([0.21692309, 0., 0.10145577])
-    correctbx = np.array([0.24659432, 0.01761721, 0.17236256])
-    assert_array_almost_equal(b, correctb)
-    assert_array_almost_equal(bx, correctbx)
-
-    # 4d Array
-    obs = [[[[56, 23],
-             [21, 45]],
-            [[13, 16],
-             [76, 99]]],
-           [[[21, 22],
-             [41, 44]],
-            [[22, 32],
-             [33, 53]]]]
-    c = association(observed=obs)
-    cx = association(observed=obs, correct_bias=False)
-    correctc = np.array([[0.32170191, 0.46508101], [0.20871773, 0.09505997]])
-    correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
-    assert_array_almost_equal(c, correctc)
-    assert_array_almost_equal(cx, correctcx)
 
 
 def test_tschuprowst():
 
     # 2d Array
-    obs = [[12, 13, 14, 15, 16],
-           [17, 16, 18, 19, 11],
-           [9, 15, 14, 12, 11]]
-    a = association(observed=obs, stat="t")
-    ax = association(observed=obs, stat="t", correct_bias=False)
-    correcta = np.array([0.])
-    correctax = np.array([0.06558142])
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    num_obs = sum(obs.flatten())
+    num_cols = obs.shape[1]
+    num_rows = obs.shape[0]
+    chi2 = tuple(chi2_contingency(obs))[0]
+    a = association(n_obs=num_obs, n_rows=num_rows,
+                    n_cols=num_cols, chi2_stat=chi2,
+                    stat='t')
+    ax = association(n_obs=num_obs, n_rows=num_rows,
+                     n_cols=num_cols, chi2_stat=chi2,
+                     stat="t", correct_bias=True)
+    correcta = 0.0
+    correctax = 0.06558142
     assert_array_almost_equal(a, correcta)
     assert_array_almost_equal(ax, correctax)
-
-    # 3d Array
-    obs = [[[13, 23, 10],
-            [33, 43, 21]],
-           [[35, 36, 15],
-            [37, 38, 18]],
-           [[22, 21, 13],
-            [12, 18, 13]]]
-    b = association(observed=obs, stat="t")
-    bx = association(observed=obs, stat="t", correct_bias=False)
-    correctb = np.array([0.18273471, 0., 0.08579792])
-    correctbx = np.array([0.20736028, 0.01481425, 0.14493906])
-    assert_array_almost_equal(b, correctb)
-    assert_array_almost_equal(bx, correctbx)
-
-    # 4d Array
-    obs = [[[[56, 23],
-             [21, 45]],
-            [[13, 16],
-             [76, 99]]],
-           [[[21, 22],
-             [41, 44]],
-            [[22, 32],
-             [33, 53]]]]
-    c = association(observed=obs, stat="t")
-    cx = association(observed=obs, stat="t", correct_bias=False)
-    correctc = np.array([[0.32170191, 0.46508101], [0.20871773, 0.09505997]])
-    correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
-    assert_array_almost_equal(c, correctc)
-    assert_array_almost_equal(cx, correctcx)
 
 
 def test_phi():
 
     # 2d Array
-    obs = [[12, 13, 14, 15, 16],
-           [17, 16, 18, 19, 11],
-           [9, 15, 14, 12, 11]]
-    a = association(observed=obs, stat="phi")
-    ax = association(observed=obs, stat="phi", correct_bias=False)
-    correcta = np.array([0.])
-    correctax = np.array([0.11029436])
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    num_obs = sum(obs.flatten())
+    num_cols = obs.shape[1]
+    num_rows = obs.shape[0]
+    chi2 = tuple(chi2_contingency(obs))[0]
+    a = association(n_obs=num_obs, n_rows=num_rows,
+                    n_cols=num_cols, chi2_stat=chi2,
+                    stat='phi')
+    ax = association(n_obs=num_obs, n_rows=num_rows,
+                     n_cols=num_cols, chi2_stat=chi2,
+                     stat="phi", correct_bias=True)
+    correcta = 0.0
+    correctax = 0.11029436
     assert_array_almost_equal(a, correcta)
     assert_array_almost_equal(ax, correctax)
-
-    # 3d Array
-    obs = [[[13, 23, 10],
-            [33, 43, 21]],
-           [[35, 36, 15],
-            [37, 38, 18]],
-           [[22, 21, 13],
-            [12, 18, 13]]]
-    b = association(observed=obs, stat="phi")
-    bx = association(observed=obs, stat="phi", correct_bias=False)
-    correctb = np.array([0.21615793, 0., 0.10030634])
-    correctbx = np.array([0.24659432, 0.01761721, 0.17236256])
-    assert_array_almost_equal(b, correctb)
-    assert_array_almost_equal(bx, correctbx)
-
-    # 4d Array
-    obs = [[[[56, 23],
-             [21, 45]],
-            [[13, 16],
-             [76, 99]]],
-           [[[21, 22],
-             [41, 44]],
-            [[22, 32],
-             [33, 53]]]]
-    c = association(observed=obs, stat="phi")
-    cx = association(observed=obs, stat="phi", correct_bias=False)
-    correctc = np.array([[0.32058294, 0.46232834], [0.2066736, 0.09379639]])
-    correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
-    assert_array_almost_equal(c, correctc)
-    assert_array_almost_equal(cx, correctcx)
 
 
 def test_c():
 
     # 2d Array
-    obsA = [[12, 13, 14, 15, 16],
-            [17, 16, 18, 19, 11],
-            [9, 15, 14, 12, 11]]
-    a = association(observed=obsA, stat="c")
-    correcta = np.array([0.10962956])
+
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    num_obs = sum(obs.flatten())
+    num_cols = obs.shape[1]
+    num_rows = obs.shape[0]
+    chi2 = tuple(chi2_contingency(obs))[0]
+    a = association(n_obs=num_obs, n_rows=num_rows,
+                    n_cols=num_cols, chi2_stat=chi2,
+                    stat='c')
+    correcta = 0.10962956
     assert_array_almost_equal(a, correcta)
 
-    # 3d Array
-    obsB = [[[13, 23, 10],
-             [33, 43, 21]],
-            [[35, 36, 15],
-             [37, 38, 18]],
-            [[22, 21, 13],
-             [12, 18, 13]]]
-    b = association(observed=obsB, stat="c")
-    correctb = np.array([0.23942225, 0.01761448, 0.16985789])
-    assert_array_almost_equal(b, correctb)
-
-    # 4d Array
-    obsC = [[[[56, 23],
-              [21, 45]],
-             [[13, 16],
-              [76, 99]]],
-            [[[21, 22],
-              [41, 44]],
-             [[22, 32],
-              [33, 53]]]]
-    c = association(observed=obsC, stat="c")
-    correctc = np.array([[0.31443609, 0.42354437], [0.21905398, 0.12438315]])
-    assert_array_almost_equal(c, correctc)
