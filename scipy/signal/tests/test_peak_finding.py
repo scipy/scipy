@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import copy
+import platform
 
 import numpy as np
 from numpy.testing import (
@@ -775,6 +776,9 @@ class TestFindPeaks(object):
 
 class TestFindPeaksCwt(object):
 
+    @pytest.mark.skipif(np.dtype(np.intp).itemsize < 8 and 
+                        platform.system() == 'Linux',
+                        reason="gh-11095")
     def test_find_peaks_exact(self):
         """
         Generate a series of gaussians and attempt to find the peak locations.
@@ -788,6 +792,9 @@ class TestFindPeaksCwt(object):
         np.testing.assert_array_equal(found_locs, act_locs,
                         "Found maximum locations did not equal those expected")
 
+    @pytest.mark.skipif(np.dtype(np.intp).itemsize < 8 and 
+                        platform.system() == 'Linux',
+                        reason="gh-11095")
     def test_find_peaks_withnoise(self):
         """
         Verify that peak locations are (approximately) found
