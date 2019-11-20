@@ -350,8 +350,8 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
 
     Returns
     -------
-    value_array : float array
-        Values of the test statistic
+    value : float
+        Value of the test statistic
 
     References
     ----------
@@ -436,10 +436,10 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
     it was not included as a part of the supporting academic paper.
     """
 
-    if any([i for i in [n_obs, n_rows, n_cols] if type(i) != int]):
+    if any([i for i in [n_obs, n_rows, n_cols] if type(i) not in [float, int]]):
         raise TypeError("n_obs, n_rows, n_cols all must be int")
 
-    if stat.casefold() not in ['T', "C", 'V', 'phi']:
+    if stat.casefold() not in ['t', "c", 'v', 'phi']:
         raise ValueError("stat must be in ['T', 'C', 'V', 'phi']")
     else:
         stat_str = stat.casefold()
