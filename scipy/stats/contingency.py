@@ -6,11 +6,11 @@ from __future__ import division, print_function, absolute_import
 
 from functools import reduce
 import numpy as np
-from .stats import power_divergence, chisquare
+from .stats import power_divergence
 import math
-from warnings import warn
 
-__all__ = ['chi2_contingency']
+
+__all__ = ["chi2_contingency", "expected_freq", 'association', 'margins']
 
 
 def margins(a):
@@ -431,7 +431,6 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
     Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient. Moreover, due
     to the close relationship between the Cramer's V and Tschuprow's T the returned values can often
     be similar or even equivalent. They are likely to diverge more as the array shape diverges from a 2x2.
-    As is seen in the examples above.
 
     The evaluation of Pearsons Contingency Coefficient is not effected by the bias correction metric, because
     it was not included as a part of the supporting academic paper.
