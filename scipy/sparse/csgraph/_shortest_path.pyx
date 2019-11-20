@@ -630,6 +630,8 @@ cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
     heap.min_node = NULL
     for i in range(Nind):
         j_source = source_indices[i]
+        if nodes[j_source].state == SCANNED:
+            continue
         dist_matrix[j_source] = 0
         if return_pred:
             sources[j_source] = j_source
