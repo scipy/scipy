@@ -28,7 +28,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
            'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
-           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk']
+           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk', 'is_stable']
 
 
 class BadCoefficients(UserWarning):
@@ -1608,6 +1608,59 @@ def normalize(b, a):
         num = num[0, :]
 
     return num, den
+
+
+def is_stable(den):
+    """Determine digital filter stability
+
+    Parameters
+    ----------
+    b: array_like
+        Numerator of the transfer function. Can be a 2d array to normalize
+        multiple transfer functions.
+    a: array_like
+        Denominator of the transfer function. At most 1d.
+
+    Returns
+    -------
+    stable: bool
+        Indicates whether all poles of the filter are stable.
+
+    Notes
+    -----
+    This function checks if all poles of the filter lie within the z-plane unit circle.
+    As direct root finding is numerically unreliable, this function uses step-down,
+    reverse Levinson recursion to determine the denominator polynomial's reflection
+    coefficients, as shown in [1]_. For a stable filter, all reflection coefficients
+    have magnitude less than unity.
+
+    References
+    ----------
+    .. [1] S. M. Kay, "Modern Spectral Estimation: Theory and Application",
+           O.P. EngleWood Cliffs, N.J., Ch. 6, p.172, Eq. 6.51
+
+    """
+
+    den = np.atleast_1d(den)
+
+    if den.ndim != 1:
+        raise ValueError("Denominator polynomial must be rank-1 array.")
+
+    if np.all(den == 0):
+        raise ValueError("Denominator must have at least on nonzero element.")
+
+    den = np.trim_zeros(den, 'f')
+    a = den / den[0]  # Normalize to first element
+
+    stable = True
+    for ii in reversed(range(1, len(a))):
+        k = a[ii]
+        if abs(k) >= 1:
+            stable = False
+            break
+        a = (a[:ii] - k * a[ii:0:-1]) / (1 - k ** 2)
+
+    return stable
 
 
 def lp2lp(b, a, wo=1.0):
