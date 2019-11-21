@@ -328,26 +328,22 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     >>> num_obs = sum(obs.flatten())
     >>> num_rows = obs.shape[0]
     >>> num_cols = obs.shape[1]
-    >>> chi2_stat = tuple(chi2_contingency(obs))[0]
+    >>> chi2 = tuple(chi2_contingency(obs))[0]
 
     Pearson's contingency coefficient
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="C")
+    >>> association(num_obs, num_rows, num_cols, chi2, stat="C")
     0.22768
 
     Cramer's V
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="V")
+    >>> association(num_obs, num_rows, num_cols, chi2, stat="V")
     0.23382
 
     Tschuprow's T
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="T")
+    >>> association(num_obs, num_rows, num_cols, chi2, stat="T")
     0.17766
 
     Phi
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="phi")
+    >>> association(num_obs, num_rows, num_cols, chi2, stat="phi")
     0.23382
 
 
