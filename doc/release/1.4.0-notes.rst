@@ -26,19 +26,19 @@ Highlights of this release
 --------------------------
 
 - a new submodule, `scipy.fft`, now supersedes `scipy.fftpack`; this
-means support for ``long double`` transforms, faster multi-dimensional
-transforms, improved algorithm time complexity, release of the global
-intepreter lock, and control over threading behavior
+  means support for ``long double`` transforms, faster multi-dimensional
+  transforms, improved algorithm time complexity, release of the global
+  intepreter lock, and control over threading behavior
 - support for ``pydata/sparse`` arrays in `scipy.sparse.linalg`
 - substantial improvement to the documentation and functionality of
-several `scipy.special` functions, and some new additions
+  several `scipy.special` functions, and some new additions
 - the generalized inverse Gaussian distribution has been added to
-`scipy.stats`
+  `scipy.stats`
 - an implementation of the Edmonds-Karp algorithm in
-`scipy.sparse.csgraph.maximum_flow`
+  `scipy.sparse.csgraph.maximum_flow`
 - `scipy.spatial.SphericalVoronoi` now supports n-dimensional input, 
-has linear memory complexity, improved performance, and
-supports single-hemisphere generators
+   has linear memory complexity, improved performance, and
+   supports single-hemisphere generators
 
 
 New features
@@ -250,7 +250,7 @@ with rotational symmetries.
 for tracking whether they are furthest site diagrams
 
 `scipy.special` improvements
---------------------------
+----------------------------
 The Voigt profile has been added as `scipy.special.voigt_profile`.
 
 A real dispatch has been added for the Wright Omega function
@@ -309,7 +309,7 @@ Deprecated features
 Support for NumPy functions exposed via the root SciPy namespace is deprecated
 and will be removed in 2.0.0. For example, if you use ``scipy.rand`` or
 ``scipy.diag``, you should change your code to directly use
-:func:`numpy.random.default_rng` or :func:`numpy.diag`, respectively.
+``numpy.random.default_rng`` or ``numpy.diag``, respectively.
 They remain available in the currently continuing Scipy 1.x release series.
 
 The exception to this rule is using ``scipy.fft`` as a function --
@@ -356,7 +356,7 @@ https://github.com/scipy/scipy/issues/10968.
 
 `scipy.signal` changes
 ----------------------
-:func:`scipy.signal.resample` behavior for length-1 signal inputs has been
+`scipy.signal.resample` behavior for length-1 signal inputs has been
 fixed to output a constant (DC) value rather than an impulse, consistent with
 the assumption of signal periodicity in the FFT method.
 
@@ -366,7 +366,7 @@ time-asymmetric wavelets.
 
 `scipy.stats` changes
 ---------------------
-:func:`scipy.stats.loguniform` added with better documentation as (an alias for
+`scipy.stats.loguniform` added with better documentation as (an alias for
 ``scipy.stats.reciprocal``). ``loguniform`` generates random variables
 that are equally likely in the log space; e.g., ``1``, ``10`` and ``100``
 are all equally likely if ``loguniform(10 ** 0, 10 ** 2).rvs()`` is used.
@@ -377,7 +377,7 @@ Other changes
 The ``LSODA`` method of `scipy.integrate.solve_ivp` now correctly detects stiff
 problems.
 
-`scipy.spatial.ckdtree` now accepts and correctly handles empty input data
+`scipy.spatial.cKDTree` now accepts and correctly handles empty input data
 
 `scipy.stats.binned_statistic_dd` now calculates the standard deviation 
 statistic in a numerically stable way.
@@ -634,6 +634,7 @@ Issues closed for 1.4.0
 * `#10991 <https://github.com/scipy/scipy/issues/10991>`__: Error running openBlas probably missing a step
 * `#11033 <https://github.com/scipy/scipy/issues/11033>`__: deadlock on osx for python 3.8
 * `#11041 <https://github.com/scipy/scipy/issues/11041>`__: Test failure in wheel builds for TestTf2zpk.test_simple
+* `#11089 <https://github.com/scipy/scipy/issues/11089>`__: Regression in scipy.stats where distribution will not accept loc and scale parameters
 
 Pull requests for 1.4.0
 -----------------------
@@ -664,7 +665,7 @@ Pull requests for 1.4.0
 * `#10115 <https://github.com/scipy/scipy/pull/10115>`__: TST: Add a test with an almost singular design matrix for lsq_linear
 * `#10118 <https://github.com/scipy/scipy/pull/10118>`__: MAINT: fix rdist methods in scipy.stats
 * `#10119 <https://github.com/scipy/scipy/pull/10119>`__: MAINT: improve rvs of randint in scipy.stats
-* `#10127 <https://github.com/scipy/scipy/pull/10127>`__: Fix typo in record array field name (spatial-ckdtree-sparse_distance_…
+* `#10127 <https://github.com/scipy/scipy/pull/10127>`__: Fix typo in record array field name (spatial-ckdtree-sparse_distance…
 * `#10130 <https://github.com/scipy/scipy/pull/10130>`__: MAINT: ndimage: Fix some compiler warnings.
 * `#10131 <https://github.com/scipy/scipy/pull/10131>`__: DOC: Note the solve_ivp args enhancement in the 1.4.0 release...
 * `#10133 <https://github.com/scipy/scipy/pull/10133>`__: MAINT: add rvs for semicircular in scipy.stats
@@ -800,7 +801,7 @@ Pull requests for 1.4.0
 * `#10552 <https://github.com/scipy/scipy/pull/10552>`__: add scipy.signal.upfirdn signal extension modes
 * `#10555 <https://github.com/scipy/scipy/pull/10555>`__: MAINT: special: move \`c_misc\` into Cephes
 * `#10556 <https://github.com/scipy/scipy/pull/10556>`__: [DOC] Add example for trima
-* `#10562 <https://github.com/scipy/scipy/pull/10562>`__: [DOC] Fix triple string fo trimmed_\* so that __doc__ can show...
+* `#10562 <https://github.com/scipy/scipy/pull/10562>`__: [DOC] Fix triple string fo trimmed so that __doc__ can show...
 * `#10563 <https://github.com/scipy/scipy/pull/10563>`__: improve least_squares error msg for mismatched shape
 * `#10564 <https://github.com/scipy/scipy/pull/10564>`__: ENH: linalg: memoize get_lapack/blas_funcs to speed it up
 * `#10566 <https://github.com/scipy/scipy/pull/10566>`__: ENH: add implementation of solver for the maximum flow problem
@@ -993,3 +994,6 @@ Pull requests for 1.4.0
 * `#11066 <https://github.com/scipy/scipy/pull/11066>`__: BUG: skip deprecation for numpy top-level types
 * `#11067 <https://github.com/scipy/scipy/pull/11067>`__: DOC: updated documentation for consistency in writing style
 * `#11070 <https://github.com/scipy/scipy/pull/11070>`__: DOC: Amendment to Ubuntu Development Environment Quickstart should...
+* `#11073 <https://github.com/scipy/scipy/pull/11073>`__: DOC: fix 1.4.0 release notes
+* `#11083 <https://github.com/scipy/scipy/pull/11083>`__: DOC: more 1.4.0 release note fixes
+* `#11092 <https://github.com/scipy/scipy/pull/11092>`__: BUG: stats: fix freezing of some distributions
