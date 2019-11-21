@@ -634,6 +634,7 @@ Issues closed for 1.4.0
 * `#10991 <https://github.com/scipy/scipy/issues/10991>`__: Error running openBlas probably missing a step
 * `#11033 <https://github.com/scipy/scipy/issues/11033>`__: deadlock on osx for python 3.8
 * `#11041 <https://github.com/scipy/scipy/issues/11041>`__: Test failure in wheel builds for TestTf2zpk.test_simple
+* `#11089 <https://github.com/scipy/scipy/issues/11089>`__: Regression in scipy.stats where distribution will not accept loc and scale parameters
 
 Pull requests for 1.4.0
 -----------------------
@@ -993,3 +994,6 @@ Pull requests for 1.4.0
 * `#11066 <https://github.com/scipy/scipy/pull/11066>`__: BUG: skip deprecation for numpy top-level types
 * `#11067 <https://github.com/scipy/scipy/pull/11067>`__: DOC: updated documentation for consistency in writing style
 * `#11070 <https://github.com/scipy/scipy/pull/11070>`__: DOC: Amendment to Ubuntu Development Environment Quickstart should...
+* `#11073 <https://github.com/scipy/scipy/pull/11073>`__: DOC: fix 1.4.0 release notes
+* `#11083 <https://github.com/scipy/scipy/pull/11083>`__: DOC: more 1.4.0 release note fixes
+* `#11092 <https://github.com/scipy/scipy/pull/11092>`__: BUG: stats: fix freezing of some distributions
