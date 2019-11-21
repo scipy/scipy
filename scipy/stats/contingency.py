@@ -323,9 +323,9 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
 
     2-way Example
 
-    >>> from scipy.stats.contingency import association
+    >>> from scipy.stats.contingency import association, chi2_contingency
     >>> obs = np.array([[100, 150], [203, 322], [42, 7], [32, 21]])
-    >>> num_obs = int(sum(obs.flatten()))
+    >>> num_obs = sum(obs.flatten())
     >>> num_rows = obs.shape[0]
     >>> num_cols = obs.shape[1]
     >>> chi2_stat = tuple(chi2_contingency(obs))[0]
@@ -333,22 +333,22 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     Pearson's contingency coefficient
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="C")
-    0.42731574
+    0.22768
 
     Cramer's V
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="V")
-    0.47264083
+    0.23382
 
     Tschuprow's T
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="T")
-    0.35912937
+    0.17766
 
     Phi
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="phi")
-    0.47264083
+    0.23382
 
 
     Notes
