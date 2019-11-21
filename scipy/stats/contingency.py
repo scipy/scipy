@@ -277,54 +277,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     return chi2, p, dof, expected
 
 
-def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
-    """Corrects bias in estimated value of phi squared derived from nxn contingency tables.
-
-    Parameters
-    ----------
-    phi_squared : float
-        Empirical Phi Squared Value
-    n_rows : int
-        Unadjusted number of rows
-    n_cols : int
-        Unadjusted number of columns
-    n_obs : int
-        Total number of observations
-
-    Returns
-    -------
-    adj_phisq : float
-        Unbiased Phi Squared value
-    nrows_hat : float
-        Unbiased number of rows
-    ncols_hat : float
-        Unbiased number of columns
-
-
-    References
-    ----------
-    .. [1] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T",
-           London School of Econ. and Pol. Sci., pp. 2-4. http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
-    .. [2] https://en.wikipedia.org/wiki/Cramer's_V
-
-
-    Notes
-    ------
-    Improves accuracy of estimators with tables > 2x2 and smaller sample sizes [1]
-
-    Cramer's V can be a heavily biased estimator of its population counterpart
-    and will tend to overestimate the strength of association. The adjusted statistic
-    estimates the same population quantity as the original statistic but with typically
-    much smaller mean squared error. [2]
-    """
-    phi_squared = phi_squared - (((n_rows - 1) * (n_cols - 1)) / (n_obs - 1))
-    adj_phisq = max(0., phi_squared)
-    nrows_hat = float(n_rows - (((n_rows - 1) ** 2) / (n_obs - 1)))
-    ncols_hat = float(n_cols - (((n_cols - 1) ** 2) / (n_obs - 1)))
-    return adj_phisq, nrows_hat, ncols_hat
-
-
-def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
+def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     """Calculates degree of association between variables that are nominal or greater.
 
     Allows for specification of one of four related methods, Tschuprow's T, Pearson's Contingency Coefficient,
@@ -334,19 +287,16 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
     ----------
     stat : {"V", "T", "C", "phi"} (default = "V")
         The association test statistic.
-    n_obs : int
+    n_obs : int or float
         The total number of observations
-    n_rows : int
+    n_rows : int or float
         The total number of rows
-    n_cols : int
+    n_cols : int or float
         The total number of columns
     chi2_stat : float
         The chi squared statistic.
     stat : {"V", "T", "C", "phi"} (default = "V")
         The association test statistic.
-    correct_bias : boolean, optional (default = False)
-        If True, bias correction will be applied to phi as per Bergsma (2013) &
-        does not apply to Pearson's Contingency Coefficient ('C').
 
     Returns
     -------
@@ -375,9 +325,9 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
 
     >>> from scipy.stats.contingency import association
     >>> obs = np.array([[100, 150], [203, 322], [42, 7], [32, 21]])
-    >>> num_obs = sum(obs.flatten())
-    >>> num_rows = 4
-    >>> num_cols = 2
+    >>> num_obs = int(sum(obs.flatten()))
+    >>> num_rows = obs.shape[0]
+    >>> num_cols = obs.shape[1]
     >>> chi2_stat = tuple(chi2_contingency(obs))[0]
 
     Pearson's contingency coefficient
@@ -385,38 +335,20 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
     ...             chi2_stat=chi2_stat, stat="C")
     0.42731574
 
-    Cramer's V without bias correction
+    Cramer's V
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="V")
     0.47264083
 
-
-    Cramer's V with bias correction
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="V", correct_bias=True)
-    0.46927187
-
-    Tschuprow's T without bias correction
+    Tschuprow's T
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="T")
     0.35912937
 
-    Tschuprow's T with bias correction
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="T", correct_bias=True)
-    0.35677355
-
-
-    Phi without bias correction
+    Phi
     >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
     ...             chi2_stat=chi2_stat, stat="phi")
     0.47264083
-
-
-    Phi with bias correction
-    >>> association(n_obs=num_obs, n_rows=num_rows, n_cols=num_cols,
-    ...             chi2_stat=chi2_stat, stat="phi", correct_bias=True)
-    0.46900394
 
 
     Notes
@@ -436,29 +368,24 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V", correct_bias=False):
     it was not included as a part of the supporting academic paper.
     """
 
-    if any([i for i in [n_obs, n_rows, n_cols] if type(i) not in [float, int]]):
-        raise TypeError("n_obs, n_rows, n_cols all must be int")
+    try:
+        n_obs = int(n_obs)
+        n_cols = int(n_cols)
+        n_rows = int(n_rows)
+    except ValueError:
+        raise ValueError("n_obs, n_cols, n_rows must be int or float")
 
     if stat.casefold() not in ['t', "c", 'v', 'phi']:
         raise ValueError("stat must be in ['T', 'C', 'V', 'phi']")
     else:
         stat_str = stat.casefold()
 
-    if type(chi2_stat) is int or type(chi2_stat) is float:
-        phi2 = float(chi2_stat) / n_obs
+    try:
+        chi2_stat = float(chi2_stat)
+    except ValueError:
+        raise ValueError("Invalid chi2_stat, must be float or int")
     else:
-        raise TypeError("Invalid chi2_stat value")
-
-    if correct_bias is True:
-        if stat_str != "c":
-            phi2, n_rows, n_cols = _association_bias_correction(phi_squared=phi2, n_rows=n_rows,
-                                                                n_cols=n_cols, n_obs=n_obs)
-        else:
-            raise ValueError("correction bias only applies to stats 't', 'v', or 'phi'. ")
-    elif correct_bias is False:
-        pass
-    else:
-        raise TypeError("invalid argument type: 'correct_bias' must be boolean")
+        phi2 = chi2_stat / n_obs
 
     if stat_str == "v":
         value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))

@@ -202,24 +202,19 @@ def test_chi2_contingency_bad_args():
 def test_bad_association_args():
 
     # Invalid Chi Squared Stat Value Type
-    assert_raises(TypeError, association, 50, 2, 2, str(1), "T", True)
-
-    # Invalid Correct Bias Value
-
-    assert_raises(TypeError, association, 50, 2, 2, 2.55, "T", "True")
+    assert_raises(ValueError, association, 50, 2, 2, "x", "T")
 
     # Invalid Test Statistic
-
-    assert_raises(ValueError, association, 50, 2, 2, 2.55, "X", True)
+    assert_raises(ValueError, association, 50, 2, 2, 2.55, "X")
 
     # Invalid n_rows data type
-    assert_raises(TypeError, association, 50, "2", 2, 2.55, "T", True)
+    assert_raises(ValueError, association, 50, "X", 2, 2.55, "T")
 
     # Invalid n_cols data type
-    assert_raises(TypeError, association, 50, 2, "2", 2.55, "T", True)
+    assert_raises(ValueError, association, 50, 2, "X", 2.55, "T")
 
     # Invalid n_obs data type
-    assert_raises(TypeError, association, "50", 2, 2, 2.55, "T", True)
+    assert_raises(ValueError, association, "X", 2, 2, 2.55, "T")
 
 
 def test_cramersv():
@@ -233,14 +228,11 @@ def test_cramersv():
     num_rows = obs.shape[0]
     chi2 = tuple(chi2_contingency(obs))[0]
     a = association(n_obs=num_obs, n_rows=num_rows,
-                    n_cols=num_cols, chi2_stat=chi2)
-    ax = association(n_obs=num_obs, n_rows=num_rows,
-                     n_cols=num_cols, chi2_stat=chi2,
-                     correct_bias=True)
-    correcta = 0.0
-    correctax = 0.07798989
-    assert_array_almost_equal(a, correcta)
-    assert_array_almost_equal(ax, correctax)
+                    n_cols=num_cols, chi2_stat=chi2,
+                    stat='v')
+
+    correct = 0.09222412010290792
+    assert_approx_equal(a, correct)
 
 
 def test_tschuprowst():
@@ -256,13 +248,8 @@ def test_tschuprowst():
     a = association(n_obs=num_obs, n_rows=num_rows,
                     n_cols=num_cols, chi2_stat=chi2,
                     stat='t')
-    ax = association(n_obs=num_obs, n_rows=num_rows,
-                     n_cols=num_cols, chi2_stat=chi2,
-                     stat="t", correct_bias=True)
-    correcta = 0.0
-    correctax = 0.06558142
-    assert_array_almost_equal(a, correcta)
-    assert_array_almost_equal(ax, correctax)
+    correct = 0.0775509319944633
+    assert_approx_equal(a, correct)
 
 
 def test_phi():
@@ -278,14 +265,8 @@ def test_phi():
     a = association(n_obs=num_obs, n_rows=num_rows,
                     n_cols=num_cols, chi2_stat=chi2,
                     stat='phi')
-    ax = association(n_obs=num_obs, n_rows=num_rows,
-                     n_cols=num_cols, chi2_stat=chi2,
-                     stat="phi", correct_bias=True)
-    correcta = 0.0
-    correctax = 0.11029436
-    assert_array_almost_equal(a, correcta)
-    assert_array_almost_equal(ax, correctax)
-
+    correct = 0.1304246014274576
+    assert_approx_equal(a, correct)
 
 def test_c():
 
@@ -301,6 +282,6 @@ def test_c():
     a = association(n_obs=num_obs, n_rows=num_rows,
                     n_cols=num_cols, chi2_stat=chi2,
                     stat='c')
-    correcta = 0.10962956
-    assert_array_almost_equal(a, correcta)
+    correct = 0.12932925727138758
+    assert_approx_equal(a, correct)
 
