@@ -5,6 +5,7 @@ from multiprocessing.pool import Pool as PWL
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
+import pytest
 from pytest import raises as assert_raises
 
 from scipy._lib._util import _aligned_zeros, check_random_state, MapWrapper
@@ -110,38 +111,3 @@ def test_mapwrapper_parallel():
         assert_equal(list(out), out_arg)
     finally:
         p.close()
-
-
-# get our custom ones and a few from the "import *" cases
-@pytest.mark.parametrize(
-    'key', ('fft', 'ifft', 'diag', 'arccos',
-            'randn', 'rand', 'array', 'finfo'))
-def test_numpy_deprecation(key):
-    """Test that 'from numpy import *' functions are deprecated."""
-    if key in ('fft', 'ifft', 'diag', 'arccos'):
-        arg = [1.0, 0.]
-    elif key == 'finfo':
-        arg = float
-    else:
-        arg = 2
-    func = getattr(scipy, key)
-    if key == 'fft':
-        match = r'scipy\.fft.*deprecated.*1.5.0.*'
-    else:
-        match = r'scipy\.%s is deprecated.*2\.0\.0' % key
-    with deprecated_call(match=match) as dep:
-        func(arg)  # deprecated
-    # in case we catch more than one dep warning
-    fnames = [os.path.splitext(d.filename)[0] for d in dep.list]
-    basenames = [os.path.basename(fname) for fname in fnames]
-    assert 'test__util' in basenames
-    if key in ('rand', 'randn'):
-        root = np.random
-    elif key in ('fft', 'ifft'):
-        root = np.fft
-    else:
-        root = np
-    func_np = getattr(root, key)
-    func_np(arg)  # not deprecated
-    assert func_np is not func
->>>>>>> 9eed43b78... MAINT:TST: Skipped tests that use spawn start method
