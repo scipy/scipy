@@ -891,7 +891,7 @@ def test_align_vectors_no_rotation():
     x = np.array([[1, 2, 3], [4, 5, 6]])
     y = x.copy()
 
-    r, rmsd, p = Rotation.align_vectors(x, y)
+    r, rmsd = Rotation.align_vectors(x, y)
     assert_array_almost_equal(r.as_matrix(), np.eye(3))
     assert_allclose(rmsd, 0, atol=1e-6)
 
@@ -902,7 +902,7 @@ def test_align_vectors_no_noise():
     b = np.random.normal(size=(5, 3))
     a = c.apply(b)
 
-    est, rmsd, cov = Rotation.align_vectors(a, b)
+    est, rmsd = Rotation.align_vectors(a, b)
     assert_allclose(c.as_quat(), est.as_quat())
     assert_allclose(rmsd, 0, atol=1e-7)
 
@@ -914,7 +914,7 @@ def test_align_vectors_improper_rotation():
     y = np.array([[0.02386536, -0.82176463, 0.5693271],
                   [-0.27654929, -0.95191427, -0.1318321]])
 
-    est, rmsd, cov = Rotation.align_vectors(x, y)
+    est, rmsd = Rotation.align_vectors(x, y)
     assert_allclose(x, est.apply(y), atol=1e-6)
     assert_allclose(rmsd, 0, atol=1e-7)
 
@@ -925,8 +925,8 @@ def test_align_vectors_scaled_weights():
     b = rng.normal(size=(5, 3))
     a = c.apply(b)
 
-    est1, rmsd1, cov1 = Rotation.align_vectors(a, b, np.ones(5))
-    est2, rmsd2, cov2 = Rotation.align_vectors(a, b, 2 * np.ones(5))
+    est1, rmsd1, cov1 = Rotation.align_vectors(a, b, np.ones(5), True)
+    est2, rmsd2, cov2 = Rotation.align_vectors(a, b, 2 * np.ones(5), True)
 
     assert_allclose(est1.as_matrix(), est2.as_matrix())
     assert_allclose(np.sqrt(2) * rmsd1, rmsd2)
@@ -954,7 +954,8 @@ def test_align_vectors_noise():
     # rotations to each vector.
     noisy_result = noise.apply(result)
 
-    est, rmsd, cov = Rotation.align_vectors(noisy_result, vectors)
+    est, rmsd, cov = Rotation.align_vectors(noisy_result, vectors,
+                                            return_sensitivity=True)
 
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()

@@ -1838,7 +1838,7 @@ class Rotation(object):
         return cls.from_matrix(C), sensitivity
 
     @classmethod
-    def align_vectors(cls, a, b, weights=None):
+    def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
         """Estimate a rotation to optimally align two sets of vectors.
 
         Find a rotation between frames A and B which best aligns a set of
@@ -1855,8 +1855,39 @@ class Rotation(object):
 
         The rotation is estimated with Kabsch algorithm [1]_.
 
-        This method also computes the sensitivity of the estimated rotation to
-        small perturbations of the vector measurements. Specifically we
+        Parameters
+        ----------
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the vector
+            observations. If None (default), then all values in `weights` are
+            assumed to be 1.
+        return_sensitivity : bool, optional
+            Whether to return the sensitivity matrix. See Notes for details.
+            Default is False.
+
+        Returns
+        -------
+        estimated_rotation : `Rotation` instance
+            Best estimate of the rotation that transforms `b` to `a`.
+        rmsd : float
+            Root mean square distance (weighted) between the given set of
+            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
+            where ``minimum_loss`` is the loss function evaluated for the
+            found optimal rotation.
+        sensitivity_matrix : ndarray, shape (3, 3)
+            Sensitivity matrix of the estimated rotation estimate as explained
+            in Notes. Returned only when `return_sensitivity` is True.
+
+        Notes
+        -----
+        This method can also compute the sensitivity of the estimated rotation
+        to small perturbations of the vector measurements. Specifically we
         consider the rotation estimate error as a small rotation vector of
         frame A. The sensitivity matrix is proportional to the covariance of
         this rotation vector assuming that the vectors in `a` was measured with
@@ -1871,32 +1902,6 @@ class Rotation(object):
 
         Refer to [2]_ for more rigorous discussion of the covariance
         estimation.
-
-        Parameters
-        ----------
-        a : array_like, shape (N, 3)
-            Vector components observed in initial frame A. Each row of `a`
-            denotes a vector.
-        b : array_like, shape (N, 3)
-            Vector components observed in another frame B. Each row of `b`
-            denotes a vector.
-        weights : array_like shape (N,), optional
-            Weights describing the relative importance of the vector
-            observations. If None (default), then all values in `weights` are
-            assumed to be 1.
-
-        Returns
-        -------
-        estimated_rotation : `Rotation` instance
-            Best estimate of the rotation that transforms `b` to `a`.
-        rmsd : float
-            Root mean square distance (weighted) between the given set of
-            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
-            where ``minimum_loss`` is the loss function evaluated for the
-            found optimal rotation.
-        sensitivity_matrix : ndarray, shape (3, 3)
-            Sensitivity matrix of the estimated rotation estimate as explained
-            above.
 
         References
         ----------
@@ -1952,16 +1957,19 @@ class Rotation(object):
             warnings.warn("Optimal rotation is poorly defined for the given "
                           "arrangement of vectors.")
 
-        zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
-        kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
-        with np.errstate(divide='ignore', invalid='ignore'):
-            sensitivity = np.mean(weights) / zeta * (
-                    kappa * np.eye(3) + np.dot(B, B.T))
+        rmsd = np.sqrt(max(
+            np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
+            0))
 
-        loss = max(0.5 * np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1))
-                   - np.sum(s), 0)
-
-        return cls.from_matrix(C), np.sqrt(2 * loss), sensitivity
+        if return_sensitivity:
+            zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
+            kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                sensitivity = np.mean(weights) / zeta * (
+                        kappa * np.eye(3) + np.dot(B, B.T))
+            return cls.from_matrix(C), rmsd, sensitivity
+        else:
+            return cls.from_matrix(C), rmsd
 
 
 class Slerp(object):
