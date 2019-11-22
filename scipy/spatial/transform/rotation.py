@@ -1944,8 +1944,11 @@ class Rotation(object):
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
-        minimum_loss : float
-            Achieved minimum value of the loss function.
+        rmsd : float
+            Root mean square distance (weighted) between the given set of
+            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
+            where ``minimum_loss`` is the loss function evaluated for the
+            found optimal rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             above.
@@ -2013,7 +2016,7 @@ class Rotation(object):
         loss = max(0.5 * np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1))
                    - np.sum(s), 0)
 
-        return cls.from_matrix(C), loss, sensitivity
+        return cls.from_matrix(C), np.sqrt(2 * loss), sensitivity
 
 
 class Slerp(object):
