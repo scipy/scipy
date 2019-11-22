@@ -1779,62 +1779,7 @@ class Rotation(object):
                           "align_vectors in scipy 1.4.0 and will be removed "
                           "in scipy 1.6.0")
     def match_vectors(cls, a, b, weights=None, normalized=False):
-        """Estimate a rotation to match two sets of vectors.
-
-        Find a rotation between frames A and B which best matches a set of unit
-        vectors `a` and `b` observed in these frames. The following loss
-        function is minimized to solve for the rotation matrix
-        :math:`C`:
-
-        .. math::
-
-            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
-            C \\mathbf{b}_i \\rVert^2 ,
-
-        where :math:`w_i`'s are the `weights` corresponding to each vector.
-
-        The rotation is estimated using Markley's SVD method [1]_.
-
-        Parameters
-        ----------
-        a : array_like, shape (N, 3)
-            Vector components observed in initial frame A. Each row of `a`
-            denotes a vector.
-        b : array_like, shape (N, 3)
-            Vector components observed in another frame B. Each row of `b`
-            denotes a vector.
-        weights : array_like shape (N,), optional
-            Weights describing the relative importance of the vectors in
-            `a`. If None (default), then all values in `weights` are assumed to
-            be equal.
-        normalized : bool, optional
-            If True, assume input vectors `a` and `b` to have unit norm. If
-            False, normalize `a` and `b` before estimating rotation. Default
-            is False.
-
-        Returns
-        -------
-        estimated_rotation : `Rotation` instance
-            Best estimate of the rotation that transforms `b` to `a`.
-        sensitivity_matrix : ndarray, shape (3, 3)
-            Scaled covariance of the attitude errors expressed as the small
-            rotation vector of frame A. Multiply with harmonic mean [3]_ of
-            variance in each observation to get true covariance matrix. The
-            error model is detailed in [2]_.
-
-        References
-        ----------
-        .. [1] F. Landis Markley,
-                "Attitude determination using vector observations: a fast
-                optimal matrix algorithm", Journal of Astronautical Sciences,
-                Vol. 41, No.2, 1993, pp. 261-280.
-        .. [2] F. Landis Markley,
-                "Attitude determination using vector observations and the
-                Singular Value Decomposition", Journal of Astronautical
-                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-
-        """
+        """Deprecated in favor of `align_vectors`."""
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
             raise ValueError("Expected input `a` to have shape (N, 3), "
