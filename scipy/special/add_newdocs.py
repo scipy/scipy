@@ -5423,17 +5423,83 @@ add_newdoc("k1e",
     """)
 
 add_newdoc("kei",
-    """
-    kei(x)
+    r"""
+    kei(x, out=None)
 
-    Kelvin function ker
+    Kelvin function kei.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{kei}(x) = \Im[K_0(x e^{\pi i / 4})]
+
+    where :math:`K_0` is the modified Bessel function of the second
+    kind (see `kv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    See Also
+    --------
+    ker : the corresponding real part
+    keip : the derivative of kei
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using the modified Bessel function of the
+    second kind.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).imag
+    array([-0.49499464, -0.20240007, -0.05112188,  0.0021984 ])
+    >>> sc.kei(x)
+    array([-0.49499464, -0.20240007, -0.05112188,  0.0021984 ])
+
     """)
 
 add_newdoc("keip",
-    """
-    keip(x)
+    r"""
+    keip(x, out=None)
 
-    Derivative of the Kelvin function kei
+    Derivative of the Kelvin function kei.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The values of the derivative of kei.
+
+    See Also
+    --------
+    kei
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("kelvin",
@@ -5453,17 +5519,83 @@ add_newdoc("kelvin",
     """)
 
 add_newdoc("ker",
-    """
-    ker(x)
+    r"""
+    ker(x, out=None)
 
-    Kelvin function ker
+    Kelvin function ker.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{ker}(x) = \Re[K_0(x e^{\pi i / 4})]
+
+    Where :math:`K_0` is the modified Bessel function of the second
+    kind (see `kv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    See Also
+    --------
+    kei : the corresponding imaginary part
+    kerp : the derivative of ker
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using the modified Bessel function of the
+    second kind.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).real
+    array([ 0.28670621, -0.04166451, -0.06702923, -0.03617885])
+    >>> sc.ker(x)
+    array([ 0.28670621, -0.04166451, -0.06702923, -0.03617885])
+
     """)
 
 add_newdoc("kerp",
-    """
-    kerp(x)
+    r"""
+    kerp(x, out=None)
 
-    Derivative of the Kelvin function ker
+    Derivative of the Kelvin function ker.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the derivative of ker.
+
+    See Also
+    --------
+    ker
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("kl_div",
