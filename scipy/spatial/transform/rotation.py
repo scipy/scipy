@@ -1926,10 +1926,6 @@ class Rotation(object):
                              ", got {} and {} respectively.".format(
                                 a.shape, b.shape))
 
-        if b.shape[0] == 1:
-            raise ValueError("Rotation cannot be estimated using a single "
-                             "vector.")
-
         if weights is None:
             weights = np.ones(len(b))
         else:
@@ -1954,8 +1950,8 @@ class Rotation(object):
         C = np.dot(u, vh)
 
         if s[1] + s[2] < 1e-16 * s[0]:
-            warnings.warn("Optimal rotation is poorly defined for the given "
-                          "arrangement of vectors.")
+            warnings.warn("Optimal rotation is not uniquely or poorly defined "
+                          "for the given sets of vectors.")
 
         rmsd = np.sqrt(max(
             np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),

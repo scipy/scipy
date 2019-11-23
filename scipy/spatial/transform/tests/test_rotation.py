@@ -972,6 +972,12 @@ def test_align_vectors_noise():
     assert_allclose(rmsd, np.sum((noisy_result - est.apply(vectors))**2)**0.5)
 
 
+def test_align_vectors_single_vector():
+    with pytest.warns(UserWarning, match="Optimal rotation is not"):
+        r_estimate, rmsd = Rotation.align_vectors([[1, -1, 1]], [[1, 1, -1]])
+        assert_allclose(rmsd, 0, atol=1e-16)
+
+
 def test_random_rotation_shape():
     assert_equal(Rotation.random().as_quat().shape, (4,))
     assert_equal(Rotation.random(None).as_quat().shape, (4,))
