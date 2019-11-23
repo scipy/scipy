@@ -246,3 +246,9 @@ class TestRecurrence(object):
         v = orth.eval_hermite(70, 1.0)
         a = -1.457076485701412e60
         assert_allclose(v,a)
+
+
+def test_hermite_domain():
+    # Regression test for gh-11091.
+    assert np.isnan(orth.eval_hermite(-1, 1.0))
+    assert np.isnan(orth.eval_hermitenorm(-1, 1.0))
