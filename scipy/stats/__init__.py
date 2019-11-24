@@ -248,6 +248,7 @@ Statistical tests
    ttest_ind_from_stats
    ttest_rel
    kstest
+   cvm_test
    chisquare
    power_divergence
    ks_2samp
