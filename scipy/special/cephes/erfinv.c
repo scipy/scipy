@@ -1,13 +1,10 @@
-#ifndef ERF_INV_H
-#define ERF_INV_H
-
 /*
  * mconf configures NANS, INFINITYs etc. for cephes and includes some standard
  * headers. Although erfinv and erfcinv are not defined in cephes, erf and erfc
  * are. We want to keep the behaviour consistent for the inverse functions and
  * so need to include mconf.
  */
-#include "cephes/mconf.h"
+#include "mconf.h"
 
 /*
  * Inverse of the error function.
@@ -17,20 +14,27 @@
  * such that erf(erfinv(y)) = y.
  */
 double erfinv(double y) {
-    if (cephes_isnan(y)) {
-        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+    const double domain_lb = -1;
+    const double domain_ub = 1;
+
+    if ((domain_lb < y) && (y < domain_ub)) {
+        return ndtri(0.5 * (y+1)) * NPY_SQRT1_2;
     }
-    else if (y <= -1) {
+    else if (cephes_isnan(y)) {
+        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
+        return y;
+    }
+    else if (y == domain_lb) {
         sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
         return -NPY_INFINITY;
     }
-    else if (y >= 1) {
+    else if (y == domain_ub) {
         sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
         return NPY_INFINITY;
     }
     else {
-        return ndtri(0.5 * (y+1)) * NPY_SQRT1_2;
+        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
     }
 }
 
@@ -42,21 +46,26 @@ double erfinv(double y) {
  * such that erfc(erfcinv(y)) = y.
  */
 double erfcinv(double y) {
-    if (cephes_isnan(y)) {
-        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+    const double domain_lb = 0;
+    const double domain_ub = 2;
+
+    if ((domain_lb < y) && (y < domain_ub)) {
+        return -ndtri(0.5 * y) * NPY_SQRT1_2;
     }
-    else if (y <= 0) {
+    else if (cephes_isnan(y)) {
+        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
+        return y;
+    }
+    else if (y == domain_lb) {
         sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
         return NPY_INFINITY;
     }
-    else if (y >= 2) {
+    else if (y == domain_ub) {
         sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
         return -NPY_INFINITY;
     }
     else {
-        return -ndtri(0.5 * y) * NPY_SQRT1_2;
+        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
     }
 }
-
-#endif // ERF_INV_H

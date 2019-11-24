@@ -383,12 +383,12 @@
         }
     },
     "erfinv": {
-        "_erfinv.h": {
+        "cephes.h": {
             "erfinv": "d->d"
         }
     },
     "erfcinv": {
-        "_erfinv.h": {
+        "cephes.h": {
             "erfcinv": "d->d"
         }
     },

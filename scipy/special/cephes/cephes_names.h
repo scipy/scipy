@@ -64,6 +64,8 @@
 #define ndtr cephes_ndtr
 #define erfc cephes_erfc
 #define erf cephes_erf
+#define erfinv cephes_erfinv
+#define erfcinv cephes_erfcinv
 #define ndtri cephes_ndtri
 #define pdtrc cephes_pdtrc
 #define pdtr cephes_pdtr

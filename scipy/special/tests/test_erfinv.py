@@ -32,16 +32,28 @@ class TestInverseErrorFunction:
         'f, x, y',
         [
             (sc.erfinv, -1, -np.inf),
+            (sc.erfinv, 0, 0),
             (sc.erfinv, 1, np.inf),
+            (sc.erfinv, -100, np.nan),
+            (sc.erfinv, 100, np.nan),
             (sc.erfcinv, 0, np.inf),
+            (sc.erfcinv, 1, -0.0),
             (sc.erfcinv, 2, -np.inf),
+            (sc.erfcinv, -100, np.nan),
+            (sc.erfcinv, 100, np.nan),
         ],
         ids=[
-            'erfinv lower bound',
-            'erfinv upper bound',
-            'erfcinv lower bound',
-            'erfcinv upper bound',
+            'erfinv at lower bound',
+            'erfinv at midpoint',
+            'erfinv at upper bound',
+            'erfinv below lower bound',
+            'erfinv above upper bound',
+            'erfcinv at lower bound',
+            'erfcinv at midpoint',
+            'erfcinv at upper bound',
+            'erfcinv below lower bound',
+            'erfcinv above upper bound',
         ]
     )
-    def test_at_domain_bounds(self, f, x, y):
+    def test_domain_bounds(self, f, x, y):
         assert_equal(f(x), y)
