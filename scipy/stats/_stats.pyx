@@ -143,7 +143,7 @@ cdef _invert_in_place(intp_t[:] perm):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _toint64(x):
-    cdef intp_t i, j = 0, l = len(x)
+    cdef intp_t i = 0, j = 0, l = len(x)
     cdef intp_t[::1] perm = np.argsort(x, kind='quicksort')
     # The type of this array must be one of the supported types
     cdef int64_t[::1] result = np.ndarray(l, dtype=np.int64)
