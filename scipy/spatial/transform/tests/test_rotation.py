@@ -978,6 +978,26 @@ def test_align_vectors_single_vector():
         assert_allclose(rmsd, 0, atol=1e-16)
 
 
+def test_align_vectors_invalid_input():
+    with pytest.raises(ValueError, match="Expected input `a` to have shape"):
+        Rotation.align_vectors([1, 2, 3], [[1, 2, 3]])
+
+    with pytest.raises(ValueError, match="Expected input `b` to have shape"):
+        Rotation.align_vectors([[1, 2, 3]], [1, 2, 3])
+
+    with pytest.raises(ValueError, match="Expected inputs `a` and `b` "
+                                         "to have same shapes"):
+        Rotation.align_vectors([[1, 2, 3],[4, 5, 6]], [[1, 2, 3]])
+
+    with pytest.raises(ValueError,
+                       match="Expected `weights` to be 1 dimensional"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[[1]])
+
+    with pytest.raises(ValueError,
+                       match="Expected `weights` to have number of values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
+
+
 def test_random_rotation_shape():
     assert_equal(Rotation.random().as_quat().shape, (4,))
     assert_equal(Rotation.random(None).as_quat().shape, (4,))
