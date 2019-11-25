@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix
@@ -42,6 +43,13 @@ def test_csr_getrow():
 
         assert_array_almost_equal(arr_row, csr_row.toarray())
         assert_(type(csr_row) is csr_matrix)
+
+    # cannot slice with start index > stop index
+    with pytest.raises(IndexError):
+        Xcsr[3:2]
+
+    with pytest.raises(IndexError):
+        Xcsr[:, 3:2]
 
 
 def test_csr_getcol():
