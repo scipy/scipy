@@ -204,6 +204,11 @@ All functions
    cgetrf
    zgetrf
 
+   sgetc2
+   dgetc2
+   cgetc2
+   zgetc2
+
    sgetri
    dgetri
    cgetri
@@ -218,6 +223,11 @@ All functions
    dgetrs
    cgetrs
    zgetrs
+
+   sgesc2
+   dgesc2
+   cgesc2
+   zgesc2
 
    sgges
    dgges
