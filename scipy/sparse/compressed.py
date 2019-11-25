@@ -1275,6 +1275,9 @@ def _process_slice(sl, num):
         i0, i1, stride = sl.indices(num)
         if stride != 1:
             raise ValueError('slicing with step != 1 not supported')
+        if i0 > i1:
+            raise IndexError(
+                'slicing with start index > stop index is not supported')
     elif isintlike(sl):
         if sl < 0:
             sl += num
