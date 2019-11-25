@@ -468,10 +468,18 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
         goto fail;
     }
     if (iopt == 0|| n > no) {
+        Py_XDECREF(ap_wrk);
+        ap_wrk = NULL;
+        Py_XDECREF(ap_iwrk);
+        ap_iwrk = NULL;
+
         dims[0] = n;
         ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+        if (ap_wrk == NULL) {
+            goto fail;
+        }
         ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INT);
-        if (ap_wrk == NULL || ap_iwrk == NULL) {
+        if (ap_iwrk == NULL) {
             goto fail;
         }
     }
