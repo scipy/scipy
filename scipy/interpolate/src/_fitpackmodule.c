@@ -437,6 +437,8 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
         }
         n = no = ap_t->dimensions[0];
         memcpy(t, ap_t->data, n*sizeof(double));
+        Py_DECREF(ap_t);
+        ap_t = NULL;
     }
     if (iopt == 1) {
         memcpy(wrk, ap_wrk->data, n*sizeof(double));
