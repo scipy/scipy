@@ -218,7 +218,7 @@ class Rotation(object):
     __getitem__
     identity
     random
-    match_vectors
+    align_vectors
 
     See Also
     --------
@@ -1775,70 +1775,11 @@ class Rotation(object):
         return cls(sample)
 
     @classmethod
-    def match_vectors(cls, a, b, weights=None):
-        """Estimate a rotation to match two sets of vectors.
-
-        Find a rotation between frames A and B which best matches a set of
-        vectors `a` and `b` observed in these frames. The following loss
-        function is minimized to solve for the rotation matrix
-        :math:`C`:
-
-        .. math::
-
-            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
-            C \\mathbf{b}_i \\rVert^2 ,
-
-        where :math:`w_i`'s are the `weights` corresponding to each vector.
-
-        The rotation is estimated with Kabsch algorithm [1]_.
-
-        This method also computes the sensitivity of the estimated rotation to
-        small perturbations of the vector measurements. Specifically we
-        consider the rotation estimate error as a small rotation vector of
-        frame A. The sensitivity matrix is proportional to the covariance of
-        this rotation vector assuming that the vectors in `a` was measured with
-        errors significantly less than their lengths. To get the true
-        covariance matrix, the returned sensitivity matrix must be multiplied
-        by harmonic mean [3]_ of variance in each observation. Note that
-        `weights` are supposed to be inversely proportional to the observation
-        variances to get consistent results. For example, if all vectors are
-        measured with the same accuracy of 0.01 (`weights` must be all equal),
-        then you should multiple the sensitivity matrix by 0.01**2 to get the
-        covariance.
-
-        Refer to [2]_ for more rigorous discussion of the covariance
-        estimation.
-
-        Parameters
-        ----------
-        a : array_like, shape (N, 3)
-            Vector components observed in initial frame A. Each row of `a`
-            denotes a vector.
-        b : array_like, shape (N, 3)
-            Vector components observed in another frame B. Each row of `b`
-            denotes a vector.
-        weights : array_like shape (N,), optional
-            Weights describing the relative importance of the vector
-            observations. If None (default), then all values in `weights` are
-            assumed to be equal.
-
-        Returns
-        -------
-        estimated_rotation : `Rotation` instance
-            Best estimate of the rotation that transforms `b` to `a`.
-        sensitivity_matrix : ndarray, shape (3, 3)
-            Sensitivity matrix of the estimated rotation estimate as explained
-            above.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
-        .. [2] F. Landis Markley,
-                "Attitude determination using vector observations: a fast
-                optimal matrix algorithm", Journal of Astronautical Sciences,
-                Vol. 41, No.2, 1993, pp. 261-280.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-        """
+    @np.deprecate(message="match_vectors is deprecated in favor of "
+                          "align_vectors in scipy 1.4.0 and will be removed "
+                          "in scipy 1.6.0")
+    def match_vectors(cls, a, b, weights=None, normalized=False):
+        """Deprecated in favor of `align_vectors`."""
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
             raise ValueError("Expected input `a` to have shape (N, 3), "
@@ -1871,6 +1812,10 @@ class Rotation(object):
                                     weights.shape[0], b.shape[0]))
         weights = weights / np.sum(weights)
 
+        if not normalized:
+            a = a / scipy.linalg.norm(a, axis=1)[:, None]
+            b = b / scipy.linalg.norm(b, axis=1)[:, None]
+
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
 
@@ -1891,6 +1836,136 @@ class Rotation(object):
         sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
                        (zeta * a.shape[0]))
         return cls.from_matrix(C), sensitivity
+
+    @classmethod
+    def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
+        """Estimate a rotation to optimally align two sets of vectors.
+
+        Find a rotation between frames A and B which best aligns a set of
+        vectors `a` and `b` observed in these frames. The following loss
+        function is minimized to solve for the rotation matrix
+        :math:`C`:
+
+        .. math::
+
+            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
+            C \\mathbf{b}_i \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each vector.
+
+        The rotation is estimated with Kabsch algorithm [1]_.
+
+        Parameters
+        ----------
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the vector
+            observations. If None (default), then all values in `weights` are
+            assumed to be 1.
+        return_sensitivity : bool, optional
+            Whether to return the sensitivity matrix. See Notes for details.
+            Default is False.
+
+        Returns
+        -------
+        estimated_rotation : `Rotation` instance
+            Best estimate of the rotation that transforms `b` to `a`.
+        rmsd : float
+            Root mean square distance (weighted) between the given set of
+            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
+            where ``minimum_loss`` is the loss function evaluated for the
+            found optimal rotation.
+        sensitivity_matrix : ndarray, shape (3, 3)
+            Sensitivity matrix of the estimated rotation estimate as explained
+            in Notes. Returned only when `return_sensitivity` is True.
+
+        Notes
+        -----
+        This method can also compute the sensitivity of the estimated rotation
+        to small perturbations of the vector measurements. Specifically we
+        consider the rotation estimate error as a small rotation vector of
+        frame A. The sensitivity matrix is proportional to the covariance of
+        this rotation vector assuming that the vectors in `a` was measured with
+        errors significantly less than their lengths. To get the true
+        covariance matrix, the returned sensitivity matrix must be multiplied
+        by harmonic mean [3]_ of variance in each observation. Note that
+        `weights` are supposed to be inversely proportional to the observation
+        variances to get consistent results. For example, if all vectors are
+        measured with the same accuracy of 0.01 (`weights` must be all equal),
+        then you should multiple the sensitivity matrix by 0.01**2 to get the
+        covariance.
+
+        Refer to [2]_ for more rigorous discussion of the covariance
+        estimation.
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
+        .. [2] F. Landis Markley,
+                "Attitude determination using vector observations: a fast
+                optimal matrix algorithm", Journal of Astronautical Sciences,
+                Vol. 41, No.2, 1993, pp. 261-280.
+        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
+        """
+        a = np.asarray(a)
+        if a.ndim != 2 or a.shape[-1] != 3:
+            raise ValueError("Expected input `a` to have shape (N, 3), "
+                             "got {}".format(a.shape))
+        b = np.asarray(b)
+        if b.ndim != 2 or b.shape[-1] != 3:
+            raise ValueError("Expected input `b` to have shape (N, 3), "
+                             "got {}.".format(b.shape))
+
+        if a.shape != b.shape:
+            raise ValueError("Expected inputs `a` and `b` to have same shapes"
+                             ", got {} and {} respectively.".format(
+                                a.shape, b.shape))
+
+        if weights is None:
+            weights = np.ones(len(b))
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != b.shape[0]:
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of input vectors, got "
+                                 "{} values and {} vectors.".format(
+                                    weights.shape[0], b.shape[0]))
+
+        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
+        u, s, vh = np.linalg.svd(B)
+
+        # Correct improper rotation if necessary (as in Kabsch algorithm)
+        if np.linalg.det(u @ vh) < 0:
+            s[-1] = -s[-1]
+            u[:, -1] = -u[:, -1]
+
+        C = np.dot(u, vh)
+
+        if s[1] + s[2] < 1e-16 * s[0]:
+            warnings.warn("Optimal rotation is not uniquely or poorly defined "
+                          "for the given sets of vectors.")
+
+        rmsd = np.sqrt(max(
+            np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
+            0))
+
+        if return_sensitivity:
+            zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
+            kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                sensitivity = np.mean(weights) / zeta * (
+                        kappa * np.eye(3) + np.dot(B, B.T))
+            return cls.from_matrix(C), rmsd, sensitivity
+        else:
+            return cls.from_matrix(C), rmsd
 
 
 class Slerp(object):
