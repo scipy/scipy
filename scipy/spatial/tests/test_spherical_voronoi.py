@@ -183,11 +183,19 @@ class TestSphericalVoronoi(object):
     @pytest.mark.parametrize("n", [8, 15, 21])
     @pytest.mark.parametrize("radius", [0.5, 1, 2])
     @pytest.mark.parametrize("center", [(0, 0, 0), (1, 2, 3)])
-    def test_geodesic_input(self, n, radius, center):
-        U = Rotation.random(random_state=0).as_matrix()
+    def test_circular_input(self, n, radius, center):
+        # generate a random circle
+        rng = np.random.RandomState(0)
+        U = Rotation.random(random_state=rng).as_matrix()
+        h = radius * rng.uniform(0.001, 0.999)
+        circle_radius = np.sqrt(radius**2 - h**2)
         thetas = np.linspace(0, 2 * np.pi, n, endpoint=False)
-        points = np.vstack([np.sin(thetas), np.cos(thetas), np.zeros(n)]).T
-        points = radius * points @ U
+        points = np.vstack([circle_radius * np.sin(thetas),
+                            circle_radius * np.cos(thetas),
+                            h * np.ones(n)]).T
+        points = points @ U
+
+        # calculate Spherical Voronoi diagram
         sv = SphericalVoronoi(points + center, radius=radius, center=center)
 
         # each region must have 4 vertices
@@ -200,19 +208,28 @@ class TestSphericalVoronoi(object):
         vertices = sv.vertices - center
         assert len(vertices) == n + 2
 
-        # verify that north and south poles are orthogonal to geodesic on which
+        # verify that north and south poles are orthogonal to circle on which
         # input points lie
         poles = vertices[n:]
-        assert np.abs(np.dot(points, poles.T)).max() < 1E-10
+        midpoint = np.array([0, 0, h]) @ U
+        assert np.abs(np.dot(points - midpoint, poles.T)).max() < 1E-10
 
+        # test arc lengths to forward and backward neighbors
+        for point, region in zip(points, sv.regions):
+            cosine = np.dot(vertices[region] - midpoint, point - midpoint)
+            sine = np.linalg.norm(np.cross(vertices[region] - midpoint,
+                                           point - midpoint), axis=1)
+            arclengths = circle_radius * np.arctan2(sine, cosine)
+            assert_almost_equal(arclengths[[0, 2]], circle_radius * np.pi / n)
+
+        # test arc lengths to poles
         for point, region in zip(points, sv.regions):
             cosine = np.dot(vertices[region], point)
             sine = np.linalg.norm(np.cross(vertices[region], point), axis=1)
-            arclengths = radius * np.arctan2(sine, cosine)
-            # test arc lengths to poles
-            assert_almost_equal(arclengths[[1, 3]], radius * np.pi / 2)
-            # test arc lengths to forward and backward neighbors
-            assert_almost_equal(arclengths[[0, 2]], radius * np.pi / n)
+            arclengths = np.arctan2(sine, cosine)
+            angle = np.arcsin(h / radius)
+            assert_almost_equal(arclengths[1], np.pi / 2 - angle)
+            assert_almost_equal(arclengths[3], np.pi / 2 + angle)
 
         regions = sv.regions.copy()
         sv.sort_vertices_of_regions()
