@@ -10,7 +10,7 @@ from .stats import power_divergence
 import math
 
 
-__all__ = ["association", "expected_freq", "margins", "chi2_contingency"]
+__all__ = ["chi2_contingency"]
 
 
 def margins(a):
@@ -153,7 +153,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     See Also
     --------
-    contingency.expected_freq
+    expected_freq
     fisher_exact
     chisquare
     power_divergence
@@ -367,8 +367,6 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
 
     >>> association(num_obs, num_rows, num_cols, chi2, stat="phi")
     0.23382
-
-
     """
 
     try:

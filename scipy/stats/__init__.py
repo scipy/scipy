@@ -333,9 +333,9 @@ Contingency table functions
    :toctree: generated/
 
    chi2_contingency
-   expected_freq
-   margins
-   association
+   contingency.expected_freq
+   contingency.margins
+   contingency.association
    fisher_exact
 
 Plot-tests
@@ -391,7 +391,7 @@ from .kde import gaussian_kde
 from . import mstats
 from ._multivariate import *
 from . import contingency
-from .contingency import chi2_contingency
+from .contingency import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
