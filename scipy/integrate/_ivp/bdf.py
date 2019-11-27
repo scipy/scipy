@@ -104,7 +104,7 @@ class BDF(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
@@ -422,7 +422,7 @@ class BDF(OdeSolver):
             error_p_norm = np.inf
 
         error_norms = np.array([error_m_norm, error_norm, error_p_norm])
-        with np.errstate(divide='ignore'): 
+        with np.errstate(divide='ignore'):
             factors = error_norms ** (-1 / np.arange(order, order + 3))
 
         delta_order = np.argmax(factors) - 1

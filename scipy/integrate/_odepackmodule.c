@@ -4,10 +4,10 @@
 Copyright (c) 2002 Travis Oliphant all rights reserved
 oliphant.travis@ieee.org
 Permission to use, modify, and distribute this software is given under the
-terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
+terms of the SciPy (BSD style) license. See LICENSE.txt that came with
 this distribution for specifics.
 
-NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
+NO WARRANTY IS EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 */
 
 
@@ -15,11 +15,11 @@ NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 common FORTRAN code in the package ODEPACK.
 
 The wrappers are meant to be nearly direct translations between the
-FORTRAN code and Python.  Some parameters like sizes do not need to be
+FORTRAN code and Python. Some parameters like sizes do not need to be
 passed since they are available from the objects.
 
 It is anticipated that a pure Python module be written to call these lower
-level routines and make a simpler user interface.  All of the routines define
+level routines and make a simpler user interface. All of the routines define
 default values for little-used parameters so that even the raw routines are
 quite useful without a separate wrapper.
 
@@ -66,7 +66,7 @@ PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
     and those functions call this function to call the Python functions
     provided to odeint by the user.
 
-    If an error occurs, NULL is returned.  Otherwise, a numpy array
+    If an error occurs, NULL is returned. Otherwise, a NumPy array
     is returned.
     */
 
@@ -445,14 +445,14 @@ compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu,
         lmat = (2*ml + mu + 1)*neq + 2;
     }
     else {
-        PYERR(odepack_error,"Incorrect value for jt");
+        PYERR(odepack_error,"Incorrect value for jt.");
     }
 
     if (mxordn < 0) {
-        PYERR(odepack_error,"Incorrect value for mxordn");
+        PYERR(odepack_error,"Incorrect value for mxordn.");
     }
     if (mxords < 0) {
-        PYERR(odepack_error,"Incorrect value for mxords");
+        PYERR(odepack_error,"Incorrect value for mxords.");
     }
     nyh = neq;
 
@@ -553,7 +553,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         Py_INCREF(extra_args);   /* We decrement on exit. */
     }
     if (!PyTuple_Check(extra_args)) {
-        PYERR(odepack_error, "Extra arguments must be in a tuple");
+        PYERR(odepack_error, "Extra arguments must be in a tuple.");
     }
     if (!PyCallable_Check(fcn) || (Dfun != Py_None && !PyCallable_Check(Dfun))) {
         PYERR(odepack_error, "The function and its Jacobian must be callable functions.");
@@ -603,7 +603,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         }
     }
 
-    /* Setup array to hold the output evaluations*/
+    /* Set up array to hold the output evaluations*/
     ap_yout= (PyArrayObject *) PyArray_SimpleNew(2,dims,NPY_DOUBLE);
     if (ap_yout== NULL) {
         goto fail;
@@ -840,4 +840,4 @@ PyMODINIT_FUNC init_odepack(void)
         Py_FatalError("can't initialize module odepack");
     }
 }
-#endif    
+#endif

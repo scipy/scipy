@@ -54,7 +54,7 @@ def _invalid_origin(origin, lenw):
 @_ni_docstrings.docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):
-    """Calculate a one-dimensional correlation along the given axis.
+    """Calculate a 1-D correlation along the given axis.
 
     The lines of the array along the given axis are correlated with the
     given weights.
@@ -63,7 +63,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     ----------
     %(input)s
     weights : array
-        One-dimensional sequence of numbers.
+        1-D sequence of numbers.
     %(axis)s
     %(output)s
     %(mode)s
@@ -99,7 +99,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
 @_ni_docstrings.docfiller
 def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
                cval=0.0, origin=0):
-    """Calculate a one-dimensional convolution along the given axis.
+    """Calculate a 1-D convolution along the given axis.
 
     The lines of the array along the given axis are convolved with the
     given weights.
@@ -108,7 +108,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     ----------
     %(input)s
     weights : ndarray
-        One-dimensional sequence of numbers.
+        1-D sequence of numbers.
     %(axis)s
     %(output)s
     %(mode)s
@@ -135,7 +135,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
 
 def _gaussian_kernel1d(sigma, order, radius):
     """
-    Computes a 1D Gaussian convolution kernel.
+    Computes a 1-D Gaussian convolution kernel.
     """
     if order < 0:
         raise ValueError('order must be non-negative')
@@ -167,7 +167,7 @@ def _gaussian_kernel1d(sigma, order, radius):
 @_ni_docstrings.docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
                       mode="reflect", cval=0.0, truncate=4.0):
-    """One-dimensional Gaussian filter.
+    """1-D Gaussian filter.
 
     Parameters
     ----------
@@ -232,7 +232,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
         all axes.
     order : int or sequence of ints, optional
         The order of the filter along each axis is given as a sequence
-        of integers, or as a single number.  An order of 0 corresponds
+        of integers, or as a single number. An order of 0 corresponds
         to convolution with a Gaussian kernel. A positive order
         corresponds to convolution with that derivative of a Gaussian.
     %(output)s
@@ -250,7 +250,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     Notes
     -----
     The multidimensional filter is implemented as a sequence of
-    one-dimensional convolution filters. The intermediate arrays are
+    1-D convolution filters. The intermediate arrays are
     stored in the same data type as the output. Therefore, for output
     types with a limited precision, the results may be imprecise
     because intermediate results may be stored with insufficient
@@ -383,7 +383,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
                     extra_arguments=(),
                     extra_keywords=None):
     """
-    N-dimensional Laplace filter using a provided second derivative function.
+    N-D Laplace filter using a provided second derivative function.
 
     Parameters
     ----------
@@ -421,7 +421,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
 
 @_ni_docstrings.docfiller
 def laplace(input, output=None, mode="reflect", cval=0.0):
-    """N-dimensional Laplace filter based on approximate second derivatives.
+    """N-D Laplace filter based on approximate second derivatives.
 
     Parameters
     ----------
@@ -452,7 +452,7 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
 @_ni_docstrings.docfiller
 def gaussian_laplace(input, sigma, output=None, mode="reflect",
                      cval=0.0, **kwargs):
-    """Multidimensional Laplace filter using gaussian second derivatives.
+    """Multidimensional Laplace filter using Gaussian second derivatives.
 
     Parameters
     ----------
@@ -555,7 +555,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     sigma : scalar or sequence of scalars
         The standard deviations of the Gaussian filter are given for
         each axis as a sequence, or as a single number, in which case
-        it is equal for all axes..
+        it is equal for all axes.
     %(output)s
     %(mode_multiple)s
     %(cval)s
@@ -627,7 +627,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
 def correlate(input, weights, output=None, mode='reflect', cval=0.0,
               origin=0):
     """
-    Multi-dimensional correlation.
+    Multidimensional correlation.
 
     The array is correlated with the given kernel.
 
@@ -682,14 +682,14 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     -----
     Each value in result is :math:`C_i = \\sum_j{I_{i+k-j} W_j}`, where
     W is the `weights` kernel,
-    j is the n-D spatial index over :math:`W`,
+    j is the N-D spatial index over :math:`W`,
     I is the `input` and k is the coordinate of the center of
     W, specified by `origin` in the input parameters.
 
     Examples
     --------
     Perhaps the simplest case to understand is ``mode='constant', cval=0.0``,
-    because in this case borders (i.e. where the `weights` kernel, centered
+    because in this case borders (i.e., where the `weights` kernel, centered
     on any one value, extends beyond an edge of `input`) are treated as zeros.
 
     >>> a = np.array([[1, 2, 0, 0],
@@ -758,7 +758,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 @_ni_docstrings.docfiller
 def uniform_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
-    """Calculate a one-dimensional uniform filter along the given axis.
+    """Calculate a 1-D uniform filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
     uniform filter of given size.
@@ -798,7 +798,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
 @_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
                    cval=0.0, origin=0):
-    """Multi-dimensional uniform filter.
+    """Multidimensional uniform filter.
 
     Parameters
     ----------
@@ -819,8 +819,8 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
 
     Notes
     -----
-    The multi-dimensional filter is implemented as a sequence of
-    one-dimensional uniform filters. The intermediate arrays are stored
+    The multidimensional filter is implemented as a sequence of
+    1-D uniform filters. The intermediate arrays are stored
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
@@ -860,7 +860,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
 @_ni_docstrings.docfiller
 def minimum_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
-    """Calculate a one-dimensional minimum filter along the given axis.
+    """Calculate a 1-D minimum filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
     minimum filter of given size.
@@ -912,7 +912,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
 @_ni_docstrings.docfiller
 def maximum_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
-    """Calculate a one-dimensional maximum filter along the given axis.
+    """Calculate a 1-D maximum filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
     maximum filter of given size.
@@ -1036,7 +1036,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
 @_ni_docstrings.docfiller
 def minimum_filter(input, size=None, footprint=None, output=None,
                    mode="reflect", cval=0.0, origin=0):
-    """Calculate a multi-dimensional minimum filter.
+    """Calculate a multidimensional minimum filter.
 
     Parameters
     ----------
@@ -1073,7 +1073,7 @@ def minimum_filter(input, size=None, footprint=None, output=None,
 @_ni_docstrings.docfiller
 def maximum_filter(input, size=None, footprint=None, output=None,
                    mode="reflect", cval=0.0, origin=0):
-    """Calculate a multi-dimensional maximum filter.
+    """Calculate a multidimensional maximum filter.
 
     Parameters
     ----------
@@ -1165,7 +1165,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
 @_ni_docstrings.docfiller
 def rank_filter(input, rank, size=None, footprint=None, output=None,
                 mode="reflect", cval=0.0, origin=0):
-    """Calculate a multi-dimensional rank filter.
+    """Calculate a multidimensional rank filter.
 
     Parameters
     ----------
@@ -1244,7 +1244,7 @@ def median_filter(input, size=None, footprint=None, output=None,
 @_ni_docstrings.docfiller
 def percentile_filter(input, percentile, size=None, footprint=None,
                       output=None, mode="reflect", cval=0.0, origin=0):
-    """Calculate a multi-dimensional percentile filter.
+    """Calculate a multidimensional percentile filter.
 
     Parameters
     ----------
@@ -1285,12 +1285,12 @@ def percentile_filter(input, percentile, size=None, footprint=None,
 def generic_filter1d(input, function, filter_size, axis=-1,
                      output=None, mode="reflect", cval=0.0, origin=0,
                      extra_arguments=(), extra_keywords=None):
-    """Calculate a one-dimensional filter along the given axis.
+    """Calculate a 1-D filter along the given axis.
 
     `generic_filter1d` iterates over the lines of the array, calling the
     given function at each line. The arguments of the line are the
-    input line, and the output line. The input and output lines are 1D
-    double arrays.  The input line is extended appropriately according
+    input line, and the output line. The input and output lines are 1-D
+    double arrays. The input line is extended appropriately according
     to the filter size and origin. The output line must be modified
     in-place with the result.
 
@@ -1368,11 +1368,11 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 def generic_filter(input, function, size=None, footprint=None,
                    output=None, mode="reflect", cval=0.0, origin=0,
                    extra_arguments=(), extra_keywords=None):
-    """Calculate a multi-dimensional filter using the given function.
+    """Calculate a multidimensional filter using the given function.
 
     At each element the provided function is called. The input values
     within the filter footprint at that element are passed to the function
-    as a 1D array of double values.
+    as a 1-D array of double values.
 
     Parameters
     ----------

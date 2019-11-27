@@ -16,7 +16,7 @@ add_newdoc('scipy.odr', 'odr',
     Notes
     -----
     This is a function performing the same operation as the `ODR`,
-    `Model` and `Data` classes together. The parameters of this
+    `Model`, and `Data` classes together. The parameters of this
     function are explained in the class documentation.
 
     """)

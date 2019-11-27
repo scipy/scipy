@@ -110,8 +110,8 @@ add_newdoc("voigt_profile",
 
     Voigt profile.
 
-    The Voigt profile is a convolution of a 1D Normal distribution with
-    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    The Voigt profile is a convolution of a 1-D Normal distribution with
+    standard deviation ``sigma`` and a 1-D Cauchy distribution with half-width at
     half-maximum ``gamma``.
 
     Parameters
@@ -219,8 +219,8 @@ add_newdoc("agm",
     Parameters
     ----------
     a, b : array_like
-        Real values only.  If the values are both negative, the result
-        is negative.  If one value is negative and the other is positive,
+        Real values only. If the values are both negative, the result
+        is negative. If one value is negative and the other is positive,
         `nan` is returned.
 
     Returns
@@ -539,7 +539,7 @@ add_newdoc("bdtrik",
     cumulative incomplete beta distribution.
 
     Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    value of `y`. The search relies on the monotonicity of `y` with `k`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -589,7 +589,7 @@ add_newdoc("bdtrin",
     cumulative incomplete beta distribution.
 
     Computation of `n` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `n`.
+    value of `y`. The search relies on the monotonicity of `y` with `n`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -653,8 +653,8 @@ add_newdoc("btdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `a`.
 
     References
@@ -706,8 +706,8 @@ add_newdoc("btdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `b`.
 
     References
@@ -1547,11 +1547,11 @@ add_newdoc("ellipj",
     equal to the complete elliptic integral `ellipk(m)`.
 
     Relation to incomplete elliptic integral: If `u = ellipkinc(phi,m)`, then
-    `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`.  The `phi` is called
+    `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`. The `phi` is called
     the amplitude of `u`.
 
     Computation is by means of the arithmetic-geometric mean algorithm,
-    except when `m` is within 1e-9 of 0 or 1.  In the latter case with `m`
+    except when `m` is within 1e-9 of 0 or 1. In the latter case with `m`
     close to 1, the approximation applies only for `phi < pi/2`.
 
     See also
@@ -2479,7 +2479,7 @@ add_newdoc("eval_genlaguerre",
     Parameters
     ----------
     n : array_like
-        Degree of the polynomial. If not an integer the result is
+        Degree of the polynomial. If not an integer, the result is
         determined via the relation to the confluent hypergeometric
         function.
     alpha : array_like
@@ -3392,7 +3392,7 @@ add_newdoc("gammainc",
     r"""
     gammainc(a, x)
 
-    Regularized lower incomplete gamma function.
+    Regularized lower incomplete Gamma function.
 
     It is defined as
 
@@ -3412,7 +3412,7 @@ add_newdoc("gammainc",
     Returns
     -------
     scalar or ndarray
-        Values of the lower incomplete gamma function
+        Values of the lower incomplete Gamma function
 
     Notes
     -----
@@ -3461,7 +3461,7 @@ add_newdoc("gammaincc",
     r"""
     gammaincc(a, x)
 
-    Regularized upper incomplete gamma function.
+    Regularized upper incomplete Gamma function.
 
     It is defined as
 
@@ -3481,7 +3481,7 @@ add_newdoc("gammaincc",
     Returns
     -------
     scalar or ndarray
-        Values of the upper incomplete gamma function
+        Values of the upper incomplete Gamma function
 
     Notes
     -----
@@ -3493,11 +3493,11 @@ add_newdoc("gammaincc",
 
     See also
     --------
-    gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
+    gammainc : regularized lower incomplete Gamma function
+    gammaincinv : inverse of the regularized lower incomplete Gamma
         function with respect to `x`
     gammainccinv : inverse to of the regularized upper incomplete
-        gamma function with respect to `x`
+        Gamma function with respect to `x`
 
     References
     ----------
@@ -3531,12 +3531,12 @@ add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse of the upper incomplete gamma function with respect to `x`
+    Inverse of the upper incomplete Gamma function with respect to `x`
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
     that :math:`y = Q(a, x)`. Here :math:`Q` is the upper incomplete
-    gamma function; see `gammaincc`. This is well-defined because the
-    upper incomplete gamma function is monotonic as can be seen from
+    Gamma function; see `gammaincc`. This is well-defined because the
+    upper incomplete Gamma function is monotonic as can be seen from
     its definition in [dlmf]_.
 
     Parameters
@@ -3549,13 +3549,13 @@ add_newdoc("gammainccinv",
     Returns
     -------
     scalar or ndarray
-        Values of the inverse of the upper incomplete gamma function
+        Values of the inverse of the upper incomplete Gamma function
 
     See Also
     --------
-    gammaincc : regularized upper incomplete gamma function
-    gammainc : regularized lower incomplete gamma function
-    gammaincinv : inverse of the regularized lower incomplete gamma
+    gammaincc : regularized upper incomplete Gamma function
+    gammainc : regularized lower incomplete Gamma function
+    gammaincinv : inverse of the regularized lower incomplete Gamma
         function with respect to `x`
 
     References
@@ -3572,7 +3572,7 @@ add_newdoc("gammainccinv",
     >>> sc.gammainccinv(0.5, [0, 0.1, 0.5, 1])
     array([       inf, 1.35277173, 0.22746821, 0.        ])
 
-    It inverts the upper incomplete gamma function.
+    It inverts the upper incomplete Gamma function.
 
     >>> a, x = 0.5, [0, 0.1, 0.5, 1]
     >>> sc.gammaincc(a, sc.gammainccinv(a, x))
@@ -3588,12 +3588,12 @@ add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to the lower incomplete gamma function with respect to `x`.
+    Inverse to the lower incomplete Gamma function with respect to `x`.
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
     that :math:`y = P(a, x)`. Here :math:`P` is the regularized lower
     incomplete gamma function; see `gammainc`. This is well-defined
-    because the lower incomplete gamma function is monotonic as can be
+    because the lower incomplete Gamma function is monotonic as can be
     seen from its definition in [dlmf]_.
 
     Parameters
@@ -3606,13 +3606,13 @@ add_newdoc("gammaincinv",
     Returns
     -------
     scalar or ndarray
-        Values of the inverse of the lower incomplete gamma function
+        Values of the inverse of the lower incomplete Gamma function
 
     See Also
     --------
-    gammainc : regularized lower incomplete gamma function
-    gammaincc : regularized upper incomplete gamma function
-    gammainccinv : inverse of the regualizred upper incomplete gamma
+    gammainc : regularized lower incomplete Gamma function
+    gammaincc : regularized upper incomplete Gamma function
+    gammainccinv : inverse of the regualizred upper incomplete Gamma
         function with respect to `x`
 
     References
@@ -3671,7 +3671,7 @@ add_newdoc("gammaln",
     See Also
     --------
     gammasgn : sign of the gamma function
-    loggamma : principal branch of the logarithm of the gamma function
+    loggamma : principal branch of the logarithm of the Gamma function
 
     Notes
     -----
@@ -3718,7 +3718,7 @@ add_newdoc("gammasgn",
     r"""
     gammasgn(x)
 
-    Sign of the gamma function.
+    Sign of the Gamma function.
 
     It is defined as
 
@@ -3790,19 +3790,19 @@ add_newdoc("gdtr",
 
     Gamma distribution cumulative distribution function.
 
-    Returns the integral from zero to `x` of the gamma probability density
+    Returns the integral from zero to `x` of the Gamma probability density
     function,
 
     .. math::
 
         F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
-    where :math:`\Gamma` is the gamma function.
+    where :math:`\Gamma` is the Gamma function.
 
     Parameters
     ----------
     a : array_like
-        The rate parameter of the gamma distribution, sometimes denoted
+        The rate parameter of the Gamma distribution, sometimes denoted
         :math:`\beta` (float).  It is also the reciprocal of the scale
         parameter :math:`\theta`.
     b : array_like
@@ -3813,17 +3813,17 @@ add_newdoc("gdtr",
 
     See also
     --------
-    gdtrc : 1 - CDF of the gamma distribution.
+    gdtrc : 1 - CDF of the Gamma distribution.
 
     Returns
     -------
     F : ndarray
-        The CDF of the gamma distribution with parameters `a` and `b`
+        The CDF of the Gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
     Notes
     -----
-    The evaluation is carried out using the relation to the incomplete gamma
+    The evaluation is carried out using the relation to the incomplete Gamma
     integral (regularized gamma function).
 
     Wrapper for the Cephes [1]_ routine `gdtr`.
@@ -3841,18 +3841,18 @@ add_newdoc("gdtrc",
 
     Gamma distribution survival function.
 
-    Integral from `x` to infinity of the gamma probability density function,
+    Integral from `x` to infinity of the Gamma probability density function,
 
     .. math::
 
         F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
-    where :math:`\Gamma` is the gamma function.
+    where :math:`\Gamma` is the Gamma function.
 
     Parameters
     ----------
     a : array_like
-        The rate parameter of the gamma distribution, sometimes denoted
+        The rate parameter of the Gamma distribution, sometimes denoted
         :math:`\beta` (float).  It is also the reciprocal of the scale
         parameter :math:`\theta`.
     b : array_like
@@ -3864,7 +3864,7 @@ add_newdoc("gdtrc",
     Returns
     -------
     F : ndarray
-        The survival function of the gamma distribution with parameters `a`
+        The survival function of the Gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
     See Also
@@ -3873,8 +3873,8 @@ add_newdoc("gdtrc",
 
     Notes
     -----
-    The evaluation is carried out using the relation to the incomplete gamma
-    integral (regularized gamma function).
+    The evaluation is carried out using the relation to the incomplete Gamma
+    integral (regularized Gamma function).
 
     Wrapper for the Cephes [1]_ routine `gdtrc`.
 
@@ -3892,7 +3892,7 @@ add_newdoc("gdtria",
     Inverse of `gdtr` vs a.
 
     Returns the inverse with respect to the parameter `a` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the gamma
+    gdtr(a, b, x)``, the cumulative distribution function of the Gamma
     distribution.
 
     Parameters
@@ -3901,9 +3901,9 @@ add_newdoc("gdtria",
         Probability values.
     b : array_like
         `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
-        of the gamma distribution.
+        of the Gamma distribution.
     x : array_like
-        Nonnegative real values, from the domain of the gamma distribution.
+        Nonnegative real values, from the domain of the Gamma distribution.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
         matches the broadcast result of `a`, `b` and `x`.  `out` is then the
@@ -3913,11 +3913,11 @@ add_newdoc("gdtria",
     -------
     a : ndarray
         Values of the `a` parameter such that `p = gdtr(a, b, x)`.  `1/a`
-        is the "scale" parameter of the gamma distribution.
+        is the "scale" parameter of the Gamma distribution.
 
     See Also
     --------
-    gdtr : CDF of the gamma distribution.
+    gdtr : CDF of the Gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
 
@@ -3926,8 +3926,8 @@ add_newdoc("gdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `a`.
 
     References
@@ -3961,18 +3961,18 @@ add_newdoc("gdtrib",
     Inverse of `gdtr` vs b.
 
     Returns the inverse with respect to the parameter `b` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the gamma
+    gdtr(a, b, x)``, the cumulative distribution function of the Gamma
     distribution.
 
     Parameters
     ----------
     a : array_like
         `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
-        parameter of the gamma distribution.
+        parameter of the Gamma distribution.
     p : array_like
         Probability values.
     x : array_like
-        Nonnegative real values, from the domain of the gamma distribution.
+        Nonnegative real values, from the domain of the Gamma distribution.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
         matches the broadcast result of `a`, `b` and `x`.  `out` is then the
@@ -3982,11 +3982,11 @@ add_newdoc("gdtrib",
     -------
     b : ndarray
         Values of the `b` parameter such that `p = gdtr(a, b, x)`.  `b` is
-        the "shape" parameter of the gamma distribution.
+        the "shape" parameter of the Gamma distribution.
 
     See Also
     --------
-    gdtr : CDF of the gamma distribution.
+    gdtr : CDF of the Gamma distribution.
     gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
 
@@ -3995,8 +3995,8 @@ add_newdoc("gdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `b`.
 
     References
@@ -4030,23 +4030,23 @@ add_newdoc("gdtrix",
     Inverse of `gdtr` vs x.
 
     Returns the inverse with respect to the parameter `x` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the gamma
-    distribution. This is also known as the p'th quantile of the
+    gdtr(a, b, x)``, the cumulative distribution function of the Gamma
+    distribution. This is also known as the pth quantile of the
     distribution.
 
     Parameters
     ----------
     a : array_like
         `a` parameter values of `gdtr(a, b, x)`.  `1/a` is the "scale"
-        parameter of the gamma distribution.
+        parameter of the Gamma distribution.
     b : array_like
         `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
-        of the gamma distribution.
+        of the Gamma distribution.
     p : array_like
         Probability values.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
-        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        matches the broadcast result of `a`, `b` and `x`. `out` is then the
         array returned by the function.
 
     Returns
@@ -4056,7 +4056,7 @@ add_newdoc("gdtrix",
 
     See Also
     --------
-    gdtr : CDF of the gamma distribution.
+    gdtr : CDF of the Gamma distribution.
     gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
 
@@ -4065,8 +4065,8 @@ add_newdoc("gdtrix",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `x` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `x`.
 
     References
@@ -4299,9 +4299,9 @@ add_newdoc("hyp0f1",
     Parameters
     ----------
     v : array_like
-        Real valued parameter
+        Real-valued parameter
     z : array_like
-        Real or complex valued argument
+        Real- or complex-valued argument
     out : ndarray, optional
         Optional output array for the function results
 
@@ -4544,9 +4544,9 @@ add_newdoc("hyperu",
     Parameters
     ----------
     a, b : array_like
-        Real valued parameters
+        Real-valued parameters
     x : array_like
-        Real valued argument
+        Real-valued argument
     out : ndarray
         Optional output array for the function values
 
@@ -4651,7 +4651,7 @@ add_newdoc("i0e",
     Notes
     -----
     The range is partitioned into the two intervals [0, 8] and (8, infinity).
-    Chebyshev polynomial expansions are employed in each interval.  The
+    Chebyshev polynomial expansions are employed in each interval. The
     polynomial expansions used are the same as those in `i0`, but
     they are not multiplied by the dominant exponential factor.
 
@@ -4988,7 +4988,7 @@ add_newdoc("iv",
     for large `abs(z)`, the Miller algorithm normalized by the Wronskian
     and a Neumann series for intermediate magnitudes, and the uniform
     asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
-    orders.  Backward recurrence is used to generate sequences or reduce
+    orders. Backward recurrence is used to generate sequences or reduce
     orders when necessary.
 
     The calculations above are done in the right half plane and continued
@@ -6570,7 +6570,7 @@ add_newdoc("ncfdtri",
     Returns
     -------
     f : float
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     See Also
     --------
@@ -6616,7 +6616,7 @@ add_newdoc("ncfdtridfd",
     nc : array_like
         Noncentrality parameter.  Should be in range (0, 1e4).
     f : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
@@ -6633,8 +6633,8 @@ add_newdoc("ncfdtridfd",
     Notes
     -----
     The value of the cumulative noncentral F distribution is not necessarily
-    monotone in either degrees of freedom.  There thus may be two values that
-    provide a given CDF value.  This routine assumes monotonicity and will
+    monotone in either degrees of freedom. There thus may be two values that
+    provide a given CDF value. This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
     Examples
@@ -6667,14 +6667,14 @@ add_newdoc("ncfdtridfn",
     Parameters
     ----------
     p : array_like
-        Value of the cumulative distribution function.  Must be in the
+        Value of the cumulative distribution function. Must be in the
         range [0, 1].
     dfd : array_like
-        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+        Degrees of freedom of the denominator sum of squares. Range (0, inf).
     nc : array_like
         Noncentrality parameter.  Should be in range (0, 1e4).
     f : float
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
@@ -6691,8 +6691,8 @@ add_newdoc("ncfdtridfn",
     Notes
     -----
     The value of the cumulative noncentral F distribution is not necessarily
-    monotone in either degrees of freedom.  There thus may be two values that
-    provide a given CDF value.  This routine assumes monotonicity and will
+    monotone in either degrees of freedom. There thus may be two values that
+    provide a given CDF value. This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
     Examples
@@ -6706,7 +6706,7 @@ add_newdoc("ncfdtridfn",
     >>> p
     array([ 0.92562363,  0.93020416,  0.93188394])
 
-    Compute the inverse.  We recover the values of `dfn`, as expected:
+    Compute the inverse. We recover the values of `dfn`, as expected:
 
     >>> ncfdtridfn(p, 2, 0.25, 15)
     array([ 1.,  2.,  3.])
@@ -6725,14 +6725,14 @@ add_newdoc("ncfdtrinc",
     Parameters
     ----------
     dfn : array_like
-        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+        Degrees of freedom of the numerator sum of squares. Range (0, inf).
     dfd : array_like
-        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+        Degrees of freedom of the denominator sum of squares. Range (0, inf).
     p : array_like
-        Value of the cumulative distribution function.  Must be in the
+        Value of the cumulative distribution function. Must be in the
         range [0, 1].
     f : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
@@ -6757,7 +6757,7 @@ add_newdoc("ncfdtrinc",
     >>> p
     array([ 0.96309246,  0.94327955,  0.93304098])
 
-    Compute the inverse.  We recover the values of `nc`, as expected:
+    Compute the inverse. We recover the values of `nc`, as expected:
 
     >>> ncfdtrinc(2, 3, p, 15)
     array([ 0.5,  1.5,  2. ])
@@ -6773,17 +6773,17 @@ add_newdoc("nctdtr",
     Parameters
     ----------
     df : array_like
-        Degrees of freedom of the distribution.  Should be in range (0, inf).
+        Degrees of freedom of the distribution. Should be in range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
     t : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
     cdf : float or ndarray
-        The calculated CDF.  If all inputs are scalar, the return will be a
-        float.  Otherwise it will be an array.
+        The calculated CDF. If all inputs are scalar, the return will be a
+        float. Otherwise, it will be an array.
 
     See Also
     --------
@@ -6797,7 +6797,7 @@ add_newdoc("nctdtr",
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
-    Plot the CDF of the non-central t distribution, for nc=0.  Compare with the
+    Plot the CDF of the non-central t distribution, for nc=0. Compare with the
     t-distribution from scipy.stats:
 
     >>> x = np.linspace(-5, 5, num=500)
@@ -6826,9 +6826,9 @@ add_newdoc("nctdtridf",
     p : array_like
         CDF values, in range (0, 1].
     nc : array_like
-        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
     t : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     """)
 
@@ -6843,11 +6843,11 @@ add_newdoc("nctdtrinc",
     Parameters
     ----------
     df : array_like
-        Degrees of freedom of the distribution.  Should be in range (0, inf).
+        Degrees of freedom of the distribution. Should be in range (0, inf).
     p : array_like
         CDF values, in range (0, 1].
     t : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     """)
 
@@ -6862,9 +6862,9 @@ add_newdoc("nctdtrit",
     Parameters
     ----------
     df : array_like
-        Degrees of freedom of the distribution.  Should be in range (0, inf).
+        Degrees of freedom of the distribution. Should be in range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
     p : array_like
         CDF values, in range (0, 1].
 
@@ -7257,7 +7257,7 @@ add_newdoc("pdtrc",
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
-    k+1, m).  Arguments must both be non-negative doubles.
+    k+1, m). Arguments must both be non-negative doubles.
     """)
 
 add_newdoc("pdtri",
@@ -7513,13 +7513,13 @@ add_newdoc("psi",
 
     Notes
     -----
-    For large values not close to the negative real axis ``psi`` is
+    For large values not close to the negative real axis, ``psi`` is
     computed using the asymptotic series (5.11.2) from [1]_. For small
-    arguments not close to the negative real axis the recurrence
+    arguments not close to the negative real axis, the recurrence
     relation (5.5.2) from [1]_ is used until the argument is large
     enough to use the asymptotic series. For values close to the
-    negative real axis the reflection formula (5.5.4) from [1]_ is
-    used first.  Note that ``psi`` has a family of zeros on the
+    negative real axis, the reflection formula (5.5.4) from [1]_ is
+    used first. Note that ``psi`` has a family of zeros on the
     negative real axis which occur between the poles at nonpositive
     integers. Around the zeros the reflection formula suffers from
     cancellation and the implementation loses precision. The sole
