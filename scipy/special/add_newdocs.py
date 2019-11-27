@@ -1944,9 +1944,9 @@ add_newdoc("erfinv",
 
     See Also
     --------
-        erf : Error function of a complex argument
-        erfc : Complementary error function, ``1 - erf(x)``
-        erfcinv : Inverse of the complementary error function
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfcinv : Inverse of the complementary error function
 
     Examples
     --------
@@ -1990,9 +1990,9 @@ add_newdoc("erfcinv",
 
     See Also
     --------
-        erf : Error function of a complex argument
-        erfc : Complementary error function, ``1 - erf(x)``
-        erfinv : Inverse of the error function
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfinv : Inverse of the error function
 
     Examples
     --------
