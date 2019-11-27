@@ -153,7 +153,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     See Also
     --------
-    expected_freq
+    contingency.expected_freq
     fisher_exact
     chisquare
     power_divergence
