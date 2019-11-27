@@ -64,7 +64,8 @@ def geometric_slerp(start,
         spherical path and including start and
         end when 0 and 1 t are used. The
         interpolated values should correspond to the
-        same sort order provided in the t array.
+        same sort order provided in the t array. The result
+        may be 1-dimensional if ``t`` is a float.
 
     Notes
     -----
@@ -73,7 +74,7 @@ def geometric_slerp(start,
     4-D geometry, is credited to Glenn Davis in a footnote of the original
     quaternion Slerp publication by Ken Shoemake [2]_.
 
-    .. versionadded:: 1.4.0
+    .. versionadded:: 1.5.0
 
     References
     ----------
