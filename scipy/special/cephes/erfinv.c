@@ -20,17 +20,15 @@ double erfinv(double y) {
     if ((domain_lb < y) && (y < domain_ub)) {
         return ndtri(0.5 * (y+1)) * NPY_SQRT1_2;
     }
-    else if (cephes_isnan(y)) {
-        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
-        return y;
-    }
     else if (y == domain_lb) {
-        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
         return -NPY_INFINITY;
     }
     else if (y == domain_ub) {
-        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
         return NPY_INFINITY;
+    }
+    else if (cephes_isnan(y)) {
+        sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
+        return y;
     }
     else {
         sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
@@ -52,17 +50,15 @@ double erfcinv(double y) {
     if ((domain_lb < y) && (y < domain_ub)) {
         return -ndtri(0.5 * y) * NPY_SQRT1_2;
     }
-    else if (cephes_isnan(y)) {
-        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
-        return y;
-    }
     else if (y == domain_lb) {
-        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
         return NPY_INFINITY;
     }
     else if (y == domain_ub) {
-        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
         return -NPY_INFINITY;
+    }
+    else if (cephes_isnan(y)) {
+        sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
+        return y;
     }
     else {
         sf_error("erfcinv", SF_ERROR_DOMAIN, NULL);
