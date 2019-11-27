@@ -333,9 +333,9 @@ Contingency table functions
    :toctree: generated/
 
    chi2_contingency
-   contingency.expected_freq
-   contingency.margins
-   contingency.association
+   expected_freq
+   margins
+   association
    fisher_exact
 
 Plot-tests

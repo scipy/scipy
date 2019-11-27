@@ -200,25 +200,19 @@ def test_chi2_contingency_bad_args():
 
 
 def test_bad_association_args():
-
     # Invalid Chi Squared Stat Value Type
-    assert_raises(ValueError, association, 50, 2, 2, "x", "T")
-
+    assert_raises(ValueError, association, 50, 2, 2, "x", "tschuprow")
     # Invalid Test Statistic
     assert_raises(ValueError, association, 50, 2, 2, 2.55, "X")
-
     # Invalid n_rows data type
-    assert_raises(ValueError, association, 50, "X", 2, 2.55, "T")
-
+    assert_raises(ValueError, association, 50, "X", 2, 2.55, "cramer")
     # Invalid n_cols data type
-    assert_raises(ValueError, association, 50, 2, "X", 2.55, "T")
-
+    assert_raises(ValueError, association, 50, 2, "X", 2.55, "pearson")
     # Invalid n_obs data type
-    assert_raises(ValueError, association, "X", 2, 2, 2.55, "T")
+    assert_raises(ValueError, association, "X", 2, 2, 2.55, "phi")
 
 
 def test_cramersv():
-
     # 2d Array
     obs = np.array([[12, 13, 14, 15, 16],
                     [17, 16, 18, 19, 11],
@@ -236,7 +230,6 @@ def test_cramersv():
 
 
 def test_tschuprowst():
-
     # 2d Array
     obs = np.array([[12, 13, 14, 15, 16],
                     [17, 16, 18, 19, 11],
@@ -253,7 +246,6 @@ def test_tschuprowst():
 
 
 def test_phi():
-
     # 2d Array
     obs = np.array([[12, 13, 14, 15, 16],
                     [17, 16, 18, 19, 11],
@@ -268,8 +260,8 @@ def test_phi():
     correct = 0.1304246014274576
     assert_approx_equal(a, correct)
 
-def test_c():
 
+def test_c():
     # 2d Array
 
     obs = np.array([[12, 13, 14, 15, 16],

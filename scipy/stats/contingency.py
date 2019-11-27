@@ -10,7 +10,7 @@ from .stats import power_divergence
 import math
 
 
-__all__ = ["chi2_contingency"]
+__all__ = ["association", "expected_freq", "margins", "chi2_contingency"]
 
 
 def margins(a):
@@ -277,16 +277,15 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     return chi2, p, dof, expected
 
 
-def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
-    """Calculates degree of association between variables that are nominal or greater.
+def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
+    """Calculates degree of association between variables
+    that are nominal or greater.
 
-    Allows for specification of one of four related methods, Tschuprow's T, Pearson's Contingency Coefficient,
-    Cramer's V and Phi.
+    Allows for specification of one of four related methods,
+    Tschuprow's T, Pearson's Contingency Coefficient, Cramer's V and Phi.
 
     Parameters
     ----------
-    stat : {"V", "T", "C", "phi"} (default = "V")
-        The association test statistic.
     n_obs : int or float
         The total number of observations
     n_rows : int or float
@@ -294,8 +293,8 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     n_cols : int or float
         The total number of columns
     chi2_stat : float
-        The chi squared statistic.
-    stat : {"V", "T", "C", "phi"} (default = "V")
+        The chi-squared statistic.
+    stat : {"cramer", "tschuprow", "pearson", "phi"} (default = "cramer")
         The association test statistic.
 
     Returns
@@ -303,19 +302,38 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     value : float
         Value of the test statistic
 
+    Notes
+    ------
+    Cramer's V and Tschuprow's T measure degree to which two variables are
+    related, or the level of their association. This differs from correlation,
+    although many often mistakenly consider them equivalent.
+    Correlation measures in what way two variables are related, whereas,
+    association measures how related the variables are. As such, association
+    does not subsume independent variables, and is rather a
+    test of independence. A value of 1.0 indicates perfect association, and
+    0.0 means the variables have no association.
+
+    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient.
+    Moreover, due to the close relationship between the Cramer's V and
+    Tschuprow's T the returned values can often be similar or even equivalent.
+    They are likely to diverge more as the array shape diverges from a 2x2.
+
+    The evaluation of Pearsons Contingency Coefficient is not effected by the
+    bias correction metric, because it was not included as a
+    part of the supporting academic paper.
+
     References
     ----------
     .. [1] "Tschuprow's T",
            https://en.wikipedia.org/wiki/Tschuprow's_T
-    .. [2] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T",
-           London School of Econ. and Pol. Sci., pp. 5-7.
-           http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
-    .. [3] Tschuprow, A. A. (1939) Principles of the Mathematical Theory of Correlation;
+    .. [2] Tschuprow, A. A. (1939)
+           Principles of the Mathematical Theory of Correlation;
            translated by M. Kantorowitsch. W. Hodge & Co.
-    .. [4] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
-    .. [5] "Nominal Association: Phi and Cramer's V",
+    .. [3] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
+    .. [4] "Nominal Association: Phi and Cramer's V",
            http://www.people.vcu.edu/~pdattalo/702SuppRead/MeasAssoc/NominalAssoc.html
-    .. [6] Gingrich, Paul, "Association Between Variables", http://uregina.ca/~gingrich/ch11a.pdf
+    .. [5] Gingrich, Paul, "Association Between Variables",
+           http://uregina.ca/~gingrich/ch11a.pdf
 
 
     Examples
@@ -331,37 +349,26 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     >>> chi2 = tuple(chi2_contingency(obs))[0]
 
     Pearson's contingency coefficient
+
     >>> association(num_obs, num_rows, num_cols, chi2, stat="C")
     0.22768
 
     Cramer's V
+
     >>> association(num_obs, num_rows, num_cols, chi2, stat="V")
     0.23382
 
     Tschuprow's T
+
     >>> association(num_obs, num_rows, num_cols, chi2, stat="T")
     0.17766
 
     Phi
+
     >>> association(num_obs, num_rows, num_cols, chi2, stat="phi")
     0.23382
 
 
-    Notes
-    ------
-    Cramer's V and Tschuprow's T measure degree to which two variables are related, or the level of
-    their association. This differs from correlation, although many often mistakenly consider them equivalent.
-    Correlation measures in what way two variables are related, whereas, association measures
-    how related the variables are. As such, association does not subsume independent variables, and is
-    rather a test of independence. Where a value of 1.0 = perfect association or dependent variables, and
-    0.0 = no association or entirely independent variables.
-
-    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient. Moreover, due
-    to the close relationship between the Cramer's V and Tschuprow's T the returned values can often
-    be similar or even equivalent. They are likely to diverge more as the array shape diverges from a 2x2.
-
-    The evaluation of Pearsons Contingency Coefficient is not effected by the bias correction metric, because
-    it was not included as a part of the supporting academic paper.
     """
 
     try:
@@ -371,10 +378,12 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     except ValueError:
         raise ValueError("n_obs, n_cols, n_rows must be int or float")
 
-    if stat.casefold() not in ['t', "c", 'v', 'phi']:
-        raise ValueError("stat must be in ['T', 'C', 'V', 'phi']")
+    if stat.lower() not in ['tschuprow', "pearson", 'cramer', 'phi',
+                            't', 'c', 'v']:
+        raise ValueError("stat must be in "
+                         "['tschuprow', 'cramer', 'pearson', 'phi']")
     else:
-        stat_str = stat.casefold()
+        stat_str = stat.lower()
 
     try:
         chi2_stat = float(chi2_stat)
@@ -383,11 +392,11 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="V"):
     else:
         phi2 = chi2_stat / n_obs
 
-    if stat_str == "v":
+    if stat_str == "cramer" or stat_str == 'v':
         value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))
-    elif stat_str == "t":
+    elif stat_str == "tschuprow" or stat_str == 't':
         value = math.sqrt(phi2 / math.sqrt((n_rows - 1) * (n_cols - 1)))
-    elif stat_str == 'c':
+    elif stat_str == 'pearson' or stat_str == 'c':
         value = math.sqrt(phi2 / (1 + phi2))
     elif stat_str == "phi":
         value = math.sqrt(phi2)
