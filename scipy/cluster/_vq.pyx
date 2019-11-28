@@ -12,7 +12,7 @@ from __future__ import absolute_import
 cimport cython
 import numpy as np
 cimport numpy as np
-from .cluster_blas cimport f_dgemm, f_sgemm
+from scipy.linalg.cython_blas cimport dgemm, sgemm
 
 from libc.math cimport sqrt
 
@@ -52,11 +52,11 @@ cdef inline void cal_M(int nobs, int ncodes, int nfeat, vq_type *obs,
     # Call BLAS functions with Fortran ABI
     # Note that BLAS Fortran ABI uses column-major order
     if vq_type is float32_t:
-        f_sgemm("T", "N", &ncodes, &nobs, &nfeat,
-                &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
+        sgemm("T", "N", &ncodes, &nobs, &nfeat,
+               &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
     else:
-        f_dgemm("T", "N", &ncodes, &nobs, &nfeat,
-                &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
+        dgemm("T", "N", &ncodes, &nobs, &nfeat,
+              &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
 
 
 cdef int _vq(vq_type *obs, vq_type *code_book,
