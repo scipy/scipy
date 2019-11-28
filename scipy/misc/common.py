@@ -52,14 +52,14 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     Find the nth derivative of a function at a point.
 
     Given a function, use a central difference formula with spacing `dx` to
-    compute the `n`th derivative at `x0`.
+    compute the nth derivative at `x0`.
 
     Parameters
     ----------
     func : function
         Input function.
     x0 : float
-        The point at which the `n`th derivative is found.
+        The point at which the nth derivative is found.
     dx : float, optional
         Spacing.
     n : int, optional
