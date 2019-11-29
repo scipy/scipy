@@ -397,8 +397,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Compute objective function
             fx = func(x)
+            # TODO enforce returning an actual scalar, not a np.array of shape [1, 1, 1]
+            # or something like that?
             try:
-                fx = float(np.asarray(fx))
+                fx = np.asarray(fx).reshape([])
             except (TypeError, ValueError):
                 raise ValueError("Objective function must return a scalar")
             # Compute the constraints
@@ -445,7 +447,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # Call SLSQP
         slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
               alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-              iexact, incons, ireset, itermx, line, 
+              iexact, incons, ireset, itermx, line,
               n1, n2, n3)
 
         # call callback if major iteration has incremented

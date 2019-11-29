@@ -1,6 +1,5 @@
 from __future__ import division
 
-import math
 from itertools import product
 
 import numpy as np
@@ -182,10 +181,10 @@ class TestApproxDerivativesDense(object):
         ])
 
     def fun_non_numpy(self, x):
-        return math.exp(x)
+        return np.exp(x)
 
     def jac_non_numpy(self, x):
-        return math.exp(x)
+        return np.exp(x)
 
     def test_scalar_scalar(self):
         x0 = 1.0
@@ -359,9 +358,9 @@ class TestApproxDerivativesDense(object):
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-8)
 
-        # math.exp cannot handle complex arguments, hence this raises
-        assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
-                      **dict(method='cs'))
+        # We're using np.exp now, so this doesn't raise anymore.
+        # assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
+        #               **dict(method='cs'))
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])

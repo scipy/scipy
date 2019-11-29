@@ -831,7 +831,11 @@ class DifferentialEvolutionSolver(object):
                 DE_result.x = result.x
                 DE_result.jac = result.jac
                 # to keep internal state consistent
-                self.population_energies[0] = result.fun
+                # Sometimes, result.fun is a float, sometimes an array of length 1.
+                # TODO get some consistency here and remove the reshape workaround.
+                result_fun = np.asarray(result.fun).reshape(1)[0]
+                # TODO why is result.fun an array here?
+                self.population_energies[0] = result_fun
                 self.population[0] = self._unscale_parameters(result.x)
 
         if self._wrapped_constraints:
@@ -874,8 +878,11 @@ class DifferentialEvolutionSolver(object):
 
         parameters_pop = self._scale_parameters(population)
         try:
-            calc_energies = list(self._mapwrapper(self.func,
-                                                  parameters_pop[0:nfevs]))
+            # Instead of casting this into an array and reshaping it,
+            # there's probably a nicer way to handle this.
+            calc_energies = np.array(list(self._mapwrapper(self.func,
+                                                           parameters_pop[0:nfevs])))
+            calc_energies = calc_energies.reshape(-1)
             energies[0:nfevs] = calc_energies
         except (TypeError, ValueError):
             # wrong number of arguments for _mapwrapper
@@ -1085,6 +1092,9 @@ class DifferentialEvolutionSolver(object):
                                       self.feasible[candidate],
                                       self.constraint_violation[candidate]):
                     self.population[candidate] = trial
+                    # Sometimes, energy is a float, sometimes an array of length 1.
+                    # TODO get some consistency here and remove the reshape workaround.
+                    energy = np.asarray(energy).reshape(1)[0]
                     self.population_energies[candidate] = energy
                     self.feasible[candidate] = feasible
                     self.constraint_violation[candidate] = cv
