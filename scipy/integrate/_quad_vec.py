@@ -189,7 +189,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     for infinite intervals). This is because the algorithm here is
     supposed to work on vector-valued functions, in an user-specified
     norm, and the extension of the epsilon algorithm to this case does
-    not appear to be widely agreed.  For max-norm, using elementwise
+    not appear to be widely agreed. For max-norm, using elementwise
     Wynn epsilon could be possible, but we do not do this here with
     the hope that the epsilon extrapolation is mainly useful in
     special cases.

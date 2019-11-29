@@ -55,7 +55,7 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
                     mode='mirror'):
     """
-    Calculate a one-dimensional spline filter along the given axis.
+    Calculate a 1-D spline filter along the given axis.
 
     The lines of the array along the given axis are filtered by a
     spline filter. The order of the spline must be >= 2 and <= 5.
@@ -81,10 +81,10 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     Notes
     -----
     All functions in `ndimage.interpolation` do spline interpolation of
-    the input image. If using b-splines of `order > 1`, the input image
-    values have to be converted to b-spline coefficients first, which is
-    done by applying this one-dimensional filter sequentially along all
-    axes of the input. All functions that require b-spline coefficients
+    the input image. If using B-splines of `order > 1`, the input image
+    values have to be converted to B-spline coefficients first, which is
+    done by applying this 1-D filter sequentially along all
+    axes of the input. All functions that require B-spline coefficients
     will automatically filter their inputs, a behavior controllable with
     the `prefilter` keyword argument. For functions that accept a `mode`
     parameter, the result will only be correct if it matches the `mode`
@@ -107,7 +107,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
 
 def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
-    Multi-dimensional spline filter.
+    Multidimensional spline filter.
 
     For more details, see `spline_filter1d`.
 
@@ -117,8 +117,8 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
 
     Notes
     -----
-    The multi-dimensional filter is implemented as a sequence of
-    one-dimensional spline filters. The intermediate arrays are stored
+    The multidimensional filter is implemented as a sequence of
+    1-D spline filters. The intermediate arrays are stored
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
@@ -201,12 +201,12 @@ def geometric_transform(input, mapping, output_shape=None,
     callback function must return the coordinates at which the input must
     be interpolated in ``input_coordinates``. The rank of the input and
     output arrays are given by ``input_rank`` and ``output_rank``
-    respectively.  ``user_data`` is the data pointer provided
+    respectively. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
     The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
-    normally set the python error status with an informative message
+    normally set the Python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
@@ -379,7 +379,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
             - ``(ndim, ndim)``: the linear transformation matrix for each
               output coordinate.
-            - ``(ndim,)``: assume that the 2D transformation matrix is
+            - ``(ndim,)``: assume that the 2-D transformation matrix is
               diagonal, with the diagonal specified by the given value. A more
               efficient algorithm is then used that exploits the separability
               of the problem.
@@ -420,8 +420,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     .. versionchanged:: 0.18.0
         Previously, the exact interpretation of the affine transformation
-        depended on whether the matrix was supplied as a one-dimensional or
-        two-dimensional array. If a one-dimensional array was supplied
+        depended on whether the matrix was supplied as a 1-D or a
+        2-D array. If a 1-D array was supplied
         to the matrix parameter, the output pixel value at index ``o``
         was determined from the input image at position
         ``matrix * (o + offset)``.
@@ -475,9 +475,9 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         offset = offset.copy()
     if matrix.ndim == 1:
         warnings.warn(
-            "The behaviour of affine_transform with a one-dimensional "
+            "The behavior of affine_transform with a 1-D "
             "array supplied for the matrix parameter has changed in "
-            "scipy 0.18.0."
+            "SciPy 0.18.0."
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
@@ -678,7 +678,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     ndim = input_arr.ndim
 
     if ndim < 2:
-        raise ValueError('input array should be at least two-dimensional')
+        raise ValueError('input array should be at least 2D')
 
     axes = list(axes)
 

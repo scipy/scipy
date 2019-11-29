@@ -742,7 +742,7 @@ def test_odeint_banded_jacobian():
                              mxstep=10000,
                              Dfun=lambda t, y, c: jac(y, t, c), tfirst=True)
     # The code should execute the exact same sequence of floating point
-    # calculations, so these should be exactly equal.  We'll be safe and use
+    # calculations, so these should be exactly equal. We'll be safe and use
     # a small tolerance.
     assert_allclose(sol1, sol1ty, rtol=1e-12, err_msg="sol1 != sol1ty")
 

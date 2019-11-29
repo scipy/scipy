@@ -24,11 +24,11 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     The permutation array can be used to triangularize the outer factors
     simply by a row shuffle, i.e., ``lu[perm, :]`` is an upper/lower
     triangular matrix. This is also equivalent to multiplication with a
-    permutation matrix ``P.dot(lu)`` where ``P`` is a column-permuted
+    permutation matrix ``P.dot(lu)``, where ``P`` is a column-permuted
     identity matrix ``I[:, perm]``.
 
     Depending on the value of the boolean ``lower``, only upper or lower
-    triangular part of the input array is referenced. Hence a triangular
+    triangular part of the input array is referenced. Hence, a triangular
     matrix on entry would give the same result as if the full matrix is
     supplied.
 
@@ -311,8 +311,8 @@ def _ldl_construct_tri_factor(lu, swap_vec, pivs, lower=True):
         The triangular array that is extracted from LAPACK routine call with
         ones on the diagonals.
     swap_vec : ndarray
-        The array that defines the row swapping indices. If k'th entry is m
-        then rows k,m are swapped. Notice that m'th entry is not necessarily
+        The array that defines the row swapping indices. If the kth entry is m
+        then rows k,m are swapped. Notice that the mth entry is not necessarily
         k to avoid undoing the swapping.
     pivs : ndarray
         The array that defines the block diagonal structure returned by

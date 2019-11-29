@@ -127,7 +127,7 @@ def naive_dst1(x, norm=None):
 
 
 def naive_dct4(x, norm=None):
-    """Calculate textbook definition version  of DCT-IV."""
+    """Calculate textbook definition version of DCT-IV."""
     x = np.array(x, copy=True)
     N = len(x)
     y = np.zeros(N)
@@ -142,7 +142,7 @@ def naive_dct4(x, norm=None):
 
 
 def naive_dst4(x, norm=None):
-    """Calculate textbook definition version  of DST-IV."""
+    """Calculate textbook definition version of DST-IV."""
     x = np.array(x, copy=True)
     N = len(x)
     y = np.zeros(N)
@@ -235,7 +235,7 @@ class _TestDCTIBase(_TestDCTBase):
 
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
-        # Test correspondence with matlab (orthornomal mode).
+        # Test correspondence with MATLAB (orthornomal mode).
         for i in range(len(X)):
             dt = np.result_type(np.float32, self.rdt)
             x = np.array(X[i], dtype=dt)

@@ -1,11 +1,11 @@
 """
-Module to read / write wav files using numpy arrays
+Module to read / write wav files using NumPy arrays
 
 Functions
 ---------
 `read`: Return the sample rate (in samples/sec) and data from a WAV file.
 
-`write`: Write a numpy array as a WAV file.
+`write`: Write a NumPy array as a WAV file.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -198,7 +198,7 @@ def read(filename, mmap=False):
     rate : int
         Sample rate of wav file.
     data : numpy array
-        Data read from wav file.  Data-type is determined from the file;
+        Data read from wav file. Data-type is determined from the file;
         see Notes.
 
     Notes
@@ -325,7 +325,7 @@ def read(filename, mmap=False):
 
 def write(filename, rate, data):
     """
-    Write a numpy array as a WAV file.
+    Write a NumPy array as a WAV file.
 
     Parameters
     ----------
@@ -334,7 +334,7 @@ def write(filename, rate, data):
     rate : int
         The sample rate (in samples/sec).
     data : ndarray
-        A 1-D or 2-D numpy array of either integer or float data-type.
+        A 1-D or 2-D NumPy array of either integer or float data-type.
 
     Notes
     -----

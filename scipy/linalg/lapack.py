@@ -700,7 +700,7 @@ dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
 sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
 zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
 
-# Modyfy _flapack in this scope so the deprecation warnings apply to
+# Modify _flapack in this scope so the deprecation warnings apply to
 # functions returned by get_lapack_funcs.
 _flapack.cgegv = cgegv
 _flapack.dgegv = dgegv
@@ -749,7 +749,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     In LAPACK, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the NumPy
     types {float32, float64, complex64, complex128} respectively, and
     are stored in attribute ``typecode`` of the returned functions.
 

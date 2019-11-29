@@ -11,7 +11,7 @@ or
 Copyright 2002 Pearu Peterson all rights reserved,
 Pearu Peterson <pearu@cens.ioc.ee>
 Permission to use, modify, and distribute this software is given under the
-terms of the SciPy (BSD style) license.  See LICENSE.txt that came with
+terms of the SciPy (BSD style) license. See LICENSE.txt that came with
 this distribution for specifics.
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
@@ -92,7 +92,7 @@ _iermess2 = {
         "coincide with an old one. Probable cause: s too small or too large\n"
         "a weight to an inaccurate data point. (fp>s)", ValueError],
     10: ["Error on input data", ValueError],
-    11: ["rwrk2 too small, i.e. there is not enough workspace for computing\n"
+    11: ["rwrk2 too small, i.e., there is not enough workspace for computing\n"
          "the minimal least-squares solution of a rank deficient system of\n"
          "linear equations.", ValueError],
     'unknown': ["An error occurred", TypeError]
@@ -106,7 +106,7 @@ _parcur_cache = {'t': array([], float), 'wrk': array([], float),
 def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
             full_output=0, nest=None, per=0, quiet=1):
     """
-    Find the B-spline representation of an N-dimensional curve.
+    Find the B-spline representation of an N-D curve.
 
     Given a list of N rank-1 arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating
@@ -132,7 +132,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
             u[i] = v[i] / v[M-1]
 
     ub, ue : int, optional
-        The end-points of the parameters interval.  Defaults to
+        The end-points of the parameters interval. Defaults to
         u[0] and u[-1].
     k : int, optional
         Degree of the spline. Cubic splines are recommended.
@@ -146,11 +146,11 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         If task=-1 find the weighted least square spline for a given set of
         knots, t.
     s : float, optional
-        A smoothing condition.  The amount of smoothness is determined by
+        A smoothing condition. The amount of smoothness is determined by
         satisfying the conditions: ``sum((w * (y - g))**2,axis=0) <= s``,
         where g(x) is the smoothed interpolation of (x,y).  The user can
         use `s` to control the trade-off between closeness and smoothness
-        of fit.  Larger `s` means more smoothing while smaller values of `s`
+        of fit. Larger `s` means more smoothing while smaller values of `s`
         indicate less smoothing. Recommended values of `s` depend on the
         weights, w.  If the weights represent the inverse of the
         standard-deviation of y, then a good `s` value should be found in
@@ -162,7 +162,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         If non-zero, then return optional outputs.
     nest : int, optional
         An over-estimate of the total number of knots of the spline to
-        help in determining the storage space.  By default nest=m/2.
+        help in determining the storage space. By default nest=m/2.
         Always large enough is nest=m+k+1.
     per : int, optional
        If non-zero, data points are considered periodic with period
@@ -351,7 +351,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         added automatically.
     s : float, optional
         A smoothing condition. The amount of smoothness is determined by
-        satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s where g(x)
+        satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s, where g(x)
         is the smoothed interpolation of (x,y). The user can use s to control
         the tradeoff between closeness and smoothness of fit. Larger s means
         more smoothing while smaller values of s indicate less smoothing.
@@ -529,14 +529,14 @@ def splev(x, tck, der=0, ext=0):
     Evaluate a B-spline or its derivatives.
 
     Given the knots and coefficients of a B-spline representation, evaluate
-    the value of the smoothing polynomial and its derivatives.  This is a
+    the value of the smoothing polynomial and its derivatives. This is a
     wrapper around the FORTRAN routines splev and splder of FITPACK.
 
     Parameters
     ----------
     x : array_like
         An array of points at which to return the value of the smoothed
-        spline or its derivatives.  If `tck` was returned from `splprep`,
+        spline or its derivatives. If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
     tck : tuple
         A sequence of length 3 returned by `splrep` or `splprep` containing
@@ -560,7 +560,7 @@ def splev(x, tck, der=0, ext=0):
     y : ndarray or list of ndarrays
         An array of values representing the spline function evaluated at
         the points in ``x``.  If `tck` was returned from `splprep`, then this
-        is a list of arrays representing the curve in N-dimensional space.
+        is a list of arrays representing the curve in N-D space.
 
     See Also
     --------
@@ -831,7 +831,7 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         with task=0 or task=1.
         If task=-1, find coefficients for a given set of knots tx, ty.
     s : float, optional
-        A non-negative smoothing factor.  If weights correspond
+        A non-negative smoothing factor. If weights correspond
         to the inverse of the standard-deviation of the errors in z,
         then a good s-value should be found in the range
         ``(m-sqrt(2*m),m+sqrt(2*m))`` where m=len(x).
@@ -861,7 +861,7 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     fp : ndarray
         The weighted sum of squared residuals of the spline approximation.
     ier : int
-        An integer flag about splrep success.  Success is indicated if
+        An integer flag about splrep success. Success is indicated if
         ier<=0. If ier in [1,2,3] an error occurred but was not raised.
         Otherwise an error is raised.
     msg : str

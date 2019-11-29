@@ -34,10 +34,10 @@ class LSODA(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     min_step : float, optional
-        Minimum allowed step size. Default is 0.0, i.e. the step size is not
+        Minimum allowed step size. Default is 0.0, i.e., the step size is not
         bounded and determined solely by the solver.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
