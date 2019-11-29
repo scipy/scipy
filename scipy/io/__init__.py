@@ -95,6 +95,7 @@ Arff files (:mod:`scipy.io.arff`)
 """
 from __future__ import division, print_function, absolute_import
 
+from . import wavfile
 # matfile read and write
 from .matlab import loadmat, savemat, whosmat, byteordercodes
 
