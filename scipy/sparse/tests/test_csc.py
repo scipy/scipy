@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, csc_matrix
@@ -35,9 +34,3 @@ def test_csc_getcol():
         assert_array_almost_equal(arr_col, csc_col.toarray())
         assert_(type(csc_col) is csc_matrix)
 
-    # cannot slice with start index > stop index
-    with pytest.raises(IndexError):
-        Xcsc[:, 3:2]
-
-    with pytest.raises(IndexError):
-        Xcsc[3:2, :]
