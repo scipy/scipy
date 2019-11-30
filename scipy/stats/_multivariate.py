@@ -41,13 +41,23 @@ random_state : None or int or np.random.RandomState instance, optional
 """
 
 
-def _squeeze_output(out):
+def _squeeze_output(out, axis=None):
     """
     Remove single-dimensional entries from array and convert to scalar,
     if necessary.
 
+    Parameters
+    ----------
+    axis : None or int or tuple of ints, optional
+        Subset of single-dimensional entries in the shape.
+
+    Returns
+    -------
+    out : array
+        The input array with single-dimensional entries removed.
+
     """
-    out = out.squeeze()
+    out = out.squeeze(axis)
     if out.ndim == 0:
         out = out[()]
     return out
@@ -639,7 +649,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Parameters
         ----------
         %(_mvn_doc_default_callparams)s
-        size : integer, optional
+        size : integer or tuple of integers, optional
             Number of samples to draw (default 1).
         %(_doc_random_state)s
 
@@ -658,6 +668,13 @@ class multivariate_normal_gen(multi_rv_generic):
 
         random_state = self._get_random_state(random_state)
         out = random_state.multivariate_normal(mean, cov, size)
+
+        if not isinstance(size, int):
+            all_axes_count = len(out.shape)
+            size_axes_count = len(size)
+            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axs)
+
         return _squeeze_output(out)
 
     def entropy(self, mean=None, cov=1):

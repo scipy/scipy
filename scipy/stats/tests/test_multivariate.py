@@ -414,6 +414,15 @@ class TestMultivariateNormal(object):
         sample = u.rvs(N)
         assert_equal(sample.shape, (N, ))
 
+        sample = multivariate_normal.rvs(size=(1,))
+        assert_equal(sample.shape, (1,))
+
+        sample = multivariate_normal.rvs(mean=(3,), size=(1, 3, 1))
+        assert_equal(sample.shape, (1, 3, 1))
+
+        sample = multivariate_normal.rvs(mean=np.zeros(3), size=(1,))
+        assert_equal(sample.shape, (1, 3))
+
     def test_large_sample(self):
         # Generate large sample and compare sample mean and sample covariance
         # with mean and covariance matrix.
