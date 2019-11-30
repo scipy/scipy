@@ -1449,7 +1449,7 @@ class SHGO(object):
                 # sometimes self.func returns a scalar, sometimes [x] or [[[[x]]]].
                 # TODO get some consistency in and remove the reshape
                 val = self.func(self.C[i, :], *self.args)
-                self.F[i] = np.asarray(val).reshape(1)[0]
+                self.F[i] = np.asarray(val).reshape(())
                 self.fn += 1
             elif self.infty_cons_sampl:
                 self.F[i] = np.inf

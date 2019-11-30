@@ -318,8 +318,7 @@ class Metropolis(object):
         # The expression 0 * inf is undefined. With Python floats this simply gives
         # NaN and the computation continues.
         # TODO deal with this properly
-        energy_diff = float(energy_new - energy_old)
-        w = math.exp(min(0, -energy_diff * self.beta))
+        w = math.exp(min(0, -(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
 
