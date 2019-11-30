@@ -831,11 +831,7 @@ class DifferentialEvolutionSolver(object):
                 DE_result.x = result.x
                 DE_result.jac = result.jac
                 # to keep internal state consistent
-                # Sometimes, result.fun is a float, sometimes an array of length 1.
-                # TODO get some consistency here and remove the reshape workaround.
-                result_fun = np.asarray(result.fun).reshape(1)[0]
-                # TODO why is result.fun an array here?
-                self.population_energies[0] = result_fun
+                self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
 
         if self._wrapped_constraints:

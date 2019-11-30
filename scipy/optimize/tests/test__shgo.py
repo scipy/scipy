@@ -56,7 +56,8 @@ class StructTest2(StructTestFunction):
     """
 
     def f(self, x):
-        return (x - 30) * numpy.sin(x)
+        # f must return a scalar
+        return (x[0] - 30) * numpy.sin(x[0])
 
     def g(x):
         return 58 - numpy.sum(x, axis=0)
@@ -656,7 +657,7 @@ class TestShgoArguments(object):
         """Test the functionality to add custom sampling methods to shgo"""
         def sample(n, d):
             return numpy.random.uniform(size=(n,d))
-        
+
         run_test(test1_1, n=30, sampling_method=sample)
 
 # Failure test functions
