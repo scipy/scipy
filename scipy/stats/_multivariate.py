@@ -669,7 +669,8 @@ class multivariate_normal_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
         out = random_state.multivariate_normal(mean, cov, size)
 
-        if not isinstance(size, int):
+        size = np.asanyarray(size)
+        if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
             axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
@@ -2164,10 +2165,10 @@ class wishart_gen(multi_rv_generic):
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
-        if not isinstance(size, int):
+        size = np.asanyarray(size)
+        if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            print(all_axes_count, size_axes_count)
             axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
             return _squeeze_output(out, axs)
 
@@ -2302,10 +2303,11 @@ class wishart_frozen(multi_rv_frozen):
         n, shape = self._dist._process_size(size)
         out = self._dist._rvs(n, shape, self.dim, self.df,
                               self.C, random_state)
-        if not isinstance(size, int):
+
+        size = np.asanyarray(size)
+        if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            print(all_axes_count, size_axes_count)
             axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
             return _squeeze_output(out, axs)
 
@@ -2797,7 +2799,8 @@ class invwishart_gen(wishart_gen):
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
-        if not isinstance(size, int):
+        size = np.asanyarray(size)
+        if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
             axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
@@ -2874,10 +2877,11 @@ class invwishart_frozen(multi_rv_frozen):
 
         out = self._dist._rvs(n, shape, self.dim, self.df,
                               self.C, random_state)
-        if not isinstance(size, int):
+
+        size = np.asanyarray(size)
+        if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            print(all_axes_count, size_axes_count)
             axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
             return _squeeze_output(out, axs)
 
