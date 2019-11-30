@@ -39,13 +39,9 @@ def geometric_slerp(start,
     start : (n_dimensions, ) array-like
         Single n-dimensional input coordinate in a 1-D array-like
         object. `n` must be greater than 1.
-        Starting coordinate for interpolation will be converted
-        to float64 and must lay on a unit sphere.
     end : (n_dimensions, ) array-like
         Single n-dimensional input coordinate in a 1-D array-like
         object. `n` must be greater than 1.
-        End coordinate for interpolation will be converted to
-        float64 and must lay on a unit sphere.
     t: float or (n_points,) array-like
         A float or array-like of doubles representing interpolation
         parameters, with values required in the inclusive interval
@@ -54,8 +50,7 @@ def geometric_slerp(start,
         Ascending, descending, and scrambled orders are permitted.
     tol: float
         The absolute tolerance for determining if the start and end
-        coordinates are antipodes. Antipode detection will
-        raise an exception because of the ambiguity in the path.
+        coordinates are antipodes.
 
     Returns
     -------
@@ -66,6 +61,12 @@ def geometric_slerp(start,
         interpolated values should correspond to the
         same sort order provided in the t array. The result
         may be 1-dimensional if ``t`` is a float.
+
+    Raises
+    ------
+    ValueError
+        If ``start`` and ``end`` are antipodes, not on the
+        unit n-sphere, or for a variety of degenerate conditions.
 
     Notes
     -----
@@ -169,14 +170,21 @@ def geometric_slerp(start,
         raise ValueError("The dimensions of start and "
                          "end must match (have same size)")
 
-    if start.size == 0 or end.size == 0:
-        raise ValueError("One or both input coordinates are empty")
+    if start.size < 2 or end.size < 2:
+        raise ValueError("The start and end coordinates must "
+                         "both be in at least two-dimensional "
+                         "space")
 
     if np.array_equal(start, end):
         raise ValueError("Start and end coordinates cannot be the same")
 
-    if start.size == 1 or end.size == 1:
-        raise ValueError("Cannot interpolate the 0-sphere")
+    # for points that violate equation for n-sphere
+    for coord in [start, end]:
+        if not np.allclose(np.linalg.norm(coord), 1.0,
+                           rtol=np.finfo(np.float32).eps,
+                           atol=0):
+            raise ValueError("start and end are not"
+                             " on a unit n-sphere")
 
     if not isinstance(tol, float):
         raise ValueError("tol must be a float")
@@ -191,14 +199,6 @@ def geometric_slerp(start,
         raise ValueError("start and end are antipodes"
                          " using the specified tolerance or they"
                          " are not on a unit n-sphere")
-
-    # for points that violate equation for n-sphere
-    for coord in [start, end]:
-        if not np.allclose(np.linalg.norm(coord), 1.0,
-                           rtol=np.finfo(np.float32).eps,
-                           atol=0):
-            raise ValueError("start and end are not"
-                             " on a unit n-sphere")
 
     t = np.asarray(t, dtype=np.float64)
 

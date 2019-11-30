@@ -95,7 +95,7 @@ class TestGeometricSlerp(object):
         # empty inputs to geometric_slerp must
         # be handled appropriately when not detected
         # by mismatch
-        with pytest.raises(ValueError, match='empty'):
+        with pytest.raises(ValueError, match='at least two-dim'):
             geometric_slerp(start=start,
                             end=end,
                             t=np.linspace(0, 1, 10))
@@ -196,7 +196,7 @@ class TestGeometricSlerp(object):
     def test_0_sphere_handling(self, start, end):
         # it does not make sense to interpolate the set of
         # two points that is the 0-sphere
-        with pytest.raises(ValueError, match='0-sphere'):
+        with pytest.raises(ValueError, match='at least two-dim'):
             actual = geometric_slerp(start=start,
                                      end=end,
                                      t=np.linspace(0, 1, 4))
