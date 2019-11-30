@@ -336,6 +336,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave, maxls)
+        # f should really always be a scalar
+        f = np.asarray(f).reshape(())
         task_str = task.tostring()
         if task_str.startswith(b'FG'):
             # The minimization routine wants f and g at the current x.
