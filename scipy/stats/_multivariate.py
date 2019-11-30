@@ -48,13 +48,15 @@ def _squeeze_output(out, axis=None):
 
     Parameters
     ----------
+    out : array_like
+        Input data.
     axis : None or int or tuple of ints, optional
         Subset of single-dimensional entries in the shape.
 
     Returns
     -------
     out : array
-        The input array with single-dimensional entries removed.
+        The input array, but with all or a subset of the dimensions of length 1 removed.
 
     """
     out = out.squeeze(axis)
