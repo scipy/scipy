@@ -1039,6 +1039,25 @@ class TestWishart(object):
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
 
+    def test_rvs_shape(self):
+        # Check that rvs returns an array of the right shape
+        dim = 4
+        scale = np.arange(dim) + 1
+        df = 10
+        w = wishart(df, scale)
+
+        sample = w.rvs(size=(1,))
+        assert_equal(sample.shape, (1, dim, dim))
+
+        sample = w.rvs(size=(3, 1, 1))
+        assert_equal(sample.shape, (3, 1, 1, dim, dim))
+
+        sample = wishart.rvs(df, scale, size=(1,))
+        assert_equal(sample.shape, (1, dim, dim))
+
+        sample = wishart.rvs(df, (1,), size=(1, 1, 2))
+        assert_equal(sample.shape, (1, 1, 2))
+
 class TestMultinomial(object):
     def test_logpmf(self):
         vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
@@ -1346,6 +1365,25 @@ class TestInvwishart(object):
                     - (nu + p + 1)/2*logdetX
                     - 0.5*M.trace())
         assert_allclose(prob, expected)
+
+    def test_rvs_shape(self):
+        # Check that rvs returns an array of the right shape
+        dim = 4
+        scale = np.arange(dim) + 1
+        df = 10
+        w = invwishart(df, scale)
+
+        sample = w.rvs(size=(1,))
+        assert_equal(sample.shape, (1, dim, dim))
+
+        sample = w.rvs(size=(2, 1, 1))
+        assert_equal(sample.shape, (2, 1, 1, dim, dim))
+
+        sample = invwishart.rvs(df, scale, size=(1, 2))
+        assert_equal(sample.shape, (1, 2, dim, dim))
+
+        sample = invwishart.rvs(df, (1,), size=(1, 1, 2))
+        assert_equal(sample.shape, (1, 1, 2))
 
 
 class TestSpecialOrthoGroup(object):

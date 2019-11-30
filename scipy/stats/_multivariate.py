@@ -2164,6 +2164,13 @@ class wishart_gen(multi_rv_generic):
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
+        if not isinstance(size, int):
+            all_axes_count = len(out.shape)
+            size_axes_count = len(size)
+            print(all_axes_count, size_axes_count)
+            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axs)
+
         return _squeeze_output(out)
 
     def _entropy(self, dim, df, log_det_scale):
@@ -2295,6 +2302,13 @@ class wishart_frozen(multi_rv_frozen):
         n, shape = self._dist._process_size(size)
         out = self._dist._rvs(n, shape, self.dim, self.df,
                               self.C, random_state)
+        if not isinstance(size, int):
+            all_axes_count = len(out.shape)
+            size_axes_count = len(size)
+            print(all_axes_count, size_axes_count)
+            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axs)
+
         return _squeeze_output(out)
 
     def entropy(self):
@@ -2783,6 +2797,12 @@ class invwishart_gen(wishart_gen):
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
+        if not isinstance(size, int):
+            all_axes_count = len(out.shape)
+            size_axes_count = len(size)
+            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axs)
+
         return _squeeze_output(out)
 
     def entropy(self):
@@ -2854,6 +2874,12 @@ class invwishart_frozen(multi_rv_frozen):
 
         out = self._dist._rvs(n, shape, self.dim, self.df,
                               self.C, random_state)
+        if not isinstance(size, int):
+            all_axes_count = len(out.shape)
+            size_axes_count = len(size)
+            print(all_axes_count, size_axes_count)
+            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axs)
 
         return _squeeze_output(out)
 
