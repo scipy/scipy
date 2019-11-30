@@ -218,29 +218,22 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # Reference [4] Eq. 8.6
         rhatp = eta(gamma) * r_P
         rhatd = eta(gamma) * r_D
-        rhatg = np.array(eta(gamma) * r_G).reshape((1,))
+        rhatg = eta(gamma) * r_G
 
         # Reference [4] Eq. 8.7
         rhatxs = gamma * mu - x * z
-        rhattk = np.array(gamma * mu - tau * kappa).reshape((1,))
+        rhattk = gamma * mu - tau * kappa
 
         if i == 1:
             if ip:  # if the correction is to get "initial point"
                 # Reference [4] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
                           x * z - alpha**2 * d_x * d_z)
-                rhattk = np.array(
-                    (1 -
-                     alpha) *
-                    gamma *
-                    mu -
-                    tau *
-                    kappa -
-                    alpha**2 *
-                    d_tau *
-                    d_kappa).reshape(
-                    (1,
-                     ))
+                rhattk = (
+                    (1 - alpha) * gamma * mu
+                    - tau * kappa
+                    - alpha**2 * d_tau * d_kappa
+                )
             else:  # if the correction is for "predictor-corrector"
                 # Reference [4] Eq. 8.13
                 rhatxs -= d_x * d_z
@@ -325,7 +318,6 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
             beta1 = 0.1  # [4] pg. 220 (Table 8.1)
             gamma = (1 - alpha)**2 * min(beta1, (1 - alpha))
         i += 1
-
     return d_x, d_y, d_z, d_tau, d_kappa
 
 
@@ -424,11 +416,11 @@ def _do_step(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
            2000. 197-232.
 
     """
-    x = x + alpha * d_x
-    tau = tau + alpha * d_tau
-    z = z + alpha * d_z
-    kappa = kappa + alpha * d_kappa
-    y = y + alpha * d_y
+    x += alpha * d_x
+    tau += alpha * d_tau
+    z += alpha * d_z
+    kappa += alpha * d_kappa
+    y += alpha * d_y
     return x, y, z, tau, kappa
 
 
