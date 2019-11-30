@@ -34,6 +34,7 @@ Functions
 ## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
 from __future__ import division, print_function, absolute_import
+import warnings
 
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
@@ -336,8 +337,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave, maxls)
-        # f should really always be a scalar
-        f = np.asarray(f).reshape(())
         task_str = task.tostring()
         if task_str.startswith(b'FG'):
             # The minimization routine wants f and g at the current x.
@@ -345,6 +344,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
             f, g = func_and_grad(x)
+
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
@@ -358,6 +358,13 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                            'EXCEEDS LIMIT')
         else:
             break
+
+    # f should really always be a scalar
+    f = np.asarray(f)
+    if len(f.shape) > 1:
+        warnings.warn("The LBFGS-B fun value used to be a 1x1 array. It is now a scalar.",
+                      category=DeprecationWarning)
+    f = f.reshape(())
 
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
