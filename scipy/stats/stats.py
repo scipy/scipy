@@ -3113,7 +3113,7 @@ def trimboth(a, proportiontocut, axis=0):
     The proportion to trim is rounded down to the nearest integer.  Trimming 
     25% of the values from each end of an array of 10 values will return an 
     array of 6 values:
-    
+
     >>> c = np.arange(10)
     >>> stats.trimboth(c, 1/4).shape
     (6,)
@@ -3187,7 +3187,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     array([2, 7, 3, 4, 6, 5, 8, 9])
 
     The proportion to trim is rounded down to the nearest integer.  Trimming 
-    25% of the values from an array of 10 values will return an array of 6 values:
+    25% of the values from an array of 10 values will return an array of 8 values:
 
     >>> c = np.arange(10)
     >>> stats.trim1(c, 1/4).shape
