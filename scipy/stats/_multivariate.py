@@ -671,12 +671,12 @@ class multivariate_normal_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
         out = random_state.multivariate_normal(mean, cov, size)
 
-        size = np.asanyarray(size)
+        size = np.asarray(size)
         if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
-            return _squeeze_output(out, axs)
+            axes = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axes)
 
         return _squeeze_output(out)
 
@@ -2167,12 +2167,12 @@ class wishart_gen(multi_rv_generic):
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
-        size = np.asanyarray(size)
+        size = np.asarray(size)
         if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
-            return _squeeze_output(out, axs)
+            axes = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axes)
 
         return _squeeze_output(out)
 
@@ -2306,12 +2306,12 @@ class wishart_frozen(multi_rv_frozen):
         out = self._dist._rvs(n, shape, self.dim, self.df,
                               self.C, random_state)
 
-        size = np.asanyarray(size)
+        size = np.asarray(size)
         if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
-            return _squeeze_output(out, axs)
+            axes = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axes)
 
         return _squeeze_output(out)
 
@@ -2801,12 +2801,12 @@ class invwishart_gen(wishart_gen):
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
-        size = np.asanyarray(size)
+        size = np.asarray(size)
         if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
-            return _squeeze_output(out, axs)
+            axes = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axes)
 
         return _squeeze_output(out)
 
@@ -2880,12 +2880,12 @@ class invwishart_frozen(multi_rv_frozen):
         out = self._dist._rvs(n, shape, self.dim, self.df,
                               self.C, random_state)
 
-        size = np.asanyarray(size)
+        size = np.asarray(size)
         if size.ndim != 0:
             all_axes_count = len(out.shape)
             size_axes_count = len(size)
-            axs = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
-            return _squeeze_output(out, axs)
+            axes = tuple(i for i in range(size_axes_count, all_axes_count) if out.shape[i] == 1)
+            return _squeeze_output(out, axes)
 
         return _squeeze_output(out)
 
