@@ -4158,13 +4158,15 @@ EPSILON = 2e-16
 
 
 def _vratio(u, ineps, mp):
-    [s, c, d, phi] = special.ellipj(u, mp)
+    # u is the corner of a 1D simplex; _vratio must return a scalar.
+    x = u[0]
+    [s, c, d, phi] = special.ellipj(x, mp)
     ret = abs(ineps - s / c)
     return ret
 
 
 def _kratio(m, k_ratio):
-    m = float(m)
+    m = m[0]
     if m < 0:
         m = 0.0
     if m > 1:
