@@ -310,14 +310,8 @@ class Metropolis(object):
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
         """
-        # energy_new, energy_old are sometimes scalars, sometimes arrays of
-        # length 1. Cast them all into scalars.
-        energy_new = np.asarray(energy_new).reshape(1)[0]
-        energy_old = np.asarray(energy_old).reshape(1)[0]
-        # Not casting energy_diff into a Python float reveals an error in the tests:
-        # The expression 0 * inf is undefined. With Python floats this simply gives
-        # NaN and the computation continues.
-        # TODO deal with this properly
+        # The energy difference can be 0. If self.beta is inf, this emits a warning and
+        # returns nan.
         w = math.exp(min(0, -(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
