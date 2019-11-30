@@ -723,31 +723,163 @@ add_newdoc("btdtrib",
     """)
 
 add_newdoc("bei",
-    """
-    bei(x)
+    r"""
+    bei(x, out=None)
 
-    Kelvin function bei
+    Kelvin function bei.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{bei}(x) = \Im[J_0(x e^{3 \pi i / 4})]
+
+    where :math:`J_0` is the Bessel function of the first kind of
+    order zero (see `jv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    See Also
+    --------
+    ber : the corresponding real part
+    beip : the derivative of bei
+    jv : Bessel function of the first kind
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using Bessel functions.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).imag
+    array([0.24956604, 0.97229163, 1.93758679, 2.29269032])
+    >>> sc.bei(x)
+    array([0.24956604, 0.97229163, 1.93758679, 2.29269032])
+
     """)
 
 add_newdoc("beip",
-    """
-    beip(x)
+    r"""
+    beip(x, out=None)
 
-    Derivative of the Kelvin function `bei`
+    Derivative of the Kelvin function bei.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The values of the derivative of bei.
+
+    See Also
+    --------
+    bei
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("ber",
-    """
-    ber(x)
+    r"""
+    ber(x, out=None)
 
     Kelvin function ber.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{ber}(x) = \Re[J_0(x e^{3 \pi i / 4})]
+
+    where :math:`J_0` is the Bessel function of the first kind of
+    order zero (see `jv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    See Also
+    --------
+    bei : the corresponding real part
+    berp : the derivative of bei
+    jv : Bessel function of the first kind
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using Bessel functions.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).real
+    array([ 0.98438178,  0.75173418, -0.22138025, -2.56341656])
+    >>> sc.ber(x)
+    array([ 0.98438178,  0.75173418, -0.22138025, -2.56341656])
+
     """)
 
 add_newdoc("berp",
-    """
-    berp(x)
+    r"""
+    berp(x, out=None)
 
-    Derivative of the Kelvin function `ber`
+    Derivative of the Kelvin function ber.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The values of the derivative of ber.
+
+    See Also
+    --------
+    ber
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("besselpoly",
@@ -5453,6 +5585,7 @@ add_newdoc("kei",
     --------
     ker : the corresponding real part
     keip : the derivative of kei
+    kv : modified Bessel function of the second kind
 
     References
     ----------
@@ -5544,6 +5677,7 @@ add_newdoc("ker",
     --------
     kei : the corresponding imaginary part
     kerp : the derivative of ker
+    kv : modified Bessel function of the second kind
 
     Returns
     -------
