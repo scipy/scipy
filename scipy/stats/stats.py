@@ -3098,12 +3098,14 @@ def trimboth(a, proportiontocut, axis=0):
     >>> from scipy import stats
 
     Create an array of 10 values and trim 10% of those values from each end:
+
     >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> stats.trimboth(a, 0.1)
     array([1, 3, 2, 4, 5, 6, 7, 8])
 
     The elements of the input array are trimmed by value, but the output array 
     is not necessarily sorted:
+
     >>> b = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
     >>> stats.trimboth(b, 0.1)
     array([1, 3, 4, 2, 5, 6, 7, 8])
@@ -3111,6 +3113,7 @@ def trimboth(a, proportiontocut, axis=0):
     The proportion to trim is rounded down to the nearest integer.  Trimming 
     25% of the values from each end of an array of 10 values will return an 
     array of 6 values:
+    
     >>> c = np.arange(10)
     >>> stats.trimboth(c, 1/4).shape
     (6,)
@@ -3171,24 +3174,28 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     >>> from scipy import stats
 
     Create an array of 10 values and trim 20% of its lowest values:
+
     >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> stats.trim1(a, 0.2, 'left')
     array([2, 4, 3, 5, 6, 7, 8, 9])
 
     The elements of the input array are trimmed by value, but the output array 
     is not necessarily sorted: 
+
     >>> b = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
     >>> stats.trim1(b, 0.2, 'left')
     array([2, 7, 3, 4, 6, 5, 8, 9])
 
     The proportion to trim is rounded down to the nearest integer.  Trimming 
     25% of the values from an array of 10 values will return an array of 6 values:
+
     >>> c = np.arange(10)
     >>> stats.trim1(c, 1/4).shape
     (8,)
 
     Multidimensional arrays can be trimmed along any axis or across the entire 
     array:
+
     >>> d = np.array([a, b, c])
     >>> stats.trim1(d, 0.8, axis=0).shape
     (1, 10)
