@@ -657,7 +657,7 @@ class TestShgoArguments(object):
         """Test the functionality to add custom sampling methods to shgo"""
         def sample(n, d):
             return numpy.random.uniform(size=(n,d))
-
+        
         run_test(test1_1, n=30, sampling_method=sample)
 
 # Failure test functions

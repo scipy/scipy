@@ -197,7 +197,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         problems where the convergence is relatively fast.
         User defined sampling functions must accept two arguments of ``n``
         sampling points of dimension ``dim`` per call and output an array of
-        sampling points with shape `n x dim`.
+        sampling points with shape `n x dim`. 
 
     Returns
     -------
@@ -658,7 +658,7 @@ class SHGO(object):
     def init_options(self, options):
         """
         Initiates the options.
-
+        
         Can also be useful to change parameters after class initiation.
 
         Parameters
@@ -1208,7 +1208,7 @@ class SHGO(object):
     def sampled_surface(self, infty_cons_sampl=False):
         """
         Sample the function surface.
-
+        
         There are 2 modes, if ``infty_cons_sampl`` is True then the sampled
         points that are generated outside the feasible domain will be
         assigned an ``inf`` value in accordance with SHGO rules.
@@ -1425,7 +1425,7 @@ class SHGO(object):
         Find the objective function output reference table
         """
         # TODO: Replace with cached wrapper
-
+        
         # Note: This process can be pooled easily
         # Obj. function returns to be used as reference table.:
         f_cache_bool = False

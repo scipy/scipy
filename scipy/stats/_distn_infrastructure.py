@@ -2496,7 +2496,7 @@ class rv_continuous(rv_generic):
 
         Examples
         --------
-
+        
         To understand the effect of the bounds of integration consider
 
         >>> from scipy.stats import expon
