@@ -344,7 +344,12 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
             f, g = func_and_grad(x)
-
+            # f should really always be a scalar
+            f = np.asarray(f)
+            if f.ndim > 0:
+                warnings.warn("f should return a scalar, not a vector of shape {}.".format(f.shape),
+                              category=UserWarning)
+            f = f.reshape(())
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
@@ -358,13 +363,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                            'EXCEEDS LIMIT')
         else:
             break
-
-    # f should really always be a scalar
-    f = np.asarray(f)
-    if len(f.shape) > 1:
-        warnings.warn("The LBFGS-B fun value used to be a 1x1 array. It is now a scalar.",
-                      category=DeprecationWarning)
-    f = f.reshape(())
 
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
