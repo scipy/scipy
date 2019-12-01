@@ -472,9 +472,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
-    x0 = np.asarray(x0)
+    if isinstance(x0, np.matrix) and x0.shape[0] == 1:
+        # flatten matrices for backwards compatibility
+        x0 = np.asarray(x0).squeeze(axis=0)
+    else:
+        x0 = np.asarray(x0)
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
+
+    # flatten the input so it is 1d, but wrap the function so that it sees the
+    # original dimensionality. This is primarily for convenience working
+    # with scalars instead of vectors, but generalizes well.
+    orig_fun = fun
+    orig_x0 = x0
+    def fun(x, *args):
+        return orig_fun(x.reshape(orig_x0.shape), *args)
+    x0 = x0.ravel()
 
     if not isinstance(args, tuple):
         args = (args,)

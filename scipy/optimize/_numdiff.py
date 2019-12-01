@@ -55,7 +55,7 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
         return h, use_one_sided
 
     h_total = h * num_steps
-    h_adjusted = h.copy()
+    h_adjusted = np.asarray(h.copy())
 
     lower_dist = x0 - lb
     upper_dist = ub - x0
@@ -189,11 +189,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     ----------
     fun : callable
         Function of which to estimate the derivatives. The argument x
-        passed to this function is ndarray of shape (n,) (never a scalar
-        even if n=1). It must return 1-d array_like of shape (m,) or a scalar.
-    x0 : array_like of shape (n,) or float
-        Point at which to estimate the derivatives. Float will be converted
-        to a 1-d array.
+        passed to this function is an ndarray the same shape as x0.
+    x0 : array_like
+        Point at which to estimate the derivatives.
     method : {'3-point', '2-point', 'cs'}, optional
         Finite difference method to use:
             - '2-point' - use the first order accuracy forward or backward
@@ -256,13 +254,13 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     J : {ndarray, sparse matrix, LinearOperator}
         Finite difference approximation of the Jacobian matrix.
         If `as_linear_operator` is True returns a LinearOperator
-        with shape (m, n). Otherwise it returns a dense array or sparse
+        with shape (f0.size, x0.size). Otherwise it returns a dense array or sparse
         matrix depending on how `sparsity` is defined. If `sparsity`
-        is None then a ndarray with shape (m, n) is returned. If
-        `sparsity` is not None returns a csr_matrix with shape (m, n).
+        is None then a ndarray with shape ``f0.shape + x0.shape`` is returned. If
+        `sparsity` is not None returns a csr_matrix with shape (f0.size, x0.size).
         For sparse matrices and linear operators it is always returned as
-        a 2-dimensional structure, for ndarrays, if m=1 it is returned
-        as a 1-dimensional gradient array with shape (n,).
+        a 2-dimensional structure, for ndarrays the result keeps the
+        dimensionality of the input.
 
     See Also
     --------
@@ -282,12 +280,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     terms of Taylor expansion. Refer to [2]_ for the formulas of 3-point
     forward and backward difference schemes.
 
-    For dense differencing when m=1 Jacobian is returned with a shape (n,),
-    on the other hand when n=1 Jacobian is returned with a shape (m, 1).
-    Our motivation is the following: a) It handles a case of gradient
-    computation (m=1) in a conventional way. b) It clearly separates these two
-    different cases. b) In all cases np.atleast_2d can be called to get 2-d
-    Jacobian with correct dimensions.
+    For dense differencing when f0 is a scalar, the Jacobian is returned with a
+    shape x0.shape, and when x0 is a scalar, the Jacobian is returned with a shape f0.shape.
 
     References
     ----------
@@ -330,9 +324,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if method not in ['2-point', '3-point', 'cs']:
         raise ValueError("Unknown method '%s'. " % method)
 
-    x0 = np.atleast_1d(x0)
-    if x0.ndim > 1:
-        raise ValueError("`x0` must have at most 1 dimension.")
+    x0 = np.asarray(x0)
 
     lb, ub = _prepare_bounds(bounds, x0)
 
@@ -345,18 +337,12 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
                          "`as_linear_operator` is True.")
 
     def fun_wrapped(x):
-        f = np.atleast_1d(fun(x, *args, **kwargs))
-        if f.ndim > 1:
-            raise RuntimeError("`fun` return value has "
-                               "more than 1 dimension.")
-        return f
+        x = x.reshape(x0.shape)
+        return np.asarray(fun(x, *args, **kwargs)).ravel()
 
     if f0 is None:
-        f0 = fun_wrapped(x0)
-    else:
-        f0 = np.atleast_1d(f0)
-        if f0.ndim > 1:
-            raise ValueError("`f0` passed has more than 1 dimension.")
+        f0 = fun(x0, *args, **kwargs)
+    f0 = np.asarray(f0)
 
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
@@ -365,8 +351,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         if rel_step is None:
             rel_step = relative_step[method]
 
-        return _linear_operator_difference(fun_wrapped, x0,
-                                           f0, rel_step, method)
+        return _linear_operator_difference(fun_wrapped, x0.ravel(),
+                                           f0.ravel(), rel_step, method)
     else:
         h = _compute_absolute_step(rel_step, x0, method)
 
@@ -377,11 +363,12 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
             h, use_one_sided = _adjust_scheme_to_bounds(
                 x0, h, 1, '2-sided', lb, ub)
         elif method == 'cs':
-            use_one_sided = False
+            use_one_sided = np.zeros_like(h, dtype=bool)
 
         if sparsity is None:
-            return _dense_difference(fun_wrapped, x0, f0, h,
-                                     use_one_sided, method)
+            ret = _dense_difference(fun_wrapped, x0.ravel(), f0.ravel(), h.ravel(),
+                                    use_one_sided.ravel(), method)
+            return ret.reshape(f0.shape + x0.shape)
         else:
             if not issparse(sparsity) and len(sparsity) == 2:
                 structure, groups = sparsity
@@ -395,8 +382,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
                 structure = np.atleast_2d(structure)
 
             groups = np.atleast_1d(groups)
-            return _sparse_difference(fun_wrapped, x0, f0, h,
-                                      use_one_sided, structure,
+            return _sparse_difference(fun_wrapped, x0.ravel(), f0.ravel(), h.ravel(),
+                                      use_one_sided.ravel(), structure,
                                       groups, method)
 
 
@@ -474,9 +461,6 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
             raise RuntimeError("Never be here.")
 
         J_transposed[i] = df / dx
-
-    if m == 1:
-        J_transposed = np.ravel(J_transposed)
 
     return J_transposed.T
 

@@ -306,7 +306,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 3 : Negative curvature detected.
             * 4 : Tolerance was satisfied.
     """
-    x0 = np.atleast_1d(x0).astype(float)
+    x0 = np.asarray(x0).astype(float)
     n_vars = np.size(x0)
     if hess is None:
         if callable(hessp):
