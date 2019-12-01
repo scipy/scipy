@@ -318,6 +318,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
             beta1 = 0.1  # [4] pg. 220 (Table 8.1)
             gamma = (1 - alpha)**2 * min(beta1, (1 - alpha))
         i += 1
+
     return d_x, d_y, d_z, d_tau, d_kappa
 
 
@@ -416,11 +417,11 @@ def _do_step(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
            2000. 197-232.
 
     """
-    x += alpha * d_x
-    tau += alpha * d_tau
-    z += alpha * d_z
-    kappa += alpha * d_kappa
-    y += alpha * d_y
+    x = x + alpha * d_x
+    tau = tau + alpha * d_tau
+    z = z + alpha * d_z
+    kappa = kappa + alpha * d_kappa
+    y = y + alpha * d_y
     return x, y, z, tau, kappa
 
 
