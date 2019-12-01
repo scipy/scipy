@@ -179,10 +179,7 @@ class CheckOptimizeParameterized(CheckOptimize):
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         def func(x):
-            # x is sometimes [[scalar]]
-            # TODO get more consistency in this -- it should always be [scalar]
-            x = np.asarray(x).reshape(())
-            return -np.exp(-x)
+            return -np.exp(-x[0])
 
         def fgrad(x):
             return np.exp(-x)
