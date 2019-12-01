@@ -41,8 +41,8 @@ def _pivot_col(T, tol=1e-9, bland=False):
 
     Parameters
     ----------
-    T : 2D array
-        A 2D array representing the simplex tableau, T, corresponding to the
+    T : 2-D array
+        A 2-D array representing the simplex tableau, T, corresponding to the
         linear programming problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
@@ -102,8 +102,8 @@ def _pivot_row(T, basis, pivcol, phase, tol=1e-9, bland=False):
 
     Parameters
     ----------
-    T : 2D array
-        A 2D array representing the simplex tableau, T, corresponding to the
+    T : 2-D array
+        A 2-D array representing the simplex tableau, T, corresponding to the
         linear programming problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
@@ -174,8 +174,8 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
 
     Parameters
     ----------
-    T : 2D array
-        A 2D array representing the simplex tableau, T, corresponding to the
+    T : 2-D array
+        A 2-D array representing the simplex tableau, T, corresponding to the
         linear programming problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
@@ -200,7 +200,7 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-9):
          for a Phase 1 problem (a problem in which a basic feasible solution is
          sought prior to maximizing the actual objective. ``T`` is modified in
          place by ``_solve_simplex``.
-    basis : 1D array
+    basis : 1-D array
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
         Basis is modified in place by _apply_pivot.
@@ -247,8 +247,8 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
 
     Parameters
     ----------
-    T : 2D array
-        A 2D array representing the simplex tableau, T, corresponding to the
+    T : 2-D array
+        A 2-D array representing the simplex tableau, T, corresponding to the
         linear programming problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
@@ -275,7 +275,7 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
          place by ``_solve_simplex``.
     n : int
         The number of true variables in the problem.
-    basis : 1D array
+    basis : 1-D array
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
         Basis is modified in place by _solve_simplex
@@ -284,18 +284,18 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
         iteration of the algorithm. The callback must accept a
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 Current solution vector
             fun : float
                 Current value of the objective function
             success : bool
                 True only when a phase has completed successfully. This
                 will be False for most iterations.
-            slack : 1D array
+            slack : 1-D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``
             phase : int
@@ -454,33 +454,33 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
 
     Parameters
     ----------
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
-    A : 2D array
-        2D array such that ``A @ x``, gives the values of the equality
+    A : 2-D array
+        2-D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
-    b : 1D array
-        1D array of values representing the right hand side of each equality
+    b : 1-D array
+        1-D array of values representing the right hand side of each equality
         constraint (row) in ``A``.
     callback : callable, optional
         If a callback function is provided, it will be called within each
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 Current solution vector
             fun : float
                 Current value of the objective function
             success : bool
                 True when an algorithm has completed successfully.
-            slack : 1D array
+            slack : 1-D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``
             phase : int
@@ -523,7 +523,7 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::

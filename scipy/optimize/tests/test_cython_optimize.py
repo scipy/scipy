@@ -1,6 +1,6 @@
 """
 Test Cython optimize zeros API functions: ``bisect``, ``ridder``, ``brenth``,
-and ``brentq``, in `scipy.optimize.cython_optimize`, by finding the roots of a
+and ``brentq`` in `scipy.optimize.cython_optimize`, by finding the roots of a
 3rd order polynomial given a sequence of constant terms, ``a0``, and fixed 1st,
 2nd, and 3rd order terms in ``args``.
 
@@ -10,7 +10,7 @@ and ``brentq``, in `scipy.optimize.cython_optimize`, by finding the roots of a
 
 The 3rd order polynomial function is written in Cython and called in a Python
 wrapper named after the zero function. See the private ``_zeros`` Cython module
-in `scipy.optimize.cython_optimze` for more information. 
+in `scipy.optimize.cython_optimze` for more information.
 """
 
 from __future__ import division, print_function, absolute_import
@@ -81,7 +81,7 @@ def test_brentq():
         ),
         rtol=RTOL, atol=XTOL
     )
-                       
+
 
 # test brentq with full output
 def test_brentq_full_output():

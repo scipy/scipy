@@ -50,7 +50,7 @@ def _assert_unable_to_find_basic_feasible_sol(res):
 
     # The status may be either 2 or 4 depending on why the feasible solution
     # could not be found. If the undelying problem is expected to not have a
-    # feasible solution _assert_infeasible should be used.
+    # feasible solution, _assert_infeasible should be used.
     assert_(not res.success, "incorrectly reported success")
     assert_(res.status in (2, 4), "failed to report optimization failure")
 
@@ -357,7 +357,7 @@ class LinprogCommonTests(object):
         if ("_sparse_presolve" in self.options and
                 self.options["_sparse_presolve"]):
             return
-            # there aren't 3D sparse matrices
+            # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
 
@@ -1397,7 +1397,7 @@ class LinprogRSTests(LinprogCommonTests):
     # acknowledges this possibility, suggesting that there is a bug. On the
     # other hand, the pivoting rule is quite simple, and I can't find a
     # mistake, which suggests that this is a possibility with the pivoting
-    # rule. Hopefully a better pivoting rule will fix the issue.
+    # rule. Hopefully, a better pivoting rule will fix the issue.
 
     def test_bug_5400(self):
         pytest.skip("Intermittent failure acceptable.")
@@ -1423,14 +1423,14 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
             super(TestLinprogSimplexDefault, self).test_bug_5400()
 
     def test_bug_7237_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexDefault, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
@@ -1447,7 +1447,7 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
             super(TestLinprogSimplexBland, self).test_bug_5400()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError):
@@ -1479,14 +1479,14 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
             return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
 
     def test_bug_7237_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):

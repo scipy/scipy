@@ -10,7 +10,7 @@ Spatial Transformations
 
 These are contained in the `scipy.spatial.transform` submodule.
 
-Nearest-neighbor Queries
+Nearest-neighbor queries
 ========================
 .. autosummary::
    :toctree: generated/
@@ -21,7 +21,7 @@ Nearest-neighbor Queries
 
 Distance metrics are contained in the :mod:`scipy.spatial.distance` submodule.
 
-Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
+Delaunay triangulation, convex hulls, and Voronoi diagrams
 =========================================================
 
 .. autosummary::
@@ -33,7 +33,7 @@ Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
    SphericalVoronoi -- compute a Voronoi diagram from input points on the surface of a sphere
    HalfspaceIntersection -- compute the intersection points of input halfspaces
 
-Plotting Helpers
+Plotting helpers
 ================
 
 .. autosummary::

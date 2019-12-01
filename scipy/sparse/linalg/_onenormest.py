@@ -253,7 +253,7 @@ def _algorithm_2_2(A, AT, t):
     -----
     This algorithm is mainly for testing.
     It uses the 'ind' array in a way that is similar to
-    its usage in algorithm 2.4.  This algorithm 2.2 may be easier to test,
+    its usage in algorithm 2.4. This algorithm 2.2 may be easier to test,
     so it gives a chance of uncovering bugs related to indexing
     which could have propagated less noticeably to algorithm 2.4.
 

@@ -201,7 +201,7 @@ class TestZpk2Tf(object):
         b_r = np.array([1.])  # desired result
         a_r = np.array([1.])  # desired result
         # The test for the *type* of the return values is a regression
-        # test for ticket #1095.  In the case p=[], zpk2tf used to
+        # test for ticket #1095. In the case p=[], zpk2tf used to
         # return the scalar 1.0 instead of array([1.0]).
         assert_array_equal(b, b_r)
         assert_(isinstance(b, np.ndarray))

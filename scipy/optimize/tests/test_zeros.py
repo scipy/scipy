@@ -389,7 +389,7 @@ class TestBasic(object):
     def test_newton_full_output(self):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
-        # (e.g. exp & trig) in number of iterations
+        # (e.g., exp & trig) in number of iterations
 
         x0 = 3
         expected_counts = [(6, 7), (5, 10), (3, 9)]

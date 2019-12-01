@@ -47,7 +47,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
 
     Parameters
     ----------
-    M : 2D array
+    M : 2-D array
         As defined in [4] Equation 8.31
     sparse : bool (default = False)
         True if the system to be solved is sparse. This is typically set
@@ -568,13 +568,13 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
     Parameters
     ----------
-    A : 2D array
-        2D array such that ``A @ x``, gives the values of the equality
+    A : 2-D array
+        2-D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
-    b : 1D array
-        1D array of values representing the RHS of each equality constraint
+    b : 1-D array
+        1-D array of values representing the RHS of each equality constraint
         (row) in ``A`` (for standard form problem).
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized (for
         standard form problem).
     c0 : float
@@ -635,7 +635,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 Current solution vector
             fun : float
                 Current value of the objective function
@@ -643,11 +643,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
                 True only when an algorithm has completed successfully,
                 so this is always False as the callback function is called
                 only while the algorithm is still iterating.
-            slack : 1D array
+            slack : 1-D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``
             phase : int
@@ -843,16 +843,16 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     Parameters
     ----------
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
-    A : 2D array
-        2D array such that ``A @ x``, gives the values of the equality
+    A : 2-D array
+        2-D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
-    b : 1D array
-        1D array of values representing the right hand side of each equality
+    b : 1-D array
+        1-D array of values representing the right hand side of each equality
         constraint (row) in ``A``.
     callback : callable, optional
         Callback function to be executed once per iteration.
@@ -929,7 +929,7 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::

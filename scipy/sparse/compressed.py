@@ -25,7 +25,7 @@ from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
-    """base matrix class for compressed row and column oriented matrices"""
+    """base matrix class for compressed row- and column-oriented matrices"""
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
