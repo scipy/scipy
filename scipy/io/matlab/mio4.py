@@ -286,10 +286,10 @@ class VarReader4(object):
 
             # Read only the row and column counts
             self.mat_stream.seek(dt.itemsize * (dims[0] - 1), 1)
-            rows = np.ndarray(shape=(1,), dtype=dt,
+            rows = np.ndarray(shape=(), dtype=dt,
                               buffer=self.mat_stream.read(dt.itemsize))
             self.mat_stream.seek(dt.itemsize * (dims[0] - 1), 1)
-            cols = np.ndarray(shape=(1,), dtype=dt,
+            cols = np.ndarray(shape=(), dtype=dt,
                               buffer=self.mat_stream.read(dt.itemsize))
 
             shape = (int(rows), int(cols))
