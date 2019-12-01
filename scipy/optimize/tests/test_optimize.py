@@ -132,6 +132,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
     def test_cg_cornercase(self):
         def f(r):
+            r = r[0]
             return 2.5 * (1 - np.exp(-1.5*(r - 0.5)))**2
 
         # Check several initial guesses. (Too far away from the
@@ -177,8 +178,15 @@ class CheckOptimizeParameterized(CheckOptimize):
 
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
-        func = lambda x: -np.e**-x
-        fprime = lambda x: -func(x)
+        def func(x):
+            # x is sometimes [[scalar]]
+            # TODO get more consistency in this -- it should always be [scalar]
+            x = np.asarray(x).reshape(())
+            return -np.exp(-x)
+
+        def fprime(x):
+            return np.exp(-x[0])
+
         x0 = [0]
         olderr = np.seterr(over='ignore')
         try:
@@ -544,6 +552,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     def test_bfgs_gh_2169(self):
         def f(x):
+            x = x[0]
             if x < 0:
                 return 1.79769313e+308
             else:
@@ -554,7 +563,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_double_evaluations(self):
         # check bfgs does not evaluate twice in a row at same point
         def f(x):
-            xp = float(x)
+            xp = x[0]
             assert xp not in seen
             seen.add(xp)
             return 10*x**2, 20*x
@@ -851,6 +860,10 @@ class TestOptimizeSimple(CheckOptimize):
         # initial point.
 
         def func(x):
+            # x can be scalar or np.array([x]), output must return a scalar
+            # TODO there should be some consistency in x. np.array([x]) makes sense for
+            #      an optimization problem
+            x = np.asarray(x).reshape(())
             return (x - 1)**2
 
         def bad_grad(x):
@@ -1433,7 +1446,7 @@ class TestBrute:
         def f(x):
             assert_(len(x.shape) == 1)
             assert_(x.shape[0] == 1)
-            return x ** 2
+            return x[0] ** 2
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
