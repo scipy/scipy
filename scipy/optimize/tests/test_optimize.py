@@ -184,18 +184,18 @@ class CheckOptimizeParameterized(CheckOptimize):
             x = np.asarray(x).reshape(())
             return -np.exp(-x)
 
-        def fprime(x):
-            return np.exp(-x[0])
+        def fgrad(x):
+            return np.exp(-x)
 
         x0 = [0]
         olderr = np.seterr(over='ignore')
         try:
             if self.use_wrapper:
                 opts = {'disp': self.disp}
-                x = optimize.minimize(func, x0, jac=fprime, method='BFGS',
+                x = optimize.minimize(func, x0, jac=fgrad, method='BFGS',
                                       args=(), options=opts)['x']
             else:
-                x = optimize.fmin_bfgs(func, x0, fprime, disp=self.disp)
+                x = optimize.fmin_bfgs(func, x0, fgrad, disp=self.disp)
             assert_(not np.isfinite(func(x)))
         finally:
             np.seterr(**olderr)
