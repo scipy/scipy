@@ -5,6 +5,7 @@ from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import assert_almost_equal, assert_equal, assert_
+from scipy._lib._numpy_compat import suppress_warnings
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
@@ -304,8 +305,10 @@ class TestBasinHopping(object):
     def test_monotonic_basin_hopping(self):
         # test 1d minimizations with gradient and T=0
         i = 0
-        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
-                           niter=self.niter, disp=self.disp, T=0)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in double_scalars")
+            res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                               niter=self.niter, disp=self.disp, T=0)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
