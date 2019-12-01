@@ -1088,9 +1088,6 @@ class DifferentialEvolutionSolver(object):
                                       self.feasible[candidate],
                                       self.constraint_violation[candidate]):
                     self.population[candidate] = trial
-                    # Sometimes, energy is a float, sometimes an array of length 1.
-                    # TODO get some consistency here and remove the reshape workaround.
-                    energy = np.asarray(energy).reshape(1)[0]
                     self.population_energies[candidate] = energy
                     self.feasible[candidate] = feasible
                     self.constraint_violation[candidate] = cv
