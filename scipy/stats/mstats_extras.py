@@ -171,8 +171,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
             mx_ = np.fromiter([np.dot(w,xsorted[np.r_[list(range(0,k)),
                                                       list(range(k+1,n))].astype(int_)])
                                   for k in range(n)], dtype=float_)
-            mx_var = np.array(mx_.var(), copy=False, ndmin=1) * n / float(n-1)
-            hdsd[i] = float(n-1) * np.sqrt(np.diag(mx_var).diagonal() / float(n))
+            hdsd[i] = float(n-1) * np.sqrt(mx_.var() / float(n-1))
         return hdsd
 
     # Initialization & checks
