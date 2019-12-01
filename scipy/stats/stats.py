@@ -4410,11 +4410,11 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     # parallelizes with specified workers over number of reps and set seeds
     mapwrapper = MapWrapper(workers)
     if workers == 1:
-        random_states = [check_random_state(0)]
+        random_states = check_random_state(0)
     else:
         random_state = check_random_state(random_state)
-        seeds = random_state.permutation(np.arange(reps))
-        random_states = [check_random_state(seeds[i]) for i in range(reps)]
+    seeds = random_state.permutation(np.arange(reps))
+    random_states = [check_random_state(seeds[i]) for i in range(reps)]
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance,
                            random_states=random_states)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
