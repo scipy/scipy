@@ -1299,12 +1299,12 @@ def convolve(in1, in2, mode='full', method='auto'):
 
 def order_filter(a, domain, rank):
     """
-    Perform an order filter on an N-dimensional array.
+    Perform an order filter on an N-D array.
 
-    Perform an order filter on the array in.  The domain argument acts as a
-    mask centered over each pixel.  The non-zero elements of domain are
+    Perform an order filter on the array in. The domain argument acts as a
+    mask centered over each pixel. The non-zero elements of domain are
     used to select elements surrounding each input pixel which are placed
-    in a list.   The list is sorted, and the output for that pixel is the
+    in a list. The list is sorted, and the output for that pixel is the
     element corresponding to rank in the sorted list.
 
     Parameters
@@ -1538,7 +1538,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
-        raise ValueError('convolve2d inputs must both be 2D arrays')
+        raise ValueError('convolve2d inputs must both be 2-D arrays')
 
     if _inputs_swap_needed(mode, in1.shape, in2.shape):
         in1, in2 = in2, in1
@@ -1628,7 +1628,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in2 = np.asarray(in2)
 
     if not in1.ndim == in2.ndim == 2:
-        raise ValueError('correlate2d inputs must both be 2D arrays')
+        raise ValueError('correlate2d inputs must both be 2-D arrays')
 
     swapped_inputs = _inputs_swap_needed(mode, in1.shape, in2.shape)
     if swapped_inputs:
@@ -3924,7 +3924,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 def _validate_x(x):
     x = np.asarray(x)
     if x.ndim == 0:
-        raise ValueError('x must be at least 1D')
+        raise ValueError('x must be at least 1-D')
     return x
 
 
