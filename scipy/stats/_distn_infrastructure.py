@@ -2414,7 +2414,9 @@ class rv_continuous(rv_generic):
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
-            return entr(val)
+            ret = entr(val)
+            # cast return value into a scalar
+            return np.asarray(ret).reshape(())
 
         # upper limit is often inf, so suppress warnings when integrating
         _a, _b = self._get_support(*args)
@@ -2496,7 +2498,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
-        
+
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
