@@ -4410,7 +4410,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     # parallelizes with specified workers over number of reps and set seeds
     mapwrapper = MapWrapper(workers)
     if workers == 1:
-        random_states = check_random_state(0)
+        random_state = check_random_state(0)
     else:
         random_state = check_random_state(random_state)
     seeds = random_state.permutation(np.arange(reps))
