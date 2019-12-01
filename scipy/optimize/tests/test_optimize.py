@@ -178,21 +178,18 @@ class CheckOptimizeParameterized(CheckOptimize):
 
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
-        def func(x):
-            return -np.exp(-x[0])
-
-        def fgrad(x):
-            return np.exp(-x)
+        func = lambda x: -np.e**-x[0]
+        fprime = lambda x: np.e**-x
 
         x0 = [0]
         olderr = np.seterr(over='ignore')
         try:
             if self.use_wrapper:
                 opts = {'disp': self.disp}
-                x = optimize.minimize(func, x0, jac=fgrad, method='BFGS',
+                x = optimize.minimize(func, x0, jac=fprime, method='BFGS',
                                       args=(), options=opts)['x']
             else:
-                x = optimize.fmin_bfgs(func, x0, fgrad, disp=self.disp)
+                x = optimize.fmin_bfgs(func, x0, fprime, disp=self.disp)
             assert_(not np.isfinite(func(x)))
         finally:
             np.seterr(**olderr)
