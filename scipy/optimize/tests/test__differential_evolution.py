@@ -413,7 +413,7 @@ class TestDifferentialEvolutionSolver(object):
         differential_evolution(rosen, bounds, popsize=49, maxiter=1)
 
     def test_calculate_population_energies(self):
-        # if popsize is 3 then the overall generation has size (6,)
+        # if popsize is 3, then the overall generation has size (6,)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3)
         solver._calculate_population_energies(solver.population)
         solver._promote_lowest_energy()
@@ -424,7 +424,7 @@ class TestDifferentialEvolutionSolver(object):
 
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
-        # if popsize is 3 then the overall generation has size (6,)
+        # if popsize is 3, then the overall generation has size (6,)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3,
                                              maxfun=12)
         x, fun = next(solver)
@@ -486,7 +486,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
-        # we should be able to initialise with our own array
+        # we should be able to initialize with our own array
         population = np.linspace(-1, 3, 10).reshape(5, 2)
         solver = DifferentialEvolutionSolver(rosen, self.bounds,
                                              init=population,
@@ -498,7 +498,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver.num_population_members == 5)
         assert_(solver.population_shape == (5, 2))
 
-        # check that the population was initialised correctly
+        # check that the population was initialized correctly
         unscaled_population = np.clip(solver._unscale_parameters(population),
                                       0, 1)
         assert_almost_equal(solver.population[:5], unscaled_population)
@@ -507,7 +507,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_almost_equal(np.min(solver.population[:5]), 0)
         assert_almost_equal(np.max(solver.population[:5]), 1)
 
-        # shouldn't be able to initialise with an array if it's the wrong shape
+        # shouldn't be able to initialize with an array if it's the wrong shape
         # this would have too many parameters
         population = np.linspace(-1, 3, 15).reshape(5, 3)
         assert_raises(ValueError,
@@ -552,7 +552,7 @@ class TestDifferentialEvolutionSolver(object):
 
     @knownfail_on_py38
     def test_parallel(self):
-        # smoke test for parallelisation with deferred updating
+        # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
                 rosen, bounds, updating='deferred', workers=p.map) as solver:
@@ -680,7 +680,7 @@ class TestDifferentialEvolutionSolver(object):
         assert not res.success
 
         # test _promote_lowest_energy works when none of the population is
-        # feasible. In this case the solution with the lowest constraint
+        # feasible. In this case, the solution with the lowest constraint
         # violation should be promoted.
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
                                              constraints=(nlc), polish=False)

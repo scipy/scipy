@@ -218,8 +218,8 @@ class CheckOptimizeParameterized(CheckOptimize):
         # However, some leeway must be added: the exact evaluation
         # count is sensitive to numerical error, and floating-point
         # computations are not bit-for-bit reproducible across
-        # machines, and when using e.g. MKL, data alignment
-        # etc. affect the rounding error.
+        # machines, and when using e.g., MKL, data alignment
+        # etc., affect the rounding error.
         #
         assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
@@ -531,7 +531,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_(result['success'] is False)
 
     def test_bfgs_numerical_jacobian(self):
-        # BFGS with numerical jacobian and a vector epsilon parameter.
+        # BFGS with numerical Jacobian and a vector epsilon parameter.
         # define the epsilon parameter using a random vector
         epsilon = np.sqrt(np.spacing(1.)) * np.random.rand(len(self.solution))
 
@@ -552,7 +552,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
 
     def test_bfgs_double_evaluations(self):
-        # check bfgs does not evaluate twice in a row at same point
+        # check BFGS does not evaluate twice in a row at same point
         def f(x):
             xp = float(x)
             assert xp not in seen
@@ -585,7 +585,7 @@ class TestOptimizeSimple(CheckOptimize):
                         atol=1e-14, rtol=1e-7)
 
     def test_l_bfgs_b_numjac(self):
-        # L-BFGS-B with numerical jacobian
+        # L-BFGS-B with numerical Jacobian
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
                                         approx_grad=True,
                                         maxiter=self.maxiter)
@@ -596,7 +596,7 @@ class TestOptimizeSimple(CheckOptimize):
                         atol=1e-6)
 
     def test_l_bfgs_b_funjac(self):
-        # L-BFGS-B with combined objective function and jacobian
+        # L-BFGS-B with combined objective function and Jacobian
         def fun(x):
             return self.func(x), self.grad(x)
 
@@ -642,12 +642,12 @@ class TestOptimizeSimple(CheckOptimize):
                               options=opts)
         assert_allclose(self.func(r.x), self.func(self.solution),
                         atol=1e-6)
-        # approximate jacobian
+        # approximate Jacobian
         ra = optimize.minimize(self.func, self.startparams,
                                method='L-BFGS-B', options=opts)
         assert_allclose(self.func(ra.x), self.func(self.solution),
                         atol=1e-6)
-        # check that function evaluations in approximate jacobian are counted
+        # check that function evaluations in approximate Jacobian are counted
         assert_(ra.nfev > r.nfev)
 
     def test_minimize_l_bfgs_b_ftol(self):
@@ -1283,7 +1283,7 @@ class TestNewtonCg(object):
 class TestRosen(object):
 
     def test_hess(self):
-        # Compare rosen_hess(x) times p with rosen_hess_prod(x,p).  See gh-1775
+        # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
         x = np.array([3, 4, 5])
         p = np.array([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
@@ -1293,7 +1293,7 @@ class TestRosen(object):
 
 def himmelblau(p):
     """
-    R^2 -> R^1 test function for optimization.  The function has four local
+    R^2 -> R^1 test function for optimization. The function has four local
     minima where himmelblau(xopt) == 0.
     """
     x, y = p
@@ -1428,7 +1428,7 @@ class TestBrute:
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
 
     def test_1D(self):
-        # test that for a 1D problem the test function is passed an array,
+        # test that for a 1-D problem the test function is passed an array,
         # not a scalar.
         def f(x):
             assert_(len(x.shape) == 1)

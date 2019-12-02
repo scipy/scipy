@@ -400,13 +400,13 @@ class TestPeakProminences(object):
         Verify that exceptions and warnings are raised.
         """
         # x with dimension > 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences([[0, 1, 1, 0]], [1, 2])
         # peaks with dimension > 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences([0, 1, 1, 0], [[1, 2]])
         # x with dimension < 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences(3, [0,])
 
         # empty x with supplied
@@ -491,16 +491,16 @@ class TestPeakWidths(object):
         """
         Verify that argument validation works as intended.
         """
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # x with dimension > 1
             peak_widths(np.zeros((3, 4)), np.ones(3))
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # x with dimension < 1
             peak_widths(3, [0])
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # peaks with dimension > 1
             peak_widths(np.arange(10), np.ones((3, 2), dtype=np.intp))
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # peaks with dimension < 1
             peak_widths(np.arange(10), 3)
         with raises(ValueError, match='not a valid index'):
@@ -747,9 +747,9 @@ class TestFindPeaks(object):
         """
         Test exceptions raised by function.
         """
-        with raises(ValueError, match="1D array"):
+        with raises(ValueError, match="1-D array"):
             find_peaks(np.array(1))
-        with raises(ValueError, match="1D array"):
+        with raises(ValueError, match="1-D array"):
             find_peaks(np.ones((2, 2)))
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)

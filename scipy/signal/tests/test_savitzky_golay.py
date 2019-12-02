@@ -40,7 +40,7 @@ def test_polyder():
 def alt_sg_coeffs(window_length, polyorder, pos):
     """This is an alternative implementation of the SG coefficients.
 
-    It uses numpy.polyfit and numpy.polyval.  The results should be
+    It uses numpy.polyfit and numpy.polyval. The results should be
     equivalent to those of savgol_coeffs(), but this implementation
     is slower.
 
@@ -171,7 +171,7 @@ def test_sg_filter_trivial():
     y = savgol_filter(x, 1, 0)
     assert_equal(y, [1.0])
 
-    # Input is a single value.  With a window length of 3 and polyorder 1,
+    # Input is a single value. With a window length of 3 and polyorder 1,
     # the value in y is from the straight-line fit of (-1,0), (0,3) and
     # (1, 0) at 0. This is just the average of the three values, hence 1.0.
     x = np.array([3.0])
@@ -214,7 +214,7 @@ def test_sg_filter_2d():
 
 def test_sg_filter_interp_edges():
     # Another test with low degree polynomial data, for which we can easily
-    # give the exact results.  In this test, we use mode='interp', so
+    # give the exact results. In this test, we use mode='interp', so
     # savgol_filter should match the exact solution for the entire data set,
     # including the edges.
     t = np.linspace(-5, 5, 21)
@@ -301,4 +301,3 @@ def test_sg_filter_interp_edges_3d():
 
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
     assert_allclose(dy, dz, atol=1e-10)
-

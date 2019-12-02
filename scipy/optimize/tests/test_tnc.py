@@ -24,7 +24,7 @@ class TestTnc(object):
         # options for minimize
         self.opts = {'disp': False, 'maxiter': 200}
 
-    # objective functions and jacobian for each test
+    # objective functions and Jacobian for each test
     def f1(self, x, a=100.0):
         return a * pow((x[1] - pow(x[0], 2)), 2) + pow(1.0 - x[0], 2)
 
@@ -301,4 +301,3 @@ class TestTnc(object):
         assert_allclose(self.f45(x), self.f45(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
                                 optimize.tnc.RCSTRINGS[rc])
-

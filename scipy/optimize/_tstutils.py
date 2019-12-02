@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 r"""
 Parameters used in test and benchmark methods.
 
-Collections of test cases suitable for testing 1-dimensional root-finders
+Collections of test cases suitable for testing 1-D root-finders
   'original': The original benchmarking functions.
      Real-valued functions of real-valued inputs on an interval
      with a zero.
@@ -16,7 +16,7 @@ Collections of test cases suitable for testing 1-dimensional root-finders
 
   'aps': The test problems in the 1995 paper
      TOMS "Algorithm 748: Enclosing Zeros of Continuous Functions"
-     by Alefeld, Potra and Shi.  Real-valued functions of
+     by Alefeld, Potra and Shi. Real-valued functions of
      real-valued inputs on an interval with a zero.
      Suitable for methods which start with an enclosing interval, and
      derivatives up to 2nd order.
@@ -52,7 +52,7 @@ f4 is step function with a discontinuity at 1
 f5 is a hyperbola with vertical asymptote at 1
 f6 has random values positive to left of 1, negative to right
 
-of course these are not real problems. They just test how the
+Of course, these are not real problems. They just test how the
 'good' solvers behave in bad circumstances where bisection is
 really the best. A good solver should not be much worse than
 bisection in such circumstance, while being faster for smooth
@@ -100,7 +100,7 @@ def f3_fpp(x):
 
 
 def f4(x):
-    r"""Piecewise linear, left and right discontinuous at x=1, the root."""
+    r"""Piecewise linear, left- and right- discontinuous at x=1, the root."""
     if x > 1:
         return 1.0 + .1 * x
     if x < 1:
@@ -109,7 +109,7 @@ def f4(x):
 
 
 def f5(x):
-    r"""Hyperbola with a pole at x=1, but pole replaced with 0.  Not continuous at root."""
+    r"""Hyperbola with a pole at x=1, but pole replaced with 0. Not continuous at root."""
     if x != 1:
         return 1.0 / (1. - x)
     return 0
@@ -159,7 +159,7 @@ _ORIGINAL_TESTS_DICTS = [dict(zip(_ORIGINAL_TESTS_KEYS, testcase)) for testcase 
 
 
 def aps01_f(x):
-    r"""Straight forward sum of trigonometric function and polynomial"""
+    r"""Straightforward sum of trigonometric function and polynomial"""
     return np.sin(x) - x / 2
 
 
@@ -305,7 +305,7 @@ def aps11_fpp(x, n):
 
 
 def aps12_f(x, n):
-    r"""n-th root of x, with a zero at x=n"""
+    r"""nth root of x, with a zero at x=n"""
     return np.power(x, 1.0 / n) - np.power(n, 1.0 / n)
 
 
@@ -401,7 +401,7 @@ def aps15_fpp(x, n):
 # - an Identifier of the test case
 #
 # Algorithm 748 is a bracketing algorithm so a bracketing interval was provided
-# in [1] for each test case.   Newton and Halley methods need a single
+# in [1] for each test case. Newton and Halley methods need a single
 # starting point x0, which was chosen to be near the middle of the interval,
 # unless that would have made the problem too easy.
 
@@ -572,7 +572,7 @@ _APS_TESTS_DICTS = [dict(zip(_APS_TESTS_KEYS, testcase)) for testcase in _APS_TE
 
 
 def cplx01_f(z, n, a):
-    r"""z**n-a:  Use to find the n-th root of a"""
+    r"""z**n-a:  Use to find the nth root of a"""
     return z**n - a
 
 
@@ -606,7 +606,7 @@ def cplx02_fpp(z, a):
 # - an Identifier of the test case
 #
 # Algorithm 748 is a bracketing algorithm so a bracketing interval was provided
-# in [1] for each test case.   Newton and Halley need a single starting point
+# in [1] for each test case. Newton and Halley need a single starting point
 # x0, which was chosen to be near the middle of the interval, unless that
 # would make the problem too easy.
 
@@ -649,7 +649,7 @@ def get_tests(collection='original', smoothness=None):
          f5 has a root at 1 replacing a 1st order pole
          f6 is randomly positive on one side of the root, randomly negative on the other
     'aps': The test problems in the TOMS "Algorithm 748: Enclosing Zeros of Continuous Functions"
-         paper by Alefeld, Potra and Shi.  Real-valued functions of
+         paper by Alefeld, Potra and Shi. Real-valued functions of
          real-valued inputs on an interval with a zero.
          Suitable for methods which start with an enclosing interval, and
          derivatives up to 2nd order.

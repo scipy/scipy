@@ -14,7 +14,7 @@ __all__ = ['minkowski_distance_p', 'minkowski_distance',
 
 def minkowski_distance_p(x, y, p=2):
     """
-    Compute the p-th power of the L**p distance between two arrays.
+    Compute the pth power of the L**p distance between two arrays.
 
     For efficiency, this function computes the L**p distance but does
     not extract the pth root. If `p` is 1 or infinity, this is equal to
@@ -43,7 +43,7 @@ def minkowski_distance_p(x, y, p=2):
     # Don't just cast to float64 for complex input case.
     common_datatype = np.promote_types(np.promote_types(x.dtype, y.dtype), 'float64')
 
-    # Make sure x and y are numpy arrays of correct datatype.
+    # Make sure x and y are NumPy arrays of correct datatype.
     x = x.astype(common_datatype)
     y = y.astype(common_datatype)
 
@@ -186,7 +186,7 @@ class KDTree(object):
     """
     kd-tree for quick nearest-neighbor lookup
 
-    This class provides an index into a set of k-dimensional points which
+    This class provides an index into a set of k-D points which
     can be used to rapidly look up the nearest neighbors of any point.
 
     Parameters

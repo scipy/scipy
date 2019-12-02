@@ -12,8 +12,8 @@ import scipy.signal.bsplines as bsp
 
 
 class TestBSplines(object):
-    """Test behaviors of bsplines. The values tested against were returned as of
-    scipy 1.1.0 and are included for regression testing purposes"""
+    """Test behaviors of B-splines. The values tested against were returned as of
+    SciPy 1.1.0 and are included for regression testing purposes"""
 
     def test_factorial(self):
         # can't all be zero state

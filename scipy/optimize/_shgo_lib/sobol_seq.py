@@ -89,7 +89,7 @@ class Sobol:
 
         Parameters:
           Input, integer N, the integer to be measured.
-          N should be nonnegative.  If N is nonpositive,
+          N should be nonnegative. If N is nonpositive,
           the value will always be 0.
 
           Output, integer BIT, the number of bits base 2.
@@ -160,18 +160,18 @@ class Sobol:
           Algorithm 659:
           Implementing Sobol's Quasirandom Sequence Generator,
           ACM Transactions on Mathematical Software,
-          Volume 14, Number 1, pages 88-100, 1988.
+          Volume 14, Number 1, pp. 88-100, 1988.
 
           Bennett Fox,
           Algorithm 647:
           Implementation and Relative Efficiency of Quasirandom
           Sequence Generators,
           ACM Transactions on Mathematical Software,
-          Volume 12, Number 4, pages 362-376, 1986.
+          Volume 12, Number 4, pp. 362-376, 1986.
 
           Ilya Sobol,
           USSR Computational Mathematics and Mathematical Physics,
-          Volume 16, pages 236-242, 1977.
+          Volume 16, pp. 236-242, 1977.
 
           Ilya Sobol, Levitan,
           The Production of Points Uniformly Distributed in a Multidimensional
@@ -185,10 +185,10 @@ class Sobol:
 
           Input/output, integer SEED, the "seed" for the sequence.
           This is essentially the index in the sequence of the quasirandom
-          value to be generated.  On output, SEED has been set to the
+          value to be generated. On output, SEED has been set to the
           appropriate next value, usually simply SEED+1.
           If SEED is less than 0 on input, it is treated as though it were 0.
-          An input value of 0 requests the first (0-th) element of the sequence.
+          An input value of 0 requests the first (0th) element of the sequence.
 
           Output, real QUASI(DIM_NUM), the next quasirandom vector.
         """

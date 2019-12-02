@@ -39,7 +39,7 @@ def orthogonality(A, g):
     """
     # Compute vector norms
     norm_g = np.linalg.norm(g)
-    # Compute Frobenius norm of the matrix A
+    # Compute Froebnius norm of the matrix A
     if issparse(A):
         norm_A = scipy.sparse.linalg.norm(A, ord='fro')
     else:
@@ -320,9 +320,9 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
     orth_tol : float, optional
         Tolerance for iterative refinements.
     max_refin : int, optional
-        Maximum number of iterative refinements
+        Maximum number of iterative refinements.
     tol : float, optional
-        Tolerance for singular values
+        Tolerance for singular values.
 
     Returns
     -------
@@ -334,8 +334,8 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
         equivalent to project ``x`` into the null space
         of A.
     LS : LinearOperator, shape (m, n)
-        Least-Square operator. For a given vector ``x``,
-        the least-square operator is equivalent to apply a
+        Least-squares operator. For a given vector ``x``,
+        the least-squares operator is equivalent to apply a
         pseudoinverse matrix ``pinv(A.T) = inv(A A.T) A``
         to the vector. It can be shown that this vector
         ``pinv(A.T) x`` is the least_square solution to
