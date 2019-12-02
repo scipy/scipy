@@ -780,7 +780,7 @@ class _TestCommon(object):
             # correct length, and too short or too long vectors
             for r in [-1, len(np.diag(a, k)), 2, 30]:
                 if r < 0:
-                    v = int(np.random.randint(1, 20, size=1))
+                    v = np.random.choice(range(1, 20))
                 else:
                     v = np.random.randint(1, 20, size=r)
 
