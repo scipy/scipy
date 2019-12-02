@@ -227,10 +227,9 @@ def test_expm_multiply(matrices):
 
 def test_eq(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    with pytest.warns(sp.SparseEfficiencyWarning):
-        assert (sp_sparse == pd_sparse).sum() == np.multiply(*sp_sparse.shape)
+    assert np.all(sp_sparse == pd_sparse)
 
 
 def test_ne(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    assert (sp_sparse != pd_sparse).sum() == 0
+    assert not np.any(sp_sparse != pd_sparse)
