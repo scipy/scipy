@@ -1,4 +1,4 @@
-"""Functions copypasted from newer versions of numpy.
+"""Functions copypasted from newer versions of NumPy.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -19,8 +19,8 @@ else:
         r"""
         Fail unless the given callable throws the specified warning.
 
-        This definition is copypasted from numpy 1.9.0.dev.
-        The version in earlier numpy returns None.
+        This definition is copypasted from NumPy 1.9.0.dev.
+        The version in earlier NumPy returns None.
 
         Parameters
         ----------
@@ -53,7 +53,7 @@ else:
 if NumpyVersion(np.__version__) >= '1.10.0':
     from numpy import broadcast_to
 else:
-    # Definition of `broadcast_to` from numpy 1.10.0.
+    # Definition of `broadcast_to` from NumPy 1.10.0.
 
     def _maybe_view_as_subclass(original_array, new_array):
         if type(original_array) is not type(new_array):
@@ -726,7 +726,7 @@ else:
             fweights = np.asarray(fweights, dtype=float)
             if not np.all(fweights == np.around(fweights)):
                 raise TypeError(
-                    "fweights must be an integer")
+                    "fweights must be integer")
             if fweights.ndim > 1:
                 raise RuntimeError(
                     "cannot handle multidimensional fweights")
