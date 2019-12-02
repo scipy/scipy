@@ -241,17 +241,20 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         grad = '2-point'
         epsilon = epsilon
 
-    fhess = hess
     if hess is None:
-        def fhess(x, *args):
-            return x
+        # ScalarFunction requires something for hess, so we give a dummy
+        # implementation here if nothing is provided, return a value of None
+        # so that downstream minimisers halt. The results of `fun.hess`
+        # should not be used.
+        def hess(x, *args):
+            return None
 
     if bounds is None:
         bounds = (-np.inf, np.inf)
 
     # ScalarFunction caches. Reuse of fun(x) during grad
     # calculation reduces overall function evaluations.
-    sf = ScalarFunction(fun, x0, args, grad, fhess,
+    sf = ScalarFunction(fun, x0, args, grad, hess,
                         finite_diff_rel_step, bounds, epsilon=epsilon)
 
     return sf
