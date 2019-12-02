@@ -4435,7 +4435,7 @@ MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
-                         workers=1, random_state=None, is_twosamp=False):
+                         workers=1, is_twosamp=False, random_state=None):
     r"""
     Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -4485,15 +4485,15 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         ``multiprocessing.Pool.map`` for evaluating the p-value in parallel.
         This evaluation is carried out as ``workers(func, iterable)``.
         Requires that `func` be pickleable. The default is ``1``.
-    random_state : int or np.random.RandomState instance, optional
-        If already a RandomState instance, use it.
-        If seed is an int, return a new RandomState instance seeded with seed.
-        If None, use np.random.RandomState. Default is None.
     is_twosamp : bool, optional
         If `True`, a two sample test will be run. If ``x`` and ``y`` have
         shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
+    random_state : int or np.random.RandomState instance, optional
+        If already a RandomState instance, use it.
+        If seed is an int, return a new RandomState instance seeded with seed.
+        If None, use np.random.RandomState. Default is None.
 
     Returns
     -------
