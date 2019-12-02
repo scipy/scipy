@@ -3236,8 +3236,8 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond), value=self.badvalue, typecode='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _a-1)
-        place(output, cond2, _b)
+        place(output, (q == 0)*(cond == cond), _a-1 + loc)
+        place(output, cond2, _b + loc)
         if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
