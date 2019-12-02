@@ -21,10 +21,31 @@ msg = "pydata/sparse (0.8) does not implement necessary operations"
 sparse_params = [pytest.param("COO"),
                  pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
 
+scipy_sparse_classes = [
+    sp.bsr_matrix,
+    sp.csr_matrix,
+    sp.coo_matrix,
+    sp.csc_matrix,
+    sp.dia_matrix,
+    sp.dok_matrix
+]
+
 
 @pytest.fixture(params=sparse_params)
 def sparse_cls(request):
     return getattr(sparse, request.param)
+
+
+@pytest.fixture(params=scipy_sparse_classes)
+def sp_sparse_cls(request):
+    return request.param
+
+
+@pytest.fixture
+def same_matrix(sparse_cls, sp_sparse_cls):
+    np.random.seed(1234)
+    A_dense = np.random.rand(9, 9)
+    return sp_sparse_cls(A_dense), sparse_cls(A_dense)
 
 
 @pytest.fixture
@@ -202,3 +223,14 @@ def test_expm_multiply(matrices):
     x0 = splin.expm_multiply(A_dense, b)
     x = splin.expm_multiply(A_sparse, b)
     assert_allclose(x, x0)
+
+
+def test_eq(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    with pytest.warns(sp.SparseEfficiencyWarning):
+        assert (sp_sparse == pd_sparse).sum() == np.multiply(*sp_sparse.shape)
+
+
+def test_ne(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    assert (sp_sparse != pd_sparse).sum() == 0
