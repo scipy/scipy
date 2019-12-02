@@ -3317,9 +3317,9 @@ add_newdoc("gamma",
     r"""
     gamma(z)
 
-    Gamma function.
+    gamma function.
 
-    The Gamma function is defined as
+    The gamma function is defined as
 
     .. math::
 
@@ -3336,11 +3336,11 @@ add_newdoc("gamma",
     Returns
     -------
     scalar or ndarray
-        Values of the Gamma function
+        Values of the gamma function
 
     Notes
     -----
-    The Gamma function is often referred to as the generalized
+    The gamma function is often referred to as the generalized
     factorial since :math:`\Gamma(n + 1) = n!` for natural numbers
     :math:`n`. More generally it satisfies the recurrence relation
     :math:`\Gamma(z + 1) = z \cdot \Gamma(z)` for complex :math:`z`,
@@ -3392,7 +3392,7 @@ add_newdoc("gammainc",
     r"""
     gammainc(a, x)
 
-    Regularized lower incomplete Gamma function.
+    Regularized lower incomplete gamma function.
 
     It is defined as
 
@@ -3412,7 +3412,7 @@ add_newdoc("gammainc",
     Returns
     -------
     scalar or ndarray
-        Values of the lower incomplete Gamma function
+        Values of the lower incomplete gamma function
 
     Notes
     -----
@@ -3461,7 +3461,7 @@ add_newdoc("gammaincc",
     r"""
     gammaincc(a, x)
 
-    Regularized upper incomplete Gamma function.
+    Regularized upper incomplete gamma function.
 
     It is defined as
 
@@ -3481,7 +3481,7 @@ add_newdoc("gammaincc",
     Returns
     -------
     scalar or ndarray
-        Values of the upper incomplete Gamma function
+        Values of the upper incomplete gamma function
 
     Notes
     -----
@@ -3493,11 +3493,11 @@ add_newdoc("gammaincc",
 
     See also
     --------
-    gammainc : regularized lower incomplete Gamma function
-    gammaincinv : inverse of the regularized lower incomplete Gamma
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse of the regularized lower incomplete gamma
         function with respect to `x`
     gammainccinv : inverse to of the regularized upper incomplete
-        Gamma function with respect to `x`
+        gamma function with respect to `x`
 
     References
     ----------
@@ -3531,12 +3531,12 @@ add_newdoc("gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse of the upper incomplete Gamma function with respect to `x`
+    Inverse of the upper incomplete gamma function with respect to `x`
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
     that :math:`y = Q(a, x)`. Here :math:`Q` is the upper incomplete
-    Gamma function; see `gammaincc`. This is well-defined because the
-    upper incomplete Gamma function is monotonic as can be seen from
+    gamma function; see `gammaincc`. This is well-defined because the
+    upper incomplete gamma function is monotonic as can be seen from
     its definition in [dlmf]_.
 
     Parameters
@@ -3549,13 +3549,13 @@ add_newdoc("gammainccinv",
     Returns
     -------
     scalar or ndarray
-        Values of the inverse of the upper incomplete Gamma function
+        Values of the inverse of the upper incomplete gamma function
 
     See Also
     --------
-    gammaincc : regularized upper incomplete Gamma function
-    gammainc : regularized lower incomplete Gamma function
-    gammaincinv : inverse of the regularized lower incomplete Gamma
+    gammaincc : regularized upper incomplete gamma function
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse of the regularized lower incomplete gamma
         function with respect to `x`
 
     References
@@ -3572,7 +3572,7 @@ add_newdoc("gammainccinv",
     >>> sc.gammainccinv(0.5, [0, 0.1, 0.5, 1])
     array([       inf, 1.35277173, 0.22746821, 0.        ])
 
-    It inverts the upper incomplete Gamma function.
+    It inverts the upper incomplete gamma function.
 
     >>> a, x = 0.5, [0, 0.1, 0.5, 1]
     >>> sc.gammaincc(a, sc.gammainccinv(a, x))
@@ -3588,12 +3588,12 @@ add_newdoc("gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to the lower incomplete Gamma function with respect to `x`.
+    Inverse to the lower incomplete gamma function with respect to `x`.
 
     Given an input :math:`y` between 0 and 1, returns :math:`x` such
     that :math:`y = P(a, x)`. Here :math:`P` is the regularized lower
     incomplete gamma function; see `gammainc`. This is well-defined
-    because the lower incomplete Gamma function is monotonic as can be
+    because the lower incomplete gamma function is monotonic as can be
     seen from its definition in [dlmf]_.
 
     Parameters
@@ -3606,13 +3606,13 @@ add_newdoc("gammaincinv",
     Returns
     -------
     scalar or ndarray
-        Values of the inverse of the lower incomplete Gamma function
+        Values of the inverse of the lower incomplete gamma function
 
     See Also
     --------
-    gammainc : regularized lower incomplete Gamma function
-    gammaincc : regularized upper incomplete Gamma function
-    gammainccinv : inverse of the regualizred upper incomplete Gamma
+    gammainc : regularized lower incomplete gamma function
+    gammaincc : regularized upper incomplete gamma function
+    gammainccinv : inverse of the regualizred upper incomplete gamma
         function with respect to `x`
 
     References
@@ -3645,7 +3645,7 @@ add_newdoc("gammaln",
     r"""
     gammaln(x, out=None)
 
-    Logarithm of the absolute value of the Gamma function.
+    Logarithm of the absolute value of the gamma function.
 
     Defined as
 
@@ -3653,8 +3653,8 @@ add_newdoc("gammaln",
 
        \ln(\lvert\Gamma(x)\rvert)
 
-    where :math:`\Gamma` is the Gamma function. For more details on
-    the Gamma function, see [dlmf]_.
+    where :math:`\Gamma` is the gamma function. For more details on
+    the gamma function, see [dlmf]_.
 
     Parameters
     ----------
@@ -3666,12 +3666,12 @@ add_newdoc("gammaln",
     Returns
     -------
     scalar or ndarray
-        Values of the log of the absolute value of Gamma
+        Values of the log of the absolute value of gamma
 
     See Also
     --------
     gammasgn : sign of the gamma function
-    loggamma : principal branch of the logarithm of the Gamma function
+    loggamma : principal branch of the logarithm of the gamma function
 
     Notes
     -----
@@ -3718,7 +3718,7 @@ add_newdoc("gammasgn",
     r"""
     gammasgn(x)
 
-    Sign of the Gamma function.
+    Sign of the gamma function.
 
     It is defined as
 
@@ -3730,8 +3730,8 @@ add_newdoc("gammasgn",
          -1 & \Gamma(x) < 0
        \end{cases}
 
-    where :math:`\Gamma` is the Gamma function; see `gamma`. This
-    definition is complete since the Gamma function is never zero;
+    where :math:`\Gamma` is the gamma function; see `gamma`. This
+    definition is complete since the gamma function is never zero;
     see the discussion after [dlmf]_.
 
     Parameters
@@ -3742,18 +3742,18 @@ add_newdoc("gammasgn",
     Returns
     -------
     scalar or ndarray
-        Sign of the Gamma function
+        Sign of the gamma function
 
     Notes
     -----
-    The Gamma function can be computed as ``gammasgn(x) *
+    The gamma function can be computed as ``gammasgn(x) *
     np.exp(gammaln(x))``.
 
     See Also
     --------
-    gamma : the Gamma function
-    gammaln : log of the absolute value of the Gamma function
-    loggamma : analytic continuation of the log of the Gamma function
+    gamma : the gamma function
+    gammaln : log of the absolute value of the gamma function
+    loggamma : analytic continuation of the log of the gamma function
 
     References
     ----------
@@ -3774,7 +3774,7 @@ add_newdoc("gammasgn",
     >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
     array([-1.,  1., -1.,  1.])
 
-    It can be used to compute the Gamma function.
+    It can be used to compute the gamma function.
 
     >>> x = [1.5, 0.5, -0.5, -1.5]
     >>> sc.gammasgn(x) * np.exp(sc.gammaln(x))
@@ -3790,19 +3790,19 @@ add_newdoc("gdtr",
 
     Gamma distribution cumulative distribution function.
 
-    Returns the integral from zero to `x` of the Gamma probability density
+    Returns the integral from zero to `x` of the gamma probability density
     function,
 
     .. math::
 
         F = \int_0^x \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
-    where :math:`\Gamma` is the Gamma function.
+    where :math:`\Gamma` is the gamma function.
 
     Parameters
     ----------
     a : array_like
-        The rate parameter of the Gamma distribution, sometimes denoted
+        The rate parameter of the gamma distribution, sometimes denoted
         :math:`\beta` (float).  It is also the reciprocal of the scale
         parameter :math:`\theta`.
     b : array_like
@@ -3813,17 +3813,17 @@ add_newdoc("gdtr",
 
     See also
     --------
-    gdtrc : 1 - CDF of the Gamma distribution.
+    gdtrc : 1 - CDF of the gamma distribution.
 
     Returns
     -------
     F : ndarray
-        The CDF of the Gamma distribution with parameters `a` and `b`
+        The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
     Notes
     -----
-    The evaluation is carried out using the relation to the incomplete Gamma
+    The evaluation is carried out using the relation to the incomplete gamma
     integral (regularized gamma function).
 
     Wrapper for the Cephes [1]_ routine `gdtr`.
@@ -3841,19 +3841,19 @@ add_newdoc("gdtrc",
 
     Gamma distribution survival function.
 
-    Integral from `x` to infinity of the Gamma probability density function,
+    Integral from `x` to infinity of the gamma probability density function,
 
     .. math::
 
         F = \int_x^\infty \frac{a^b}{\Gamma(b)} t^{b-1} e^{-at}\,dt,
 
-    where :math:`\Gamma` is the Gamma function.
+    where :math:`\Gamma` is the gamma function.
 
     Parameters
     ----------
     a : array_like
-        The rate parameter of the Gamma distribution, sometimes denoted
-        :math:`\beta` (float).  It is also the reciprocal of the scale
+        The rate parameter of the gamma distribution, sometimes denoted
+        :math:`\beta` (float). It is also the reciprocal of the scale
         parameter :math:`\theta`.
     b : array_like
         The shape parameter of the gamma distribution, sometimes denoted
@@ -3864,7 +3864,7 @@ add_newdoc("gdtrc",
     Returns
     -------
     F : ndarray
-        The survival function of the Gamma distribution with parameters `a`
+        The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
     See Also
@@ -3873,8 +3873,8 @@ add_newdoc("gdtrc",
 
     Notes
     -----
-    The evaluation is carried out using the relation to the incomplete Gamma
-    integral (regularized Gamma function).
+    The evaluation is carried out using the relation to the incomplete gamma
+    integral (regularized gamma function).
 
     Wrapper for the Cephes [1]_ routine `gdtrc`.
 
@@ -3892,7 +3892,7 @@ add_newdoc("gdtria",
     Inverse of `gdtr` vs a.
 
     Returns the inverse with respect to the parameter `a` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the Gamma
+    gdtr(a, b, x)``, the cumulative distribution function of the gamma
     distribution.
 
     Parameters
@@ -3900,10 +3900,10 @@ add_newdoc("gdtria",
     p : array_like
         Probability values.
     b : array_like
-        `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
-        of the Gamma distribution.
+        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
+        of the gamma distribution.
     x : array_like
-        Nonnegative real values, from the domain of the Gamma distribution.
+        Nonnegative real values, from the domain of the gamma distribution.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
         matches the broadcast result of `a`, `b` and `x`.  `out` is then the
@@ -3913,11 +3913,11 @@ add_newdoc("gdtria",
     -------
     a : ndarray
         Values of the `a` parameter such that `p = gdtr(a, b, x)`.  `1/a`
-        is the "scale" parameter of the Gamma distribution.
+        is the "scale" parameter of the gamma distribution.
 
     See Also
     --------
-    gdtr : CDF of the Gamma distribution.
+    gdtr : CDF of the gamma distribution.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
 
@@ -3961,18 +3961,18 @@ add_newdoc("gdtrib",
     Inverse of `gdtr` vs b.
 
     Returns the inverse with respect to the parameter `b` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the Gamma
+    gdtr(a, b, x)``, the cumulative distribution function of the gamma
     distribution.
 
     Parameters
     ----------
     a : array_like
         `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
-        parameter of the Gamma distribution.
+        parameter of the gamma distribution.
     p : array_like
         Probability values.
     x : array_like
-        Nonnegative real values, from the domain of the Gamma distribution.
+        Nonnegative real values, from the domain of the gamma distribution.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
         matches the broadcast result of `a`, `b` and `x`.  `out` is then the
@@ -3982,11 +3982,11 @@ add_newdoc("gdtrib",
     -------
     b : ndarray
         Values of the `b` parameter such that `p = gdtr(a, b, x)`.  `b` is
-        the "shape" parameter of the Gamma distribution.
+        the "shape" parameter of the gamma distribution.
 
     See Also
     --------
-    gdtr : CDF of the Gamma distribution.
+    gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
     gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
 
@@ -4030,18 +4030,18 @@ add_newdoc("gdtrix",
     Inverse of `gdtr` vs x.
 
     Returns the inverse with respect to the parameter `x` of ``p =
-    gdtr(a, b, x)``, the cumulative distribution function of the Gamma
+    gdtr(a, b, x)``, the cumulative distribution function of the gamma
     distribution. This is also known as the pth quantile of the
     distribution.
 
     Parameters
     ----------
     a : array_like
-        `a` parameter values of `gdtr(a, b, x)`.  `1/a` is the "scale"
-        parameter of the Gamma distribution.
+        `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
+        parameter of the gamma distribution.
     b : array_like
-        `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
-        of the Gamma distribution.
+        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
+        of the gamma distribution.
     p : array_like
         Probability values.
     out : ndarray, optional
@@ -4056,7 +4056,7 @@ add_newdoc("gdtrix",
 
     See Also
     --------
-    gdtr : CDF of the Gamma distribution.
+    gdtr : CDF of the gamma distribution.
     gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
     gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
 
@@ -7332,7 +7332,7 @@ add_newdoc("poch",
     >>> 1 * 2 * 3 * 4 * 5
     120
 
-    It can be expressed in terms of the Gamma function.
+    It can be expressed in terms of the gamma function.
 
     >>> z, m = 3.7, 2.1
     >>> sc.poch(z, m)
@@ -7608,10 +7608,10 @@ add_newdoc("rgamma",
     r"""
     rgamma(z, out=None)
 
-    Reciprocal of the Gamma function.
+    Reciprocal of the gamma function.
 
     Defined as :math:`1 / \Gamma(z)`, where :math:`\Gamma` is the
-    Gamma function. For more on the Gamma function see `gamma`.
+    gamma function. For more on the gamma function see `gamma`.
 
     Parameters
     ----------
@@ -7627,7 +7627,7 @@ add_newdoc("rgamma",
 
     Notes
     -----
-    The Gamma function has no zeros and has simple poles at
+    The gamma function has no zeros and has simple poles at
     nonpositive integers, so `rgamma` is an entire function with zeros
     at the nonpositive integers. See the discussion in [dlmf]_ for
     more details.
@@ -7645,7 +7645,7 @@ add_newdoc("rgamma",
     --------
     >>> import scipy.special as sc
 
-    It is the reciprocal of the Gamma function.
+    It is the reciprocal of the gamma function.
 
     >>> sc.rgamma([1, 2, 3, 4])
     array([1.        , 1.        , 0.5       , 0.16666667])
@@ -8520,7 +8520,7 @@ add_newdoc("loggamma",
     r"""
     loggamma(z, out=None)
 
-    Principal branch of the logarithm of the Gamma function.
+    Principal branch of the logarithm of the gamma function.
 
     Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
     extended to the complex plane by analytic continuation. The
@@ -8565,7 +8565,7 @@ add_newdoc("loggamma",
 
     See also
     --------
-    gammaln : logarithm of the absolute value of the Gamma function
+    gammaln : logarithm of the absolute value of the gamma function
     gammasgn : sign of the gamma function
 
     References
