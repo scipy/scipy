@@ -1017,7 +1017,7 @@ def test_scalar_squeeze():
     out_d = loadmat(stream, squeeze_me=True)
     assert_(isinstance(out_d['scalar'], float))
     assert_(isinstance(out_d['string'], string_types))
-    assert_(isinstance(out_d['st'], np.ndarray))
+    assert_(isinstance(out_d['st'], np.void))
 
 
 def test_str_round():
