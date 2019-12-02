@@ -28,6 +28,7 @@ are:
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
+- pydata/sparse  (compatibility support in ``scipy.sparse``)
 
 *Unconditional build-time dependencies:*
 

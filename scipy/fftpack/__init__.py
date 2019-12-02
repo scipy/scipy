@@ -16,20 +16,20 @@ Fast Fourier Transforms (FFTs)
 
    fft - Fast (discrete) Fourier Transform (FFT)
    ifft - Inverse FFT
-   fft2 - Two dimensional FFT
-   ifft2 - Two dimensional inverse FFT
-   fftn - n-dimensional FFT
-   ifftn - n-dimensional inverse FFT
+   fft2 - 2-D FFT
+   ifft2 - 2-D inverse FFT
+   fftn - N-D FFT
+   ifftn - N-D inverse FFT
    rfft - FFT of strictly real-valued sequence
    irfft - Inverse of rfft
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
-   dctn - n-dimensional Discrete cosine transform
-   idctn - n-dimensional Inverse discrete cosine transform
+   dctn - N-D Discrete cosine transform
+   idctn - N-D Inverse discrete cosine transform
    dst - Discrete sine transform
    idst - Inverse discrete sine transform
-   dstn - n-dimensional Discrete sine transform
-   idstn - n-dimensional Inverse discrete sine transform
+   dstn - N-D Discrete sine transform
+   idstn - N-D Inverse discrete sine transform
 
 Differential and pseudo-differential operators
 ==============================================

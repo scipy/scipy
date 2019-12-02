@@ -136,7 +136,7 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             return self._with_data(result, copy=True)
 
         method.__doc__ = ("Element-wise %s.\n\n"
-                          "See numpy.%s for more information." % (name, name))
+                          "See NumPy.%s for more information." % (name, name))
         method.__name__ = name
 
         return method

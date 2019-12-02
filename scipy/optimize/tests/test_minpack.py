@@ -22,8 +22,8 @@ from scipy.optimize import OptimizeWarning
 class ReturnShape(object):
     """This class exists to create a callable that does not have a '__name__' attribute.
 
-    __init__ takes the argument 'shape', which should be a tuple of ints.  When an instance
-    it called with a single argument 'x', it returns numpy.ones(shape).
+    __init__ takes the argument 'shape', which should be a tuple of ints. When an instance
+    is called with a single argument 'x', it returns numpy.ones(shape).
     """
 
     def __init__(self, shape):
@@ -48,7 +48,7 @@ def sequence_parallel(fs):
         pool.terminate()
 
 
-# Function and jacobian for tests of solvers for systems of nonlinear
+# Function and Jacobian for tests of solvers for systems of nonlinear
 # equations
 
 
@@ -59,23 +59,23 @@ def pressure_network(flow_rates, Qtot, k):
         f_i = P_i - P_0, for i = 1..n
         f_0 = sum(Q_i) - Qtot
 
-    Where Q_i is the flow rate in pipe i and P_i the pressure in that pipe.
+    where Q_i is the flow rate in pipe i and P_i the pressure in that pipe.
     Pressure is modeled as a P=kQ**2 where k is a valve coefficient and
     Q is the flow rate.
 
     Parameters
     ----------
     flow_rates : float
-        A 1D array of n flow rates [kg/s].
+        A 1-D array of n flow rates [kg/s].
     k : float
-        A 1D array of n valve coefficients [1/kg m].
+        A 1-D array of n valve coefficients [1/kg m].
     Qtot : float
         A scalar, the total input flow rate [kg/s].
 
     Returns
     -------
     F : float
-        A 1D array, F[i] == f_i.
+        A 1-D array, F[i] == f_i.
 
     """
     P = k * flow_rates**2
@@ -511,7 +511,7 @@ class TestCurveFit(object):
         assert_array_equal(pcov1, pcov_expected)
 
     def test_array_like(self):
-        # Test sequence input.  Regression test for gh-3037.
+        # Test sequence input. Regression test for gh-3037.
         def f_linear(x, a, b):
             return a*x + b
 

@@ -1,5 +1,5 @@
 """
-This module implements the Sequential Least SQuares Programming optimization
+This module implements the Sequential Least Squares Programming optimization
 algorithm (SLSQP), originally developed by Dieter Kraft.
 See http://www.netlib.org/toms/733
 
@@ -73,7 +73,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
                iprint=1, disp=None, full_output=0, epsilon=_epsilon,
                callback=None):
     """
-    Minimize a function using Sequential Least SQuares Programming
+    Minimize a function using Sequential Least Squares Programming
 
     Python interface function for the SLSQP Optimization subroutine
     originally implemented by Dieter Kraft.
@@ -90,7 +90,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         problem.
     f_eqcons : callable f(x,*args), optional
         Returns a 1-D array in which each element must equal 0.0 in a
-        successfully optimized problem.  If f_eqcons is specified,
+        successfully optimized problem. If f_eqcons is specified,
         eqcons is ignored.
     ieqcons : list, optional
         A list of functions of length n such that
@@ -98,7 +98,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         problem.
     f_ieqcons : callable f(x,*args), optional
         Returns a 1-D ndarray in which each element must be greater or
-        equal to 0.0 in a successfully optimized problem.  If
+        equal to 0.0 in a successfully optimized problem. If
         f_ieqcons is specified, ieqcons is ignored.
     bounds : list, optional
         A list of tuples specifying the lower and upper bound
@@ -108,12 +108,12 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         A function that evaluates the partial derivatives of func.
     fprime_eqcons : callable `f(x,*args)`, optional
         A function of the form `f(x, *args)` that returns the m by n
-        array of equality constraint normals.  If not provided,
+        array of equality constraint normals. If not provided,
         the normals will be approximated. The array returned by
         fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
     fprime_ieqcons : callable `f(x,*args)`, optional
         A function of the form `f(x, *args)` that returns the m by n
-        array of inequality constraint normals.  If not provided,
+        array of inequality constraint normals. If not provided,
         the normals will be approximated. The array returned by
         fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
     args : sequence, optional
@@ -129,7 +129,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         * iprint == 1 : Print summary upon completion (default)
         * iprint >= 2 : Print status of each iterate and summary
     disp : int, optional
-        Over-rides the iprint interface (preferred).
+        Overrides the iprint interface (preferred).
     full_output : bool, optional
         If False, return only the minimizer of func (default).
         Otherwise, output final objective function and summary
@@ -163,7 +163,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     Exit modes are defined as follows ::
 
         -1 : Gradient evaluation required (g & a)
-         0 : Optimization terminated successfully.
+         0 : Optimization terminated successfully
          1 : Function evaluation required (f & c)
          2 : More equality constraints than independent variables
          3 : More than 3*n iterations in LSQ subproblem
@@ -220,7 +220,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
-    Least SQuares Programming (SLSQP).
+    Least Squares Programming (SLSQP).
 
     Options
     -------
@@ -276,7 +276,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check Jacobian
         cjac = con.get('jac')
         if cjac is None:
-            # approximate Jacobian function.  The factory function is needed
+            # approximate Jacobian function. The factory function is needed
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
                 def cjac(x, *args):
@@ -296,7 +296,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                          'args': con.get('args', ())}, )
 
     exit_modes = {-1: "Gradient evaluation required (g & a)",
-                   0: "Optimization terminated successfully.",
+                   0: "Optimization terminated successfully",
                    1: "Function evaluation required (f & c)",
                    2: "More equality constraints than independent variables",
                    3: "More than 3*n iterations in LSQ subproblem",
@@ -458,7 +458,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # Call SLSQP
         slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
               alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-              iexact, incons, ireset, itermx, line, 
+              iexact, incons, ireset, itermx, line,
               n1, n2, n3)
 
         # call callback if major iteration has incremented
@@ -477,7 +477,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
-    # Optimization loop complete.  Print status if requested
+    # Optimization loop complete. Print status if requested
     if iprint >= 1:
         print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
         print("            Current function value:", fx)
@@ -517,7 +517,7 @@ if __name__ == '__main__':
         return array([x[0] * x[1] + c])
 
     def jieqcon(x, c=10):
-        """ Jacobian of Inequality constraint """
+        """ Jacobian of inequality constraint """
         return array([[1, 1]])
 
     # constraints dictionaries

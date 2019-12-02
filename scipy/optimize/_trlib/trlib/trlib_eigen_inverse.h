@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,10 +35,10 @@
 /** Computes eigenvector to provided eigenvalue of symmetric tridiagonal matrix :math:`T \in \mathbb R^{n\times n}`,
  *  using inverse iteration.
  *
- *  For a description of the method see https://en.wikipedia.org/wiki/Inverse_iteration.
+ *  For a description of the method, see https://en.wikipedia.org/wiki/Inverse_iteration.
  *
  *  **Convergence**
- *  
+ *
  *  Convergence is reported if :math:`\vert \frac{1}{\Vert w_{i+1} \Vert} - \texttt{pert} \vert \le \texttt{tol}\_\texttt{abs}`, where :math:`(T-\lambda I) w_{i+1} = v_i`, :math:`v_i` the current normalized iterate and :math:`\texttt{pert}` is the perturbation applied to the provided eigenvalue.
  *
  *  :param n: dimension, ensure :math:`n > 0`
@@ -105,7 +105,7 @@
  */
 
 trlib_int_t trlib_eigen_inverse(
-        trlib_int_t n, trlib_flt_t *diag, trlib_flt_t *offdiag, 
+        trlib_int_t n, trlib_flt_t *diag, trlib_flt_t *offdiag,
         trlib_flt_t lam_init, trlib_int_t itmax, trlib_flt_t tol_abs,
         trlib_flt_t *ones, trlib_flt_t *diag_fac, trlib_flt_t *offdiag_fac,
         trlib_flt_t *eig, trlib_int_t verbose, trlib_int_t unicode, char *prefix, FILE *fout,

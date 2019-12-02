@@ -406,9 +406,9 @@ const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
 This module supports
 - single, double, and long double precision
 - complex and real-valued transforms
-- multi-dimensional transforms
+- multidimensional transforms
 
-For two- and higher-dimensional transforms the code will use SSE2 and AVX
+For two- and higher-dimensional transforms, the code will use SSE2 and AVX
 vector instructions for faster execution if these are supported by the CPU and
 were enabled during compilation.
 )""";
@@ -547,7 +547,7 @@ numpy.ndarray (same shape and data type as `a`)
 )""";
 
 const char *separable_hartley_DS = R"""(Performs a separable Hartley transform.
-For every requested axis, a 1D forward Fourier transform is carried out, and
+For every requested axis, a 1-D forward Fourier transform is carried out, and
 the real and imaginary parts of the result are added before the next axis is
 processed.
 

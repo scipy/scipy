@@ -482,7 +482,12 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
     cdef double y1, y2, y3
 
     if n < 0:
-        return 0.0
+        sf_error.error(
+            "eval_hermitenorm",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return nan
     elif n == 0:
         return 1.0
     elif n == 1:
@@ -502,4 +507,11 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double eval_hermite(long n, double x) nogil:
+    if n < 0:
+        sf_error.error(
+            "eval_hermite",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return nan
     return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)

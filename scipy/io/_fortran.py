@@ -180,7 +180,7 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-dimensional array object.
+            A 1-D array object.
 
         Raises
         ------
@@ -192,7 +192,7 @@ class FortranFile(object):
 
         Notes
         -----
-        If the record contains a multi-dimensional array, you can specify
+        If the record contains a multidimensional array, you can specify
         the size in the dtype. For example::
 
             INTEGER var(5,4)
@@ -205,7 +205,7 @@ class FortranFile(object):
         column major order, so you need to (i) swap the order of dimensions
         when reading and (ii) transpose the resulting array.
 
-        Alternatively, you can read the data as a 1D array and handle the
+        Alternatively, you can read the data as a 1-D array and handle the
         ordering yourself. For example::
 
             read_record('i4').reshape(5, 4, order='F')
@@ -232,7 +232,7 @@ class FortranFile(object):
             a = record[0]
             b = record[1].T
 
-        Numpy also supports a short syntax for this kind of type::
+        NumPy also supports a short syntax for this kind of type::
 
             record = f.read_record('<f4', '(3,3)<i4')
 
@@ -306,7 +306,7 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-dimensional array object.
+            A 1-D array object.
 
         See Also
         --------
@@ -329,7 +329,7 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-dimensional array object.
+            A 1-D array object.
 
         See Also
         --------

@@ -191,7 +191,7 @@ class Radau(OdeSolver):
         Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
         It can either have shape (n,); then ``fun`` must return array_like with
         shape (n,). Alternatively it can have shape (n, k); then ``fun``
-        must return an array_like with shape (n, k), i.e. each column
+        must return an array_like with shape (n, k), i.e., each column
         corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
@@ -207,7 +207,7 @@ class Radau(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error

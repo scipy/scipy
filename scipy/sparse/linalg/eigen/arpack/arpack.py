@@ -48,7 +48,7 @@ import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.sparse.sputils import isdense
+from scipy.sparse.sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 from scipy._lib._util import _aligned_zeros
@@ -1032,6 +1032,9 @@ def _fast_spmatrix_to_csc(A, hermitian=False):
     if (isspmatrix_csr(A) and hermitian
             and not np.issubdtype(A.dtype, np.complexfloating)):
         return A.T
+    elif is_pydata_spmatrix(A):
+        # No need to convert
+        return A
     else:
         return A.tocsc()
 
@@ -1039,7 +1042,7 @@ def _fast_spmatrix_to_csc(A, hermitian=False):
 def get_inv_matvec(M, hermitian=False, tol=0):
     if isdense(M):
         return LuInv(M).matvec
-    elif isspmatrix(M):
+    elif isspmatrix(M) or is_pydata_spmatrix(M):
         M = _fast_spmatrix_to_csc(M, hermitian=hermitian)
         return SpLuInv(M).matvec
     else:
@@ -1060,7 +1063,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
                 A = A + 0j
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
-        elif isspmatrix(A):
+        elif isspmatrix(A) or is_pydata_spmatrix(A):
             A = A - sigma * eye(A.shape[0])
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
@@ -1068,8 +1071,8 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                              M, sigma, tol=tol).matvec
     else:
-        if ((not isdense(A) and not isspmatrix(A)) or
-                (not isdense(M) and not isspmatrix(M))):
+        if ((not isdense(A) and not isspmatrix(A) and not is_pydata_spmatrix(A)) or
+                (not isdense(M) and not isspmatrix(M) and not is_pydata_spmatrix(A))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                              _aslinearoperator_with_dtype(M),
                              sigma, tol=tol).matvec
@@ -1800,7 +1803,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     else:
         raise ValueError("which must be either 'LM' or 'SM'.")
 
-    if not (isinstance(A, LinearOperator) or isspmatrix(A)):
+    if not (isinstance(A, LinearOperator) or isspmatrix(A) or is_pydata_spmatrix(A)):
         A = np.asarray(A)
 
     n, m = A.shape

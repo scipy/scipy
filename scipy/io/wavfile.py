@@ -1,11 +1,11 @@
 """
-Module to read / write wav files using numpy arrays
+Module to read / write wav files using NumPy arrays
 
 Functions
 ---------
 `read`: Return the sample rate (in samples/sec) and data from a WAV file.
 
-`write`: Write a numpy array as a WAV file.
+`write`: Write a NumPy array as a WAV file.
 
 """
 from __future__ import division, print_function, absolute_import
@@ -198,7 +198,7 @@ def read(filename, mmap=False):
     rate : int
         Sample rate of wav file.
     data : numpy array
-        Data read from wav file.  Data-type is determined from the file;
+        Data read from wav file. Data-type is determined from the file;
         see Notes.
 
     Notes
@@ -266,6 +266,7 @@ def read(filename, mmap=False):
     try:
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
+        data_chunk_received = False
         channels = 1
         bit_depth = 8
         format_tag = WAVE_FORMAT_PCM
@@ -274,7 +275,16 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
 
             if not chunk_id:
-                raise ValueError("Unexpected end of file.")
+                if data_chunk_received:
+                    # End of file but data successfully read
+                    warnings.warn(
+                        "Reached EOF prematurely; finished at {:d} bytes, "
+                        "expected {:d} bytes from header."
+                        .format(fid.tell(), file_size),
+                        WavFileWarning, stacklevel=2)
+                    break
+                else:
+                    raise ValueError("Unexpected end of file.")
             elif len(chunk_id) < 4:
                 raise ValueError("Incomplete wav chunk.")
 
@@ -289,6 +299,7 @@ def read(filename, mmap=False):
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
+                data_chunk_received = True
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
@@ -301,7 +312,7 @@ def read(filename, mmap=False):
                 _skip_unknown_chunk(fid, is_big_endian)
             else:
                 warnings.warn("Chunk (non-data) not understood, skipping it.",
-                              WavFileWarning)
+                              WavFileWarning, stacklevel=2)
                 _skip_unknown_chunk(fid, is_big_endian)
     finally:
         if not hasattr(filename, 'read'):
@@ -314,7 +325,7 @@ def read(filename, mmap=False):
 
 def write(filename, rate, data):
     """
-    Write a numpy array as a WAV file.
+    Write a NumPy array as a WAV file.
 
     Parameters
     ----------
@@ -323,7 +334,7 @@ def write(filename, rate, data):
     rate : int
         The sample rate (in samples/sec).
     data : ndarray
-        A 1-D or 2-D numpy array of either integer or float data-type.
+        A 1-D or 2-D NumPy array of either integer or float data-type.
 
     Notes
     -----

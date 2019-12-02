@@ -221,6 +221,43 @@ subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
 
 end subroutine <prefix>getrs
 
+subroutine <prefix>getc2(n,a,lda,ipiv,jpiv,info)
+    ! lu,ipiv,jpiv,info = getc2(a,overwrite_a=0)
+    ! Compute an LU factorization of with complete pivoting of a general n-by-n matrix.
+    ! A = P * L * U * Q
+    threadsafe
+    callstatement {int i;(*f2py_func)(&n,a,&lda,ipiv,jpiv,&info);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument int*,<ctype>*,int*,int*,int*,int*
+
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype> dimension(n,n),intent(in,out,copy,out=lu) :: a
+    check(shape(a,0)==shape(a,1)) :: a
+    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+    integer dimension(n),depend(n),intent(out) :: ipiv
+    integer dimension(n),depend(n),intent(out) :: jpiv
+    integer intent(out):: info
+
+end subroutine <prefix>getc2
+
+subroutine <prefix>gesc2(n,lu,lda,rhs,ipiv,jpiv,scale)
+    ! x,scale = gesc2(lu,rhs,ipiv,jpiv,overwrite_rhs=0)
+    ! Solve  A * X = scale * RHS
+    ! A = P * L * U * Q
+    threadsafe
+    callstatement {int i;for(i=0;i\<n;++ipiv[i],++jpiv[i++]);(*f2py_func)(&n,lu,&lda,rhs,ipiv,jpiv,&scale);for(i=0;i\<n;--ipiv[i],--jpiv[i++]);}
+    callprotoargument int*,<ctype>*,int*,<ctype>*,int*,int*,<ctypereal>*
+
+    integer depend(lu),intent(hide):: n = shape(lu,0)
+    <ftype> dimension(n,n),intent(in) :: lu
+    check(shape(lu,0)==shape(lu,1)) :: lu
+    integer intent(hide),depend(lu):: lda = MAX(1,shape(lu,0))
+    <ftype> dimension(n),intent(in,out,copy,out=x),depend(n),check(shape(lu,0)==len(rhs)) :: rhs
+    integer dimension(n),intent(in),depend(n) :: ipiv
+    integer dimension(n),intent(in),depend(n) :: jpiv
+    <ftypereal> intent(out):: scale
+
+end subroutine <prefix>gesc2
+
 subroutine <prefix>getri(n,lu,piv,work,lwork,info)
     ! inv_a,info = getri(lu,piv,lwork=3*n,overwrite_lu=0)
     ! Find A inverse A^-1.

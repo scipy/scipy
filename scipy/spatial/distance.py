@@ -4,7 +4,7 @@ Distance computations (:mod:`scipy.spatial.distance`)
 
 .. sectionauthor:: Damian Eads
 
-Function Reference
+Function reference
 ------------------
 
 Distance matrix computation from a collection of raw observation vectors

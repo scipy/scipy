@@ -28,7 +28,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((6,) + y_shape)).transpose(s)
 
-    # Cython code chokes on y.shape = (0, 3) etc, skip them
+    # Cython code chokes on y.shape = (0, 3) etc., skip them
     if y.size == 0:
         return
 
@@ -333,7 +333,7 @@ class TestBarycentric(object):
     def test_vector(self):
         xs = [0, 1, 2]
         ys = np.array([[0, 1], [1, 0], [2, 1]])
-        BI = BarycentricInterpolator 
+        BI = BarycentricInterpolator
         P = BI(xs, ys)
         Pi = [BI(xs, ys[:, i]) for i in xrange(ys.shape[1])]
         test_xs = np.linspace(-1, 3, 100)

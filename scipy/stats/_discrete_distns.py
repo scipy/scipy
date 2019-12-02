@@ -937,6 +937,27 @@ class dlaplace_gen(rv_discrete):
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
 
+    def _rvs(self, a):
+        # The discrete Laplace is equivalent to the two-sided geometric
+        # distribution with PMF:
+        #   f(k) = (1 - alpha)/(1 + alpha) * alpha^abs(k)
+        #   Reference:
+        #     https://www.sciencedirect.com/science/
+        #     article/abs/pii/S0378375804003519
+        # Furthermore, the two-sided geometric distribution is
+        # equivalent to the difference between two iid geometric 
+        # distributions.
+        #   Reference (page 179):
+        #     https://pdfs.semanticscholar.org/61b3/
+        #     b99f466815808fd0d03f5d2791eea8b541a1.pdf
+        # Thus, we can leverage the following:
+        #   1) alpha = e^-a
+        #   2) probability_of_success = 1 - alpha (Bernoulli trial)
+        probOfSuccess = -np.expm1(-np.asarray(a))
+        x = self._random_state.geometric(probOfSuccess, size=self._size)
+        y = self._random_state.geometric(probOfSuccess, size=self._size)
+        return x - y
+
 
 dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')

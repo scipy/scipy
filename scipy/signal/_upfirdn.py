@@ -74,7 +74,7 @@ class _UpFIRDn(object):
         """Helper for resampling"""
         h = np.asarray(h)
         if h.ndim != 1 or h.size == 0:
-            raise ValueError('h must be 1D with non-zero length')
+            raise ValueError('h must be 1-D with non-zero length')
         self._output_type = np.result_type(h.dtype, x_dtype, np.float32)
         h = np.asarray(h, self._output_type)
         self._up = int(up)
@@ -86,7 +86,7 @@ class _UpFIRDn(object):
         self._h_trans_flip = np.ascontiguousarray(self._h_trans_flip)
 
     def apply_filter(self, x, axis=-1, mode='constant', cval=0):
-        """Apply the prepared filter to the specified axis of a nD signal x"""
+        """Apply the prepared filter to the specified axis of a N-D signal x"""
         output_len = _output_len(len(self._h_trans_flip), x.shape[axis],
                                  self._up, self._down)
         output_shape = np.asarray(x.shape)
@@ -106,7 +106,7 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     Parameters
     ----------
     h : array_like
-        1-dimensional FIR (finite-impulse response) filter coefficients.
+        1-D FIR (finite-impulse response) filter coefficients.
     x : array_like
         Input signal array.
     up : int, optional

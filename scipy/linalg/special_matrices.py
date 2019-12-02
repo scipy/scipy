@@ -17,13 +17,13 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
 # -----------------------------------------------------------------------------
 
 #
-# *Note*: tri{,u,l} is implemented in numpy, but an important bug was fixed in
+# *Note*: tri{,u,l} is implemented in NumPy, but an important bug was fixed in
 # 2.0.0.dev-1af2f3, the following tri{,u,l} definitions are here for backwards
 # compatibility.
 
 def tri(N, M=None, k=0, dtype=None):
     """
-    Construct (N, M) matrix filled with ones at and below the k-th diagonal.
+    Construct (N, M) matrix filled with ones at and below the kth diagonal.
 
     The matrix has A[i,j] == 1 for i <= j + k
 
@@ -75,7 +75,7 @@ def tri(N, M=None, k=0, dtype=None):
 
 def tril(m, k=0):
     """
-    Make a copy of a matrix with elements above the k-th diagonal zeroed.
+    Make a copy of a matrix with elements above the kth diagonal zeroed.
 
     Parameters
     ----------
@@ -108,7 +108,7 @@ def tril(m, k=0):
 
 def triu(m, k=0):
     """
-    Make a copy of a matrix with elements below the k-th diagonal zeroed.
+    Make a copy of a matrix with elements below the kth diagonal zeroed.
 
     Parameters
     ----------
@@ -122,7 +122,7 @@ def triu(m, k=0):
     Returns
     -------
     triu : ndarray
-        Return matrix with zeroed elements below the k-th diagonal and has
+        Return matrix with zeroed elements below the kth diagonal and has
         same shape and type as `m`.
 
     Examples
@@ -145,7 +145,7 @@ def toeplitz(c, r=None):
     Construct a Toeplitz matrix.
 
     The Toeplitz matrix has constant diagonals, with c as its first column
-    and r as its first row.  If r is not given, ``r == conjugate(c)`` is
+    and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
     Parameters
@@ -174,7 +174,7 @@ def toeplitz(c, r=None):
     Notes
     -----
     The behavior when `c` or `r` is a scalar, or when `c` is complex and
-    `r` is None, was changed in version 0.8.0.  The behavior in previous
+    `r` is None, was changed in version 0.8.0. The behavior in previous
     versions was undocumented and is no longer supported.
 
     Examples
@@ -195,7 +195,7 @@ def toeplitz(c, r=None):
         r = c.conjugate()
     else:
         r = np.asarray(r).ravel()
-    # Form a 1D array containing a reversed c followed by r[1:] that could be
+    # Form a 1-D array containing a reversed c followed by r[1:] that could be
     # strided to give us toeplitz matrix.
     vals = np.concatenate((c[::-1], r[1:]))
     out_shp = len(c), len(r)
@@ -249,18 +249,18 @@ def hankel(c, r=None):
     Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
-    first column and `r` as its last row.  If `r` is not given, then
+    first column and `r` as its last row. If `r` is not given, then
     `r = zeros_like(c)` is assumed.
 
     Parameters
     ----------
     c : array_like
-        First column of the matrix.  Whatever the actual shape of `c`, it
+        First column of the matrix. Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
     r : array_like, optional
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
-        ``[c[-1], r[1:]]``.  Whatever the actual shape of `r`, it will be
+        ``[c[-1], r[1:]]``. Whatever the actual shape of `r`, it will be
         converted to a 1-D array.
 
     Returns
@@ -292,7 +292,7 @@ def hankel(c, r=None):
         r = np.zeros_like(c)
     else:
         r = np.asarray(r).ravel()
-    # Form a 1D array of values to be used in the matrix, containing `c`
+    # Form a 1-D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
     vals = np.concatenate((c, r[1:]))
     # Stride on concatenated array to get hankel matrix
@@ -303,15 +303,15 @@ def hankel(c, r=None):
 
 def hadamard(n, dtype=int):
     """
-    Construct a Hadamard matrix.
+    Construct an Hadamard matrix.
 
     Constructs an n-by-n Hadamard matrix, using Sylvester's
-    construction.  `n` must be a power of 2.
+    construction. `n` must be a power of 2.
 
     Parameters
     ----------
     n : int
-        The order of the matrix.  `n` must be a power of 2.
+        The order of the matrix. `n` must be a power of 2.
     dtype : dtype, optional
         The data type of the array to be constructed.
 
@@ -413,9 +413,9 @@ def leslie(f, s):
     f = np.atleast_1d(f)
     s = np.atleast_1d(s)
     if f.ndim != 1:
-        raise ValueError("Incorrect shape for f.  f must be one-dimensional")
+        raise ValueError("Incorrect shape for f.  f must be 1D")
     if s.ndim != 1:
-        raise ValueError("Incorrect shape for s.  s must be one-dimensional")
+        raise ValueError("Incorrect shape for s.  s must be 1D")
     if f.size != s.size + 1:
         raise ValueError("Incorrect lengths for f and s.  The length"
                          " of s must be one less than the length of f.")
@@ -491,7 +491,7 @@ def block_diag(*arrs):
     Returns
     -------
     D : ndarray
-        Array with `A`, `B`, `C`, ... on the diagonal.  `D` has the
+        Array with `A`, `B`, `C`, ... on the diagonal. `D` has the
         same dtype as `A`.
 
     Notes
@@ -563,7 +563,7 @@ def companion(a):
     Parameters
     ----------
     a : (N,) array_like
-        1-D array of polynomial coefficients.  The length of `a` must be
+        1-D array of polynomial coefficients. The length of `a` must be
         at least two, and ``a[0]`` must not be zero.
 
     Returns
@@ -619,7 +619,7 @@ def companion(a):
 
 def helmert(n, full=False):
     """
-    Create a Helmert matrix of order `n`.
+    Create an Helmert matrix of order `n`.
 
     This has applications in statistics, compositional or simplicial analysis,
     and in Aitchison geometry.
@@ -704,9 +704,9 @@ def invhilbert(n, exact=False):
     """
     Compute the inverse of the Hilbert matrix of order `n`.
 
-    The entries in the inverse of a Hilbert matrix are integers.  When `n`
+    The entries in the inverse of a Hilbert matrix are integers. When `n`
     is greater than 14, some entries in the inverse exceed the upper limit
-    of 64 bit integers.  The `exact` argument provides two options for
+    of 64 bit integers. The `exact` argument provides two options for
     dealing with these large integers.
 
     Parameters
@@ -716,9 +716,9 @@ def invhilbert(n, exact=False):
     exact : bool, optional
         If False, the data type of the array that is returned is np.float64,
         and the array is an approximation of the inverse.
-        If True, the array is the exact integer inverse array.  To represent
+        If True, the array is the exact integer inverse array. To represent
         the exact inverse when n > 14, the returned array is an object array
-        of long integers.  For n <= 14, the exact inverse is returned as an
+        of long integers. For n <= 14, the exact inverse is returned as an
         array with data type np.int64.
 
     Returns
@@ -726,7 +726,7 @@ def invhilbert(n, exact=False):
     invh : (n, n) ndarray
         The data type of the array is np.float64 if `exact` is False.
         If `exact` is True, the data type is either np.int64 (for n <= 14)
-        or object (for n > 14).  In the latter case, the objects in the
+        or object (for n > 14). In the latter case, the objects in the
         array will be long integers.
 
     See Also
@@ -796,7 +796,7 @@ def pascal(n, kind='symmetric', exact=True):
         If `exact` is True, the result is either an array of type
         numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.special.comb` with `exact=False`.  The result will be a floating
+        `scipy.special.comb` with `exact=False`. The result will be a floating
         point array, and the values in the array will not be the exact
         coefficients, but this version is much faster than `exact=True`.
 
@@ -882,7 +882,7 @@ def invpascal(n, kind='symmetric', exact=True):
         If `exact` is True, the result is either an array of type
         ``numpy.int64`` (if `n` <= 35) or an object array of Python integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.special.comb` with `exact=False`.  The result will be a floating
+        `scipy.special.comb` with `exact=False`. The result will be a floating
         point array, and for large `n`, the values in the array will not be the
         exact coefficients.
 
@@ -978,7 +978,7 @@ def dft(n, scale=None):
     Discrete Fourier transform matrix.
 
     Create the matrix that computes the discrete Fourier transform of a
-    sequence [1]_.  The n-th primitive root of unity used to generate the
+    sequence [1]_. The nth primitive root of unity used to generate the
     matrix is exp(-2*pi*i/n), where i = sqrt(-1).
 
     Parameters
@@ -1139,8 +1139,8 @@ def fiedler_companion(a):
 
     Notes
     -----
-    Similar to `companion` the leading coefficient should be nonzero. In case
-    the leading coefficient is not 1., other coefficients are rescaled before
+    Similar to `companion` the leading coefficient should be nonzero. In the case
+    the leading coefficient is not 1, other coefficients are rescaled before
     the array generation. To avoid numerical issues, it is best to provide a
     monic polynomial.
 
@@ -1172,7 +1172,7 @@ def fiedler_companion(a):
     a = np.atleast_1d(a)
 
     if a.ndim != 1:
-        raise ValueError("Input 'a' must be a 1D array.")
+        raise ValueError("Input 'a' must be a 1-D array.")
 
     if a.size <= 2:
         if a.size == 2:

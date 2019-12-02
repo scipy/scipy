@@ -164,7 +164,7 @@ class orthopoly1d(np.poly1d):
         except AttributeError:
             self.__dict__['coeffs'] *= p
         else:
-            # the coeffs attr is be made private in future versions of numpy
+            # the coeffs attr is be made private in future versions of NumPy
             self._coeffs *= p
 
         evf = self._eval_func
@@ -222,7 +222,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     r"""Gauss-Jacobi quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Jacobi polynomial, :math:`P^{\alpha, \beta}_n(x)`. These sample
     points and weights correctly integrate polynomials of degree
     :math:`2n - 1` or less over the interval :math:`[-1, 1]` with
@@ -352,7 +352,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     """Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     shifted Jacobi polynomial, :math:`G^{p,q}_n(x)`. These sample
     points and weights correctly integrate polynomials of degree
     :math:`2n - 1` or less over the interval :math:`[0, 1]` with
@@ -450,7 +450,7 @@ def sh_jacobi(n, p, q, monic=False):
     x, w, mu0 = roots_sh_jacobi(n1, p, q, mu=True)
     hn = _gam(n + 1) * _gam(n + q) * _gam(n + p) * _gam(n + p - q + 1)
     hn /= (2 * n + p) * (_gam(2 * n + p)**2)
-    # kn = 1.0 in standard form so monic is redundant.  Kept for compatibility.
+    # kn = 1.0 in standard form so monic is redundant. Kept for compatibility.
     kn = 1.0
     pp = orthopoly1d(x, w, hn, kn, wfunc=wfunc, limits=(0, 1), monic=monic,
                      eval_func=lambda x: eval_sh_jacobi(n, p, q, x))
@@ -463,7 +463,7 @@ def roots_genlaguerre(n, alpha, mu=False):
     r"""Gauss-generalized Laguerre quadrature.
 
     Compute the sample points and weights for Gauss-generalized
-    Laguerre quadrature. The sample points are the roots of the n-th
+    Laguerre quadrature. The sample points are the roots of the nth
     degree generalized Laguerre polynomial, :math:`L^{\alpha}_n(x)`.
     These sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[0,
@@ -592,7 +592,7 @@ def roots_laguerre(n, mu=False):
     r"""Gauss-Laguerre quadrature.
 
     Compute the sample points and weights for Gauss-Laguerre
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Laguerre polynomial, :math:`L_n(x)`. These sample points and
     weights correctly integrate polynomials of degree :math:`2n - 1`
     or less over the interval :math:`[0, \infty]` with weight function
@@ -679,10 +679,10 @@ def laguerre(n, monic=False):
 
 
 def roots_hermite(n, mu=False):
-    r"""Gauss-Hermite (physicst's) quadrature.
+    r"""Gauss-Hermite (physicist's) quadrature.
 
     Compute the sample points and weights for Gauss-Hermite
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Hermite polynomial, :math:`H_n(x)`. These sample points and
     weights correctly integrate polynomials of degree :math:`2n - 1`
     or less over the interval :math:`[-\infty, \infty]` with weight
@@ -834,7 +834,7 @@ def _initial_nodes_a(n, k):
 def _initial_nodes_b(n, k):
     r"""Gatteschi initial guesses
 
-    Computes an initial approximation to the square of the `k`-th
+    Computes an initial approximation to the square of the kth
     (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
     of order :math:`n`. The formula is the one from lemma 3.2 in the
     original paper. The guesses are accurate in the region just
@@ -1068,11 +1068,11 @@ def _newton(n, x_initial, maxit=5):
 
 
 def _roots_hermite_asy(n):
-    r"""Gauss-Hermite (physicst's) quadrature for large n.
+    r"""Gauss-Hermite (physicist's) quadrature for large n.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
-    The sample points are the roots of the n-th degree Hermite polynomial,
-    :math:`H_n(x)`.  These sample points and weights correctly integrate
+    The sample points are the roots of the nth degree Hermite polynomial,
+    :math:`H_n(x)`. These sample points and weights correctly integrate
     polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2}`.
 
@@ -1178,7 +1178,7 @@ def roots_hermitenorm(n, mu=False):
     r"""Gauss-Hermite (statistician's) quadrature.
 
     Compute the sample points and weights for Gauss-Hermite
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Hermite polynomial, :math:`He_n(x)`. These sample points and
     weights correctly integrate polynomials of degree :math:`2n - 1`
     or less over the interval :math:`[-\infty, \infty]` with weight
@@ -1305,7 +1305,7 @@ def roots_gegenbauer(n, alpha, mu=False):
     r"""Gauss-Gegenbauer quadrature.
 
     Compute the sample points and weights for Gauss-Gegenbauer
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Gegenbauer polynomial, :math:`C^{\alpha}_n(x)`. These sample
     points and weights correctly integrate polynomials of degree
     :math:`2n - 1` or less over the interval :math:`[-1, 1]` with
@@ -1416,8 +1416,8 @@ def roots_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev
-    quadrature. The sample points are the roots of the n-th degree
-    Chebyshev polynomial of the first kind, :math:`T_n(x)`.  These
+    quadrature. The sample points are the roots of the nth degree
+    Chebyshev polynomial of the first kind, :math:`T_n(x)`. These
     sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[-1, 1]`
     with weight function :math:`w(x) = 1/\sqrt{1 - x^2}`. See 22.2.4
@@ -1519,7 +1519,7 @@ def roots_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Chebyshev polynomial of the second kind, :math:`U_n(x)`. These
     sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[-1, 1]`
@@ -1614,7 +1614,7 @@ def roots_chebyc(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
     Compute the sample points and weights for Gauss-Chebyshev
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Chebyshev polynomial of the first kind, :math:`C_n(x)`. These
     sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[-2, 2]`
@@ -1720,7 +1720,7 @@ def roots_chebys(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
     Compute the sample points and weights for Gauss-Chebyshev
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Chebyshev polynomial of the second kind, :math:`S_n(x)`. These
     sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[-2, 2]`
@@ -1827,7 +1827,7 @@ def roots_sh_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind, shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Chebyshev
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     shifted Chebyshev polynomial of the first kind, :math:`T_n(x)`.
     These sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[0, 1]`
@@ -1907,7 +1907,7 @@ def roots_sh_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind, shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     shifted Chebyshev polynomial of the second kind, :math:`U_n(x)`.
     These sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[0, 1]`
@@ -1991,7 +1991,7 @@ def roots_legendre(n, mu=False):
     r"""Gauss-Legendre quadrature.
 
     Compute the sample points and weights for Gauss-Legendre
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     Legendre polynomial :math:`P_n(x)`. These sample points and
     weights correctly integrate polynomials of degree :math:`2n - 1`
     or less over the interval :math:`[-1, 1]` with weight function
@@ -2100,7 +2100,7 @@ def roots_sh_legendre(n, mu=False):
     r"""Gauss-Legendre (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Legendre
-    quadrature. The sample points are the roots of the n-th degree
+    quadrature. The sample points are the roots of the nth degree
     shifted Legendre polynomial :math:`P^*_n(x)`. These sample points
     and weights correctly integrate polynomials of degree :math:`2n -
     1` or less over the interval :math:`[0, 1]` with weight function

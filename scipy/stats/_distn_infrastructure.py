@@ -429,7 +429,7 @@ class rv_frozen(object):
 
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
-        self.a, self.b = self.dist._get_support(*args, **kwds)
+        self.a, self.b = self.dist._get_support(*shapes)
 
     @property
     def random_state(self):
@@ -2232,6 +2232,8 @@ class rv_continuous(rv_generic):
         penalty applied for samples outside of range of the distribution. The
         returned answer is not guaranteed to be the globally optimal MLE, it
         may only be locally optimal, or the optimization may fail altogether.
+        If the data contain any of np.nan, np.inf, or -np.inf, the fit routine
+        will throw a RuntimeError.
 
         Examples
         --------
@@ -2274,6 +2276,9 @@ class rv_continuous(rv_generic):
         Narg = len(args)
         if Narg > self.numargs:
             raise TypeError("Too many input arguments.")
+
+        if not np.isfinite(data).all():
+            raise RuntimeError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and

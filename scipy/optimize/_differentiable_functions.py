@@ -467,7 +467,7 @@ class VectorFunction(object):
 class LinearVectorFunction(object):
     """Linear vector function and its derivatives.
 
-    Defines a linear function F = A x, where x is n-dimensional vector and
+    Defines a linear function F = A x, where x is N-D vector and
     A is m-by-n matrix. The Jacobian is constant and equals to A. The Hessian
     is identically zero and it is returned as a csr matrix.
     """

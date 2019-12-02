@@ -29,10 +29,10 @@ def has_flag(compiler, flag, ext=None):
 
 
 def get_cxx_std_flag(compiler):
-    """Detects compiler flag for c++14, c++11 or None if not detected"""
-    # GNU C compiler documentation use single dash:
+    """Detects compiler flag for c++14, c++11, or None if not detected"""
+    # GNU C compiler documentation uses single dash:
     #    https://gcc.gnu.org/onlinedocs/gcc/Standards.html
-    # but silently understands two dahes like --std=c++11 too.
+    # but silently understands two dashes, like --std=c++11 too.
     # Other GCC compatible compilers, like Intel C Compiler on Linux do not.
     gnu_flags = ['-std=c++14', '-std=c++11']
     flags_by_cc = {

@@ -218,7 +218,7 @@ class Rotation(object):
     __getitem__
     identity
     random
-    match_vectors
+    align_vectors
 
     See Also
     --------
@@ -365,7 +365,7 @@ class Rotation(object):
     output formats supported, consult the individual method's examples.
 
     """
-    def __init__(self, quat, normalized=False, copy=True):
+    def __init__(self, quat, normalize=True, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
@@ -380,9 +380,7 @@ class Rotation(object):
             quat = quat[None, :]
             self._single = True
 
-        if normalized:
-            self._quat = quat.copy() if copy else quat
-        else:
+        if normalize:
             self._quat = quat.copy()
             norms = scipy.linalg.norm(quat, axis=1)
 
@@ -392,6 +390,8 @@ class Rotation(object):
 
             # Ensure norm is broadcasted along each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
+        else:
+            self._quat = quat.copy() if copy else quat
 
     def __len__(self):
         """Number of rotations contained in this object.
@@ -407,7 +407,7 @@ class Rotation(object):
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, normalized=False):
+    def from_quat(cls, quat, normalized=None):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -416,11 +416,13 @@ class Rotation(object):
         ----------
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion in scalar-last
-            (x, y, z, w) format.
-        normalized : bool, optional
-            If False, input quaternions are normalized to unit norm before
-            being stored. If True, quaternions are assumed to already have
-            unit norm and are stored as given. Default is False.
+            (x, y, z, w) format. Each quaternion will be normalized to unit
+            norm.
+        normalized
+            Deprecated argument. Has no effect, input `quat` is always
+            normalized.
+
+            .. deprecated:: 1.4.0
 
         Returns
         -------
@@ -463,20 +465,18 @@ class Rotation(object):
         >>> r.as_quat().shape
         (1, 4)
 
-        By default, quaternions are normalized before initialization.
+        Quaternions are normalized before initialization.
 
         >>> r = R.from_quat([0, 0, 1, 1])
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
-
-        If unit norms are ensured, skip the normalization step.
-
-        >>> r = R.from_quat([0, 0, 1, 0], normalized=True)
-        >>> r.as_quat()
-        array([0., 0., 1., 0.])
-
         """
-        return cls(quat, normalized)
+        if normalized is not None:
+            warnings.warn("`normalized` is deprecated in scipy 1.4.0 and "
+                          "will be removed in scipy 1.6.0. The input `quat` "
+                          "is always normalized.", DeprecationWarning)
+
+        return cls(quat, normalize=True)
 
     @classmethod
     def from_matrix(cls, matrix):
@@ -607,9 +607,9 @@ class Rotation(object):
         quat /= np.linalg.norm(quat, axis=1)[:, None]
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalize=False, copy=False)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalize=False, copy=False)
 
     @classmethod
     @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
@@ -702,17 +702,17 @@ class Rotation(object):
         quat[:, 3] = np.cos(norms / 2)
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalize=False, copy=False)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalize=False, copy=False)
 
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
         """Initialize from Euler angles.
 
-        Rotations in 3 dimensions can be represented by a sequece of 3
+        Rotations in 3-D can be represented by a sequence of 3
         rotations around a sequence of axes. In theory, any three axes spanning
-        the 3D Euclidean space are enough. In practice the axes of rotation are
+        the 3-D Euclidean space are enough. In practice, the axes of rotation are
         chosen to be the basis vectors.
 
         The three rotations can either be in a global frame of reference
@@ -857,7 +857,7 @@ class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = _elementary_quat_compose(seq, angles, intrinsic)
-        return cls(quat[0] if is_single else quat, normalized=True, copy=False)
+        return cls(quat[0] if is_single else quat, normalize=False, copy=False)
 
     def as_quat(self):
         """Represent as quaternions.
@@ -1403,7 +1403,7 @@ class Rotation(object):
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalized=True, copy=False)
+        return self.__class__(result, normalize=False, copy=False)
 
     def inv(self):
         """Invert this rotation.
@@ -1440,7 +1440,7 @@ class Rotation(object):
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, normalized=True, copy=False)
+        return self.__class__(quat, normalize=False, copy=False)
 
     def magnitude(self):
         """Get the magnitude(s) of the rotation(s).
@@ -1524,7 +1524,7 @@ class Rotation(object):
 
         K = np.dot(weights * self._quat.T, self._quat)
         l, v = np.linalg.eigh(K)
-        return self.__class__(v[:, -1], normalized=True)
+        return self.__class__(v[:, -1], normalize=False)
 
     def reduce(self, left=None, right=None, return_indices=False):
         """Reduce this rotation with the provided rotation groups.
@@ -1558,7 +1558,7 @@ class Rotation(object):
             Indices of elements from `left` and `right` used for reduction.
         """
         if left is None and right is None:
-            reduced = self.__class__(self._quat, normalized=True, copy=True)
+            reduced = self.__class__(self._quat, normalize=False, copy=True)
             if return_indices:
                 return reduced, None, None
             else:
@@ -1700,7 +1700,7 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         """
-        return self.__class__(self._quat[indexer], normalized=True)
+        return self.__class__(self._quat[indexer], normalize=False)
 
     @classmethod
     def identity(cls, num=None):
@@ -1724,7 +1724,7 @@ class Rotation(object):
         else:
             q = np.zeros((num, 4))
             q[:, 3] = 1
-        return cls(q, normalized=True)
+        return cls(q, normalize=False)
 
     @classmethod
     def random(cls, num=None, random_state=None):
@@ -1775,63 +1775,11 @@ class Rotation(object):
         return cls(sample)
 
     @classmethod
+    @np.deprecate(message="match_vectors is deprecated in favor of "
+                          "align_vectors in scipy 1.4.0 and will be removed "
+                          "in scipy 1.6.0")
     def match_vectors(cls, a, b, weights=None, normalized=False):
-        """Estimate a rotation to match two sets of vectors.
-
-        Find a rotation between frames A and B which best matches a set of unit
-        vectors `a` and `b` observed in these frames. The following loss
-        function is minimized to solve for the rotation matrix
-        :math:`C`:
-
-        .. math::
-
-            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
-            C \\mathbf{b}_i \\rVert^2 ,
-
-        where :math:`w_i`'s are the `weights` corresponding to each vector.
-
-        The rotation is estimated using Markley's SVD method [1]_.
-
-        Parameters
-        ----------
-        a : array_like, shape (N, 3)
-            Vector components observed in initial frame A. Each row of `a`
-            denotes a vector.
-        b : array_like, shape (N, 3)
-            Vector components observed in another frame B. Each row of `b`
-            denotes a vector.
-        weights : array_like shape (N,), optional
-            Weights describing the relative importance of the vectors in
-            `a`. If None (default), then all values in `weights` are assumed to
-            be equal.
-        normalized : bool, optional
-            If True, assume input vectors `a` and `b` to have unit norm. If
-            False, normalize `a` and `b` before estimating rotation. Default
-            is False.
-
-        Returns
-        -------
-        estimated_rotation : `Rotation` instance
-            Best estimate of the rotation that transforms `b` to `a`.
-        sensitivity_matrix : ndarray, shape (3, 3)
-            Scaled covariance of the attitude errors expressed as the small
-            rotation vector of frame A. Multiply with harmonic mean [3]_ of
-            variance in each observation to get true covariance matrix. The
-            error model is detailed in [2]_.
-
-        References
-        ----------
-        .. [1] F. Landis Markley,
-                "Attitude determination using vector observations: a fast
-                optimal matrix algorithm", Journal of Astronautical Sciences,
-                Vol. 41, No.2, 1993, pp. 261-280.
-        .. [2] F. Landis Markley,
-                "Attitude determination using vector observations and the
-                Singular Value Decomposition", Journal of Astronautical
-                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-
-        """
+        """Deprecated in favor of `align_vectors`."""
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
             raise ValueError("Expected input `a` to have shape (N, 3), "
@@ -1888,6 +1836,136 @@ class Rotation(object):
         sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
                        (zeta * a.shape[0]))
         return cls.from_matrix(C), sensitivity
+
+    @classmethod
+    def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
+        """Estimate a rotation to optimally align two sets of vectors.
+
+        Find a rotation between frames A and B which best aligns a set of
+        vectors `a` and `b` observed in these frames. The following loss
+        function is minimized to solve for the rotation matrix
+        :math:`C`:
+
+        .. math::
+
+            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
+            C \\mathbf{b}_i \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each vector.
+
+        The rotation is estimated with Kabsch algorithm [1]_.
+
+        Parameters
+        ----------
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the vector
+            observations. If None (default), then all values in `weights` are
+            assumed to be 1.
+        return_sensitivity : bool, optional
+            Whether to return the sensitivity matrix. See Notes for details.
+            Default is False.
+
+        Returns
+        -------
+        estimated_rotation : `Rotation` instance
+            Best estimate of the rotation that transforms `b` to `a`.
+        rmsd : float
+            Root mean square distance (weighted) between the given set of
+            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
+            where ``minimum_loss`` is the loss function evaluated for the
+            found optimal rotation.
+        sensitivity_matrix : ndarray, shape (3, 3)
+            Sensitivity matrix of the estimated rotation estimate as explained
+            in Notes. Returned only when `return_sensitivity` is True.
+
+        Notes
+        -----
+        This method can also compute the sensitivity of the estimated rotation
+        to small perturbations of the vector measurements. Specifically we
+        consider the rotation estimate error as a small rotation vector of
+        frame A. The sensitivity matrix is proportional to the covariance of
+        this rotation vector assuming that the vectors in `a` was measured with
+        errors significantly less than their lengths. To get the true
+        covariance matrix, the returned sensitivity matrix must be multiplied
+        by harmonic mean [3]_ of variance in each observation. Note that
+        `weights` are supposed to be inversely proportional to the observation
+        variances to get consistent results. For example, if all vectors are
+        measured with the same accuracy of 0.01 (`weights` must be all equal),
+        then you should multiple the sensitivity matrix by 0.01**2 to get the
+        covariance.
+
+        Refer to [2]_ for more rigorous discussion of the covariance
+        estimation.
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
+        .. [2] F. Landis Markley,
+                "Attitude determination using vector observations: a fast
+                optimal matrix algorithm", Journal of Astronautical Sciences,
+                Vol. 41, No.2, 1993, pp. 261-280.
+        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
+        """
+        a = np.asarray(a)
+        if a.ndim != 2 or a.shape[-1] != 3:
+            raise ValueError("Expected input `a` to have shape (N, 3), "
+                             "got {}".format(a.shape))
+        b = np.asarray(b)
+        if b.ndim != 2 or b.shape[-1] != 3:
+            raise ValueError("Expected input `b` to have shape (N, 3), "
+                             "got {}.".format(b.shape))
+
+        if a.shape != b.shape:
+            raise ValueError("Expected inputs `a` and `b` to have same shapes"
+                             ", got {} and {} respectively.".format(
+                                a.shape, b.shape))
+
+        if weights is None:
+            weights = np.ones(len(b))
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != b.shape[0]:
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of input vectors, got "
+                                 "{} values and {} vectors.".format(
+                                    weights.shape[0], b.shape[0]))
+
+        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
+        u, s, vh = np.linalg.svd(B)
+
+        # Correct improper rotation if necessary (as in Kabsch algorithm)
+        if np.linalg.det(u @ vh) < 0:
+            s[-1] = -s[-1]
+            u[:, -1] = -u[:, -1]
+
+        C = np.dot(u, vh)
+
+        if s[1] + s[2] < 1e-16 * s[0]:
+            warnings.warn("Optimal rotation is not uniquely or poorly defined "
+                          "for the given sets of vectors.")
+
+        rmsd = np.sqrt(max(
+            np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
+            0))
+
+        if return_sensitivity:
+            zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
+            kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                sensitivity = np.mean(weights) / zeta * (
+                        kappa * np.eye(3) + np.dot(B, B.T))
+            return cls.from_matrix(C), rmsd, sensitivity
+        else:
+            return cls.from_matrix(C), rmsd
 
 
 class Slerp(object):

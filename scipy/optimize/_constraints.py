@@ -278,7 +278,7 @@ def new_bounds_to_old(lb, ub, n):
     """Convert the new bounds representation to the old one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, i-th containing lower and upper bound on a i-th
+    containing n tuples, ith containing lower and upper bound on a ith
     variable.
     If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
     None.
@@ -300,7 +300,7 @@ def old_bound_to_new(bounds):
     """Convert the old bounds representation to the new one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, i-th containing lower and upper bound on a i-th
+    containing n tuples, ith containing lower and upper bound on a ith
     variable.
     If any of the entries in lb/ub are None they are replaced by
     -np.inf/np.inf.

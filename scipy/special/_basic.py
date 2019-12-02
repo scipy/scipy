@@ -167,7 +167,7 @@ def diric(x, n):
     array([ 3.        ,  2.41421356,  1.        ,  0.41421356,  1.        ,
             0.41421356,  1.        ,  2.41421356])
 
-    Now find the same values (up to sign) using `diric`.  We multiply
+    Now find the same values (up to sign) using `diric`. We multiply
     by `k` to account for the different scaling conventions of
     `numpy.fft.fft` and `diric`:
 

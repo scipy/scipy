@@ -12,8 +12,9 @@ import os
 import sys
 import warnings
 from collections import namedtuple
+import multiprocessing
 
-from numpy.testing import (assert_, assert_equal,
+from numpy.testing import (dec, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns)
@@ -175,6 +176,7 @@ class TestCorrPearsonr(object):
         other variables.  The same should go for SPEARMAN correlations, if
         your program has them.
     """
+
     def test_pXX(self):
         y = stats.pearsonr(X,X)
         r = y[0]
@@ -420,6 +422,7 @@ class TestFisherExact(object):
     > phyper(18999, 99000, 110000, 39000, lower.tail = FALSE)
     [1] 1.701815e-09
     """
+
     def test_basic(self):
         fisher_exact = stats.fisher_exact
 
@@ -545,6 +548,7 @@ class TestCorrSpearmanr(object):
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
     """
+
     def test_scalar(self):
         y = stats.spearmanr(4., 2.)
         assert_(np.isnan(y).all())
@@ -1844,6 +1848,7 @@ class _numpy_version_warn_context_mgr(object):
     This manager does not apply for cases where the old code returns
     different values.
     """
+
     def __init__(self, min_numpy_version, warning_type, num_warnings):
         if NumpyVersion(np.__version__) < min_numpy_version:
             self.numpy_is_old = True
@@ -4978,6 +4983,7 @@ class TestBrunnerMunzel(object):
 class TestRatioUniforms(object):
     """ Tests for rvs_ratio_uniforms.
     """
+
     def test_rv_generation(self):
         # use KS test to check distribution of rvs
         # normal distribution
@@ -5104,3 +5110,169 @@ class TestEppsSingleton(object):
         res = stats.epps_singleton_2samp(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+
+class TestMGCErrorWarnings(object):
+    """ Tests errors and warnings derived from MGC.
+    """
+    def test_error_notndarray(self):
+        # raises error if x or y is not a ndarray
+        x = np.arange(20)
+        y = [5] * 20
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+        assert_raises(ValueError, stats.multiscale_graphcorr, y, x)
+
+    def test_error_shape(self):
+        # raises error if number of samples different (n)
+        x = np.arange(100).reshape(25, 4)
+        y = x.reshape(10, 10)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+
+    def test_error_lowsamples(self):
+        # raises error if samples are low (< 3)
+        x = np.arange(3)
+        y = np.arange(3)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+
+    def test_error_nans(self):
+        # raises error if inputs contain NaNs
+        x = np.arange(20, dtype=float)
+        x[0] = np.nan
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, x)
+
+        y = np.arange(20)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+
+    def test_error_wrongdisttype(self):
+        # raises error if compute_distance is not a function
+        x = np.arange(20)
+        compute_distance = 0
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
+                      compute_distance=compute_distance)
+
+    @pytest.mark.parametrize("reps", [
+        -1,    # reps is negative
+        '1',   # reps is not integer
+    ])
+    def test_error_reps(self, reps):
+        # raises error if reps is negative
+        x = np.arange(20)
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, x, reps=reps)
+
+    def test_warns_reps(self):
+        # raises warning when reps is less than 1000
+        x = np.arange(20)
+        reps = 100
+        assert_warns(RuntimeWarning, stats.multiscale_graphcorr, x, x, reps=reps)
+
+    def test_error_infty(self):
+        # raises error if input contains infinities
+        x = np.arange(20)
+        y = np.ones(20) * np.inf
+        assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
+
+
+class TestMGCStat(object):
+    """ Test validity of MGC test statistic
+    """
+    def _simulations(self, samps=100, dims=1, sim_type=""):
+        # linear simulation
+        if sim_type == "linear":
+            x = np.random.uniform(-1, 1, size=(samps, 1))
+            y = x + 0.3 * np.random.random_sample(size=(x.size, 1))
+
+        # spiral simulation
+        elif sim_type == "nonlinear":
+            unif = np.array(np.random.uniform(0, 5, size=(samps, 1)))
+            x = unif * np.cos(np.pi * unif)
+            y = unif * np.sin(np.pi * unif) + (0.4
+                * np.random.random_sample(size=(x.size, 1)))
+
+        # independence (tests type I simulation)
+        elif sim_type == "independence":
+            u = np.random.normal(0, 1, size=(samps, 1))
+            v = np.random.normal(0, 1, size=(samps, 1))
+            u_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
+            v_2 = np.random.binomial(1, p=0.5, size=(samps, 1))
+            x = u/3 + 2*u_2 - 1
+            y = v/3 + 2*v_2 - 1
+
+        # raises error if not approved sim_type
+        else:
+            raise ValueError("sim_type must be linear, nonlinear, or "
+                             "independence")
+
+        # add dimensions of noise for higher dimensions
+        if dims > 1:
+            dims_noise = np.random.normal(0, 1, size=(samps, dims-1))
+            x = np.concatenate((x, dims_noise), axis=1)
+
+        return x, y
+
+    @dec.slow
+    @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
+        ("linear", 0.97, 1/1000),           # test linear simulation
+        ("nonlinear", 0.163, 1/1000),       # test spiral simulation
+        ("independence", -0.0094, 0.78)     # test independence simulation
+    ])
+    def test_oned(self, sim_type, obs_stat, obs_pvalue):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type=sim_type)
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
+        assert_approx_equal(stat, obs_stat, significant=1)
+        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+
+    @dec.slow
+    @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
+        ("linear", 0.184, 1/1000),           # test linear simulation
+        ("nonlinear", 0.0190, 0.117),        # test spiral simulation
+    ])
+    def test_fived(self, sim_type, obs_stat, obs_pvalue):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=5, sim_type=sim_type)
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
+        assert_approx_equal(stat, obs_stat, significant=1)
+        assert_approx_equal(pvalue, obs_pvalue, significant=1)
+
+    @dec.slow
+    def test_twosamp(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x = np.random.binomial(100, 0.5, size=(100, 5))
+        y = np.random.normal(0, 1, size=(80, 5))
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y)
+        assert_approx_equal(stat, 1.0, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
+        # generate x and y
+        y = np.random.normal(0, 1, size=(100, 5))
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True)
+        assert_approx_equal(stat, 1.0, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
+    @pytest.mark.skipif(multiprocessing.get_start_method() != 'fork',
+                        reason=('multiprocessing with spawn method is not'
+                                ' compatible with pytest.'))
+    def test_workers(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, workers=2)
+        assert_approx_equal(stat, 0.97, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)

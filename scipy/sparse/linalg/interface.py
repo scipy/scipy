@@ -47,7 +47,7 @@ import warnings
 import numpy as np
 
 from scipy.sparse import isspmatrix
-from scipy.sparse.sputils import isshape, isintlike, asmatrix
+from scipy.sparse.sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 
@@ -801,7 +801,7 @@ def aslinearoperator(A):
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
-    elif isspmatrix(A):
+    elif isspmatrix(A) or is_pydata_spmatrix(A):
         return MatrixLinearOperator(A)
 
     else:
