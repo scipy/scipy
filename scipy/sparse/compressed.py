@@ -21,7 +21,7 @@ from ._index import IndexMixin
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, isintlike, get_index_dtype,
                       downcast_intp_index, get_sum_dtype, check_shape,
-                      matrix, asmatrix)
+                      matrix, asmatrix, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -233,13 +233,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif isdense(other):
             return self.todense() == other
         # Sparse other.
-        elif isspmatrix(other):
+        elif isspmatrix(other) or is_pydata_spmatrix(other):
             warn("Comparing sparse matrices using == is inefficient, try using"
                  " != instead.", SparseEfficiencyWarning, stacklevel=3)
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 return False
-            elif self.format != other.format:
+            if is_pydata_spmatrix(other):
+                other = other.to_scipy_sparse()
+            if self.format != other.format:
                 other = other.asformat(self.format)
             res = self._binopt(other, '_ne_')
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
@@ -268,11 +270,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif isdense(other):
             return self.todense() != other
         # Sparse other.
-        elif isspmatrix(other):
+        elif isspmatrix(other) or is_pydata_spmatrix(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 return True
-            elif self.format != other.format:
+            if is_pydata_spmatrix(other):
+                other = other.to_scipy_sparse()
+            if self.format != other.format:
                 other = other.asformat(self.format)
             return self._binopt(other, '_ne_')
         else:
