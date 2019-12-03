@@ -4411,7 +4411,7 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     mapwrapper = MapWrapper(workers)
     random_state = check_random_state(random_state)
     seeds = random_state.permutation(np.arange(reps))
-    random_states = [check_random_state(seeds[i]) for i in range(reps)]
+    random_states = [check_random_state(seeds) for seed in seeds]
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance,
                            random_states=random_states)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
