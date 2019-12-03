@@ -2830,7 +2830,6 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> plt.show()
     """
     x = np.asarray(x)
-    X = sp_fft.fft(x, axis=axis)
     Nx = x.shape[axis]
 
     # Check if we can use faster real FFT
