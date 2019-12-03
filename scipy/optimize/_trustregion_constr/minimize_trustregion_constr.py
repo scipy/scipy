@@ -433,7 +433,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 1
             elif state.tr_radius < xtol:
                 state.status = 2
-            elif state.nit > maxiter:
+            elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
@@ -472,7 +472,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):
                 state.status = 2
-            elif state.nit > maxiter:
+            elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 
