@@ -6,7 +6,8 @@ __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
 @_dispatch
-def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -17,21 +18,25 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     s : int or array_like of ints or None, optional
-        The shape of the result.  If both `s` and `axes` (see below) are None,
+        The shape of the result. If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
         ``scipy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes over which the DCT is computed.  If not given, the last ``len(s)``
+        Axes over which the DCT is computed. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -59,7 +64,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+          workers=None):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -73,18 +79,22 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         The shape of the result.  If both `s` and `axes` (see below) are
         None, `s` is ``x.shape``; if `s` is None but `axes` is
         not None, then `s` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes over which the IDCT is computed.  If not given, the last ``len(s)``
+        Axes over which the IDCT is computed. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -112,7 +122,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -126,18 +137,22 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
         ``scipy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
         If any element of `shape` is -1, the size of the corresponding dimension
         of `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes over which the DST is computed.  If not given, the last ``len(s)``
+        Axes over which the DST is computed. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -165,7 +180,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
+def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+          workers=None):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -179,18 +195,22 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
         ``scipy.take(x.shape, axes, axis=0)``.
-        If ``s[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``s[i] < x.shape[i]``, the i-th dimension is truncated to length
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
         If any element of `s` is -1, the size of the corresponding dimension of
         `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes over which the IDST is computed.  If not given, the last ``len(s)``
+        Axes over which the IDST is computed. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -218,7 +238,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     r"""
     Return the Discrete Cosine Transform of arbitrary type sequence x.
 
@@ -239,6 +259,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -258,8 +282,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     ``1/N`` where ``N`` is the "logical" size of the DCT. For ``norm='ortho'``
     both directions are scaled by the same factor ``1/sqrt(N)``.
 
-    There are theoretically 8 types of the DCT, only the first 4 types are
-    implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
+    There are, theoretically, 8 types of the DCT, only the first 4 types are
+    implemented in SciPy.'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
 
     **Type I**
@@ -301,7 +325,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
        \sqrt{\frac{1}{4N}} & \text{if }k=0, \\
        \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
 
-    Which makes the corresponding matrix of coefficients orthonormal
+    which makes the corresponding matrix of coefficients orthonormal
     (``O @ O.T = np.eye(N)``).
 
     **Type III**
@@ -350,7 +374,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Examples
     --------
     The Type 1 DCT is equivalent to the FFT (though faster) for real,
-    even-symmetrical inputs.  The output is also real and even-symmetrical.
+    even-symmetrical inputs. The output is also real and even-symmetrical.
     Half of the FFT input is used to generate half of the FFT output:
 
     >>> from scipy.fft import fft, dct
@@ -364,7 +388,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
 
@@ -385,6 +410,10 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -409,7 +438,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Examples
     --------
     The Type 1 DCT is equivalent to the DFT for real, even-symmetrical
-    inputs.  The output is also real and even-symmetrical.  Half of the IFFT
+    inputs. The output is also real and even-symmetrical. Half of the IFFT
     input is used to generate half of the IFFT output:
 
     >>> from scipy.fft import ifft, idct
@@ -423,7 +452,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     r"""
     Return the Discrete Sine Transform of arbitrary type sequence x.
 
@@ -434,7 +463,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        Length of the transform. If ``n < x.shape[axis]``, `x` is
         truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
         default results in ``n = x.shape[axis]``.
     axis : int, optional
@@ -444,6 +473,10 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------
@@ -463,9 +496,9 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     ``norm='ortho'`` both directions are scaled by the same factor
     ``1/sqrt(N)``.
 
-    There are theoretically 8 types of the DST for different combinations of
+    There are, theoretically, 8 types of the DST for different combinations of
     even/odd boundary conditions and boundary off sets [1]_, only the first
-    4 types are implemented in scipy.
+    4 types are implemented in SciPy.
 
     **Type I**
 
@@ -536,7 +569,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
+         workers=None):
     """
     Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
 
@@ -547,7 +581,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        Length of the transform. If ``n < x.shape[axis]``, `x` is
         truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
         default results in ``n = x.shape[axis]``.
     axis : int, optional
@@ -557,6 +591,10 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
 
     Returns
     -------

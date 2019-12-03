@@ -22,7 +22,7 @@ class _Interpolator1D(object):
     """
     Common features in univariate interpolation
 
-    Deal with input data type and interpolation axis rolling.  The
+    Deal with input data type and interpolation axis rolling. The
     actual interpolator can assume the y-data is of shape (n, r) where
     `n` is the number of x-points, and `r` the number of variables,
     and use self.dtype as the y-data type.
@@ -92,7 +92,7 @@ class _Interpolator1D(object):
         return x.ravel(), x_shape
 
     def _finish_y(self, y, x_shape):
-        """Reshape interpolated y back to n-d array similar to initial y"""
+        """Reshape interpolated y back to an N-D array similar to initial y"""
         y = y.reshape(x_shape + self._y_extra_shape)
         if self._y_axis != 0 and x_shape != ():
             nx = len(x_shape)
@@ -159,7 +159,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         Returns
         -------
         d : ndarray
-            Array with derivatives; d[j] contains the j-th derivative.
+            Array with derivatives; d[j] contains the jth derivative.
             Shape of d[j] is determined by replacing the interpolation
             axis in the original array with the shape of x.
 
@@ -203,7 +203,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         Returns
         -------
         d : ndarray
-            Derivative interpolated at the x-points.  Shape of d is
+            Derivative interpolated at the x-points. Shape of d is
             determined by replacing the interpolation axis in the
             original array with the shape of x.
 
@@ -247,7 +247,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     Be aware that the algorithms implemented here are not necessarily
     the most numerically stable known. Moreover, even in a world of
     exact computation, unless the x coordinates are chosen very
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
     polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon. In general, even with well-chosen
     x values, degrees higher than about thirty cause problems with
@@ -366,7 +366,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     xi : array_like
         Known x-coordinates.
     yi : array_like
-        Known y-coordinates, of shape ``(xi.size, R)``.  Interpreted as
+        Known y-coordinates, of shape ``(xi.size, R)``. Interpreted as
         vectors of length R, or scalars if R=1.
     x : array_like
         Point or points at which to evaluate the derivatives.
@@ -381,7 +381,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     Returns
     -------
     d : ndarray
-        If the interpolator's values are R-dimensional then the
+        If the interpolator's values are R-D then the
         returned array will be the number of derivatives by N by R.
         If `x` is a scalar, the middle dimension will be dropped; if
         the `yi` are scalars then the last dimension will be dropped.
@@ -477,7 +477,7 @@ class BarycentricInterpolator(_Interpolator1D):
     Parameters
     ----------
     xi : array_like
-        1-d array of x coordinates of the points the polynomial
+        1-D array of x coordinates of the points the polynomial
         should pass through
     yi : array_like, optional
         The y coordinates of the points the polynomial should pass through.
@@ -491,7 +491,7 @@ class BarycentricInterpolator(_Interpolator1D):
     the problem as a special case of rational function interpolation.
     This algorithm is quite stable, numerically, but even in a world of
     exact computation, unless the x coordinates are chosen very
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
     polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon.
 
@@ -629,14 +629,14 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     the problem as a special case of rational function interpolation.
     This algorithm is quite stable, numerically, but even in a world of
     exact computation, unless the `x` coordinates are chosen very
-    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
     polynomial interpolation itself is a very ill-conditioned process
     due to the Runge phenomenon.
 
     Parameters
     ----------
     xi : array_like
-        1-d array of x coordinates of the points the polynomial should
+        1-D array of x coordinates of the points the polynomial should
         pass through
     yi : array_like
         The y coordinates of the points the polynomial should pass through.

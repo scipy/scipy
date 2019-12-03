@@ -16,16 +16,16 @@ rules for what is and isn't public in Python are:
 - Methods / functions / classes and module attributes whose names begin with a
   leading underscore are private.
 
-- If a class name begins with a leading underscore none of its members are
+- If a class name begins with a leading underscore, none of its members are
   public, whether or not they begin with a leading underscore.
 
 - If a module name in a package begins with a leading underscore none of
   its members are public, whether or not they begin with a leading underscore.
 
-- If a module or package defines ``__all__`` that authoritatively defines the
+- If a module or package defines ``__all__``, that authoritatively defines the
   public interface.
 
-- If a module or package doesn't define ``__all__`` then all names that don't
+- If a module or package doesn't define ``__all__``, then all names that don't
   start with a leading underscore are public.
 
 .. note:: Reading the above guidelines one could draw the conclusion that every
@@ -34,7 +34,7 @@ rules for what is and isn't public in Python are:
           the absence of underscores do not mark something as public.
 
 In SciPy there are modules whose names don't start with an underscore, but that
-should be considered private.  To clarify which modules these are we define
+should be considered private. To clarify which modules these are, we define
 below what the public API is for SciPy, and give some recommendations for how
 to import modules/functions/objects from SciPy.
 
@@ -61,7 +61,7 @@ stdlib)::
   from scipy import integrate
   import scipy.io as spio
 
-In some cases, the public API is one level deeper.  For example the
+In some cases, the public API is one level deeper.  For example, the
 ``scipy.sparse.linalg`` module is public, and the functions it contains are not
 available in the ``scipy.sparse`` namespace.  Sometimes it may result in more
 easily understandable code if functions are imported from one level deeper.
@@ -76,16 +76,16 @@ distribution if the second form is chosen::
   from scipy.stats import distributions
   distributions.lomax(...)
 
-In that case the second form can be chosen, **if** it is documented in the next
+In that case, the second form can be chosen **if** it is documented in the next
 section that the submodule in question is public.
 
 
 API definition
 --------------
 
-Every submodule listed below is public.  That means that these submodules are
+Every submodule listed below is public. That means that these submodules are
 unlikely to be renamed or changed in an incompatible way, and if that is
-necessary a deprecation warning will be raised for one SciPy release before the
+necessary, a deprecation warning will be raised for one SciPy release before the
 change is made.
 
 * `scipy.cluster`
@@ -159,8 +159,8 @@ following, a *SciPy module* is defined as a Python package, say
 
 * Ideally, each SciPy module should be as self-contained as possible.
   That is, it should have minimal dependencies on other packages or
-  modules.  Even dependencies on other SciPy modules should be kept to
-  a minimum.  A dependency on NumPy is of course assumed.
+  modules. Even dependencies on other SciPy modules should be kept to
+  a minimum. A dependency on NumPy is of course assumed.
 
 * Directory ``yyy/`` contains:
 
@@ -187,7 +187,7 @@ following, a *SciPy module* is defined as a Python package, say
   module.
 
   Tutorial-style documentation with extensive examples should be
-  separate, and put under ``doc/source/tutorial/``
+  separate and put under ``doc/source/tutorial/``.
 
 See the existing SciPy submodules for guidance.
 

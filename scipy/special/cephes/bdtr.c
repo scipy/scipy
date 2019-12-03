@@ -166,7 +166,7 @@ double p;
 
     if (n < k) {
       domerr:
-	mtherr("bdtrc", DOMAIN);
+	sf_error("bdtrc", SF_ERROR_DOMAIN, NULL);
 	return NPY_NAN;
     }
 
@@ -198,7 +198,7 @@ double p;
 	goto domerr;
     if ((k < 0) || (n < k)) {
       domerr:
-	mtherr("bdtr", DOMAIN);
+	sf_error("bdtr", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -227,7 +227,7 @@ double y;
 	goto domerr;
     if ((k < 0) || (n <= k)) {
       domerr:
-	mtherr("bdtri", DOMAIN);
+	sf_error("bdtri", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 

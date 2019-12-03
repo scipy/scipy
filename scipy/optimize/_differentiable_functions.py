@@ -146,14 +146,14 @@ class ScalarFunction(object):
                 self.x_prev = self.x
                 self.g_prev = self.g
 
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -191,6 +191,13 @@ class ScalarFunction(object):
             self._update_x_impl(x)
         self._update_hess()
         return self.H
+
+    def fun_and_grad(self, x):
+        if not np.array_equal(x, self.x):
+            self._update_x_impl(x)
+        self._update_fun()
+        self._update_grad()
+        return self.f, self.g
 
 
 class VectorFunction(object):
@@ -398,14 +405,14 @@ class VectorFunction(object):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = x
+                self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -457,7 +464,7 @@ class VectorFunction(object):
 class LinearVectorFunction(object):
     """Linear vector function and its derivatives.
 
-    Defines a linear function F = A x, where x is n-dimensional vector and
+    Defines a linear function F = A x, where x is N-D vector and
     A is m-by-n matrix. The Jacobian is constant and equals to A. The Hessian
     is identically zero and it is returned as a csr matrix.
     """
@@ -483,7 +490,7 @@ class LinearVectorFunction(object):
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = x
+            self.x = np.atleast_1d(x).astype(float)
             self.f_updated = False
 
     def fun(self, x):

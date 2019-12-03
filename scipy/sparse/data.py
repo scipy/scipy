@@ -136,7 +136,7 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             return self._with_data(result, copy=True)
 
         method.__doc__ = ("Element-wise %s.\n\n"
-                          "See numpy.%s for more information." % (name, name))
+                          "See `numpy.%s` for more information." % (name, name))
         method.__name__ = name
 
         return method
@@ -298,7 +298,7 @@ class _minmax_mixin(object):
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
             compute the maximum over all the matrix elements, returning
-            a scalar (i.e. `axis` = `None`).
+            a scalar (i.e., `axis` = `None`).
 
         out : None, optional
             This argument is in the signature *solely* for NumPy
@@ -330,7 +330,7 @@ class _minmax_mixin(object):
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
             compute the minimum over all the matrix elements, returning
-            a scalar (i.e. `axis` = `None`).
+            a scalar (i.e., `axis` = `None`).
 
         out : None, optional
             This argument is in the signature *solely* for NumPy

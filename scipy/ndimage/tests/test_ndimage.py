@@ -32,6 +32,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import sys
+import platform
 
 import numpy
 from numpy import fft
@@ -1938,7 +1939,7 @@ class TestNdimage:
         for order in range(0, 6):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 out1 = ndimage.affine_transform(data, [2], -1, order=order)
             out2 = ndimage.affine_transform(data, [[2]], -1, order=order)
             assert_array_almost_equal(out1, out2)
@@ -1949,7 +1950,7 @@ class TestNdimage:
         for order in range(0, 6):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 out1 = ndimage.affine_transform(data, [0.5], -1, order=order)
             out2 = ndimage.affine_transform(data, [[0.5]], -1, order=order)
             assert_array_almost_equal(out1, out2)
@@ -1998,7 +1999,7 @@ class TestNdimage:
                     data.dtype, data.dtype.newbyteorder()]:
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 returned = ndimage.affine_transform(data, [1, 1], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [[1, 1], [1, 1]])
@@ -2130,7 +2131,7 @@ class TestNdimage:
         for order in range(0, 6):
             with suppress_warnings() as sup:
                 sup.filter(UserWarning,
-                           "The behaviour of affine_transform with a one-dimensional array .* has changed")
+                           "The behavior of affine_transform with a 1-D array .* has changed")
                 out = ndimage.affine_transform(data, [0.5, 0.5], 0,
                                                (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)

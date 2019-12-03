@@ -38,7 +38,7 @@ def lombscargle(x,
     When *normalize* is True the computed periodogram is normalized by
     the residuals of the data around a constant reference model (at zero).
 
-    Input arrays should be one-dimensional and will be cast to float64.
+    Input arrays should be 1-D and will be cast to float64.
 
     Parameters
     ----------

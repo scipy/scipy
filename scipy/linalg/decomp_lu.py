@@ -56,14 +56,13 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     Examples
     --------
     >>> from scipy.linalg import lu_factor
-    >>> from numpy import tril, triu, allclose, zeros, eye
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> lu, piv = lu_factor(A)
     >>> piv
     array([2, 2, 3, 3], dtype=int32)
-    
-    Convert LAPACK's ``piv`` array to NumPy index and test the permutation 
-    
+
+    Convert LAPACK's ``piv`` array to NumPy index and test the permutation
+
     >>> piv_py = [2, 0, 3, 1]
     >>> L, U = np.tril(lu, k=-1) + np.eye(4), np.triu(lu)
     >>> np.allclose(A[piv_py] - L @ U, np.zeros((4, 4)))
@@ -79,7 +78,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of '
+        raise ValueError('illegal value in %dth argument of '
                          'internal getrf (lu_factor)' % -info)
     if info > 0:
         warn("Diagonal number %d is exactly zero. Singular matrix." % info,
@@ -146,7 +145,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
     if info == 0:
         return x
-    raise ValueError('illegal value in %d-th argument of internal gesv|posv'
+    raise ValueError('illegal value in %dth argument of internal gesv|posv'
                      % -info)
 
 
@@ -166,7 +165,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     a : (M, N) array_like
         Array to decompose
     permute_l : bool, optional
-        Perform the multiplication P*L  (Default: do not permute)
+        Perform the multiplication P*L (Default: do not permute)
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
     check_finite : bool, optional
@@ -217,7 +216,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     flu, = get_flinalg_funcs(('lu',), (a1,))
     p, l, u, info = flu(a1, permute_l=permute_l, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of '
+        raise ValueError('illegal value in %dth argument of '
                          'internal lu.getrf' % -info)
     if permute_l:
         return l, u

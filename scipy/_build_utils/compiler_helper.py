@@ -29,11 +29,16 @@ def has_flag(compiler, flag, ext=None):
 
 
 def get_cxx_std_flag(compiler):
-    """Detects compiler flag for c++14, c++11 or None if not detected"""
-    gnu_flags = ['--std=c++14', '--std=c++11']
+    """Detects compiler flag for c++14, c++11, or None if not detected"""
+    # GNU C compiler documentation uses single dash:
+    #    https://gcc.gnu.org/onlinedocs/gcc/Standards.html
+    # but silently understands two dashes, like --std=c++11 too.
+    # Other GCC compatible compilers, like Intel C Compiler on Linux do not.
+    gnu_flags = ['-std=c++14', '-std=c++11']
     flags_by_cc = {
         'msvc': ['/std:c++14', None],
-        'intelw': ['/Qstd=c++14', '/Qstd=c++11']
+        'intelw': ['/Qstd=c++14', '/Qstd=c++11'],
+        'intelem': ['-std=c++14', '-std=c++11']
     }
     flags = flags_by_cc.get(compiler.compiler_type, gnu_flags)
 

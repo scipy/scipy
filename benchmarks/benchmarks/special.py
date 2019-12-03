@@ -31,7 +31,7 @@ class Airy(Benchmark):
 
 class Erf(Benchmark):
     def setup(self, *args):
-        self.rand = np.random.rand(1e5)
+        self.rand = np.random.rand(100000)
 
     def time_real(self, offset):
         erf(self.rand + offset)

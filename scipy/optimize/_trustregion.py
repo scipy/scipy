@@ -16,7 +16,7 @@ class BaseQuadraticSubproblem(object):
     Base/abstract class defining the quadratic model for trust-region
     minimization. Child classes must implement the ``solve`` method.
 
-    Values of the objective function, jacobian and hessian (if provided) at
+    Values of the objective function, Jacobian and Hessian (if provided) at
     the current iterate ``x`` are evaluated on demand and then stored as
     attributes ``fun``, ``jac``, ``hess``.
     """
@@ -46,14 +46,14 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def jac(self):
-        """Value of jacobian of objective function at current iteration."""
+        """Value of Jacobian of objective function at current iteration."""
         if self._g is None:
             self._g = self._jac(self._x)
         return self._g
 
     @property
     def hess(self):
-        """Value of hessian of objective function at current iteration."""
+        """Value of Hessian of objective function at current iteration."""
         if self._h is None:
             self._h = self._hess(self._x)
         return self._h
@@ -66,7 +66,7 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def jac_mag(self):
-        """Magniture of jacobian of objective function at current iteration."""
+        """Magniture of Jacobian of objective function at current iteration."""
         if self._g_mag is None:
             self._g_mag = scipy.linalg.norm(self.jac)
         return self._g_mag

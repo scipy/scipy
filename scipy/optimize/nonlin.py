@@ -6,7 +6,7 @@ Nonlinear solvers
 .. currentmodule:: scipy.optimize
 
 This is a collection of general-purpose nonlinear multidimensional
-solvers.  These solvers find *x* for which *F(x) = 0*. Both *x*
+solvers. These solvers find *x* for which *F(x) = 0*. Both *x*
 and *F* can be multidimensional.
 
 Routines
@@ -484,7 +484,7 @@ class Jacobian(object):
     Common interface for Jacobians or Jacobian approximations.
 
     The optional methods come useful when implementing trust region
-    etc.  algorithms that often require evaluating transposes of the
+    etc., algorithms that often require evaluating transposes of the
     Jacobian.
 
     Methods
@@ -904,7 +904,7 @@ _doc_parts['broyden_params'] = """
 
     max_rank : int, optional
         Maximum rank for the Broyden matrix.
-        Default is infinity (ie., no rank reduction).
+        Default is infinity (i.e., no rank reduction).
     """.strip()
 
 
@@ -1094,7 +1094,7 @@ class Anderson(GenericBroyden):
     #     A      = W + dF^H dF
     #     W      = w0^2 diag(dF^H dF)
     #
-    # so that for w0 = 0 the secant condition applies for last M iterates, ie.,
+    # so that for w0 = 0 the secant condition applies for last M iterates, i.e.,
     #
     #     J^-1 df_j = dx_j
     #
@@ -1227,7 +1227,7 @@ class DiagBroyden(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.d = np.full((self.shape[0],), 1 / self.alpha, dtype=self.dtype) 
+        self.d = np.full((self.shape[0],), 1 / self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
         return -f / self.d
@@ -1465,7 +1465,7 @@ class KrylovJacobian(Jacobian):
             # the Jacobian changes a lot in the nonlinear step
             #
             # XXX: some trust-region inspired ideas might be more efficient...
-            #      See eg. Brown & Saad. But needs to be implemented separately
+            #      See e.g., Brown & Saad. But needs to be implemented separately
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
             self.method_kw.setdefault('atol', 0)
@@ -1530,7 +1530,7 @@ class KrylovJacobian(Jacobian):
 
 def _nonlin_wrapper(name, jac):
     """
-    Construct a solver wrapper with given name and jacobian approx.
+    Construct a solver wrapper with given name and Jacobian approx.
 
     It inspects the keyword arguments of ``jac.__init__``, and allows to
     use the same arguments in the wrapper function, in addition to the

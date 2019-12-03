@@ -125,6 +125,8 @@ def main(argv):
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
                         help="Perform pep8 check with pycodestyle.")
+    parser.add_argument("--doc", action="append", nargs="?",
+                        const="html-scipyorg", help="Build documentation")
     args = parser.parse_args(argv)
 
     if args.pep8:
@@ -191,6 +193,14 @@ def main(argv):
         print("Spawning a Unix shell...")
         os.execv(shell, [shell] + extra_argv)
         sys.exit(1)
+
+    if args.doc:
+        cmd = ["make", "-Cdoc", 'PYTHON="{}"'.format(sys.executable)]
+        cmd += args.doc
+        if args.parallel:
+            cmd.append('SPHINXOPTS="-j{}"'.format(args.parallel))
+        subprocess.run(cmd, check=True)
+        sys.exit(0)
 
     if args.coverage:
         dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
@@ -354,7 +364,7 @@ def build_project(args):
     cmd += ['build']
     if args.parallel > 1:
         cmd += ['-j', str(args.parallel)]
-    # Install; avoid producing eggs so scipy can be imported from dst_dir.
+    # Install; avoid producing eggs so SciPy can be imported from dst_dir.
     cmd += ['install', '--prefix=' + dst_dir,
             '--single-version-externally-managed',
             '--record=' + dst_dir + 'tmp_install_log.txt']
@@ -362,7 +372,7 @@ def build_project(args):
     from distutils.sysconfig import get_python_lib
     site_dir = get_python_lib(prefix=dst_dir, plat_specific=True)
     # easy_install won't install to a path that Python by default cannot see
-    # and isn't on the PYTHONPATH.  Plus, it has to exist.
+    # and isn't on the PYTHONPATH. Plus, it has to exist.
     if not os.path.exists(site_dir):
         os.makedirs(site_dir)
     env['PYTHONPATH'] = site_dir

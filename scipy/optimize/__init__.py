@@ -1,6 +1,6 @@
 """
 =====================================================
-Optimization and Root Finding (:mod:`scipy.optimize`)
+Optimization and root finding (:mod:`scipy.optimize`)
 =====================================================
 
 .. currentmodule:: scipy.optimize
@@ -8,8 +8,8 @@ Optimization and Root Finding (:mod:`scipy.optimize`)
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
-optimization algorithms), linear programing,  constrained
-and nonlinear least-squares, root finding and curve fitting.
+optimization algorithms), linear programing, constrained
+and nonlinear least-squares, root finding, and curve fitting.
 
 Common functions and objects, shared across different solvers, are:
 
@@ -24,7 +24,7 @@ Common functions and objects, shared across different solvers, are:
 Optimization
 ============
 
-Scalar Functions Optimization
+Scalar functions optimization
 -----------------------------
 
 .. autosummary::
@@ -40,7 +40,7 @@ The `minimize_scalar` function supports the following methods:
    optimize.minimize_scalar-bounded
    optimize.minimize_scalar-golden
 
-Local (Multivariate) Optimization
+Local (multivariate) optimization
 ---------------------------------
 
 .. autosummary::
@@ -95,7 +95,7 @@ quasi-Newton methods implementing this interface are:
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
 
-Global Optimization
+Global optimization
 -------------------
 
 .. autosummary::
@@ -109,10 +109,10 @@ Global Optimization
    dual_annealing - Dual annealing stochastic optimizer.
 
 
-Least-squares and Curve Fitting
+Least-squares and curve fitting
 ===============================
 
-Nonlinear Least-Squares
+Nonlinear least-squares
 -----------------------
 
 .. autosummary::
@@ -120,7 +120,7 @@ Nonlinear Least-Squares
 
    least_squares - Solve a nonlinear least-squares problem with bounds on the variables.
 
-Linear Least-Squares
+Linear least-squares
 --------------------
 
 .. autosummary::
@@ -129,7 +129,7 @@ Linear Least-Squares
    nnls - Linear least-squares problem with non-negativity constraint.
    lsq_linear - Linear least-squares problem with bound constraints.
 
-Curve Fitting
+Curve fitting
 -------------
 
 .. autosummary::
@@ -151,7 +151,7 @@ Scalar functions
    ridder - Ridder's method.
    bisect - Bisection method.
    newton - Newton's method (also Secant and Halley's methods).
-   toms748 - Alefeld, Potra & Shi Algorithm 748
+   toms748 - Alefeld, Potra & Shi Algorithm 748.
    RootResults - The root finding result returned by some root finders.
 
 The `root_scalar` function supports the following methods:
@@ -232,7 +232,7 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear Programming
+Linear programming
 ==================
 
 .. autosummary::
@@ -265,7 +265,7 @@ Assignment problems:
 Utilities
 =========
 
-Finite-Difference Approximation
+Finite-difference approximation
 -------------------------------
 
 .. autosummary::
@@ -275,7 +275,7 @@ Finite-Difference Approximation
    check_grad - Check the supplied derivative using finite differences.
 
 
-Line Search
+Line search
 -----------
 
 .. autosummary::
@@ -284,7 +284,7 @@ Line Search
    bracket - Bracket a minimum, given two starting points.
    line_search - Return a step that satisfies the strong Wolfe conditions.
 
-Hessian Approximation
+Hessian approximation
 ---------------------
 
 .. autosummary::
@@ -293,7 +293,7 @@ Hessian Approximation
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian.
    HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
-Benchmark Problems
+Benchmark problems
 ------------------
 
 .. autosummary::
@@ -304,7 +304,7 @@ Benchmark Problems
    rosen_hess - The Hessian matrix of the Rosenbrock function.
    rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
-Legacy Functions
+Legacy functions
 ================
 
 The functions below are not recommended for use in new scripts;
@@ -344,7 +344,7 @@ Univariate (scalar) minimization methods:
    brent - 1-D function minimization using Brent method.
    golden - 1-D function minimization using Golden Section method.
 
-Least-Squares
+Least-squares
 -------------
 
 .. autosummary::
@@ -352,7 +352,7 @@ Least-Squares
 
    leastsq - Minimize the sum of squares of M equations in N unknowns.
 
-Root Finding
+Root finding
 ------------
 
 General nonlinear solvers:
@@ -360,7 +360,7 @@ General nonlinear solvers:
 .. autosummary::
    :toctree: generated/
 
-   fsolve - Non-linear multi-variable equation solver.
+   fsolve - Non-linear multivariable equation solver.
    broyden1 - Broyden's first method.
    broyden2 - Broyden's second method.
 

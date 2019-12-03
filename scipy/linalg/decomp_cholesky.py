@@ -21,7 +21,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     # Dimension check
     if a1.ndim != 2:
-        raise ValueError('Input array needs to be 2 dimensional but received '
+        raise ValueError('Input array needs to be 2D but received '
                          'a {}d-array.'.format(a1.ndim))
     # Squareness check
     if a1.shape[0] != a1.shape[1]:
@@ -56,7 +56,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     a : (M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
-        Whether to compute the upper or lower triangular Cholesky
+        Whether to compute the upper- or lower-triangular Cholesky
         factorization.  Default is upper-triangular.
     overwrite_a : bool, optional
         Whether to overwrite data in `a` (may improve performance).
@@ -208,7 +208,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
-        raise ValueError('illegal value in %d-th argument of internal potrs'
+        raise ValueError('illegal value in %dth argument of internal potrs'
                          % -info)
     return x
 
@@ -217,7 +217,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
     Cholesky decompose a banded Hermitian positive-definite matrix
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in ab either in lower-diagonal or upper-
     diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
@@ -252,7 +252,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     -------
     c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
-        
+
     See also
     --------
     cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
@@ -346,8 +346,8 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
     if info > 0:
-        raise LinAlgError("%d-th leading minor not positive definite" % info)
+        raise LinAlgError("%dth leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbtrs'
+        raise ValueError('illegal value in %dth argument of internal pbtrs'
                          % -info)
     return x

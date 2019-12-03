@@ -22,7 +22,7 @@ Sparse matrix classes
    csr_matrix - Compressed Sparse Row matrix
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
-   lil_matrix - Row-based linked list sparse matrix
+   lil_matrix - Row-based list of lists sparse matrix
    spmatrix - Sparse matrix base class
 
 Functions
@@ -118,7 +118,7 @@ functions directly on these matrices because NumPy may not properly convert
 them for computations, leading to unexpected (and incorrect) results. If you
 do want to apply a NumPy function to these matrices, first check if SciPy has
 its own implementation for the given sparse matrix class, or **convert the
-sparse matrix to a NumPy array** (e.g. using the `toarray()` method of the
+sparse matrix to a NumPy array** (e.g., using the `toarray()` method of the
 class) first before applying the method.
 
 To perform manipulations such as multiplication or inversion, first
@@ -209,12 +209,12 @@ Duplicate (i,j) entries are summed when converting to CSR or CSC.
 
 This is useful for constructing finite-element stiffness and mass matrices.
 
-Further Details
+Further details
 ---------------
 
-CSR column indices are not necessarily sorted.  Likewise for CSC row
-indices.  Use the .sorted_indices() and .sort_indices() methods when
-sorted indices are required (e.g. when passing data to other libraries).
+CSR column indices are not necessarily sorted. Likewise for CSC row
+indices. Use the .sorted_indices() and .sort_indices() methods when
+sorted indices are required (e.g., when passing data to other libraries).
 
 """
 

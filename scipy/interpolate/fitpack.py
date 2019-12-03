@@ -15,10 +15,10 @@ from ._bsplines import BSpline
 def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
             full_output=0, nest=None, per=0, quiet=1):
     """
-    Find the B-spline representation of an N-dimensional curve.
+    Find the B-spline representation of an N-D curve.
 
     Given a list of N rank-1 arrays, `x`, which represent a curve in
-    N-dimensional space parametrized by `u`, find a smooth approximating
+    N-D space parametrized by `u`, find a smooth approximating
     spline curve g(`u`). Uses the FORTRAN routine parcur from FITPACK.
 
     Parameters
@@ -161,7 +161,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
            full_output=0, per=0, quiet=1):
     """
-    Find the B-spline representation of 1-D curve.
+    Find the B-spline representation of a 1-D curve.
 
     Given the set of data points ``(x[i], y[i])`` determine a smooth spline
     approximation of degree k on the interval ``xb <= x <= xe``.
@@ -295,14 +295,14 @@ def splev(x, tck, der=0, ext=0):
     Evaluate a B-spline or its derivatives.
 
     Given the knots and coefficients of a B-spline representation, evaluate
-    the value of the smoothing polynomial and its derivatives.  This is a
+    the value of the smoothing polynomial and its derivatives. This is a
     wrapper around the FORTRAN routines splev and splder of FITPACK.
 
     Parameters
     ----------
     x : array_like
         An array of points at which to return the value of the smoothed
-        spline or its derivatives.  If `tck` was returned from `splprep`,
+        spline or its derivatives. If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
     tck : 3-tuple or a BSpline object
         If a tuple, then it should be a sequence of length 3 returned by
@@ -327,7 +327,7 @@ def splev(x, tck, der=0, ext=0):
     y : ndarray or list of ndarrays
         An array of values representing the spline function evaluated at
         the points in `x`.  If `tck` was returned from `splprep`, then this
-        is a list of arrays representing the curve in N-dimensional space.
+        is a list of arrays representing the curve in an N-D space.
 
     Notes
     -----

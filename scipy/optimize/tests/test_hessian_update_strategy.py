@@ -65,7 +65,7 @@ class TestHessianUpdateStrategy(TestCase):
 
             assert_array_equal(B, np.eye(5))
 
-    # For this list of points it is known
+    # For this list of points, it is known
     # that no exception occur during the
     # Hessian update. Hence no update is
     # skiped or damped.
@@ -143,7 +143,7 @@ class TestHessianUpdateStrategy(TestCase):
             assert_array_less(norm(B - B_true)/norm(B_true), 0.1)
 
     def test_SR1_skip_update(self):
-        # Define auxiliar problem
+        # Define auxiliary problem
         prob = Rosenbrock(n=5)
         # Define iteration points
         x_list = [[0.0976270, 0.4303787, 0.2055267, 0.0897663, -0.15269040],
@@ -173,7 +173,7 @@ class TestHessianUpdateStrategy(TestCase):
                       for i in range(len(grad_list)-1)]
         hess = SR1(init_scale=1, min_denominator=1e-2)
         hess.initialize(len(x_list[0]), 'hess')
-        # Compare the hessian and its inverse
+        # Compare the Hessian and its inverse
         for i in range(len(delta_x)-1):
             s = delta_x[i]
             y = delta_grad[i]
@@ -205,7 +205,7 @@ class TestHessianUpdateStrategy(TestCase):
                       for i in range(len(grad_list)-1)]
         hess = BFGS(init_scale=1, min_curvature=10)
         hess.initialize(len(x_list[0]), 'hess')
-        # Compare the hessian and its inverse
+        # Compare the Hessian and its inverse
         for i in range(len(delta_x)-1):
             s = delta_x[i]
             y = delta_grad[i]

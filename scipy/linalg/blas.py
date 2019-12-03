@@ -233,8 +233,8 @@ del empty_module
 _type_score = {x: 1 for x in '?bBhHef'}
 _type_score.update({x: 2 for x in 'iIlLqQd'})
 
-# Handle float128(g) and complex256(G) separately in case non-windows systems.
-# On windows, the values will be rewritten to the same key with the same value.
+# Handle float128(g) and complex256(G) separately in case non-Windows systems.
+# On Windows, the values will be rewritten to the same key with the same value.
 _type_score.update({'F': 3, 'D': 4, 'g': 2, 'G': 4})
 
 # Final mapping to the actual prefixes and dtypes
@@ -373,7 +373,7 @@ def _memoize_get_funcs(func):
     def getter(names, arrays=(), dtype=None):
         key = (names, dtype)
         for array in arrays:
-            # c.f. find_blas_funcs
+            # cf. find_blas_funcs
             key += (array.dtype.char, array.flags.fortran)
 
         try:
@@ -430,7 +430,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
 
     In BLAS, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the NumPy
     types {float32, float64, complex64, complex128} respectively.
     The code and the dtype are stored in attributes `typecode` and `dtype`
     of the returned functions.

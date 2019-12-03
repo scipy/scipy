@@ -50,7 +50,7 @@ def _assert_unable_to_find_basic_feasible_sol(res):
 
     # The status may be either 2 or 4 depending on why the feasible solution
     # could not be found. If the undelying problem is expected to not have a
-    # feasible solution _assert_infeasible should be used.
+    # feasible solution, _assert_infeasible should be used.
     assert_(not res.success, "incorrectly reported success")
     assert_(res.status in (2, 4), "failed to report optimization failure")
 
@@ -357,7 +357,7 @@ class LinprogCommonTests(object):
         if ("_sparse_presolve" in self.options and
                 self.options["_sparse_presolve"]):
             return
-            # there aren't 3D sparse matrices
+            # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
 
@@ -1331,6 +1331,42 @@ class LinprogCommonTests(object):
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
 
+    def test_bug_10466(self):
+        """
+        Test that autoscale fixes poorly-scaled problem
+        """
+        c = [-8., -0., -8., -0., -8., -0., -0., -0., -0., -0., -0., -0., -0.]
+        A_eq = [[1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., -1., 0., 0., 0., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., 0., 1., 0., 0., 0., 0., 0.],
+                [1., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                [1., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                [1., 0., 1., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0.],
+                [0., 0., 1., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0.],
+                [0., 0., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 1.]]
+
+        b_eq = [3.14572800e+08, 4.19430400e+08, 5.24288000e+08,
+                1.00663296e+09, 1.07374182e+09, 1.07374182e+09,
+                1.07374182e+09, 1.07374182e+09, 1.07374182e+09,
+                1.07374182e+09]
+        o = {"autoscale": True}
+        o.update(self.options)
+
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "Solving system with option...")
+            if has_umfpack:
+                sup.filter(UmfpackWarning)
+            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
+            sup.filter(RuntimeWarning, "divide by zero encountered...")
+            sup.filter(RuntimeWarning, "overflow encountered...")
+            sup.filter(RuntimeWarning, "invalid value encountered...")
+            sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=o)
+        assert_allclose(res.fun, -8589934560)
+
 #########################
 # Method-specific Tests #
 #########################
@@ -1361,7 +1397,7 @@ class LinprogRSTests(LinprogCommonTests):
     # acknowledges this possibility, suggesting that there is a bug. On the
     # other hand, the pivoting rule is quite simple, and I can't find a
     # mistake, which suggests that this is a possibility with the pivoting
-    # rule. Hopefully a better pivoting rule will fix the issue.
+    # rule. Hopefully, a better pivoting rule will fix the issue.
 
     def test_bug_5400(self):
         pytest.skip("Intermittent failure acceptable.")
@@ -1387,14 +1423,14 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
             super(TestLinprogSimplexDefault, self).test_bug_5400()
 
     def test_bug_7237_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexDefault, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
@@ -1411,7 +1447,7 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
             super(TestLinprogSimplexBland, self).test_bug_5400()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError):
@@ -1443,14 +1479,14 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
             return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
 
     def test_bug_7237_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate error is raised.
         self.options.update({'tol': 1e-12})
         with pytest.raises(ValueError):
             super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
 
     def test_bug_8174_low_tol(self):
-        # Fails if the tolerance is too strict. Here we test that
+        # Fails if the tolerance is too strict. Here, we test that
         # even if the solutuion is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
@@ -1480,6 +1516,9 @@ if has_cholmod:
 if has_umfpack:
     class TestLinprogIPSparseUmfpack(LinprogIPTests):
         options = {"sparse": True, "cholesky": False}
+
+        def test_bug_10466(self):
+            pytest.skip("Autoscale doesn't fix everything, and that's OK.")
 
 
 class TestLinprogIPSparse(LinprogIPTests):
@@ -1681,3 +1720,46 @@ class TestLinprogRSCommon(LinprogRSTests):
 
 class TestLinprogRSBland(LinprogRSTests):
     options = {"pivot": "bland"}
+
+
+###########################
+# Autoscale-Specific Tests#
+###########################
+
+
+class AutoscaleTests(object):
+    options = {"autoscale": True}
+
+    test_bug_6139 = LinprogCommonTests.test_bug_6139
+    test_bug_6690 = LinprogCommonTests.test_bug_6690
+    test_bug_7237 = LinprogCommonTests.test_bug_7237
+
+
+class TestAutoscaleIP(AutoscaleTests):
+    method = "interior-point"
+
+    def test_bug_6139(self):
+        self.options['tol'] = 1e-10
+        return AutoscaleTests.test_bug_6139(self)
+
+
+class TestAutoscaleSimplex(AutoscaleTests):
+    method = "simplex"
+
+
+class TestAutoscaleRS(AutoscaleTests):
+    method = "revised simplex"
+
+    def test_nontrivial_problem_with_guess(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                      method=self.method, options=self.options, x0=x_star)
+        _assert_success(res, desired_fun=f_star, desired_x=x_star)
+        assert_equal(res.nit, 0)
+
+    def test_nontrivial_problem_with_bad_guess(self):
+        c, A_ub, b_ub, A_eq, b_eq, x_star, f_star = nontrivial_problem()
+        bad_guess = [1, 2, 3, .5]
+        res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                      method=self.method, options=self.options, x0=bad_guess)
+        assert_equal(res.status, 6)

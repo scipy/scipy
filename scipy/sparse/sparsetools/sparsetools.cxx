@@ -510,6 +510,7 @@ static void free_std_vector_typenum(int typenum, void *p)
 #define PROCESS(ntype, ctype)                                   \
     if (PyArray_EquivTypenums(typenum, ntype)) {                \
         delete ((std::vector<ctype>*)p);                        \
+        return;                                                 \
     }
 
     PROCESS(NPY_BOOL, npy_bool_wrapper);

@@ -16,7 +16,7 @@ def _broadcast_arrays(a, b):
     """
     Same as np.broadcast_arrays(a, b) but old writeability rules.
 
-    Numpy >= 1.17.0 transitions broadcast_arrays to return
+    NumPy >= 1.17.0 transitions broadcast_arrays to return
     read-only arrays. Set writeability explicitly to avoid warnings.
     Retain the old writeability rules, as our Cython code assumes
     the old behavior.
@@ -120,10 +120,9 @@ class IndexMixin(object):
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
             x, _ = _broadcast_arrays(x, i)
-            if x.shape != i.shape:
-                raise ValueError("shape mismatch in assignment")
             if x.size == 0:
                 return
+            x = x.reshape(i.shape)
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
@@ -327,4 +326,3 @@ def _boolean_index_to_array(idx):
     if idx.ndim > 1:
         raise IndexError('invalid index shape')
     return idx.nonzero()[0]
-

@@ -4,7 +4,7 @@
     documentation for :obj:`unumpy`. This page explains how to write
     back-ends and multimethods.
 
-``uarray`` is built around a back-end protocol, and overridable multimethods.
+``uarray`` is built around a back-end protocol and overridable multimethods.
 It is necessary to define multimethods for back-ends to be able to override them.
 See the documentation of :obj:`generate_multimethod` on how to write multimethods.
 
@@ -12,10 +12,12 @@ See the documentation of :obj:`generate_multimethod` on how to write multimethod
 
 Let's start with the simplest:
 
-``__ua_domain__`` defines the back-end *domain*. The domain consists of a string
-that, by convention, is the module for which a back-end is provided, along with
-related packages in the ecosystem. For example, the ``"numpy"`` domain may cover
-backends for NumPy itself, as well as SciPy and the numerical scikit packages.
+``__ua_domain__`` defines the back-end *domain*. The domain consists of period-
+separated string consisting of the modules you extend plus the submodule. For
+example, if a submodule ``module2.submodule`` extends ``module1``
+(i.e., it exposes dispatchables marked as types available in ``module1``),
+then the domain string should be ``"module1.module2.submodule"``.
+
 
 For the purpose of this demonstration, we'll be creating an object and setting
 its attributes directly. However, note that you can use a module or your own type
@@ -94,7 +96,7 @@ converted at all and it's up to the backend to handle that.
 ('override_me', (1, '2'), {})
 
 You also have the option to return ``NotImplemented``, in which case processing moves on
-to the next back-end, which in this case, doesn't exist. The same applies to
+to the next back-end, which, in this case, doesn't exist. The same applies to
 ``__ua_convert__``.
 
 >>> be.__ua_function__ = lambda *a, **kw: NotImplemented
@@ -110,6 +112,5 @@ possible.
 """
 
 from ._backend import *
-from ._backend import _Function
 
-__version__ = 'v0.4+336.g4c712ad.scipy'
+__version__ = '0.5.1+5.ga864a57.scipy'

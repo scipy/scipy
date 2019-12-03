@@ -58,11 +58,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     Parameters
     ----------
     func : callable f(x,*args)
-        Function to minimise.
+        Function to minimize.
     x0 : ndarray
         Initial guess.
     fprime : callable fprime(x,*args), optional
-        The gradient of `func`.  If None, then `func` returns the function
+        The gradient of `func`. If None, then `func` returns the function
         value and the gradient (``f, g = func(x, *args)``), unless
         `approx_grad` is True in which case `func` returns only ``f``.
     args : sequence, optional
@@ -103,7 +103,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         ``iprint = 100``  print also the changes of active set and final x;
         ``iprint > 100``  print details of every iteration including x and g.
     disp : int, optional
-        If zero, then no output.  If a positive number, then this over-rides
+        If zero, then no output. If a positive number, then this over-rides
         `iprint` (i.e., `iprint` gets the value of `disp`).
     maxfun : int, optional
         Maximum number of function evaluations.
@@ -148,7 +148,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     License of L-BFGS-B (FORTRAN code):
 
     The version included here (in fortran code) is 3.0
-    (released April 25, 2011).  It was written by Ciyou Zhu, Richard Byrd,
+    (released April 25, 2011). It was written by Ciyou Zhu, Richard Byrd,
     and Jorge Nocedal <nocedal@ece.nwu.edu>. It carries the following
     condition for use:
 
@@ -235,11 +235,21 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         <= gtol`` where ``pg_i`` is the i-th component of the
         projected gradient.
     eps : float
-        Step size used for numerical approximation of the jacobian.
+        Step size used for numerical approximation of the Jacobian.
     maxfun : int
         Maximum number of function evaluations.
     maxiter : int
         Maximum number of iterations.
+    iprint : int, optional
+        Controls the frequency of output. ``iprint < 0`` means no output;
+        ``iprint = 0``    print only one line at the last iteration;
+        ``0 < iprint < 99`` print also f and ``|proj g|`` every iprint iterations;
+        ``iprint = 99``   print details of every iteration except n-vectors;
+        ``iprint = 100``  print also the changes of active set and final x;
+        ``iprint > 100``  print details of every iteration including x and g.
+    callback : callable, optional
+        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
+        current parameter vector.
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
 

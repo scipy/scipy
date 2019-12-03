@@ -76,12 +76,12 @@ class HessianUpdateStrategy(object):
         Parameters
         ----------
         p : array_like
-            1-d array representing a vector.
+            1-D array representing a vector.
 
         Returns
         -------
         Hp : array
-            1-d  represents the result of multiplying the approximation matrix
+            1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
         raise NotImplementedError("The method ``dot(p)``"
@@ -206,12 +206,12 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         Parameters
         ----------
         p : array_like
-            1-d array representing a vector.
+            1-D array representing a vector.
 
         Returns
         -------
         Hp : array
-            1-d  represents the result of multiplying the approximation matrix
+            1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
         if self.approx_type == 'hess':

@@ -29,7 +29,7 @@ class SparseEfficiencyWarning(SparseWarning):
 _formats = {'csc': [0, "Compressed Sparse Column"],
             'csr': [1, "Compressed Sparse Row"],
             'dok': [2, "Dictionary Of Keys"],
-            'lil': [3, "LInked List"],
+            'lil': [3, "List of Lists"],
             'dod': [4, "Dictionary of Dictionaries"],
             'sss': [5, "Symmetric Sparse Skyline"],
             'coo': [6, "COOrdinate"],
@@ -98,9 +98,9 @@ class spmatrix(object):
             The new shape should be compatible with the original shape.
         order : {'C', 'F'}, optional
             Read the elements using this index order. 'C' means to read and
-            write the elements using C-like index order; e.g. read entire first
+            write the elements using C-like index order; e.g., read entire first
             row, then second row, etc. 'F' means to read and write the elements
-            using Fortran-like index order; e.g. read entire first column, then
+            using Fortran-like index order; e.g., read entire first column, then
             second column, etc.
         copy : bool, optional
             Indicates whether or not attributes of self should be copied
@@ -145,8 +145,8 @@ class spmatrix(object):
         Notes
         -----
         The semantics are not identical to `numpy.ndarray.resize` or
-        `numpy.resize`.  Here, the same data will be maintained at each index
-        before and after reshape, if that index is within the new bounds.  In
+        `numpy.resize`. Here, the same data will be maintained at each index
+        before and after reshape, if that index is within the new bounds. In
         numpy, resizing maintains contiguity of the array, moving elements
         around in the logical matrix but not within a flattened representation.
 
@@ -330,7 +330,7 @@ class spmatrix(object):
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
     # Therefore a new sparse matrix format just needs to define a
-    # .tocsr() method to provide arithmetic support.  Any of these
+    # .tocsr() method to provide arithmetic support. Any of these
     # methods can be overridden for efficiency.
     ####################################################################
 
@@ -831,7 +831,7 @@ class spmatrix(object):
             Cannot be specified in conjunction with the `out`
             argument.
 
-        out : ndarray, 2-dimensional, optional
+        out : ndarray, 2-D, optional
             If specified, uses this array (or `numpy.matrix`) as the
             output buffer instead of allocating a new array to
             return. The provided array must have the same shape and
@@ -840,7 +840,7 @@ class spmatrix(object):
 
         Returns
         -------
-        arr : numpy.matrix, 2-dimensional
+        arr : numpy.matrix, 2-D
             A NumPy matrix object with the same shape and containing
             the same data represented by the sparse matrix, with the
             requested memory order. If `out` was passed and was an
@@ -857,13 +857,13 @@ class spmatrix(object):
         Parameters
         ----------
         order : {'C', 'F'}, optional
-            Whether to store multi-dimensional data in C (row-major)
+            Whether to store multidimensional data in C (row-major)
             or Fortran (column-major) order in memory. The default
             is 'None', indicating the NumPy default of C-ordered.
             Cannot be specified in conjunction with the `out`
             argument.
 
-        out : ndarray, 2-dimensional, optional
+        out : ndarray, 2-D, optional
             If specified, uses this array as the output buffer
             instead of allocating a new array to return. The provided
             array must have the same shape and dtype as the sparse
@@ -873,7 +873,7 @@ class spmatrix(object):
 
         Returns
         -------
-        arr : ndarray, 2-dimensional
+        arr : ndarray, 2-D
             An array with the same shape and containing the same
             data represented by the sparse matrix, with the requested
             memory order. If `out` was passed, the same object is
@@ -910,7 +910,7 @@ class spmatrix(object):
         return self.tocsr(copy=False).tocoo(copy=copy)
 
     def tolil(self, copy=False):
-        """Convert this matrix to LInked List format.
+        """Convert this matrix to List of Lists format.
 
         With copy=False, the data/indices may be shared between this matrix and
         the resultant lil_matrix.
@@ -961,7 +961,7 @@ class spmatrix(object):
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
             compute the sum of all the matrix elements, returning a scalar
-            (i.e. `axis` = `None`).
+            (i.e., `axis` = `None`).
         dtype : dtype, optional
             The type of the returned matrix and of the accumulator in which
             the elements are summed.  The dtype of `a` is used by default
@@ -1037,7 +1037,7 @@ class spmatrix(object):
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the mean is computed. The default is to compute
-            the mean of all elements in the matrix (i.e. `axis` = `None`).
+            the mean of all elements in the matrix (i.e., `axis` = `None`).
         dtype : data-type, optional
             Type to use in computing the mean. For integer inputs, the default
             is `float64`; for floating point inputs, it is the same as the
@@ -1098,12 +1098,12 @@ class spmatrix(object):
                 axis=1, dtype=res_dtype, out=out)
 
     def diagonal(self, k=0):
-        """Returns the k-th diagonal of the matrix.
+        """Returns the kth diagonal of the matrix.
 
         Parameters
         ----------
         k : int, optional
-            Which diagonal to set, corresponding to elements a[i, i+k].
+            Which diagonal to get, corresponding to elements a[i, i+k].
             Default: 0 (the main diagonal).
 
             .. versionadded:: 1.0
@@ -1132,8 +1132,8 @@ class spmatrix(object):
         values : array_like
             New values of the diagonal elements.
 
-            Values may have any length.  If the diagonal is longer than values,
-            then the remaining diagonal entries will not be set.  If values if
+            Values may have any length. If the diagonal is longer than values,
+            then the remaining diagonal entries will not be set. If values if
             longer than the diagonal, then the remaining values are ignored.
 
             If a scalar value is given, all of the diagonal is set to it.

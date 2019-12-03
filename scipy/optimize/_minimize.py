@@ -39,6 +39,11 @@ from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
 
 
+MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                    'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
+                    'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+
+
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
@@ -175,7 +180,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         generic options:
 
             maxiter : int
-                Maximum number of iterations to perform.
+                Maximum number of iterations to perform. Depending on the
+                method each iteration may use several function evaluations.
             disp : bool
                 Set to True to print convergence messages.
 
@@ -188,7 +194,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``xk`` is the current parameter vector. and ``state``
         is an `OptimizeResult` object, with the same fields
-        as the ones from the return.  If callback returns True
+        as the ones from the return. If callback returns True
         the algorithm execution is terminated.
         For all the other methods, the signature is:
 
@@ -235,7 +241,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     Method :ref:`CG <optimize.minimize-cg>` uses a nonlinear conjugate
     gradient algorithm by Polak and Ribiere, a variant of the
-    Fletcher-Reeves method described in [5]_ pp.  120-122. Only the
+    Fletcher-Reeves method described in [5]_ pp.120-122. Only the
     first derivatives are used.
 
     Method :ref:`BFGS <optimize.minimize-bfgs>` uses the quasi-Newton
@@ -574,17 +580,21 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
             options.setdefault('barrier_tol', tol)
 
+    if meth == '_custom':
+        # custom method called before bounds and constraints are 'standardised'
+        # custom method should be able to accept whatever bounds/constraints
+        # are provided to it.
+        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
+                      bounds=bounds, constraints=constraints,
+                      callback=callback, **options)
+
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
 
     if constraints is not None:
         constraints = standardize_constraints(constraints, x0, meth)
 
-    if meth == '_custom':
-        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
-                      bounds=bounds, constraints=constraints,
-                      callback=callback, **options)
-    elif meth == 'nelder-mead':
+    if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, **options)
@@ -705,7 +715,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     **Custom minimizers**
 
     It may be useful to pass a custom minimization method, for example
-    when using some library frontend to minimize_scalar.  You can simply
+    when using some library frontend to minimize_scalar. You can simply
     pass a callable as the ``method`` parameter.
 
     The callable is called as ``method(fun, args, **kwargs, **options)``
@@ -717,7 +727,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     The provided `method` callable must be able to accept (and possibly ignore)
     arbitrary parameters; the set of parameters accepted by `minimize` may
     expand in future versions and then these parameters will be passed to
-    the method.  You can find an example in the scipy.optimize tutorial.
+    the method. You can find an example in the scipy.optimize tutorial.
 
     .. versionadded:: 0.11.0
 

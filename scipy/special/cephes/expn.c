@@ -79,8 +79,8 @@ double expn(int n, double x)
 	return NPY_NAN;
     }
     else if (n < 0 || x < 0) {
-	mtherr("expn", DOMAIN);
-	return NPY_INFINITY;
+	sf_error("expn", SF_ERROR_DOMAIN, NULL);
+	return NPY_NAN;
     }
 
     if (x > MAXLOG) {
@@ -89,7 +89,7 @@ double expn(int n, double x)
 
     if (x == 0.0) {
 	if (n < 2) {
-	    mtherr("expn", SING);
+	    sf_error("expn", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}
 	else {
@@ -203,7 +203,7 @@ static double expn_large_n(int n, double x)
 
     expfac = exp(-lambda*p)/(lambda + 1)/p;
     if (expfac == 0) {
-	mtherr("expn", UNDERFLOW);
+	sf_error("expn", SF_ERROR_UNDERFLOW, NULL);
 	return 0;
     }
 

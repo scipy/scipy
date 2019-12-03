@@ -10,7 +10,7 @@
 
 namespace {
 
-/** Handle to a python object that automatically DECREFs */
+/** Handle to a Python object that automatically DECREFs */
 class py_ref
 {
   explicit py_ref(PyObject * object): obj_(object) {}
@@ -112,7 +112,7 @@ thread_local std::unordered_map<
 /** Constant Python string identifiers
 
 Using these with PyObject_GetAttr is faster than PyObject_GetAttrString which
-has to create a new python string internally.
+has to create a new Python string internally.
  */
 struct
 {
@@ -179,10 +179,10 @@ std::string backend_to_domain_string(PyObject * backend)
 }
 
 
-/** Use to clean up python references before the interpreter is finalized.
+/** Use to clean up Python references before the interpreter is finalized.
  *
- * This must be installed in a python atexit handler. This prevents Py_DECREF
- * being called after the interpreter has already shudown.
+ * This must be installed in a Python atexit handler. This prevents Py_DECREF
+ * being called after the interpreter has already shut down.
  */
 PyObject * clear_all_globals(PyObject * /* self */, PyObject * /* args */)
 {
@@ -219,7 +219,7 @@ PyObject * set_global_backend(PyObject * /* self */, PyObject * args)
 PyObject * register_backend(PyObject * /* self */, PyObject * args)
 {
   PyObject * backend;
-  if (!PyArg_ParseTuple(args, "O", 
+  if (!PyArg_ParseTuple(args, "O",
     &backend))
     return nullptr;
 
@@ -242,7 +242,7 @@ void clear_single(const std::string& domain, bool registered, bool global)
       global_domain_map.erase(domain_globals);
       return;
     }
-  
+
   if (registered)
   {
     domain_globals->second.registered.clear();
@@ -258,7 +258,7 @@ PyObject * clear_backends(PyObject * /* self */, PyObject * args)
 {
   PyObject* domain = nullptr;
   int registered = true, global = false;
-  if (!PyArg_ParseTuple(args, "O|pp", 
+  if (!PyArg_ParseTuple(args, "O|pp",
     &domain, &registered, &global))
     return nullptr;
 
@@ -889,9 +889,11 @@ int Function::clear(Function * self)
 }
 
 
+// getset takes mutable char * in Python < 3.7
+static char dict__[] = "__dict__";
 PyGetSetDef Function_getset[] =
 {
-  {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+  {dict__, PyObject_GenericGetDict, PyObject_GenericSetDict},
   {NULL} /* Sentinel */
 };
 
