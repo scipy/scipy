@@ -881,15 +881,17 @@ class TestOptimizeSimple(CheckOptimize):
             assert sol.njev >= sf.ngev
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
-        # special case of minimization with trust-constr and inequality constraints
-        # to check maxiter limit is obeyed when using internal method 'tr_interior_point'
+        # special case of minimization with trust-constr and inequality
+        # constraints to check maxiter limit is obeyed when using internal
+        # method 'tr_interior_point'
         MAXITER = 4
         f = optimize.rosen
         jac = optimize.rosen_der
         hess = optimize.rosen_hess
 
+        fun = lambda x: np.array([0.2 * x[0] - 0.4 * x[1] - 0.33 * x[2]])
         cons = ({'type': 'ineq',
-                 'fun': lambda x: np.array([0.2 * x[0] - 0.4 * x[1] - 0.33 * x[2]])},)
+                 'fun': fun},)
 
         x0 = np.zeros(10)
         sol = optimize.minimize(f, x0, constraints=cons, jac=jac, hess=hess,
