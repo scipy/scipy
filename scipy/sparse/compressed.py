@@ -784,7 +784,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         j0, j1 = _process_slice(minor, N)
 
         if i0 == 'empty' or j0 == 'empty':
-            out = np.zeros([0, 0], dtype=self.dtype)
+            out = np.zeros(shape=(0, self.shape[1]),
+                           dtype=self.dtype)
             return self.__class__(out)
 
         if i0 == 0 and j0 == 0 and i1 == M and j1 == N:
