@@ -23,6 +23,7 @@ from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
+from scipy.optimize._differentiable_functions import ScalarFunction
 
 
 def test_check_grad():
@@ -848,34 +849,36 @@ class TestOptimizeSimple(CheckOptimize):
                                 constraints={'type': 'ineq', 'fun': cons})
         assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
 
-    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B',
-                                        #  'TNC', 'SLSQP',
+    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
+                                        'Newton-CG', 'L-BFGS-B',
+                                        # 'TNC', 'SLSQP',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
     def test_respect_maxiter(self, method):
-        # Check that the number of iterations equals max_iter, assuming convergence
-        # doesn't establish before
+        # Check that the number of iterations equals max_iter, assuming
+        # convergence doesn't establish before
         MAXITER = 4
 
-        func = optimize.rosen
-        jac = optimize.rosen_der
-        hess = optimize.rosen_hess
-
         x0 = np.zeros(10)
+
+        sf = ScalarFunction(optimize.rosen, x0, (), optimize.rosen_der,
+                            optimize.rosen_hess, None, None)
 
         # Set options
         kwargs = {'method': method, 'options': dict(maxiter=MAXITER)}
 
         if method in ('Newton-CG',):
-            kwargs['jac'] = jac
+            kwargs['jac'] = sf.grad
         elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
                         'trust-constr'):
-            kwargs['jac'] = jac
-            kwargs['hess'] = hess
+            kwargs['jac'] = sf.grad
+            kwargs['hess'] = sf.hess
 
-        sol = optimize.minimize(func, x0, **kwargs)
-        n_iter = sol.get('nit', sol.get('niter'))
-        assert_(n_iter == MAXITER)
+        sol = optimize.minimize(sf.fun, x0, **kwargs)
+        assert sol.nit <= MAXITER
+        assert sol.nfev >= sf.nfev
+        if hasattr(sol, 'njev'):
+            assert sol.njev >= sf.ngev
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality constraints
@@ -892,7 +895,7 @@ class TestOptimizeSimple(CheckOptimize):
         sol = optimize.minimize(f, x0, constraints=cons, jac=jac, hess=hess,
                                 method='trust-constr',
                                 options=dict(maxiter=MAXITER))
-        assert_(sol.nit == MAXITER)
+        assert sol.nit == MAXITER
 
     def test_minimize_automethod(self):
         def f(x):
