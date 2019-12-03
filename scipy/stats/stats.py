@@ -4407,11 +4407,14 @@ def _perm_test(x, y, stat, compute_distance, reps=1000, workers=-1,
     null_dist : list
         The approximated null distribution.
     """
+    # generate seeds for each rep (change to new parallel random number
+    # capabilities in numpy >= 1.17+)
+    random_state = check_random_state(random_state)
+    random_states = [np.random.RandomState(random_state.randint(1<<32, size=4,
+                     dtype=np.uint32)) for _ in range(reps)]
+
     # parallelizes with specified workers over number of reps and set seeds
     mapwrapper = MapWrapper(workers)
-    random_state = check_random_state(random_state)
-    seeds = random_state.permutation(np.arange(reps))
-    random_states = [check_random_state(seed) for seed in seeds]
     parallelp = _ParallelP(x=x, y=y, compute_distance=compute_distance,
                            random_states=random_states)
     null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
