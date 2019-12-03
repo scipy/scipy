@@ -207,10 +207,10 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     >>> matstruct_squeezed['teststruct'].shape
     ()
     >>> matstruct_squeezed['teststruct']['complexfield'].shape
-    ()
-    >>> matstruct_squeezed['teststruct']['complexfield'].item()
+    (3,)
+    >>> matstruct_squeezed['teststruct']['complexfield']
     array([ 1.41421356+1.41421356j,  2.71828183+2.71828183j,
-        3.14159265+3.14159265j])
+            3.14159265+3.14159265j])
     """
     variable_names = kwargs.pop('variable_names', None)
     with _open_file_context(file_name, appendmat) as f:
