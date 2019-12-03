@@ -20,6 +20,7 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
+import platform
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -321,21 +322,6 @@ class TestCephes(object):
     def test_erfc(self):
         assert_equal(cephes.erfc(0), 1.0)
 
-    def test_exp1(self):
-        cephes.exp1(1)
-
-    def test_expi(self):
-        cephes.expi(1)
-
-    def test_expn(self):
-        cephes.expn(1,1)
-
-    def test_exp1_reg(self):
-        # Regression for #834
-        a = cephes.exp1(-complex(19.9999990))
-        b = cephes.exp1(-complex(19.9999991))
-        assert_array_almost_equal(a.imag, b.imag)
-
     def test_exp10(self):
         assert_approx_equal(cephes.exp10(2),100.0)
 
@@ -423,12 +409,6 @@ class TestCephes(object):
 
     def test_gamma(self):
         assert_equal(cephes.gamma(5),24.0)
-
-    def test_gammainc(self):
-        assert_equal(cephes.gammainc(5,0),0.0)
-
-    def test_gammaincc(self):
-        assert_equal(cephes.gammaincc(5,0),1.0)
 
     def test_gammainccinv(self):
         assert_equal(cephes.gammainccinv(5,1),0.0)
@@ -832,7 +812,7 @@ class TestCephes(object):
         val = cephes.pdtr(0, 1)
         assert_almost_equal(val, np.exp(-1))
         # Edge case: m = 0.
-        val = cephes.pdtr([0, 1, 2], 0.0)
+        val = cephes.pdtr([0, 1, 2], 0)
         assert_array_equal(val, [1, 1, 1])
 
     def test_pdtrc(self):
@@ -1020,23 +1000,6 @@ class TestCephes(object):
         ]
         assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
-    def test_voigt(self):
-        x = np.array([-7.89, -0.05, -13.98, -12.66, 11.34, -11.56, -9.17,
-                      16.59, 9.11, -43.33])
-        sigma = np.array([45.06, 7.98, 16.83, 0.21, 4.25, 20.40, 25.61, 18.05,
-                          2.12, 0.30])
-        gamma = np.array([6.66, 24.13, 42.37, 6.32, 21.96, 30.53, 8.32, 2.50,
-                          39.33, 45.68])
-        mu = np.array([-0.90, 9.81, 16.39, 11.35, -4.00, -1.10, -16.40, 2.17,
-                       -26.34, 19.12])
-        inp = np.array([x, sigma, gamma, mu]).T
-        # obtained from Mathematica: PDF[VoigtDistribution[g, s], x - m]
-        res = np.array([0.007814991977202203,0.010812438037546024,
-                        0.005002213710481824,0.003264178482142271,
-                        0.009796933140171458,0.007708387983265838,
-                        0.011866733688978792,0.014941654349762511,
-                        0.004471089949150293,0.002428855941768048])
-        assert_func_equal(special.voigt, res, inp, rtol=1e-10, atol=1e-13)
 
 class TestAiry(object):
     def test_airy(self):
@@ -1736,11 +1699,6 @@ class TestErf(object):
         expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
         assert_allclose(special.wofz(vals), expected, rtol=1e-15)
 
-    def test_voigt_nan_inf(self):
-        vals = [np.nan, -np.inf, np.inf]
-        expected = [np.nan, -0.0, 0.0]
-        assert_allclose(special.voigt(vals), expected, rtol=1e-15)
-
 
 class TestEuler(object):
     def test_euler(self):
@@ -1861,6 +1819,15 @@ class TestFactorialFunctions(object):
             assert_array_equal(special.factorial([n], True),
                                special.factorial([n], False))
 
+    @pytest.mark.parametrize('x, exact', [
+        (1, True),
+        (1, False),
+        (np.array(1), True),
+        (np.array(1), False),
+    ])
+    def test_factorial_0d_return_type(self, x, exact):
+        assert np.isscalar(special.factorial(x, exact=exact))
+
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
                                   special.factorial2([7, 8, 9], exact=False))
@@ -1925,36 +1892,6 @@ class TestGamma(object):
         gamln = special.gammaln(3)
         lngam = log(special.gamma(3))
         assert_almost_equal(gamln,lngam,8)
-
-    def test_gammainc(self):
-        gama = special.gammainc(.5,.5)
-        assert_almost_equal(gama,.7,1)
-
-    def test_gammaincnan(self):
-        gama = special.gammainc(-1,1)
-        assert_(isnan(gama))
-
-    def test_gammainczero(self):
-        # bad arg but zero integration limit
-        gama = special.gammainc(-1,0)
-        assert_equal(gama,0.0)
-
-    def test_gammaincinf(self):
-        gama = special.gammainc(0.5, np.inf)
-        assert_equal(gama,1.0)
-
-    def test_gammaincc(self):
-        gicc = special.gammaincc(.5,.5)
-        greal = 1 - special.gammainc(.5,.5)
-        assert_almost_equal(gicc,greal,8)
-
-    def test_gammainccnan(self):
-        gama = special.gammaincc(-1,1)
-        assert_(isnan(gama))
-
-    def test_gammainccinf(self):
-        gama = special.gammaincc(0.5,np.inf)
-        assert_equal(gama,0.0)
 
     def test_gammainccinv(self):
         gccinv = special.gammainccinv(.5,.5)
@@ -2591,9 +2528,13 @@ class TestBessel(object):
                     assert_allclose(c3, c2, err_msg=(v, z),
                                      rtol=rtol, atol=atol)
 
+    @pytest.mark.xfail(platform.machine() == 'ppc64le',
+                       reason="fails on ppc64le")
     def test_jv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.jv, special.jn, rtol=1e-10, atol=1e-305)
 
+    @pytest.mark.xfail(platform.machine() == 'ppc64le',
+                       reason="fails on ppc64le")
     def test_yv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305)
 
@@ -3337,8 +3278,6 @@ def test_legacy():
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))
-        assert_equal(special.pdtrc(1, 0.3), special.pdtrc(1.8, 0.3))
-        assert_equal(special.pdtr(1, 0.3), special.pdtr(1.8, 0.3))
         assert_equal(special.pdtri(1, 0.3), special.pdtri(1.8, 0.3))
         assert_equal(special.kn(1, 0.3), special.kn(1.8, 0.3))
         assert_equal(special.yn(1, 0.3), special.yn(1.8, 0.3))

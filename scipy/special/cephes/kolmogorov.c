@@ -261,7 +261,6 @@ _kolmogi(double psf, double pcdf)
     double fmax = pcdf - 1;
     int iterations;
     double a = xmin, b = xmax;
-    double fa = fmin, fb = fmax;
 
     if (!(psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
         sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
@@ -337,10 +336,8 @@ _kolmogi(double psf, double pcdf)
         /* Update the bracketing interval */
         if (df > 0 && x > a) {
             a = x;
-            fa = df;
         } else if (df < 0 && x < b) {
             b = x;
-            fb = df;
         }
 
         dfdx = -probs.pdf;
@@ -910,7 +907,6 @@ _smirnovi(int n, double psf, double pcdf)
     int iterations = 0;
     int function_calls = 0;
     double a=0, b=1;
-    double fa=pcdf, fb=-psf;
     double maxlogpcdf, psfrootn;
     double dx, dxold;
 
@@ -1000,13 +996,9 @@ _smirnovi(int n, double psf, double pcdf)
     assert (x < 1);
 
     /*
-     * Skip computing fb, fb as that takes cycles and the exact values
-     * are not needed. Instead set
-     *  fa <- f(0.0)=pcdf,   fb <- f(1.0)=psf
-     * so that fa, fb have the correct sign.
+     * Skip computing fa, fb as that takes cycles and the exact values
+     * are not needed.
      */
-    fa = pcdf;
-    fb = -psf;
 
     /* STEP 5 Run N-R.
      * smirnov should be well-enough behaved for NR starting at this location.
@@ -1030,10 +1022,8 @@ _smirnovi(int n, double psf, double pcdf)
         /* Update the bracketing interval */
         if (df > 0 &&  x > a) {
             a = x;
-            fa = df;
         } else if (df < 0 && x < b) {
             b = x;
-            fb = df;
         }
 
         if (dfdx == 0) {

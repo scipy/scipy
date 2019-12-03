@@ -5276,7 +5276,7 @@ C       Output:  EI --- Ei(x)
 C       ============================================
 C
         IMPLICIT NONE
-        DOUBLE COMPLEX Z, CEI, IMF
+        DOUBLE COMPLEX Z, CEI
         DOUBLE PRECISION PI
         PI=3.141592653589793D0
         CALL E1Z(-Z, CEI)
@@ -5287,7 +5287,7 @@ C
            CEI = CEI - (0d0,1d0)*PI
         ELSE IF (DIMAG(Z).EQ.0) THEN
            IF (DBLE(Z).GT.0) THEN
-              CEI = CEI - (0d0,1d0)*PI
+              CEI = CEI + (0d0,1d0)*DSIGN(PI,DIMAG(Z))
            ENDIF
         ENDIF
         RETURN
@@ -8738,8 +8738,9 @@ C          Power series
 10         CONTINUE
 15         CONTINUE
            IF (X.LE.0.0.AND.DIMAG(Z).EQ.0.0) THEN
-C             Careful on the branch cut -- avoid signed zeros
-              CE1=-EL-CDLOG(-Z)+Z*CE1-PI*(0.0D0,1.0D0)
+C     Careful on the branch cut -- use the sign of the imaginary part
+C     to get the right sign on the factor if pi.
+              CE1=-EL-CDLOG(-Z)+Z*CE1-DSIGN(PI,DIMAG(Z))*(0.0D0,1.0D0)
            ELSE
               CE1=-EL-CDLOG(Z)+Z*CE1
            ENDIF

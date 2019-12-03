@@ -809,6 +809,26 @@ class TestSolveTriangular(object):
         sol = solve_triangular(A, b, lower=True, trans=1)
         assert_array_almost_equal(sol, [[.5-.5j, -.25-.25j], [0, 0.5]])
 
+        # check other option combinations with complex rhs
+        b = np.diag([1+1j, 1+2j])
+        sol = solve_triangular(A, b, lower=True, trans=0)
+        assert_array_almost_equal(sol, [[1, 0], [-0.5j, 0.5+1j]])
+
+        sol = solve_triangular(A, b, lower=True, trans=1)
+        assert_array_almost_equal(sol, [[1, 0.25-0.75j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A, b, lower=True, trans=2)
+        assert_array_almost_equal(sol, [[1j, -0.75-0.25j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=0)
+        assert_array_almost_equal(sol, [[1, 0.25-0.75j], [0, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=1)
+        assert_array_almost_equal(sol, [[1, 0], [-0.5j, 0.5+1j]])
+
+        sol = solve_triangular(A.T, b, lower=False, trans=2)
+        assert_array_almost_equal(sol, [[1j, 0], [-0.5, 0.5+1j]])
+
     def test_check_finite(self):
         """
         solve_triangular on a simple 2x2 matrix.
@@ -939,7 +959,7 @@ class TestLstsq(object):
                         assert_allclose(dot(a, x), b,
                                         atol=25 * _eps_cast(a1.dtype),
                                         rtol=25 * _eps_cast(a1.dtype),
-                                         err_msg="driver: %s" % lapack_driver)
+                                        err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet(self):
         for dtype in REAL_DTYPES:

@@ -125,18 +125,29 @@ static double igamc_series(double, double);
 static double asymptotic_series(double, double, int);
 
 
-double igam(a, x)
-double a, x;
+double igam(double a, double x)
 {
     double absxma_a;
 
-    /* Check zero integration limit first */
-    if (x == 0)
-	return (0.0);
-
-    if ((x < 0) || (a <= 0)) {
-	sf_error("gammainc", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    if (x < 0 || a < 0) {
+        sf_error("gammainc", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    } else if (a == 0) {
+        if (x > 0) {
+            return 1;
+        } else {
+            return NPY_NAN;
+        }
+    } else if (x == 0) {
+        /* Zero integration limit */
+        return 0;
+    } else if (npy_isinf(a)) {
+        if (npy_isinf(x)) {
+            return NPY_NAN;
+        }
+        return 0;
+    } else if (npy_isinf(x)) {
+        return 1;
     }
 
     /* Asymptotic regime where a ~ x; see [2]. */
@@ -159,13 +170,24 @@ double igamc(double a, double x)
 {
     double absxma_a;
 
-    if ((x < 0) || (a <= 0)) {
+    if (x < 0 || a < 0) {
 	sf_error("gammaincc", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return NPY_NAN;
+    } else if (a == 0) {
+        if (x > 0) {
+	    return 0;
+	} else {
+	    return NPY_NAN;
+	}
     } else if (x == 0) {
 	return 1;
-    } else if (cephes_isinf(x)) {
-	return 0.0;
+    } else if (npy_isinf(a)) {
+	if (npy_isinf(x)) {
+	    return NPY_NAN;
+	}
+	return 1;
+    } else if (npy_isinf(x)) {
+	return 0;
     }
 
     /* Asymptotic regime where a ~ x; see [2]. */

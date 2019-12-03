@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 import operator
 import warnings
 import numpy as np
@@ -94,9 +95,9 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify argument processing.  If 'dtype' is not
+    """Function used to simplify argument processing. If 'dtype' is not
     specified (is None), returns a.dtype; otherwise returns a np.dtype
-    object created from the specified dtype argument.  If 'dtype' and 'a'
+    object created from the specified dtype argument. If 'dtype' and 'a'
     are both None, construct a data type out of the 'default' parameter.
     Furthermore, 'dtype' must be in 'allowed' set.
     """
@@ -328,6 +329,14 @@ def check_reshape_kwargs(kwargs):
         raise TypeError('reshape() got unexpected keywords arguments: {}'
                         .format(', '.join(kwargs.keys())))
     return order, copy
+
+
+def is_pydata_spmatrix(m):
+    """
+    Check whether object is pydata/sparse matrix, avoiding importing the module.
+    """
+    base_cls = getattr(sys.modules.get('sparse'), 'SparseArray', None)
+    return base_cls is not None and isinstance(m, base_cls)
 
 
 ###############################################################################

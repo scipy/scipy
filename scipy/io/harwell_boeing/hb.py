@@ -352,7 +352,7 @@ def _write_data(m, fid, header):
 
     fid.write(header.dump())
     fid.write("\n")
-    # +1 is for fortran one-based indexing
+    # +1 is for Fortran one-based indexing
     write_array(fid, m.indptr+1, header.pointer_nlines,
                 header.pointer_format)
     write_array(fid, m.indices+1, header.indices_nlines,
@@ -363,7 +363,7 @@ def _write_data(m, fid, header):
 
 class HBMatrixType(object):
     """Class to hold the matrix type."""
-    # q2f* translates qualified names to fortran character
+    # q2f* translates qualified names to Fortran character
     _q2f_type = {
         "real": "R",
         "complex": "C",
@@ -475,7 +475,7 @@ def hb_read(path_or_open_file):
     Parameters
     ----------
     path_or_open_file : path-like or file-like
-        If a file-like object, it is used as-is. Otherwise it is opened
+        If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
 
     Returns
@@ -510,7 +510,7 @@ def hb_write(path_or_open_file, m, hb_info=None):
     Parameters
     ----------
     path_or_open_file : path-like or file-like
-        If a file-like object, it is used as-is. Otherwise it is opened
+        If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
     m : sparse-matrix
         the sparse matrix to write

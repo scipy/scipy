@@ -293,7 +293,10 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-
+    if not isspmatrix(csgraph):
+        # for dense array input, zero entries represent non-edge
+        dist_matrix[dist_matrix == 0] = INFINITY
+        
     if unweighted:
         dist_matrix[~np.isinf(dist_matrix)] = 1
 
@@ -337,10 +340,8 @@ cdef void _floyd_warshall(
 
     # ----------------------------------------------------------------------
     #  Initialize distance matrix
-    #   - set non-edges to infinity
     #   - set diagonal to zero
     #   - symmetrize matrix if non-directed graph is desired
-    dist_matrix[dist_matrix == 0] = INFINITY
     dist_matrix.flat[::N + 1] = 0
     if not directed:
         for i in range(N):
@@ -629,10 +630,12 @@ cdef _dijkstra_setup_heap_multi(FibonacciHeap *heap,
     heap.min_node = NULL
     for i in range(Nind):
         j_source = source_indices[i]
+        current_node = &nodes[j_source]
+        if current_node.state == SCANNED:
+            continue
         dist_matrix[j_source] = 0
         if return_pred:
             sources[j_source] = j_source
-        current_node = &nodes[j_source]
         current_node.state = SCANNED
         current_node.source = j_source
         insert_node(heap, &nodes[j_source])

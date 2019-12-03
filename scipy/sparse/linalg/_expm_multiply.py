@@ -8,6 +8,7 @@ import numpy as np
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse.sputils import is_pydata_spmatrix
 
 __all__ = ['expm_multiply']
 
@@ -16,6 +17,8 @@ def _exact_inf_norm(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
         return max(abs(A).sum(axis=1).flat)
+    elif is_pydata_spmatrix(A):
+        return max(abs(A).sum(axis=1))
     else:
         return np.linalg.norm(A, np.inf)
 
@@ -24,6 +27,8 @@ def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
         return max(abs(A).sum(axis=0).flat)
+    elif is_pydata_spmatrix(A):
+        return max(abs(A).sum(axis=0))
     else:
         return np.linalg.norm(A, 1)
 
@@ -32,6 +37,8 @@ def _trace(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
         return A.diagonal().sum()
+    elif is_pydata_spmatrix(A):
+        return A.to_scipy_sparse().diagonal().sum()
     else:
         return np.trace(A)
 
@@ -41,6 +48,9 @@ def _ident_like(A):
     if scipy.sparse.isspmatrix(A):
         return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
                 dtype=A.dtype, format=A.format)
+    elif is_pydata_spmatrix(A):
+        import sparse
+        return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
     else:
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
@@ -522,7 +532,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     num : int, optional
         Number of time points to use.
     endpoint : bool, optional
-        If True, `stop` is the last time point.  Otherwise, it is not included.
+        If True, `stop` is the last time point. Otherwise, it is not included.
     balance : bool
         Indicates whether or not to apply balancing.
     status_only : bool

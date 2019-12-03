@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import scipy.linalg
 from scipy._lib._util import check_random_state
+from ._rotation_groups import create_group
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -16,10 +17,10 @@ def _elementary_basis_vector(axis):
     return b
 
 
-def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
-    # The algorithm assumes intrinsic frame transformations. For representation
-    # the paper uses transformation matrices, which are transpose of the
-    # direction cosine matrices used by our Rotation class.
+def _compute_euler_from_matrix(matrix, seq, extrinsic=False):
+    # The algorithm assumes intrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation matrices which are transposition
+    # rotation matrices used within Rotation.
     # Adapt the algorithm for our case by
     # 1. Instead of transposing our representation, use the transpose of the
     #    O matrix as defined in the paper, and be careful to swap indices
@@ -28,9 +29,9 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
     if extrinsic:
         seq = seq[::-1]
 
-    if dcm.ndim == 2:
-        dcm = dcm[None, :, :]
-    num_rotations = dcm.shape[0]
+    if matrix.ndim == 2:
+        matrix = matrix[None, :, :]
+    num_rotations = matrix.shape[0]
 
     # Step 0
     # Algorithm assumes axes as column vectors, here we use 1D vectors
@@ -53,17 +54,17 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
         [0, cl, sl],
         [0, -sl, cl],
     ])
-    res = np.einsum('...ij,...jk->...ik', c, dcm)
-    dcm_transformed = np.einsum('...ij,...jk->...ik', res, c.T.dot(rot))
+    res = np.einsum('...ij,...jk->...ik', c, matrix)
+    matrix_transformed = np.einsum('...ij,...jk->...ik', res, c.T.dot(rot))
 
     # Step 4
     angles = np.empty((num_rotations, 3))
     # Ensure less than unit norm
-    positive_unity = dcm_transformed[:, 2, 2] > 1
-    negative_unity = dcm_transformed[:, 2, 2] < -1
-    dcm_transformed[positive_unity, 2, 2] = 1
-    dcm_transformed[negative_unity, 2, 2] = -1
-    angles[:, 1] = np.arccos(dcm_transformed[:, 2, 2])
+    positive_unity = matrix_transformed[:, 2, 2] > 1
+    negative_unity = matrix_transformed[:, 2, 2] < -1
+    matrix_transformed[positive_unity, 2, 2] = 1
+    matrix_transformed[negative_unity, 2, 2] = -1
+    angles[:, 1] = np.arccos(matrix_transformed[:, 2, 2])
 
     # Steps 5, 6
     eps = 1e-7
@@ -75,10 +76,10 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # 5b
     safe_mask = np.logical_and(safe1, safe2)
-    angles[safe_mask, 0] = np.arctan2(dcm_transformed[safe_mask, 0, 2],
-                                      -dcm_transformed[safe_mask, 1, 2])
-    angles[safe_mask, 2] = np.arctan2(dcm_transformed[safe_mask, 2, 0],
-                                      dcm_transformed[safe_mask, 2, 1])
+    angles[safe_mask, 0] = np.arctan2(matrix_transformed[safe_mask, 0, 2],
+                                      -matrix_transformed[safe_mask, 1, 2])
+    angles[safe_mask, 2] = np.arctan2(matrix_transformed[safe_mask, 2, 0],
+                                      matrix_transformed[safe_mask, 2, 1])
 
     if extrinsic:
         # For extrinsic, set first angle to zero so that after reversal we
@@ -86,29 +87,29 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
         # 6a
         angles[~safe_mask, 0] = 0
         # 6b
-        angles[~safe1, 2] = np.arctan2(
-            dcm_transformed[~safe1, 1, 0] - dcm_transformed[~safe1, 0, 1],
-            dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
-        )
+        angles[~safe1, 2] = np.arctan2(matrix_transformed[~safe1, 1, 0]
+                                       - matrix_transformed[~safe1, 0, 1],
+                                       matrix_transformed[~safe1, 0, 0]
+                                       + matrix_transformed[~safe1, 1, 1])
         # 6c
-        angles[~safe2, 2] = -np.arctan2(
-            dcm_transformed[~safe2, 1, 0] + dcm_transformed[~safe2, 0, 1],
-            dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
-        )
+        angles[~safe2, 2] = -np.arctan2(matrix_transformed[~safe2, 1, 0]
+                                        + matrix_transformed[~safe2, 0, 1],
+                                        matrix_transformed[~safe2, 0, 0]
+                                        - matrix_transformed[~safe2, 1, 1])
     else:
         # For instrinsic, set third angle to zero
         # 6a
         angles[~safe_mask, 2] = 0
         # 6b
-        angles[~safe1, 0] = np.arctan2(
-            dcm_transformed[~safe1, 1, 0] - dcm_transformed[~safe1, 0, 1],
-            dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
-        )
+        angles[~safe1, 0] = np.arctan2(matrix_transformed[~safe1, 1, 0]
+                                       - matrix_transformed[~safe1, 0, 1],
+                                       matrix_transformed[~safe1, 0, 0]
+                                       + matrix_transformed[~safe1, 1, 1])
         # 6c
-        angles[~safe2, 0] = np.arctan2(
-            dcm_transformed[~safe2, 1, 0] + dcm_transformed[~safe2, 0, 1],
-            dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
-        )
+        angles[~safe2, 0] = np.arctan2(matrix_transformed[~safe2, 1, 0]
+                                       + matrix_transformed[~safe2, 0, 1],
+                                       matrix_transformed[~safe2, 0, 0]
+                                       - matrix_transformed[~safe2, 1, 1])
 
     # Step 7
     if seq[0] == seq[2]:
@@ -179,9 +180,9 @@ class Rotation(object):
     with:
 
     - Quaternions
-    - Direction Cosine Matrices
+    - Rotation Matrices
     - Rotation Vectors
-    - Euler angles
+    - Euler Angles
 
     The following operations on rotations are supported:
 
@@ -200,20 +201,24 @@ class Rotation(object):
     -------
     __len__
     from_quat
-    from_dcm
+    from_matrix
     from_rotvec
     from_euler
     as_quat
-    as_dcm
+    as_matrix
     as_rotvec
     as_euler
     apply
     __mul__
     inv
     magnitude
+    mean
+    reduce
+    create_group
     __getitem__
+    identity
     random
-    match_vectors
+    align_vectors
 
     See Also
     --------
@@ -238,7 +243,7 @@ class Rotation(object):
 
     The rotation can be expressed in any of the other formats:
 
-    >>> r.as_dcm()
+    >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
     [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
     [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -247,12 +252,11 @@ class Rotation(object):
     >>> r.as_euler('zyx', degrees=True)
     array([90.,  0.,  0.])
 
-    The same rotation can be initialized using a direction cosine matrix:
+    The same rotation can be initialized using a rotation matrix:
 
-    >>> r = R.from_dcm(np.array([
-    ... [0, -1, 0],
-    ... [1, 0, 0],
-    ... [0, 0, 1]]))
+    >>> r = R.from_matrix([[0, -1, 0],
+    ...                    [1, 0, 0],
+    ...                    [0, 0, 1]])
 
     Representation in other formats:
 
@@ -271,7 +275,7 @@ class Rotation(object):
 
     >>> r.as_quat()
     array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_dcm()
+    >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -288,7 +292,7 @@ class Rotation(object):
 
     >>> r.as_quat()
     array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_dcm()
+    >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -328,7 +332,7 @@ class Rotation(object):
            [0.        , 0.38268343, 0.        , 0.92387953],
            [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
     >>> p = r[0]
-    >>> p.as_dcm()
+    >>> p.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -361,7 +365,7 @@ class Rotation(object):
     output formats supported, consult the individual method's examples.
 
     """
-    def __init__(self, quat, normalized=False, copy=True):
+    def __init__(self, quat, normalize=True, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
@@ -376,9 +380,7 @@ class Rotation(object):
             quat = quat[None, :]
             self._single = True
 
-        if normalized:
-            self._quat = quat.copy() if copy else quat
-        else:
+        if normalize:
             self._quat = quat.copy()
             norms = scipy.linalg.norm(quat, axis=1)
 
@@ -388,6 +390,8 @@ class Rotation(object):
 
             # Ensure norm is broadcasted along each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
+        else:
+            self._quat = quat.copy() if copy else quat
 
     def __len__(self):
         """Number of rotations contained in this object.
@@ -403,7 +407,7 @@ class Rotation(object):
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, normalized=False):
+    def from_quat(cls, quat, normalized=None):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -412,11 +416,13 @@ class Rotation(object):
         ----------
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion in scalar-last
-            (x, y, z, w) format.
-        normalized : bool, optional
-            If False, input quaternions are normalized to unit norm before
-            being stored. If True, quaternions are assumed to already have
-            unit norm and are stored as given. Default is False.
+            (x, y, z, w) format. Each quaternion will be normalized to unit
+            norm.
+        normalized
+            Deprecated argument. Has no effect, input `quat` is always
+            normalized.
+
+            .. deprecated:: 1.4.0
 
         Returns
         -------
@@ -459,40 +465,38 @@ class Rotation(object):
         >>> r.as_quat().shape
         (1, 4)
 
-        By default, quaternions are normalized before initialization.
+        Quaternions are normalized before initialization.
 
         >>> r = R.from_quat([0, 0, 1, 1])
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
-
-        If unit norms are ensured, skip the normalization step.
-
-        >>> r = R.from_quat([0, 0, 1, 0], normalized=True)
-        >>> r.as_quat()
-        array([0., 0., 1., 0.])
-
         """
-        return cls(quat, normalized)
+        if normalized is not None:
+            warnings.warn("`normalized` is deprecated in scipy 1.4.0 and "
+                          "will be removed in scipy 1.6.0. The input `quat` "
+                          "is always normalized.", DeprecationWarning)
+
+        return cls(quat, normalize=True)
 
     @classmethod
-    def from_dcm(cls, dcm):
-        """Initialize from direction cosine matrices.
+    def from_matrix(cls, matrix):
+        """Initialize from rotation matrix.
 
-        Rotations in 3 dimensions can be represented using 3 x 3 proper
+        Rotations in 3 dimensions can be represented with 3 x 3 proper
         orthogonal matrices [1]_. If the input is not proper orthogonal,
         an approximation is created using the method described in [2]_.
 
         Parameters
         ----------
-        dcm : array_like, shape (N, 3, 3) or (3, 3)
-            A single matrix or a stack of matrices, where ``dcm[i]`` is the i-th
-            matrix.
+        matrix : array_like, shape (N, 3, 3) or (3, 3)
+            A single matrix or a stack of matrices, where ``matrix[i]`` is
+            the i-th matrix.
 
         Returns
         -------
         rotation : `Rotation` instance
-            Object containing the rotations represented by the input direction
-            cosine matrices.
+            Object containing the rotations represented by the rotation
+            matrices.
 
         References
         ----------
@@ -507,16 +511,16 @@ class Rotation(object):
 
         Initialize a single rotation:
 
-        >>> r = R.from_dcm([
+        >>> r = R.from_matrix([
         ... [0, -1, 0],
         ... [1, 0, 0],
         ... [0, 0, 1]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (3, 3)
 
         Initialize multiple rotations in a single object:
 
-        >>> r = R.from_dcm([
+        >>> r = R.from_matrix([
         ... [
         ...     [0, -1, 0],
         ...     [1, 0, 0],
@@ -527,7 +531,7 @@ class Rotation(object):
         ...     [0, 0, -1],
         ...     [0, 1, 0],
         ... ]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (2, 3, 3)
 
         If input matrices are not special orthogonal (orthogonal with
@@ -539,47 +543,46 @@ class Rotation(object):
         ... [0, 0, 0.5]])
         >>> np.linalg.det(a)
         0.12500000000000003
-        >>> r = R.from_dcm(a)
-        >>> dcm = r.as_dcm()
-        >>> dcm
+        >>> r = R.from_matrix(a)
+        >>> matrix = r.as_matrix()
+        >>> matrix
         array([[-0.38461538, -0.92307692,  0.        ],
                [ 0.92307692, -0.38461538,  0.        ],
                [ 0.        ,  0.        ,  1.        ]])
-        >>> np.linalg.det(dcm)
+        >>> np.linalg.det(matrix)
         1.0000000000000002
 
         It is also possible to have a stack containing a single rotation:
 
-        >>> r = R.from_dcm([[
+        >>> r = R.from_matrix([[
         ... [0, -1, 0],
         ... [1, 0, 0],
         ... [0, 0, 1]]])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 0., -1.,  0.],
                 [ 1.,  0.,  0.],
                 [ 0.,  0.,  1.]]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (1, 3, 3)
-
         """
         is_single = False
-        dcm = np.asarray(dcm, dtype=float)
+        matrix = np.asarray(matrix, dtype=float)
 
-        if dcm.ndim not in [2, 3] or dcm.shape[-2:] != (3, 3):
-            raise ValueError("Expected `dcm` to have shape (3, 3) or "
-                             "(N, 3, 3), got {}".format(dcm.shape))
+        if matrix.ndim not in [2, 3] or matrix.shape[-2:] != (3, 3):
+            raise ValueError("Expected `matrix` to have shape (3, 3) or "
+                             "(N, 3, 3), got {}".format(matrix.shape))
 
-        # If a single dcm is given, convert it to 3D 1 x 3 x 3 matrix but set
-        # self._single to True so that we can return appropriate objects in
+        # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
+        # set self._single to True so that we can return appropriate objects in
         # the `to_...` methods
-        if dcm.shape == (3, 3):
-            dcm = dcm.reshape((1, 3, 3))
+        if matrix.shape == (3, 3):
+            matrix = matrix.reshape((1, 3, 3))
             is_single = True
 
-        num_rotations = dcm.shape[0]
+        num_rotations = matrix.shape[0]
 
         decision_matrix = np.empty((num_rotations, 4))
-        decision_matrix[:, :3] = dcm.diagonal(axis1=1, axis2=2)
+        decision_matrix[:, :3] = matrix.diagonal(axis1=1, axis2=2)
         decision_matrix[:, -1] = decision_matrix[:, :3].sum(axis=1)
         choices = decision_matrix.argmax(axis=1)
 
@@ -590,23 +593,29 @@ class Rotation(object):
         j = (i + 1) % 3
         k = (j + 1) % 3
 
-        quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * dcm[ind, i, i]
-        quat[ind, j] = dcm[ind, j, i] + dcm[ind, i, j]
-        quat[ind, k] = dcm[ind, k, i] + dcm[ind, i, k]
-        quat[ind, 3] = dcm[ind, k, j] - dcm[ind, j, k]
+        quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * matrix[ind, i, i]
+        quat[ind, j] = matrix[ind, j, i] + matrix[ind, i, j]
+        quat[ind, k] = matrix[ind, k, i] + matrix[ind, i, k]
+        quat[ind, 3] = matrix[ind, k, j] - matrix[ind, j, k]
 
         ind = np.nonzero(choices == 3)[0]
-        quat[ind, 0] = dcm[ind, 2, 1] - dcm[ind, 1, 2]
-        quat[ind, 1] = dcm[ind, 0, 2] - dcm[ind, 2, 0]
-        quat[ind, 2] = dcm[ind, 1, 0] - dcm[ind, 0, 1]
+        quat[ind, 0] = matrix[ind, 2, 1] - matrix[ind, 1, 2]
+        quat[ind, 1] = matrix[ind, 0, 2] - matrix[ind, 2, 0]
+        quat[ind, 2] = matrix[ind, 1, 0] - matrix[ind, 0, 1]
         quat[ind, 3] = 1 + decision_matrix[ind, -1]
 
         quat /= np.linalg.norm(quat, axis=1)[:, None]
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalize=False, copy=False)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalize=False, copy=False)
+
+    @classmethod
+    @np.deprecate(message="from_dcm is renamed to from_matrix in scipy 1.4.0 "
+                          "and will be removed in scipy 1.6.0")
+    def from_dcm(cls, dcm):
+        return cls.from_matrix(dcm)
 
     @classmethod
     def from_rotvec(cls, rotvec):
@@ -693,17 +702,17 @@ class Rotation(object):
         quat[:, 3] = np.cos(norms / 2)
 
         if is_single:
-            return cls(quat[0], normalized=True, copy=False)
+            return cls(quat[0], normalize=False, copy=False)
         else:
-            return cls(quat, normalized=True, copy=False)
+            return cls(quat, normalize=False, copy=False)
 
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
         """Initialize from Euler angles.
 
-        Rotations in 3 dimensions can be represented by a sequece of 3
+        Rotations in 3-D can be represented by a sequence of 3
         rotations around a sequence of axes. In theory, any three axes spanning
-        the 3D Euclidean space are enough. In practice the axes of rotation are
+        the 3-D Euclidean space are enough. In practice, the axes of rotation are
         chosen to be the basis vectors.
 
         The three rotations can either be in a global frame of reference
@@ -848,7 +857,7 @@ class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = _elementary_quat_compose(seq, angles, intrinsic)
-        return cls(quat[0] if is_single else quat, normalized=True, copy=False)
+        return cls(quat[0] if is_single else quat, normalize=False, copy=False)
 
     def as_quat(self):
         """Represent as quaternions.
@@ -874,10 +883,9 @@ class Rotation(object):
 
         Represent a single rotation:
 
-        >>> r = R.from_dcm([
-        ... [0, -1, 0],
-        ... [1, 0, 0],
-        ... [0, 0, 1]])
+        >>> r = R.from_matrix([[0, -1, 0],
+        ...                    [1, 0, 0],
+        ...                    [0, 0, 1]])
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         >>> r.as_quat().shape
@@ -889,7 +897,7 @@ class Rotation(object):
         >>> r.as_quat().shape
         (1, 4)
 
-        Represent multiple rotaions in a single object:
+        Represent multiple rotations in a single object:
 
         >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
         >>> r.as_quat().shape
@@ -901,15 +909,15 @@ class Rotation(object):
         else:
             return self._quat.copy()
 
-    def as_dcm(self):
-        """Represent as direction cosine matrices.
+    def as_matrix(self):
+        """Represent as rotation matrix.
 
-        3D rotations can be represented using direction cosine matrices, which
+        3D rotations can be represented using rotation matrices, which
         are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.
 
         Returns
         -------
-        dcm : ndarray, shape (3, 3) or (N, 3, 3)
+        matrix : ndarray, shape (3, 3) or (N, 3, 3)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -923,36 +931,35 @@ class Rotation(object):
         Represent a single rotation:
 
         >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
                [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (3, 3)
 
         Represent a stack with a single rotation:
 
         >>> r = R.from_quat([[1, 1, 0, 0]])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 0.,  1.,  0.],
                 [ 1.,  0.,  0.],
                 [ 0.,  0., -1.]]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (1, 3, 3)
 
         Represent multiple rotations:
 
         >>> r = R.from_rotvec([[np.pi/2, 0, 0], [0, 0, np.pi/2]])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
                 [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
                 [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]],
                [[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
                 [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]])
-        >>> r.as_dcm().shape
+        >>> r.as_matrix().shape
         (2, 3, 3)
-
         """
         x = self._quat[:, 0]
         y = self._quat[:, 1]
@@ -972,24 +979,29 @@ class Rotation(object):
         xw = x * w
 
         num_rotations = len(self)
-        dcm = np.empty((num_rotations, 3, 3))
+        matrix = np.empty((num_rotations, 3, 3))
 
-        dcm[:, 0, 0] = x2 - y2 - z2 + w2
-        dcm[:, 1, 0] = 2 * (xy + zw)
-        dcm[:, 2, 0] = 2 * (xz - yw)
+        matrix[:, 0, 0] = x2 - y2 - z2 + w2
+        matrix[:, 1, 0] = 2 * (xy + zw)
+        matrix[:, 2, 0] = 2 * (xz - yw)
 
-        dcm[:, 0, 1] = 2 * (xy - zw)
-        dcm[:, 1, 1] = - x2 + y2 - z2 + w2
-        dcm[:, 2, 1] = 2 * (yz + xw)
+        matrix[:, 0, 1] = 2 * (xy - zw)
+        matrix[:, 1, 1] = - x2 + y2 - z2 + w2
+        matrix[:, 2, 1] = 2 * (yz + xw)
 
-        dcm[:, 0, 2] = 2 * (xz + yw)
-        dcm[:, 1, 2] = 2 * (yz - xw)
-        dcm[:, 2, 2] = - x2 - y2 + z2 + w2
+        matrix[:, 0, 2] = 2 * (xz + yw)
+        matrix[:, 1, 2] = 2 * (yz - xw)
+        matrix[:, 2, 2] = - x2 - y2 + z2 + w2
 
         if self._single:
-            return dcm[0]
+            return matrix[0]
         else:
-            return dcm
+            return matrix
+
+    @np.deprecate(message="as_dcm is renamed to as_matrix in scipy 1.4.0 "
+                          "and will be removed in scipy 1.6.0")
+    def as_dcm(self):
+        return self.as_matrix()
 
     def as_rotvec(self):
         """Represent as rotation vectors.
@@ -1160,7 +1172,7 @@ class Rotation(object):
 
         seq = seq.lower()
 
-        angles = _compute_euler_from_dcm(self.as_dcm(), seq, extrinsic)
+        angles = _compute_euler_from_matrix(self.as_matrix(), seq, extrinsic)
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -1178,8 +1190,8 @@ class Rotation(object):
               frame as it rotates. In this case the vector components are
               expressed in the original frame before and after the rotation.
 
-        In terms of DCMs, this application is the same as
-        ``self.as_dcm().dot(vectors)``.
+        In terms of rotation matricies, this application is the same as
+        ``self.as_matrix().dot(vectors)``.
 
         Parameters
         ----------
@@ -1213,7 +1225,7 @@ class Rotation(object):
 
         >>> vector = np.array([1, 0, 0])
         >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
                [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
@@ -1228,7 +1240,7 @@ class Rotation(object):
         ... [1, 0, 0],
         ... [1, 2, 3]])
         >>> r = R.from_rotvec([0, 0, np.pi/4])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[ 0.70710678, -0.70710678,  0.        ],
                [ 0.70710678,  0.70710678,  0.        ],
                [ 0.        ,  0.        ,  1.        ]])
@@ -1242,7 +1254,7 @@ class Rotation(object):
 
         >>> r = R.from_rotvec([[0, 0, np.pi/4], [np.pi/2, 0, 0]])
         >>> vector = np.array([1,2,3])
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
                 [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
@@ -1293,9 +1305,9 @@ class Rotation(object):
             single_vector = True
             vectors = vectors[None, :]
 
-        dcm = self.as_dcm()
+        matrix = self.as_matrix()
         if self._single:
-            dcm = dcm[None, :, :]
+            matrix = matrix[None, :, :]
 
         n_vectors = vectors.shape[0]
         n_rotations = len(self)
@@ -1307,9 +1319,9 @@ class Rotation(object):
                                 n_rotations, n_vectors))
 
         if inverse:
-            result = np.einsum('ikj,ik->ij', dcm, vectors)
+            result = np.einsum('ikj,ik->ij', matrix, vectors)
         else:
-            result = np.einsum('ijk,ik->ij', dcm, vectors)
+            result = np.einsum('ijk,ik->ij', matrix, vectors)
 
         if self._single and single_vector:
             return result[0]
@@ -1320,13 +1332,14 @@ class Rotation(object):
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of DCMs, the composition can
-        be expressed as `p.as_dcm().dot(q.as_dcm())`.
+        by p' is equivalent to `p * q`. In terms of rotation matrices,
+        the composition can be expressed as
+        ``p.as_matrix().dot(q.as_matrix())``.
 
         Parameters
         ----------
         other : `Rotation` instance
-            Object containing the rotaions to be composed with this one. Note
+            Object containing the rotations to be composed with this one. Note
             that rotation compositions are not commutative, so ``p * q`` is
             different from ``q * p``.
 
@@ -1351,16 +1364,16 @@ class Rotation(object):
 
         >>> p = R.from_quat([0, 0, 1, 1])
         >>> q = R.from_quat([1, 0, 0, 1])
-        >>> p.as_dcm()
+        >>> p.as_matrix()
         array([[ 0., -1.,  0.],
                [ 1.,  0.,  0.],
                [ 0.,  0.,  1.]])
-        >>> q.as_dcm()
+        >>> q.as_matrix()
         array([[ 1.,  0.,  0.],
                [ 0.,  0., -1.],
                [ 0.,  1.,  0.]])
         >>> r = p * q
-        >>> r.as_dcm()
+        >>> r.as_matrix()
         array([[0., 0., 1.],
                [1., 0., 0.],
                [0., 1., 0.]])
@@ -1390,7 +1403,7 @@ class Rotation(object):
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalized=True, copy=False)
+        return self.__class__(result, normalize=False, copy=False)
 
     def inv(self):
         """Invert this rotation.
@@ -1427,7 +1440,7 @@ class Rotation(object):
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, normalized=True, copy=False)
+        return self.__class__(quat, normalize=False, copy=False)
 
     def magnitude(self):
         """Get the magnitude(s) of the rotation(s).
@@ -1460,6 +1473,186 @@ class Rotation(object):
             return angles[0]
         else:
             return angles
+
+    def mean(self, weights=None):
+        """Get the mean of the rotations.
+
+        Parameters
+        ----------
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the rotations. If
+            None (default), then all values in `weights` are assumed to be
+            equal.
+
+        Returns
+        -------
+        mean : `Rotation` instance
+            Object containing the mean of the rotations in the current
+            instance.
+
+        Notes
+        -----
+        The mean used is the chordal L2 mean (also called the projected or
+        induced arithmetic mean). If ``p`` is a set of rotations with mean
+        ``m``, then ``m`` is the rotation which minimizes
+        ``(weights[:, None, None] * (p.as_matrix() - m.as_matrix())**2).sum()``.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r = R.from_euler('zyx', [[0, 0, 0],
+        ...                          [1, 0, 0],
+        ...                          [0, 1, 0],
+        ...                          [0, 0, 1]], degrees=True)
+        >>> r.mean().as_euler('zyx', degrees=True)
+        array([0.24945696, 0.25054542, 0.24945696])
+        """
+        if weights is None:
+            weights = np.ones(len(self))
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != len(self):
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of rotations, got "
+                                 "{} values and {} rotations.".format(
+                                    weights.shape[0], len(self)))
+            if np.any(weights < 0):
+                raise ValueError("`weights` must be non-negative.")
+
+        K = np.dot(weights * self._quat.T, self._quat)
+        l, v = np.linalg.eigh(K)
+        return self.__class__(v[:, -1], normalize=False)
+
+    def reduce(self, left=None, right=None, return_indices=False):
+        """Reduce this rotation with the provided rotation groups.
+
+        Reduction of a rotation ``p`` is a transformation of the form
+        ``q = l * p * r``, where ``l`` and ``r`` are chosen from `left` and
+        `right` respectively, such that rotation ``q`` has the smallest
+        magnitude.
+
+        If `left` and `right` are rotation groups representing symmetries of
+        two objects rotated by ``p``, then ``q`` is the rotation of the
+        smallest magnitude to align these objects considering their symmetries.
+
+        Parameters
+        ----------
+        left : `Rotation` instance, optional
+            Object containing the left rotation(s). Default value (None)
+            corresponds to the identity rotation.
+        right : `Rotation` instance, optional
+            Object containing the right rotation(s). Default value (None)
+            corresponds to the identity rotation.
+        return_indices : bool, optional
+            Whether to return the indices of the rotations from `left` and
+            `right` used for reduction.
+
+        Returns
+        -------
+        reduced : `Rotation` instance
+            Object containing reduced rotations.
+        left_best, right_best: integer ndarray
+            Indices of elements from `left` and `right` used for reduction.
+        """
+        if left is None and right is None:
+            reduced = self.__class__(self._quat, normalize=False, copy=True)
+            if return_indices:
+                return reduced, None, None
+            else:
+                return reduced
+        elif right is None:
+            right = Rotation.identity()
+        elif left is None:
+            left = Rotation.identity()
+
+        # Levi-Civita tensor for triple product computations
+        e = np.zeros((3, 3, 3))
+        e[0, 1, 2] = e[1, 2, 0] = e[2, 0, 1] = 1
+        e[0, 2, 1] = e[2, 1, 0] = e[1, 0, 2] = -1
+
+        # We want to calculate the real components of q = l * p * r. It can
+        # be shown that:
+        #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
+        #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
+        # where ls and lv denote the scalar and vector components of l.
+
+        def split_rotation(R):
+            q = np.atleast_2d(R.as_quat())
+            return q[:, -1], q[:, :-1]
+
+        p = self
+        ps, pv = split_rotation(p)
+        ls, lv = split_rotation(left)
+        rs, rv = split_rotation(right)
+
+        qs = np.abs(np.einsum('i,j,k', ls, ps, rs) -
+                    np.einsum('i,jx,kx', ls, pv, rv) -
+                    np.einsum('ix,j,kx', lv, ps, rv) -
+                    np.einsum('ix,jx,k', lv, pv, rs) -
+                    np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
+        qs = np.reshape(np.rollaxis(qs, 1), (qs.shape[1], -1))
+
+        # Find best indices from scalar components
+        max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
+        left_best = max_ind // len(right)
+        right_best = max_ind % len(right)
+
+        # Reduce the rotation using the best indices
+        reduced = left[left_best] * p * right[right_best]
+        if self._single:
+            reduced = reduced[0]
+            left_best = left_best[0]
+            right_best = right_best[0]
+
+        if return_indices:
+            if left is None:
+                left_best = None
+            if right is None:
+                right_best = None
+            return reduced, left_best, right_best
+        else:
+            return reduced
+
+    @classmethod
+    def create_group(cls, group, axis='Z'):
+        """Create a 3D rotation group.
+
+        Parameters
+        ----------
+        group : string
+            The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
+            where `n` is a positive integer. The groups are:
+
+                * I: Icosahedral group
+                * O: Octahedral group
+                * T: Tetrahedral group
+                * D: Dicyclic group
+                * C: Cyclic group
+
+        axis : integer
+            The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or
+            lowercase). Default is 'Z'. Ignored for groups 'I', 'O', and 'T'.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            Object containing the elements of the rotation group.
+
+        Notes
+        -----
+        This method generates rotation groups only. The full 3-dimensional
+        point groups [PointGroups]_ also contain reflections.
+
+        References
+        ----------
+        .. [PointGroups] `Point groups
+           <https://en.wikipedia.org/wiki/Point_groups_in_three_dimensions>`_
+           on Wikipedia.
+        """
+        return create_group(cls, group, axis=axis)
 
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
@@ -1507,7 +1700,31 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         """
-        return self.__class__(self._quat[indexer], normalized=True)
+        return self.__class__(self._quat[indexer], normalize=False)
+
+    @classmethod
+    def identity(cls, num=None):
+        """Get identity rotation(s).
+
+        Composition with the identity rotation has no effect.
+
+        Parameters
+        ----------
+        num : int or None, optional
+            Number of identity rotations to generate. If None (default), then a
+            single rotation is generated.
+
+        Returns
+        -------
+        identity : Rotation object
+            The identity rotation.
+        """
+        if num is None:
+            q = [0, 0, 0, 1]
+        else:
+            q = np.zeros((num, 4))
+            q[:, 3] = 1
+        return cls(q, normalize=False)
 
     @classmethod
     def random(cls, num=None, random_state=None):
@@ -1555,66 +1772,14 @@ class Rotation(object):
         else:
             sample = random_state.normal(size=(num, 4))
 
-        return Rotation.from_quat(sample)
+        return cls(sample)
 
     @classmethod
+    @np.deprecate(message="match_vectors is deprecated in favor of "
+                          "align_vectors in scipy 1.4.0 and will be removed "
+                          "in scipy 1.6.0")
     def match_vectors(cls, a, b, weights=None, normalized=False):
-        """Estimate a rotation to match two sets of vectors.
-
-        Find a rotation between frames A and B which best matches a set of unit
-        vectors `a` and `b` observed in these frames. The following loss
-        function is minimized to solve for the direction cosine matrix
-        :math:`C`:
-
-        .. math::
-
-            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
-            C \\mathbf{b}_i \\rVert^2 ,
-
-        where :math:`w_i`'s are the `weights` corresponding to each vector.
-
-        The rotation is estimated using Markley's SVD method [1]_.
-
-        Parameters
-        ----------
-        a : array_like, shape (N, 3)
-            Vector components observed in initial frame A. Each row of `a`
-            denotes a vector.
-        b : array_like, shape (N, 3)
-            Vector components observed in another frame B. Each row of `b`
-            denotes a vector.
-        weights : array_like shape (N,), optional
-            Weights describing the relative importance of the vectors in
-            `a`. If None (default), then all values in `weights` are assumed to
-            be equal.
-        normalized : bool, optional
-            If True, assume input vectors `a` and `b` to have unit norm. If
-            False, normalize `a` and `b` before estimating rotation. Default
-            is False.
-
-        Returns
-        -------
-        estimated_rotation : `Rotation` instance
-            Best estimate of the rotation that transforms `b` to `a`.
-        sensitivity_matrix : ndarray, shape (3, 3)
-            Scaled covariance of the attitude errors expressed as the small
-            rotation vector of frame A. Multiply with harmonic mean [3]_ of
-            variance in each observation to get true covariance matrix. The
-            error model is detailed in [2]_.
-
-        References
-        ----------
-        .. [1] F. Landis Markley,
-                "Attitude determination using vector observations: a fast
-                optimal matrix algorithm", Journal of Astronautical Sciences,
-                Vol. 41, No.2, 1993, pp. 261-280.
-        .. [2] F. Landis Markley,
-                "Attitude determination using vector observations and the
-                Singular Value Decomposition", Journal of Astronautical
-                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-
-        """
+        """Deprecated in favor of `align_vectors`."""
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
             raise ValueError("Expected input `a` to have shape (N, 3), "
@@ -1670,7 +1835,137 @@ class Rotation(object):
         kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
         sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
                        (zeta * a.shape[0]))
-        return cls.from_dcm(C), sensitivity
+        return cls.from_matrix(C), sensitivity
+
+    @classmethod
+    def align_vectors(cls, a, b, weights=None, return_sensitivity=False):
+        """Estimate a rotation to optimally align two sets of vectors.
+
+        Find a rotation between frames A and B which best aligns a set of
+        vectors `a` and `b` observed in these frames. The following loss
+        function is minimized to solve for the rotation matrix
+        :math:`C`:
+
+        .. math::
+
+            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
+            C \\mathbf{b}_i \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each vector.
+
+        The rotation is estimated with Kabsch algorithm [1]_.
+
+        Parameters
+        ----------
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the vector
+            observations. If None (default), then all values in `weights` are
+            assumed to be 1.
+        return_sensitivity : bool, optional
+            Whether to return the sensitivity matrix. See Notes for details.
+            Default is False.
+
+        Returns
+        -------
+        estimated_rotation : `Rotation` instance
+            Best estimate of the rotation that transforms `b` to `a`.
+        rmsd : float
+            Root mean square distance (weighted) between the given set of
+            vectors after alignment. It is equal to ``sqrt(2 * minimum_loss)``,
+            where ``minimum_loss`` is the loss function evaluated for the
+            found optimal rotation.
+        sensitivity_matrix : ndarray, shape (3, 3)
+            Sensitivity matrix of the estimated rotation estimate as explained
+            in Notes. Returned only when `return_sensitivity` is True.
+
+        Notes
+        -----
+        This method can also compute the sensitivity of the estimated rotation
+        to small perturbations of the vector measurements. Specifically we
+        consider the rotation estimate error as a small rotation vector of
+        frame A. The sensitivity matrix is proportional to the covariance of
+        this rotation vector assuming that the vectors in `a` was measured with
+        errors significantly less than their lengths. To get the true
+        covariance matrix, the returned sensitivity matrix must be multiplied
+        by harmonic mean [3]_ of variance in each observation. Note that
+        `weights` are supposed to be inversely proportional to the observation
+        variances to get consistent results. For example, if all vectors are
+        measured with the same accuracy of 0.01 (`weights` must be all equal),
+        then you should multiple the sensitivity matrix by 0.01**2 to get the
+        covariance.
+
+        Refer to [2]_ for more rigorous discussion of the covariance
+        estimation.
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
+        .. [2] F. Landis Markley,
+                "Attitude determination using vector observations: a fast
+                optimal matrix algorithm", Journal of Astronautical Sciences,
+                Vol. 41, No.2, 1993, pp. 261-280.
+        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
+        """
+        a = np.asarray(a)
+        if a.ndim != 2 or a.shape[-1] != 3:
+            raise ValueError("Expected input `a` to have shape (N, 3), "
+                             "got {}".format(a.shape))
+        b = np.asarray(b)
+        if b.ndim != 2 or b.shape[-1] != 3:
+            raise ValueError("Expected input `b` to have shape (N, 3), "
+                             "got {}.".format(b.shape))
+
+        if a.shape != b.shape:
+            raise ValueError("Expected inputs `a` and `b` to have same shapes"
+                             ", got {} and {} respectively.".format(
+                                a.shape, b.shape))
+
+        if weights is None:
+            weights = np.ones(len(b))
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != b.shape[0]:
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of input vectors, got "
+                                 "{} values and {} vectors.".format(
+                                    weights.shape[0], b.shape[0]))
+
+        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
+        u, s, vh = np.linalg.svd(B)
+
+        # Correct improper rotation if necessary (as in Kabsch algorithm)
+        if np.linalg.det(u @ vh) < 0:
+            s[-1] = -s[-1]
+            u[:, -1] = -u[:, -1]
+
+        C = np.dot(u, vh)
+
+        if s[1] + s[2] < 1e-16 * s[0]:
+            warnings.warn("Optimal rotation is not uniquely or poorly defined "
+                          "for the given sets of vectors.")
+
+        rmsd = np.sqrt(max(
+            np.sum(weights * np.sum(b ** 2 + a ** 2, axis=1)) - 2 * np.sum(s),
+            0))
+
+        if return_sensitivity:
+            zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
+            kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                sensitivity = np.mean(weights) / zeta * (
+                        kappa * np.eye(3) + np.dot(B, B.T))
+            return cls.from_matrix(C), rmsd, sensitivity
+        else:
+            return cls.from_matrix(C), rmsd
 
 
 class Slerp(object):
@@ -1781,8 +2076,9 @@ class Slerp(object):
 
         Parameters
         ----------
-        times : array_like, 1D
-            Times to compute the interpolations at.
+        times : array_like
+            Times to compute the interpolations at. Can be a scalar or
+            1-dimensional.
 
         Returns
         -------
@@ -1792,10 +2088,11 @@ class Slerp(object):
         """
         # Clearly differentiate from self.times property
         compute_times = np.asarray(times)
-        if compute_times.ndim != 1:
-            raise ValueError("Expected times to be specified in a 1 "
-                             "dimensional array, got {} "
-                             "dimensions.".format(compute_times.ndim))
+        if compute_times.ndim > 1:
+            raise ValueError("`times` must be at most 1-dimensional.")
+
+        single_time = compute_times.ndim == 0
+        compute_times = np.atleast_1d(compute_times)
 
         # side = 'left' (default) excludes t_min.
         ind = np.searchsorted(self.times, compute_times) - 1
@@ -1808,5 +2105,10 @@ class Slerp(object):
 
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
 
-        return (self.rotations[ind] *
-                Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
+        result = (self.rotations[ind] *
+                  Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
+
+        if single_time:
+            result = result[0]
+
+        return result

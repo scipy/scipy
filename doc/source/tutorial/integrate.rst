@@ -43,7 +43,7 @@ This could be computed using :obj:`quad`:
     >>> print(abs(result[0]-I))
     1.03761443881e-11
 
-The first argument to quad is a "callable" Python object (*i.e.* a
+The first argument to quad is a "callable" Python object (i.e., a
 function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
@@ -203,7 +203,7 @@ can be calculated as
 (0.20000000000002294, 1.2239614263187945e-08)
 
 Note that the order of arguments for `f` must match the order of the
-integration bounds; i.e. the inner integral with respect to :math:`t` is on
+integration bounds; i.e., the inner integral with respect to :math:`t` is on
 the interval :math:`[1, \infty]` and the outer integral with respect to
 :math:`x` is on the interval :math:`[0, \infty]`.
 
@@ -235,15 +235,15 @@ Gaussian quadrature
 -------------------
 
 A few functions are also provided in order to perform simple Gaussian
-quadrature over a fixed interval. The first is :obj:`fixed_quad` which
+quadrature over a fixed interval. The first is :obj:`fixed_quad`, which
 performs fixed-order Gaussian quadrature. The second function is
-:obj:`quadrature` which performs Gaussian quadrature of multiple
+:obj:`quadrature`, which performs Gaussian quadrature of multiple
 orders until the difference in the integral estimate is beneath some
 tolerance supplied by the user. These functions both use the module
-``scipy.special.orthogonal`` which can calculate the roots and quadrature
+``scipy.special.orthogonal``, which can calculate the roots and quadrature
 weights of a large variety of orthogonal polynomials (the polynomials
 themselves are available as special functions returning instances of
-the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
+the polynomial class --- e.g., :obj:`special.legendre <scipy.special.legendre>`).
 
 
 Romberg Integration
@@ -262,7 +262,7 @@ integration can be used to obtain high-precision estimates of the
 integral using the available samples. Romberg integration uses the
 trapezoid rule at step-sizes related by a power of two and then
 performs Richardson extrapolation on these estimates to approximate
-the integral with a higher-degree of accuracy.
+the integral with a higher degree of accuracy.
 
 In case of arbitrary spaced samples, the two functions :func:`~numpy.trapz`
 and :obj:`simps` are available. They are using Newton-Coates formulas
@@ -347,7 +347,7 @@ to arbitrary additional data you want to provide.
 
 2.) Now compile this file to a shared/dynamic library (a quick search will help
 with this as it is OS-dependent). The user must link any math libraries,
-etc. used.  On linux this looks like::
+etc., used.  On linux this looks like::
 
     $ gcc -shared -fPIC -o testlib.so testlib.c
 
@@ -404,7 +404,7 @@ A higher-order ordinary differential equation can always be reduced to
 a differential equation of this type by introducing intermediate
 derivatives into the :math:`\mathbf{y}` vector.
 
-For example suppose it is desired to find the solution to the
+For example, suppose it is desired to find the solution to the
 following second-order differential equation:
 
 .. math::
@@ -447,8 +447,8 @@ However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not 
 
 This differential equation can be solved using the function :obj:`solve_ivp`.
 It requires the derivative, *fprime*, the time span `[t_start, t_end]`
-and the initial conditions vector, *y0*, as input arguments and returns 
-an object whose *y* field is an array with consecutive solution values as 
+and the initial conditions vector, *y0*, as input arguments and returns
+an object whose *y* field is an array with consecutive solution values as
 columns. The initial conditions are therefore given in the first output column.
 
 >>> from scipy.integrate import solve_ivp
@@ -466,7 +466,7 @@ sol1.t:    [0.         0.10097672 1.04643602 1.91060117 2.49872472 3.08684827
  3.62692846 4.        ]
 
 As it can be seen `solve_ivp` determines its time steps automatically if not
-specified otherwise. To compare the solution of `solve_ivp` with the `airy` 
+specified otherwise. To compare the solution of `solve_ivp` with the `airy`
 function the time vector created by `solve_ivp` is passed to the `airy` function.
 
 >>> print("sol1.y[1]: {}".format(sol1.y[1]))
@@ -475,7 +475,7 @@ sol1.y[1]: [0.35502805 0.328952   0.12801343 0.04008508 0.01601291 0.00623879
 >>> print("airy(sol.t)[0]:  {}".format(airy(sol1.t)[0]))
 airy(sol.t)[0]: [0.35502805 0.328952   0.12804768 0.03995804 0.01575943 0.00562799
  0.00201689 0.00095156]
- 
+
 The solution of `solve_ivp` with its standard parameters shows a big deviation
 to the airy function. To minimize this deviation, relative and absolute
 tolerances can be used.
@@ -486,9 +486,9 @@ tolerances can be used.
 sol2.y[1][::6]: [0.35502805 0.19145234 0.06368989 0.0205917  0.00554734 0.00106409]
 >>> print("airy(sol2.t)[0][::6]: {}".format(airy(sol2.t)[0][::6]))
 airy(sol2.t)[0][::6]: [0.35502805 0.19145234 0.06368989 0.0205917  0.00554733 0.00106406]
- 
+
 To specify user defined time points for the solution of `solve_ivp`, `solve_ivp`
-offers two possibilites that can also be used complementarily. By passing the `t_eval`
+offers two possibilities that can also be used complementarily. By passing the `t_eval`
 option to the function call `solve_ivp` returns the solutions of these time points
 of `t_eval` in its output.
 
@@ -513,7 +513,7 @@ Solving a system with a banded Jacobian matrix
 system of differential equations that are known to be stiff, this
 can improve performance significantly.
 
-As an example, we'll solve the one-dimensional Gray-Scott partial
+As an example, we'll solve the 1-D Gray-Scott partial
 differential equations using the method of lines [MOL]_.  The Gray-Scott equations
 for the functions :math:`u(x, t)` and :math:`v(x, t)` on the interval
 :math:`x \in [0, L]` are
@@ -530,7 +530,7 @@ components :math:`u` and :math:`v`, respectively, and :math:`f` and :math:`k`
 are constants.  (For more information about the system, see
 http://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/)
 
-We'll assume Neumann (i.e. "no flux") boundary conditions:
+We'll assume Neumann (i.e., "no flux") boundary conditions:
 
 .. math::
 
@@ -676,12 +676,12 @@ terms of the system::
     def H(u, v, f, k):
         return -(f + k) * v + u*v**2
 
-Next we define the function that computes the right-hand-side
+Next, we define the function that computes the right-hand side
 of the system of differential equations::
 
     def grayscott1d(y, t, f, k, Du, Dv, dx):
         """
-        Differential equations for the 1D Gray-Scott equations.
+        Differential equations for the 1-D Gray-Scott equations.
 
         The ODEs are derived using the method of lines.
         """

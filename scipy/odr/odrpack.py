@@ -4,20 +4,20 @@ Python wrappers for Orthogonal Distance Regression (ODRPACK).
 Notes
 =====
 
-* Array formats -- FORTRAN stores its arrays in memory column first, i.e. an
+* Array formats -- FORTRAN stores its arrays in memory column first, i.e., an
   array element A(i, j, k) will be next to A(i+1, j, k). In C and, consequently,
   NumPy, arrays are stored row first: A[i, j, k] is next to A[i, j, k+1]. For
   efficiency and convenience, the input and output arrays of the fitting
   function (and its Jacobians) are passed to FORTRAN without transposition.
   Therefore, where the ODRPACK documentation says that the X array is of shape
   (N, M), it will be passed to the Python function as an array of shape (M, N).
-  If M==1, the one-dimensional case, then nothing matters; if M>1, then your
+  If M==1, the 1-D case, then nothing matters; if M>1, then your
   Python functions will be dealing with arrays that are indexed in reverse of
-  the ODRPACK documentation. No real biggie, but watch out for your indexing of
-  the Jacobians: the i,j'th elements (@f_i/@x_j) evaluated at the n'th
+  the ODRPACK documentation. No real issue, but watch out for your indexing of
+  the Jacobians: the i,jth elements (@f_i/@x_j) evaluated at the nth
   observation will be returned as jacd[j, i, n]. Except for the Jacobians, it
   really is easier to deal with x[0] and x[1] than x[:,0] and x[:,1]. Of course,
-  you can always use the transpose() function from scipy explicitly.
+  you can always use the transpose() function from SciPy explicitly.
 
 * Examples -- See the accompanying file test/test.py for examples of how to set
   up fits of your own. Some are taken from the User's Guide; some are from
@@ -218,12 +218,12 @@ class Data(object):
         variable), then this vector is the diagonal of the covariant weighting
         matrix for all data points.
         If `wd` is a rank-1 array of length n (the number of data points), then
-        the i'th element is the weight for the i'th input variable observation
+        the i'th element is the weight for the ith input variable observation
         (single-dimensional only).
         If `wd` is a rank-2 array of shape (m, m), then this is the full
         covariant weighting matrix broadcast to each observation.
         If `wd` is a rank-2 array of shape (m, n), then `wd[:,i]` is the
-        diagonal of the covariant weighting matrix for the i'th observation.
+        diagonal of the covariant weighting matrix for the ith observation.
         If `wd` is a rank-3 array of shape (m, m, n), then `wd[:,:,i]` is the
         full specification of the covariant weighting matrix for each
         observation.
@@ -246,7 +246,7 @@ class Data(object):
     specified value of `y`.
 
     The `we` argument weights the effect a deviation in the response variable
-    has on the fit.  The `wd` argument weights the effect a deviation in the
+    has on the fit. The `wd` argument weights the effect a deviation in the
     input variable has on the fit. To handle multidimensional inputs and
     responses easily, the structure of these arguments has the n'th
     dimensional axis first. These arguments heavily use the structured
@@ -344,14 +344,14 @@ class RealData(Data):
 
     `covx` and `covy` are arrays of covariance matrices and are converted to
     weights by performing a matrix inversion on each observation's covariance
-    matrix.  For example, ``we[i] = numpy.linalg.inv(covy[i])``.
+    matrix. For example, ``we[i] = numpy.linalg.inv(covy[i])``.
 
     These arguments follow the same structured argument conventions as wd and
     we only restricted by their natures: `sx` and `sy` can't be rank-3, but
     `covx` and `covy` can be.
 
     Only set *either* `sx` or `covx` (not both). Setting both will raise an
-    exception.  Same with `sy` and `covy`.
+    exception. Same with `sy` and `covy`.
 
     """
 
@@ -478,7 +478,7 @@ class Model(object):
 
     `x`
         if the input data is single-dimensional, then `x` is rank-1
-        array; i.e. ``x = array([1, 2, 3, ...]); x.shape = (n,)``
+        array; i.e., ``x = array([1, 2, 3, ...]); x.shape = (n,)``
         If the input data is multi-dimensional, then `x` is a rank-2 array;
         i.e., ``x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n)``.
         In all cases, it has the same shape as the input data array passed to
@@ -496,11 +496,11 @@ class Model(object):
     `fjacb`
         if the response variable is multi-dimensional, then the
         return array's shape is `(q, p, n)` such that ``fjacb(x,beta)[l,k,i] =
-        d f_l(X,B)/d B_k`` evaluated at the i'th data point.  If `q == 1`, then
+        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If `q == 1`, then
         the return array is only rank-2 and with shape `(p, n)`.
     `fjacd`
         as with fjacb, only the return array's shape is `(q, m, n)`
-        such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the i'th data
+        such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the ith data
         point.  If `q == 1`, then the return array's shape is `(m, n)`. If
         `m == 1`, the shape is (q, n). If `m == q == 1`, the shape is `(n,)`.
 
@@ -683,7 +683,7 @@ class ODR(object):
     maxit : int, optional
         integer specifying the maximum number of iterations to perform. For
         first runs, maxit is the total number of iterations performed and
-        defaults to 50.  For restarts, maxit is the number of additional
+        defaults to 50. For restarts, maxit is the number of additional
         iterations to perform and defaults to 10.
     stpb : array_like, optional
         sequence (``len(stpb) == len(beta0)``) of relative step sizes to compute
@@ -696,7 +696,7 @@ class ODR(object):
         all observations.
     sclb : array_like, optional
         sequence (``len(stpb) == len(beta0)``) of scaling factors for the
-        parameters.  The purpose of these scaling factors are to scale all of
+        parameters. The purpose of these scaling factors are to scale all of
         the parameters to around unity. Normally appropriate scaling factors
         are computed if this argument is not specified. Specify them yourself
         if the automatic procedure goes awry.

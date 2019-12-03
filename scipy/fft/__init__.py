@@ -13,21 +13,21 @@ Fast Fourier Transforms (FFTs)
 
    fft - Fast (discrete) Fourier Transform (FFT)
    ifft - Inverse FFT
-   fft2 - Two dimensional FFT
-   ifft2 - Two dimensional inverse FFT
-   fftn - n-dimensional FFT
-   ifftn - n-dimensional inverse FFT
+   fft2 - 2-D FFT
+   ifft2 - 2-D inverse FFT
+   fftn - N-D FFT
+   ifftn - N-D inverse FFT
    rfft - FFT of strictly real-valued sequence
    irfft - Inverse of rfft
-   rfft2 - Two dimensional FFT of real sequence
+   rfft2 - 2-D FFT of real sequence
    irfft2 - Inverse of rfft2
-   rfftn - n-dimensional FFT of real sequence
+   rfftn - N-D FFT of real sequence
    irfftn - Inverse of rfftn
    hfft - FFT of a Hermitian sequence (real spectrum)
    ihfft - Inverse of hfft
-   hfft2 - Two dimensional FFT of a Hermitian sequence
+   hfft2 - 2-D FFT of a Hermitian sequence
    ihfft2 - Inverse of hfft2
-   hfftn - n-dimensional FFT of a Hermitian sequence
+   hfftn - N-D FFT of a Hermitian sequence
    ihfftn - Inverse of hfftn
 
 Discrete Sin and Cosine Transforms (DST and DCT)
@@ -37,12 +37,12 @@ Discrete Sin and Cosine Transforms (DST and DCT)
 
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
-   dctn - n-dimensional Discrete cosine transform
-   idctn - n-dimensional Inverse discrete cosine transform
+   dctn - N-D Discrete cosine transform
+   idctn - N-D Inverse discrete cosine transform
    dst - Discrete sine transform
    idst - Inverse discrete sine transform
-   dstn - n-dimensional Discrete sine transform
-   idstn - n-dimensional Inverse discrete sine transform
+   dstn - N-D Discrete sine transform
+   idstn - N-D Inverse discrete sine transform
 
 Helper functions
 ================
@@ -109,8 +109,8 @@ import sys
 class _FFTModule(sys.modules[__name__].__class__):
     @staticmethod
     def __call__(*args, **kwargs):
-        import numpy as np
-        return np.fft.fft(*args, **kwargs)
+        from scipy import _dep_fft
+        return _dep_fft(*args, **kwargs)
 
 
 import os

@@ -13,7 +13,6 @@ import itertools
 from distutils.version import LooseVersion
 
 import scipy.special as sc
-from scipy._lib.six import with_metaclass
 from scipy.special._testutils import (
     MissingModule, check_version, FuncData,
     assert_func_equal)
@@ -29,9 +28,6 @@ try:
     import mpmath
 except ImportError:
     mpmath = MissingModule('mpmath')
-
-
-_is_32bit_platform = np.intp(0).itemsize < 8
 
 
 # ------------------------------------------------------------------------------
@@ -1394,8 +1390,7 @@ class TestSystematic(object):
                             exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
 
-    @pytest.mark.xfail(condition=_is_32bit_platform,
-                       reason="mpmath issue gh-342: unsupported operand mpz, long for pow")
+    @pytest.mark.xfail_on_32bit("mpmath issue gh-342: unsupported operand mpz, long for pow")
     def test_igam_fac(self):
         def mp_igam_fac(a, x):
             return mpmath.power(x, a)*mpmath.exp(-x)/mpmath.gamma(a)
@@ -1476,7 +1471,7 @@ class TestSystematic(object):
                             lambda n, x: exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
                             [IntArg(), Arg()], n=20000)
 
-    @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
+    @pytest.mark.xfail_on_32bit("see gh-3551 for bad points")
     def test_lambertw_real(self):
         assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k.real)),
                             lambda x, k: mpmath.lambertw(x, int(k.real)),
@@ -1851,6 +1846,22 @@ class TestSystematic(object):
                             [Arg(-1e4, 1e4), Arg(0, 1e4)],
                             rtol=5e-10,
                             ignore_inf_sign=True)
+
+    def test_wrightomega_real(self):
+        def mpmath_wrightomega_real(x):
+            return mpmath.lambertw(mpmath.exp(x), mpmath.mpf('-0.5'))
+
+        # For x < -1000 the Wright Omega function is just 0 to double
+        # precision, and for x > 1e21 it is just x to double
+        # precision.
+        assert_mpmath_equal(
+            sc.wrightomega,
+            mpmath_wrightomega_real,
+            [Arg(-1000, 1e21)],
+            rtol=5e-15,
+            atol=0,
+            nan_ok=False,
+        )
 
     def test_wrightomega(self):
         assert_mpmath_equal(sc.wrightomega,

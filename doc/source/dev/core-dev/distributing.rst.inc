@@ -28,6 +28,7 @@ are:
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
+- pydata/sparse  (compatibility support in ``scipy.sparse``)
 
 *Unconditional build-time dependencies:*
 
@@ -183,21 +184,21 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
 .. _Numpy: https://numpy.org
-.. _Python: https://python.org
+.. _Python: https://www.python.org
 .. _nose: https://nose.readthedocs.io
 .. _asv: https://asv.readthedocs.org
 .. _matplotlib: https://matplotlib.org
 .. _Pillow: https://pillow.readthedocs.org
-.. _scikits.umfpack: https://pypi.python.org/pypi/scikit-umfpack
+.. _scikits.umfpack: https://pypi.org/project/scikit-umfpack
 .. _mpmath: http://mpmath.org
-.. _Cython: http://cython.org
+.. _Cython: https://cython.org
 .. _setuptools: https://bitbucket.org/pypa/setuptools
 .. _wheel: https://wheel.readthedocs.io/
 .. _pip: https://pip.pypa.io/en/stable/
 .. _Python Packaging User Guide: https://packaging.python.org
-.. _Wheelhouse: https://pypi.python.org/pypi/Wheelhouse
+.. _Wheelhouse: https://pypi.org/project/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io
 .. _Sphinx: http://www.sphinx-doc.org/
-.. _six: https://pypi.python.org/pypi/six
+.. _six: https://pypi.org/project/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/

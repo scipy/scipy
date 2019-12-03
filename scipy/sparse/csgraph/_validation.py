@@ -50,7 +50,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
                                          nan_null=nan_null)
 
     if csgraph.ndim != 2:
-        raise ValueError("compressed-sparse graph must be two dimensional")
+        raise ValueError("compressed-sparse graph must be 2-D")
 
     if csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError("compressed-sparse graph must be shape (N, N)")

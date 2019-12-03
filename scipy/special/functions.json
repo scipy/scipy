@@ -112,9 +112,9 @@
             "struve_power_series": "ddi*d->d"
         }
     },
-    "_voigt" : {
+    "voigt_profile" : {
         "_faddeeva.h++" : {
-            "faddeeva_voigt": "dddd->d"
+            "faddeeva_voigt_profile": "ddd->d"
         }
     },
     "_zeta": {
@@ -1124,19 +1124,13 @@
         }
     },
     "pdtr": {
-        "_legacy.pxd": {
-            "pdtr_unsafe": "dd->d"
-        },
         "cephes.h": {
-            "pdtr": "id->d"
+            "pdtr": "dd->d"
         }
     },
     "pdtrc": {
-        "_legacy.pxd": {
-            "pdtrc_unsafe": "dd->d"
-        },
         "cephes.h": {
-            "pdtrc": "id->d"
+            "pdtrc": "dd->d"
         }
     },
     "pdtri": {
@@ -1340,7 +1334,8 @@
     },
     "wrightomega": {
         "_wright.h++": {
-            "wrightomega": "D->D"
+            "wrightomega": "D->D",
+            "wrightomega_real": "d->d"
         }
     },
     "xlog1py": {

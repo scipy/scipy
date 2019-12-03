@@ -1,4 +1,4 @@
-/* This file should be included into the _multipackmodule file */
+/* This file should be included in the _multipackmodule file */
 /* $Revision$ */
 /* module_methods:
   {"_qagse", quadpack_qagse, METH_VARARGS, doc_qagse},
@@ -15,7 +15,7 @@
    blas
    mach
  */
-/* python files: (to be imported to Multipack.py)
+/* Python files: (to be imported to Multipack.py)
    quadpack.py
  */
 
@@ -62,7 +62,7 @@ static PyObject *quadpack_error;
     #define DQAWOE dqawoe_
     #define DQAWFE dqawfe_
     #define DQAWSE dqawse_
-    #define DQAWCE dqawce_ 
+    #define DQAWCE dqawce_
   #endif
 #endif
 
@@ -102,12 +102,12 @@ static ccallback_signature_t quadpack_call_signatures[] = {
 
 static ccallback_signature_t quadpack_call_legacy_signatures[] = {
     {"double (double)", CB_1D},
-    {"double (int, double)", CB_ND}, /* sic -- for backward compat only */
+    {"double (int, double)", CB_ND}, /* sic -- for backward compatibility only */
 #if NPY_SIZEOF_SHORT == NPY_SIZEOF_INT
-    {"double (short, double)", CB_ND}, /* sic -- for backward compat only */
+    {"double (short, double)", CB_ND}, /* sic -- for backward compatibility only */
 #endif
 #if NPY_SIZEOF_LONG == NPY_SIZEOF_INT
-    {"double (long, double)", CB_ND}, /* sic -- for backward compat only */
+    {"double (long, double)", CB_ND}, /* sic -- for backward compatibility only */
 #endif
     {NULL}
 };
@@ -160,7 +160,6 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
     int ret;
     int ndim;
     int flags = CCALLBACK_OBTAIN;
-    int legacy = 0;
     ccallback_signature_t *signatures = quadpack_call_signatures;
 
     if (cfuncptr_type == NULL) {
@@ -182,7 +181,6 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
         /* Legacy support --- ctypes objects can be passed in as-is */
         flags |= CCALLBACK_PARSE;
         signatures = quadpack_call_legacy_signatures;
-        legacy = 1;
     }
 
     ret = ccallback_prepare(callback, signatures, func, flags);
@@ -340,7 +338,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   if (!PyArg_ParseTuple(args, "Odd|Oiddi", &fcn, &a, &b, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -349,7 +347,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
       return NULL;
   }
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
@@ -366,7 +364,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAGSE(quad_thunk, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, 
+  DQAGSE(quad_thunk, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist,
          blist, rlist, elist, iord, &last);
 
   if (free_callback(&callback) != 0) {
@@ -417,12 +415,12 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   int ret;
   ccallback_t callback;
 
-  if (!PyArg_ParseTuple(args, "Odi|Oiddi", &fcn, &bound, &inf, &extra_args, 
-                        &full_output, &epsabs, &epsrel, &limit)) 
+  if (!PyArg_ParseTuple(args, "Odi|Oiddi", &fcn, &bound, &inf, &extra_args,
+                        &full_output, &epsabs, &epsrel, &limit))
     return NULL;
   limit_shape[0] = limit;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -431,7 +429,7 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
       return NULL;
   }
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
@@ -507,7 +505,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   if (!PyArg_ParseTuple(args, "OddO|Oiddi", &fcn, &a, &b, &o_points, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -522,7 +520,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   npts2_shape[0] = npts2;
   points = (double *)ap_points->data;
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
@@ -611,7 +609,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   if (!PyArg_ParseTuple(args, "Odddi|OiddiiiiO", &fcn, &a, &b, &omega, &integr, &extra_args, &full_output, &epsabs, &epsrel, &limit, &maxp1, &icall, &momcom, &o_chebmo)) return NULL;
   limit_shape[0] = limit;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -634,7 +632,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   }
   chebmo = (double *) ap_chebmo->data;
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
@@ -716,7 +714,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   limit_shape[0] = limit;
   limlst_shape[0] = limlst;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -731,7 +729,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   if (ap_chebmo == NULL) goto fail;
   chebmo = (double *) ap_chebmo->data;
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_nnlog = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
@@ -821,7 +819,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   if (!PyArg_ParseTuple(args, "Oddd|Oiddi", &fcn, &a, &b, &c, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -830,7 +828,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
       return NULL;
   }
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
@@ -902,7 +900,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   if (!PyArg_ParseTuple(args, "Odd(dd)i|Oiddi", &fcn, &a, &b, &alfa, &beta, &integr, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
 
-  /* Need to check that limit is bigger than 1 */
+  /* Need to check that limit is greater than 1 */
   if (limit < 1)
     return Py_BuildValue("ddi",result,abserr,ier);
 
@@ -911,7 +909,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
       return NULL;
   }
 
-  /* Setup iwork and work arrays */
+  /* Set up iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
   ap_alist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);
   ap_blist = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_DOUBLE);

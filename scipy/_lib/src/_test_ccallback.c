@@ -4,7 +4,7 @@
  * This also is an internal "best-practices" code example on how to write
  * low-level callback code. (In the examples below, it is assumed the semantics
  * and signatures of the callbacks in test_call_* are fixed by some 3rd party
- * library e.g. implemented in FORTRAN, and they are not necessarily the optimal
+ * library e.g., implemented in FORTRAN, and they are not necessarily the optimal
  * way.)
  *
  * The general structure of callbacks is the following:

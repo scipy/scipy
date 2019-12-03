@@ -41,7 +41,11 @@ class SemiInfiniteFunc(object):
         self._tmin = sys.float_info.min**0.5
 
     def get_t(self, x):
-        return 1 / (self._sgn * (x - self._start) + 1)
+        z = self._sgn * (x - self._start) + 1
+        if z == 0:
+            # Can happen only if point not in range
+            return np.inf
+        return 1 / z
 
     def __call__(self, t):
         if t < self._tmin:
@@ -100,7 +104,7 @@ class _Bunch(object):
 
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
-             workers=1, points=None, quadrature='gk21', full_output=False):
+             workers=1, points=None, quadrature=None, full_output=False):
     """Adaptive integration of a vector-valued function.
 
     Parameters
@@ -185,7 +189,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     for infinite intervals). This is because the algorithm here is
     supposed to work on vector-valued functions, in an user-specified
     norm, and the extension of the epsilon algorithm to this case does
-    not appear to be widely agreed.  For max-norm, using elementwise
+    not appear to be widely agreed. For max-norm, using elementwise
     Wynn epsilon could be possible, but we do not do this here with
     the hope that the epsilon extrapolation is mainly useful in
     special cases.
@@ -200,32 +204,42 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     # Use simple transformations to deal with integrals over infinite
     # intervals.
-    args = (epsabs, epsrel, norm, cache_size, limit, workers, points,
-            'gk15' if quadrature is None else quadrature,
-            full_output)
+    kwargs = dict(epsabs=epsabs,
+                  epsrel=epsrel,
+                  norm=norm,
+                  cache_size=cache_size,
+                  limit=limit,
+                  workers=workers,
+                  points=points,
+                  quadrature='gk15' if quadrature is None else quadrature,
+                  full_output=full_output)
     if np.isfinite(a) and np.isinf(b):
         f2 = SemiInfiniteFunc(f, start=a, infty=b)
         if points is not None:
-            points = tuple(f2.get_t(xp) for xp in points)
-        return quad_vec(f2, 0, 1, *args)
+            kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
+        return quad_vec(f2, 0, 1, **kwargs)
     elif np.isfinite(b) and np.isinf(a):
         f2 = SemiInfiniteFunc(f, start=b, infty=a)
         if points is not None:
-            points = tuple(f2.get_t(xp) for xp in points)
-        res = quad_vec(f2, 0, 1, *args)
+            kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
+        res = quad_vec(f2, 0, 1, **kwargs)
         return (-res[0],) + res[1:]
     elif np.isinf(a) and np.isinf(b):
         sgn = -1 if b < a else 1
 
-        # NB. first interval split occurs at t=0, which separates
-        # positive and negative sides of the integral
+        # NB. explicitly split integral at t=0, which separates
+        # the positive and negative sides
         f2 = DoubleInfiniteFunc(f)
         if points is not None:
-            points = tuple(f2.get_t(xp) for xp in points)
-        if a != b:
-            res = quad_vec(f2, -1, 1, *args)
+            kwargs['points'] = (0,) + tuple(f2.get_t(xp) for xp in points)
         else:
-            res = quad_vec(f2, 1, 1, *args)
+            kwargs['points'] = (0,)
+
+        if a != b:
+            res = quad_vec(f2, -1, 1, **kwargs)
+        else:
+            res = quad_vec(f2, 1, 1, **kwargs)
+
         return (res[0]*sgn,) + res[1:]
     elif not (np.isfinite(a) and np.isfinite(b)):
         raise ValueError("invalid integration bounds a={}, b={}".format(a, b))
@@ -242,7 +256,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     mapwrapper = MapWrapper(workers)
 
-    parallel_count = 8
+    parallel_count = 128
     min_intervals = 2
 
     try:
@@ -261,7 +275,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         initial_intervals = []
         for p in sorted(points):
             p = float(p)
-            if p <= a or p >= b or p == prev:
+            if not (a < p < b) or p == prev:
                 continue
             initial_intervals.append((prev, p))
             prev = p
@@ -321,11 +335,13 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
             tol = max(epsabs, epsrel*norm_func(global_integral))
 
             to_process = []
+            err_sum = 0
+
             for j in range(parallel_count):
                 if not intervals:
                     break
 
-                if j > 0 and abs(intervals[0][0]) * len(intervals) < 0.5*tol:
+                if j > 0 and err_sum > global_error - tol/8:
                     # avoid unnecessary parallel splitting
                     break
 
@@ -334,6 +350,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                 neg_old_err, a, b = interval
                 old_int = interval_cache.pop((a, b), None)
                 to_process.append(((-neg_old_err, a, b, old_int), f, norm_func, _quadrature))
+                err_sum += -neg_old_err
 
             # Subdivide intervals
             for dint, derr, dround_err, subint, dneval in mapwrapper(_subdivide_interval, to_process):
@@ -568,13 +585,13 @@ def _quadrature_gk15(a, b, f, norm_func):
          0.405845151377397166906606412076961,
          0.207784955007898467600689403773245,
          0.000000000000000000000000000000000,
-         0.207784955007898467600689403773245,
-         0.405845151377397166906606412076961,
-         0.586087235467691130294144838258730,
-         0.741531185599394439863864773280788,
-         0.864864423359769072789712788640926,
-         0.949107912342758524526189684047851,
-         0.991455371120812639206854697526329)
+         -0.207784955007898467600689403773245,
+         -0.405845151377397166906606412076961,
+         -0.586087235467691130294144838258730,
+         -0.741531185599394439863864773280788,
+         -0.864864423359769072789712788640926,
+         -0.949107912342758524526189684047851,
+         -0.991455371120812639206854697526329)
 
     # 7-point weights
     w = (0.129484966168869693270611432679082,

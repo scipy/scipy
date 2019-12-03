@@ -64,7 +64,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               least-squares problem. This is an interior-point-like method
               and the required number of iterations is weakly correlated with
               the number of variables.
-            * 'bvls' : Bounded-Variable Least-Squares algorithm. This is
+            * 'bvls' : Bounded-variable least-squares algorithm. This is
               an active set method, which requires the number of iterations
               comparable to the number of variables. Can't be used when `A` is
               sparse or LinearOperator.
@@ -73,7 +73,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     tol : float, optional
         Tolerance parameter. The algorithm terminates if a relative change
         of the cost function is less than `tol` on the last iteration.
-        Additionally the first-order optimality measure is considered:
+        Additionally, the first-order optimality measure is considered:
 
             * ``method='trf'`` terminates if the uniform norm of the gradient,
               scaled to account for the presence of the bounds, is less than
@@ -91,7 +91,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               which requires only matrix-vector product evaluations. Can't
               be used with ``method='bvls'``.
 
-        If None (default) the solver is chosen based on type of `A`.
+        If None (default), the solver is chosen based on type of `A`.
     lsmr_tol : None, float or 'auto', optional
         Tolerance parameters 'atol' and 'btol' for `scipy.sparse.linalg.lsmr`
         If None (default), it is set to ``1e-2 * tol``. If 'auto', the
@@ -152,7 +152,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     See Also
     --------
     nnls : Linear least squares with non-negativity constraint.
-    least_squares : Nonlinear least squares with bounds on the variables.                    
+    least_squares : Nonlinear least squares with bounds on the variables.
 
     Notes
     -----
@@ -192,7 +192,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Examples
     --------
-    In this example a problem with a large sparse matrix and bounds on the
+    In this example, a problem with a large sparse matrix and bounds on the
     variables is solved.
 
     >>> from scipy.sparse import rand

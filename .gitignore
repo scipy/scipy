@@ -192,6 +192,7 @@ scipy/optimize/_trlib/_trlib.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
@@ -201,6 +202,8 @@ scipy/sparse/csgraph/_min_spanning_tree.c
 scipy/sparse/csgraph/_shortest_path.c
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
+scipy/sparse/csgraph/_flow.c
+scipy/sparse/csgraph/_matching.c
 scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c

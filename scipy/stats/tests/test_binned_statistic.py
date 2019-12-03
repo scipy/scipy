@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_allclose
+from pytest import raises as assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 
@@ -38,7 +39,7 @@ class TestBinnedStatistic(object):
         v = self.v
         statistics = [u'mean', u'median', u'count', u'sum']
         for statistic in statistics:
-            res = binned_statistic(x, v, statistic, bins=10)
+            binned_statistic(x, v, statistic, bins=10)
 
     def test_big_number_std(self):
         # tests for numerical stability of std calculation
@@ -50,6 +51,16 @@ class TestBinnedStatistic(object):
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
 
         assert_allclose(stat1, stat2)
+
+    def test_non_finite_inputs(self):
+        # if either `values` or `sample` contain np.inf or np.nan throw
+        # see issue gh-9010 for more
+        x = self.x
+        u = self.u
+        u[0] = np.inf
+        assert_raises(ValueError, binned_statistic, x, u, 'std', bins=10)
+        u[0] = np.nan
+        assert_raises(ValueError, binned_statistic, x, u, 'count', bins=10)
 
     def test_1d_result_attributes(self):
         x = self.x
@@ -88,11 +99,11 @@ class TestBinnedStatistic(object):
 
         assert_allclose(stat1, stat2)
         assert_allclose(edges1, edges2)
-        
+
     def test_1d_min(self):
         x = self.x
         v = self.v
-        
+
         stat1, edges1, bc = binned_statistic(x, v, 'min', bins=10)
         stat2, edges2, bc = binned_statistic(x, v, np.min, bins=10)
 
@@ -102,13 +113,13 @@ class TestBinnedStatistic(object):
     def test_1d_max(self):
         x = self.x
         v = self.v
-        
+
         stat1, edges1, bc = binned_statistic(x, v, 'max', bins=10)
         stat2, edges2, bc = binned_statistic(x, v, np.max, bins=10)
 
         assert_allclose(stat1, stat2)
         assert_allclose(edges1, edges2)
-        
+
     def test_1d_median(self):
         x = self.x
         v = self.v
@@ -447,3 +458,28 @@ class TestBinnedStatistic(object):
         assert_allclose(bcx, bc2[0])
         assert_allclose(bcy, bc2[1])
         assert_allclose(bcz, bc2[2])
+
+    def test_dd_binned_statistic_result(self):
+        # NOTE: tests the reuse of bin_edges from previous call
+        x = np.random.random((10000, 3))
+        v = np.random.random((10000))
+        bins = np.linspace(0, 1, 10)
+        bins = (bins, bins, bins)
+
+        result = binned_statistic_dd(x, v, 'mean', bins=bins)
+        stat = result.statistic
+
+        result = binned_statistic_dd(x, v, 'mean',
+                                     binned_statistic_result=result)
+        stat2 = result.statistic
+
+        assert_allclose(stat, stat2)
+
+    def test_dd_zero_dedges(self):
+        x = np.random.random((10000, 3))
+        v = np.random.random((10000))
+        bins = np.linspace(0, 1, 10)
+        bins = np.append(bins, 1)
+        bins = (bins, bins, bins)
+        with assert_raises(ValueError, match='difference is numerically 0'):
+            binned_statistic_dd(x, v, 'mean', bins=bins)

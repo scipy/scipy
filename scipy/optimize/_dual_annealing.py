@@ -29,10 +29,10 @@ class VisitingDistribution(object):
     Parameters
     ----------
     lb : array_like
-        A 1-D numpy ndarray containing lower bounds of the generated
+        A 1-D NumPy ndarray containing lower bounds of the generated
         components. Neither NaN or inf are allowed.
     ub : array_like
-        A 1-D numpy ndarray containing upper bounds for the generated
+        A 1-D NumPy ndarray containing upper bounds for the generated
         components. Neither NaN or inf are allowed.
     visiting_param : float
         Parameter for visiting distribution. Default value is 2.62.
@@ -135,10 +135,10 @@ class EnergyState(object):
     Parameters
     ----------
     lower : array_like
-        A 1-D numpy ndarray containing lower bounds for generating an initial
+        A 1-D NumPy ndarray containing lower bounds for generating an initial
         random components in the `reset` method.
     upper : array_like
-        A 1-D numpy ndarray containing upper bounds for generating an initial
+        A 1-D NumPy ndarray containing upper bounds for generating an initial
         random components in the `reset` method
         components. Neither NaN or inf are allowed.
     callback : callable, ``callback(x, f, context)``, optional
@@ -436,7 +436,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     Parameters
     ----------
     func : callable
-        The objective function to be minimized.  Must be in the form
+        The objective function to be minimized. Must be in the form
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
@@ -503,7 +503,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
-        Coordinates of a single n-dimensional starting point.
+        Coordinates of a single N-D starting point.
 
     Returns
     -------
@@ -583,7 +583,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     Examples
     --------
-    The following example is a 10-dimensional problem, with many local minima.
+    The following example is a 10-D problem, with many local minima.
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 

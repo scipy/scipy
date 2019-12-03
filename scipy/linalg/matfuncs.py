@@ -554,7 +554,7 @@ def funm(A, func, disp=True):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
-    F = F.astype(T.dtype.char)  # e.g. when F is real but T is complex
+    F = F.astype(T.dtype.char)  # e.g., when F is real but T is complex
 
     minden = abs(T[0,0])
 

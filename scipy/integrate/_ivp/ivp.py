@@ -164,8 +164,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         dy / dt = f(t, y)
         y(t0) = y0
 
-    Here t is a one-dimensional independent variable (time), y(t) is an
-    n-dimensional vector-valued function (state), and an n-dimensional
+    Here t is a 1-D independent variable (time), y(t) is an
+    N-D vector-valued function (state), and an N-D
     vector-valued function f(t, y) determines the differential equations.
     The goal is to find y(t) approximately satisfying the differential
     equations, given an initial value y(t0)=y0.
@@ -183,8 +183,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
         Here `t` is a scalar, and there are two options for the ndarray `y`:
         It can either have shape (n,); then `fun` must return array_like with
-        shape (n,). Alternatively it can have shape (n, k); then `fun`
-        must return an array_like with shape (n, k), i.e. each column
+        shape (n,). Alternatively, it can have shape (n, k); then `fun`
+        must return an array_like with shape (n, k), i.e., each column
         corresponds to a single column in `y`. The choice between the two
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
@@ -267,7 +267,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 direction will trigger event. Implicitly 0 if not assigned.
 
         You can assign attributes like ``event.terminal = True`` to any
-        function in Python. 
+        function in Python.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
     args : tuple, optional
@@ -283,7 +283,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Initial step size. Default is `None` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float or array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
@@ -304,7 +304,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             * If array_like or sparse_matrix, the Jacobian is assumed to
               be constant. Not supported by 'LSODA'.
             * If callable, the Jacobian is assumed to depend on both
-              t and y; it will be called as ``jac(t, y)`` as necessary.
+              t and y; it will be called as ``jac(t, y)``, as necessary.
               For 'Radau' and 'BDF' methods, the return value might be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
@@ -332,7 +332,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         illustration).  These parameters can be also used with ``jac=None`` to
         reduce the number of Jacobian elements estimated by finite differences.
     min_step : float, optional
-        The minimum allowed step size for 'LSODA' method. 
+        The minimum allowed step size for 'LSODA' method.
         By default `min_step` is zero.
 
     Returns
@@ -348,6 +348,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     t_events : list of ndarray or None
         Contains for each event type a list of arrays at which an event of
         that type event was detected. None if `events` was None.
+    y_events : list of ndarray or None
+        For each value of `t_events`, the corresponding value of the solution.
+        None if `events` was None.
     nfev : int
         Number of evaluations of the right-hand side.
     njev : int
@@ -456,10 +459,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     of the cannonball's trajectory. Apex is not defined as terminal, so both
     apex and hit_ground are found. There is no information at t=20, so the sol
     attribute is used to evaluate the solution. The sol attribute is returned
-    by setting ``dense_output=True``.
+    by setting ``dense_output=True``. Alternatively, the `y_events` attribute
+    can be used to access the solution at the time of the event.
 
-    >>> def apex(t,y): return y[1]
-    >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
+    >>> def apex(t, y): return y[1]
+    >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10],
     ...                 events=(hit_ground, apex), dense_output=True)
     >>> print(sol.t_events)
     [array([40.]), array([20.])]
@@ -468,6 +472,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      1.11088891e-01 1.11098890e+00 1.11099890e+01 4.00000000e+01]
     >>> print(sol.sol(sol.t_events[1][0]))
     [100.   0.]
+    >>> print(sol.y_events)
+    [array([[-5.68434189e-14, -1.00000000e+01]]), array([[1.00000000e+02, 1.77635684e-15]])]
 
     As an example of a system with additional parameters, we'll implement
     the Lotka-Volterra equations [12]_.
@@ -555,14 +561,16 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         if args is not None:
             # Wrap user functions in lambdas to hide the additional parameters.
             # The original event function is passed as a keyword argument to the
-            # lambda to keep the original function in scope (i.e. avoid the
+            # lambda to keep the original function in scope (i.e., avoid the
             # late binding closure "gotcha").
             events = [lambda t, x, event=event: event(t, x, *args)
                       for event in events]
         g = [event(t0, y0) for event in events]
         t_events = [[] for _ in range(len(events))]
+        y_events = [[] for _ in range(len(events))]
     else:
         t_events = None
+        y_events = None
 
     status = None
     while status is None:
@@ -596,6 +604,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
                 for e, te in zip(root_indices, roots):
                     t_events[e].append(te)
+                    y_events[e].append(sol(te))
 
                 if terminate:
                     status = 1
@@ -615,7 +624,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             else:
                 t_eval_i_new = np.searchsorted(t_eval, t, side='left')
                 # It has to be done with two slice operations, because
-                # you can't slice to 0-th element inclusive using backward
+                # you can't slice to 0th element inclusive using backward
                 # slicing.
                 t_eval_step = t_eval[t_eval_i_new:t_eval_i][::-1]
 
@@ -625,7 +634,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 ts.append(t_eval_step)
                 ys.append(sol(t_eval_step))
                 t_eval_i = t_eval_i_new
-        
+
         if t_eval is not None and dense_output:
             ti.append(t)
 
@@ -633,6 +642,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if t_events is not None:
         t_events = [np.asarray(te) for te in t_events]
+        y_events = [np.asarray(ye) for ye in y_events]
 
     if t_eval is None:
         ts = np.array(ts)
@@ -649,6 +659,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     else:
         sol = None
 
-    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, nfev=solver.nfev,
-                     njev=solver.njev, nlu=solver.nlu, status=status,
-                     message=message, success=status >= 0)
+    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
+                     nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu,
+                     status=status, message=message, success=status >= 0)

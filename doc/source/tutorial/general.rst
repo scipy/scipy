@@ -10,9 +10,9 @@ SciPy is a collection of mathematical algorithms and convenience
 functions built on the NumPy extension of Python. It adds
 significant power to the interactive Python session by providing the
 user with high-level commands and classes for manipulating and
-visualizing data. With SciPy an interactive Python session
+visualizing data. With SciPy, an interactive Python session
 becomes a data-processing and system-prototyping environment rivaling
-systems such as MATLAB, IDL, Octave, R-Lab, and SciLab.
+systems, such as MATLAB, IDL, Octave, R-Lab, and SciLab.
 
 The additional benefit of basing SciPy on Python is that this also makes a
 powerful programming language available for use in developing
@@ -103,8 +103,8 @@ keywords and modules available to all of Python. Secondly, running the command
 signature, and documentation string.
 
 The pydoc method of ``help`` is sophisticated but uses a pager to display
-the text. Sometimes this can interfere with the terminal you are
-running the interactive session within. A numpy/scipy-specific help system
+the text. Sometimes this can interfere with the terminal within which you are
+running the interactive session. A numpy/scipy-specific help system
 is also available under the command ``numpy.info``. The signature and
 documentation string for the object passed to the ``help`` command are
 printed to standard output (or to a writeable object passed as the

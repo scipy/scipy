@@ -27,7 +27,7 @@ def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
         A x = b
         D x = 0
 
-    Where D is diagonal matrix. The method is based on QR decomposition
+    where D is diagonal matrix. The method is based on QR decomposition
     of the form A P = Q R, where P is a column permutation matrix, Q is an
     orthogonal matrix and R is an upper triangular matrix.
 
@@ -40,7 +40,7 @@ def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
     QTb : ndarray, shape (n,)
         First n components of Q^T b.
     perm : ndarray, shape (n,)
-        Array defining column permutation of A, such that i-th column of
+        Array defining column permutation of A, such that ith column of
         P is perm[i]-th column of identity matrix.
     diag : ndarray, shape (n,)
         Array containing diagonal elements of D.
@@ -224,7 +224,7 @@ def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol, max_iter,
 
         # Perhaps almost never executed, the idea is that `p` is descent
         # direction thus we must find acceptable cost decrease using simple
-        # "backtracking", otherwise algorithm's logic would break.
+        # "backtracking", otherwise the algorithm's logic would break.
         if cost_change < 0:
             x, step, cost_change = backtracking(
                 A, g, x, p, theta, p_dot_g, lb, ub)
