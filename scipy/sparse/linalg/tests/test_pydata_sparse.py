@@ -227,9 +227,9 @@ def test_expm_multiply(matrices):
 
 def test_eq(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    assert np.all(sp_sparse == pd_sparse)
+    assert (sp_sparse == pd_sparse).all()
 
 
 def test_ne(same_matrix):
     sp_sparse, pd_sparse = same_matrix
-    assert not np.any(sp_sparse != pd_sparse)
+    assert not (sp_sparse != pd_sparse).any()
