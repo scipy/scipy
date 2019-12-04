@@ -5276,3 +5276,12 @@ class TestMGCStat(object):
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, workers=2)
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
+
+    def test_random_state(self):
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
+        assert_approx_equal(stat, 0.97, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
