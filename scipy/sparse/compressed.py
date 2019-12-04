@@ -783,10 +783,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         i0, i1 = _process_slice(major, M)
         j0, j1 = _process_slice(minor, N)
 
-        if i0 == 'empty' or j0 == 'empty':
-            out = np.zeros([0, 0], dtype=self.dtype)
-            return self.__class__(out)
-
         if i0 == 0 and j0 == 0 and i1 == M and j1 == N:
             return self.copy() if copy else self
 
@@ -1280,8 +1276,7 @@ def _process_slice(sl, num):
         i0, i1, stride = sl.indices(num)
         if stride != 1:
             raise ValueError('slicing with step != 1 not supported')
-        if i0 > i1:
-            return 'empty', 'empty'
+        i0 = min(i0, i1)  # give an empty slice when i0 > i1
     elif isintlike(sl):
         if sl < 0:
             sl += num
