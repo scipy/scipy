@@ -605,6 +605,14 @@ def _expm(A, use_exact_onenorm):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
 
+    # gracefully handle size-0 input,
+    # carefully handling sparse scenario
+    if A.shape == (0, 0):
+        out = np.zeros([0, 0], dtype=A.dtype)
+        if isspmatrix(A) or is_pydata_spmatrix(A):
+            return A.__class__(out)
+        return out
+
     # Trivial case
     if A.shape == (1, 1):
         out = [[np.exp(A[0, 0])]]
