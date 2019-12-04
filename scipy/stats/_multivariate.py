@@ -56,7 +56,8 @@ def _squeeze_output(out, axis=None):
     Returns
     -------
     out : array
-        The input array, but with all or a subset of the dimensions of length 1 removed.
+        The input array, but with all or a subset of the dimensions of length 1 removed,
+        converted to scalar, if necessary.
 
     """
     out = out.squeeze(axis)
