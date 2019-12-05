@@ -1007,6 +1007,23 @@ class TestGenpareto(object):
         logp = stats.genpareto.logsf(1e10, .01, 0, 1)
         assert_allclose(logp, -1842.0680753952365)
 
+    # Values in 'expected_stats' are
+    # [mean, variance, skewness, excess kurtosis].
+    @pytest.mark.parametrize(
+        'c, expected_stats',
+        [(0, [1, 1, 2, 6]),
+         (1/4, [4/3, 32/9, 10/np.sqrt(2), np.nan]),
+         (1/9, [9/8, (81/64)*(9/7), (10/9)*np.sqrt(7), 754/45]),
+         (-1, [1/2, 1/12, 0, -6/5])])
+    def test_stats(self, c, expected_stats):
+        result = stats.genpareto.stats(c, moments='mvsk')
+        assert_allclose(result, expected_stats, rtol=1e-13, atol=1e-15)
+
+    def test_var(self):
+        # Regression test for gh-11168.
+        v = stats.genpareto.var(1e-8)
+        assert_allclose(v, 1.000000040000001, rtol=1e-13)
+
 
 class TestPearson3(object):
     def setup_method(self):
