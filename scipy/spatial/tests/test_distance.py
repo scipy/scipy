@@ -767,6 +767,11 @@ class TestPdist(object):
         Y_test1 = pdist(X, 'seuclidean')
         _assert_within_tol(Y_test1, Y_right, eps)
 
+        # Check no error is raise when V has float32 dtype (#11171).
+        V = np.var(X, axis=0, ddof=1)
+        Y_test2 = pdist(X, 'seuclidean', V=V)
+        _assert_within_tol(Y_test1, Y_right, eps)
+
     def test_pdist_seuclidean_random_nonC(self):
         # Test pdist(X, 'test_sqeuclidean') [the non-C implementation]
         eps = 1e-05
