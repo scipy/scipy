@@ -38,3 +38,28 @@ subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
     integer intent(out)                                  :: info
 
 end subroutine <prefix>gttrf
+
+subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
+    ! x, info  = gttrs(dl, d, du, du2, ipiv, b, trans="N")
+    !
+    ! ?GTTRS solves one of the systems of equations:
+    ! A*X = B  or  A**T*X = B,
+    ! with a tridiagonal matrix A using the LU factorization computed
+    ! by ?GTTRF.
+    callstatement (*f2py_func)(trans, &n, &nrhs, dl, d, du, du2, ipiv, b, &ldb, &info)
+    callprotoargument char*, int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, <ctype>*, int*, int*
+    threadsafe
+
+    character  optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
+    integer    intent(in, hide), depend(d), check(len(d) > 2) :: n = len(d)
+    integer    intent(in, hide), depend(b), check(nrhs > 0)  :: nrhs = shape(b, 1)
+    integer    intent(in, hide), depend(b), check(ldb >= MAX(1, n)):: ldb = shape(b, 0)
+    <ftype>    intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype>    intent(in),            dimension(n)     :: d
+    <ftype>    intent(in), depend(n), dimension(n - 1) :: du
+    <ftype>    intent(in), depend(n), dimension(n - 2) :: du2
+    integer    intent(in), depend(n), dimension(n)     :: ipiv
+    <ftype>    intent(in, out),       dimension(ldb, nrhs) :: b
+    integer    intent(out) :: info
+
+end subroutine gttrs
