@@ -650,6 +650,11 @@ All functions
    cgttrf
    zgttrf
 
+   sgttrs
+   dgttrs
+   cgttrs
+   zgttrs
+
    stpqrt
    dtpqrt
    ctpqrt
