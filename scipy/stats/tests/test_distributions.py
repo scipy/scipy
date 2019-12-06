@@ -3121,7 +3121,7 @@ def test_540_567():
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
-    g = stats._continuous_distns.gamma_gen(name='gamma')
+    stats._continuous_distns.gamma_gen(name='gamma')
 
 
 def test_regression_ticket_1326():
@@ -3781,10 +3781,10 @@ def test_genextreme_give_no_warnings():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        p = stats.genextreme.cdf(.5, 0)
-        p = stats.genextreme.pdf(.5, 0)
-        p = stats.genextreme.ppf(.5, 0)
-        p = stats.genextreme.logpdf(-np.inf, 0.0)
+        stats.genextreme.cdf(.5, 0)
+        stats.genextreme.pdf(.5, 0)
+        stats.genextreme.ppf(.5, 0)
+        stats.genextreme.logpdf(-np.inf, 0.0)
         number_of_warnings_thrown = len(w)
         assert_equal(number_of_warnings_thrown, 0)
 
