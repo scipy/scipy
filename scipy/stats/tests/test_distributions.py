@@ -830,12 +830,6 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
-class TestNorm(object):
-    def test_bad_keyword_arg(self):
-        x = [1, 2, 3]
-        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
-
-
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
@@ -1515,7 +1509,6 @@ class TestExpon(object):
 
 
 class TestNorm(object):
-    """gh-10300"""
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
@@ -1525,6 +1518,10 @@ class TestNorm(object):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         assert_raises(RuntimeError, stats.norm.fit, x)
+
+    def test_bad_keyword_arg(self):
+        x = [1, 2, 3]
+        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
 
 
 class TestUniform(object):
