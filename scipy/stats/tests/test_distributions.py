@@ -1277,10 +1277,22 @@ class TestF(object):
             warnings.simplefilter('error', RuntimeWarning)
             stats.f.stats(dfn=[11]*4, dfd=[2, 4, 6, 8], moments='mvsk')
 
-    @pytest.mark.xfail(reason='f stats does not properly broadcast')
     def test_stats_broadcast(self):
-        # stats do not fully broadcast just yet
-        mv = stats.f.stats(dfn=11, dfd=[11, 12])
+        dfn = np.array([[3], [11]])
+        dfd = np.array([11, 12])
+        m, v, s, k = stats.f.stats(dfn=dfn, dfd=dfd, moments='mvsk')
+        m2 = [dfd / (dfd - 2)]*2
+        assert_allclose(m, m2)
+        v2 = 2 * dfd**2 * (dfn + dfd - 2) / dfn / (dfd - 2)**2 / (dfd - 4)
+        assert_allclose(v, v2)
+        s2 = ((2*dfn + dfd - 2) * np.sqrt(8*(dfd - 4)) /
+              ((dfd - 6) * np.sqrt(dfn*(dfn + dfd - 2))))
+        assert_allclose(s, s2)
+        k2num = 12 * (dfn * (5*dfd - 22) * (dfn + dfd - 2) +
+                      (dfd - 4) * (dfd - 2)**2)
+        k2den = dfn * (dfd - 6) * (dfd - 8) * (dfn + dfd - 2)
+        k2 = k2num / k2den
+        assert_allclose(k, k2)
 
 
 def test_rvgeneric_std():
