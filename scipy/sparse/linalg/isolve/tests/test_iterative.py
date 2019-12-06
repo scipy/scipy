@@ -470,6 +470,7 @@ def test_maxiter_worsening(solver):
                   [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
     v = np.ones(4)
     best_error = np.inf
+    tol = 7 if platform.machine() == 'aarch64' else 5
 
     for maxiter in range(1, 20):
         x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
@@ -481,7 +482,7 @@ def test_maxiter_worsening(solver):
         best_error = min(best_error, error)
 
         # Check with slack
-        assert_(error <= 5*best_error)
+        assert_(error <= tol*best_error)
 
 
 #------------------------------------------------------------------------------
