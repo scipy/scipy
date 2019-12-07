@@ -16,7 +16,7 @@ end subroutine <prefix>gtsv
 
 
 subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
-    ! dl, d, du, du2, ipiv, info  = gttrf(dl, d, du)
+    ! dl, d, du, du2, ipiv, info  = gttrf(dl, d, du, [overwrite_dl=0, overwrite_d=0, overwrite_du=0])
     ! ?GTTRF computes an LU factorization of a tridiagonal matrix A
     ! using elimination with partial pivoting and row interchanges.
     !
@@ -30,14 +30,15 @@ subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
     callprotoargument int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
 
     integer intent(hide),   depend(d), check(len(d) > 2) :: n = len(d)
-    <ftype> intent(in,out), depend(n), dimension(n-1)    :: dl
-    <ftype> intent(in,out),            dimension(n)      :: d
-    <ftype> intent(in,out), depend(n), dimension(n-1)    :: du
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
+    <ftype> intent(in,out,copy),            dimension(n)   :: d
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: du
     <ftype> intent(out),    depend(n), dimension(n-2)    :: du2
     integer intent(out),    depend(n), dimension(n)      :: ipiv
     integer intent(out)                                  :: info
 
 end subroutine <prefix>gttrf
+
 
 subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
     ! x, info  = gttrs(dl, d, du, du2, ipiv, b, trans="N")
