@@ -149,7 +149,7 @@ def test_undirected_sparse_zero():
 @pytest.mark.parametrize('directed, SP_ans',
                          ((True, directed_SP),
                           (False, undirected_SP)))
-@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4]))
+@pytest.mark.parametrize('indices', ([0, 2, 4], [0, 4], [3, 4], [0, 0]))
 def test_dijkstra_indices_min_only(directed, SP_ans, indices):
     SP_ans = np.array(SP_ans)
     indices = np.array(indices, dtype=np.int64)
