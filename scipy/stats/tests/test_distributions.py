@@ -4281,3 +4281,10 @@ def test_loguniform():
     vals, _ = np.histogram(np.log10(rvs), bins=10)
     assert 900 <= vals.min() <= vals.max() <= 1100
     assert np.abs(np.median(vals) - 1000) <= 10
+
+
+def test_argus_rvs_large_chi():
+    np.random.seed(325)
+    # test that the rejection algorithm can handle large values of chi
+    x = stats.argus.rvs(50, size=500)
+    assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
