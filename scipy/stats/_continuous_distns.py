@@ -8010,7 +8010,7 @@ class argus_gen(rv_continuous):
         f(x, \chi) = \frac{\chi^3}{\sqrt{2\pi} \Psi(\chi)} x \sqrt{1-x^2}
                      \exp(-\chi^2 (1 - x^2)/2)
 
-    for :math:`0 < x < 1`, where
+    for :math:`0 < x < 1` and :math:`\chi > 0`, where
 
     .. math::
 
@@ -8041,7 +8041,8 @@ class argus_gen(rv_continuous):
                             sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
         """
         y = 1.0 - x**2
-        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+        A = chi**3 / (_norm_pdf_C * _argus_phi(chi))
+        return A * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
 
     def _cdf(self, x, chi):
         """
@@ -8054,6 +8055,81 @@ class argus_gen(rv_continuous):
         Return survival function of the argus function
         """
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+
+    def _rvs(self, chi):
+        chi = np.asarray(chi)
+        if chi.size == 1:
+            out = self._rvs_scalar(chi, self._size)
+        else:
+            shp, bc = _check_shape(chi.shape, self._size)
+            numsamples = int(np.prod(shp))
+            out = np.empty(self._size)
+            it = np.nditer([chi],
+                           flags=['multi_index'],
+                           op_flags=[['readonly']])
+            while not it.finished:
+                idx = tuple((it.multi_index[j] if not bc[j] else slice(None))
+                            for j in range(-len(self._size), 0))
+                r = self._rvs_scalar(it[0], numsamples)
+                out[idx] = r.reshape(shp)
+                it.iternext()
+
+        if self._size == ():
+            out = out[()]
+        return out
+
+    def _rvs_scalar(self, chi, numsamples=None):
+        # use rejection method, see Devroye:
+        # Non-Uniform Random Variate Generation, 1986, section II.3.2.
+        # write: self.pdf = c * g(x) * h(x), where
+        # h is [0,1]-valued and g is a density
+        # g(x) = d1 * chi**2 * x * exp(-chi**2 * (1 - x**2) / 2), 0 <= x <= 1
+        # h(x) = sqrt(1 - x**2), 0 <= x <= 1
+        # Integrating g, we get:
+        # G(x) = d1 * exp(-chi**2 * (1 - x**2) / 2) - d2
+        # d1 and d2 are determined by G(0) = 0 and G(1) = 1
+        # d1 = 1 / (1 - exp(-0.5 * chi**2))
+        # d2 = 1 / (exp(0.5 * chi**2) - 1)
+        # => G(x) = (exp(chi**2 * x**2 /2) - 1) / (exp(chi**2 / 2) - 1)
+        # expected number of iterations is c with
+        # c = -np.expm1(-0.5 * chi**2) * chi / (_norm_pdf_C * _argus_phi(chi))
+        # note that G can be inverted easily, so we can sample
+        # rvs from this distribution
+        # G_inv(y) = sqrt(2 * log(1 + (exp(chi**2 / 2) - 1) * y) / chi**2)
+        # to avoid an overflow of exp(chi**2 / 2), it is convenient to write
+        # G_inv(y) = sqrt(1 + 2 * log(exp(-chi**2 / 2) * (1-y) + y) / chi**2)
+
+        size1d = tuple(np.atleast_1d(numsamples))
+        N = int(np.prod(size1d))
+        x = np.zeros(N)
+        echi = np.exp(-chi**2 / 2)
+        simulated = 0
+        # apply rejection method
+        while simulated < N:
+            k = N - simulated
+            u = self._random_state.random_sample(size=k)
+            v = self._random_state.random_sample(size=k)
+            # acceptance condition: u <= h(G_inv(v)). This simplifies to
+            z = 2 * np.log(echi * (1 - v) + v) / chi**2
+            accept = (u**2 + z <= 0)
+            num_accept = np.sum(accept)
+            if num_accept > 0:
+                # rvs follow a distribution with density g: rvs = G_inv(v)
+                rvs = np.sqrt(1 + z[accept])
+                x[simulated:(simulated + num_accept)] = rvs
+                simulated += num_accept
+
+        if self._size == ():
+            # return scalar if rvs() is called without size specified
+            return x[0]
+        return np.reshape(x, size1d)
+
+    def _stats(self, chi):
+        chi2 = chi**2
+        phi = _argus_phi(chi)
+        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
+        return m, v, None, None
 
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)

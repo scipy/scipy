@@ -52,7 +52,7 @@ distslow = ['kappa4', 'gausshyper', 'recipinvgauss', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
-skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
                  'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
@@ -60,7 +60,7 @@ skip_fit_test = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'levy_stable', 'rv_histogram_instance']
 
 # skip check_fit_args_fix (test is slow)
-skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
+skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gausshyper', 'genexpon', 'halfgennorm',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
                      'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
@@ -264,9 +264,9 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'dweibull', 'exponnorm',
-                          'geninvgauss', 'levy_stable', 'nct', 'norminvgauss',
-                          'rice', 'skewnorm', 'semicircular']
+    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
+                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
+                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
