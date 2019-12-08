@@ -830,12 +830,6 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
-class TestNorm(object):
-    def test_bad_keyword_arg(self):
-        x = [1, 2, 3]
-        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
-
-
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
@@ -1277,10 +1271,22 @@ class TestF(object):
             warnings.simplefilter('error', RuntimeWarning)
             stats.f.stats(dfn=[11]*4, dfd=[2, 4, 6, 8], moments='mvsk')
 
-    @pytest.mark.xfail(reason='f stats does not properly broadcast')
     def test_stats_broadcast(self):
-        # stats do not fully broadcast just yet
-        mv = stats.f.stats(dfn=11, dfd=[11, 12])
+        dfn = np.array([[3], [11]])
+        dfd = np.array([11, 12])
+        m, v, s, k = stats.f.stats(dfn=dfn, dfd=dfd, moments='mvsk')
+        m2 = [dfd / (dfd - 2)]*2
+        assert_allclose(m, m2)
+        v2 = 2 * dfd**2 * (dfn + dfd - 2) / dfn / (dfd - 2)**2 / (dfd - 4)
+        assert_allclose(v, v2)
+        s2 = ((2*dfn + dfd - 2) * np.sqrt(8*(dfd - 4)) /
+              ((dfd - 6) * np.sqrt(dfn*(dfn + dfd - 2))))
+        assert_allclose(s, s2)
+        k2num = 12 * (dfn * (5*dfd - 22) * (dfn + dfd - 2) +
+                      (dfd - 4) * (dfd - 2)**2)
+        k2den = dfn * (dfd - 6) * (dfd - 8) * (dfn + dfd - 2)
+        k2 = k2num / k2den
+        assert_allclose(k, k2)
 
 
 def test_rvgeneric_std():
@@ -1503,7 +1509,6 @@ class TestExpon(object):
 
 
 class TestNorm(object):
-    """gh-10300"""
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
@@ -1513,6 +1518,10 @@ class TestNorm(object):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         assert_raises(RuntimeError, stats.norm.fit, x)
+
+    def test_bad_keyword_arg(self):
+        x = [1, 2, 3]
+        assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
 
 
 class TestUniform(object):
@@ -3112,7 +3121,7 @@ def test_540_567():
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
-    g = stats._continuous_distns.gamma_gen(name='gamma')
+    stats._continuous_distns.gamma_gen(name='gamma')
 
 
 def test_regression_ticket_1326():
@@ -3772,10 +3781,10 @@ def test_genextreme_give_no_warnings():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        p = stats.genextreme.cdf(.5, 0)
-        p = stats.genextreme.pdf(.5, 0)
-        p = stats.genextreme.ppf(.5, 0)
-        p = stats.genextreme.logpdf(-np.inf, 0.0)
+        stats.genextreme.cdf(.5, 0)
+        stats.genextreme.pdf(.5, 0)
+        stats.genextreme.ppf(.5, 0)
+        stats.genextreme.logpdf(-np.inf, 0.0)
         number_of_warnings_thrown = len(w)
         assert_equal(number_of_warnings_thrown, 0)
 
