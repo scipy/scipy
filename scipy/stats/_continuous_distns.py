@@ -2424,6 +2424,35 @@ class genpareto_gen(rv_continuous):
     def _isf(self, q, c):
         return -sc.boxcox(q, -c)
 
+    def _stats(self, c, moments='mv'):
+        if 'm' not in moments:
+            m = None
+        else:
+            m = _lazywhere(c < 1, (c,),
+                           lambda xi: 1/(1 - xi),
+                           np.inf)
+        if 'v' not in moments:
+            v = None
+        else:
+            v = _lazywhere(c < 1/2, (c,),
+                           lambda xi: 1 / (1 - xi)**2 / (1 - 2*xi),
+                           np.nan)
+        if 's' not in moments:
+            s = None
+        else:
+            s = _lazywhere(c < 1/3, (c,),
+                           lambda xi: 2 * (1 + xi) * np.sqrt(1 - 2*xi) /
+                                      (1 - 3*xi),
+                           np.nan)
+        if 'k' not in moments:
+            k = None
+        else:
+            k = _lazywhere(c < 1/4, (c,),
+                           lambda xi: 3 * (1 - 2*xi) * (2*xi**2 + xi + 3) /
+                                      (1 - 3*xi) / (1 - 4*xi) - 3,
+                           np.nan)
+        return m, v, s, k
+
     def _munp(self, n, c):
         def __munp(n, c):
             val = 0.0
