@@ -154,7 +154,7 @@ locally to a quadratic form:
 
 .. math::
 
-    f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
+    f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
 
 where :math:`\mathbf{H}\left(\mathbf{x}_{0}\right)` is a matrix of second-derivatives (the Hessian). If the Hessian is
 positive definite then the local minimum of this function can be found
@@ -292,7 +292,7 @@ the following quadratic subproblem:
    :nowrap:
 
    \begin{eqnarray*}
-      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)^{T}\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
       \text{subject to: } \|\mathbf{p}\|\le \Delta.&
     \end{eqnarray*}
 
@@ -346,7 +346,7 @@ method.
    :nowrap:
 
    \begin{eqnarray*}
-      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)^{T}\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
       \text{subject to: } \|\mathbf{p}\|\le \Delta.&
     \end{eqnarray*}
 
