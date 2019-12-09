@@ -682,6 +682,13 @@ try:
 except ImportError:
     _clapack = None
 
+try:
+    from scipy.linalg import _flapack_64
+    HAS_ILP64 = True
+except ImportError:
+    HAS_ILP64 = False
+    _flapack_64 = None
+
 # Backward compatibility
 from .blas import find_best_blas_type as find_best_lapack_type
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
@@ -723,7 +730,7 @@ _lapack_alias = {
 
 
 @_memoize_get_funcs
-def get_lapack_funcs(names, arrays=(), dtype=None):
+def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     """Return available LAPACK function objects from names.
 
     Arrays are used to determine the optimal prefix of LAPACK routines.
@@ -740,6 +747,11 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
+
+    ilp64 : {True, False, 'maybe'}, optional
+        Whether to return ILP64 routine variant.
+        Choosing 'maybe' returns ILP64 routine if available, and otherwise
+        the 32-bit routine. Default: False
 
     Returns
     -------
@@ -788,9 +800,19 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     >>> udut, ipiv, x, info = xsysv(a, b, lwork=int(opt_lwork.real))
 
     """
-    return _get_funcs(names, arrays, dtype,
-                      "LAPACK", _flapack, _clapack,
-                      "flapack", "clapack", _lapack_alias)
+    if not ilp64 or (ilp64 == 'maybe' and not HAS_ILP64):
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack, _clapack,
+                          "flapack", "clapack", _lapack_alias,
+                          ilp64=False)
+    else:
+        if not HAS_ILP64:
+            raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
+                               "compiled only with 32-bit BLAS")
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack_64, None,
+                          "flapack_64", None, _lapack_alias,
+                          ilp64=True)
 
 
 _int32_max = _np.iinfo(_np.int32).max
@@ -818,18 +840,19 @@ def _compute_lwork(routine, *args, **kwargs):
 
     """
     dtype = getattr(routine, 'dtype', None)
+    int_dtype = getattr(routine, 'int_dtype', None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
         raise ValueError("Internal work array size computation failed: "
                          "%d" % (ret[-1],))
 
     if len(ret) == 2:
-        return _check_work_float(ret[0].real, dtype)
+        return _check_work_float(ret[0].real, dtype, int_dtype)
     else:
-        return tuple(_check_work_float(x.real, dtype) for x in ret[:-1])
+        return tuple(_check_work_float(x.real, dtype, int_dtype) for x in ret[:-1])
 
 
-def _check_work_float(value, dtype):
+def _check_work_float(value, dtype, int_dtype):
     """
     Convert LAPACK-returned work array size float to integer,
     carefully for single-precision types.
@@ -841,7 +864,8 @@ def _check_work_float(value, dtype):
         value = _np.nextafter(value, _np.inf, dtype=_np.float32)
 
     value = int(value)
-    if value < 0 or value > _int32_max:
-        raise ValueError("Too large work array required -- computation cannot "
-                         "be performed with standard 32-bit LAPACK.")
+    if int_dtype.itemsize < 8:
+        if value < 0 or value > _int32_max:
+            raise ValueError("Too large work array required -- computation cannot "
+                             "be performed with standard 32-bit LAPACK.")
     return value
