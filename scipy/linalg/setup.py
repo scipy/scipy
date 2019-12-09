@@ -12,9 +12,9 @@ def patch_int64_pyf(filename, basename_suffix='_64'):
 
     Does the replacements::
 
-    - ``npy_int -> npy_int64``
-    - Appends `basename_suffix` to module name and file basename.
-    - Appends `basename_suffix` to include directives.
+    - ``int -> npy_int64``
+    - Appends `basename_suffix` to file basename, module names,
+      and callback identifier names.
 
     """
     from scipy._build_utils import write_file_content
@@ -22,9 +22,16 @@ def patch_int64_pyf(filename, basename_suffix='_64'):
     with open(filename, 'r') as f:
         text = f.read()
 
-    text = re.sub(r"npy_int(?!\w)", "npy_int64", text, flags=re.I)
-    text = re.sub(r"python module ([a-z0-9_]+)",
+    text = re.sub(r"^int(?!\w)", r"npy_int64", text, flags=re.I)
+    text = re.sub(r"([^\w])int(?!\w)", r"\1npy_int64", text, flags=re.I)
+    text = re.sub(r"python\s+module\s+([a-z0-9_]+)",
                   r"python module \1{}".format(basename_suffix),
+                  text, flags=re.I)
+    text = re.sub(r"([^\w])use ([a-z0-9_]+)",
+                  r"\1use \2{}".format(basename_suffix),
+                  text, flags=re.I)
+    text = re.sub(r"([^\w])(cb_[a-z_0-9<>]+__user__routines)(?!\w)",
+                  r"\1\2{}".format(basename_suffix),
                   text, flags=re.I)
     text = re.sub(r"include\s+'([a-z0-9_]+)(\.[a-z0-9.]+)'",
                   r"include '\1{}\2'".format(basename_suffix),
@@ -102,19 +109,28 @@ def configuration(parent_package='', top_path=None):
     dep_pfx = join('src', 'lapack_deprecations')
     deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
     sources += deprecated_lapack_routines
+    flapack_depends = ['flapack_gen.pyf.src',
+                       'flapack_gen_banded.pyf.src',
+                       'flapack_gen_tri.pyf.src',
+                       'flapack_pos_def.pyf.src',
+                       'flapack_pos_def_tri.pyf.src',
+                       'flapack_sym_herm.pyf.src',
+                       'flapack_other.pyf.src',
+                       'flapack_user.pyf.src']
 
     config.add_extension('_flapack',
                          sources=sources,
-                         depends=['flapack_gen.pyf.src',
-                                  'flapack_gen_banded.pyf.src',
-                                  'flapack_gen_tri.pyf.src',
-                                  'flapack_pos_def.pyf.src',
-                                  'flapack_pos_def_tri.pyf.src',
-                                  'flapack_sym_herm.pyf.src',
-                                  'flapack_other.pyf.src',
-                                  'flapack_user.pyf.src'],
+                         depends=flapack_depends,
                          extra_info=lapack_opt
                          )
+
+    if uses_blas64():
+        ext = config.add_extension('_flapack_64',
+                                   sources=patch_int64_pyf_glob(sources),
+                                   depends=patch_int64_pyf_glob(flapack_depends),
+                                   extra_info=lapack_ilp64_opt,
+                                   f2py_options=get_f2py_int64_options())
+        ext._pre_build_hook = blas_ilp64_pre_build_hook(lapack_ilp64_opt)
 
     if atlas_version is not None:
         # cblas:
