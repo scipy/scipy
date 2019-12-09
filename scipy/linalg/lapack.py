@@ -164,6 +164,11 @@ All functions
    cgeqrf
    zgeqrf
 
+   sgeqrf_lwork
+   dgeqrf_lwork
+   cgeqrf_lwork
+   zgeqrf_lwork
+
    sgerqf
    dgerqf
    cgerqf

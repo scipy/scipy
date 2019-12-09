@@ -406,6 +406,19 @@ class TestLeastSquaresSolvers(object):
                             rtol=25*np.finfo(dtype).eps)
 
 
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_geqrf_lwork(dtype):
+    geqrf, geqrf_lwork = get_lapack_funcs(
+        ('geqrf', 'geqrf_lwork'),
+        dtype=dtype,
+    )
+    m, n = 4, 3
+    _, _, work, _ = geqrf(np.ones((m, n), dtype=dtype), lwork=-1)
+    lwork, info = geqrf_lwork(m=m, n=n)
+    assert_equal(info, 0)
+    assert_equal(lwork, work[0])
+
+
 class TestRegression(object):
 
     def test_ticket_1645(self):
