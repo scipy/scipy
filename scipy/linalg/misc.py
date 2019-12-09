@@ -148,7 +148,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
 
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
-            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
+            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype, ilp64='maybe')
             return nrm2(a)
 
         if a.ndim == 2 and axis is None and not keepdims:
