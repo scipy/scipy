@@ -407,16 +407,15 @@ class TestLeastSquaresSolvers(object):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
-def test_geqrf_lwork(dtype):
+@pytest.mark.parametrize('shape', [(3, 4), (5, 2), (2**18, 2**18)])
+def test_geqrf_lwork(dtype, shape):
     geqrf, geqrf_lwork = get_lapack_funcs(
         ('geqrf', 'geqrf_lwork'),
         dtype=dtype,
     )
-    m, n = 4, 3
-    _, _, work, _ = geqrf(np.ones((m, n), dtype=dtype), lwork=-1)
+    m, n = shape
     lwork, info = geqrf_lwork(m=m, n=n)
     assert_equal(info, 0)
-    assert_equal(lwork, work[0])
 
 
 class TestRegression(object):
