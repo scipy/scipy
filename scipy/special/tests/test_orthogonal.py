@@ -716,8 +716,6 @@ def test_roots_laguerre():
     assert_raises(ValueError, sc.roots_laguerre, 0)
     assert_raises(ValueError, sc.roots_laguerre, 3.3)
 
-@pytest.mark.xfail(platform.machine() == 'ppc64le',
-                   reason="fails on ppc64le")
 def test_roots_genlaguerre():
     rootf = lambda a: lambda n, mu: sc.roots_genlaguerre(n, a, mu)
     evalf = lambda a: lambda n, x: orth.eval_genlaguerre(n, a, x)
