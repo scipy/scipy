@@ -2054,6 +2054,97 @@ add_newdoc("erfcx",
 
     """)
 
+add_newdoc("erfinv",
+    """Inverse of the error function.
+
+    Computes the inverse of the error function.
+
+    In the complex domain, there is no unique complex number w satisfying
+    erf(w)=z. This indicates a true inverse function would have multi-value.
+    When the domain restricts to the real, -1 < x < 1, there is a unique real
+    number satisfying erf(erfinv(x)) = x.
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [-1, 1]
+
+    Returns
+    -------
+    erfinv : ndarray
+        The inverse of erf of y, element-wise)
+
+    See Also
+    --------
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfcinv : Inverse of the complementary error function
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfinv(0.5)
+    0.4769362762044698
+
+    2) evaluating an ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(-1.0, 1.0, num=10)
+    >>> special.erfinv(y)
+    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
+            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+
+    """)
+
+add_newdoc("erfcinv",
+    """Inverse of the complementary error function.
+
+    Computes the inverse of the complementary error function.
+
+    In the complex domain, there is no unique complex number w satisfying
+    erfc(w)=z. This indicates a true inverse function would have multi-value.
+    When the domain restricts to the real, 0 < x < 2, there is a unique real
+    number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+
+    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [0, 2]
+
+    Returns
+    -------
+    erfcinv : ndarray
+        The inverse of erfc of y, element-wise
+
+    See Also
+    --------
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfinv : Inverse of the error function
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfcinv(0.5)
+    0.4769362762044698
+
+    2) evaluating an ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(0.0, 2.0, num=11)
+    >>> special.erfcinv(y)
+    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
+           -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
+                  -inf])
+
+    """)
+
 add_newdoc("eval_jacobi",
     r"""
     eval_jacobi(n, alpha, beta, x, out=None)
