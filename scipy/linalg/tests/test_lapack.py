@@ -55,7 +55,7 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = set([
         'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function',
+        'flapack', 'print_function', 'HAS_ILP64',
     ])
     missing = list()
     for name in dir(lapack):
