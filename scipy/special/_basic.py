@@ -1667,7 +1667,21 @@ def pbdn_seq(n, z):
 
 
 def ber_zeros(nt):
-    """Compute nt zeros of the Kelvin function ber(x).
+    """Compute nt zeros of the Kelvin function ber.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    ber
 
     References
     ----------
@@ -1682,7 +1696,21 @@ def ber_zeros(nt):
 
 
 def bei_zeros(nt):
-    """Compute nt zeros of the Kelvin function bei(x).
+    """Compute nt zeros of the Kelvin function bei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    bei
 
     References
     ----------
@@ -1697,7 +1725,21 @@ def bei_zeros(nt):
 
 
 def ker_zeros(nt):
-    """Compute nt zeros of the Kelvin function ker(x).
+    """Compute nt zeros of the Kelvin function ker.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    ker
 
     References
     ----------
@@ -1712,7 +1754,28 @@ def ker_zeros(nt):
 
 
 def kei_zeros(nt):
-    """Compute nt zeros of the Kelvin function kei(x).
+    """Compute nt zeros of the Kelvin function kei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the Kelvin function.
+
+    See Also
+    --------
+    kei
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1720,7 +1783,21 @@ def kei_zeros(nt):
 
 
 def berp_zeros(nt):
-    """Compute nt zeros of the Kelvin function ber'(x).
+    """Compute nt zeros of the derivative of the Kelvin function ber.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    ber, berp
 
     References
     ----------
@@ -1735,7 +1812,21 @@ def berp_zeros(nt):
 
 
 def beip_zeros(nt):
-    """Compute nt zeros of the Kelvin function bei'(x).
+    """Compute nt zeros of the derivative of the Kelvin function bei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    bei, beip
 
     References
     ----------
@@ -1750,7 +1841,21 @@ def beip_zeros(nt):
 
 
 def kerp_zeros(nt):
-    """Compute nt zeros of the Kelvin function ker'(x).
+    """Compute nt zeros of the derivative of the Kelvin function ker.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    ker, kerp
 
     References
     ----------
@@ -1765,7 +1870,21 @@ def kerp_zeros(nt):
 
 
 def keip_zeros(nt):
-    """Compute nt zeros of the Kelvin function kei'(x).
+    """Compute nt zeros of the derivative of the Kelvin function kei.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ndarray
+        First `nt` zeros of the derivative of the Kelvin function.
+
+    See Also
+    --------
+    kei, keip
 
     References
     ----------
