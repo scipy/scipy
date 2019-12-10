@@ -1645,3 +1645,12 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('shape', [(3, 7), (7, 3), (2**18, 2**18)])
+def test_geqrfp_lwork(dtype, shape):
+    geqrfp_lwork = get_lapack_funcs(('geqrfp_lwork'), dtype=dtype)
+    m, n = shape
+    lwork, info = geqrfp_lwork(m=m, n=n)
+    assert_equal(info, 0)
