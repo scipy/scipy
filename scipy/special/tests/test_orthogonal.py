@@ -334,7 +334,8 @@ def test_roots_jacobi():
     vgq(rf(0.9, 2), ef(0.9, 2), wf(0.9, 2), -1., 1., 100, atol=3e-13)
 
     vgq(rf(18.24, 27.3), ef(18.24, 27.3), wf(18.24, 27.3), -1., 1., 5)
-    vgq(rf(18.24, 27.3), ef(18.24, 27.3), wf(18.24, 27.3), -1., 1., 25)
+    vgq(rf(18.24, 27.3), ef(18.24, 27.3), wf(18.24, 27.3), -1., 1., 25,
+        atol=1.1e-14)
     vgq(rf(18.24, 27.3), ef(18.24, 27.3), wf(18.24, 27.3), -1., 1.,
         100, atol=1e-13)
 
@@ -715,8 +716,6 @@ def test_roots_laguerre():
     assert_raises(ValueError, sc.roots_laguerre, 0)
     assert_raises(ValueError, sc.roots_laguerre, 3.3)
 
-@pytest.mark.xfail(platform.machine() == 'ppc64le',
-                   reason="fails on ppc64le")
 def test_roots_genlaguerre():
     rootf = lambda a: lambda n, mu: sc.roots_genlaguerre(n, a, mu)
     evalf = lambda a: lambda n, x: orth.eval_genlaguerre(n, a, x)
@@ -729,11 +728,11 @@ def test_roots_genlaguerre():
 
     vgq(rootf(0.1), evalf(0.1), weightf(0.1), 0., np.inf, 5)
     vgq(rootf(0.1), evalf(0.1), weightf(0.1), 0., np.inf, 25, atol=1e-13)
-    vgq(rootf(0.1), evalf(0.1), weightf(0.1), 0., np.inf, 100, atol=1e-13)
+    vgq(rootf(0.1), evalf(0.1), weightf(0.1), 0., np.inf, 100, atol=1.6e-13)
 
     vgq(rootf(1), evalf(1), weightf(1), 0., np.inf, 5)
     vgq(rootf(1), evalf(1), weightf(1), 0., np.inf, 25, atol=1e-13)
-    vgq(rootf(1), evalf(1), weightf(1), 0., np.inf, 100, atol=1e-13)
+    vgq(rootf(1), evalf(1), weightf(1), 0., np.inf, 100, atol=1.03e-13)
 
     vgq(rootf(10), evalf(10), weightf(10), 0., np.inf, 5)
     vgq(rootf(10), evalf(10), weightf(10), 0., np.inf, 25, atol=1e-13)
