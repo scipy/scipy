@@ -1006,6 +1006,24 @@ subroutine <prefix>geqrfp(m,n,a,lda,tau,work,lwork,info)
 
 end subroutine <prefix>geqrfp
 
+subroutine <prefix>geqrfp_lwork(m,n,a,lda,tau,work,lwork,info)
+    ! work, info = geqrfp_lwork(m, n)
+
+    fortranname <prefix>geqrfp
+    callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(in), check(m > 0) :: m
+    integer intent(in), check(n > 0) :: n
+    <ftype> intent(hide) :: a
+    integer intent(hide) :: lda = m
+    <ftype> intent(hide) :: tau
+    <ftype> intent(out) :: work
+    integer intent(hide) :: lwork = -1
+    integer intent(out) :: info
+
+end subroutine <prefix>geqrfp_lwork
+
 subroutine <prefix>gerqf(m,n,a,tau,work,lwork,info)
    ! rq_a,tau,work,info = gerqf(a,lwork=3*n,overwrite_a=0)
    ! Compute an RQ factorization of a real M-by-N matrix A:
