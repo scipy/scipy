@@ -296,7 +296,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             g = jac(x, *args)
             return f, g
 
-    nbd = zeros(n, int32)
+    fortran_int = _lbfgsb.types.intvar.dtype
+
+    nbd = zeros(n, fortran_int)
     low_bnd = zeros(n, float64)
     upper_bnd = zeros(n, float64)
     bounds_map = {(None, None): 0,
@@ -320,11 +322,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     f = array(0.0, float64)
     g = zeros((n,), float64)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
-    iwa = zeros(3*n, int32)
+    iwa = zeros(3*n, fortran_int)
     task = zeros(1, 'S60')
     csave = zeros(1, 'S60')
-    lsave = zeros(4, int32)
-    isave = zeros(44, int32)
+    lsave = zeros(4, fortran_int)
+    isave = zeros(44, fortran_int)
     dsave = zeros(29, float64)
 
     task[:] = 'START'
