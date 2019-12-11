@@ -166,12 +166,17 @@ def shortest_path(csgraph, method='auto',
         issparse = isspmatrix(csgraph)
         if issparse:
             Nk = csgraph.nnz
+            edges = csgraph.data
+        elif np.ma.isMaskedArray(csgraph):
+            Nk = csgraph.count()
+            edges = csgraph.compressed()
         else:
+            csgraph[~np.isfinite(csgraph)] = 0
             Nk = np.sum(csgraph > 0)
+            edges = csgraph
 
         if indices is not None or Nk < N * N / 4:
-            if ((issparse and np.any(csgraph.data < 0))
-                      or (not issparse and np.any(csgraph < 0))):
+            if (np.any(edges < 0)):
                 method = 'J'
             else:
                 method = 'D'
