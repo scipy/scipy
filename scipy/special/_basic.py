@@ -2287,6 +2287,8 @@ def ellipc1(x, y, z, errtol=3e-4):
     ----------
     .. [1] Carlson, B.C., 1994. Numerical computation of real or complex
            elliptic integrals. arXiv:math/9409227 [math.CA]
+
+    .. versionadded:: 1.5.0
     """
     xn = x.copy()
     yn = y.copy()
@@ -2351,6 +2353,13 @@ def ellipc2(x, y, z, errtol=1e-4):
     Notes
     ------
     x, y, and z have to be nonnegative and at most x or y is zero.
+
+    References
+    ----------
+    .. [1] Carlson, B.C., 1994. Numerical computation of real or complex
+           elliptic integrals. arXiv:math/9409227 [math.CA]
+
+    .. versionadded:: 1.5.0
     """
     xn = x.copy()
     yn = y.copy()
