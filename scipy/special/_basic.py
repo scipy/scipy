@@ -2293,15 +2293,15 @@ def ellipc1(x, y, z, errtol=3e-4):
     xn = x.copy()
     yn = y.copy()
     zn = z.copy()
-    An = (xn + yn + zn) / 3.0
-    Q = (3. * errtol) ** (-1 / 6.) * \
-        np.max(np.abs([An - xn, An - yn, An - zn]), axis=0)
+    an = (xn + yn + zn) / 3.0
+    qq = (3. * errtol) ** (-1 / 6.) * \
+        np.max(np.abs([an - xn, an - yn, an - zn]), axis=0)
     # Convergence has to be done element-by-element:
     index = np.ndindex(*x.shape)
     for v in index:
         n = 0
         # Convergence condition
-        while 4.**(-n) * Q[v] > abs(An[v]):
+        while 4.**(-n) * qq[v] > abs(an[v]):
             xnroot = np.sqrt(xn[v])
             ynroot = np.sqrt(yn[v])
             znroot = np.sqrt(zn[v])
@@ -2310,18 +2310,18 @@ def ellipc1(x, y, z, errtol=3e-4):
             xn[v] = (xn[v] + lamda) * 0.250
             yn[v] = (yn[v] + lamda) * 0.250
             zn[v] = (zn[v] + lamda) * 0.250
-            An[v] = (An[v] + lamda) * 0.250
+            an[v] = (an[v] + lamda) * 0.250
 
     # post convergence calculation
-    X = 1. - xn / An
-    Y = 1. - yn / An
+    X = 1. - xn / an
+    Y = 1. - yn / an
     Z = - X - Y
-    E2 = X * Y - Z * Z
-    E3 = X * Y * Z
-    RF = An**(-1 / 2.) * \
-        (1 - E2 / 10. + E3 / 14. + (E2**2) / 24. - 3 / 44. * E2 * E3)
+    e2 = X * Y - Z * Z
+    e3 = X * Y * Z
+    rf = an**(-1 / 2.) * \
+        (1 - e2 / 10. + e3 / 14. + (e2**2) / 24. - 3 / 44. * e2 * e3)
 
-    return RF
+    return rf
 
 
 def ellipc2(x, y, z, errtol=1e-4):
@@ -2364,10 +2364,10 @@ def ellipc2(x, y, z, errtol=1e-4):
     xn = x.copy()
     yn = y.copy()
     zn = z.copy()
-    A0 = (xn + yn + 3. * zn) / 5.0
-    An = A0.copy()
-    Q = (errtol / 4.) ** (-1 / 6.) * \
-        np.max(np.abs([An - xn, An - yn, An - zn]), axis=0)
+    a0 = (xn + yn + 3. * zn) / 5.0
+    an = a0.copy()
+    qq = (errtol / 4.) ** (-1 / 6.) * \
+        np.max(np.abs([an - xn, an - yn, an - zn]), axis=0)
     sum_term = np.zeros(x.shape, dtype=x.dtype)
     n = np.zeros(x.shape)
 
@@ -2375,7 +2375,7 @@ def ellipc2(x, y, z, errtol=1e-4):
     index = np.ndindex(*x.shape)
     for v in index:
         # Convergence condition
-        while 4.**(-n[v]) * Q[v] > abs(An[v]):
+        while 4.**(-n[v]) * qq[v] > abs(an[v]):
             xnroot = np.sqrt(xn[v])
             ynroot = np.sqrt(yn[v])
             znroot = np.sqrt(zn[v])
@@ -2386,20 +2386,20 @@ def ellipc2(x, y, z, errtol=1e-4):
             xn[v] = (xn[v] + lamda) * 0.250
             yn[v] = (yn[v] + lamda) * 0.250
             zn[v] = (zn[v] + lamda) * 0.250
-            An[v] = (An[v] + lamda) * 0.250
+            an[v] = (an[v] + lamda) * 0.250
 
     # post convergence calculation
-    X = (A0 - x) / (4.**(n) * An)
-    Y = (A0 - y) / (4.**(n) * An)
+    X = (a0 - x) / (4.**(n) * an)
+    Y = (a0 - y) / (4.**(n) * an)
     Z = - (X + Y) / 3.
-    E2 = X * Y - 6. * Z * Z
-    E3 = (3. * X * Y - 8. * Z * Z) * Z
-    E4 = 3. * (X * Y - Z * Z) * Z**2.
-    E5 = X * Y * Z**3.
-    RD = \
-        4**(-n) * An**(-3 / 2.) * \
-        (1 - 3 / 14. * E2 + 1 / 6. * E3 +
-         9 / 88. * (E2**2) - 3 / 22. * E4 - 9 / 52. * E2 * E3 +
-         3 / 26. * E5) + 3 * sum_term
+    e2 = X * Y - 6. * Z * Z
+    e3 = (3. * X * Y - 8. * Z * Z) * Z
+    e4 = 3. * (X * Y - Z * Z) * Z**2.
+    e5 = X * Y * Z**3.
+    rd = \
+        4**(-n) * an**(-3 / 2.) * \
+        (1 - 3 / 14. * e2 + 1 / 6. * e3 +
+         9 / 88. * (e2**2) - 3 / 22. * e4 - 9 / 52. * e2 * e3 +
+         3 / 26. * e5) + 3 * sum_term
 
-    return RD
+    return rd
