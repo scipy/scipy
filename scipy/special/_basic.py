@@ -90,7 +90,9 @@ __all__ = [
     'ynp_zeros',
     'yv',
     'yvp',
-    'zeta'
+    'zeta',
+    'ellipc1',
+    'ellipc2'
 ]
 
 
@@ -2276,7 +2278,7 @@ def ellipc1(x, y, z, errtol=3e-4):
 
     Returns
     -------
-    RF : ndarray
+    rf : ndarray
         Value of the incomplete first order elliptic integral
 
     Notes
@@ -2347,7 +2349,7 @@ def ellipc2(x, y, z, errtol=1e-4):
 
     Returns
     -------
-    RD : ndarray
+    rd : ndarray
         Value of the incomplete second order elliptic integral
 
     Notes
