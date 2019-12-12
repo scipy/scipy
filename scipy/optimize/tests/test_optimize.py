@@ -1175,6 +1175,11 @@ class TestOptimizeScalar(object):
         x = optimize.fminbound(self.fun, 1, np.array(5))
         assert_allclose(x, self.solution, atol=1e-6)
 
+    def test_gh11207(self):
+        def fun(x):
+            return x**2
+        optimize.fminbound(fun, 0, 0)
+
     def test_minimize_scalar(self):
         # combine all tests above for the minimize_scalar wrapper
         x = optimize.minimize_scalar(self.fun).x
