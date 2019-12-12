@@ -171,6 +171,7 @@ from .fitpack import *
 from .fitpack2 import *
 
 from .rbf import Rbf
+from .radial_basis_interp import RadialBasisFunction
 
 from .polyint import *
 
