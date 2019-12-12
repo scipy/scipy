@@ -59,6 +59,8 @@ Elliptic functions and integrals
    ellipkinc -- Incomplete elliptic integral of the first kind.
    ellipe    -- Complete elliptic integral of the second kind.
    ellipeinc -- Incomplete elliptic integral of the second kind.
+   ellipc1   -- Incomplete Carlson integral of the first kind.
+   ellipc2   -- Incomplete Carlson integral of the second kind.
 
 Bessel functions
 ----------------
@@ -671,6 +673,8 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'ellipc1',
+    'ellipc2'
 ]
 
 from scipy._lib._testutils import PytestTester

@@ -35,7 +35,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk, zeta
+from scipy.special import ellipk, zeta, ellipc1, ellipc2
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -3397,3 +3397,74 @@ def test_pseudo_huber():
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_ellipc1():
+    # Define inputs that we know the outputs from:
+    # Carlson, B.C., 1994. Numerical computation of real or complex
+    # elliptic integrals. arXiv:math/9409227 [math.CA]
+
+    # Real values (test in 2D format)
+    x = np.array([[1.0, 0.5], [2.0, 2.0]])
+    y = np.array([[2.0, 1.0], [3.0, 3.0]])
+    z = np.array([[0.0, 0.0], [4.0, 4.0]])
+
+    # Define reference outputs
+    RF_ref = np.array([[1.3110287771461, 1.8540746773014],
+                       [0.58408284167715, 0.58408284167715]])
+
+    # Compute integrals
+    RF = ellipc1(x, y, z)
+
+    # Compare
+    assert_array_almost_equal(RF, RF_ref)
+
+    # Complex values
+    x = np.array([1j, 1j - 1, 1j, 1j - 1])
+    y = np.array([-1j, 1j, -1j, 1j])
+    z = np.array([0.0, 0.0, 2, 1 - 1j])
+
+    # Define reference outputs
+    RF_ref = np.array([1.8540746773014, 0.79612586584234 - 1.2138566698365j,
+                       1.0441445654064, 0.93912050218619 - 0.53296252018635j])
+    # Compute integrals
+    RF = ellipc1(x, y, z, errtol=3e-5)
+
+    # Compare
+    assert_array_almost_equal(RF, RF_ref)
+
+
+def test_ellipc2():
+
+    # Define inputs that we know the outputs from:
+    # Carlson, B.C., 1994. Numerical computation of real or complex
+    # elliptic integrals. arXiv:math/9409227 [math.CA]
+
+    # Real values
+    x = np.array([0.0, 2.0])
+    y = np.array([2.0, 3.0])
+    z = np.array([1.0, 4.0])
+
+    # Defene reference outputs
+    RD_ref = np.array([1.7972103521034, 0.16510527294261])
+
+    # Compute integrals
+    RD = ellipc2(x, y, z, errtol=1e-5)
+
+    # Compare
+    assert_array_almost_equal(RD, RD_ref)
+
+    # Complex values (testing in 2D format)
+    x = np.array([[1j, 0.0], [0.0, -2 - 1j]])
+    y = np.array([[-1j, 1j], [1j-1, -1j]])
+    z = np.array([[2.0, -1j], [1j, -1 + 1j]])
+
+    # Defene reference outputs
+    RD_ref = np.array([[0.65933854154220, 1.2708196271910 + 2.7811120159521j],
+                       [-1.8577235439239 - 0.96193450888839j,
+                        1.8249027393704 - 1.2218475784827j]])
+    # Compute integrals
+    RD = ellipc2(x, y, z, errtol=1e-5)
+
+    # Compare
+    assert_array_almost_equal(RD, RD_ref)

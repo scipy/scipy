@@ -2251,3 +2251,146 @@ def zeta(x, q=None, out=None):
         return ufuncs._riemann_zeta(x, out)
     else:
         return ufuncs._zeta(x, q, out)
+
+
+def ellipc1(x, y, z, errtol=3e-4):
+    r""" Computes Carlson's incomplete elliptic integral of the first kind
+    defined as:
+
+    .. math::
+
+        R_F = \frac{1}{2} \int_{0}^{\infty} \left [(t+x)(t+y)(t+z)  \right ]
+        ^{-\frac{1}{2}}dt
+
+    Parameters
+    ----------
+    x : ndarray
+        First independent variable of the integral.
+    y : ndarray
+        Second independent variable of the integral.
+    z : ndarray
+        Third independent variable of the integral.
+    errtol : float
+        Error tolerance. Integral is computed with relative error less in
+        magnitude than the defined value
+
+    Returns
+    -------
+    RF : ndarray
+        Value of the incomplete first order elliptic integral
+
+    Notes
+    ------
+    x, y, and z have to be nonnegative and at most one of them is zero.
+
+    References
+    ----------
+    .. [1] Carlson, B.C., 1994. Numerical computation of real or complex
+           elliptic integrals. arXiv:math/9409227 [math.CA]
+    """
+    xn = x.copy()
+    yn = y.copy()
+    zn = z.copy()
+    An = (xn + yn + zn) / 3.0
+    Q = (3. * errtol) ** (-1 / 6.) * \
+        np.max(np.abs([An - xn, An - yn, An - zn]), axis=0)
+    # Convergence has to be done element-by-element:
+    index = np.ndindex(*x.shape)
+    for v in index:
+        n = 0
+        # Convergence condition
+        while 4.**(-n) * Q[v] > abs(An[v]):
+            xnroot = np.sqrt(xn[v])
+            ynroot = np.sqrt(yn[v])
+            znroot = np.sqrt(zn[v])
+            lamda = xnroot * (ynroot + znroot) + ynroot * znroot
+            n = n + 1
+            xn[v] = (xn[v] + lamda) * 0.250
+            yn[v] = (yn[v] + lamda) * 0.250
+            zn[v] = (zn[v] + lamda) * 0.250
+            An[v] = (An[v] + lamda) * 0.250
+
+    # post convergence calculation
+    X = 1. - xn / An
+    Y = 1. - yn / An
+    Z = - X - Y
+    E2 = X * Y - Z * Z
+    E3 = X * Y * Z
+    RF = An**(-1 / 2.) * \
+        (1 - E2 / 10. + E3 / 14. + (E2**2) / 24. - 3 / 44. * E2 * E3)
+
+    return RF
+
+
+def ellipc2(x, y, z, errtol=1e-4):
+    r""" Computes the Carlson's incomplete elliptic integral of the second kind
+    defined as:
+
+    .. math::
+
+        R_D = \frac{3}{2} \int_{0}^{\infty} (t+x)^{-\frac{1}{2}}
+        (t+y)^{-\frac{1}{2}}(t+z)  ^{-\frac{3}{2}}
+
+    Parameters
+    ----------
+    x : ndarray
+        First independent variable of the integral.
+    y : ndarray
+        Second independent variable of the integral.
+    z : ndarray
+        Third independent variable of the integral.
+    errtol : float
+        Error tolerance. Integral is computed with relative error less in
+        magnitude than the defined value
+
+    Returns
+    -------
+    RD : ndarray
+        Value of the incomplete second order elliptic integral
+
+    Notes
+    ------
+    x, y, and z have to be nonnegative and at most x or y is zero.
+    """
+    xn = x.copy()
+    yn = y.copy()
+    zn = z.copy()
+    A0 = (xn + yn + 3. * zn) / 5.0
+    An = A0.copy()
+    Q = (errtol / 4.) ** (-1 / 6.) * \
+        np.max(np.abs([An - xn, An - yn, An - zn]), axis=0)
+    sum_term = np.zeros(x.shape, dtype=x.dtype)
+    n = np.zeros(x.shape)
+
+    # Convergence has to be done element-by-element:
+    index = np.ndindex(*x.shape)
+    for v in index:
+        # Convergence condition
+        while 4.**(-n[v]) * Q[v] > abs(An[v]):
+            xnroot = np.sqrt(xn[v])
+            ynroot = np.sqrt(yn[v])
+            znroot = np.sqrt(zn[v])
+            lamda = xnroot * (ynroot + znroot) + ynroot * znroot
+            sum_term[v] = sum_term[v] + \
+                4.**(-n[v]) / (znroot * (zn[v] + lamda))
+            n[v] = n[v] + 1
+            xn[v] = (xn[v] + lamda) * 0.250
+            yn[v] = (yn[v] + lamda) * 0.250
+            zn[v] = (zn[v] + lamda) * 0.250
+            An[v] = (An[v] + lamda) * 0.250
+
+    # post convergence calculation
+    X = (A0 - x) / (4.**(n) * An)
+    Y = (A0 - y) / (4.**(n) * An)
+    Z = - (X + Y) / 3.
+    E2 = X * Y - 6. * Z * Z
+    E3 = (3. * X * Y - 8. * Z * Z) * Z
+    E4 = 3. * (X * Y - Z * Z) * Z**2.
+    E5 = X * Y * Z**3.
+    RD = \
+        4**(-n) * An**(-3 / 2.) * \
+        (1 - 3 / 14. * E2 + 1 / 6. * E3 +
+         9 / 88. * (E2**2) - 3 / 22. * E4 - 9 / 52. * E2 * E3 +
+         3 / 26. * E5) + 3 * sum_term
+
+    return RD
