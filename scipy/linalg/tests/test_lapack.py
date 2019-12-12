@@ -409,10 +409,7 @@ class TestLeastSquaresSolvers(object):
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('shape', [(3, 4), (5, 2), (2**18, 2**18)])
 def test_geqrf_lwork(dtype, shape):
-    geqrf, geqrf_lwork = get_lapack_funcs(
-        ('geqrf', 'geqrf_lwork'),
-        dtype=dtype,
-    )
+    geqrf_lwork = get_lapack_funcs(('geqrf_lwork'), dtype=dtype)
     m, n = shape
     lwork, info = geqrf_lwork(m=m, n=n)
     assert_equal(info, 0)
