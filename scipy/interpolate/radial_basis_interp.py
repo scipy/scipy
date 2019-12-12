@@ -1,5 +1,5 @@
 import sys
-if sys.version_info[0] >2:
+if sys.version_info[0] > 2:
     unicode = str
 
 import numpy as np
@@ -20,19 +20,14 @@ class RadialBasisFunction(object):
 
     f : (Npoints,) ndarray of float or complex
         Data values.
-
-    degree : int optional
-        Use an augmented RBF. Specify the *total* degree fit if given as an 
-        integer. If given as a matrix, must be (P+1,ndim) shape. This is the 
-        degree of the augmenting polynomial. Default: 0
     
-    kernel : string, callable, or int optional
+    kernel : string, callable, or int: optional
         Default: gaussian
         The radial basis kernel, based on the radius, r
         If string:
             'multiquadric': sqrt((r/epsilon)**2 + 1)
             'inverse': 1.0/sqrt((r/epsilon)**2 + 1)
-            'gaussian': exp(-(r/epsilon)**2)
+            'gaussian','squared_exponential','rbf': exp(-(r/epsilon)**2)
             'linear': r
             'cubic': r**3
             'quintic': r**5
@@ -42,14 +37,33 @@ class RadialBasisFunction(object):
             not needed. 
         If integer:
             Spline of the form: r**kernel if kernel is odd else r**kernel*log(r)
+    
+    degree : int: optional
+        Use an augmented RBF. Specify the *total* degree fit if given as an 
+        integer. If given as a matrix, must be (P+1,ndim) shape. This is the 
+        degree of the augmenting polynomial. Default: 0            
 
-    epsilon: float or None , optional
-        Adjustable parameter for some kernels. Default: None
+    epsilon: float or None: optional
+        Adjustable parameter for some kernels. Default is the average
+        interpoint distance for X (it is computed anyway).
         
-    smooth : float or None, optional
+        See [3] and [4] for alternative methods to select epsilon
+        
+    smooth : float: optional
         Values greater than zero increase the smoothness of the
         approximation.  0 is for interpolation (default). Actually set to
-        max(smooth,1e-10 * ||f||) for numerical precision
+        max(smooth,1e-10 * ||f||) for numerical precision.
+
+    Methods:
+    --------
+    __call__(X)
+        Evaluate the interpolant at X
+
+    Tips:
+    -----
+    While not required, it is *highly* suggested to scale all inputs to a unit
+    hypercube! This will improve the quality of the interpolant; especially for
+    cases with large differences in scales.
 
     Theory:
     ------
@@ -97,19 +111,24 @@ class RadialBasisFunction(object):
         Deterministic Computer Models. AIAA journal, 43(4):853–863, 2005.
 
     """
-    def __init__(self,X,f,degree=0,
-                 epsilon=1,smooth=0,
-                 kernel='gaussian',_solve=True):
-        self.X = X = np.atleast_2d(X)
+    def __init__(self,X,f,
+                 kernel='gaussian',
+                 degree=0,
+                 epsilon=1,
+                 smooth=0):
+        self.X = X = self._checkX(X)
+             
         self.N,self.ndim = X.shape
         self.f = f = np.ravel(f)
         self.degree = degree
         self.kernel = kernel
-        self.epsilon = epsilon
-        
         
         r = scipy.spatial.distance.cdist(X,X)
-
+        
+        if epsilon is None:
+            epsilon = np.mean(r[np.triu_indices(self.N,1)])
+        self.epsilon = epsilon
+        
         self.smooth = max(float(smooth),1e-10*scipy.linalg.norm(f)/np.sqrt(len(f))) # Scale by ||f||
         
         K = self._kernel(r) + np.eye(self.N)*self.smooth
@@ -125,9 +144,16 @@ class RadialBasisFunction(object):
         self.rbf_coef = coef[:self.N]
         self.poly_coef = coef[self.N:]
         
+    def _checkX(self,X):
+        X = np.asarray(X)
+        if X.ndim == 1:
+            X = np.c_[X]
+        elif X.ndim != 2:
+            raise ValueError('X must be 1D or 2D')
+        return X
 
     def __call__(self,X):
-        X = np.atleast_2d(X)
+        X = self._checkX(X)
         K = self._kernel( scipy.spatial.distance.cdist(X,self.X) )
         P = RadialBasisFunction.vandermond(X,degree=self.degree)
         return K.dot(self.rbf_coef) + P.dot(self.poly_coef)
@@ -150,7 +176,7 @@ class RadialBasisFunction(object):
             return np.sqrt((r/self.epsilon)**2 + 1)
         elif kernel in ['inverse_multiquadric','inverse']:
             return 1.0/np.sqrt((1.0/self.epsilon*r)**2 + 1)
-        elif kernel in ['gaussian','squared_exponential']:
+        elif kernel in ['gaussian','squared_exponential','rbf']:
             return np.exp(-(1.0/self.epsilon*r)**2)
         elif kernel in ['linear']:
             return r
@@ -177,7 +203,6 @@ class RadialBasisFunction(object):
             v = np.fliplr(np.vander(X[:,d],N=degree+1))
             V *= v[:,index[:,d]]
         return V
-
     
     @staticmethod
     def total_index(P,ndim,sort=True):
