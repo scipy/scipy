@@ -55,6 +55,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
 class MemoizeJac(object):
     """ Decorator that caches the value gradient of function each time it
     is called. """
+
     def __init__(self, fun):
         self.fun = fun
         self.jac = None
@@ -111,6 +112,7 @@ class OptimizeResult(dict):
     with attribute accessors, one can see which attributes are available
     using the `keys()` method.
     """
+
     def __getattr__(self, name):
         try:
             return self[name]
@@ -1795,6 +1797,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     fx = func(x, *args)
     num = 1
     fmin_data = (1, xf, fx)
+    fu = np.inf
 
     ffulc = fnfc = fx
     xm = 0.5 * (a + b)
@@ -2988,6 +2991,7 @@ class _Brute_Wrapper(object):
     """
     Object to wrap user cost function for optimize.brute, allowing picklability
     """
+
     def __init__(self, f, args):
         self.f = f
         self.args = [] if args is None else args
