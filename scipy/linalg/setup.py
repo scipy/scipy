@@ -6,7 +6,7 @@ import glob
 from os.path import join
 
 
-def patch_int64_pyf(filename, basename_suffix='_64'):
+def patch_int64_pyf(filename, lapack_opt, basename_suffix='_64'):
     """
     Patch .pyf files to ILP64 ABI.
 
@@ -37,6 +37,18 @@ def patch_int64_pyf(filename, basename_suffix='_64'):
                   r"include '\1{}\2'".format(basename_suffix),
                   text, flags=re.I)
 
+    macros = dict(lapack_opt.get('define_macros', []))
+    suffix = macros.get('BLAS_SYMBOL_SUFFIX', '')
+    prefix = macros.get('BLAS_SYMBOL_PREFIX', '')
+    if suffix or prefix:
+        # Add rename macro declarations in C code
+        text = re.sub(r"^(\s*python module.*)$",
+                      ("\\1\n"
+                       "usercode '''\n"
+                       "  #include \"blas64-prefix-defines.h\"\n"
+                       "'''\n\n"),
+                      text, flags=re.I | re.M)
+
     basename = os.path.basename(filename)
     if basename.endswith('.pyf.src'):
         base, ext = basename[:-8], basename[-8:]
@@ -52,7 +64,7 @@ def patch_int64_pyf(filename, basename_suffix='_64'):
     return os.path.relpath(dst, os.path.dirname(filename))
 
 
-def patch_int64_pyf_glob(filenames, basename_suffix='_64'):
+def patch_int64_pyf_glob(filenames, lapack_opt, basename_suffix='_64'):
     new_filenames = []
     for fn_glob in filenames:
         fn_glob = os.path.join(os.path.dirname(__file__), fn_glob)
@@ -61,7 +73,7 @@ def patch_int64_pyf_glob(filenames, basename_suffix='_64'):
                 new_filenames.append(fn)
                 continue
 
-            new_filenames.append(patch_int64_pyf(fn, basename_suffix))
+            new_filenames.append(patch_int64_pyf(fn, lapack_opt, basename_suffix))
 
     return new_filenames
 
@@ -97,8 +109,8 @@ def configuration(parent_package='', top_path=None):
 
     if uses_blas64():
         ext = config.add_extension('_fblas_64',
-                                   sources=patch_int64_pyf_glob(sources),
-                                   depends=patch_int64_pyf_glob(['fblas_l?.pyf.src']),
+                                   sources=patch_int64_pyf_glob(sources, lapack_ilp64_opt),
+                                   depends=patch_int64_pyf_glob(['fblas_l?.pyf.src'], lapack_ilp64_opt),
                                    extra_info=lapack_ilp64_opt,
                                    f2py_options=get_f2py_int64_options())
         ext._pre_build_hook = blas_ilp64_pre_build_hook(lapack_ilp64_opt)
@@ -126,8 +138,8 @@ def configuration(parent_package='', top_path=None):
 
     if uses_blas64():
         ext = config.add_extension('_flapack_64',
-                                   sources=patch_int64_pyf_glob(sources),
-                                   depends=patch_int64_pyf_glob(flapack_depends),
+                                   sources=patch_int64_pyf_glob(sources, lapack_ilp64_opt),
+                                   depends=patch_int64_pyf_glob(flapack_depends, lapack_ilp64_opt),
                                    extra_info=lapack_ilp64_opt,
                                    f2py_options=get_f2py_int64_options())
         ext._pre_build_hook = blas_ilp64_pre_build_hook(lapack_ilp64_opt)
