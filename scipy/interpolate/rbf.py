@@ -55,7 +55,7 @@ from scipy.spatial.distance import cdist, pdist, squareform
 
 __all__ = ['Rbf']
 
-@np.deprecate(new_name='scipy.interpolate.RadialBasisFunction')
+
 class Rbf(object):
     """
     Rbf(*args)
