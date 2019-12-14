@@ -1656,10 +1656,47 @@ def test_getc2_gesc2():
                                       x/scale, decimal=4)
 
 
-@pytest.mark.parametrize('dtype', DTYPES)
-@pytest.mark.parametrize('shape', [(3, 7), (7, 3), (2**18, 2**18)])
-def test_geqrfp_lwork(dtype, shape):
-    geqrfp_lwork = get_lapack_funcs(('geqrfp_lwork'), dtype=dtype)
-    m, n = shape
-    lwork, info = geqrfp_lwork(m=m, n=n)
-    assert_equal(info, 0)
+def test_gttrf_gttrs():
+    np.random.seed(42)
+    n = 10
+    for index, dtype in enumerate(DTYPES):
+        atol = 10**-(np.finfo(dtype).precision-1)
+        if index < 2:
+            du = np.random.rand(n-1)
+            d = np.random.rand(n)
+            dl = np.random.rand(n-1)
+        else:
+            du = np.random.rand(n-1) * 1j
+            d = np.random.rand(n) * 1j
+            dl = np.random.rand(n-1) * 1j
+
+        diag_cpy = np.array([dl.copy(), d.copy(), du.copy()])
+
+        A = np.diag(d) + np.diag(dl, -1) + np.diag(du, 1)
+        x = np.random.rand(n)
+        b = A @ x
+
+        dgttrf = get_lapack_funcs('gttrf', dtype=dtype)
+        dgttrs = get_lapack_funcs('gttrs', dtype=dtype)
+
+        _dl, _d, _du, du2, ipiv, info = dgttrf(dl, d, du)
+
+        np.testing.assert_allclose(dl, diag_cpy[0], atol=atol)
+        np.testing.assert_allclose(d, diag_cpy[1], atol=atol)
+        np.testing.assert_allclose(du, diag_cpy[2], atol=atol)
+        
+        b_cpy = b.copy()
+        x_dgttrs, info = dgttrs(_dl, _d, _du, du2, ipiv, b)
+        np.testing.assert_allclose(x, x_dgttrs, atol=atol)
+        np.testing.assert_allclose(b, b_cpy, atol=atol)
+        
+
+        dl_malformatted = np.append(dl, [1])
+        d_malformatted = np.append(d, [1])
+        du_malformatted = np.append(du, [1])
+        with assert_raises(ValueError):
+            dgttrf(dl_malformatted, d, du)
+        with assert_raises(ValueError):
+            dgttrf(dl, d_malformatted, du)
+        with assert_raises(ValueError):
+            dgttrf(dl, d, du_malformatted)
