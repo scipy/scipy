@@ -9,6 +9,56 @@ from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
     )
+from collections import namedtuple
+
+
+_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
+_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem.__doc__ = \
+    """ Represents a linear-programming problem.
+
+    Attributes
+    ----------
+    c : 1D array
+        The coefficients of the linear objective function to be minimized.
+    A_ub : 2D array, optional
+        The inequality constraint matrix. Each row of ``A_ub`` specifies the
+        coefficients of a linear inequality constraint on ``x``.
+    b_ub : 1D array, optional
+        The inequality constraint vector. Each element represents an
+        upper bound on the corresponding value of ``A_ub @ x``.
+    A_eq : 2D array, optional
+        The equality constraint matrix. Each row of ``A_eq`` specifies the
+        coefficients of a linear equality constraint on ``x``.
+    b_eq : 1D array, optional
+        The equality constraint vector. Each element of ``A_eq @ x`` must equal
+        the corresponding element of ``b_eq``.
+    bounds : sequence, optional
+        A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+        the minimum and maximum values of that decision variable. Use ``None`` to
+        indicate that there is no bound. By default, bounds are ``(0, None)``
+        (all decision variables are non-negative).
+        If a single tuple ``(min, max)`` is provided, then ``min`` and
+        ``max`` will serve as bounds for all decision variables.
+    x0 : 1D array, optional
+        Guess values of the decision variables, which will be refined by
+        the optimization algorithm. This argument is currently used only by the
+        'revised simplex' method, and can only be used if `x0` represents a
+        basic feasible solution.
+
+    Notes
+    -----
+    This namedtuple supports 2 ways of initialization:
+    >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
+    >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
+
+    Note that only ``c`` is a required argument here, whereas all other arguments 
+    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with 
+    default values of None.
+    For example, ``A_eq`` and ``b_eq`` can be set without ``A_ub`` or ``b_ub``:
+    >>> lp3 = _LPProblem(c=[-1, 4], A_eq=[[2, 1]], b_eq=[10])
+    """
+
 
 def _check_sparse_inputs(options, A_ub, A_eq):
     """
@@ -121,8 +171,7 @@ def _format_b_constraints(b):
     return b if b.size != 1 else b.reshape((-1))
 
 
-def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-                  x0=None):
+def _clean_inputs(lp):
     """
     Given user inputs for a linear programming problem, return the
     objective vector, upper bound constraints, equality constraints,
@@ -130,56 +179,69 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
 
     Parameters
     ----------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence, optional
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative).
-        If a sequence containing a single tuple is provided, then ``min`` and
-        ``max`` will be applied to all variables in the problem.
-    x0 : 1-D array, optional
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm.
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
 
     Returns
     -------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence of tuples
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for each of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative).
-    x0 : 1-D array, optional
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm.
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
     """
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+
     if c is None:
         raise TypeError
 
@@ -383,10 +445,10 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
             "Invalid input for linprog: bounds must be a sequence of "
             "(min,max) pairs, each defining bounds on an element of x ")
 
-    return c, A_ub, b_ub, A_eq, b_eq, bounds, x0
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
 
 
-def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
+def _presolve(lp, rr, tol=1e-9):
     """
     Given inputs for a linear programming problem in preferred format,
     presolve the problem: identify trivial infeasibilities, redundancies,
@@ -395,27 +457,35 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
 
     Parameters
     ----------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence of tuples
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for each of ``min`` or
-        ``max`` when there is no bound in that direction.
-    x0 : 1-D array, optional
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm.
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
     rr : bool
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
@@ -427,34 +497,41 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
 
     Returns
     -------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-    c0 : 1-D array
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
+    c0 : 1D array
         Constant term in objective function due to fixed (and eliminated)
         variables.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence of tuples
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for each of ``min`` or
-        ``max`` when there is no bound in that direction. Bounds have been
-        tightened where possible.
-    x : 1-D array
+    x : 1D array
         Solution vector (when the solution is trivial and can be determined
         in presolve)
-    x0 : 1-D array
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm (if solution is not determined in presolve)
     undo: list of tuples
         (index, value) pairs that record the original index and fixed value
         for each variable removed from the problem
@@ -493,6 +570,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
     #  * implement remaining checks from [5]
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
+
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
     undo = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
@@ -543,8 +622,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                        "of zeros in the equality constraint matrix with a "
                        "nonzero corresponding constraint value.")
             complete = True
-            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, x0, undo, complete, status, message)
+            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                    c0, x, undo, complete, status, message)
         else:  # test_zero_row_2
             # if RHS is zero, we can eliminate this equation entirely
             A_eq = A_eq[np.logical_not(zero_row), :]
@@ -560,8 +639,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                        "of zeros in the equality constraint matrix with a "
                        "nonzero corresponding  constraint value.")
             complete = True
-            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, x0, undo, complete, status, message)
+            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                    c0, x, undo, complete, status, message)
         else:  # test_zero_row_2
             # if LHS is >= 0, we can eliminate this constraint entirely
             A_ub = A_ub[np.logical_not(zero_row), :]
@@ -584,8 +663,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                        "you wish to check whether the problem is infeasible, "
                        "turn presolve off.")
             complete = True
-            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, x0, undo, complete, status, message)
+            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                    c0, x, undo, complete, status, message)
         # variables will equal upper/lower bounds will be removed later
         lb[np.logical_and(zero_col, c < 0)] = ub[
             np.logical_and(zero_col, c < 0)]
@@ -607,8 +686,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                            "singleton row in the equality constraints is "
                            "inconsistent with the bounds.")
                 complete = True
-                return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                        x, x0, undo, complete, status, message)
+                return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                        c0, x, undo, complete, status, message)
             else:
                 # sets upper and lower bounds at that fixed value - variable
                 # will be removed later
@@ -643,8 +722,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                 message = ("The problem is (trivially) infeasible because a "
                            "singleton row in the upper bound constraints is "
                            "inconsistent with the bounds.")
-                return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                        x, x0, undo, complete, status, message)
+                return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                        c0, x, undo, complete, status, message)
         A_ub = A_ub[np.logical_not(singleton_row), :]
         b_ub = b_ub[np.logical_not(singleton_row)]
 
@@ -663,8 +742,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                        "bounds fix all variables to values inconsistent with "
                        "the constraints")
             complete = True
-            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                    x, x0, undo, complete, status, message)
+            return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                    c0, x, undo, complete, status, message)
 
     ub_mod = ub
     lb_mod = lb
@@ -747,8 +826,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
                 complete = True
-        return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-                x, x0, undo, complete, status, message)
+        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0, x, undo, complete, status, message)
 
     # This is a wild guess for which redundancy removal algorithm will be
     # faster. More testing would be good.
@@ -775,11 +854,11 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, rr, tol=1e-9):
             status = 4
         if status != 0:
             complete = True
-    return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
-            x, x0, undo, complete, status, message)
+    return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+            c0, x, undo, complete, status, message)
 
 
-def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0):
+def _parse_linprog(lp, options):
     """
     Parse the provided linear programming problem
 
@@ -794,27 +873,35 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0):
 
     Parameters
     ----------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative). If a sequence containing a
-        single tuple is provided, then ``min`` and ``max`` will be applied to
-        all variables in the problem.
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
     options : dict
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -825,35 +912,38 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
-    x0 : 1-D array, optional
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm. Currently compatible only with the
-        'revised simplex' method, and only if x0 is a basic feasible solution
-        of the problem.
 
     Returns
     -------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence, optional
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative).
-        If a sequence containing a single tuple is provided, then ``min`` and
-        ``max`` will be applied to all variables in the problem.
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -864,25 +954,19 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options, x0):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
-    x0 : 1-D array, optional
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm. Currently compatible only with the
-        'revised simplex' method, and only if x0 is a basic feasible solution
-        of the problem.
+
     """
     if options is None:
         options = {}
 
     solver_options = {k: v for k, v in options.items()}
-    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, A_ub, A_eq)
-    # Convert lists to NumPy arrays, etc.
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = _clean_inputs(
-        c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
-    return c, A_ub, b_ub, A_eq, b_eq, bounds, solver_options, x0
+    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, lp.A_ub, lp.A_eq)
+    # Convert lists to numpy arrays, etc...
+    lp = _clean_inputs(lp._replace(A_ub=A_ub, A_eq=A_eq))
+    return lp, solver_options
 
 
-def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-             x0=None, undo=[]):
+def _get_Abc(lp, c0, undo=[]):
     """
     Given a linear programming problem of the form:
 
@@ -913,32 +997,39 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
 
     Parameters
     ----------
-    c : 1-D array
-        Coefficients of the linear objective function to be minimized.
-        Components corresponding with fixed variables have been eliminated.
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables.
-    A_ub : 2-D array, optional
-        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-        inequality constraints at ``x``.
-    b_ub : 1-D array, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``.
-    A_eq : 2-D array, optional
-        2-D array such that ``A_eq @ x`` gives the values of the equality
-        constraints at ``x``.
-    b_eq : 1-D array, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
-    bounds : sequence of tuples
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for each of ``min`` or
-        ``max`` when there is no bound in that direction. Bounds have been
-        tightened where possible.
-    x0 : 1-D array
-        Starting values of the independent variables, which will be refined by
-        the optimization algorithm
+
     undo: list of tuples
         (`index`, `value`) pairs that record the original index and fixed value
         for each variable removed from the problem
@@ -967,6 +1058,7 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
            programming." Athena Scientific 1 (1997): 997.
 
     """
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
     if sps.issparse(A_eq):
         sparse = True
@@ -1189,27 +1281,38 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
         Data needed by _postsolve to convert the solution to the standard-form
         problem into the solution to the original problem, including:
 
-        c : 1-D array
-            Original coefficients of the linear objective function to be
-            minimized.
-        A_ub : 2-D array, optional
-            2-D array such that ``A_ub @ x`` gives the values of the upper-bound
-            inequality constraints at ``x``.
-        b_ub : 1-D array, optional
-            1-D array of values representing the upper-bound of each inequality
-            constraint (row) in ``A_ub``.
-        A_eq : 2-D array, optional
-            2-D array such that ``A_eq @ x`` gives the values of the equality
-            constraints at ``x``.
-        b_eq : 1-D array, optional
-            1-D array of values representing the RHS of each equality constraint
-            (row) in ``A_eq``.
-        bounds : sequence of tuples
-            Bounds, as modified in presolve
-        undo: list of tuples
-            (`index`, `value`) pairs that record the original index and fixed value
-            for each variable removed from the problem
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
 
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
+
+    undo: list of tuples
+        (`index`, `value`) pairs that record the original index and fixed value
+        for each variable removed from the problem
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
     tol : float
@@ -1238,7 +1341,8 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
     # we need these modified values to undo the variable substitutions
     # in retrospect, perhaps this could have been simplified if the "undo"
     # variable also contained information for undoing variable substitutions
-    c, A_ub, b_ub, A_eq, b_eq, bounds, undo, C, b_scale = postsolve_args
+
+    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), undo, C, b_scale = postsolve_args
     x = _unscale(x, C, b_scale)
 
     n_x = len(c)
