@@ -980,7 +980,7 @@ end subroutine <prefix>geqrf
 
 subroutine <prefix>geqrf_lwork(m,n,a,tau,work,lwork,info)
     ! work, info = geqrf_lwork(m, n)
-    ! Calcualte the size of the ?geqrf work array.
+    ! Calculate the optimal size of the ?geqrf work array.
 
     fortranname <prefix>geqrf
     callstatement (*f2py_func)(&m,&n,&a,&m,&tau,&work,&lwork,&info)
