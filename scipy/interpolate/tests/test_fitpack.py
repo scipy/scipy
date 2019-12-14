@@ -54,7 +54,7 @@ def f2(x,y=0,dx=0,dy=0):
 
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
-    # Or itertools.product (>= python 2.6)
+    # Or itertools.product (>= Python 2.6)
     xy = array([[a, b] for a in asarray(x) for b in asarray(y)])
     return xy.T
 
@@ -403,7 +403,7 @@ class TestBisplrep(object):
 
 def test_dblint():
     # Basic test to see it runs and gives the correct result on a trivial
-    # problem.  Note that `dblint` is not exposed in the interpolate namespace.
+    # problem. Note that `dblint` is not exposed in the interpolate namespace.
     x = np.linspace(0, 1)
     y = np.linspace(0, 1)
     xx, yy = np.meshgrid(x, y)
@@ -460,4 +460,3 @@ def test_bisplev_integer_overflow():
     yp = np.zeros([2621440])
 
     assert_raises((RuntimeError, MemoryError), bisplev, xp, yp, tck)
-

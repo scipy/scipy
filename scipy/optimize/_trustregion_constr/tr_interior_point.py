@@ -108,7 +108,7 @@ class BarrierSubproblem:
         s = self.get_slack(z)
         diag_elements = np.hstack((np.ones(self.n_vars), s))
 
-        # Diagonal Matrix
+        # Diagonal matrix
         def matvec(vec):
             return diag_elements*vec
         return LinearOperator((self.n_vars+self.n_ineq,
@@ -121,7 +121,7 @@ class BarrierSubproblem:
         Return scaled gradient:
             gradient = [             grad(x)             ]
                        [ -barrier_parameter*ones(n_ineq) ]
-        and scaled Jacobian Matrix:
+        and scaled Jacobian matrix:
             jacobian = [  jac_eq(x)  0  ]
                        [ jac_ineq(x) S  ]
         Both of them scaled by the previously defined scaling factor.
@@ -132,7 +132,7 @@ class BarrierSubproblem:
         # Compute first derivatives
         g = self.grad(x)
         J_eq, J_ineq = self.jac(x)
-        # Return gradient and jacobian
+        # Return gradient and Jacobian
         return (self._compute_gradient(g),
                 self._compute_jacobian(J_eq, J_ineq, s))
 
@@ -164,7 +164,7 @@ class BarrierSubproblem:
                                  [J_ineq, S]])
 
     def _assemble_sparse_jacobian(self, J_eq, J_ineq, s):
-        """Assemble sparse jacobian given its components.
+        """Assemble sparse Jacobian given its components.
 
         Given ``J_eq``, ``J_ineq`` and ``s`` returns:
             jacobian = [ J_eq,     0     ]

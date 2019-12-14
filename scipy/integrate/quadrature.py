@@ -8,7 +8,7 @@ import types
 import warnings
 
 # trapz is a public function for scipy.integrate,
-# even though it's actually a numpy function.
+# even though it's actually a NumPy function.
 from numpy import trapz
 from scipy.special import roots_legendre
 from scipy.special import gammaln
@@ -29,7 +29,7 @@ def _copy_func(f):
 
 
 trapz = _copy_func(trapz)
-if sys.flags.optimize <= 1:
+if trapz.__doc__:
     trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
 
 
@@ -267,15 +267,15 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     y : array_like
         Values to integrate.
     x : array_like, optional
-        The coordinate to integrate along.  If None (default), use spacing `dx`
+        The coordinate to integrate along. If None (default), use spacing `dx`
         between consecutive elements in `y`.
     dx : float, optional
-        Spacing between elements of `y`.  Only used if `x` is None.
+        Spacing between elements of `y`. Only used if `x` is None.
     axis : int, optional
-        Specifies the axis to cumulate.  Default is -1 (last axis).
+        Specifies the axis to cumulate. Default is -1 (last axis).
     initial : scalar, optional
         If given, insert this value at the beginning of the returned result.
-        Typically this value should be 0.  Default is None, which means no
+        Typically this value should be 0. Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration.
 
@@ -284,7 +284,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     res : ndarray
         The result of cumulative integration of `y` along `axis`.
         If `initial` is None, the shape is such that the axis of integration
-        has one less value than `y`.  If `initial` is given, the shape is equal
+        has one less value than `y`. If `initial` is given, the shape is equal
         to that of `y`.
 
     See Also
@@ -324,7 +324,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
             shape[axis] = -1
             d = d.reshape(shape)
         elif len(x.shape) != len(y.shape):
-            raise ValueError("If given, shape of x must be 1-d or the "
+            raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         else:
             d = np.diff(x, axis=axis)
@@ -360,7 +360,7 @@ def _basic_simps(y, start, stop, x, dx, axis):
     slice1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
     slice2 = tupleset(slice_all, axis, slice(start+2, stop+2, step))
 
-    if x is None:  # Even spaced Simpson's rule.
+    if x is None:  # Even-spaced Simpson's rule.
         result = np.sum(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
                         axis=axis)
     else:
@@ -384,11 +384,11 @@ def _basic_simps(y, start, stop, x, dx, axis):
 def simps(y, x=None, dx=1, axis=-1, even='avg'):
     """
     Integrate y(x) using samples along the given axis and the composite
-    Simpson's rule.  If x is None, spacing of dx is assumed.
+    Simpson's rule. If x is None, spacing of dx is assumed.
 
     If there are an even number of samples, N, then there are an odd
     number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals.  The parameter 'even' controls how this is handled.
+    of intervals. The parameter 'even' controls how this is handled.
 
     Parameters
     ----------
@@ -428,7 +428,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     Notes
     -----
     For an odd number of samples that are equally spaced the result is
-    exact if the function is a polynomial of order 3 or less.  If
+    exact if the function is a polynomial of order 3 or less. If
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
@@ -466,7 +466,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             returnshape = 1
             x = x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
-            raise ValueError("If given, shape of x must be 1-d or the "
+            raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         if x.shape[axis] != N:
             raise ValueError("If given, length of x along axis must be the "
@@ -630,7 +630,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 # Cosmetic changes by Konrad Hinsen <hinsen@cnrs-orleans.fr>
 # last revision: 1999-7-21
 #
-# Adapted to scipy by Travis Oliphant <oliphant.travis@ieee.org>
+# Adapted to SciPy by Travis Oliphant <oliphant.travis@ieee.org>
 # last revision: Dec 2001
 
 
@@ -638,9 +638,9 @@ def _difftrap(function, interval, numtraps):
     """
     Perform part of the trapezoidal rule to integrate a function.
     Assume that we had called difftrap with all lower powers-of-2
-    starting with 1.  Calling difftrap only returns the summation
-    of the new ordinates.  It does _not_ multiply by the width
-    of the trapezoids.  This must be performed by the caller.
+    starting with 1. Calling difftrap only returns the summation
+    of the new ordinates. It does _not_ multiply by the width
+    of the trapezoids. This must be performed by the caller.
         'function' is the function to evaluate (must accept vector arguments).
         'interval' is a sequence with lower and upper limits
                    of integration.
@@ -695,7 +695,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     over the interval (`a`, `b`).
 
     If `show` is 1, the triangular array of the intermediate results
-    will be printed.  If `vec_func` is True (default is False), then
+    will be printed. If `vec_func` is True (default is False), then
     `function` is assumed to support vector arguments.
 
     Parameters
@@ -725,7 +725,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     divmax : int, optional
         Maximum order of extrapolation. Default is 10.
     vec_func : bool, optional
-        Whether `func` handles arrays as arguments (i.e whether it is a
+        Whether `func` handles arrays as arguments (i.e., whether it is a
         "vector" function). Default is False.
 
     See Also
@@ -872,7 +872,7 @@ def newton_cotes(rn, equal=0):
     Return weights and error coefficient for Newton-Cotes integration.
 
     Suppose we have (N+1) samples of f at the positions
-    x_0, x_1, ..., x_N.  Then an N-point Newton-Cotes formula for the
+    x_0, x_1, ..., x_N. Then an N-point Newton-Cotes formula for the
     integral between x_0 and x_N is:
 
     :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
@@ -889,7 +889,7 @@ def newton_cotes(rn, equal=0):
     rn : int
         The integer order for equally-spaced data or the relative positions of
         the samples with the first sample at 0 and the last at N, where N+1 is
-        the length of `rn`.  N is the order of the Newton-Cotes integration.
+        the length of `rn`. N is the order of the Newton-Cotes integration.
     equal : int, optional
         Set to 1 to enforce equally spaced data.
 

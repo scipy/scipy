@@ -19,8 +19,10 @@
 #
 # The available Python executables are python3.6 and python3.7 (along with
 # pip3.6 and pip3.7.
-# The image does not come bundled with cython/numpy/pytest, those need to
+# The image does not come bundled with cython/numpy/pytest/pybind11, those need to
 # be installed with pip before trying to build/run scipy.
+#
+# pip3 install cython numpy pytest pybind11
 #
 
 

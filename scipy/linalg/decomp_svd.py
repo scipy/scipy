@@ -131,7 +131,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gesdd'
+        raise ValueError('illegal value in %dth argument of internal gesdd'
                          % -info)
     if compute_uv:
         return u, s, v
@@ -194,7 +194,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
 
     We can verify the maximum singular value of `m` by computing the maximum
     length of `m.dot(u)` over all the unit vectors `u` in the (x,y) plane.
-    We approximate "all" the unit vectors with a large sample.  Because
+    We approximate "all" the unit vectors with a large sample. Because
     of linearity, we only need the unit vectors with angles in [0, pi].
 
     >>> t = np.linspace(0, np.pi, 2000)
@@ -202,7 +202,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> np.linalg.norm(m.dot(u), axis=0).max()
     4.2809152422538475
 
-    `p` is a projection matrix with rank 1.  With exact arithmetic,
+    `p` is a projection matrix with rank 1. With exact arithmetic,
     its singular values would be [1, 0, 0, 0].
 
     >>> v = np.array([0.1, 0.3, 0.9, 0.3])
@@ -211,7 +211,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([  1.00000000e+00,   2.02021698e-17,   1.56692500e-17,
              8.15115104e-34])
 
-    The singular values of an orthogonal matrix are all 1.  Here we
+    The singular values of an orthogonal matrix are all 1. Here, we
     create a random orthogonal matrix by using the `rvs()` method of
     `scipy.stats.ortho_group`.
 
@@ -356,7 +356,7 @@ def null_space(A, rcond=None):
 
     Examples
     --------
-    One-dimensional null space:
+    1-D null space:
 
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
@@ -365,7 +365,7 @@ def null_space(A, rcond=None):
     array([[ 0.70710678],
            [-0.70710678]])
 
-    Two-dimensional null space:
+    2-D null space:
 
     >>> B = np.random.rand(3, 5)
     >>> Z = null_space(B)
@@ -429,7 +429,7 @@ def subspace_angles(A, B):
 
     Examples
     --------
-    A Hadamard matrix, which has orthogonal columns, so we expect that
+    An Hadamard matrix, which has orthogonal columns, so we expect that
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
     >>> from scipy.linalg import hadamard, subspace_angles

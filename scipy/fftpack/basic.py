@@ -15,7 +15,7 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return discrete Fourier transform of real or complex sequence.
 
-    The returned complex array contains ``y(0), y(1),..., y(n-1)`` where
+    The returned complex array contains ``y(0), y(1),..., y(n-1)``, where
 
     ``y(j) = (x * exp(-2*pi*sqrt(-1)*j*np.arange(n)/n)).sum()``.
 
@@ -24,8 +24,8 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     x : array_like
         Array to Fourier transform.
     n : int, optional
-        Length of the Fourier transform.  If ``n < x.shape[axis]``, `x` is
-        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        Length of the Fourier transform. If ``n < x.shape[axis]``, `x` is
+        truncated. If ``n > x.shape[axis]``, `x` is zero-padded. The
         default results in ``n = x.shape[axis]``.
     axis : int, optional
         Axis along which the fft's are computed; the default is over the
@@ -55,27 +55,27 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     The packing of the result is "standard": If ``A = fft(a, n)``, then
     ``A[0]`` contains the zero-frequency term, ``A[1:n/2]`` contains the
     positive-frequency terms, and ``A[n/2:]`` contains the negative-frequency
-    terms, in order of decreasingly negative frequency. So for an 8-point
+    terms, in order of decreasingly negative frequency. So ,for an 8-point
     transform, the frequencies of the result are [0, 1, 2, 3, -4, -3, -2, -1].
     To rearrange the fft output so that the zero-frequency component is
     centered, like [-4, -3, -2, -1,  0,  1,  2,  3], use `fftshift`.
 
-    Both single and double precision routines are implemented.  Half precision
-    inputs will be converted to single precision.  Non floating-point inputs
-    will be converted to double precision.  Long-double precision inputs are
+    Both single and double precision routines are implemented. Half precision
+    inputs will be converted to single precision. Non-floating-point inputs
+    will be converted to double precision. Long-double precision inputs are
     not supported.
 
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
 
-    Note that if ``x`` is real-valued then ``A[j] == A[n-j].conjugate()``.
-    If ``x`` is real-valued and ``n`` is even then ``A[n/2]`` is real.
+    Note that if ``x`` is real-valued, then ``A[j] == A[n-j].conjugate()``.
+    If ``x`` is real-valued and ``n`` is even, then ``A[n/2]`` is real.
 
     If the data type of `x` is real, a "real FFT" algorithm is automatically
-    used, which roughly halves the computation time.  To increase efficiency
+    used, which roughly halves the computation time. To increase efficiency
     a little further, use `rfft`, which does the same calculation, but only
-    outputs half of the symmetrical spectrum.  If the data is both real and
-    symmetrical, the `dct` can again double the efficiency, by generating
+    outputs half of the symmetrical spectrum. If the data is both real and
+    symmetrical, the `dct` can again double the efficiency by generating
     half of the spectrum from half of the signal.
 
     Examples
@@ -93,7 +93,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return discrete inverse Fourier transform of real or complex sequence.
 
-    The returned complex array contains ``y(0), y(1),..., y(n-1)`` where
+    The returned complex array contains ``y(0), y(1),..., y(n-1)``, where
 
     ``y(j) = (x * exp(2*pi*sqrt(-1)*j*np.arange(n)/n)).mean()``.
 
@@ -103,7 +103,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
         Transformed data to invert.
     n : int, optional
         Length of the inverse Fourier transform.  If ``n < x.shape[axis]``,
-        `x` is truncated.  If ``n > x.shape[axis]``, `x` is zero-padded.
+        `x` is truncated. If ``n > x.shape[axis]``, `x` is zero-padded.
         The default results in ``n = x.shape[axis]``.
     axis : int, optional
         Axis along which the ifft's are computed; the default is over the
@@ -122,9 +122,9 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
 
     Notes
     -----
-    Both single and double precision routines are implemented.  Half precision
-    inputs will be converted to single precision.  Non floating-point inputs
-    will be converted to double precision.  Long-double precision inputs are
+    Both single and double precision routines are implemented. Half precision
+    inputs will be converted to single precision. Non-floating-point inputs
+    will be converted to double precision. Long-double precision inputs are
     not supported.
 
     This function is most efficient when `n` is a power of two, and least
@@ -154,11 +154,11 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     x : array_like, real-valued
         The data to transform.
     n : int, optional
-        Defines the length of the Fourier transform.  If `n` is not specified
-        (the default) then ``n = x.shape[axis]``.  If ``n < x.shape[axis]``,
+        Defines the length of the Fourier transform. If `n` is not specified
+        (the default) then ``n = x.shape[axis]``. If ``n < x.shape[axis]``,
         `x` is truncated, if ``n > x.shape[axis]``, `x` is zero-padded.
     axis : int, optional
-        The axis along which the transform is applied.  The default is the
+        The axis along which the transform is applied. The default is the
         last axis.
     overwrite_x : bool, optional
         If set to true, the contents of `x` can be overwritten. Default is
@@ -185,9 +185,9 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     -----
     Within numerical accuracy, ``y == rfft(irfft(y))``.
 
-    Both single and double precision routines are implemented.  Half precision
-    inputs will be converted to single precision.  Non floating-point inputs
-    will be converted to double precision.  Long-double precision inputs are
+    Both single and double precision routines are implemented. Half precision
+    inputs will be converted to single precision. Non-floating-point inputs
+    will be converted to double precision. Long-double precision inputs are
     not supported.
 
     To get an output with a complex datatype, consider using the newer
@@ -289,13 +289,13 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     Parameters
     ----------
     x : array_like
-        The (n-dimensional) array to transform.
+        The (N-D) array to transform.
     shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
+        The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
         If any element of `shape` is -1, the size of the corresponding
         dimension of `x` is used.
@@ -304,12 +304,12 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
         transform is applied.
         The default is over all axes.
     overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed.  Default is False.
+        If True, the contents of `x` can be destroyed. Default is False.
 
     Returns
     -------
-    y : complex-valued n-dimensional numpy array
-        The (n-dimensional) DFT of the input array.
+    y : complex-valued N-D NumPy array
+        The (N-D) DFT of the input array.
 
     See Also
     --------
@@ -320,9 +320,9 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     If ``x`` is real-valued, then
     ``y[..., j_i, ...] == y[..., n_i-j_i, ...].conjugate()``.
 
-    Both single and double precision routines are implemented.  Half precision
-    inputs will be converted to single precision.  Non floating-point inputs
-    will be converted to double precision.  Long-double precision inputs are
+    Both single and double precision routines are implemented. Half precision
+    inputs will be converted to single precision. Non-floating-point inputs
+    will be converted to double precision. Long-double precision inputs are
     not supported.
 
     Examples
@@ -339,7 +339,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
 
 def ifftn(x, shape=None, axes=None, overwrite_x=False):
     """
-    Return inverse multi-dimensional discrete Fourier transform.
+    Return inverse multidimensional discrete Fourier transform.
 
     The sequence can be of an arbitrary type.
 
@@ -373,7 +373,7 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     """
     2-D discrete Fourier transform.
 
-    Return the two-dimensional discrete Fourier transform of the 2-D argument
+    Return the 2-D discrete Fourier transform of the 2-D argument
     `x`.
 
     See Also
@@ -388,7 +388,7 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of real or complex sequence.
 
-    Return inverse two-dimensional discrete Fourier transform of
+    Return inverse 2-D discrete Fourier transform of
     arbitrary type sequence x.
 
     See `ifft` for more information.

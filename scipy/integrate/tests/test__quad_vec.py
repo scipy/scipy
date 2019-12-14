@@ -1,62 +1,82 @@
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.integrate import quad_vec
 
+quadrature_params = pytest.mark.parametrize('quadrature',
+                                            [None, "gk15", "gk21", "trapz"])
 
-def test_quad_vec_simple():
+
+@quadrature_params
+def test_quad_vec_simple(quadrature):
     n = np.arange(10)
     f = lambda x: x**n
     for epsabs in [0.1, 1e-3, 1e-6]:
+        if quadrature == 'trapz' and epsabs < 1e-4:
+            # slow: skip
+            continue
+
+        kwargs = dict(epsabs=epsabs, quadrature=quadrature)
+
         exact = 2**(n+1)/(n + 1)
 
-        res, err = quad_vec(f, 0, 2, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, 0, 2, norm='max', **kwargs)
         assert_allclose(res, exact, rtol=0, atol=epsabs)
 
-        res, err = quad_vec(f, 0, 2, norm='2', epsabs=epsabs)
+        res, err = quad_vec(f, 0, 2, norm='2', **kwargs)
         assert np.linalg.norm(res - exact) < epsabs
 
-        res, err = quad_vec(f, 0, 2, norm='max', epsabs=epsabs, points=(0.5, 1.0))
+        res, err = quad_vec(f, 0, 2, norm='max', points=(0.5, 1.0), **kwargs)
         assert_allclose(res, exact, rtol=0, atol=epsabs)
 
         res, err, *rest = quad_vec(f, 0, 2, norm='max',
-                                   epsrel=1e-8, epsabs=epsabs,
+                                   epsrel=1e-8,
                                    full_output=True,
-                                   limit=10000, quadrature='trapz')
+                                   limit=10000,
+                                   **kwargs)
         assert_allclose(res, exact, rtol=0, atol=epsabs)
 
 
-def test_quad_vec_simple_inf():
+@quadrature_params
+def test_quad_vec_simple_inf(quadrature):
     f = lambda x: 1 / (1 + np.float64(x)**2)
 
     for epsabs in [0.1, 1e-3, 1e-6]:
-        res, err = quad_vec(f, 0, np.inf, norm='max', epsabs=epsabs)
+        if quadrature == 'trapz' and epsabs < 1e-4:
+            # slow: skip
+            continue
+
+        kwargs = dict(norm='max', epsabs=epsabs, quadrature=quadrature)
+
+        res, err = quad_vec(f, 0, np.inf, **kwargs)
         assert_allclose(res, np.pi/2, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, 0, -np.inf, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, 0, -np.inf, **kwargs)
         assert_allclose(res, -np.pi/2, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, -np.inf, 0, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, -np.inf, 0, **kwargs)
         assert_allclose(res, np.pi/2, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, np.inf, 0, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, np.inf, 0, **kwargs)
         assert_allclose(res, -np.pi/2, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, -np.inf, np.inf, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, -np.inf, np.inf, **kwargs)
         assert_allclose(res, np.pi, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, np.inf, -np.inf, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, np.inf, -np.inf, **kwargs)
         assert_allclose(res, -np.pi, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, np.inf, np.inf, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, np.inf, np.inf, **kwargs)
         assert_allclose(res, 0, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, -np.inf, -np.inf, norm='max', epsabs=epsabs)
+        res, err = quad_vec(f, -np.inf, -np.inf, **kwargs)
         assert_allclose(res, 0, rtol=0, atol=max(epsabs, err))
 
-        res, err = quad_vec(f, 0, np.inf, norm='max', epsabs=epsabs, points=(1.0, 2.0))
+        res, err = quad_vec(f, 0, np.inf, points=(1.0, 2.0), **kwargs)
         assert_allclose(res, np.pi/2, rtol=0, atol=max(epsabs, err))
 
     f = lambda x: np.sin(x + 2) / (1 + x**2)
@@ -64,8 +84,9 @@ def test_quad_vec_simple_inf():
     epsabs = 1e-5
 
     res, err, info = quad_vec(f, -np.inf, np.inf, limit=1000, norm='max', epsabs=epsabs,
-                              full_output=True)
-    assert_allclose(res, exact, rtol=0, atol=max(epsabs, err))
+                              quadrature=quadrature, full_output=True)
+    assert info.status == 1
+    assert_allclose(res, exact, rtol=0, atol=max(epsabs, 1.5 * err))
 
 
 def _lorenzian(x):
@@ -85,15 +106,15 @@ def test_quad_vec_pool():
         assert_allclose(res, np.pi, rtol=0, atol=1e-4)
 
 
-def test_num_eval():
+@quadrature_params
+def test_num_eval(quadrature):
     def f(x):
         count[0] += 1
         return x**5
 
-    for q in ['gk21', 'trapz']:
-        count = [0]
-        res = quad_vec(f, 0, 1, norm='max', full_output=True, quadrature=q)
-        assert res[2].neval == count[0]
+    count = [0]
+    res = quad_vec(f, 0, 1, norm='max', full_output=True, quadrature=quadrature)
+    assert res[2].neval == count[0]
 
 
 def test_info():
@@ -123,3 +144,35 @@ def test_nan_inf():
 
     res, err, info = quad_vec(f_inf, 0, 1, full_output=True)
     assert info.status == 3
+
+
+@pytest.mark.parametrize('a,b', [(0, 1), (0, np.inf), (np.inf, 0),
+                                 (-np.inf, np.inf), (np.inf, -np.inf)])
+def test_points(a, b):
+    # Check that initial interval splitting is done according to
+    # `points`, by checking that consecutive sets of 15 point (for
+    # gk15) function evaluations lie between `points`
+
+    points = (0, 0.25, 0.5, 0.75, 1.0)
+    points += tuple(-x for x in points)
+
+    quadrature_points = 15
+    interval_sets = []
+    count = 0
+
+    def f(x):
+        nonlocal count
+
+        if count % quadrature_points == 0:
+            interval_sets.append(set())
+
+        count += 1
+        interval_sets[-1].add(float(x))
+        return 0.0
+
+    quad_vec(f, a, b, points=points, quadrature='gk15', limit=0)
+
+    # Check that all point sets lie in a single `points` interval
+    for p in interval_sets:
+        j = np.searchsorted(sorted(points), tuple(p))
+        assert np.all(j == j[0])

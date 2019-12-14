@@ -164,8 +164,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         dy / dt = f(t, y)
         y(t0) = y0
 
-    Here t is a one-dimensional independent variable (time), y(t) is an
-    n-dimensional vector-valued function (state), and an n-dimensional
+    Here t is a 1-D independent variable (time), y(t) is an
+    N-D vector-valued function (state), and an N-D
     vector-valued function f(t, y) determines the differential equations.
     The goal is to find y(t) approximately satisfying the differential
     equations, given an initial value y(t0)=y0.
@@ -183,8 +183,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
         Here `t` is a scalar, and there are two options for the ndarray `y`:
         It can either have shape (n,); then `fun` must return array_like with
-        shape (n,). Alternatively it can have shape (n, k); then `fun`
-        must return an array_like with shape (n, k), i.e. each column
+        shape (n,). Alternatively, it can have shape (n, k); then `fun`
+        must return an array_like with shape (n, k), i.e., each column
         corresponds to a single column in `y`. The choice between the two
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
@@ -267,7 +267,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 direction will trigger event. Implicitly 0 if not assigned.
 
         You can assign attributes like ``event.terminal = True`` to any
-        function in Python. 
+        function in Python.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
     args : tuple, optional
@@ -283,7 +283,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Initial step size. Default is `None` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float or array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
@@ -304,7 +304,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             * If array_like or sparse_matrix, the Jacobian is assumed to
               be constant. Not supported by 'LSODA'.
             * If callable, the Jacobian is assumed to depend on both
-              t and y; it will be called as ``jac(t, y)`` as necessary.
+              t and y; it will be called as ``jac(t, y)``, as necessary.
               For 'Radau' and 'BDF' methods, the return value might be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
@@ -332,7 +332,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         illustration).  These parameters can be also used with ``jac=None`` to
         reduce the number of Jacobian elements estimated by finite differences.
     min_step : float, optional
-        The minimum allowed step size for 'LSODA' method. 
+        The minimum allowed step size for 'LSODA' method.
         By default `min_step` is zero.
 
     Returns
@@ -463,7 +463,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     can be used to access the solution at the time of the event.
 
     >>> def apex(t, y): return y[1]
-    >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], 
+    >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10],
     ...                 events=(hit_ground, apex), dense_output=True)
     >>> print(sol.t_events)
     [array([40.]), array([20.])]
@@ -561,7 +561,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         if args is not None:
             # Wrap user functions in lambdas to hide the additional parameters.
             # The original event function is passed as a keyword argument to the
-            # lambda to keep the original function in scope (i.e. avoid the
+            # lambda to keep the original function in scope (i.e., avoid the
             # late binding closure "gotcha").
             events = [lambda t, x, event=event: event(t, x, *args)
                       for event in events]
@@ -624,7 +624,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             else:
                 t_eval_i_new = np.searchsorted(t_eval, t, side='left')
                 # It has to be done with two slice operations, because
-                # you can't slice to 0-th element inclusive using backward
+                # you can't slice to 0th element inclusive using backward
                 # slicing.
                 t_eval_step = t_eval[t_eval_i_new:t_eval_i][::-1]
 
@@ -634,7 +634,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 ts.append(t_eval_step)
                 ys.append(sol(t_eval_step))
                 t_eval_i = t_eval_i_new
-        
+
         if t_eval is not None and dense_output:
             ti.append(t)
 

@@ -66,6 +66,8 @@ cdef extern from "cephes.h" nogil:
     double log_ndtr(double a)
     double erfc(double a)
     double erf(double x)
+    double erfinv(double y)
+    double erfcinv(double y)
     double ndtri(double y0)
     double pdtrc(double k, double m)
     double pdtr(double k, double m)

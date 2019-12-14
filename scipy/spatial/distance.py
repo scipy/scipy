@@ -4,7 +4,7 @@ Distance computations (:mod:`scipy.spatial.distance`)
 
 .. sectionauthor:: Damian Eads
 
-Function Reference
+Function reference
 ------------------
 
 Distance matrix computation from a collection of raw observation vectors
@@ -316,8 +316,6 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
         V = np.var(X.astype(np.double), axis=0, ddof=1)
     else:
         V = np.asarray(V, order='c')
-        if V.dtype != np.double:
-            raise TypeError('Variance vector V must contain doubles.')
         if len(V.shape) != 1:
             raise ValueError('Variance vector V must '
                              'be one-dimensional.')

@@ -780,7 +780,7 @@ class _TestCommon(object):
             # correct length, and too short or too long vectors
             for r in [-1, len(np.diag(a, k)), 2, 30]:
                 if r < 0:
-                    v = int(np.random.randint(1, 20, size=1))
+                    v = np.random.choice(range(1, 20))
                 else:
                     v = np.random.randint(1, 20, size=r)
 
@@ -2384,6 +2384,7 @@ class _TestSlicing(object):
 
         s_ = np.s_
         slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
+                  s_[15:20], s_[3:2],
                   s_[8:3:-1], s_[4::-2], s_[:5:-1],
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]

@@ -629,6 +629,12 @@ class TestExpM(object):
         assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
                                               -0.84864425749518878))
 
+    def test_empty_matrix_input(self):
+        # handle gh-11082
+        A = np.zeros((0, 0))
+        result = expm(A)
+        assert result.size == 0
+
 
 class TestExpmFrechet(object):
 

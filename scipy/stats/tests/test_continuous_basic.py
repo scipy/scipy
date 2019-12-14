@@ -16,7 +16,7 @@ from. common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast)
+                           check_pickling, check_rvs_broadcast, check_freezing)
 from scipy.stats._distr_params import distcont
 
 """
@@ -74,10 +74,12 @@ skip_fit_fix_test = ['argus', 'burr', 'exponpow', 'exponweib',
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
-                   'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
+                   'geninvgauss', 'gennorm', 'genpareto',
+                   'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
-                   'pearson3', 'rdist', 'rice', 'skewnorm', 't', 'tukeylambda',
+                   'loguniform', 'maxwell', 'nakagami',
+                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
+                   'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
@@ -131,7 +133,9 @@ def test_cont_basic(distname, arg):
         alpha = 0.01
         if distname == 'rv_histogram_instance':
             check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-        else:
+        elif distname != 'geninvgauss':
+            # skip kstest for geninvgauss since cdf is too slow; see test for
+            # rv generation in TestGenInvGauss in test_distributions.py
             check_distribution_rvs(distname, arg, alpha, rvs)
 
         locscale_defaults = (0, 1)
@@ -149,6 +153,7 @@ def test_cont_basic(distname, arg):
         check_named_args(distfn, x, arg, locscale_defaults, meths)
         check_random_state_property(distfn, arg)
         check_pickling(distfn, arg)
+        check_freezing(distfn, arg)
 
         # Entropy
         if distname not in ['kstwobign']:
@@ -260,9 +265,9 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm', 'norminvgauss',
-                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm',
-                          'semicircular']
+    shape_only = dist in ['betaprime', 'dgamma', 'dweibull', 'exponnorm',
+                          'geninvgauss', 'levy_stable', 'nct', 'norminvgauss',
+                          'rice', 'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

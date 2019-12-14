@@ -1,8 +1,8 @@
 """
 This paver file is intended to help with the release process as much as
 possible. It relies on virtualenv to generate 'bootstrap' environments as
-independent from the user system as possible (e.g. to make sure the sphinx doc
-is built against the built scipy, not an installed one).
+independent from the user system as possible (e.g., to make sure the sphinx doc
+is built against the built SciPy, not an installed one).
 
 The release is assumed to be done on OS X. See release.sh for a script that
 employs the Paver tasks defined in this file, and builds everything required
@@ -18,7 +18,7 @@ instructions) installer, do::
 
     paver bdist_wininst_simple
 
-This assumes that blas/lapack are in c:\local\lib inside drive_c.  You will
+This assumes that blas/lapack are in c:\local\lib inside drive_c. You will
 have to make sure your Wine python locations (WINE_PYS) are configured
 correctly.
 
@@ -35,7 +35,7 @@ For a simple installer, which is just an mpkg inside a dmg, do::
 
   paver simple_dmg
 
-For a more fancy installer which includes documentation and looks better, do::
+For a more fancy installer, which includes documentation and looks better, do::
 
   paver pdf  # needs to be done only once
   paver dmg
@@ -48,7 +48,7 @@ Assumes you have git and the binaries/tarballs in installers/::
 
     paver write_release_and_log
 
-This automatically put the checksum into NOTES.txt, and write the Changelog
+This automatically puts the checksum into NOTES.txt and writes the Changelog,
 which can be uploaded to Github Releases (and maybe sourceforge for historical
 reasons, see gh-4939).
 
@@ -58,7 +58,7 @@ TODO
     - make it more easily customizable (through command line args)
     - missing targets: install & test, sdist test, debian packaging
     - fix bdist_mpkg: we build the same source twice -> how to make sure we use
-      the same underlying python for egg install in venv and for bdist_mpkg
+      the same underlying Python for egg install in venv and for bdist_mpkg
 """
 
 import os
@@ -113,10 +113,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.4.0-notes.rst'
+RELEASE = 'doc/release/1.5.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.3.0'
+LOG_START = 'v1.4.0'
 LOG_END = 'master'
 
 
@@ -124,7 +124,7 @@ LOG_END = 'master'
 # Hardcoded build/install dirs, virtualenv options, etc.
 #-------------------------------------------------------
 
-# Default python version
+# Default Python version
 PYVER="3.6"
 
 # Paver options object, holds all default dirs
@@ -252,7 +252,7 @@ def nuke():
 
 @task
 def html(options):
-    """Build scipy documentation and put it into build/docs"""
+    """Build SciPy documentation and put it into build/docs"""
     # Don't use paver html target because of scipy bootstrapping problems
     subprocess.check_call(["make", "html"], cwd="doc")
     builtdocs = paver.path.path("doc") / options.sphinx.builddir / "html"
@@ -261,7 +261,7 @@ def html(options):
 
 @task
 def latex():
-    """Build scipy documentation in latex format."""
+    """Build SciPy documentation in latex format."""
     subprocess.check_call(["make", "latex"], cwd="doc")
 
 @task
@@ -295,7 +295,7 @@ def tarball_name(type='gztar'):
 
 @task
 def sdist():
-    # First clean the repo and update submodules (for up-to-date doc html theme
+    # First, clean the repo and update submodules (for up-to-date doc html theme
     # and Sphinx extensions)
     sh('git clean -xdf')
     sh('git submodule init')
@@ -333,7 +333,7 @@ def sdist():
 
 @task
 def release(options):
-    """sdists, release notes and changelog.  Docs and wheels are built in
+    """sdists, release notes and changelog. Docs and wheels are built in
     separate steps (see doc/source/dev/releasing.rst).
     """
     # Source tarballs
@@ -363,7 +363,7 @@ def wininst_name(pyver):
     return "scipy-%s.win32-py%s%s" % (FULLVERSION, pyver, ext)
 
 def bdist_wininst_arch(pyver, arch):
-    """Arch specific wininst build."""
+    """Arch-specific wininst build."""
     if os.path.exists("build"):
         shutil.rmtree("build")
     _bdist_wininst(pyver, SITECFG[arch])
@@ -417,7 +417,7 @@ def bdist_superpack(options):
             os.rename(source, target)
         except OSError:
             # May be due to dev version having 'Unknown' in name, if git isn't
-            # found.  This can be the case when compiling under Wine.
+            # found. This can be the case when compiling under Wine.
             ix = source.find('.dev0+') + 6
             source = source[:ix] + 'Unknown' + source[ix+7:]
             os.rename(source, target)
@@ -464,7 +464,7 @@ def _bdist_wininst(pyver, cfg_env=None):
         subprocess.check_call(cmd, env=cfg_env)
     except subprocess.CalledProcessError:
         # Too many open files to compile in one go, so re-run.
-        print('RESTART WINDOWS BUILD.  See gh-2709.')
+        print('RESTART WINDOWS BUILD. See gh-2709.')
         subprocess.check_call(cmd, env=cfg_env)
 
 
@@ -526,7 +526,7 @@ def _build_mpkg(pyver):
     numverstr = ".".join(["%i" % i for i in numver])
     if pyver < "3.3":
         if not numver == (1, 8, 2):
-            raise ValueError("Scipy 0.19.x should be built against numpy "
+            raise ValueError("SciPy 0.19.x should be built against numpy "
                              "1.8.2, (detected %s) for Python >= 3.4" % numverstr)
 
     prepare_static_gfortran_runtime("build")

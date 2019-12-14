@@ -110,8 +110,8 @@ add_newdoc("voigt_profile",
 
     Voigt profile.
 
-    The Voigt profile is a convolution of a 1D Normal distribution with
-    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    The Voigt profile is a convolution of a 1-D Normal distribution with
+    standard deviation ``sigma`` and a 1-D Cauchy distribution with half-width at
     half-maximum ``gamma``.
 
     Parameters
@@ -219,8 +219,8 @@ add_newdoc("agm",
     Parameters
     ----------
     a, b : array_like
-        Real values only.  If the values are both negative, the result
-        is negative.  If one value is negative and the other is positive,
+        Real values only. If the values are both negative, the result
+        is negative. If one value is negative and the other is positive,
         `nan` is returned.
 
     Returns
@@ -539,7 +539,7 @@ add_newdoc("bdtrik",
     cumulative incomplete beta distribution.
 
     Computation of `k` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `k`.
+    value of `y`. The search relies on the monotonicity of `y` with `k`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -589,7 +589,7 @@ add_newdoc("bdtrin",
     cumulative incomplete beta distribution.
 
     Computation of `n` involves a search for a value that produces the desired
-    value of `y`.  The search relies on the monotonicity of `y` with `n`.
+    value of `y`. The search relies on the monotonicity of `y` with `n`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -653,8 +653,8 @@ add_newdoc("btdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `a`.
 
     References
@@ -706,8 +706,8 @@ add_newdoc("btdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `b`.
 
     References
@@ -723,31 +723,163 @@ add_newdoc("btdtrib",
     """)
 
 add_newdoc("bei",
-    """
-    bei(x)
+    r"""
+    bei(x, out=None)
 
-    Kelvin function bei
+    Kelvin function bei.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{bei}(x) = \Im[J_0(x e^{3 \pi i / 4})]
+
+    where :math:`J_0` is the Bessel function of the first kind of
+    order zero (see `jv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    See Also
+    --------
+    ber : the corresponding real part
+    beip : the derivative of bei
+    jv : Bessel function of the first kind
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using Bessel functions.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).imag
+    array([0.24956604, 0.97229163, 1.93758679, 2.29269032])
+    >>> sc.bei(x)
+    array([0.24956604, 0.97229163, 1.93758679, 2.29269032])
+
     """)
 
 add_newdoc("beip",
-    """
-    beip(x)
+    r"""
+    beip(x, out=None)
 
-    Derivative of the Kelvin function `bei`
+    Derivative of the Kelvin function bei.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The values of the derivative of bei.
+
+    See Also
+    --------
+    bei
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("ber",
-    """
-    ber(x)
+    r"""
+    ber(x, out=None)
 
     Kelvin function ber.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{ber}(x) = \Re[J_0(x e^{3 \pi i / 4})]
+
+    where :math:`J_0` is the Bessel function of the first kind of
+    order zero (see `jv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    See Also
+    --------
+    bei : the corresponding real part
+    berp : the derivative of bei
+    jv : Bessel function of the first kind
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using Bessel functions.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).real
+    array([ 0.98438178,  0.75173418, -0.22138025, -2.56341656])
+    >>> sc.ber(x)
+    array([ 0.98438178,  0.75173418, -0.22138025, -2.56341656])
+
     """)
 
 add_newdoc("berp",
-    """
-    berp(x)
+    r"""
+    berp(x, out=None)
 
-    Derivative of the Kelvin function `ber`
+    Derivative of the Kelvin function ber.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The values of the derivative of ber.
+
+    See Also
+    --------
+    ber
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("besselpoly",
@@ -1547,11 +1679,11 @@ add_newdoc("ellipj",
     equal to the complete elliptic integral `ellipk(m)`.
 
     Relation to incomplete elliptic integral: If `u = ellipkinc(phi,m)`, then
-    `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`.  The `phi` is called
+    `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`. The `phi` is called
     the amplitude of `u`.
 
     Computation is by means of the arithmetic-geometric mean algorithm,
-    except when `m` is within 1e-9 of 0 or 1.  In the latter case with `m`
+    except when `m` is within 1e-9 of 0 or 1. In the latter case with `m`
     close to 1, the approximation applies only for `phi < pi/2`.
 
     See also
@@ -1922,6 +2054,97 @@ add_newdoc("erfcx",
 
     """)
 
+add_newdoc("erfinv",
+    """Inverse of the error function.
+
+    Computes the inverse of the error function.
+
+    In the complex domain, there is no unique complex number w satisfying
+    erf(w)=z. This indicates a true inverse function would have multi-value.
+    When the domain restricts to the real, -1 < x < 1, there is a unique real
+    number satisfying erf(erfinv(x)) = x.
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [-1, 1]
+
+    Returns
+    -------
+    erfinv : ndarray
+        The inverse of erf of y, element-wise)
+
+    See Also
+    --------
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfcinv : Inverse of the complementary error function
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfinv(0.5)
+    0.4769362762044698
+
+    2) evaluating an ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(-1.0, 1.0, num=10)
+    >>> special.erfinv(y)
+    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
+            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+
+    """)
+
+add_newdoc("erfcinv",
+    """Inverse of the complementary error function.
+
+    Computes the inverse of the complementary error function.
+
+    In the complex domain, there is no unique complex number w satisfying
+    erfc(w)=z. This indicates a true inverse function would have multi-value.
+    When the domain restricts to the real, 0 < x < 2, there is a unique real
+    number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+
+    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [0, 2]
+
+    Returns
+    -------
+    erfcinv : ndarray
+        The inverse of erfc of y, element-wise
+
+    See Also
+    --------
+    erf : Error function of a complex argument
+    erfc : Complementary error function, ``1 - erf(x)``
+    erfinv : Inverse of the error function
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfcinv(0.5)
+    0.4769362762044698
+
+    2) evaluating an ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(0.0, 2.0, num=11)
+    >>> special.erfcinv(y)
+    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
+           -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
+                  -inf])
+
+    """)
+
 add_newdoc("eval_jacobi",
     r"""
     eval_jacobi(n, alpha, beta, x, out=None)
@@ -1938,7 +2161,7 @@ add_newdoc("eval_jacobi",
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.42 in [AS]_ for details.
 
     Parameters
     ----------
@@ -1963,6 +2186,13 @@ add_newdoc("eval_jacobi",
     roots_jacobi : roots and quadrature weights of Jacobi polynomials
     jacobi : Jacobi polynomial object
     hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_sh_jacobi",
@@ -1978,7 +2208,8 @@ add_newdoc("eval_sh_jacobi",
         G_n^{(p, q)}(x)
           = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
+    polynomial. See 22.5.2 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2001,6 +2232,13 @@ add_newdoc("eval_sh_jacobi",
                       polynomials
     sh_jacobi : shifted Jacobi polynomial object
     eval_jacobi : evaluate Jacobi polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_gegenbauer",
@@ -2018,7 +2256,7 @@ add_newdoc("eval_gegenbauer",
           {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.46 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2042,6 +2280,13 @@ add_newdoc("eval_gegenbauer",
                        polynomials
     gegenbauer : Gegenbauer polynomial object
     hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_chebyt",
@@ -2058,7 +2303,7 @@ add_newdoc("eval_chebyt",
         T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.47 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2087,6 +2332,13 @@ add_newdoc("eval_chebyt",
     -----
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
     up to order ``10000``.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_chebyu",
@@ -2103,7 +2355,7 @@ add_newdoc("eval_chebyu",
         U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.48 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2126,6 +2378,13 @@ add_newdoc("eval_chebyu",
     chebyu : Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     hyp2f1 : Gauss hypergeometric function
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_chebys",
@@ -2141,7 +2400,8 @@ add_newdoc("eval_chebys",
 
         S_n(x) = U_n(x/2)
 
-    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+    where :math:`U_n` is a Chebyshev polynomial of the second
+    kind. See 22.5.13 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2162,6 +2422,26 @@ add_newdoc("eval_chebys",
                    polynomials of the second kind on [-2, 2]
     chebys : Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    They are a scaled version of the Chebyshev polynomials of the
+    second kind.
+
+    >>> x = np.linspace(-2, 2, 6)
+    >>> sc.eval_chebys(3, x)
+    array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
+    >>> sc.eval_chebyu(3, x / 2)
+    array([-4.   ,  0.672,  0.736, -0.736, -0.672,  4.   ])
+
     """)
 
 add_newdoc("eval_chebyc",
@@ -2175,9 +2455,10 @@ add_newdoc("eval_chebyc",
 
     .. math::
 
-        S_n(x) = T_n(x/2)
+        C_n(x) = 2 T_n(x/2)
 
-    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+    where :math:`T_n` is a Chebyshev polynomial of the first kind. See
+    22.5.11 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2199,6 +2480,26 @@ add_newdoc("eval_chebyc",
     chebyc : Chebyshev polynomial object
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    They are a scaled version of the Chebyshev polynomials of the
+    first kind.
+
+    >>> x = np.linspace(-2, 2, 6)
+    >>> sc.eval_chebyc(3, x)
+    array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
+    >>> 2 * sc.eval_chebyt(3, x / 2)
+    array([-2.   ,  1.872,  1.136, -1.136, -1.872,  2.   ])
+
     """)
 
 add_newdoc("eval_sh_chebyt",
@@ -2214,7 +2515,8 @@ add_newdoc("eval_sh_chebyt",
 
         T_n^*(x) = T_n(2x - 1)
 
-    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+    where :math:`T_n` is a Chebyshev polynomial of the first kind. See
+    22.5.14 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2236,6 +2538,13 @@ add_newdoc("eval_sh_chebyt",
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_sh_chebyu",
@@ -2251,7 +2560,8 @@ add_newdoc("eval_sh_chebyu",
 
         U_n^*(x) = U_n(2x - 1)
 
-    where :math:`U_n` is a Chebyshev polynomial of the first kind.
+    where :math:`U_n` is a Chebyshev polynomial of the first kind. See
+    22.5.15 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2272,6 +2582,13 @@ add_newdoc("eval_sh_chebyu",
                       Chebychev polynomials of the second kind
     sh_chebyu : shifted Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_legendre",
@@ -2288,7 +2605,7 @@ add_newdoc("eval_legendre",
         P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. See 22.5.49 in [AS]_ for details.
 
     Parameters
     ----------
@@ -2311,6 +2628,13 @@ add_newdoc("eval_legendre",
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
     numpy.polynomial.legendre.Legendre : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_sh_legendre",
@@ -2325,7 +2649,8 @@ add_newdoc("eval_sh_legendre",
 
         P_n^*(x) = P_n(2x - 1)
 
-    where :math:`P_n` is a Legendre polynomial.
+    where :math:`P_n` is a Legendre polynomial. See 2.2.11 in [AS]_
+    for details.
 
     Parameters
     ----------
@@ -2347,6 +2672,13 @@ add_newdoc("eval_sh_legendre",
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
     numpy.polynomial.legendre.Legendre : Legendre series
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_genlaguerre",
@@ -2364,13 +2696,13 @@ add_newdoc("eval_genlaguerre",
           {}_1F_1(-n, \alpha + 1, x).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. The Laguerre polynomials are the special case where
-    :math:`\alpha = 0`.
+    :math:`n`. See 22.5.54 in [AS]_ for details. The Laguerre
+    polynomials are the special case where :math:`\alpha = 0`.
 
     Parameters
     ----------
     n : array_like
-        Degree of the polynomial. If not an integer the result is
+        Degree of the polynomial. If not an integer, the result is
         determined via the relation to the confluent hypergeometric
         function.
     alpha : array_like
@@ -2391,45 +2723,59 @@ add_newdoc("eval_genlaguerre",
     genlaguerre : generalized Laguerre polynomial object
     hyp1f1 : confluent hypergeometric function
     eval_laguerre : evaluate Laguerre polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_laguerre",
-     r"""
-     eval_laguerre(n, x, out=None)
+    r"""
+    eval_laguerre(n, x, out=None)
 
-     Evaluate Laguerre polynomial at a point.
+    Evaluate Laguerre polynomial at a point.
 
-     The Laguerre polynomials can be defined via the confluent
-     hypergeometric function :math:`{}_1F_1` as
+    The Laguerre polynomials can be defined via the confluent
+    hypergeometric function :math:`{}_1F_1` as
 
-     .. math::
+    .. math::
 
-         L_n(x) = {}_1F_1(-n, 1, x).
+        L_n(x) = {}_1F_1(-n, 1, x).
 
-     When :math:`n` is an integer the result is a polynomial of degree
-     :math:`n`.
+    See 22.5.16 and 22.5.54 in [AS]_ for details. When :math:`n` is an
+    integer the result is a polynomial of degree :math:`n`.
 
-     Parameters
-     ----------
-     n : array_like
-         Degree of the polynomial. If not an integer the result is
-         determined via the relation to the confluent hypergeometric
-         function.
-     x : array_like
-         Points at which to evaluate the Laguerre polynomial
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the confluent hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Laguerre polynomial
 
-     Returns
-     -------
-     L : ndarray
-         Values of the Laguerre polynomial
+    Returns
+    -------
+    L : ndarray
+        Values of the Laguerre polynomial
 
-     See Also
-     --------
-     roots_laguerre : roots and quadrature weights of Laguerre
-                      polynomials
-     laguerre : Laguerre polynomial object
-     numpy.polynomial.laguerre.Laguerre : Laguerre series
-     eval_genlaguerre : evaluate generalized Laguerre polynomials
+    See Also
+    --------
+    roots_laguerre : roots and quadrature weights of Laguerre
+                     polynomials
+    laguerre : Laguerre polynomial object
+    numpy.polynomial.laguerre.Laguerre : Laguerre series
+    eval_genlaguerre : evaluate generalized Laguerre polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
      """)
 
 add_newdoc("eval_hermite",
@@ -2444,7 +2790,8 @@ add_newdoc("eval_hermite",
 
         H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
 
-    :math:`H_n` is a polynomial of degree :math:`n`.
+    :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
+    [AS]_ for details.
 
     Parameters
     ----------
@@ -2465,6 +2812,13 @@ add_newdoc("eval_hermite",
     hermite : physicist's Hermite polynomial object
     numpy.polynomial.hermite.Hermite : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("eval_hermitenorm",
@@ -2480,7 +2834,8 @@ add_newdoc("eval_hermitenorm",
 
         He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
 
-    :math:`He_n` is a polynomial of degree :math:`n`.
+    :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
+    [AS]_ for details.
 
     Parameters
     ----------
@@ -2501,6 +2856,13 @@ add_newdoc("eval_hermitenorm",
     hermitenorm : probabilist's Hermite polynomial object
     numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
+
     """)
 
 add_newdoc("exp1",
@@ -3178,9 +3540,9 @@ add_newdoc("gamma",
     r"""
     gamma(z)
 
-    Gamma function.
+    gamma function.
 
-    The Gamma function is defined as
+    The gamma function is defined as
 
     .. math::
 
@@ -3197,11 +3559,11 @@ add_newdoc("gamma",
     Returns
     -------
     scalar or ndarray
-        Values of the Gamma function
+        Values of the gamma function
 
     Notes
     -----
-    The Gamma function is often referred to as the generalized
+    The gamma function is often referred to as the generalized
     factorial since :math:`\Gamma(n + 1) = n!` for natural numbers
     :math:`n`. More generally it satisfies the recurrence relation
     :math:`\Gamma(z + 1) = z \cdot \Gamma(z)` for complex :math:`z`,
@@ -3506,7 +3868,7 @@ add_newdoc("gammaln",
     r"""
     gammaln(x, out=None)
 
-    Logarithm of the absolute value of the Gamma function.
+    Logarithm of the absolute value of the gamma function.
 
     Defined as
 
@@ -3514,8 +3876,8 @@ add_newdoc("gammaln",
 
        \ln(\lvert\Gamma(x)\rvert)
 
-    where :math:`\Gamma` is the Gamma function. For more details on
-    the Gamma function, see [dlmf]_.
+    where :math:`\Gamma` is the gamma function. For more details on
+    the gamma function, see [dlmf]_.
 
     Parameters
     ----------
@@ -3527,7 +3889,7 @@ add_newdoc("gammaln",
     Returns
     -------
     scalar or ndarray
-        Values of the log of the absolute value of Gamma
+        Values of the log of the absolute value of gamma
 
     See Also
     --------
@@ -3591,8 +3953,8 @@ add_newdoc("gammasgn",
          -1 & \Gamma(x) < 0
        \end{cases}
 
-    where :math:`\Gamma` is the Gamma function; see `gamma`. This
-    definition is complete since the Gamma function is never zero;
+    where :math:`\Gamma` is the gamma function; see `gamma`. This
+    definition is complete since the gamma function is never zero;
     see the discussion after [dlmf]_.
 
     Parameters
@@ -3603,18 +3965,18 @@ add_newdoc("gammasgn",
     Returns
     -------
     scalar or ndarray
-        Sign of the Gamma function
+        Sign of the gamma function
 
     Notes
     -----
-    The Gamma function can be computed as ``gammasgn(x) *
+    The gamma function can be computed as ``gammasgn(x) *
     np.exp(gammaln(x))``.
 
     See Also
     --------
-    gamma : the Gamma function
-    gammaln : log of the absolute value of the Gamma function
-    loggamma : analytic continuation of the log of the Gamma function
+    gamma : the gamma function
+    gammaln : log of the absolute value of the gamma function
+    loggamma : analytic continuation of the log of the gamma function
 
     References
     ----------
@@ -3635,7 +3997,7 @@ add_newdoc("gammasgn",
     >>> sc.gammasgn([-0.5, -1.5, -2.5, -3.5])
     array([-1.,  1., -1.,  1.])
 
-    It can be used to compute the Gamma function.
+    It can be used to compute the gamma function.
 
     >>> x = [1.5, 0.5, -0.5, -1.5]
     >>> sc.gammasgn(x) * np.exp(sc.gammaln(x))
@@ -3714,7 +4076,7 @@ add_newdoc("gdtrc",
     ----------
     a : array_like
         The rate parameter of the gamma distribution, sometimes denoted
-        :math:`\beta` (float).  It is also the reciprocal of the scale
+        :math:`\beta` (float). It is also the reciprocal of the scale
         parameter :math:`\theta`.
     b : array_like
         The shape parameter of the gamma distribution, sometimes denoted
@@ -3761,7 +4123,7 @@ add_newdoc("gdtria",
     p : array_like
         Probability values.
     b : array_like
-        `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
+        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
         of the gamma distribution.
     x : array_like
         Nonnegative real values, from the domain of the gamma distribution.
@@ -3787,8 +4149,8 @@ add_newdoc("gdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `a`.
 
     References
@@ -3856,8 +4218,8 @@ add_newdoc("gdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `b`.
 
     References
@@ -3892,22 +4254,22 @@ add_newdoc("gdtrix",
 
     Returns the inverse with respect to the parameter `x` of ``p =
     gdtr(a, b, x)``, the cumulative distribution function of the gamma
-    distribution. This is also known as the p'th quantile of the
+    distribution. This is also known as the pth quantile of the
     distribution.
 
     Parameters
     ----------
     a : array_like
-        `a` parameter values of `gdtr(a, b, x)`.  `1/a` is the "scale"
+        `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
         parameter of the gamma distribution.
     b : array_like
-        `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
+        `b` parameter values of `gdtr(a, b, x)`. `b` is the "shape" parameter
         of the gamma distribution.
     p : array_like
         Probability values.
     out : ndarray, optional
         If a fourth argument is given, it must be a numpy.ndarray whose size
-        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        matches the broadcast result of `a`, `b` and `x`. `out` is then the
         array returned by the function.
 
     Returns
@@ -3926,8 +4288,8 @@ add_newdoc("gdtrix",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `x` involves a search for a value
-    that produces the desired value of `p`.  The search relies on the
+    DiDinato and Morris [2]_. Computation of `x` involves a search for a value
+    that produces the desired value of `p`. The search relies on the
     monotonicity of `p` with `x`.
 
     References
@@ -4160,9 +4522,9 @@ add_newdoc("hyp0f1",
     Parameters
     ----------
     v : array_like
-        Real valued parameter
+        Real-valued parameter
     z : array_like
-        Real or complex valued argument
+        Real- or complex-valued argument
     out : ndarray, optional
         Optional output array for the function results
 
@@ -4405,9 +4767,9 @@ add_newdoc("hyperu",
     Parameters
     ----------
     a, b : array_like
-        Real valued parameters
+        Real-valued parameters
     x : array_like
-        Real valued argument
+        Real-valued argument
     out : ndarray
         Optional output array for the function values
 
@@ -4512,7 +4874,7 @@ add_newdoc("i0e",
     Notes
     -----
     The range is partitioned into the two intervals [0, 8] and (8, infinity).
-    Chebyshev polynomial expansions are employed in each interval.  The
+    Chebyshev polynomial expansions are employed in each interval. The
     polynomial expansions used are the same as those in `i0`, but
     they are not multiplied by the dominant exponential factor.
 
@@ -4849,7 +5211,7 @@ add_newdoc("iv",
     for large `abs(z)`, the Miller algorithm normalized by the Wronskian
     and a Neumann series for intermediate magnitudes, and the uniform
     asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
-    orders.  Backward recurrence is used to generate sequences or reduce
+    orders. Backward recurrence is used to generate sequences or reduce
     orders when necessary.
 
     The calculations above are done in the right half plane and continued
@@ -5284,17 +5646,84 @@ add_newdoc("k1e",
     """)
 
 add_newdoc("kei",
-    """
-    kei(x)
+    r"""
+    kei(x, out=None)
 
-    Kelvin function ker
+    Kelvin function kei.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{kei}(x) = \Im[K_0(x e^{\pi i / 4})]
+
+    where :math:`K_0` is the modified Bessel function of the second
+    kind (see `kv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    See Also
+    --------
+    ker : the corresponding real part
+    keip : the derivative of kei
+    kv : modified Bessel function of the second kind
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using the modified Bessel function of the
+    second kind.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).imag
+    array([-0.49499464, -0.20240007, -0.05112188,  0.0021984 ])
+    >>> sc.kei(x)
+    array([-0.49499464, -0.20240007, -0.05112188,  0.0021984 ])
+
     """)
 
 add_newdoc("keip",
-    """
-    keip(x)
+    r"""
+    keip(x, out=None)
 
-    Derivative of the Kelvin function kei
+    Derivative of the Kelvin function kei.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        The values of the derivative of kei.
+
+    See Also
+    --------
+    kei
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("kelvin",
@@ -5314,38 +5743,112 @@ add_newdoc("kelvin",
     """)
 
 add_newdoc("ker",
-    """
-    ker(x)
+    r"""
+    ker(x, out=None)
 
-    Kelvin function ker
+    Kelvin function ker.
+
+    Defined as
+
+    .. math::
+
+        \mathrm{ker}(x) = \Re[K_0(x e^{\pi i / 4})]
+
+    Where :math:`K_0` is the modified Bessel function of the second
+    kind (see `kv`). See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    See Also
+    --------
+    kei : the corresponding imaginary part
+    kerp : the derivative of ker
+    kv : modified Bessel function of the second kind
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Kelvin function.
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10.61
+
+    Examples
+    --------
+    It can be expressed using the modified Bessel function of the
+    second kind.
+
+    >>> import scipy.special as sc
+    >>> x = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).real
+    array([ 0.28670621, -0.04166451, -0.06702923, -0.03617885])
+    >>> sc.ker(x)
+    array([ 0.28670621, -0.04166451, -0.06702923, -0.03617885])
+
     """)
 
 add_newdoc("kerp",
-    """
-    kerp(x)
+    r"""
+    kerp(x, out=None)
 
-    Derivative of the Kelvin function ker
+    Derivative of the Kelvin function ker.
+
+    Parameters
+    ----------
+    x : array_like
+        Real argument.
+    out : ndarray, optional
+        Optional output array for the function results.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the derivative of ker.
+
+    See Also
+    --------
+    ker
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/10#PT5
+
     """)
 
 add_newdoc("kl_div",
     r"""
-    kl_div(x, y)
+    kl_div(x, y, out=None)
 
     Elementwise function for computing Kullback-Leibler divergence.
 
-    .. math:: \mathrm{kl\_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math::
+
+        \mathrm{kl\_div}(x, y) =
+          \begin{cases}
+            x \log(x / y) - x + y & x > 0, y > 0 \\
+            y & x = 0, y \ge 0 \\
+            \infty & \text{otherwise}
+          \end{cases}
 
     Parameters
     ----------
-    x : ndarray
-        First input array.
-    y : ndarray
-        Second input array.
+    x, y : array_like
+        Real arguments
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    res : ndarray
-        Output array.
+    scalar or ndarray
+        Values of the Kullback-Liebler divergence.
 
     See Also
     --------
@@ -5353,9 +5856,21 @@ add_newdoc("kl_div",
 
     Notes
     -----
+    .. versionadded:: 0.15.0
+
     This function is non-negative and is jointly convex in `x` and `y`.
 
-    .. versionadded:: 0.15.0
+    The origin of this function is in convex programming; see [1]_ for
+    details. This is why the the function contains the extra :math:`-x
+    + y` terms over what might be expected from the Kullback-Leibler
+    divergence. For a version of the function without the extra terms,
+    see `rel_entr`.
+
+    References
+    ----------
+    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
+        Programming", http://cvxr.com/cvx/
+
 
     """)
 
@@ -6412,7 +6927,7 @@ add_newdoc("ncfdtri",
     Returns
     -------
     f : float
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     See Also
     --------
@@ -6458,7 +6973,7 @@ add_newdoc("ncfdtridfd",
     nc : array_like
         Noncentrality parameter.  Should be in range (0, 1e4).
     f : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
@@ -6475,8 +6990,8 @@ add_newdoc("ncfdtridfd",
     Notes
     -----
     The value of the cumulative noncentral F distribution is not necessarily
-    monotone in either degrees of freedom.  There thus may be two values that
-    provide a given CDF value.  This routine assumes monotonicity and will
+    monotone in either degrees of freedom. There thus may be two values that
+    provide a given CDF value. This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
     Examples
@@ -6509,14 +7024,14 @@ add_newdoc("ncfdtridfn",
     Parameters
     ----------
     p : array_like
-        Value of the cumulative distribution function.  Must be in the
+        Value of the cumulative distribution function. Must be in the
         range [0, 1].
     dfd : array_like
-        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+        Degrees of freedom of the denominator sum of squares. Range (0, inf).
     nc : array_like
         Noncentrality parameter.  Should be in range (0, 1e4).
     f : float
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
@@ -6533,8 +7048,8 @@ add_newdoc("ncfdtridfn",
     Notes
     -----
     The value of the cumulative noncentral F distribution is not necessarily
-    monotone in either degrees of freedom.  There thus may be two values that
-    provide a given CDF value.  This routine assumes monotonicity and will
+    monotone in either degrees of freedom. There thus may be two values that
+    provide a given CDF value. This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
     Examples
@@ -6548,7 +7063,7 @@ add_newdoc("ncfdtridfn",
     >>> p
     array([ 0.92562363,  0.93020416,  0.93188394])
 
-    Compute the inverse.  We recover the values of `dfn`, as expected:
+    Compute the inverse. We recover the values of `dfn`, as expected:
 
     >>> ncfdtridfn(p, 2, 0.25, 15)
     array([ 1.,  2.,  3.])
@@ -6567,14 +7082,14 @@ add_newdoc("ncfdtrinc",
     Parameters
     ----------
     dfn : array_like
-        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+        Degrees of freedom of the numerator sum of squares. Range (0, inf).
     dfd : array_like
-        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+        Degrees of freedom of the denominator sum of squares. Range (0, inf).
     p : array_like
-        Value of the cumulative distribution function.  Must be in the
+        Value of the cumulative distribution function. Must be in the
         range [0, 1].
     f : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
@@ -6599,7 +7114,7 @@ add_newdoc("ncfdtrinc",
     >>> p
     array([ 0.96309246,  0.94327955,  0.93304098])
 
-    Compute the inverse.  We recover the values of `nc`, as expected:
+    Compute the inverse. We recover the values of `nc`, as expected:
 
     >>> ncfdtrinc(2, 3, p, 15)
     array([ 0.5,  1.5,  2. ])
@@ -6615,17 +7130,17 @@ add_newdoc("nctdtr",
     Parameters
     ----------
     df : array_like
-        Degrees of freedom of the distribution.  Should be in range (0, inf).
+        Degrees of freedom of the distribution. Should be in range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
     t : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     Returns
     -------
     cdf : float or ndarray
-        The calculated CDF.  If all inputs are scalar, the return will be a
-        float.  Otherwise it will be an array.
+        The calculated CDF. If all inputs are scalar, the return will be a
+        float. Otherwise, it will be an array.
 
     See Also
     --------
@@ -6639,7 +7154,7 @@ add_newdoc("nctdtr",
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
-    Plot the CDF of the non-central t distribution, for nc=0.  Compare with the
+    Plot the CDF of the non-central t distribution, for nc=0. Compare with the
     t-distribution from scipy.stats:
 
     >>> x = np.linspace(-5, 5, num=500)
@@ -6668,9 +7183,9 @@ add_newdoc("nctdtridf",
     p : array_like
         CDF values, in range (0, 1].
     nc : array_like
-        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
     t : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     """)
 
@@ -6685,11 +7200,11 @@ add_newdoc("nctdtrinc",
     Parameters
     ----------
     df : array_like
-        Degrees of freedom of the distribution.  Should be in range (0, inf).
+        Degrees of freedom of the distribution. Should be in range (0, inf).
     p : array_like
         CDF values, in range (0, 1].
     t : array_like
-        Quantiles, i.e. the upper limit of integration.
+        Quantiles, i.e., the upper limit of integration.
 
     """)
 
@@ -6704,9 +7219,9 @@ add_newdoc("nctdtrit",
     Parameters
     ----------
     df : array_like
-        Degrees of freedom of the distribution.  Should be in range (0, inf).
+        Degrees of freedom of the distribution. Should be in range (0, inf).
     nc : array_like
-        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+        Noncentrality parameter. Should be in range (-1e6, 1e6).
     p : array_like
         CDF values, in range (0, 1].
 
@@ -7037,14 +7552,58 @@ add_newdoc("pbwa",
     """)
 
 add_newdoc("pdtr",
-    """
-    pdtr(k, m)
+    r"""
+    pdtr(k, m, out=None)
 
-    Poisson cumulative distribution function
+    Poisson cumulative distribution function.
 
-    Returns the sum of the first `k` terms of the Poisson distribution:
-    sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments
-    must both be non-negative doubles.
+    Defined as the probability that a Poisson-distributed random
+    variable with event rate :math:`m` is less than or equal to
+    :math:`k`. More concretely, this works out to be [1]_
+
+    .. math::
+
+       \exp(-m) \sum_{j = 0}^{\lfloor{k}\rfloor} \frac{m^j}{m!}.
+
+    Parameters
+    ----------
+    k : array_like
+        Nonnegative real argument
+    m : array_like
+        Nonnegative real shape parameter
+    out : ndarray
+        Optional output array for the function results
+
+    See Also
+    --------
+    pdtrc : Poisson survival function
+    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtri : inverse of `pdtr` with respect to `m`
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson cumulative distribution function
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Poisson_distribution
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is a cumulative distribution function, so it converges to 1
+    monotonically as `k` goes to infinity.
+
+    >>> sc.pdtr([1, 10, 100, np.inf], 1)
+    array([0.73575888, 0.99999999, 1.        , 1.        ])
+
+    It is discontinuous at integers and constant between integers.
+
+    >>> sc.pdtr([1, 1.5, 1.9, 2], 1)
+    array([0.73575888, 0.73575888, 0.73575888, 0.9196986 ])
+
     """)
 
 add_newdoc("pdtrc",
@@ -7055,7 +7614,7 @@ add_newdoc("pdtrc",
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
-    k+1, m).  Arguments must both be non-negative doubles.
+    k+1, m). Arguments must both be non-negative doubles.
     """)
 
 add_newdoc("pdtri",
@@ -7130,7 +7689,7 @@ add_newdoc("poch",
     >>> 1 * 2 * 3 * 4 * 5
     120
 
-    It can be expressed in terms of the Gamma function.
+    It can be expressed in terms of the gamma function.
 
     >>> z, m = 3.7, 2.1
     >>> sc.poch(z, m)
@@ -7311,13 +7870,13 @@ add_newdoc("psi",
 
     Notes
     -----
-    For large values not close to the negative real axis ``psi`` is
+    For large values not close to the negative real axis, ``psi`` is
     computed using the asymptotic series (5.11.2) from [1]_. For small
-    arguments not close to the negative real axis the recurrence
+    arguments not close to the negative real axis, the recurrence
     relation (5.5.2) from [1]_ is used until the argument is large
     enough to use the asymptotic series. For values close to the
-    negative real axis the reflection formula (5.5.4) from [1]_ is
-    used first.  Note that ``psi`` has a family of zeros on the
+    negative real axis, the reflection formula (5.5.4) from [1]_ is
+    used first. Note that ``psi`` has a family of zeros on the
     negative real axis which occur between the poles at nonpositive
     integers. Around the zeros the reflection formula suffers from
     cancellation and the implementation loses precision. The sole
@@ -7347,23 +7906,30 @@ add_newdoc("radian",
 
 add_newdoc("rel_entr",
     r"""
-    rel_entr(x, y)
+    rel_entr(x, y, out=None)
 
     Elementwise function for computing relative entropy.
 
-    .. math:: \mathrm{rel\_entr}(x, y) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math::
+
+        \mathrm{rel\_entr}(x, y) =
+            \begin{cases}
+                x \log(x / y) & x > 0, y > 0 \\
+                0 & x = 0, y \ge 0 \\
+                \infty & \text{otherwise}
+            \end{cases}
 
     Parameters
     ----------
-    x : ndarray
-        First input array.
-    y : ndarray
-        Second input array.
+    x, y : array_like
+        Input arrays
+    out : ndarray, optional
+        Optional output array for the function results
 
     Returns
     -------
-    res : ndarray
-        Output array.
+    scalar or ndarray
+        Relative entropy of the inputs
 
     See Also
     --------
@@ -7371,19 +7937,88 @@ add_newdoc("rel_entr",
 
     Notes
     -----
+    .. versionadded:: 0.15.0
+
     This function is jointly convex in x and y.
 
-    .. versionadded:: 0.15.0
+    The origin of this function is in convex programming; see
+    [1]_. Given two discrete probability distributions :math:`p_1,
+    \ldots, p_n` and :math:`q_1, \ldots, q_n`, to get the relative
+    entropy of statistics compute the sum
+
+    .. math::
+
+        \sum_{i = 1}^n \mathrm{rel\_entr}(p_i, q_i).
+
+    See [2]_ for details.
+
+    References
+    ----------
+    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
+        Programming", http://cvxr.com/cvx/
+    .. [2] Kullback-Leibler divergence,
+        https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
     """)
 
 add_newdoc("rgamma",
-    """
-    rgamma(z)
+    r"""
+    rgamma(z, out=None)
 
-    Gamma function inverted
+    Reciprocal of the gamma function.
 
-    Returns ``1/gamma(x)``
+    Defined as :math:`1 / \Gamma(z)`, where :math:`\Gamma` is the
+    gamma function. For more on the gamma function see `gamma`.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued input
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Function results
+
+    Notes
+    -----
+    The gamma function has no zeros and has simple poles at
+    nonpositive integers, so `rgamma` is an entire function with zeros
+    at the nonpositive integers. See the discussion in [dlmf]_ for
+    more details.
+
+    See Also
+    --------
+    gamma, gammaln, loggamma
+
+    References
+    ----------
+    .. [dlmf] Nist, Digital Library of Mathematical functions,
+        https://dlmf.nist.gov/5.2#i
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the reciprocal of the gamma function.
+
+    >>> sc.rgamma([1, 2, 3, 4])
+    array([1.        , 1.        , 0.5       , 0.16666667])
+    >>> 1 / sc.gamma([1, 2, 3, 4])
+    array([1.        , 1.        , 0.5       , 0.16666667])
+
+    It is zero at nonpositive integers.
+
+    >>> sc.rgamma([0, -1, -2, -3])
+    array([0., 0., 0., 0.])
+
+    It rapidly underflows to zero along the positive real axis.
+
+    >>> sc.rgamma([10, 100, 179])
+    array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
+
     """)
 
 add_newdoc("round",
@@ -8242,7 +8877,7 @@ add_newdoc("loggamma",
     r"""
     loggamma(z, out=None)
 
-    Principal branch of the logarithm of the Gamma function.
+    Principal branch of the logarithm of the gamma function.
 
     Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
     extended to the complex plane by analytic continuation. The
@@ -8287,7 +8922,7 @@ add_newdoc("loggamma",
 
     See also
     --------
-    gammaln : logarithm of the absolute value of the Gamma function
+    gammaln : logarithm of the absolute value of the gamma function
     gammasgn : sign of the gamma function
 
     References

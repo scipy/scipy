@@ -1,7 +1,7 @@
 """
 python _generate_pyx.py
 
-Generate Ufunc definition source files for scipy.special.  Produces
+Generate Ufunc definition source files for scipy.special. Produces
 files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
 
 This will generate both calls to PyUFunc_FromFuncAndData and the
@@ -104,7 +104,7 @@ CYTHON_SPECIAL_PYX = """\
 \"\"\"
 .. highlight:: cython
 
-Cython API for Special Functions
+Cython API for special functions
 ================================
 
 Scalar, typed versions of many of the functions in ``scipy.special``
@@ -122,13 +122,13 @@ The module is usable from Cython via::
 
     cimport scipy.special.cython_special
 
-Error Handling
+Error handling
 --------------
 
 Functions can indicate an error by returning ``nan``; however they
 cannot emit warnings like their counterparts in ``scipy.special``.
 
-Available Functions
+Available functions
 -------------------
 
 FUNCLIST
@@ -446,13 +446,13 @@ def generate_doc(name, specs):
 
 
 def npy_cdouble_from_double_complex(var):
-    """Cast a cython double complex to a numpy cdouble."""
+    """Cast a Cython double complex to a NumPy cdouble."""
     res = "_complexstuff.npy_cdouble_from_double_complex({})".format(var)
     return res
 
 
 def double_complex_from_npy_cdouble(var):
-    """Cast a numpy cdouble to a cython double complex."""
+    """Cast a NumPy cdouble to a Cython double complex."""
     res = "_complexstuff.double_complex_from_npy_cdouble({})".format(var)
     return res
 
@@ -700,7 +700,7 @@ class Ufunc(Func):
 class FusedFunc(Func):
     """
     Generate code for a fused-type special function that can be
-    cimported in cython.
+    cimported in Cython.
 
     """
     def __init__(self, name, signatures):
@@ -782,7 +782,7 @@ class FusedFunc(Func):
 
     def _get_incallvars(self, intypes, c):
         """Generate pure input variables to a specialization,
-        i.e. variables that aren't used to return a value.
+        i.e., variables that aren't used to return a value.
 
         """
         incallvars = []
@@ -795,7 +795,7 @@ class FusedFunc(Func):
 
     def _get_outcallvars(self, outtypes, c):
         """Generate output variables to a specialization,
-        i.e. pointers that are used to return values.
+        i.e., pointers that are used to return values.
 
         """
         outcallvars, tmpvars, casts = [], [], []
@@ -874,7 +874,7 @@ class FusedFunc(Func):
         return tmpdecs
 
     def _get_python_wrap(self):
-        """Generate a python wrapper for functions which pass their
+        """Generate a Python wrapper for functions which pass their
         arguments as pointers.
 
         """

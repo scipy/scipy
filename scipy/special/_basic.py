@@ -34,8 +34,6 @@ __all__ = [
     'digamma',
     'diric',
     'erf_zeros',
-    'erfcinv',
-    'erfinv',
     'euler',
     'factorial',
     'factorial2',
@@ -167,7 +165,7 @@ def diric(x, n):
     array([ 3.        ,  2.41421356,  1.        ,  0.41421356,  1.        ,
             0.41421356,  1.        ,  2.41421356])
 
-    Now find the same values (up to sign) using `diric`.  We multiply
+    Now find the same values (up to sign) using `diric`. We multiply
     by `k` to account for the different scaling conventions of
     `numpy.fft.fft` and `diric`:
 
@@ -807,87 +805,6 @@ def riccati_yn(n, x):
     return jn[:(n+1)], jnp[:(n+1)]
 
 
-def erfinv(y):
-    """Inverse of the error function erf.
-
-    Computes the inverse of the error function.
-
-    In complex domain, there is no unique complex number w satisfying erf(w)=z.
-    This indicates a true inverse function would have multi-value. When the domain restricts to the real, -1 < x < 1,
-    there is a unique real number satisfying erf(erfinv(x)) = x.
-
-    Parameters
-    ----------
-    y : ndarray
-        Argument at which to evaluate. Domain: [-1, 1]
-
-    Returns
-    -------
-    erfinv : ndarray
-        The inverse of erf of y, element-wise
-
-    Examples
-    --------
-    1) evaluating a float number
-
-    >>> from scipy import special
-    >>> special.erfinv(0.5)
-    0.4769362762044698
-
-    2) evaluating a ndarray
-
-    >>> from scipy import special
-    >>> y = np.linspace(-1.0, 1.0, num=10)
-    >>> special.erfinv(y)
-    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
-            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
-
-    """
-    return ndtri((y+1)/2.0)/sqrt(2)
-
-
-def erfcinv(y):
-    """Inverse of the complementary error function erfc.
-
-    Computes the inverse of the complementary error function erfc.
-
-    In complex domain, there is no unique complex number w satisfying erfc(w)=z.
-    This indicates a true inverse function would have multi-value. When the domain restricts to the real, 0 < x < 2,
-    there is a unique real number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
-
-    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
-
-    Parameters
-    ----------
-    y : ndarray
-        Argument at which to evaluate. Domain: [0, 2]
-
-    Returns
-    -------
-    erfcinv : ndarray
-        The inverse of erfc of y, element-wise
-
-    Examples
-    --------
-    1) evaluating a float number
-
-    >>> from scipy import special
-    >>> special.erfcinv(0.5)
-    0.4769362762044698
-
-    2) evaluating a ndarray
-
-    >>> from scipy import special
-    >>> y = np.linspace(0.0, 2.0, num=11)
-    >>> special.erfcinv(y)
-    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
-            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
-                  -inf])
-
-    """
-    return -ndtri(0.5*y)/sqrt(2)
-
-
 def erf_zeros(nt):
     """Compute the first nt zero in the first quadrant, ordered by absolute value.
 
@@ -992,21 +909,32 @@ digamma = psi
 
 
 def polygamma(n, x):
-    """Polygamma function n.
+    r"""Polygamma functions.
 
-    This is the nth derivative of the digamma (psi) function.
+    Defined as :math:`\psi^{(n)}(x)` where :math:`\psi` is the
+    `digamma` function. See [dlmf]_ for details.
 
     Parameters
     ----------
-    n : array_like of int
-        The order of the derivative of `psi`.
+    n : array_like
+        The order of the derivative of the digamma function; must be
+        integral
     x : array_like
-        Where to evaluate the polygamma function.
+        Real valued input
 
     Returns
     -------
-    polygamma : ndarray
-        The result.
+    ndarray
+        Function results
+
+    See Also
+    --------
+    digamma
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/5.15
 
     Examples
     --------
@@ -2279,15 +2207,23 @@ def zeta(x, q=None, out=None):
 
     Notes
     -----
-    The two-argument version is the Hurwitz zeta function:
+    The two-argument version is the Hurwitz zeta function
 
-    .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
+    .. math::
 
-    Riemann zeta function corresponds to ``q = 1``.
+        \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x};
+
+    see [dlmf]_ for details. The Riemann zeta function corresponds to
+    the case when ``q = 1``.
 
     See Also
     --------
     zetac
+
+    References
+    ----------
+    .. [dlmf] NIST, Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/25.11#i
 
     Examples
     --------

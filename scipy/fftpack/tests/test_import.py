@@ -26,7 +26,7 @@ if sys.version_info >= (3, 4):
                 if base / "fftpack" in path.parents:
                     continue
                 # use tokenize to auto-detect encoding on systems where no
-                # default encoding is defined (e.g. LANG='C')
+                # default encoding is defined (e.g., LANG='C')
                 with tokenize.open(str(path)) as file:
                     assert_(all(not re.fullmatch(regexp, line)
                                 for line in file),

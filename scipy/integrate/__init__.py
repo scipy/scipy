@@ -15,7 +15,7 @@ Integrating functions, given function object
    quad_vec      -- General purpose integration of vector-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
-   nquad         -- General purpose n-dimensional integration
+   nquad         -- General purpose N-D integration
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
    quadrature    -- Integrate with given tolerance using Gaussian quadrature
    romberg       -- Integrate func using Romberg integration
@@ -43,7 +43,7 @@ Integrating functions, given fixed samples
 Solving initial value problems for ODE systems
 ==============================================
 
-The solvers are implemented as individual classes which can be used directly
+The solvers are implemented as individual classes, which can be used directly
 (low-level usage) or through a convenience function.
 
 .. autosummary::
@@ -64,11 +64,11 @@ The solvers are implemented as individual classes which can be used directly
 Old API
 -------
 
-These are the routines developed earlier for scipy. They wrap older solvers
+These are the routines developed earlier for SciPy. They wrap older solvers
 implemented in Fortran (mostly ODEPACK). While the interface to them is not
 particularly convenient and certain features are missing compared to the new
 API, the solvers themselves are of good quality and work fast as compiled
-Fortran code. In some cases it might be worth using this old API.
+Fortran code. In some cases, it might be worth using this old API.
 
 .. autosummary::
    :toctree: generated/

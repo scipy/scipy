@@ -1,8 +1,12 @@
 
-.. _continuous-reciprocal:
+.. _continuous-loguniform:
 
-Reciprocal Distribution
-=======================
+Log-Uniform Distribution
+========================
+
+This random variable is log-uniform. That is, if ``loguniform(10**-1, 10**1)``
+is specified, ``0.1``, ``1``, ``10`` are all equally likely.
+
 There are two shape parameters :math:`a,b>0` and the support is :math:`x\in\left[a,b\right]`.
 
 .. math::
@@ -19,4 +23,4 @@ There are two shape parameters :math:`a,b>0` and the support is :math:`x\in\left
 
      h\left[X\right]=\frac{1}{2}\log\left(ab\right)+\log\left[\log\left(\frac{b}{a}\right)\right].
 
-Implementation: `scipy.stats.reciprocal`
+Implementation: `scipy.stats.loguniform`.

@@ -1320,8 +1320,12 @@ class TestBoxcox(object):
 
     def test_boxcox_bad_arg(self):
         # Raise ValueError if any data value is negative.
-        x = np.array([-1])
+        x = np.array([-1, 2])
         assert_raises(ValueError, stats.boxcox, x)
+        # Raise ValueError if data is constant.
+        assert_raises(ValueError, stats.boxcox, np.array([1]))
+        # Raise ValueError if data is not 1-dimensional.
+        assert_raises(ValueError, stats.boxcox, np.array([[1], [2]]))
 
     def test_empty(self):
         assert_(stats.boxcox([]).shape == (0,))
@@ -1511,6 +1515,23 @@ class TestYeojohnson(object):
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
+
+    @pytest.mark.parametrize('dtype', [np.complex64, np.complex128])
+    def test_input_dtype_complex(self, dtype):
+        x = np.arange(6, dtype=dtype)
+        err_msg = ('Yeo-Johnson transformation is not defined for complex '
+                   'numbers.')
+        with pytest.raises(ValueError, match=err_msg):
+            stats.yeojohnson(x)
+
+    @pytest.mark.parametrize('dtype', [np.int8, np.uint8, np.int16, np.int32])
+    def test_input_dtype_integer(self, dtype):
+        x_int = np.arange(8, dtype=dtype)
+        x_float = np.arange(8, dtype=np.float64)
+        xt_int, lmbda_int = stats.yeojohnson(x_int)
+        xt_float, lmbda_float = stats.yeojohnson(x_float)
+        assert_allclose(xt_int, xt_float, rtol=1e-7)
+        assert_allclose(lmbda_int, lmbda_float, rtol=1e-7)
 
 
 class TestYeojohnsonNormmax(object):

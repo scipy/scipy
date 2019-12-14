@@ -10,7 +10,7 @@
 
 namespace {
 
-/** Handle to a python object that automatically DECREFs */
+/** Handle to a Python object that automatically DECREFs */
 class py_ref
 {
   explicit py_ref(PyObject * object): obj_(object) {}
@@ -112,7 +112,7 @@ thread_local std::unordered_map<
 /** Constant Python string identifiers
 
 Using these with PyObject_GetAttr is faster than PyObject_GetAttrString which
-has to create a new python string internally.
+has to create a new Python string internally.
  */
 struct
 {
@@ -179,10 +179,10 @@ std::string backend_to_domain_string(PyObject * backend)
 }
 
 
-/** Use to clean up python references before the interpreter is finalized.
+/** Use to clean up Python references before the interpreter is finalized.
  *
- * This must be installed in a python atexit handler. This prevents Py_DECREF
- * being called after the interpreter has already shudown.
+ * This must be installed in a Python atexit handler. This prevents Py_DECREF
+ * being called after the interpreter has already shut down.
  */
 PyObject * clear_all_globals(PyObject * /* self */, PyObject * /* args */)
 {
@@ -889,7 +889,7 @@ int Function::clear(Function * self)
 }
 
 
-// getset takes mutable char * in python < 3.7
+// getset takes mutable char * in Python < 3.7
 static char dict__[] = "__dict__";
 PyGetSetDef Function_getset[] =
 {

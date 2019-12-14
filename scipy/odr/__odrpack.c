@@ -1,7 +1,7 @@
 /* Anti-Copyright
  *
- * I hereby release this code into the PUBLIC DOMAIN AS IS.  There is no
- * support, warranty, or guarantee.  I will gladly accept comments, bug 
+ * I hereby release this code into the PUBLIC DOMAIN AS IS. There is no
+ * support, warranty, or guarantee. I will gladly accept comments, bug 
  * reports, and patches, however.
  *
  * Robert Kern
@@ -13,25 +13,25 @@
 #include "odrpack.h"
 
 
-void F_FUNC(dodrc,DODRC)(void (*fcn)(int *n, int *m, int *np, int *nq, int *ldn, int *ldm, 
-            int *ldnp, double *beta, double *xplusd, int *ifixb, int *ifixx, 
-            int *ldifx, int *ideval, double *f, double *fjacb, double *fjacd, 
-            int *istop), 
+void F_FUNC(dodrc,DODRC)(void (*fcn)(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
+            int *ldnp, double *beta, double *xplusd, int *ifixb, int *ifixx,
+            int *ldifx, int *ideval, double *f, double *fjacb, double *fjacd,
+            int *istop),
            int *n, int *m, int *np, int *nq, double *beta, double *y, int *ldy,
            double *x, int *ldx, double *we, int *ldwe, int *ld2we, double *wd,
            int *ldwd, int *ld2wd, int *ifixb, int *ifixx, int *ldifx, int *job,
-           int *ndigit, double *taufac, double *sstol, double *partol, 
+           int *ndigit, double *taufac, double *sstol, double *partol,
            int *maxit, int *iprint, int *lunerr, int *lunrpt, double *stpb,
            double *stpd, int *ldstpd, double *sclb, double *scld, int *ldscld,
            double *work, int *lwork, int *iwork, int *liwork, int *info);
 void F_FUNC(dwinf,DWINF)(int *n, int *m, int *np, int *nq, int *ldwe, int *ld2we, int *isodr,
         int *delta, int *eps, int *xplus, int *fn, int *sd, int *vcv, int *rvar,
-        int *wss, int *wssde, int *wssep, int *rcond, int *eta, int *olmav, 
+        int *wss, int *wssde, int *wssep, int *rcond, int *eta, int *olmav,
         int *tau, int *alpha, int *actrs, int *pnorm, int *rnors, int *prers,
         int *partl, int *sstol, int *taufc, int *apsma, int *betao, int *betac,
         int *betas, int *betan, int *s, int *ss, int *ssf, int *qraux, int *u,
-        int *fs, int *fjacb, int *we1, int *diff, int *delts, int *deltn, 
-        int *t, int *tt, int *omega, int *fjacd, int *wrk1, int *wrk2, 
+        int *fs, int *fjacb, int *we1, int *diff, int *delts, int *deltn,
+        int *t, int *tt, int *omega, int *fjacd, int *wrk1, int *wrk2,
         int *wrk3, int *wrk4, int *wrk5, int *wrk6, int *wrk7, int *lwkmn);
 void F_FUNC(dluno,DLUNO)(int *lun, char *fn, int fnlen);
 void F_FUNC(dlunc,DLUNC)(int *lun);
@@ -538,7 +538,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
     }
   if (!PySequence_Check(py))
     {
-      /* Checking whether py is an int 
+      /* Checking whether py is an int
        *
        * XXX: PyInt_Check for np.int32 instances does not work on python 2.6 -
        * we should fix this in numpy, workaround by trying to cast to an int
@@ -739,7 +739,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
         }
       else if (PyArray_NDIM(we) == 1 && PyArray_DIMS(we)[0] == nq)
         {
-          /* we is a rank-1 array with diagonal weightings to be broadcast 
+          /* we is a rank-1 array with diagonal weightings to be broadcast
            * to all observations */
           ldwe = 1;
           ld2we = 1;
@@ -747,7 +747,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       else if (PyArray_NDIM(we) == 3 && PyArray_DIMS(we)[0] == nq
                && PyArray_DIMS(we)[1] == nq && PyArray_DIMS(we)[2] == 1)
         {
-          /* we is a rank-3 array with the covariant weightings 
+          /* we is a rank-3 array with the covariant weightings
              to be broadcast to all observations */
           ldwe = 1;
           ld2we = nq;
@@ -755,7 +755,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       else if (PyArray_NDIM(we) == 2 && PyArray_DIMS(we)[0] == nq
                && PyArray_DIMS(we)[1] == nq)
         {
-          /* we is a rank-2 array with the full covariant weightings 
+          /* we is a rank-2 array with the full covariant weightings
              to be broadcast to all observations */
           ldwe = 1;
           ld2we = nq;
@@ -764,7 +764,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       else if (PyArray_NDIM(we) == 2 && PyArray_DIMS(we)[0] == nq
                && PyArray_DIMS(we)[1] == n)
         {
-          /* we is a rank-2 array with the diagonal elements of the 
+          /* we is a rank-2 array with the diagonal elements of the
              covariant weightings for each observation */
           ldwe = n;
           ld2we = 1;
@@ -828,7 +828,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
         }
       else if (PyArray_NDIM(wd) == 1 && PyArray_DIMS(wd)[0] == m)
         {
-          /* wd is a rank-1 array with diagonal weightings to be broadcast 
+          /* wd is a rank-1 array with diagonal weightings to be broadcast
            * to all observations */
           ldwd = 1;
           ld2wd = 1;
@@ -837,7 +837,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       else if (PyArray_NDIM(wd) == 3 && PyArray_DIMS(wd)[0] == m
                && PyArray_DIMS(wd)[1] == m && PyArray_DIMS(wd)[2] == 1)
         {
-          /* wd is a rank-3 array with the covariant wdightings 
+          /* wd is a rank-3 array with the covariant wdightings
              to be broadcast to all observations */
           ldwd = 1;
           ld2wd = m;
@@ -845,7 +845,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       else if (PyArray_NDIM(wd) == 2 && PyArray_DIMS(wd)[0] == m
                && PyArray_DIMS(wd)[1] == m)
         {
-          /* wd is a rank-2 array with the full covariant weightings 
+          /* wd is a rank-2 array with the full covariant weightings
              to be broadcast to all observations */
           ldwd = 1;
           ld2wd = m;
@@ -854,7 +854,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       else if (PyArray_NDIM(wd) == 2 && PyArray_DIMS(wd)[0] == m
                && PyArray_DIMS(wd)[1] == n)
         {
-          /* wd is a rank-2 array with the diagonal elements of the 
+          /* wd is a rank-2 array with the diagonal elements of the
              covariant weightings for each observation */
           ldwd = n;
           ld2wd = 1;
@@ -1146,7 +1146,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
       iwork = (PyArrayObject *) PyArray_SimpleNew(1, dim1, NPY_INT);
     }                           /* iwork */
 
-  /* check if what JOB requests can be done with what the user has 
+  /* check if what JOB requests can be done with what the user has
      input into the function */
 
   if ((job / 10) % 10 >= 2)

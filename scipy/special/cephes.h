@@ -92,6 +92,8 @@ extern double ndtr(double a);
 extern double log_ndtr(double a);
 extern double erfc(double a);
 extern double erf(double x);
+extern double erfinv(double y);
+extern double erfcinv(double y);
 extern double ndtri(double y0);
 
 extern double pdtrc(double k, double m);

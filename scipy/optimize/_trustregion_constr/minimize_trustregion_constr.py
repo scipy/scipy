@@ -19,7 +19,7 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination"
+    3: "`callback` function requested termination."
 }
 
 
@@ -130,7 +130,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     ----------
     gtol : float, optional
         Tolerance for termination by the norm of the Lagrangian gradient.
-        The algorithm will terminate when both the infinity norm (i.e. max
+        The algorithm will terminate when both the infinity norm (i.e., max
         abs value) of the Lagrangian gradient and the constraint violation
         are smaller than ``gtol``. Default is 1e-8.
     xtol : float, optional
@@ -140,7 +140,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Default is 1e-8.
     barrier_tol : float, optional
         Threshold on the barrier parameter for the algorithm termination.
-        When inequality constraints are present the algorithm will terminate
+        When inequality constraints are present, the algorithm will terminate
         only when the barrier parameter is less than `barrier_tol`.
         Default is 1e-8.
     sparse_jacobian : {bool, None}, optional
@@ -205,7 +205,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         method can cope with Jacobian matrices with deficient row rank and will
         be used whenever other factorization methods fail (which may imply the
         conversion of sparse matrices to a dense format when required).
-        By default 'QRFactorization' is used for dense matrices.
+        By default, 'QRFactorization' is used for dense matrices.
     finite_diff_rel_step : None or array_like, optional
         Relative step size for the finite difference approximation.
     maxiter : int, optional
@@ -219,7 +219,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 3 : display progress during iterations (more complete report).
 
     disp : bool, optional
-        If True (default) then `verbose` will be set to 1 if it was 0.
+        If True (default), then `verbose` will be set to 1 if it was 0.
 
     Returns
     -------
@@ -230,7 +230,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
            constraints are put *after* other constraints.
         2. All numbers of function, Jacobian or Hessian evaluations correspond
            to numbers of actual Python function calls. It means, for example,
-           that if a Jacobian is estimated by finite differences then the
+           that if a Jacobian is estimated by finite differences, then the
            number of Jacobian evaluations will be zero and the number of
            function evaluations will be incremented by all calls during the
            finite difference estimation.
@@ -331,7 +331,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     objective = ScalarFunction(fun, x0, args, grad, hess,
                                finite_diff_rel_step, finite_diff_bounds)
 
-    # Put constraints in list format when needed
+    # Put constraints in list format when needed.
     if isinstance(constraints, (NonlinearConstraint, LinearConstraint)):
         constraints = [constraints]
 
@@ -433,7 +433,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 1
             elif state.tr_radius < xtol:
                 state.status = 2
-            elif state.nit > maxiter:
+            elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
@@ -464,7 +464,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.barrier_parameter,
                                          state.cg_stop_cond)
             state.status = None
-            state.niter = state.nit  # Alias for callback (backward-compatibility)
+            state.niter = state.nit  # Alias for callback (backward compatibility)
             if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
@@ -472,7 +472,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):
                 state.status = 2
-            elif state.nit > maxiter:
+            elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 

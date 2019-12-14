@@ -382,6 +382,16 @@
             "faddeeva_erfi_complex": "D->D"
         }
     },
+    "erfinv": {
+        "cephes.h": {
+            "erfinv": "d->d"
+        }
+    },
+    "erfcinv": {
+        "cephes.h": {
+            "erfcinv": "d->d"
+        }
+    },
     "eval_chebyc": {
         "orthogonal_eval.pxd": {
             "eval_chebyc[double complex]": "dD->D",

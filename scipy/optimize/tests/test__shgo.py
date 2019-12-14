@@ -52,7 +52,7 @@ test1_3 = StructTest1(bounds=[(None, None), (None, None)],
 
 class StructTest2(StructTestFunction):
     """
-    Scalar function with several minima to test all minimiser retrievals
+    Scalar function with several minima to test all minimizer retrievals
     """
 
     def f(self, x):
@@ -312,7 +312,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
 # Base test functions:
 class TestShgoSobolTestFunctions(object):
     """
-    Global optimisation tests with Sobol sampling:
+    Global optimization tests with Sobol sampling:
     """
 
     # Sobol algorithm
@@ -347,7 +347,7 @@ class TestShgoSobolTestFunctions(object):
 
     @pytest.mark.slow
     def test_f4_sobol(self):
-        """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
+        """NLP: (High-dimensional) Hock and Schittkowski 11 problem (HS11)"""
         # run_test(test4_1, n=500)
         # run_test(test4_1, n=800)
         options = {'infty_constraints': False}
@@ -363,13 +363,13 @@ class TestShgoSobolTestFunctions(object):
         run_test(test5_1, n=60, iters=5)
 
         # def test_t911(self):
-        #    """1D tabletop function"""
+        #    """1-D tabletop function"""
         #    run_test(test11_1)
 
 
 class TestShgoSimplicialTestFunctions(object):
     """
-    Global optimisation tests with Simplicial sampling:
+    Global optimization tests with Simplicial sampling:
     """
 
     def test_f1_1_simplicial(self):
@@ -405,14 +405,14 @@ class TestShgoSimplicialTestFunctions(object):
 
     @pytest.mark.slow
     def test_f4_simplicial(self):
-        """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
+        """NLP: (High-dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, n=1, sampling_method='simplicial')
 
     def test_lj_symmetry(self):
-        """LJ: Symmetry constrained test function"""
+        """LJ: Symmetry-constrained test function"""
         options = {'symmetry': True,
                    'disp': True}
-        args = (6,)  # No. of atoms
+        args = (6,)  # Number of atoms
         run_test(testLJ, args=args, n=None,
                  options=options, iters=4,
                  sampling_method='simplicial')
@@ -444,7 +444,7 @@ class TestShgoArguments(object):
         numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
     def test_3_1_disp_simplicial(self):
-        """Iterative sampling on TestFunction 1 and 2  (multi and univariate)"""
+        """Iterative sampling on TestFunction 1 and 2  (multi- and univariate)"""
 
         def callback_func(x):
             print("Local minimization callback test")
@@ -457,7 +457,7 @@ class TestShgoArguments(object):
                        callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
-        """Iterative sampling on TestFunction 1 and 2 (multi and univariate)"""
+        """Iterative sampling on TestFunction 1 and 2 (multi- and univariate)"""
 
         def callback_func(x):
             print("Local minimization callback test")
@@ -508,7 +508,7 @@ class TestShgoArguments(object):
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):
-        """Test Global mode limiting local evalutions for 1D funcs"""
+        """Test Global mode limiting local evalutions for 1-D functions"""
         options = {  # Specify known function value
             'f_min': test2_1.expected_fun,
             'f_tol': 1e-6,
@@ -656,7 +656,7 @@ class TestShgoArguments(object):
         """Test the functionality to add custom sampling methods to shgo"""
         def sample(n, d):
             return numpy.random.uniform(size=(n,d))
-        
+
         run_test(test1_1, n=30, sampling_method=sample)
 
 # Failure test functions

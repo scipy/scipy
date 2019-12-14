@@ -135,7 +135,7 @@ def softmax(x, axis=None):
 
     The softmax function transforms each element of a collection by
     computing the exponential of each element divided by the sum of the
-    exponentials of all the elements.  That is, if `x` is a one-dimensional
+    exponentials of all the elements. That is, if `x` is a one-dimensional
     numpy array::
 
         softmax(x) = np.exp(x)/sum(np.exp(x))
@@ -186,7 +186,7 @@ def softmax(x, axis=None):
     >>> m.sum()
     1.0000000000000002
 
-    Compute the softmax transformation along the first axis (i.e. the columns).
+    Compute the softmax transformation along the first axis (i.e., the columns).
 
     >>> m = softmax(x, axis=0)
 
@@ -198,7 +198,7 @@ def softmax(x, axis=None):
     >>> m.sum(axis=0)
     array([ 1.,  1.,  1.,  1.])
 
-    Compute the softmax transformation along the second axis (i.e. the rows).
+    Compute the softmax transformation along the second axis (i.e., the rows).
 
     >>> m = softmax(x, axis=1)
     >>> m

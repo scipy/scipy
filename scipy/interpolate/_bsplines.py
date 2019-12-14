@@ -158,7 +158,7 @@ class BSpline(object):
     1.375
 
     Note that outside of the base interval results differ. This is because
-    `BSpline` extrapolates the first and last polynomial pieces of b-spline
+    `BSpline` extrapolates the first and last polynomial pieces of B-spline
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
@@ -266,14 +266,14 @@ class BSpline(object):
 
         Notes
         -----
-        The order of the b-spline, `k`, is inferred from the length of `t` as
+        The order of the B-spline, `k`, is inferred from the length of `t` as
         ``len(t)-2``. The knot vector is constructed by appending and prepending
         ``k+1`` elements to internal knots `t`.
 
         Examples
         --------
 
-        Construct a cubic b-spline:
+        Construct a cubic B-spline:
 
         >>> from scipy.interpolate import BSpline
         >>> b = BSpline.basis_element([0, 1, 2, 3, 4])
@@ -283,7 +283,7 @@ class BSpline(object):
         >>> k
         3
 
-        Construct a second order b-spline on ``[0, 1, 1, 2]``, and compare
+        Construct a second order B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
         >>> t = [-1, 0, 1, 1, 2]
@@ -370,7 +370,7 @@ class BSpline(object):
             self.c = self.c.copy()
 
     def derivative(self, nu=1):
-        """Return a b-spline representing the derivative.
+        """Return a B-spline representing the derivative.
 
         Parameters
         ----------
@@ -398,7 +398,7 @@ class BSpline(object):
                                     axis=self.axis)
 
     def antiderivative(self, nu=1):
-        """Return a b-spline representing the antiderivative.
+        """Return a B-spline representing the antiderivative.
 
         Parameters
         ----------
@@ -1020,4 +1020,3 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
-

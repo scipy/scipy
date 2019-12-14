@@ -13,7 +13,7 @@ import numpy as np
 
 
 def _valarray(shape, value=np.nan, typecode=None):
-    """Return an array of all value.
+    """Return an array of all values.
     """
 
     out = np.ones(shape, dtype=bool) * value
@@ -35,7 +35,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     >>> _lazywhere(a > 2, (a, b), f, np.nan)
     array([ nan,  nan,  21.,  32.])
 
-    Notice it assumes that all `arrays` are of the same shape, or can be
+    Notice, it assumes that all `arrays` are of the same shape, or can be
     broadcasted together.
 
     """
@@ -64,7 +64,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     """
     Mimic `np.select(condlist, choicelist)`.
 
-    Notice it assumes that all `arrays` are of the same shape, or can be
+    Notice, it assumes that all `arrays` are of the same shape or can be
     broadcasted together.
 
     All functions in `choicelist` must accept array arguments in the order
@@ -104,7 +104,7 @@ def _aligned_zeros(shape, dtype=float, order="C", align=None):
     """Allocate a new ndarray with aligned memory.
 
     Primary use case for this currently is working around a f2py issue
-    in Numpy 1.9.1, where dtype.alignment is such that np.zeros() does
+    in NumPy 1.9.1, where dtype.alignment is such that np.zeros() does
     not necessarily create arrays aligned up to it.
 
     """
@@ -138,7 +138,7 @@ def _prune_array(array):
 
 class DeprecatedImport(object):
     """
-    Deprecated import, with redirection + warning.
+    Deprecated import with redirection and warning.
 
     Examples
     --------
@@ -179,7 +179,7 @@ def check_random_state(seed):
     If seed is an int, return a new RandomState instance seeded with seed.
     If seed is already a RandomState instance, return it.
     If seed is a new-style np.random.Generator, return it.
-    Otherwise raise ValueError.
+    Otherwise, raise ValueError.
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
@@ -201,10 +201,10 @@ def _asarray_validated(a, check_finite=True,
                        sparse_ok=False, objects_ok=False, mask_ok=False,
                        as_inexact=False):
     """
-    Helper function for scipy argument validation.
+    Helper function for SciPy argument validation.
 
-    Many scipy linear algebra functions do support arbitrary array-like
-    input arguments.  Examples of commonly unsupported inputs include
+    Many SciPy linear algebra functions do support arbitrary array-like
+    input arguments. Examples of commonly unsupported inputs include
     matrices containing inf/nan, sparse matrix representations, and
     matrices with complicated elements.
 
@@ -253,21 +253,21 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
-# Add a replacement for inspect.getargspec() which is deprecated in python 3.5
+# Add a replacement for inspect.getargspec() which is deprecated in Python 3.5
 # The version below is borrowed from Django,
-# https://github.com/django/django/pull/4846
+# https://github.com/django/django/pull/4846.
 
 # Note an inconsistency between inspect.getargspec(func) and
 # inspect.signature(func). If `func` is a bound method, the latter does *not*
 # list `self` as a first argument, while the former *does*.
-# Hence cook up a common ground replacement: `getargspec_no_self` which
+# Hence, cook up a common ground replacement: `getargspec_no_self` which
 # mimics `inspect.getargspec` but does not list `self`.
 #
 # This way, the caller code does not need to know whether it uses a legacy
-# .getargspec or bright and shiny .signature.
+# .getargspec or a bright and shiny .signature.
 
 try:
-    # is it python 3.3 or higher?
+    # is it Python 3.3 or higher?
     inspect.signature
 
     # Apparently, yes. Wrap inspect.signature
@@ -277,8 +277,8 @@ try:
     def getargspec_no_self(func):
         """inspect.getargspec replacement using inspect.signature.
 
-        inspect.getargspec is deprecated in python 3. This is a replacement
-        based on the (new in python 3.3) `inspect.signature`.
+        inspect.getargspec is deprecated in Python 3. This is a replacement
+        based on the (new in Python 3.3) `inspect.signature`.
 
         Parameters
         ----------
@@ -289,11 +289,11 @@ try:
         -------
         argspec : ArgSpec(args, varargs, varkw, defaults)
             This is similar to the result of inspect.getargspec(func) under
-            python 2.x.
+            Python 2.x.
             NOTE: if the first argument of `func` is self, it is *not*, I repeat
-            *not* included in argspec.args.
+            *not*, included in argspec.args.
             This is done for consistency between inspect.getargspec() under
-            python 2.x, and inspect.signature() under python 3.x.
+            Python 2.x, and inspect.signature() under Python 3.x.
         """
         sig = inspect.signature(func)
         args = [
@@ -320,11 +320,11 @@ try:
 except AttributeError:
     # python 2.x
     def getargspec_no_self(func):
-        """inspect.getargspec replacement for compatibility with python 3.x.
+        """inspect.getargspec replacement for compatibility with Python 3.x.
 
-        inspect.getargspec is deprecated in python 3. This wraps it, and
+        inspect.getargspec is deprecated in Python 3. This wraps it and
         *removes* `self` from the argument list of `func`, if present.
-        This is done for forward compatibility with python 3.
+        This is done for forward compatibility with Python 3.
 
         Parameters
         ----------
@@ -335,11 +335,11 @@ except AttributeError:
         -------
         argspec : ArgSpec(args, varargs, varkw, defaults)
             This is similar to the result of inspect.getargspec(func) under
-            python 2.x.
+            Python 2.x.
             NOTE: if the first argument of `func` is self, it is *not*, I repeat
-            *not* included in argspec.args.
+            *not*, included in argspec.args.
             This is done for consistency between inspect.getargspec() under
-            python 2.x, and inspect.signature() under python 3.x.
+            Python 2.x, and inspect.signature() under Python 3.x.
         """
         argspec = inspect.getargspec(func)
         if argspec.args[0] == 'self':
@@ -358,10 +358,10 @@ class MapWrapper(object):
         If `pool` is an integer, then it specifies the number of threads to
         use for parallelization. If ``int(pool) == 1``, then no parallel
         processing is used and the map builtin is used.
-        If ``pool == -1``, then the pool will utilise all available CPUs.
+        If ``pool == -1``, then the pool will utilize all available CPUs.
         If `pool` is a map-like callable that follows the same
         calling sequence as the built-in map function, then this callable is
-        used for parallelisation.
+        used for parallelization.
     """
     def __init__(self, pool=1):
         self.pool = None

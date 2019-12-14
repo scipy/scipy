@@ -25,7 +25,7 @@ from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
-    """base matrix class for compressed row and column oriented matrices"""
+    """base matrix class for compressed row- and column-oriented matrices"""
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -782,6 +782,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M, N = self._swap(self.shape)
         i0, i1 = _process_slice(major, M)
         j0, j1 = _process_slice(minor, N)
+
         if i0 == 0 and j0 == 0 and i1 == M and j1 == N:
             return self.copy() if copy else self
 
@@ -1275,6 +1276,7 @@ def _process_slice(sl, num):
         i0, i1, stride = sl.indices(num)
         if stride != 1:
             raise ValueError('slicing with step != 1 not supported')
+        i0 = min(i0, i1)  # give an empty slice when i0 > i1
     elif isintlike(sl):
         if sl < 0:
             sl += num

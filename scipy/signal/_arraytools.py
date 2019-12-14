@@ -32,8 +32,8 @@ def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     Notes
     -----
     The keyword arguments start, stop and step are used by calling
-    slice(start, stop, step).  This implies axis_slice() does not
-    handle its arguments the exactly the same as indexing.  To select
+    slice(start, stop, step). This implies axis_slice() does not
+    handle its arguments the exactly the same as indexing. To select
     a single index k, for example, use
         axis_slice(a, start=k, stop=k+1)
     In this case, the length of the axis 'axis' in the result will
@@ -47,7 +47,7 @@ def axis_slice(a, start=None, stop=None, step=None, axis=-1):
 
 
 def axis_reverse(a, axis=-1):
-    """Reverse the 1-d slices of `a` along axis `axis`.
+    """Reverse the 1-D slices of `a` along axis `axis`.
 
     Returns axis_slice(a, step=-1, axis=axis).
     """
@@ -67,7 +67,7 @@ def odd_ext(x, n, axis=-1):
     n : int
         The number of elements by which to extend `x` at each end of the axis.
     axis : int, optional
-        The axis along which to extend `x`.  Default is -1.
+        The axis along which to extend `x`. Default is -1.
 
     Examples
     --------
@@ -119,7 +119,7 @@ def even_ext(x, n, axis=-1):
     n : int
         The number of elements by which to extend `x` at each end of the axis.
     axis : int, optional
-        The axis along which to extend `x`.  Default is -1.
+        The axis along which to extend `x`. Default is -1.
 
     Examples
     --------
@@ -171,7 +171,7 @@ def const_ext(x, n, axis=-1):
     n : int
         The number of elements by which to extend `x` at each end of the axis.
     axis : int, optional
-        The axis along which to extend `x`.  Default is -1.
+        The axis along which to extend `x`. Default is -1.
 
     Examples
     --------
@@ -213,7 +213,7 @@ def zero_ext(x, n, axis=-1):
     """
     Zero padding at the boundaries of an array
 
-    Generate a new ndarray that is a zero padded extension of `x` along
+    Generate a new ndarray that is a zero-padded extension of `x` along
     an axis.
 
     Parameters
@@ -224,7 +224,7 @@ def zero_ext(x, n, axis=-1):
         The number of elements by which to extend `x` at each end of the
         axis.
     axis : int, optional
-        The axis along which to extend `x`.  Default is -1.
+        The axis along which to extend `x`. Default is -1.
 
     Examples
     --------

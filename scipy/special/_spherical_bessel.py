@@ -30,7 +30,7 @@ def spherical_jn(n, z, derivative=False):
     Notes
     -----
     For real arguments greater than the order, the function is computed
-    using the ascending recurrence [2]_.  For small real or complex
+    using the ascending recurrence [2]_. For small real or complex
     arguments, the definitional relation to the cylindrical Bessel function
     of the first kind is used.
 

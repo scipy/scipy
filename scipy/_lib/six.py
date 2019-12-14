@@ -76,7 +76,7 @@ def _import_module(name):
     return sys.modules[name]
 
 
-# Replacement for lazy loading stuff in upstream six.  See gh-2764
+# Replacement for lazy loading stuff in upstream six. See gh-2764.
 if PY3:
     import builtins
     import functools

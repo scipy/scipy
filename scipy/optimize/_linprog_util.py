@@ -67,11 +67,11 @@ def _check_sparse_inputs(options, A_ub, A_eq):
 
     Parameters
     ----------
-    A_ub : 2D array, optional
-        2D array such that ``A_ub @ x`` gives the values of the upper-bound
+    A_ub : 2-D array, optional
+        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
-    A_eq : 2D array, optional
-        2D array such that ``A_eq @ x`` gives the values of the equality
+    A_eq : 2-D array, optional
+        2-D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     options : dict
         A dictionary of solver options. All methods accept the following
@@ -86,11 +86,11 @@ def _check_sparse_inputs(options, A_ub, A_eq):
 
     Returns
     -------
-    A_ub : 2D array, optional
-        2D array such that ``A_ub @ x`` gives the values of the upper-bound
+    A_ub : 2-D array, optional
+        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
-    A_eq : 2D array, optional
-        2D array such that ``A_eq @ x`` gives the values of the equality
+    A_eq : 2-D array, optional
+        2-D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     options : dict
         A dictionary of solver options. All methods accept the following
@@ -119,12 +119,12 @@ def _check_sparse_inputs(options, A_ub, A_eq):
 
 
 def _format_A_constraints(A, n_x, sparse_lhs=False):
-    """Format the left hand side of the constraints to a 2D array
+    """Format the left hand side of the constraints to a 2-D array
 
     Parameters
     ----------
-    A : 2D array
-        2D array such that ``A @ x`` gives the values of the upper-bound
+    A : 2-D array
+        2-D array such that ``A @ x`` gives the values of the upper-bound
         (in)equality constraints at ``x``.
     n_x : int
         The number of variables in the linear programming problem.
@@ -135,7 +135,7 @@ def _format_A_constraints(A, n_x, sparse_lhs=False):
     Returns
     -------
     np.ndarray or sparse.coo_matrix
-        2D array such that ``A @ x`` gives the values of the upper-bound
+        2-D array such that ``A @ x`` gives the values of the upper-bound
         (in)equality constraints at ``x``.
 
     """
@@ -150,18 +150,18 @@ def _format_A_constraints(A, n_x, sparse_lhs=False):
 
 
 def _format_b_constraints(b):
-    """Format the upper bounds of the constraints to a 1D array
+    """Format the upper bounds of the constraints to a 1-D array
 
     Parameters
     ----------
-    b : 1D array
-        1D array of values representing the upper-bound of each (in)equality
+    b : 1-D array
+        1-D array of values representing the upper-bound of each (in)equality
         constraint (row) in ``A``.
 
     Returns
     -------
-    1D np.array
-        1D array of values representing the upper-bound of each (in)equality
+    1-D np.array
+        1-D array of values representing the upper-bound of each (in)equality
         constraint (row) in ``A``.
 
     """
@@ -238,6 +238,7 @@ def _clean_inputs(lp):
             the optimization algorithm. This argument is currently used only by the
             'revised simplex' method, and can only be used if `x0` represents a
             basic feasible solution.
+
     """
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
 
@@ -248,17 +249,17 @@ def _clean_inputs(lp):
         c = np.array(c, dtype=np.float, copy=True).squeeze()
     except ValueError:
         raise TypeError(
-            "Invalid input for linprog: c must be a 1D array of numerical "
+            "Invalid input for linprog: c must be a 1-D array of numerical "
             "coefficients")
     else:
-        # If c is a single value, convert it to a 1D array.
+        # If c is a single value, convert it to a 1-D array.
         if c.size == 1:
             c = c.reshape((-1))
 
         n_x = len(c)
         if n_x == 0 or len(c.shape) != 1:
             raise ValueError(
-                "Invalid input for linprog: c must be a 1D array and must "
+                "Invalid input for linprog: c must be a 1-D array and must "
                 "not have more than one non-singleton dimension")
         if not(np.isfinite(c).all()):
             raise ValueError(
@@ -270,7 +271,7 @@ def _clean_inputs(lp):
         A_ub = _format_A_constraints(A_ub, n_x, sparse_lhs=sparse_lhs)
     except ValueError:
         raise TypeError(
-            "Invalid input for linprog: A_ub must be a 2D array "
+            "Invalid input for linprog: A_ub must be a 2-D array "
             "of numerical values")
     else:
         n_ub = A_ub.shape[0]
@@ -289,13 +290,13 @@ def _clean_inputs(lp):
         b_ub = _format_b_constraints(b_ub)
     except ValueError:
         raise TypeError(
-            "Invalid input for linprog: b_ub must be a 1D array of "
+            "Invalid input for linprog: b_ub must be a 1-D array of "
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_ub")
     else:
         if b_ub.shape != (n_ub,):
             raise ValueError(
-                "Invalid input for linprog: b_ub must be a 1D array; b_ub "
+                "Invalid input for linprog: b_ub must be a 1-D array; b_ub "
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_ub must equal the number of values "
                 "in b_ub")
@@ -308,7 +309,7 @@ def _clean_inputs(lp):
         A_eq = _format_A_constraints(A_eq, n_x, sparse_lhs=sparse_lhs)
     except ValueError:
         raise TypeError(
-            "Invalid input for linprog: A_eq must be a 2D array "
+            "Invalid input for linprog: A_eq must be a 2-D array "
             "of numerical values")
     else:
         n_eq = A_eq.shape[0]
@@ -328,13 +329,13 @@ def _clean_inputs(lp):
         b_eq = _format_b_constraints(b_eq)
     except ValueError:
         raise TypeError(
-            "Invalid input for linprog: b_eq must be a 1D array of "
+            "Invalid input for linprog: b_eq must be a 1-D array of "
             "numerical values, each representing the upper bound of an "
             "inequality constraint (row) in A_eq")
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
-                "Invalid input for linprog: b_eq must be a 1D array; b_eq "
+                "Invalid input for linprog: b_eq must be a 1-D array; b_eq "
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_eq must equal the number of values "
                 "in b_eq")
@@ -350,13 +351,13 @@ def _clean_inputs(lp):
             x0 = np.array(x0, dtype=float, copy=True).squeeze()
         except ValueError:
             raise TypeError(
-                "Invalid input for linprog: x0 must be a 1D array of "
+                "Invalid input for linprog: x0 must be a 1-D array of "
                 "numerical coefficients")
         if x0.ndim == 0:
             x0 = x0.reshape((-1))
         if len(x0) == 0 or x0.ndim != 1:
             raise ValueError(
-                "Invalid input for linprog: x0 should be a 1D array; it "
+                "Invalid input for linprog: x0 should be a 1-D array; it "
                 "must not have more than one non-singleton dimension")
         if not x0.size == c.size:
             raise ValueError(
@@ -582,7 +583,7 @@ def _presolve(lp, rr, tol=1e-9):
     message = ""
 
     # Standard form for bounds (from _clean_inputs) is list of tuples
-    # but numpy array is more convenient here
+    # but NumPy array is more convenient here
     # In retrospect, numpy array should have been the standard
     bounds = np.array(bounds)
     lb = bounds[:, 0]
@@ -953,6 +954,7 @@ def _parse_linprog(lp, options):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
+
     """
     if options is None:
         options = {}
@@ -1027,25 +1029,26 @@ def _get_Abc(lp, c0, undo=[]):
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables.
+
     undo: list of tuples
         (`index`, `value`) pairs that record the original index and fixed value
         for each variable removed from the problem
 
     Returns
     -------
-    A : 2D array
-        2D array such that ``A`` @ ``x``, gives the values of the equality
+    A : 2-D array
+        2-D array such that ``A`` @ ``x``, gives the values of the equality
         constraints at ``x``.
-    b : 1D array
-        1D array of values representing the RHS of each equality constraint
+    b : 1-D array
+        1-D array of values representing the RHS of each equality constraint
         (row) in A (for standard form problem).
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized (for
         standard form problem).
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables.
-    x0 : 1D array
+    x0 : 1-D array
         Starting values of the independent variables, which will be refined by
         the optimization algorithm
 
@@ -1272,45 +1275,44 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
 
     Parameters
     ----------
-    x : 1D array
+    x : 1-D array
         Solution vector to the standard-form problem.
     postsolve_args : tuple
         Data needed by _postsolve to convert the solution to the standard-form
         problem into the solution to the original problem, including:
 
-        lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
+    lp : A `scipy.optimize._linprog_util._LPProblem` consisting of the following fields:
 
-            c : 1D array
-                The coefficients of the linear objective function to be minimized.
-            A_ub : 2D array, optional
-                The inequality constraint matrix. Each row of ``A_ub`` specifies the
-                coefficients of a linear inequality constraint on ``x``.
-            b_ub : 1D array, optional
-                The inequality constraint vector. Each element represents an
-                upper bound on the corresponding value of ``A_ub @ x``.
-            A_eq : 2D array, optional
-                The equality constraint matrix. Each row of ``A_eq`` specifies the
-                coefficients of a linear equality constraint on ``x``.
-            b_eq : 1D array, optional
-                The equality constraint vector. Each element of ``A_eq @ x`` must equal
-                the corresponding element of ``b_eq``.
-            bounds : sequence, optional
-                A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-                the minimum and maximum values of that decision variable. Use ``None`` to
-                indicate that there is no bound. By default, bounds are ``(0, None)``
-                (all decision variables are non-negative).
-                If a single tuple ``(min, max)`` is provided, then ``min`` and
-                ``max`` will serve as bounds for all decision variables.
-            x0 : 1D array, optional
-                Guess values of the decision variables, which will be refined by
-                the optimization algorithm. This argument is currently used only by the
-                'revised simplex' method, and can only be used if `x0` represents a
-                basic feasible solution.
+        c : 1D array
+            The coefficients of the linear objective function to be minimized.
+        A_ub : 2D array, optional
+            The inequality constraint matrix. Each row of ``A_ub`` specifies the
+            coefficients of a linear inequality constraint on ``x``.
+        b_ub : 1D array, optional
+            The inequality constraint vector. Each element represents an
+            upper bound on the corresponding value of ``A_ub @ x``.
+        A_eq : 2D array, optional
+            The equality constraint matrix. Each row of ``A_eq`` specifies the
+            coefficients of a linear equality constraint on ``x``.
+        b_eq : 1D array, optional
+            The equality constraint vector. Each element of ``A_eq @ x`` must equal
+            the corresponding element of ``b_eq``.
+        bounds : sequence, optional
+            A sequence of ``(min, max)`` pairs for each element in ``x``, defining
+            the minimum and maximum values of that decision variable. Use ``None`` to
+            indicate that there is no bound. By default, bounds are ``(0, None)``
+            (all decision variables are non-negative).
+            If a single tuple ``(min, max)`` is provided, then ``min`` and
+            ``max`` will serve as bounds for all decision variables.
+        x0 : 1D array, optional
+            Guess values of the decision variables, which will be refined by
+            the optimization algorithm. This argument is currently used only by the
+            'revised simplex' method, and can only be used if `x0` represents a
+            basic feasible solution.
 
-        undo: list of tuples
-            (`index`, `value`) pairs that record the original index and fixed value
-            for each variable removed from the problem
-
+    undo: list of tuples
+        (`index`, `value`) pairs that record the original index and fixed value
+        for each variable removed from the problem
     complete : bool
         Whether the solution is was determined in presolve (``True`` if so)
     tol : float
@@ -1318,19 +1320,19 @@ def _postsolve(x, postsolve_args, complete=False, tol=1e-8, copy=False):
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
-    slack : 1D array
+    slack : 1-D array
         The (non-negative) slack in the upper bound constraints, that is,
         ``b_ub - A_ub @ x``
-    con : 1D array
+    con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    lb : 1D array
+    lb : 1-D array
         The lower bound constraints on the original variables
-    ub: 1D array
+    ub: 1-D array
         The upper bound constraints on the original variables
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
@@ -1406,7 +1408,7 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
 
     Parameters
     ----------
-    x : 1D array
+    x : 1-D array
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
@@ -1419,15 +1421,15 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
              3 : Problem appears to be unbounded
              4 : Serious numerical difficulties encountered
 
-    slack : 1D array
+    slack : 1-D array
         The (non-negative) slack in the upper bound constraints, that is,
         ``b_ub - A_ub @ x``
-    con : 1D array
+    con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
-    lb : 1D array
+    lb : 1-D array
         The lower bound constraints on the original variables
-    ub: 1D array
+    ub: 1-D array
         The upper bound constraints on the original variables
     message : str
         A string descriptor of the exit status of the optimization.
@@ -1509,21 +1511,21 @@ def _postprocess(x, postsolve_args, complete=False, status=0, message="",
 
     Parameters
     ----------
-    x : 1D array
+    x : 1-D array
         Solution vector to the standard-form problem.
-    c : 1D array
+    c : 1-D array
         Original coefficients of the linear objective function to be minimized.
-    A_ub : 2D array, optional
-        2D array such that ``A_ub @ x`` gives the values of the upper-bound
+    A_ub : 2-D array, optional
+        2-D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
-    b_ub : 1D array, optional
-        1D array of values representing the upper-bound of each inequality
+    b_ub : 1-D array, optional
+        1-D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : 2D array, optional
-        2D array such that ``A_eq @ x`` gives the values of the equality
+    A_eq : 2-D array, optional
+        2-D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
-    b_eq : 1D array, optional
-        1D array of values representing the RHS of each equality constraint
+    b_eq : 1-D array, optional
+        1-D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence of tuples
         Bounds, as modified in presolve
@@ -1548,14 +1550,14 @@ def _postprocess(x, postsolve_args, complete=False, status=0, message="",
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
-    slack : 1D array
+    slack : 1-D array
         The (non-negative) slack in the upper bound constraints, that is,
         ``b_ub - A_ub @ x``
-    con : 1D array
+    con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         ``b - A_eq @ x``
     status : int

@@ -1659,16 +1659,6 @@ class TestErf(object):
             rtol=1e-12
             )
 
-    def test_erfcinv(self):
-        i = special.erfcinv(1)
-        # Use assert_array_equal instead of assert_equal, so the comparison
-        # of -0.0 and 0.0 doesn't fail.
-        assert_array_equal(i, 0)
-
-    def test_erfinv(self):
-        i = special.erfinv(0)
-        assert_equal(i,0)
-
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -1, 1]

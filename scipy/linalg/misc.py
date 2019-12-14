@@ -27,9 +27,9 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     Parameters
     ----------
     a : (M,) or (M, N) array_like
-        Input array.  If `axis` is None, `a` must be 1-D or 2-D.
+        Input array. If `axis` is None, `a` must be 1D or 2D.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
-        Order of the norm (see table under ``Notes``). inf means numpy's
+        Order of the norm (see table under ``Notes``). inf means NumPy's
         `inf` object
     axis : {int, 2-tuple of ints, None}, optional
         If `axis` is an integer, it specifies the axis of `a` along which to

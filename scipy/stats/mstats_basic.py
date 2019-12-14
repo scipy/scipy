@@ -1468,7 +1468,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trima(a, limits=limits, inclusive=inclusive)
 
 
-if trim.__doc__ is not None:
+if trim.__doc__:
     trim.__doc__ = trim.__doc__ % trimdoc
 
 
@@ -1561,7 +1561,7 @@ def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
         return trima(a,limits=limits,inclusive=inclusive).mean(axis=axis)
 
 
-if trimmed_mean.__doc__ is not None:
+if trimmed_mean.__doc__:
     trimmed_mean.__doc__ = trimmed_mean.__doc__ % trimdoc
 
 
@@ -1586,7 +1586,7 @@ def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     return out.var(axis=axis, ddof=ddof)
 
 
-if trimmed_var.__doc__ is not None:
+if trimmed_var.__doc__:
     trimmed_var.__doc__ = trimmed_var.__doc__ % trimdoc
 
 
@@ -1610,7 +1610,7 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
     return out.std(axis=axis,ddof=ddof)
 
 
-if trimmed_std.__doc__ is not None:
+if trimmed_std.__doc__:
     trimmed_std.__doc__ = trimmed_std.__doc__ % trimdoc
 
 

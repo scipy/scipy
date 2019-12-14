@@ -44,18 +44,18 @@ def linprog_verbose_callback(res):
     ----------
     res : A `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-        x : 1D array
+        x : 1-D array
             The independent variable vector which optimizes the linear
             programming problem.
         fun : float
             Value of the objective function.
         success : bool
             True if the algorithm succeeded in finding an optimal solution.
-        slack : 1D array
+        slack : 1-D array
             The values of the slack variables. Each slack variable corresponds
             to an inequality constraint. If the slack is zero, then the
             corresponding constraint is active.
-        con : 1D array
+        con : 1-D array
             The (nominally zero) residuals of the equality constraints, that is,
             ``b - A_eq @ x``
         phase : int
@@ -121,18 +121,18 @@ def linprog_terse_callback(res):
     ----------
     res : A `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-        x : 1D array
+        x : 1-D array
             The independent variable vector which optimizes the linear
             programming problem.
         fun : float
             Value of the objective function.
         success : bool
             True if the algorithm succeeded in finding an optimal solution.
-        slack : 1D array
+        slack : 1-D array
             The values of the slack variables. Each slack variable corresponds
             to an inequality constraint. If the slack is zero, then the
             corresponding constraint is active.
-        con : 1D array
+        con : 1-D array
             The (nominally zero) residuals of the equality constraints, that is,
             ``b - A_eq @ x``.
         phase : int
@@ -199,18 +199,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Parameters
     ----------
-    c : 1D array
+    c : 1-D array
         The coefficients of the linear objective function to be minimized.
-    A_ub : 2D array, optional
+    A_ub : 2-D array, optional
         The inequality constraint matrix. Each row of ``A_ub`` specifies the
         coefficients of a linear inequality constraint on ``x``.
-    b_ub : 1D array, optional
+    b_ub : 1-D array, optional
         The inequality constraint vector. Each element represents an
         upper bound on the corresponding value of ``A_ub @ x``.
-    A_eq : 2D array, optional
+    A_eq : 2-D array, optional
         The equality constraint matrix. Each row of ``A_eq`` specifies the
         coefficients of a linear equality constraint on ``x``.
-    b_eq : 1D array, optional
+    b_eq : 1-D array, optional
         The equality constraint vector. Each element of ``A_eq @ x`` must equal
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
@@ -231,16 +231,16 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 The current solution vector.
             fun : float
                 The current value of the objective function ``c @ x``.
             success : bool
                 ``True`` when the algorithm has completed successfully.
-            slack : 1D array
+            slack : 1-D array
                 The (nominally positive) values of the slack,
                 ``b_ub - A_ub @ x``.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 ``b_eq - A_eq @ x``.
             phase : int
@@ -288,7 +288,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
 
-    x0 : 1D array, optional
+    x0 : 1-D array, optional
         Guess values of the decision variables, which will be refined by
         the optimization algorithm. This argument is currently used only by the
         'revised simplex' method, and can only be used if `x0` represents a
@@ -300,15 +300,15 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     res : OptimizeResult
         A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
-            x : 1D array
+            x : 1-D array
                 The values of the decision variables that minimizes the
                 objective function while satisfying the constraints.
             fun : float
                 The optimal value of the objective function ``c @ x``.
-            slack : 1D array
+            slack : 1-D array
                 The (nominally positive) values of the slack variables,
                 ``b_ub - A_ub @ x``.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 ``b_eq - A_eq @ x``.
             success : bool
@@ -382,7 +382,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     - column singletons in ``A_ub``, representing simple bounds.
 
     If presolve reveals that the problem is unbounded (e.g. an unconstrained
-    and unbounded variable has negative cost) or infeasible (e.g. a row of
+    and unbounded variable has negative cost) or infeasible (e.g., a row of
     zeros in ``A_eq`` corresponds with a nonzero in ``b_eq``), the solver
     terminates with the appropriate status code. Note that presolve terminates
     as soon as any sign of unboundedness is detected; consequently, a problem
@@ -526,7 +526,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     # problem.
     lp_o = deepcopy(lp)
 
-    # Solve trivial problem, eliminate variables, tighten bounds, etc...
+    # Solve trivial problem, eliminate variables, tighten bounds, etc.
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
@@ -556,7 +556,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         else:
             raise ValueError('Unknown solver %s' % method)
 
-    # Eliminate artificial variables, re-introduce presolved variables, etc...
+    # Eliminate artificial variables, re-introduce presolved variables, etc.
     # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
 

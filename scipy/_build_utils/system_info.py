@@ -25,10 +25,10 @@ if NumpyVersion(np.__version__) >= "1.15.0.dev":
     # customize BLAS detection.
     get_info = old_get_info
 else:
-    # For numpy < 1.15.0, we need overrides.
+    # For NumPy < 1.15.0, we need overrides.
 
     def get_info(name, notfound_action=0):
-        # Special case our custom *_opt_info
+        # Special case our custom *_opt_info.
         cls = {'lapack_opt': lapack_opt_info,
                'blas_opt': blas_opt_info}.get(name.lower())
         if cls is None:

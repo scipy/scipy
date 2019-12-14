@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy.stats import hypergeom, bernoulli, boltzmann
+from scipy.stats import betabinom, hypergeom, bernoulli, boltzmann
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 
@@ -48,3 +48,23 @@ def test_boltzmann_upper_bound():
     c = boltzmann.cdf(k, lam, N)
     expected = [0, 0, 0, 4/7, 6/7, 1, 1, 1]
     assert_allclose(c, expected, rtol=1e-13)
+
+
+def test_betabinom_a_and_b_unity():
+    # test limiting case that betabinom(n, 1, 1) is a discrete uniform
+    # distribution from 0 to n
+    n = 20
+    k = np.arange(n + 1)
+    p = betabinom(n, 1, 1).pmf(k)
+    expected = np.repeat(1 / (n + 1), n + 1)
+    assert_almost_equal(p, expected)
+
+
+def test_betabinom_bernoulli():
+    # test limiting case that betabinom(1, a, b) = bernoulli(a / (a + b))
+    a = 2.3
+    b = 0.63
+    k = np.arange(2)
+    p = betabinom(1, a, b).pmf(k)
+    expected = bernoulli(a / (a + b)).pmf(k)
+    assert_almost_equal(p, expected)
