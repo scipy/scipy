@@ -99,8 +99,9 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
-    - os: linux-ppc64le
-      python: 3.6
+    - python: 3.6
+      os: linux
+      arch: ppc64le
       env:
         - TESTMODE=fast
         - COVERAGE=
