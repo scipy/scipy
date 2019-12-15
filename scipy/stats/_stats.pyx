@@ -545,7 +545,7 @@ def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
         Multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
     cdef:
-        double[:, :] points_, xi_, estimate
+        double[:, :] points_, xi_, estimate, whitening
         int i, j, k
         int n = points.shape[0]
         int d = points.shape[1]
@@ -558,13 +558,15 @@ def gaussian_kernel_estimate(points, real[:, :] values, xi, precision):
     if precision.shape[0] != d or precision.shape[1] != d:
         raise ValueError("precision matrix must match data dims")
 
-    # Evaluate the normalisation
-    norm = np.sqrt(np.linalg.det(precision) / (2 * np.pi) ** d)
-
     # Rescale the data
     whitening = np.linalg.cholesky(precision)
     points_ = np.dot(points, whitening).astype(np.float64, copy=False)
     xi_ = np.dot(xi, whitening).astype(np.float64, copy=False)
+
+    # Evaluate the normalisation
+    norm = (2 * np.pi) ** (- d / 2)
+    for i in range(d):
+        norm *= whitening[i, i]
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p))
