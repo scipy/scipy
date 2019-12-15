@@ -1162,6 +1162,19 @@ def test_weightedtau_vs_quadratic():
             np.random.shuffle(rank)
 
 
+class TestSpearmanrWarnings(object):
+
+    def test_gh_11111(self):
+        x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(x, y)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+
 class TestFindRepeats(object):
 
     def test_basic(self):
