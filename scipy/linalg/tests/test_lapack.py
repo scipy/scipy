@@ -1649,17 +1649,20 @@ def test_getc2_gesc2():
 
 def test_gttrf_gttrs():
     np.random.seed(42)
-    n = 10
     for index, dtype in enumerate(DTYPES):
-        atol = 10**-(np.finfo(dtype).precision-1)
+        n = 10
+        if index == 0 or index == 2:
+            rtol = 10**-(np.finfo(dtype).precision-1)
+        else:
+            rtol = 10**-(np.finfo(dtype).precision-3)
         if index < 2:
             du = np.random.rand(n-1)
             d = np.random.rand(n)
             dl = np.random.rand(n-1)
         else:
-            du = np.random.rand(n-1) * 1j
-            d = np.random.rand(n) * 1j
-            dl = np.random.rand(n-1) * 1j
+            du = np.random.rand(n-1) + np.random.rand(n-1) * 1j
+            d = np.random.rand(n) + np.random.rand(n) * 1j
+            dl = np.random.rand(n-1) + np.random.rand(n-1) * 1j
 
         diag_cpy = np.array([dl.copy(), d.copy(), du.copy()])
 
@@ -1672,23 +1675,39 @@ def test_gttrf_gttrs():
 
         _dl, _d, _du, du2, ipiv, info = dgttrf(dl, d, du)
 
-        np.testing.assert_allclose(dl, diag_cpy[0], atol=atol)
-        np.testing.assert_allclose(d, diag_cpy[1], atol=atol)
-        np.testing.assert_allclose(du, diag_cpy[2], atol=atol)
-        
+        np.testing.assert_array_equal(dl, diag_cpy[0])
+        np.testing.assert_array_equal(d, diag_cpy[1])
+        np.testing.assert_array_equal(du, diag_cpy[2])
+
         b_cpy = b.copy()
         x_dgttrs, info = dgttrs(_dl, _d, _du, du2, ipiv, b)
-        np.testing.assert_allclose(x, x_dgttrs, atol=atol)
-        np.testing.assert_allclose(b, b_cpy, atol=atol)
-        
+        np.testing.assert_array_equal(b, b_cpy)
 
-        dl_malformatted = np.append(dl, [1])
-        d_malformatted = np.append(d, [1])
-        du_malformatted = np.append(du, [1])
+        np.testing.assert_allclose(x, x_dgttrs, rtol=rtol)
+
+        if index < 2:
+            dl_misshaped = np.random.rand(n)
+            d_misshaped = np.random.rand(n-1)
+            du_misshaped = np.random.rand(n)
+            d_zeros = np.zeros(n)
+        else:
+            d_zeros = np.zeros(n) + np.zeros(n) * 1j
+            dl_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
+            d_misshaped = np.random.rand(n-1) + np.random.rand(n-1) * 1j
+            du_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
+
         with assert_raises(ValueError):
-            dgttrf(dl_malformatted, d, du)
+            dgttrf(dl_misshaped, d, du)
         with assert_raises(ValueError):
-            dgttrf(dl, d_malformatted, du)
+            dgttrf(dl, d_misshaped, du)
         with assert_raises(ValueError):
-            dgttrf(dl, d, du_malformatted)
+            dgttrf(dl, d, du_misshaped)
+            
+        singular_matrix_gttrf = dgttrf(dl, d_zeros, du)
+        
+        # np.testing.assert_(singular_matrix_gttrf[5] != 0,
+        #               "?gttrf: singular matrix should return non-zero info.")
+        
+        # put in a 2x2 matrix:    
+        # dgttrf(dl[0], d[:1], du[0])
 
