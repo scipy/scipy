@@ -2,8 +2,6 @@
 SciPy 1.4.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.4.0 is not released yet!
-
 .. contents::
 
 SciPy 1.4.0 is the culmination of 6 months of hard work. It contains
@@ -637,6 +635,7 @@ Issues closed for 1.4.0
 * `#11100 <https://github.com/scipy/scipy/issues/11100>`__: BUG: multiscale_graphcorr random state seeding and parallel use
 * `#11121 <https://github.com/scipy/scipy/issues/11121>`__: Calls to `scipy.interpolate.splprep` increase RAM usage.
 * `#11125 <https://github.com/scipy/scipy/issues/11125>`__: BUG: segfault when slicing a CSR or CSC sparse matrix with slice start index > stop index
+* `#11198 <https://github.com/scipy/scipy/issues/11198>`__: BUG: sparse eigs (arpack) shift-invert drops the smallest eigenvalue for some k
 
 Pull requests for 1.4.0
 -----------------------
@@ -1007,3 +1006,6 @@ Pull requests for 1.4.0
 * `#11152 <https://github.com/scipy/scipy/pull/11152>`__: BUG: Fix random state bug multiscale_graphcorr
 * `#11166 <https://github.com/scipy/scipy/pull/11166>`__: BUG: empty sparse slice shapes
 * `#11167 <https://github.com/scipy/scipy/pull/11167>`__: BUG: redundant fft in signal.resample
+* `#11181 <https://github.com/scipy/scipy/pull/11181>`__: TST: Fix tolerance of tests for aarch64
+* `#11182 <https://github.com/scipy/scipy/pull/11182>`__: TST: Bump up tolerance for test_maxiter_worsening
+* `#11199 <https://github.com/scipy/scipy/pull/11199>`__: BUG: sparse.linalg: mistake in unsymm. real shift-invert ARPACK eigenvalue selection
