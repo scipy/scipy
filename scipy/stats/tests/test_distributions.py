@@ -1274,6 +1274,33 @@ class TestKSTwo(object):
             vals_cdf = stats.kstwo.cdf(xn, n)
             assert_allclose(vals_cdf, probs)
 
+    def test_simard_lecuyer_table1(self):
+        # Compute the cdf for values near the mean of the distribution.
+        # The mean u ~ log(2)*sqrt(pi/(2n))
+        # Compute for x in [u/4, u/3, u/2, u, 2u, 3u]
+        # This is the computation of Table 1 of Simard, R., L'Ecuyer, P. (2011)
+        #  "Computing the Two-Sided Kolmogorov-Smirnov Distribution".
+        # Except that the values below are not from the published table, but
+        # were generated using an independent SageMath implementation of
+        # Durbin's algorithm (with the exponentiation and scaling of
+        # Marsaglia/Tsang/Wang's version) using 500 bit arithmetic.
+        # Some of the values in the published table have relative
+        # errors greater than 1e-4.
+        ns = [10, 50, 100, 200, 500, 1000]
+        ratios = np.array([1.0/4, 1.0/3, 1.0/2, 1, 2, 3])
+        expected = np.array([
+            [1.92155292e-08, 5.72933228e-05, 2.15233226e-02, 6.31566589e-01, 9.97685592e-01, 9.99999942e-01],
+            [2.28096224e-09, 1.99142563e-05, 1.42617934e-02, 5.95345542e-01, 9.96177701e-01, 9.99998662e-01],
+            [1.00201886e-09, 1.32673079e-05, 1.24608594e-02, 5.86163220e-01, 9.95866877e-01, 9.99998240e-01],
+            [4.93313022e-10, 9.52658029e-06, 1.12123138e-02, 5.79486872e-01, 9.95661824e-01, 9.99997964e-01],
+            [2.37049293e-10, 6.85002458e-06, 1.01309221e-02, 5.73427224e-01, 9.95491207e-01, 9.99997750e-01],
+            [1.56990874e-10, 5.71738276e-06, 9.59725430e-03, 5.70322692e-01, 9.95409545e-01, 9.99997657e-01]
+        ])
+        for idx, n in enumerate(ns):
+            x = ratios * np.log(2) * np.sqrt(np.pi/2/n)
+            vals_cdf = stats.kstwo.cdf(x, n)
+            assert_allclose(vals_cdf, expected[idx], rtol=1e-5)
+
 
 class TestZipf(object):
     def setup_method(self):
