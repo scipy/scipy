@@ -144,10 +144,8 @@ def _kolmogn_DMTW(n, d, cdf=True):
         w[j - 1] = fac
         fac /= j  # This might underflow.  Isn't a problem.
         v[j - 1] *= fac
-    v[-1] = 1.0 - 2 * h ** m
-    if 2 * h - 1.0 > 0:
-        v[-1] += (2 * h - 1.0) ** m
-    v[-1] *= fac
+    tt = max(2 * h - 1.0, 0)**m - 2*h**m
+    v[-1] = (1.0 + tt) * fac
 
     for i in range(1, m):
         H[i - 1:, i] = w[:m - i + 1]
@@ -158,12 +156,10 @@ def _kolmogn_DMTW(n, d, cdf=True):
     nn = n
     expnt = 0  # Scaling of Hpwr
     Hexpnt = 0  # Scaling of H
-    sqr = 1
     while nn > 0:
         if nn % 2:
             Hpwr = np.matmul(Hpwr, H)
             expnt += Hexpnt
-        sqr *= 2
         H = np.matmul(H, H)
         Hexpnt *= 2
         # Scale as needed.
