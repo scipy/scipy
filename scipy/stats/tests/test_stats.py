@@ -838,7 +838,7 @@ class TestCorrSpearmanrTies(object):
     """Some tests of tie-handling by the spearmanr function."""
 
     def test_tie0(self):
-    # with only ties in one or both inputs
+        # with only ties in one or both inputs
         with assert_warns(stats.SpearmanRConstantInputWarning):
             r, p = stats.spearmanr([2,2,2], [2,2,2])
             assert_equal(r, np.nan)
