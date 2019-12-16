@@ -107,6 +107,14 @@ class TestSLSQP(object):
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
+    def test_minimize_unbounded_approximated_nfev(self):
+        # Minimize, method='SLSQP': unbounded, approximated Jacobian.
+        # Initial guess is optimal, so only 3 function evaluations are necessary.
+        # Fails if approximating Jacobian repeats function evaluation.
+        res = minimize(self.fun, [2.0, 1.0], args=(-1.0, ),
+                       method='SLSQP', options=self.opts)
+        assert_(res.nfev, 3)
+
     def test_minimize_unbounded_given(self):
         # Minimize, method='SLSQP': unbounded, given Jacobian.
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
