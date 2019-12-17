@@ -45,7 +45,7 @@ If building from source, SciPy also requires:
 
 __ https://github.com/pypa/setuptools
 
-4) pybind11__ >= 2.2.4
+4) pybind11__ >= 2.4.0
 
 __ https://github.com/pybind/pybind11
 
