@@ -2,8 +2,6 @@
 SciPy 1.4.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.4.0 is not released yet!
-
 .. contents::
 
 SciPy 1.4.0 is the culmination of 6 months of hard work. It contains
@@ -272,6 +270,7 @@ The documentation of many functions has been improved.
 operates on high dimensional and nonlinear data sets. It has higher statistical
 power than other `scipy.stats` tests while being the only one that operates on
 multivariate data.
+
 The generalized inverse Gaussian distribution (`scipy.stats.geninvgauss`) has 
 been added.
 
@@ -290,9 +289,6 @@ handling of ``NaN`` values
 
 `scipy.stats.gaussian_kde.resample` now accepts a ``seed`` argument to empower
 reproducibility
-
-`scipy.stats.multiscale_graphcorr` has been added for calculation of the
-multiscale graph correlation (MGC) test statistic
 
 `scipy.stats.kendalltau` performance has improved, especially for large inputs,
 due to improved cache usage
@@ -320,6 +316,11 @@ In `scipy.spatial.Rotation` methods ``from_dcm``, ``as_dcm`` were renamed to
 ``from_matrix``, ``as_matrix`` respectively. The old names will be removed in 
 SciPy 1.6.0.
 
+Method ``Rotation.match_vectors`` was deprecated in favor of 
+``Rotation.align_vectors``, which provides a more logical and 
+general API to the same functionality. The old method 
+will be removed in SciPy 1.6.0.
+
 Backwards incompatible changes
 ==============================
 
@@ -343,16 +344,10 @@ Sparse matrix reshape now raises an error if shape is not two-dimensional,
 rather than guessing what was meant. The behavior is now the same as before 
 SciPy 1.1.0.
 
-
-`scipy.spatial` changes
------------------------
-The default behavior of the ``match_vectors`` method of 
-`scipy.spatial.transform.Rotation` was changed for input vectors 
-that are not normalized and not of equal lengths.
-Previously, such vectors would be normalized within the method.  
-Now, the calculated rotation takes the vector length into account, longer 
-vectors will have a larger weight. For more details, see 
-https://github.com/scipy/scipy/issues/10968.
+``CSR`` and ``CSC`` sparse matrix classes should now return empty matrices
+of the same type when indexed out of bounds. Previously, for some versions
+of SciPy, this would raise an ``IndexError``. The change is largely motivated
+by greater consistency with ``ndarray`` and ``numpy.matrix`` semantics.
 
 `scipy.signal` changes
 ----------------------
@@ -392,6 +387,7 @@ Authors
 =======
 
 * @endolith
+* @wenhui-prudencemed +
 * Abhinav +
 * Anne Archibald
 * ashwinpathak20nov1996 +
@@ -533,7 +529,7 @@ Authors
 * Kentaro Yamamoto +
 * Dave Zbarsky +
 
-A total of 141 people contributed to this release.
+A total of 142 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -621,6 +617,7 @@ Issues closed for 1.4.0
 * `#10588 <https://github.com/scipy/scipy/issues/10588>`__: scipy.fft and numpy.fft inconsistency when axes=None and shape...
 * `#10628 <https://github.com/scipy/scipy/issues/10628>`__: Scipy python>3.6 Windows wheels don't ship msvcp\*.dll
 * `#10733 <https://github.com/scipy/scipy/issues/10733>`__: DOC/BUG: min_only result does not match documentation
+* `#10774 <https://github.com/scipy/scipy/issues/10774>`__: min_only=true djisktra infinite loop with duplicate indices
 * `#10775 <https://github.com/scipy/scipy/issues/10775>`__: UnboundLocalError in Radau when given a NaN
 * `#10835 <https://github.com/scipy/scipy/issues/10835>`__: io.wavfile.read unnecessarily raises an error for a bad wav header
 * `#10838 <https://github.com/scipy/scipy/issues/10838>`__: Error in documentation for scipy.linalg.lu_factor
@@ -634,6 +631,11 @@ Issues closed for 1.4.0
 * `#10991 <https://github.com/scipy/scipy/issues/10991>`__: Error running openBlas probably missing a step
 * `#11033 <https://github.com/scipy/scipy/issues/11033>`__: deadlock on osx for python 3.8
 * `#11041 <https://github.com/scipy/scipy/issues/11041>`__: Test failure in wheel builds for TestTf2zpk.test_simple
+* `#11089 <https://github.com/scipy/scipy/issues/11089>`__: Regression in scipy.stats where distribution will not accept loc and scale parameters
+* `#11100 <https://github.com/scipy/scipy/issues/11100>`__: BUG: multiscale_graphcorr random state seeding and parallel use
+* `#11121 <https://github.com/scipy/scipy/issues/11121>`__: Calls to `scipy.interpolate.splprep` increase RAM usage.
+* `#11125 <https://github.com/scipy/scipy/issues/11125>`__: BUG: segfault when slicing a CSR or CSC sparse matrix with slice start index > stop index
+* `#11198 <https://github.com/scipy/scipy/issues/11198>`__: BUG: sparse eigs (arpack) shift-invert drops the smallest eigenvalue for some k
 
 Pull requests for 1.4.0
 -----------------------
@@ -993,3 +995,17 @@ Pull requests for 1.4.0
 * `#11066 <https://github.com/scipy/scipy/pull/11066>`__: BUG: skip deprecation for numpy top-level types
 * `#11067 <https://github.com/scipy/scipy/pull/11067>`__: DOC: updated documentation for consistency in writing style
 * `#11070 <https://github.com/scipy/scipy/pull/11070>`__: DOC: Amendment to Ubuntu Development Environment Quickstart should...
+* `#11073 <https://github.com/scipy/scipy/pull/11073>`__: DOC: fix 1.4.0 release notes
+* `#11081 <https://github.com/scipy/scipy/pull/11081>`__: API: Replace Rotation.match_vectors with align_vectors
+* `#11083 <https://github.com/scipy/scipy/pull/11083>`__: DOC: more 1.4.0 release note fixes
+* `#11092 <https://github.com/scipy/scipy/pull/11092>`__: BUG: stats: fix freezing of some distributions
+* `#11096 <https://github.com/scipy/scipy/pull/11096>`__: BUG: scipy.sparse.csgraph: fixed issue #10774
+* `#11124 <https://github.com/scipy/scipy/pull/11124>`__: fix Cython warnings related to _stats.pyx
+* `#11126 <https://github.com/scipy/scipy/pull/11126>`__: BUG: interpolate/fitpack: fix memory leak in splprep
+* `#11127 <https://github.com/scipy/scipy/pull/11127>`__: Avoid potential segfault in CSR and CSC matrix indexing
+* `#11152 <https://github.com/scipy/scipy/pull/11152>`__: BUG: Fix random state bug multiscale_graphcorr
+* `#11166 <https://github.com/scipy/scipy/pull/11166>`__: BUG: empty sparse slice shapes
+* `#11167 <https://github.com/scipy/scipy/pull/11167>`__: BUG: redundant fft in signal.resample
+* `#11181 <https://github.com/scipy/scipy/pull/11181>`__: TST: Fix tolerance of tests for aarch64
+* `#11182 <https://github.com/scipy/scipy/pull/11182>`__: TST: Bump up tolerance for test_maxiter_worsening
+* `#11199 <https://github.com/scipy/scipy/pull/11199>`__: BUG: sparse.linalg: mistake in unsymm. real shift-invert ARPACK eigenvalue selection
