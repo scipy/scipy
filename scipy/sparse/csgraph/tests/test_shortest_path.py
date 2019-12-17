@@ -311,3 +311,9 @@ def test_buffer(method):
     G = scipy.sparse.csr_matrix([[1.]])
     G.data.flags['WRITEABLE'] = False
     shortest_path(G, method=method)
+
+
+def test_NaN_warnings():
+    with pytest.warns(None) as record:
+        shortest_path(np.array([[0, 1], [np.nan, 0]]))
+    assert not record
