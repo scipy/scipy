@@ -781,6 +781,13 @@ class TestCorrSpearmanr2(object):
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
+    def test_spearmanr_attributes(self):
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+        attributes = ('correlation', 'pvalue')
+        res = stats.spearmanr(x1, x2)
+        check_named_results(res, attributes)
+
     def test_empty_arrays(self):
         assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
 
@@ -797,7 +804,7 @@ class TestCorrSpearmanr2(object):
         assert_approx_equal(res[1], expected[1])
 
     def test_corr_1(self):
-        assert_approx_equal(stats.spearmanr([1,1,2], [1,1,2])[0], 1.0)
+        assert_approx_equal(stats.spearmanr([1, 1, 2], [1, 1, 2])[0], 1.0)
 
     def test_nan_policies(self):
         x = np.arange(10.)
@@ -833,20 +840,16 @@ class TestCorrSpearmanr2(object):
         y.append(3.0)
         assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
 
-
-class TestCorrSpearmanrTies(object):
-    """Some tests of tie-handling by the spearmanr function."""
-
     def test_tie0(self):
         # with only ties in one or both inputs
         with assert_warns(stats.SpearmanRConstantInputWarning):
-            r, p = stats.spearmanr([2,2,2], [2,2,2])
+            r, p = stats.spearmanr([2, 2, 2], [2, 2, 2])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
-            r, p = stats.spearmanr([2,0,2], [2,2,2])
+            r, p = stats.spearmanr([2, 0, 2], [2, 2, 2])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
-            r, p = stats.spearmanr([2,2,2], [2,0,2])
+            r, p = stats.spearmanr([2, 2, 2], [2, 0, 2])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
 
@@ -877,6 +880,20 @@ class TestCorrSpearmanrTies(object):
         sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
         assert_almost_equal(sr1, sr2)
 
+    def test_ties_axis_1(self):
+        z1 = np.array([[1, 1, 1, 1], [1, 2, 3, 4]])
+        z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
+        z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(z1, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr(z2, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+            r, p = stats.spearmanr(z3, axis=1)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
