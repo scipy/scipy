@@ -11,5 +11,5 @@ requires = [
     "numpy==1.16.0; python_version=='3.6' and platform_system=='AIX'",
     "numpy==1.16.0; python_version=='3.7' and platform_system=='AIX'",
     "numpy==1.17.3; python_version>='3.8' and platform_system=='AIX'",
-    "pybind11>=2.2.4",
+    "pybind11>=2.4.0",
 ]
