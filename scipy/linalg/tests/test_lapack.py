@@ -1651,7 +1651,7 @@ def test_gttrf_gttrs():
     np.random.seed(42)
     for index, dtype in enumerate(DTYPES):
         n = 10
-        if index == 0 or index == 2:
+        if index % 2 == 0:
             rtol = 10**-(np.finfo(dtype).precision-1)
         else:
             rtol = 10**-(np.finfo(dtype).precision-3)
@@ -1670,26 +1670,32 @@ def test_gttrf_gttrs():
         x = np.random.rand(n)
         b = A @ x
 
-        dgttrf = get_lapack_funcs('gttrf', dtype=dtype)
-        dgttrs = get_lapack_funcs('gttrs', dtype=dtype)
+        gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
 
-        _dl, _d, _du, du2, ipiv, info = dgttrf(dl, d, du)
+        _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
 
-        np.testing.assert_array_equal(dl, diag_cpy[0])
-        np.testing.assert_array_equal(d, diag_cpy[1])
-        np.testing.assert_array_equal(du, diag_cpy[2])
+        assert_array_equal(dl, diag_cpy[0])
+        assert_array_equal(d, diag_cpy[1])
+        assert_array_equal(du, diag_cpy[2])
+
+        permute_fnl = np.arange(n)
+        for i, piv in enumerate(ipiv):
+            permute_fnl[i], permute_fnl[piv-1] = permute_fnl[piv-1], permute_fnl[i]
+
+        _A = np.diag(_dl, -1) + np.diag(_d, 0) + np.diag(_du, 1)
+        assert_allclose(_A, A[permute_fnl], rtol=rtol)
 
         b_cpy = b.copy()
-        x_dgttrs, info = dgttrs(_dl, _d, _du, du2, ipiv, b)
-        np.testing.assert_array_equal(b, b_cpy)
+        x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
+        assert_array_equal(b, b_cpy)
 
-        np.testing.assert_allclose(x, x_dgttrs, rtol=rtol)
+        assert_allclose(x, x_gttrs, rtol=rtol)
 
         if index < 2:
+            d_zeros = np.zeros(n)
             dl_misshaped = np.random.rand(n)
             d_misshaped = np.random.rand(n-1)
             du_misshaped = np.random.rand(n)
-            d_zeros = np.zeros(n)
         else:
             d_zeros = np.zeros(n) + np.zeros(n) * 1j
             dl_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
@@ -1697,17 +1703,19 @@ def test_gttrf_gttrs():
             du_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
 
         with assert_raises(ValueError):
-            dgttrf(dl_misshaped, d, du)
+            gttrf(dl_misshaped, d, du)
         with assert_raises(ValueError):
-            dgttrf(dl, d_misshaped, du)
+            gttrf(dl, d_misshaped, du)
         with assert_raises(ValueError):
-            dgttrf(dl, d, du_misshaped)
-            
-        singular_matrix_gttrf = dgttrf(dl, d_zeros, du)
+            gttrf(dl, d, du_misshaped)
+ 
+        singular_matrix_gttrf = gttrf(dl, d_zeros, du)
+        
+        with assert_raises(Exception):
+            gttrf(dl[0], d[:1], du[0])
         
         # np.testing.assert_(singular_matrix_gttrf[5] != 0,
         #               "?gttrf: singular matrix should return non-zero info.")
         
-        # put in a 2x2 matrix:    
-        # dgttrf(dl[0], d[:1], du[0])
+
 
