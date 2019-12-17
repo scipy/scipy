@@ -3855,12 +3855,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
             # If an input is constant, the correlation coefficient is not defined.
             warnings.warn(SpearmanRConstantInputWarning())
             return SpearmanrResult(np.nan, np.nan)
-    else: # case when axisout == 1 b/c a is 2 dim only
+    else:  # case when axisout == 1 b/c a is 2 dim only
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient is not defined.
             warnings.warn(SpearmanRConstantInputWarning())
             return SpearmanrResult(np.nan, np.nan)
-
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
