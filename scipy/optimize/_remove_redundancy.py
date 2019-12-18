@@ -8,6 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import svd
 import scipy
+from scipy.linalg.blas import dtrsv
 
 
 def _row_count(A):
@@ -95,8 +96,8 @@ def _remove_zero_rows(A, b):
 def bg_update_dense(plu, perm_r, v, j):
     LU, p = plu
 
-    u = scipy.linalg.solve_triangular(LU, v[perm_r], lower=True,
-                                      unit_diagonal=True)
+    vperm = v[perm_r]
+    u = dtrsv(LU, vperm, lower=1, diag=1)
     LU[:j+1, j] = u[:j+1]
     l = u[j+1:]
     piv = LU[j, j]
