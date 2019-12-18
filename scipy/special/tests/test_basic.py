@@ -1820,6 +1820,23 @@ class TestFactorialFunctions(object):
         assert_equal(special.factorialk(5, 1, exact=True), 120)
         assert_equal(special.factorialk(5, 3, exact=True), 10)
 
+    @pytest.mark.parametrize('x, exact', [
+        (np.nan, True),
+        (np.nan, False),
+        (np.array([np.nan]), True),
+        (np.array([np.nan]), False),
+    ])
+    def test_nan_inputs(self, x, exact):
+        result = special.factorial(x, exact=exact)
+        assert_(np.isnan(result))
+
+    def test_mixed_nan_inputs(self):
+        x = np.array([np.nan, 1, 2, 3, np.nan])
+        result = special.factorial(x, exact=True)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        result = special.factorial(x, exact=False)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+
 
 class TestFresnel(object):
     def test_fresnel(self):

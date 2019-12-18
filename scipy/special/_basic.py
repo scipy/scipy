@@ -2323,13 +2323,18 @@ def factorial(n, exact=False):
     """
     if exact:
         if np.ndim(n) == 0:
-            return 0 if n < 0 else math.factorial(n)
+            if not np.isnan(n):
+                return 0 if n < 0 else math.factorial(n)
+            else:
+                return np.nan
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
 
             # Convert to object array of long ints if np.int can't handle size
-            if un[-1] > 20:
+            if np.isnan(n).any():
+                dt = float
+            elif un[-1] > 20:
                 dt = object
             elif un[-1] > 12:
                 dt = np.int64
@@ -2340,8 +2345,10 @@ def factorial(n, exact=False):
 
             # Handle invalid/trivial values
             un = un[un > 1]
-            out[n < 2] = 1
-            out[n < 0] = 0
+            # Ignore runtime warning when less operator used w/np.nan
+            with np.errstate(all='ignore'):
+                out[n < 2] = 1
+                out[n < 0] = 0
 
             # Calculate products of each range of numbers
             if un.size:
@@ -2352,14 +2359,27 @@ def factorial(n, exact=False):
                     current = un[i + 1]
                     val *= _range_prod(prev, current)
                     out[n == current] = val
+
+            if np.isnan(n).any():
+                out = out.astype(np.float64)
+                out[np.isnan(n)] = np.nan
             return out
     else:
         if np.ndim(n) == 0:
-            return 0 if n < 0 else gamma(n + 1)
+            if not np.isnan(n):
+                return 0 if n < 0 else gamma(n + 1)
+            else:
+                return np.nan
 
         n = asarray(n)
         vals = gamma(n + 1)
-        return where(n >= 0, vals, 0)
+        # Ignore runtime warning when less operator used w/np.nan
+        with np.errstate(all='ignore'):
+            out = where(n >= 0, vals, 0)
+
+        if np.isnan(n).any():
+            out[np.isnan(n)] = np.nan
+        return out
 
 
 def factorial2(n, exact=False):
