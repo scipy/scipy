@@ -163,7 +163,10 @@ def _remove_redundancy_dense(A, rhs):
     perm_r = None
 
     A_orig = A
-    A = np.hstack((np.eye(m), A))
+    B = np.eye(m, order='F')  # Fortran order is more efficient here
+    A = np.empty((m, m + n), order="F")
+    A[:, :m] = B
+    A[:, m:] = A_orig
     e = np.zeros(m)
 
     # Implements basic algorithm from [2]
@@ -182,7 +185,6 @@ def _remove_redundancy_dense(A, rhs):
     # mistakes and ambiguities - which is strange, because the rest of
     # Andersen's papers are quite good.)
 
-    B = A[:, b]
     for i in v:
 
         e[i] = 1
