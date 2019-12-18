@@ -450,6 +450,11 @@ All functions
    cptsv
    zptsv
 
+   spttrf
+   dpttrf
+   cpttrf
+   zpttrf
+
    crot
    zrot
 
