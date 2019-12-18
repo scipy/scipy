@@ -7,7 +7,7 @@ SciPy 1.4.1 Release Notes
 SciPy 1.4.1 is a bug-fix release with no new features
 compared to 1.4.0. Importantly, it aims to fix a problem
 where an older version of pybind11 may cause a segmentation
-fault in some cases.
+fault when imported alongside incompatible libraries.
 
 Authors
 =======
