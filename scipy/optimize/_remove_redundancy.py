@@ -157,7 +157,6 @@ def _remove_redundancy_dense(A, rhs):
     b = list(v)             # Basis column indices.
     # This is better as a list than a set because column order of basis matrix
     # needs to be consistent.
-    k = set(range(m, m+n))  # Structural column indices.
     d = []                  # Indices of dependent rows
     lu = None
     perm_r = None
@@ -168,6 +167,10 @@ def _remove_redundancy_dense(A, rhs):
     A[:, :m] = B
     A[:, m:] = A_orig
     e = np.zeros(m)
+
+    js_candidates = np.arange(m, m+n, dtype=int)  # candidate columns for basis
+    # manual masking was faster than masked array
+    js_mask = np.ones(js_candidates.shape, dtype=bool)
 
     # Implements basic algorithm from [2]
     # Uses some of the suggested improvements (removing zero rows and
@@ -205,20 +208,20 @@ def _remove_redundancy_dense(A, rhs):
 
         pi = scipy.linalg.lu_solve(lu, e, trans=1)
 
-        # not efficient, but this is not the time sink...
-        js = np.array(list(k-set(b)))
+        js = js_candidates[js_mask]
         batch = 50
 
         # This is a tiny bit faster than looping over columns indivually,
         # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
         for j_index in range(0, len(js), batch):
-            j_indices = js[np.arange(j_index, min(j_index+batch, len(js)))]
+            j_indices = js[j_index: min(j_index+batch, len(js))]
 
             c = abs(A[:, j_indices].transpose().dot(pi))
             if (c > tolapiv).any():
                 j = js[j_index + np.argmax(c)]  # very independent column
                 B[:, i] = A[:, j]
                 b[i] = j
+                js_mask[j-m] = False
                 break
         else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))
