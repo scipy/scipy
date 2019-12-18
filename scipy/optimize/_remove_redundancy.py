@@ -185,6 +185,8 @@ def _remove_redundancy_dense(A, rhs):
     # mistakes and ambiguities - which is strange, because the rest of
     # Andersen's papers are quite good.)
 
+    lu = np.eye(m, order='F'), np.arange(m)  # LU for initial basis is trivial
+    perm_r = lu[1]
     for i in v:
 
         e[i] = 1
