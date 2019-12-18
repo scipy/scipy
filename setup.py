@@ -55,8 +55,8 @@ Operating System :: MacOS
 
 MAJOR = 1
 MINOR = 4
-MICRO = 0
-ISRELEASED = True
+MICRO = 1
+ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
@@ -472,7 +472,7 @@ def setup_package():
                           else [])
 
     install_requires = build_requires
-    setup_requires = build_requires + ['pybind11>=2.2.4']
+    setup_requires = build_requires + ['pybind11>=2.4.0']
 
     metadata = dict(
         name='scipy',
