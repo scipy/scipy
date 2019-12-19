@@ -2793,6 +2793,7 @@ class TestCDF2RDF(object):
     def test_random_1d_stacked_arrays(self):
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
+            np.random.seed(999999999)
             X = np.random.rand(100, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
