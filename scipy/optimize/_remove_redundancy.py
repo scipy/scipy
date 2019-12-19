@@ -105,7 +105,7 @@ def bg_update_dense(plu, perm_r, v, j):
     return LU, p
 
 
-def _remove_redundancy_dense(A, rhs):
+def _remove_redundancy_dense(A, rhs, true_rank=None):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
@@ -232,6 +232,8 @@ def _remove_redundancy_dense(A, rhs):
                 return A_orig, rhs, status, message
             else:  # dependent
                 d.append(i)
+                if true_rank is not None and len(d) == m - true_rank:
+                    break   # found all redundancies
 
     keep = set(range(m))
     keep = list(keep - set(d))
