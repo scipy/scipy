@@ -10,7 +10,7 @@ try:
     from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
     from numpy.testing import suppress_warnings
     from scipy.optimize._remove_redundancy import _remove_redundancy, _remove_redundancy_dense, _remove_redundancy_sparse
-    from scipy.optimize._linprog_util import _presolve, _clean_inputs
+    from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
     from scipy.sparse import csc_matrix, issparse
     import numpy as np
     import os
@@ -70,16 +70,13 @@ def klee_minty(D):
 
 class MagicSquare(Benchmark):
 
-    params = [
-        methods,
-        [(3, 1.7305505947214375), (4, 1.5485271031586025),
-         (5, 1.807494583582637), (6, 1.747266446858304)]
-    ]
+    solutions = [(3, 1.7305505947214375), (4, 1.5485271031586025),
+                 (5, 1.807494583582637), (6, 1.747266446858304)]
+
+    params = [methods, solutions]
     if not slow:
-        params = [
-            methods,
-            [(3, 1.7305505947214375), (4, 1.5485271031586025)]
-        ]
+        params[1] = solutions[:2]
+
     param_names = ['method', '(dimensions, objective)']
 
     def setup(self, meth, prob):
@@ -99,8 +96,9 @@ class MagicSquare(Benchmark):
         dims, obj = prob
         if self.fun is None:
             self.time_magic_square(meth, prob)
-        self.error = np.abs(self.fun - obj)
-        return self.error
+        self.abs_error = np.abs(self.fun - obj)
+        self.rel_error = np.abs((self.fun - obj)/obj)
+        return min(self.abs_error, self.rel_error)
 
 
 class KleeMinty(Benchmark):
@@ -125,8 +123,9 @@ class KleeMinty(Benchmark):
     def track_klee_minty(self, meth, prob):
         if self.fun is None:
             self.time_klee_minty(meth, prob)
-        self.error = np.abs(self.fun - self.obj)
-        return self.error
+        self.abs_error = np.abs(self.fun - self.obj)
+        self.rel_error = np.abs((self.fun - self.obj)/self.obj)
+        return min(self.abs_error, self.rel_error)
 
 
 class LpGen(Benchmark):
@@ -214,12 +213,11 @@ class Netlib_RR(Benchmark):
         bounds = np.squeeze(data["bounds"])
         x0 = np.zeros(c.shape)
 
-        cleaned = _clean_inputs(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
-        c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = cleaned
+        lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+        lp_cleaned = _clean_inputs(lp)
+        res = _presolve(lp_cleaned, rr=False, tol=1e-9)[0]
 
-        res = _presolve(c, A_ub, b_ub, A_eq, b_eq,
-                        bounds, x0=x0, rr=False, tol=1e-9)
-        self.A_eq, self.b_eq = res[4], res[5]
+        self.A_eq, self.b_eq = res.A_eq, res.b_eq
         self.true_rank = np.linalg.matrix_rank(self.A_eq)
         if meth == _remove_redundancy_sparse:
             self.A_eq = csc_matrix(self.A_eq)
