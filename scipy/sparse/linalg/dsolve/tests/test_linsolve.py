@@ -547,29 +547,30 @@ class TestSplu(object):
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
 
-    def test_splu_natural_permc(self):
+    @pytest.mark.parametrize("splu_fun, rtol", [(splu, 1e-7), (spilu, 1e-1)])
+    def test_natural_permc(self, splu_fun, rtol):
         # Test that the "NATURAL" permc_spec does not permute the matrix
-        n = 1000
+        np.random.seed(42)
+        n = 500
         p = 0.01
-        a = scipy.sparse.random(n,n,p)
-        # Make a diagonal dominant, to make sure it is not singular
-        a += (n+1)*scipy.sparse.identity(n)
-        a_ = csc_matrix(a)
-        lu = splu(a_, permc_spec = "NATURAL")
-        # Assert that output col permutations are sequential ordering
-        assert_(np.all(lu.perm_c == np.arange(n)))
+        A = scipy.sparse.random(n, n, p)
+        x = np.random.rand(n)
+        # Make A diagonal dominant to make sure it is not singular
+        A += (n+1)*scipy.sparse.identity(n)
+        A_ = csc_matrix(A)
+        b = A_ @ x
 
-    def test_spilu_natural_permc(self):
-        # Test that the "NATURAL" permc_spec does not permute the matrix
-        n = 1000
-        p = 0.01
-        a = scipy.sparse.random(n,n,p)
-        # Make a diagonal dominant, to make sure it is not singular
-        a += (n+1)*scipy.sparse.identity(n)
-        a_ = csc_matrix(a)
-        lu = spilu(a_, permc_spec = "NATURAL")
-        # Assert that output col permutations are sequential ordering
-        assert_(np.all(lu.perm_c == np.arange(n)))
+        # without permc_spec, permutation is not identity
+        lu = splu_fun(A_)
+        assert_(np.any(lu.perm_c != np.arange(n)))
+
+        # with permc_spec="NATURAL", permutation is identity
+        lu = splu_fun(A_, permc_spec="NATURAL")
+        assert_array_equal(lu.perm_c, np.arange(n))
+
+        # Also, lu decomposition is valid
+        x2 = lu.solve(b)
+        assert_allclose(x, x2, rtol=rtol)
 
     @pytest.mark.skipif(not hasattr(sys, 'getrefcount'), reason="no sys.getrefcount")
     def test_lu_refcount(self):
