@@ -162,10 +162,7 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
     perm_r = None
 
     A_orig = A
-    B = np.eye(m, order='F')  # Fortran order is more efficient here
-    A = np.empty((m, m + n), order="F")
-    A[:, :m] = B
-    A[:, m:] = A_orig
+    A = np.hstack((np.eye(m), A))
     e = np.zeros(m)
 
     js_candidates = np.arange(m, m+n, dtype=int)  # candidate columns for basis
@@ -190,6 +187,7 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
 
     lu = np.eye(m, order='F'), np.arange(m)  # LU for initial basis is trivial
     perm_r = lu[1]
+    B = A[:, b]
     for i in v:
 
         e[i] = 1
