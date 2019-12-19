@@ -52,8 +52,8 @@ _LPProblem.__doc__ = \
     >>> lp1 = _LPProblem(c=[-1, 4], A_ub=[[-3, 1], [1, 2]], b_ub=[6, 4])
     >>> lp2 = _LPProblem([-1, 4], [[-3, 1], [1, 2]], [6, 4])
 
-    Note that only ``c`` is a required argument here, whereas all other arguments 
-    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with 
+    Note that only ``c`` is a required argument here, whereas all other arguments
+    ``A_ub``, ``b_ub``, ``A_eq``, ``b_eq``, ``bounds``, ``x0`` are optional with
     default values of None.
     For example, ``A_eq`` and ``b_eq`` can be set without ``A_ub`` or ``b_ub``:
     >>> lp3 = _LPProblem(c=[-1, 4], A_eq=[[2, 1]], b_eq=[10])
@@ -448,7 +448,7 @@ def _clean_inputs(lp):
     return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
 
 
-def _presolve(lp, rr, tol=1e-9):
+def _presolve(lp, rr, rr_method, tol=1e-9):
     """
     Given inputs for a linear programming problem in preferred format,
     presolve the problem: identify trivial infeasibilities, redundancies,
@@ -490,6 +490,9 @@ def _presolve(lp, rr, tol=1e-9):
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
         looking for a potential speedup (at the expense of reliability).
+    rr_method : string
+        Method used to identify and remove redundant rows from the
+        equality constraint matrix after presolve.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -596,6 +599,16 @@ def _presolve(lp, rr, tol=1e-9):
 
     m_eq, n = A_eq.shape
     m_ub, n = A_ub.shape
+
+    if (rr_method is not None
+            and rr_method.lower() not in {"svd", "pivot", "id"}):
+        status = 4
+        message = ("'" + str(rr_method) + "' is not a valid option "
+                   "for redundancy removal. Valid options are 'SVD', "
+                   "'pivot', and 'ID'.")
+        complete = True
+        return (_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0),
+                c0, x, undo, complete, status, message)
 
     if (sps.issparse(A_eq)):
         A_eq = A_eq.tolil()
@@ -840,10 +853,21 @@ def _presolve(lp, rr, tol=1e-9):
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace <= small_nullspace:
-            A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
-        if dim_row_nullspace > small_nullspace or status == 4:
-            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+        if rr_method is None:
+            if dim_row_nullspace <= small_nullspace:
+                A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+            if dim_row_nullspace > small_nullspace or status == 4:
+                A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+        else:
+            rr_method = rr_method.lower()
+            if rr_method == "svd":
+                A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+            elif rr_method == "pivot":
+                A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+            elif rr_method == "id":
+                pass
+            else:  # shouldn't get here; option validity checked above
+                pass
         if A_eq.shape[0] < rank:
             message = ("Due to numerical issues, redundant equality "
                        "constraints could not be removed automatically. "

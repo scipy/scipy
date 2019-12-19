@@ -284,6 +284,34 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             rr : bool
                 Set to ``False`` to disable automatic redundancy removal.
                 Default: ``True``.
+            rr_method : string
+                Method used to identify and remove redundant rows from the
+                equality constraint matrix after presolve. For problems with
+                dense input, the available methods for redundancy removal are:
+
+                    "SVD":
+                        Repeatedly performs singular value decomposition on
+                        the matrix, detecting redundant rows based on nonzeros
+                        in the left singular vectors that correspond with
+                        zero singular values. May be fast when the matrix is
+                        nearly full rank.
+                    "pivot":
+                        Uses the algorithm presented in [5]_ to identify
+                        redundant rows.
+                    "ID":
+                        Uses a randomized interpolative decomposition.
+                        Identifies columns of the matrix transpose not used in
+                        a full-rank interpolative decomposition of the matrix.
+                    None:
+                        Uses "svd" if the matrix is nearly full rank, that is,
+                        the difference between the matrix rank and the number
+                        of rows is less than five. If not, uses "pivot". The
+                        behavior of this default is subject to change without
+                        prior notice.
+
+                Default: None.
+                For problems with sparse input, this option is ignored, and the
+                pivot-based algorithm presented in [5]_ is used.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
@@ -530,7 +558,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
         rr = solver_options.pop('rr', True)
-        (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr, tol)
+        rr_method = solver_options.pop('rr_method', None)
+        (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr,
+                                                                 rr_method,
+                                                                 tol)
 
     C, b_scale = 1, 1  # for trivial unscaling if autoscale is not used
     postsolve_args = (lp_o._replace(bounds=lp.bounds), undo, C, b_scale)
