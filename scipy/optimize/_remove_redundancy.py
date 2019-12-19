@@ -158,11 +158,12 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
     # This is better as a list than a set because column order of basis matrix
     # needs to be consistent.
     d = []                  # Indices of dependent rows
-    lu = None
     perm_r = None
 
     A_orig = A
-    A = np.hstack((np.eye(m), A))
+    A = np.zeros((m, m + n), order='F')
+    np.fill_diagonal(A, 1)
+    A[:, m:] = A_orig
     e = np.zeros(m)
 
     js_candidates = np.arange(m, m+n, dtype=int)  # candidate columns for basis
@@ -187,7 +188,6 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
 
     lu = np.eye(m, order='F'), np.arange(m)  # LU for initial basis is trivial
     perm_r = lu[1]
-    B = A[:, b]
     for i in v:
 
         e[i] = 1
@@ -198,7 +198,7 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
             j = b[i-1]
             lu = bg_update_dense(lu, perm_r, A[:, j], i-1)
         except Exception:
-            lu = scipy.linalg.lu_factor(B)
+            lu = scipy.linalg.lu_factor(A[:, b])
             LU, p = lu
             perm_r = list(range(m))
             for i1, i2 in enumerate(p):
@@ -217,7 +217,6 @@ def _remove_redundancy_dense(A, rhs, true_rank=None):
             c = abs(A[:, j_indices].transpose().dot(pi))
             if (c > tolapiv).any():
                 j = js[j_index + np.argmax(c)]  # very independent column
-                B[:, i] = A[:, j]
                 b[i] = j
                 js_mask[j-m] = False
                 break
