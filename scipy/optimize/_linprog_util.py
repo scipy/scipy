@@ -7,7 +7,8 @@ import scipy.sparse as sps
 from warnings import warn
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
-    _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
+    _remove_redundancy, _remove_redundancy_sparse,
+    _remove_redundancy_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
@@ -865,7 +866,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
             elif rr_method == "pivot":
                 A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
             elif rr_method == "id":
-                pass
+                A_eq, b_eq, status, message = _remove_redundancy_id(A_eq, b_eq, rank)
             else:  # shouldn't get here; option validity checked above
                 pass
         if A_eq.shape[0] < rank:
