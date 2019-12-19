@@ -13,8 +13,7 @@ from numpy import array, eye, exp, random
 from numpy.linalg import matrix_power
 from numpy.testing import (
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
-        assert_array_almost_equal_nulp)
-from scipy._lib._numpy_compat import suppress_warnings
+        assert_array_almost_equal_nulp, suppress_warnings)
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye

@@ -4,8 +4,7 @@ import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt

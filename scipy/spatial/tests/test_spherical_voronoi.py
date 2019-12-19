@@ -4,13 +4,13 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.spatial.transform import Rotation
 from scipy.optimize import linear_sum_assignment
 

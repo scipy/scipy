@@ -9,7 +9,6 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 
 import numpy as np
-from scipy._lib._numpy_compat import get_randint
 
 from scipy._lib.six import xrange
 
@@ -774,7 +773,7 @@ greater than %d - this is not supported on this machine
 
     if data_rvs is None:
         if np.issubdtype(dtype, np.integer):
-            randint = get_randint(random_state)
+            randint = random_state.randint
 
             def data_rvs(n):
                 return randint(np.iinfo(dtype).min, np.iinfo(dtype).max,

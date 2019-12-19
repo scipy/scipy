@@ -4,7 +4,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from scipy._lib.six import xrange
-from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
                       get_sum_dtype, validateaxis, check_reshape_kwargs,
                       check_shape, asmatrix)
@@ -418,7 +417,7 @@ class spmatrix(object):
                 raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
         elif isdense(other):
-            other = broadcast_to(other, self.shape)
+            other = np.broadcast_to(other, self.shape)
             return self._add_dense(other)
         else:
             return NotImplemented
@@ -437,7 +436,7 @@ class spmatrix(object):
                 raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
         elif isdense(other):
-            other = broadcast_to(other, self.shape)
+            other = np.broadcast_to(other, self.shape)
             return self._sub_dense(other)
         else:
             return NotImplemented
@@ -449,7 +448,7 @@ class spmatrix(object):
             raise NotImplementedError('subtracting a sparse matrix from a '
                                       'nonzero scalar is not supported')
         elif isdense(other):
-            other = broadcast_to(other, self.shape)
+            other = np.broadcast_to(other, self.shape)
             return self._rsub_dense(other)
         else:
             return NotImplemented

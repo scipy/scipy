@@ -4,7 +4,6 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
@@ -111,7 +110,7 @@ def test_cont_basic(distname, arg):
         distname = 'rv_histogram_instance'
     np.random.seed(765456)
     sn = 500
-    with suppress_warnings() as sup:
+    with npt.suppress_warnings() as sup:
         # frechet_l and frechet_r are deprecated, so all their
         # methods generate DeprecationWarnings.
         sup.filter(category=DeprecationWarning, message=".*frechet_")
@@ -166,7 +165,7 @@ def test_cont_basic(distname, arg):
                 and distname != 'vonmises'):
             check_private_entropy(distfn, arg, stats.rv_continuous)
 
-        with suppress_warnings() as sup:
+        with npt.suppress_warnings() as sup:
             sup.filter(IntegrationWarning, "The occurrence of roundoff error")
             sup.filter(IntegrationWarning, "Extremely bad integrand")
             sup.filter(RuntimeWarning, "invalid value")
@@ -228,7 +227,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
         distfn = distname
         distname = 'rv_histogram_instance'
 
-    with suppress_warnings() as sup:
+    with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(category=DeprecationWarning, message=".*frechet_")
@@ -479,7 +478,7 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
     points = np.array([0, 1])
     vals = distfn.ppf(points, *args)
     vals = vals[np.isfinite(vals)]
-    with suppress_warnings() as sup:
+    with npt.suppress_warnings() as sup:
         # Several distributions incur divide by zero or encounter invalid values when computing
         # the pdf or logpdf at the endpoints.
         suppress_messsages = [
@@ -576,7 +575,7 @@ def check_retrieving_support(distfn, args):
 
 
 def check_fit_args(distfn, arg, rvs):
-    with np.errstate(all='ignore'), suppress_warnings() as sup:
+    with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")
@@ -592,7 +591,7 @@ def check_fit_args(distfn, arg, rvs):
 
 
 def check_fit_args_fix(distfn, arg, rvs):
-    with np.errstate(all='ignore'), suppress_warnings() as sup:
+    with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning, message=".*frechet_")
         sup.filter(category=RuntimeWarning,
                    message="The shape parameter of the erlang")

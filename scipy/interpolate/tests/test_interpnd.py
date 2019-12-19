@@ -3,10 +3,10 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_almost_equal
+from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
-from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial.qhull as qhull

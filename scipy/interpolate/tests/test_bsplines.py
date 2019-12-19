@@ -1,8 +1,8 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_equal, assert_allclose, assert_,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
 

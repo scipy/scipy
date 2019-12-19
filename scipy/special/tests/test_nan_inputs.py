@@ -4,11 +4,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_
+from numpy.testing import assert_array_equal, assert_, suppress_warnings
 import pytest
 
 import scipy.special as sc
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 KNOWNFAILURES = {}
