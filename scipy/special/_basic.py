@@ -2344,9 +2344,9 @@ def factorial(n, exact=False):
             out = np.empty_like(n, dtype=dt)
 
             # Handle invalid/trivial values
-            un = un[un > 1]
             # Ignore runtime warning when less operator used w/np.nan
             with np.errstate(all='ignore'):
+                un = un[un > 1]
                 out[n < 2] = 1
                 out[n < 0] = 0
 
