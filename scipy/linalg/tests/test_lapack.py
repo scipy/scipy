@@ -1683,7 +1683,7 @@ def test_gttrf_gttrs():
             perm_fnl[i], perm_fnl[piv-1] = perm_fnl[piv-1], perm_fnl[i]
 
         _A = np.diag(_dl, -1) + np.diag(_d, 0) + np.diag(_du, 1)
-        # assert_allclose(_A, A[perm_fnl], rtol=rtol)
+        #assert_allclose(_A, A[perm_fnl], rtol=rtol)
 
         b_cpy = b.copy()
         x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
@@ -1710,9 +1710,22 @@ def test_gttrf_gttrs():
         with assert_raises(Exception):
             gttrf(dl[0], d[:1], du[0])
 
+        transpose_options = ["N", "C", "T"]
+        for trans in transpose_options:
+            if trans == "N":
+                b_trans = A @ x
+            elif trans == "T":
+                b_trans = np.transpose(A) @ x
+            elif trans == "C":
+                b_trans = A.conj().T @ x
+            _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
+            x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b_trans,
+                                  trans=trans)
+            assert_allclose(x, x_gttrs, rtol=rtol)
+
         dl[0] = 0
         du[0] = 0
         d[0] = 0
         __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
         np.testing.assert_(_info != 0,
-                          "?gttrf: singular matrix should return non 0 info")
+                           "?gttrf: singular matrix ret info == 0")
