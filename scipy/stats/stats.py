@@ -4131,7 +4131,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
         c = min(dis, tot-dis)
         if size <= 0:
             raise ValueError
@@ -4145,6 +4145,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             pvalue = 2.0/math.factorial(size) if size < 171 else 0.0
         elif c == 1:
             pvalue = 2.0/math.factorial(size-1) if (size-1) < 171 else 0.0
+        elif 2*c == tot:
+            pvalue = 1.0
         else:
             new = [0.0]*(c+1)
             new[0] = 1.0
@@ -4155,6 +4157,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
                     new[k] += new[k-1]
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
+
             pvalue = 2.0*sum(new)/math.factorial(size) if size < 171 else 0.0
 
     elif method == 'asymptotic':
