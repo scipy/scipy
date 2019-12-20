@@ -231,23 +231,13 @@ def _remove_redundancy_dense(A, rhs):
     return A_orig[keep, :], rhs[keep], status, message
 
 
-def split_splu(f):
-    L = f.L
-    U = f.U
-    m, n = f.L.shape
-
-    Pr = eye(m, format='csc')
-    Pr = Pr[f.perm_r, :]
-    Pc = eye(m, format='csc')
-    Pc = Pc[:, f.perm_c]
-    return L, U, Pr.T, Pc.T
-
-
 class LUSolver:
     def __init__(self, m):
         I = eye(m, format='csc')
         self.fl = splu(I, permc_spec="NATURAL")
         self.fu = splu(I, permc_spec="NATURAL")
+        self.L = eye(m, format='csc')
+        self.U = eye(m, format='csc')
 
     def solve(self, b, trans=False):
         if trans:
@@ -259,15 +249,10 @@ class LUSolver:
         return x
 
     def update(self, v, j):
-        L, a, b, c = split_splu(self.fl)
-        a2, U, b2, c2 = split_splu(self.fu)
+        L = self.L
+        U = self.U
         m, n = L.shape
-        assert(np.allclose(a.toarray(), np.eye(m)))
-        assert(np.allclose(b.toarray(), np.eye(m)))
-        assert(np.allclose(c.toarray(), np.eye(m)))
-        assert(np.allclose(a2.toarray(), np.eye(m)))
-        assert(np.allclose(b2.toarray(), np.eye(m)))
-        assert(np.allclose(c2.toarray(), np.eye(m)))
+
         u = self.fl.solve(v.toarray())
         U[:j+1, j] = u[:j+1]
         l = u[j+1:]
@@ -357,7 +342,7 @@ def _remove_redundancy_sparse(A, rhs):
     # until the SciPy SuperLU interface permits control over column
     # permutation - see issue #7700.
 
-    B2= LUSolver(m)
+    B2 = LUSolver(m)
     for i in v:
         B = A[:, b]
 
@@ -365,8 +350,8 @@ def _remove_redundancy_sparse(A, rhs):
         if i > 0:
             e[i-1] = 0
 
-        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1,1)
-        pi2 = B2.solve(e, True) # scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+        pi2 = B2.solve(e, True)
         assert(np.allclose(pi.ravel(), pi2.ravel()))
 
         js = list(k-set(b))  # not efficient, but this is not the time sink...
