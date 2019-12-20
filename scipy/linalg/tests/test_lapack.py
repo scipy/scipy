@@ -1729,3 +1729,31 @@ def test_gttrf_gttrs():
         __dl, __d, __du, _du2, _ipiv, _info = gttrf(dl, d, du)
         np.testing.assert_(_info != 0,
                            "?gttrf: singular matrix ret info == 0")
+
+    du = np.array([2.1, -1.0, 1.9, 8.0])
+    d = np.array([3.0, 2.3, -5.0, -.9, 7.1])
+    dl = np.array([3.4, 3.6, 7.0, -6.0])
+
+    gttrf, gttrs = get_lapack_funcs(('gttrf', "gttrs"), (du[0], du[0]))
+
+    _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
+    assert_allclose(du2, np.array([-1.0000, 1.90000, 8.0000]))
+    assert_allclose(_du, np.array([2.3, -5, -.9, 7.1]))
+    assert_allclose(_d, np.array([3.4, 3.6, 7, -6, -1.0154]), rtol=.001)
+    assert_allclose(ipiv, np.array([2, 3, 4, 5, 5]))
+
+    b = np.array([[2.7, 6.6],
+                  [-0.5, 10.8],
+                  [2.6, -3.2],
+                  [0.6, -11.2],
+                  [2.7, 19.1]
+                  ])
+
+    x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
+    x = np.array([[-4.0000, 5.0000],
+                  [7.0000, -4.0000],
+                  [3.0000, -3.0000],
+                  [-4.0000, -2.0000],
+                  [-3.0000, 1.0000]
+                  ])
+    assert_allclose(x_gttrs, x)
