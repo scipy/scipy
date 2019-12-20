@@ -622,6 +622,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             prob = 2.0/np.math.factorial(n)
         elif c == 1:
             prob = 2.0/np.math.factorial(n-1)
+        elif 2*c == (n*(n-1))/2:
+            pvalue = 1.0
         else:
             old = [0.0]*(c+1)
             new = [0.0]*(c+1)
