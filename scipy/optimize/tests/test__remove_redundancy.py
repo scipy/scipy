@@ -15,7 +15,12 @@ from numpy.testing import (
     assert_equal)
 
 from .test_linprog import magic_square
-from scipy.optimize._remove_redundancy import _remove_redundancy
+from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
+from scipy.sparse import csc_matrix
+
+
+def _remove_redundancy(A, b):
+    return _remove_redundancy_sparse(csc_matrix(A), b)
 
 
 def setup_module():

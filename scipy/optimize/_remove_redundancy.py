@@ -8,7 +8,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import svd
 import scipy
-
+from scipy.sparse.linalg import splu
+from scipy.sparse import eye, rand, csc_matrix
 
 def _row_count(A):
     """
@@ -230,6 +231,52 @@ def _remove_redundancy_dense(A, rhs):
     return A_orig[keep, :], rhs[keep], status, message
 
 
+def split_splu(f):
+    L = f.L
+    U = f.U
+    m, n = f.L.shape
+
+    Pr = eye(m, format='csc')
+    Pr = Pr[f.perm_r, :]
+    Pc = eye(m, format='csc')
+    Pc = Pc[:, f.perm_c]
+    return L, U, Pr.T, Pc.T
+
+
+class LUSolver:
+    def __init__(self, m):
+        I = eye(m, format='csc')
+        self.fl = splu(I, permc_spec="NATURAL")
+        self.fu = splu(I, permc_spec="NATURAL")
+
+    def solve(self, b, trans=False):
+        if trans:
+            y = self.fu.solve(b, 'T')
+            x = self.fl.solve(y, 'T')
+        else:
+            y = self.fl.solve(b)
+            x = self.fu.solve(y)
+        return x
+
+    def update(self, v, j):
+        L, a, b, c = split_splu(self.fl)
+        a2, U, b2, c2 = split_splu(self.fu)
+        m, n = L.shape
+        assert(np.allclose(a.toarray(), np.eye(m)))
+        assert(np.allclose(b.toarray(), np.eye(m)))
+        assert(np.allclose(c.toarray(), np.eye(m)))
+        assert(np.allclose(a2.toarray(), np.eye(m)))
+        assert(np.allclose(b2.toarray(), np.eye(m)))
+        assert(np.allclose(c2.toarray(), np.eye(m)))
+        u = self.fl.solve(v.toarray())
+        U[:j+1, j] = u[:j+1]
+        l = u[j+1:]
+        piv = U[j, j]
+        L[j+1:, j] += (l/piv)
+        self.fl = splu(L, permc_spec="NATURAL", diag_pivot_thresh=0)
+        self.fu = splu(U, permc_spec="NATURAL", diag_pivot_thresh=0)
+
+
 def _remove_redundancy_sparse(A, rhs):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
@@ -310,6 +357,7 @@ def _remove_redundancy_sparse(A, rhs):
     # until the SciPy SuperLU interface permits control over column
     # permutation - see issue #7700.
 
+    B2= LUSolver(m)
     for i in v:
         B = A[:, b]
 
@@ -317,7 +365,9 @@ def _remove_redundancy_sparse(A, rhs):
         if i > 0:
             e[i-1] = 0
 
-        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1,1)
+        pi2 = B2.solve(e, True) # scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+        assert(np.allclose(pi.ravel(), pi2.ravel()))
 
         js = list(k-set(b))  # not efficient, but this is not the time sink...
 
@@ -329,6 +379,8 @@ def _remove_redundancy_sparse(A, rhs):
         # is found.
 
         c = (np.abs(A[:, js].transpose().dot(pi)) > tolapiv).nonzero()[0]
+        c2 = (np.abs(A[:, js].transpose().dot(pi2)) > tolapiv).nonzero()[0]
+        assert(np.allclose(c.ravel(), c2.ravel()))
         if len(c) > 0:  # independent
             j = js[c[0]]
             # in a previous commit, the previous line was changed to choose
@@ -341,6 +393,7 @@ def _remove_redundancy_sparse(A, rhs):
             # high dot product, but I don't think it's worth the time to
             # develop one right now. Bartels-Golub update is a much higher
             # priority.
+            B2.update(A[:, j], i)
             b[i] = j  # replace artificial column
         else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))
