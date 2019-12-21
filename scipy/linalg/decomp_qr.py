@@ -39,7 +39,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         Matrix to be decomposed
     overwrite_a : bool, optional(default - False)
         Whether data in a is overwritten (may improve performance if overwrite_a 
-        is set True by reusing the existing input data structure rather than
+        is set to True by reusing the existing input data structure rather than
         creating a new one.)
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
