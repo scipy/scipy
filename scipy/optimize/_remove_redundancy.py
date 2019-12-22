@@ -231,13 +231,83 @@ def _remove_redundancy_dense(A, rhs):
     return A_orig[keep, :], rhs[keep], status, message
 
 
+class my_csc_matrix(csc_matrix):
+
+    def __init__(self, shape, *args, upper=None, **kwargs):
+        super().__init__(shape, *args, **kwargs)
+        if upper is not None:
+            n = shape[0]
+            self.upper = upper
+            self.my_nnz = n
+            self.my_indices = np.arange(2*n, dtype=np.int32)
+            self.my_data = np.ones(2*n)
+            self.indptr = np.arange(n+1, dtype=np.int32)
+            self.indices = self.my_indices[:self.my_nnz+1]
+            self.data = self.my_data[:self.my_nnz+1]
+
+    def __str__(self):
+        return str(self.toarray())
+
+    def __repr__(self):
+        return self.__str__()
+
+    def insert(self, array, data, column):
+        indptr = self.indptr[column]
+
+        if self.upper:
+            i1 = indptr
+            i3 = len(data) + self.my_nnz - 1
+        else:
+            i1 = indptr + 1
+            i3 = len(data) + self.my_nnz
+        i2 = i1 + len(data)
+
+        if self.my_nnz + len(data) > len(array):
+            temp = np.empty(len(array)*2, dtype=array.dtype)
+            temp[:i1] = array[:i1]
+            temp[i1:i2] = data
+            temp[i2:i3] = array[indptr+1:self.my_nnz]
+            return temp
+        else:
+            array[i2:i3] = array[indptr+1:self.my_nnz]
+            array[i1:i2] = data
+            return array
+
+    def update(self, column, data):
+        if self.upper:
+            data = data[:column+1, 0]
+        else:
+            data = data[column+1:, 0]
+
+        new_indices = np.where(data)[0]
+        new_data = data[new_indices]
+
+        if not self.upper:
+            new_indices = new_indices + column + 1
+
+        new_nnz = len(new_data)
+        self.my_indices = self.insert(self.my_indices, new_indices, column)
+        self.my_data = self.insert(self.my_data, new_data, column)
+        if self.upper:
+            self.indptr[column+1:] = self.indptr[column+1:] + new_nnz - 1
+        else:
+            self.indptr[column+1:] = self.indptr[column+1:] + new_nnz
+        self.my_nnz = self.my_nnz + new_nnz
+        self.data = self.my_data[:self.my_nnz]
+        self.indices = self.my_indices[:self.my_nnz]
+
+
 class LUSolver:
     def __init__(self, m):
         I = eye(m, format='csc')
         self.fl = splu(I, permc_spec="NATURAL")
         self.fu = splu(I, permc_spec="NATURAL")
-        self.L = eye(m, format='csc')
-        self.U = eye(m, format='csc')
+        self.L2 = eye(m, format='csc')
+        self.U2 = eye(m, format='csc')
+#        self.L = my_csc_matrix((m,m))
+#        self.U = my_csc_matrix((m,m))
+        self.L = my_csc_matrix((m, m), upper=False)
+        self.U = my_csc_matrix((m, m), upper=True)
 
     def solve(self, b, trans=False):
         if trans:
@@ -248,20 +318,28 @@ class LUSolver:
             x = self.fu.solve(y)
         return x
 
+#    @profile
     def update(self, v, j):
         L = self.L
         U = self.U
+        L2 = self.L2
+        U2 = self.U2
+
         m, n = L.shape
 
         u = self.fl.solve(v.toarray())
-        U[:j+1, j] = u[:j+1]
+        U.update(j, u)
+#        U2[:j+1, j] = u[:j+1]
         l = u[j+1:]
         piv = U[j, j]
-        L[j+1:, j] += (l/piv)
+
+#        update = np.array(L[:, j] + u/piv)
+        L.update(j, u/piv)
+#        L2[j+1:, j] += (l/piv)
         self.fl = splu(L, permc_spec="NATURAL", diag_pivot_thresh=0)
         self.fu = splu(U, permc_spec="NATURAL", diag_pivot_thresh=0)
 
-
+#@profile
 def _remove_redundancy_sparse(A, rhs):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
@@ -344,15 +422,15 @@ def _remove_redundancy_sparse(A, rhs):
 
     B2 = LUSolver(m)
     for i in v:
-        B = A[:, b]
+#        B = A[:, b]
 
         e[i] = 1
         if i > 0:
             e[i-1] = 0
 
-        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
-        pi2 = B2.solve(e, True)
-        assert(np.allclose(pi.ravel(), pi2.ravel()))
+#        pi2 = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+        pi = B2.solve(e, True)
+#        assert(np.allclose(pi.ravel(), pi2.ravel()))
 
         js = list(k-set(b))  # not efficient, but this is not the time sink...
 
@@ -364,8 +442,6 @@ def _remove_redundancy_sparse(A, rhs):
         # is found.
 
         c = (np.abs(A[:, js].transpose().dot(pi)) > tolapiv).nonzero()[0]
-        c2 = (np.abs(A[:, js].transpose().dot(pi2)) > tolapiv).nonzero()[0]
-        assert(np.allclose(c.ravel(), c2.ravel()))
         if len(c) > 0:  # independent
             j = js[c[0]]
             # in a previous commit, the previous line was changed to choose
