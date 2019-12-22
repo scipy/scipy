@@ -233,10 +233,10 @@ def _remove_redundancy_dense(A, rhs):
 
 class my_csc_matrix(csc_matrix):
 
-    def __init__(self, shape, *args, upper=None, **kwargs):
-        super().__init__(shape, *args, **kwargs)
+    def __init__(self, *args, upper=None, **kwargs):
+        super().__init__(*args, **kwargs)
         if upper is not None:
-            n = shape[0]
+            n = args[0][0]
             self.upper = upper
             self.my_nnz = n
             self.my_indices = np.arange(2*n, dtype=np.int32)
