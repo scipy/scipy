@@ -276,9 +276,9 @@ def _unpack_index(index):
             'Indexing with sparse matrices is not supported '
             'except boolean indexing where matrix and index '
             'are equal shapes.')
-    if isinstance(row, np.ndarray) and row.dtype.kind == 'b':
+    if hasattr(row, 'ndim') and row.dtype.kind == 'b':
         row = _boolean_index_to_array(row)
-    if isinstance(col, np.ndarray) and col.dtype.kind == 'b':
+    if hasattr(col, 'ndim') and col.dtype.kind == 'b':
         col = _boolean_index_to_array(col)
     return row, col
 
@@ -325,4 +325,4 @@ def _check_ellipsis(index):
 def _boolean_index_to_array(idx):
     if idx.ndim > 1:
         raise IndexError('invalid index shape')
-    return idx.nonzero()[0]
+    return np.where(idx != 0)[0]
