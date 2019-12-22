@@ -12,7 +12,8 @@ def pre_build_hook(build_ext, ext):
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from numpy.distutils.misc_util import get_info as get_misc_info
-    from scipy._build_utils.system_info import get_info as get_sys_info
+    from scipy._build_utils.system_info import get_info
+    from scipy._build_utils import combine_dict, uses_blas64
     from distutils.sysconfig import get_python_inc
 
     config = Configuration('spatial', parent_package, top_path)
@@ -31,9 +32,14 @@ def configuration(parent_package='', top_path=None):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
+    inc_dirs.append(join(dirname(dirname(__file__)), '_build_utils', 'src'))
 
-    cfg = dict(get_sys_info('lapack_opt'))
-    cfg.setdefault('include_dirs', []).extend(inc_dirs)
+    if uses_blas64():
+        lapack_opt = get_info('lapack_ilp64_opt')
+    else:
+        lapack_opt = get_info('lapack_opt')
+
+    cfg = combine_dict(lapack_opt, include_dirs=inc_dirs)
     config.add_extension('qhull',
                          sources=['qhull.c', 'qhull_misc.c'] + qhull_src,
                          **cfg)
