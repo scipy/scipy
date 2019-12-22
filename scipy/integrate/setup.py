@@ -13,11 +13,11 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('integrate', parent_package, top_path)
 
     if uses_blas64():
-        lapack_maybe64_opt = get_info('lapack_ilp64_opt', 2)
-        pre_build_hook = blas_ilp64_pre_build_hook(lapack_maybe64_opt)
+        lapack_opt = get_info('lapack_ilp64_opt', 2)
+        pre_build_hook = blas_ilp64_pre_build_hook(lapack_opt)
         f2py_options = get_f2py_int64_options()
     else:
-        lapack_maybe64_opt = get_info('lapack_opt')
+        lapack_opt = get_info('lapack_opt')
         pre_build_hook = None
         f2py_options = None
 
@@ -34,40 +34,27 @@ def configuration(parent_package='',top_path=None):
     quadpack_test_src = [join('tests','_test_multivariate.c')]
     odeint_banded_test_src = [join('tests', 'banded5x5.f')]
 
-    if uses_blas64():
-        mach64_name = 'mach64'
-        config.add_library('mach64', sources=mach_src,
-                           config_fc={'noopt': (__file__, 1)})
-    else:
-        # quadpack still needs the 32-bit integer lib
-        mach64_name = 'mach'
-
-    config.add_library('mach', sources=mach_src,
-                       config_fc={'noopt':(__file__,1)})
-    config.add_library('quadpack', sources=quadpack_src)
+    config.add_library('mach', sources=mach_src, config_fc={'noopt': (__file__, 1)},
+                       _pre_build_hook=pre_build_hook)
+    config.add_library('quadpack', sources=quadpack_src, _pre_build_hook=pre_build_hook)
     config.add_library('lsoda', sources=lsoda_src, _pre_build_hook=pre_build_hook)
     config.add_library('vode', sources=vode_src, _pre_build_hook=pre_build_hook)
     config.add_library('dop', sources=dop_src, _pre_build_hook=pre_build_hook)
 
     # Extensions
     # quadpack:
-    lapack_opt = dict(get_info('lapack_opt', notfound_action=2))
-    lapack_libs = lapack_opt.pop('libraries', [])
     include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
-    if 'include_dirs' in lapack_opt:
-        lapack_opt = dict(lapack_opt)
-        include_dirs.extend(lapack_opt.pop('include_dirs'))
-
+    cfg = combine_dict(lapack_opt,
+                       include_dirs=include_dirs,
+                       libraries=['quadpack', 'mach'])
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
-                         libraries=['quadpack', 'mach'] + lapack_libs,
                          depends=(['__quadpack.h']
                                   + quadpack_src + mach_src),
-                         include_dirs=include_dirs,
-                         **lapack_opt)
+                         **cfg)
 
     # odepack/lsoda-odeint
-    cfg = combine_dict(lapack_maybe64_opt, numpy_nodepr_api,
+    cfg = combine_dict(lapack_opt, numpy_nodepr_api,
                        libraries=['lsoda', 'mach'])
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
@@ -75,7 +62,7 @@ def configuration(parent_package='',top_path=None):
                          **cfg)
 
     # vode
-    cfg = combine_dict(lapack_maybe64_opt,
+    cfg = combine_dict(lapack_opt,
                        libraries=['vode'])
     ext = config.add_extension('vode',
                                sources=['vode.pyf'],
@@ -85,8 +72,8 @@ def configuration(parent_package='',top_path=None):
     ext._pre_build_hook = pre_build_hook
 
     # lsoda
-    cfg = combine_dict(lapack_maybe64_opt,
-                       libraries=['lsoda', mach64_name])
+    cfg = combine_dict(lapack_opt,
+                       libraries=['lsoda', 'mach'])
     ext = config.add_extension('lsoda',
                                sources=['lsoda.pyf'],
                                depends=(lsoda_src + mach_src),
@@ -106,8 +93,8 @@ def configuration(parent_package='',top_path=None):
                          sources=quadpack_test_src)
 
     # Fortran+f2py extension module for testing odeint.
-    cfg = combine_dict(lapack_maybe64_opt,
-                       libraries=['lsoda', mach64_name])
+    cfg = combine_dict(lapack_opt,
+                       libraries=['lsoda', 'mach'])
     ext = config.add_extension('_test_odeint_banded',
                                sources=odeint_banded_test_src,
                                depends=(lsoda_src + mach_src),
