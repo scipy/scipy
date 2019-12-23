@@ -1648,13 +1648,17 @@ def test_getc2_gesc2():
 
 
 def test_gttrf_gttrs():
+    #%%
     np.random.seed(42)
+    # use ?gttrf and ?gttrs to solve a random linear system for each dtype
     for index, dtype in enumerate(DTYPES):
         n = 10
+        # set appropriate test tolerance based on the data type
         if index % 2 == 0:
             rtol = 10**-(np.finfo(dtype).precision-1)
         else:
             rtol = 10**-(np.finfo(dtype).precision-3)
+        # create the matrix in accordance with the data type
         if index < 2:
             du = np.random.rand(n-1)
             d = np.random.rand(n)
@@ -1673,7 +1677,7 @@ def test_gttrf_gttrs():
         gttrf, gttrs = get_lapack_funcs(('gttrf', 'gttrs'), dtype=dtype)
 
         _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
-
+        # test to assure that the inputs of ?gttrf are maintained
         assert_array_equal(dl, diag_cpy[0])
         assert_array_equal(d, diag_cpy[1])
         assert_array_equal(du, diag_cpy[2])
@@ -1682,15 +1686,48 @@ def test_gttrf_gttrs():
         for i, piv in enumerate(ipiv):
             perm_fnl[i], perm_fnl[piv-1] = perm_fnl[piv-1], perm_fnl[i]
 
-        _A = np.diag(_dl, -1) + np.diag(_d, 0) + np.diag(_du, 1)
-        #assert_allclose(_A, A[perm_fnl], rtol=rtol)
+        U = np.diag(_d, 0) + np.diag(_du, 1) + np.diag(du2, 2)
+        L = np.eye(n)
 
+        for i, m in enumerate(_dl):
+            piv = ipiv[i] - 1
+
+            # create permutation matrix
+            P = np.eye(n)
+            temp = P[i,:].copy()
+            P[i,:] = P[piv, :]
+            P[piv, :] = temp
+
+            # create factor Li
+            if index < 2:
+                Li = np.eye(n)
+            else:
+                Li = np.eye(n) + np.eye(n)*1j
+            Li[i+1,i] = m
+
+            L = L@P@Li
+
+        # one last permutation
+        piv = ipiv[-1] - 1
+        i = -1
+        P = np.eye(n)
+        temp = P[i,:].copy()
+        P[i,:] = P[piv, :]
+        P[piv,:] = temp
+
+        _A = L @ U
+        # check that the outputs of ?gttrf define an LU decompisition of A
+        assert_allclose(A, _A, rtol=rtol)
+
+        #%%
         b_cpy = b.copy()
         x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b)
+        # test that the inputs of ?gttrs are maintained
         assert_array_equal(b, b_cpy)
-
+        # test that the result of ?gttrs matches the expected input
         assert_allclose(x, x_gttrs, rtol=rtol)
 
+        # create matricies of inconsistent shapes
         if index < 2:
             dl_misshaped = np.random.rand(n)
             d_misshaped = np.random.rand(n-1)
@@ -1700,6 +1737,7 @@ def test_gttrf_gttrs():
             d_misshaped = np.random.rand(n-1) + np.random.rand(n-1) * 1j
             du_misshaped = np.random.rand(n) + np.random.rand(n) * 1j
 
+        # test that ValueError is raised with incompatible matrix shapes
         with assert_raises(ValueError):
             gttrf(dl_misshaped, d, du)
         with assert_raises(ValueError):
@@ -1707,22 +1745,23 @@ def test_gttrf_gttrs():
         with assert_raises(ValueError):
             gttrf(dl, d, du_misshaped)
 
+        # test that matrix of size n=2 raises exception
         with assert_raises(Exception):
             gttrf(dl[0], d[:1], du[0])
 
-        transpose_options = ["N", "C", "T"]
+        # test that ?gttrf and ?gttrs work with transposal options
+        transpose_options = ["C", "T"]
         for trans in transpose_options:
-            if trans == "N":
-                b_trans = A @ x
-            elif trans == "T":
+            if trans == "T":
                 b_trans = np.transpose(A) @ x
-            elif trans == "C":
+            else:
                 b_trans = A.conj().T @ x
             _dl, _d, _du, du2, ipiv, info = gttrf(dl, d, du)
             x_gttrs, info = gttrs(_dl, _d, _du, du2, ipiv, b_trans,
                                   trans=trans)
             assert_allclose(x, x_gttrs, rtol=rtol)
 
+        # test that singular (row of all zeroes) matrix fails via info
         dl[0] = 0
         du[0] = 0
         d[0] = 0
@@ -1730,6 +1769,10 @@ def test_gttrf_gttrs():
         np.testing.assert_(_info != 0,
                            "?gttrf: singular matrix ret info == 0")
 
+
+def test_gttrf_gttrs_NAG():
+    # test to assure that wrapper is consistent with NAG manual
+    # example problems
     du = np.array([2.1, -1.0, 1.9, 8.0])
     d = np.array([3.0, 2.3, -5.0, -.9, 7.1])
     dl = np.array([3.4, 3.6, 7.0, -6.0])
