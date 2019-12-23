@@ -73,6 +73,7 @@ matrix:
       env:
         - TESTMODE=full
         - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+        - NPY_USE_BLAS_ILP64=1
     - python: 3.6
       if: type = pull_request
       env:
@@ -119,6 +120,14 @@ before_install:
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       free -m
       export PATH=/usr/lib/ccache:$PATH
+    fi
+  - |
+    if [[ "$NPY_USE_BLAS_ILP64" == "1" ]]; then
+      target=$(python tools/openblas_support.py)
+      echo "[openblas64_]" > site.cfg
+      echo "library_dirs = $target/lib" >> site.cfg
+      echo "include_dirs = $target/include" >> site.cfg
+      echo "runtime_library_dirs = $target/lib" >> site.cfg
     fi
   - export CCACHE_COMPRESS=1
   - python --version # just to check
