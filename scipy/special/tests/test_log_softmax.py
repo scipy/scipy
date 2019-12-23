@@ -31,9 +31,9 @@ def test_log_softmax():
     
 def test_log_softmax_multi_axes():
     assert_allclose(log_softmax([[1000, 1], [1000, 1]], axis=0), 
-									np.log(0.5)*np.ones((2,2)), rtol=1e-13)
+                    np.log(0.5)*np.ones((2,2)), rtol=1e-13)
     assert_allclose(log_softmax([[1000, 1], [1000, 1]], axis=1), 
-									np.array([[0, -999],[0, -999]]), rtol=1e-13)
+                    np.array([[0, -999],[0, -999]]), rtol=1e-13)
     
     # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
     # converted to float.
@@ -42,7 +42,7 @@ def test_log_softmax_multi_axes():
                          -2.4401896985611953,
                          -1.4401896985611953,
                          -0.44018969856119533],
-												[-3.4401896985611953,
+                        [-3.4401896985611953,
                          -2.4401896985611953,
                          -1.4401896985611953,
                          -0.44018969856119533]])
