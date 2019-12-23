@@ -273,22 +273,31 @@ class my_csc_matrix(csc_matrix):
             array[i1:i2] = data
             return array
 
+    @profile
     def solve(self, b, trans=False):
+        n = self.shape[0]
         if not trans:
             x = np.zeros(self.shape[0])
-            b = b.reshape(-1,1)
-            p = np.zeros((self.shape[0], 1))
+#            b = b.reshape(-1,1)
+            b = b.ravel()
+            p = np.zeros(self.shape[0])
             if self.upper:
                 cols = range(-1, -len(x)-1, -1)
             else:
                 cols = range(len(x))
             for i in cols:
-                x[i] = (b-p)[i]/self[i, i]
-                p += x[i]*self[:, i]
+                # col = self[:,i].todense()
+                col = np.zeros(n)
+#                col_sparse = self[:,i]  # too slow
+                j1 = self.indptr[i]
+                j2 = self.indptr[i+1]
+                inz = self.indices[j1:j2]
+                col[inz] = self.data[j1:j2]
+                x[i] = (b-p)[i]/col[i]
+                p += x[i]*col
             return x.ravel()
         if trans:
             A = self.T # now CSR
-            n = self.shape[0]
             x = np.zeros(n)
             if self.upper:
                 cols = range(len(x))
@@ -348,7 +357,7 @@ class LUSolver:
             x = self.fu.solve(y)
         return x
 
-#    @profile
+    @profile
     def update(self, v, j):
         L = self.L
         U = self.U
@@ -358,6 +367,8 @@ class LUSolver:
         m, n = L.shape
 
         u = self.fl.solve(v.toarray())
+        u2 = L.solve(v.toarray())
+#        assert(np.allclose(u.ravel(),u2.ravel()))
         U.update(j, u)
 #        U2[:j+1, j] = u[:j+1]
 #        l = u[j+1:]
@@ -369,7 +380,7 @@ class LUSolver:
         self.fl = splu(L, permc_spec="NATURAL", diag_pivot_thresh=0)
         self.fu = splu(U, permc_spec="NATURAL", diag_pivot_thresh=0)
 
-#@profile
+@profile
 def _remove_redundancy_sparse(A, rhs):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
