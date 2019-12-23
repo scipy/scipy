@@ -29,7 +29,7 @@ try:
     from scipy.linalg import _clapack as clapack
 except ImportError:
     clapack = None
-from scipy.linalg.lapack import get_lapack_funcs
+from scipy.linalg.lapack import get_lapack_funcs, HAS_ILP64
 from scipy.linalg.blas import get_blas_funcs
 
 REAL_DTYPES = [np.float32, np.float64]
@@ -701,6 +701,14 @@ class TestSytrd(object):
             # to 0.
             assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
 
+    @pytest.mark.skipif(not HAS_ILP64, reason="Requires ILP64 BLAS")
+    def test_sytrd_big_lwork(self):
+        for dtype in REAL_DTYPES:
+            sytrd_lwork = get_lapack_funcs('sytrd_lwork', dtype=dtype,
+                                           ilp64=True)
+            n = 2**32 + 1
+            lwork, info = sytrd_lwork(n)
+            assert_equal(info, 0)
 
 class TestHetrd(object):
     def test_hetrd(self):
