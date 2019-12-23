@@ -3095,6 +3095,24 @@ class TestKSTwoSamples(object):
         self._testOne(x, y, 'greater', 561.0 / lcm, 0.99115454582047591)
         self._testOne(x, y, 'less', 55275.0 / lcm, 3.1317328311518713e-26)
 
+    def test_gh11184(self):
+        # 3000, 3001, exact two-sided
+        np.random.seed(123456)
+        x = np.random.normal(size=3000)
+        y = np.random.normal(size=3001) * 1.5
+        print(x[0], x[-1], y[0], y[-1])
+        self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
+        self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
+
+    def test_gh11184_bigger(self):
+        # 10000, 10001, exact two-sided
+        np.random.seed(123456)
+        x = np.random.normal(size=10000)
+        y = np.random.normal(size=10001) * 1.5
+        print(x[0], x[-1], y[0], y[-1])
+        self._testOne(x, y, 'two-sided', 0.10597913208679133, 3.3149311398483503e-49, mode='asymp')
+        self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15, mode='exact')
+
     @pytest.mark.slow
     def testLargeBoth(self):
         # 10000, 11000

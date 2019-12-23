@@ -5935,12 +5935,17 @@ def _compute_prob_inside_method(m, n, g, h):
     # This is an integer calculation, but the entries are essentially
     # binomial coefficients, hence grow quickly.
     # Scaling after each column is computed avoids dividing by a
-    # large binomial coefficent at the end. Instead it is incorporated
-    # one factor at a time during the computation.
+    # large binomial coefficent at the end, but is not sufficient to avoid
+    # the large dyanamic range which appears during the calculation.
+    # Instead we rescale based on the magnitude of the right most term in
+    # the column and keep track of an exponent separately and apply
+    # it at the end of the calculation.  Similarly when multiplying by
+    # the binomial coefficint
     dtype = np.float64
     A = np.zeros(lenA, dtype=dtype)
     # Initialize the first column
     A[minj:maxj] = 1
+    expnt = 0
     for i in range(1, m + 1):
         # Generate the next column.
         # First calculate the sliding window
@@ -5956,10 +5961,26 @@ def _compute_prob_inside_method(m, n, g, h):
         if lastlen > curlen:
             # Set some carried-over elements to 0
             A[maxj - minj:maxj - minj + (lastlen - curlen)] = 0
-        # Peel off one term from each of top and bottom of the binomial coefficient.
-        scaling_factor = i * 1.0 / (n + i)
-        A *= scaling_factor
-    return A[maxj - minj - 1]
+        # Rescale if the right most value is over 2**900
+        val = A[maxj - minj - 1]
+        _, valexpt = math.frexp(val)
+        if valexpt > 900:
+            # Scaling to bring down to about 2**800 appears
+            # sufficient for sizes under 10000.
+            valexpt -= 800
+            A = np.ldexp(A, -valexpt)
+            expnt += valexpt
+
+    val = A[maxj - minj - 1]
+    # Now divide by the binomial (m+n)!/m!/n!
+    for i in range(1, n + 1):
+        val = (val * i) / (m + i)
+        _, valexpt = math.frexp(val)
+        if valexpt < -128:
+            val = np.ldexp(val, -valexpt)
+            expnt += valexpt
+    # Finally scale if needed.
+    return np.ldexp(val, expnt)
 
 
 def _compute_prob_outside_square(n, h):
@@ -6141,6 +6162,12 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the mode is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
+
+    The 'two-sided' 'exact' computation computes the complementary probability
+    and then subtracts from 1.  As such, the minimum probability it can return
+    is about 1e-16.  While the algorithm itself is exact, numerical
+    errors may accumulate for large sample sizes.   It is most suited to
+    situations in which one of the sample sizes is only a few thousand.
 
     We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk [1]_.
 
