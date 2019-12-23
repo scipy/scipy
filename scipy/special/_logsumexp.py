@@ -212,9 +212,7 @@ def softmax(x, axis=None):
     """
 
     # compute in log space for numerical stability
-    # subtraction can cause cancellation when x and logsumexp(x) are close to each other.
-    # return np.exp(x - logsumexp(x, axis=axis, keepdims=True))
-    return np.exp(log_softmax(x, axis=axis))
+    return np.exp(x - logsumexp(x, axis=axis, keepdims=True))
 
 
 def log_softmax(x, axis=None):
@@ -233,9 +231,9 @@ def log_softmax(x, axis=None):
 
     Returns
     -------
-    s : ndarray
-        An array the same shape as `x`. Exponential of the result will sum to 1 along the
-        specified axis.
+    s : ndarray or scalar
+        An array with the same shape as `x`. Exponential of the result will sum to 1 along the
+        specified axis. If `x` is a scalar, a scalar is returned.
 
     Notes
     -----
@@ -256,8 +254,9 @@ def log_softmax(x, axis=None):
     >>> y
     array([   0., -999.])
 
-    >>> y = np.log(softmax(x))
-    RuntimeWarning: divide by zero encountered in log
+    >>> with np.errstate(divide='ignore'):
+    ...   y = np.log(softmax(x))
+    ...
     >>> y
     array([  0., -inf])
 
@@ -273,4 +272,12 @@ def log_softmax(x, axis=None):
         x_max = 0
 
     tmp = x - x_max
-    return tmp-logsumexp(tmp, axis=axis, keepdims=True)
+    exp_tmp = np.exp(tmp)
+    
+    # suppress warnings about log of zero
+    with np.errstate(divide='ignore'):
+        s = np.sum(exp_tmp, axis=axis, keepdims=True)
+        out = np.log(s)
+
+    out = tmp - out
+    return out
