@@ -273,6 +273,36 @@ class my_csc_matrix(csc_matrix):
             array[i1:i2] = data
             return array
 
+    def solve(self, b, trans=False):
+        if not trans:
+            x = np.zeros(self.shape[0])
+            b = b.reshape(-1,1)
+            p = np.zeros((self.shape[0], 1))
+            if self.upper:
+                cols = range(-1, -len(x)-1, -1)
+            else:
+                cols = range(len(x))
+            for i in cols:
+                x[i] = (b-p)[i]/self[i, i]
+                p += x[i]*self[:, i]
+            return x.ravel()
+        if trans:
+            A = self.T # now CSR
+            n = self.shape[0]
+            x = np.zeros(n)
+            if self.upper:
+                cols = range(len(x))
+                start_col = 0
+                inc = 1
+            else:
+                cols = range(n-1, 0, -1)
+                start_col = n-1
+                inc = -1
+            for i in cols:
+                p = A[i,start_col:i:inc]@x[start_col:i:inc]
+                x[i] = (b[i]-p)/self[i, i]
+            return x.ravel()
+
     def update(self, column, data):
         if self.upper:
             data = data[:column+1, 0]
@@ -330,7 +360,7 @@ class LUSolver:
         u = self.fl.solve(v.toarray())
         U.update(j, u)
 #        U2[:j+1, j] = u[:j+1]
-        l = u[j+1:]
+#        l = u[j+1:]
         piv = U[j, j]
 
 #        update = np.array(L[:, j] + u/piv)
