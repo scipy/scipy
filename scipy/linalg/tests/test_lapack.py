@@ -25,6 +25,8 @@ from scipy.linalg import _flapack as flapack, lapack
 from scipy.linalg import inv, svd, cholesky, solve, ldl, norm
 from scipy.linalg.lapack import _compute_lwork
 
+import scipy.sparse as sps
+
 try:
     from scipy.linalg import _clapack as clapack
 except ImportError:
@@ -535,6 +537,31 @@ class TestTbtrs(object):
         x, info = tbtrs(ab=ab, b=b, uplo='L')
         assert_equal(info, 0)
         assert_allclose(x, x_out, rtol=0, atol=1e-5)
+
+    @pytest.mark.parametrize('dtype', DTYPES)
+    @pytest.mark.parametrize('uplo', ['U', 'L'])
+    def test_random_matrices(self, dtype, uplo):
+        seed(1724)
+        lda, ldb, nrhs, kd = 4, 4, 3, 2
+        ldab = kd + 1
+
+        band_widths = range(lda, lda - kd - 1, -1)
+        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
+
+        if dtype in REAL_DTYPES:
+            bands = [rand(band_width).astype(dtype) for band_width in band_widths]
+        elif dtype in COMPLEX_DTYPES:
+            bands = [(rand(band_width) + rand(band_width) * 1j).astype(dtype)
+                     for band_width in band_widths]
+
+        a = sps.diags(bands, band_offsets, format='dia')
+        ab = np.flipud(a.data) if uplo == 'U' else a.data
+        b = rand(ldb, nrhs).astype(dtype)
+
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        x, info = tbtrs(ab=ab, b=b, uplo=uplo)
+        assert_equal(info, 0)
+        assert_allclose(a @ x, b, rtol=5e-5)
 
 
 def test_lartg():
