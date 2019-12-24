@@ -856,7 +856,7 @@ are weights assigned to each observation.
 Example of solving a fitting problem
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here we consider an enzymatic reaction [Kowalik1968]_. There are 11 residuals defined as
+Here we consider an enzymatic reaction [1]_. There are 11 residuals defined as
 
 .. math::
     f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x_3} - y_i, \quad i = 0, \ldots, 10,
@@ -876,7 +876,7 @@ recommended to compute Jacobian matrix in a closed form:
     &J_{i3} = \frac{\partial f_i}{\partial x_3} = -\frac{x_0 (u_i^2 + u_i x_1)}{(u_i^2 + u_i x_2 + x_3)^2}
     \end{align}
 
-We are going to use the "hard" starting point defined in [Averick1992]_. To find a
+We are going to use the "hard" starting point defined in [2]_. To find a
 physically meaningful solution, avoid potential division by zero and assure
 convergence to the global minimum we impose constraints
 :math:`0 \leq x_j \leq 100, j = 0, 1, 2, 3`.
@@ -926,9 +926,9 @@ finally plots the original data and the fitted model function:
     >>> plt.legend(loc='lower right')
     >>> plt.show()
 
-.. [Kowalik1968] J. Kowalik and J. F. Morrison, “Analysis of kinetic data for allosteric enzyme reactions as
+.. [1] J. Kowalik and J. F. Morrison, “Analysis of kinetic data for allosteric enzyme reactions as
    a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
-.. [Averick1992] B. M. Averick et al., “The MINPACK-2 Test Problem Collection”.
+.. [2] B. M. Averick et al., “The MINPACK-2 Test Problem Collection”.
 
 Further examples
 ^^^^^^^^^^^^^^^^
