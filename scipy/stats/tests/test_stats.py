@@ -895,6 +895,24 @@ class TestCorrSpearmanr2(object):
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
 
+    def test_gh_11111(self):
+        x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        with assert_warns(stats.SpearmanRConstantInputWarning):
+            r, p = stats.spearmanr(x, y)
+            assert_equal(r, np.nan)
+            assert_equal(p, np.nan)
+
+    def test_index_error(self):
+        x = np.array([1.0, 7.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
+            0.0007535430349118562, 0.0002661781514710257, 0, 0,
+            0.0007835762419683435])
+        assert_raises(stats.SpearmanRIndexError, stats.spearmanr, x, y, axis=2)
+
+
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
 #    If the table cannot hold these values, forget about working with
@@ -1186,19 +1204,6 @@ def test_weightedtau_vs_quadratic():
                 assert_approx_equal(expected, actual)
             # Second pass: use a random rank
             np.random.shuffle(rank)
-
-
-class TestSpearmanrWarnings(object):
-
-    def test_gh_11111(self):
-        x = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-        y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
-            0.0007535430349118562, 0.0002661781514710257, 0, 0,
-            0.0007835762419683435])
-        with assert_warns(stats.SpearmanRConstantInputWarning):
-            r, p = stats.spearmanr(x, y)
-            assert_equal(r, np.nan)
-            assert_equal(p, np.nan)
 
 
 class TestFindRepeats(object):
