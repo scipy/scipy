@@ -3112,6 +3112,8 @@ class TestKSTwoSamples(object):
         print(x[0], x[-1], y[0], y[-1])
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 3.3149311398483503e-49, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15, mode='exact')
+        self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
+        self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
     @pytest.mark.slow
     def testLargeBoth(self):
@@ -3122,7 +3124,7 @@ class TestKSTwoSamples(object):
         x = np.linspace(1, 200, n1) - delta
         y = np.linspace(2, 200, n2)
         self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='asymp')
-        self._testOne(x, y, 'two-sided', 563.0 / lcm, 1.0, mode='exact')
+        self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.9990456491488628, mode='exact')
         self._testOne(x, y, 'two-sided', 563.0 / lcm, 0.99915729949018561, mode='auto')
         self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
         self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
