@@ -451,19 +451,22 @@ def _remove_redundancy(A, b):
 
 
 def _remove_redundancy_id(A, rhs, rank=None, randomized=True):
-    """
+    """Eliminates redundant equations from a system of equations.
+
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
+
     Parameters
     ----------
     A : 2-D array
         An array representing the left-hand side of a system of equations
     rhs : 1-D array
         An array representing the right-hand side of a system of equations
-    rank : int
+    rank : int, optional
         The rank of A
-    randomized: bool
+    randomized: bool, optional
         True for randomized interpolative decomposition
+
     Returns
     -------
     A : 2-D array
@@ -476,6 +479,7 @@ def _remove_redundancy_id(A, rhs, rank=None, randomized=True):
         2: Trivially infeasible
     message : str
         A string descriptor of the exit status of the optimization.
+
     """
 
     status = 0
@@ -496,8 +500,6 @@ def _remove_redundancy_id(A, rhs, rank=None, randomized=True):
     k = rank
     if rank is None:
         k = np.linalg.matrix_rank(A)
-        # can randomized algorithm for ID recognize when it's up to full rank?
-        # it would be nice not to have to calculate/provide the rank
 
     idx, proj = interp_decomp(A.T, k, rand=randomized)
 
