@@ -371,7 +371,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
+        raise ValueError('expected square "a" matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if iscomplexobj(a1):
         cplx = True
@@ -381,7 +381,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         b1 = _asarray_validated(b, check_finite=check_finite)
         overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
-            raise ValueError('expected square matrix')
+            raise ValueError('expected square "b" matrix')
 
         if b1.shape != a1.shape:
             raise ValueError("wrong b dimensions %s, should "
@@ -392,6 +392,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             cplx = cplx or False
     else:
         b1 = None
+
+    n = a1.shape[0]
 
     # Set job for Fortran routines
     _job = (eigvals_only and 'N') or 'V'
@@ -420,19 +422,28 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     #  Standard Eigenvalue Problem
     #  Use '*evr' routines
-    # FIXME: implement calculation of optimal lwork
-    #        for all lapack routines
     if b1 is None:
         driver = pfx+'evr'
-        (evr,) = get_lapack_funcs((driver,), (a1,))
+        (evr, evr_lwork) = get_lapack_funcs((driver, driver+'_lwork'), (a1,))
+
+        # compute *work array sizes
+        if pfx == 'he':
+            lwork, lrwork, liwork = _compute_lwork(evr_lwork, n, uplo)
+            work_args = {'lwork': lwork, 'lrwork': lrwork, 'liwork': liwork}
+        else:
+            lwork, liwork = _compute_lwork(evr_lwork, n, uplo)
+            work_args = {'lwork': lwork, 'liwork': liwork}
+
         if eigvals is None:
-            w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
-                             iu=a1.shape[0], overwrite_a=overwrite_a)
+            w, v, m, _, info = evr(a1, uplo=uplo, jobz=_job, range="A",
+                                   il=1, iu=a1.shape[0],
+                                   overwrite_a=overwrite_a, **work_args)
         else:
             (lo, hi) = eigvals
-            w_tot, v, info = evr(a1, uplo=uplo, jobz=_job, range="I",
-                                 il=lo, iu=hi, overwrite_a=overwrite_a)
-            w = w_tot[0:hi-lo+1]
+            w_tot, v, m, _, info = evr(a1, uplo=uplo, jobz=_job, range="I",
+                                       il=lo, iu=hi, overwrite_a=overwrite_a,
+                                       **work_args)
+            w = w_tot[0:m]
 
     # Generalized Eigenvalue Problem
     else:
