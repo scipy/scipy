@@ -7,7 +7,8 @@ from scipy._lib.six import xrange
 from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
                       get_sum_dtype, validateaxis, check_reshape_kwargs,
-                      check_shape, asmatrix)
+                      check_shape, asmatrix, upcast,
+                      supported_bitwise_dtypes)
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -673,6 +674,54 @@ class spmatrix(object):
             raise ValueError('exponent must be an integer')
         else:
             return NotImplemented
+
+    def logical_and(self, other):
+        return self.tocsr().logical_and(other)
+
+    def logical_or(self, other):
+        return self.tocsr().logical_or(other)
+
+    def logical_xor(self, other):
+        return self.tocsr().logical_xor(other)
+
+    def bitwise_and(self, other):
+        return self.tocsr().bitwise_and(other)
+
+    def bitwise_or(self, other):
+        return self.tocsr().bitwise_or(other)
+
+    def bitwise_xor(self, other):
+        return self.tocsr().bitwise_xor(other)
+
+    def _bitwise_op(self, other, op):
+        # XXX: check the type of other, possibly return NotImplemented
+        res_dtype = upcast(self.dtype, other.dtype)
+        # bool types should use logical operations
+        if np.issubdtype(bool, res_dtype):
+            method = getattr(self, 'logical_' + op)
+        elif res_dtype in supported_bitwise_dtypes:
+            method = getattr(self, 'bitwise_' + op)
+        else:
+            raise TypeError("Unsupported dtype for '%s': %s" %
+                            (op, res_dtype))
+
+        try:
+            return method(other)
+        except NotImplementedError:
+            return NotImplemented
+
+    def __and__(self, other):  # self & other
+        return self._bitwise_op(other, 'and')
+
+    def __or__(self, other):  # self | other
+        return self._bitwise_op(other, 'or')
+
+    def __xor__(self, other):  # self ^ other
+        return self._bitwise_op(other, 'xor')
+
+    __rand__ = __and__
+    __ror__ = __or__
+    __rxor__ = __xor__
 
     def __getattr__(self, attr):
         if attr == 'A':

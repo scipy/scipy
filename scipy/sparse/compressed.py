@@ -340,6 +340,92 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Arithmetic operator overrides #
     #################################
 
+    def bitwise_or(self, other):
+        if isscalarlike(other):
+            if not other:
+                return self.copy()
+            raise NotImplementedError('or-ing a nonzero scalar to a '
+                                      'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_bor_')
+        elif isdense(other):
+            return self.todense() | other
+        else:
+            raise NotImplementedError()
+
+    def bitwise_and(self, other):
+        if isscalarlike(other):
+            if not other:
+                return self.__class__(self.shape, self.dtype)
+            raise NotImplementedError('and-ing a nonzero scalar to a '
+                                      'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_band_')
+        elif isdense(other):
+            return self.todense() & other
+        else:
+            raise NotImplementedError()
+
+    def bitwise_xor(self, other):
+        if isscalarlike(other):
+            raise NotImplementedError('xoring a scalar and a sparse matrix'
+                                      'is not implemented')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_bxor_')
+        elif isdense(other):
+            return self.todense() ^ other
+        else:
+            raise NotImplementedError()
+
+    def logical_or(self, other):
+        if isscalarlike(other):
+            if not other:
+                return self.copy()
+            raise NotImplementedError('or-ing a nonzero scalar to a '
+                                      'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_bor_')
+        elif isdense(other):
+            return self.todense() | other
+        else:
+            raise NotImplementedError()
+
+    def logical_and(self, other):
+        if isscalarlike(other):
+            if not other:
+                return self.__class__(self.shape, self.dtype)
+            raise NotImplementedError('and-ing a nonzero scalar to a '
+                                      'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_band_')
+        elif isdense(other):
+            return self.todense() & other
+        else:
+            raise NotImplementedError()
+
+    def logical_xor(self, other):
+        if isscalarlike(other):
+            raise NotImplementedError('xoring a scalar and a sparse matrix'
+                                      'is not implemented')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_bxor_')
+        elif isdense(other):
+            return self.todense() ^ other
+        else:
+            raise NotImplementedError()
+
     def _add_dense(self, other):
         if other.shape != self.shape:
             raise ValueError('Incompatible shapes.')

@@ -44,8 +44,9 @@ import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         eye, isspmatrix, SparseEfficiencyWarning, issparse)
-from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
-                                  get_index_dtype, asmatrix, matrix)
+from scipy.sparse.sputils import (
+        supported_dtypes, isscalarlike, get_index_dtype,
+        supported_bitwise_dtypes, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib._version import NumpyVersion
@@ -228,6 +229,7 @@ class BinopTester_with_shape(object):
 class _TestCommon(object):
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
+    checked_bitwise_dtypes = supported_bitwise_dtypes + [bool]
 
     @classmethod
     def init_class(cls):
@@ -239,7 +241,8 @@ class _TestCommon(object):
         # dtype.
         # This set union is a workaround for numpy#6295, which means that
         # two np.int64 dtypes don't hash to the same value.
-        cls.checked_dtypes = set(supported_dtypes).union(cls.math_dtypes)
+        cls.checked_dtypes = set(supported_dtypes).union(cls.math_dtypes
+            ).union(cls.checked_bitwise_dtypes)
         cls.dat_dtypes = {}
         cls.datsp_dtypes = {}
         for dtype in cls.checked_dtypes:
@@ -1375,6 +1378,90 @@ class _TestCommon(object):
                 continue
 
             check(dtype)
+
+    def test_and(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = b & a
+            assert_array_equal(c, b.todense() & a)
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
+    def test_rand(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = a & b
+            assert_array_equal(c, a & b.todense())
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
+    def test_or(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = b | a
+            assert_array_equal(c, b.todense() | a)
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
+    def test_ror(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = a | b
+            assert_array_equal(c, a | b.todense())
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
+    def test_xor(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = b ^ a
+            assert_array_equal(c, b.todense() ^ a)
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
+    def test_rxor(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = a ^ b
+            assert_array_equal(c, a ^ b.todense())
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
 
     def test_add0(self):
         def check(dtype):

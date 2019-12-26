@@ -11,11 +11,13 @@ import numpy as np
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
+bitwise_dtypes = ['int8','uint8','short','ushort','intc','uintc',
+                  'longlong','ulonglong']
 supported_dtypes = ['bool', 'int8', 'uint8', 'short', 'ushort', 'intc',
                     'uintc', 'longlong', 'ulonglong', 'single', 'double',
                     'longdouble', 'csingle', 'cdouble', 'clongdouble']
 supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
-
+supported_bitwise_dtypes = [np.typeDict[x] for x in bitwise_dtypes]
 _upcast_memo = {}
 
 
