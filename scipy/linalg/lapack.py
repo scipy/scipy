@@ -285,6 +285,9 @@ All functions
    cheevr
    zheevr
 
+   cheevr_lwork
+   zheevr_lwork
+
    chegst
    zhegst
 
@@ -511,6 +514,9 @@ All functions
 
    ssyevr
    dsyevr
+
+   ssyevr_lwork
+   dsyevr_lwork
 
    ssygst
    dsygst
