@@ -45,7 +45,7 @@ If building from source, SciPy also requires:
 
 __ https://github.com/pypa/setuptools
 
-4) pybind11__ >= 2.4.0
+4) pybind11__ >= 2.4.3
 
 __ https://github.com/pybind/pybind11
 
@@ -55,7 +55,7 @@ __ http://www.sphinx-doc.org/
 
 6) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
-   Cython__ >= 0.28.5
+   Cython__ >= 0.29.14
 
 __ http://cython.org/
 
