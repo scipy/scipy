@@ -882,8 +882,8 @@ class TestCorrSpearmanrTies(object):
 def test_kendalltau():
 
     # case without ties, con-dis equal zero
-    x = [5,2,1,3,6,4,7,8]
-    y = [5,2,6,3,1,8,7,4]
+    x = [5, 2, 1, 3, 6, 4, 7, 8]
+    y = [5, 2, 6, 3, 1, 8, 7, 4]
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
@@ -892,8 +892,8 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis equal zero
-    x = [0,5,2,1,3,6,4,7,8]
-    y = [5,2,0,6,3,1,8,7,4]
+    x = [0, 5, 2, 1, 3, 6, 4, 7, 8]
+    y = [5, 2, 0, 6, 3, 1, 8, 7, 4]
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
@@ -902,8 +902,8 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis close to zero
-    x = [5,2,1,3,6,4,7]
-    y = [5,2,6,3,1,7,4]
+    x = [5, 2, 1, 3, 6, 4, 7]
+    y = [5, 2, 6, 3, 1, 7, 4]
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.14285714286, 0.77261904762)
@@ -912,8 +912,8 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis close to zero
-    x = [2,1,3,6,4,7,8]
-    y = [2,6,3,1,8,7,4]
+    x = [2, 1, 3, 6, 4, 7, 8]
+    y = [2, 6, 3, 1, 8, 7, 4]
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.047619047619, 1.0)
