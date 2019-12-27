@@ -178,7 +178,6 @@ from numpy import array, asarray, ma
 from scipy._lib.six import callable, string_types
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere, check_random_state, MapWrapper
 import scipy.special as special
 from scipy import linalg
@@ -2743,9 +2742,9 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        percentile_func = _iqr_nanpercentile
+        percentile_func = np.nanpercentile
     else:
-        percentile_func = _iqr_percentile
+        percentile_func = np.percentile
 
     if len(rng) != 2:
         raise TypeError("quantile range must be two element sequence")
@@ -2755,7 +2754,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
 
     rng = sorted(rng)
     pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                          keepdims=keepdims, contains_nan=contains_nan)
+                          keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -2880,110 +2879,6 @@ def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
         mad = np.median(np.abs(arr - med), axis=axis)
 
     return scale * mad
-
-
-def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
-    """
-    Private wrapper that works around older versions of `numpy`.
-
-    While this function is pretty much necessary for the moment, it
-    should be removed as soon as the minimum supported numpy version
-    allows.
-    """
-    if contains_nan and NumpyVersion(np.__version__) < '1.10.0a':
-        # I see no way to avoid the version check to ensure that the corrected
-        # NaN behavior has been implemented except to call `percentile` on a
-        # small array.
-        msg = "Keyword nan_policy='propagate' not correctly supported for " \
-              "numpy versions < 1.10.x. The default behavior of " \
-              "`numpy.percentile` will be used."
-        warnings.warn(msg, RuntimeWarning)
-
-    try:
-        # For older versions of numpy, there are two things that can cause a
-        # problem here: missing keywords and non-scalar axis. The former can be
-        # partially handled with a warning, the latter can be handled fully by
-        # hacking in an implementation similar to numpy's function for
-        # providing multi-axis functionality
-        # (`numpy.lib.function_base._ureduce` for the curious).
-        result = np.percentile(x, q, axis=axis, keepdims=keepdims,
-                               interpolation=interpolation)
-    except TypeError:
-        if interpolation != 'linear' or keepdims:
-            # At time or writing, this means np.__version__ < 1.9.0
-            warnings.warn("Keywords interpolation and keepdims not supported "
-                          "for your version of numpy", RuntimeWarning)
-        try:
-            # Special processing if axis is an iterable
-            original_size = len(axis)
-        except TypeError:
-            # Axis is a scalar at this point
-            pass
-        else:
-            axis = np.unique(np.asarray(axis) % x.ndim)
-            if original_size > axis.size:
-                # mimic numpy if axes are duplicated
-                raise ValueError("duplicate value in axis")
-            if axis.size == x.ndim:
-                # axis includes all axes: revert to None
-                axis = None
-            elif axis.size == 1:
-                # no rolling necessary
-                axis = axis[0]
-            else:
-                # roll multiple axes to the end and flatten that part out
-                for ax in axis[::-1]:
-                    x = np.rollaxis(x, ax, x.ndim)
-                x = x.reshape(x.shape[:-axis.size] +
-                              (np.prod(x.shape[-axis.size:]),))
-                axis = -1
-        result = np.percentile(x, q, axis=axis)
-
-    return result
-
-
-def _iqr_nanpercentile(x, q, axis=None, interpolation='linear', keepdims=False,
-                       contains_nan=False):
-    """
-    Private wrapper that works around the following:
-
-      1. A bug in `np.nanpercentile` that was around until numpy version
-         1.11.0.
-      2. A bug in `np.percentile` NaN handling that was fixed in numpy
-         version 1.10.0.
-      3. The non-existence of `np.nanpercentile` before numpy version
-         1.9.0.
-
-    While this function is pretty much necessary for the moment, it
-    should be removed as soon as the minimum supported numpy version
-    allows.
-    """
-    if hasattr(np, 'nanpercentile'):
-        # At time or writing, this means np.__version__ < 1.9.0
-        result = np.nanpercentile(x, q, axis=axis,
-                                  interpolation=interpolation,
-                                  keepdims=keepdims)
-        # If non-scalar result and nanpercentile does not do proper axis roll.
-        # I see no way of avoiding the version test since dimensions may just
-        # happen to match in the data.
-        if result.ndim > 1 and NumpyVersion(np.__version__) < '1.11.0a':
-            axis = np.asarray(axis)
-            if axis.size == 1:
-                # If only one axis specified, reduction happens along that dimension
-                if axis.ndim == 0:
-                    axis = axis[None]
-                result = np.rollaxis(result, axis[0])
-            else:
-                # If multiple axes, reduced dimeision is last
-                result = np.rollaxis(result, -1)
-    else:
-        msg = "Keyword nan_policy='omit' not correctly supported for numpy " \
-              "versions < 1.9.x. The default behavior of  numpy.percentile " \
-              "will be used."
-        warnings.warn(msg, RuntimeWarning)
-        result = _iqr_percentile(x, q, axis=axis)
-
-    return result
 
 
 #####################################
