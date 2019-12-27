@@ -259,9 +259,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     -----
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
-    1999, pp. 59-60.
-
-    For the zoom phase it uses an algorithm by [...].
+    1999, pp. 59-61.
 
     """
     fc = [0]
@@ -375,9 +373,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     -----
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
-    1999, pp. 59-60.
-
-    For the zoom phase it uses an algorithm by [...].
+    1999, pp. 59-61.
 
     """
 
@@ -525,8 +521,15 @@ def _quadmin(a, fa, fpa, b, fb):
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
           phi, derphi, phi0, derphi0, c1, c2, extra_condition):
-    """
+    """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
+    
     Part of the optimization algorithm in `scalar_search_wolfe2`.
+    
+    Notes
+    -----
+    Implements Algorithm 3.6 (zoom) in Wright and Nocedal,
+    'Numerical Optimization', 1999, pp. 61.
+
     """
 
     maxiter = 10
