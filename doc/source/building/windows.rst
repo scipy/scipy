@@ -369,14 +369,14 @@ Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy>=1.14.0 Cython>=0.29.14 pybind11>=2.4.3 pytest pytest-xdist
+    python -m pip install wheel setuptools numpy>=1.14.5 Cython>=0.29.14 pybind11>=2.4.3 pytest pytest-xdist
 
 The last two are for using SciPy's test suite which is handy if you want to test
 some new change locally.
 
 Please note that this is a simpler procedure than what is used for the official
-binaries. **Your binaries will only work with the latest NumPy (v1.14.0dev and
-higher)**. For building against older NumPy versions, see
+binaries. **Your binaries will only work with the latest NumPy**. 
+For building against older NumPy versions, see
 `Building Against an Older NumPy Version`_.
 
 Assuming that you are in the top of the SciPy repository directory where
