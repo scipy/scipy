@@ -87,6 +87,15 @@ class NonlinearConstraint(object):
     to correctly handles complex inputs and be analytically continuable to the
     complex plane. The scheme '3-point' is more accurate than '2-point' but
     requires twice as many operations.
+
+    Examples
+    --------
+    Constrain ``x[0] < sin(x[1]) + 1.9``
+
+    >>> from scipy.optimize import NonlinearConstraint
+    >>> con = lambda x: x[0] - np.sin(x[1])
+    >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
+
     """
     def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
                  keep_feasible=False, finite_diff_rel_step=None,
