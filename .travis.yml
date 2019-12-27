@@ -52,18 +52,18 @@ matrix:
         - NUMPYSPEC="numpy==1.15.4"
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
-    # so we must install python3.5-dbg using apt.
+    # so we must install python3.7-dbg using apt.
     - language: generic
       env:
-        - USE_DEBUG=python3.5-dbg
+        - USE_DEBUG=python3.7-dbg
         - TESTMODE=fast
         - NUMPYSPEC="--upgrade numpy"
       addons:
         apt:
           packages:
             - *common_packages
-            - python3.5-dbg
-            - python3.5-dev
+            - python3.7-dbg
+            - python3.7-dev
     - python: 3.8
       env:
         - TESTMODE=full
@@ -76,7 +76,7 @@ matrix:
         - REFGUIDE_CHECK=1
         - NUMPYSPEC="--upgrade numpy"
         - ASV_CHECK=1
-    - python: 3.5
+    - python: 3.6
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -186,7 +186,7 @@ before_install:
   - |
     if [ -n "${USE_DEBUG}" ]; then
         # see gh-10676; need to pin pytest version with debug
-        # Python 3.5
+        # Python 3.7
         travis_retry pip install pytest==5.0.1
     fi
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)

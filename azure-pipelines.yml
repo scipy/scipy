@@ -59,12 +59,6 @@ jobs:
           TEST_MODE: full
           OPENBLAS: $(OPENBLAS_32)
           BITS: 32
-        Python35-64bit-full:
-          PYTHON_VERSION: '3.5'
-          PYTHON_ARCH: 'x64'
-          TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
-          BITS: 64
         Python36-64bit-full:
           PYTHON_VERSION: '3.6'
           PYTHON_ARCH: 'x64'
@@ -115,7 +109,7 @@ jobs:
   - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
     displayName: 'Install dependencies'
   - powershell: |
-      If ($(PYTHON_VERSION) -ne '3.5') {
+      If ($(PYTHON_VERSION) -ne '3.6') {
           python -m pip install matplotlib==3.2.0rc1
       }
       else {
